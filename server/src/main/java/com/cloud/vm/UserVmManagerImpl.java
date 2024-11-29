@@ -7393,7 +7393,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public UserVm moveVmToUser(final AssignVMCmd cmd) throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         Account caller = CallContext.current().getCallingAccount();
         Long callerId = caller.getId();
-        logger.trace(String.format("Verifying if caller [%s] is root or domain admin.", caller));
+        logger.trace("Verifying if caller [{}] is root or domain admin.", caller);
         if (!_accountMgr.isRootAdmin(callerId) && !_accountMgr.isDomainAdmin(callerId)) {
             throw new InvalidParameterValueException(String.format("Only root or domain admins are allowed to assign VMs. Caller [%s] is of type [%s].", caller, caller.getType()));
         }
@@ -7412,7 +7412,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         checkCallerAccessToAccounts(caller, oldAccount, newAccount);
 
-        logger.trace(String.format("Verifying if the provided domain ID [%s] is valid.", domainId));
+        logger.trace("Verifying if the provided domain ID [{}] is valid.", domainId);
         if (projectId != null && domainId == null) {
             throw new InvalidParameterValueException("Please provide a valid domain ID; cannot assign VM to a project if domain ID is NULL.");
         }
@@ -7430,7 +7430,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         validateIfNewOwnerHasAccessToTemplate(vm, newAccount, template);
 
         DomainVO domain = _domainDao.findById(domainId);
-        logger.trace(String.format("Verifying if the new account [%s] has access to the specified domain [%s].", newAccount, domain));
+        logger.trace("Verifying if the new account [{}] has access to the specified domain [{}].", newAccount, domain);
         _accountMgr.checkAccess(newAccount, domain);
 
         Transaction.execute(new TransactionCallbackNoReturn() {
@@ -7440,12 +7440,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         });
 
-        logger.info(String.format("VM [%s] now belongs to account [%s].", vm.getInstanceName(), newAccountName));
+        logger.info("VM [{}] now belongs to account [{}].", vm.getInstanceName(), newAccountName);
         return vm;
     }
 
     protected void validateIfVmSupportsMigration(UserVmVO vm, Long vmId) {
-        logger.trace(String.format("Validating if VM [%s] exists and is not in state [%s].", vmId, State.Running));
+        logger.trace("Validating if VM [{}] exists and is not in state [{}].", vmId, State.Running);
 
         if (vm == null) {
             throw new InvalidParameterValueException(String.format("There is no VM by ID [%s].", vmId));
@@ -7464,7 +7464,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws InvalidParameterValueException
      */
     protected void validateIfVmHasNoRules(UserVmVO vm, Long vmId) throws InvalidParameterValueException {
-        logger.trace(String.format("Validating if VM [%s] has no Port Forwarding, Static Nat, Load Balancing or One to One Nat rules.", vm));
+        logger.trace("Validating if VM [{}] has no Port Forwarding, Static Nat, Load Balancing or One to One Nat rules.", vm);
 
         List<PortForwardingRuleVO> portForwardingRules = _portForwardingDao.listByVm(vmId);
         if (CollectionUtils.isNotEmpty(portForwardingRules)) {
@@ -7492,7 +7492,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected void validateIfVolumesHaveNoSnapshots(List<VolumeVO> volumes) throws InvalidParameterValueException {
         logger.trace("Verifying if there are any snapshots for any of the VM volumes.");
         for (VolumeVO volume : volumes) {
-            logger.trace(String.format("Verifying snapshots for volume [%s].", volume));
+            logger.trace("Verifying snapshots for volume [{}].", volume);
             List<SnapshotVO> snapshots = _snapshotDao.listByStatusNotIn(volume.getId(), Snapshot.State.Destroyed, Snapshot.State.Error);
             if (CollectionUtils.isNotEmpty(snapshots)) {
                 throw new InvalidParameterValueException(String.format("Snapshots exist for volume [%s]. Detach volume or remove snapshots for the volume before assigning VM to "
@@ -7513,13 +7513,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected void verifyResourceLimitsForAccountAndStorage(Account account, UserVmVO vm, ServiceOfferingVO offering, List<VolumeVO> volumes, VirtualMachineTemplate template)
             throws ResourceAllocationException {
 
-        logger.trace(String.format("Verifying if CPU and RAM for VM [%s] do not exceed account [%s] limit.", vm, account));
+        logger.trace("Verifying if CPU and RAM for VM [{}] do not exceed account [{}] limit.", vm, account);
 
         if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
             resourceLimitService.checkVmResourceLimit(account, vm.isDisplayVm(), offering, template);
         }
 
-        logger.trace(String.format("Verifying if volume size for VM [%s] does not exceed account [%s] limit.", vm, account));
+        logger.trace("Verifying if volume size for VM [{}] does not exceed account [{}] limit.", vm, account);
 
         checkVolumesLimits(account, volumes);
     }
@@ -7563,14 +7563,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected void executeStepsToChangeOwnershipOfVm(AssignVMCmd cmd, Account caller, Account oldAccount, Account newAccount, UserVmVO vm, ServiceOfferingVO offering,
                                                      List<VolumeVO> volumes, VirtualMachineTemplate template, Long domainId) {
 
-        logger.trace(String.format("Generating destroy event for VM [%s].", vm));
+        logger.trace("Generating destroy event for VM [{}].", vm);
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(),
                 vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
 
-        logger.trace(String.format("Decrementing old account [%s] resource count.", oldAccount));
+        logger.trace("Decrementing old account [{}] resource count.", oldAccount);
         resourceCountDecrement(oldAccount.getAccountId(), vm.isDisplayVm(), offering, template);
 
-        logger.trace(String.format("Removing VM [%s] from its instance group.", vm));
+        logger.trace("Removing VM [{}] from its instance group.", vm);
         removeInstanceFromInstanceGroup(vm.getId());
 
         Long newAccountId = newAccount.getAccountId();
@@ -7595,7 +7595,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     protected void updateVmOwner(Account newAccount, UserVmVO vm, Long domainId, Long newAccountId) {
-        logger.debug(String.format("Updating VM [%s] owner to [%s].", vm, newAccount));
+        logger.debug("Updating VM [{}] owner to [{}].", vm, newAccount);
 
         vm.setAccountId(newAccountId);
         vm.setDomainId(domainId);
@@ -7604,27 +7604,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     protected void updateVolumesOwner(final List<VolumeVO> volumes, Account oldAccount, Account newAccount, Long newAccountId) {
-        logger.debug(String.format("Updating volumes owner from old account [%s] to new account [%s].", oldAccount, newAccount));
+        logger.debug("Updating volumes owner from old account [{}] to new account [{}].", oldAccount, newAccount);
 
         for (VolumeVO volume : volumes) {
-            logger.trace(String.format("Generating a delete volume event for volume [%s].", volume));
+            logger.trace("Generating a delete volume event for volume [{}].", volume);
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                     Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
 
-            logger.trace(String.format("Decrementing volume [%s] and primary storage resource count for the old account [%s].", volume, oldAccount));
+            logger.trace("Decrementing volume [{}] and primary storage resource count for the old account [{}].", volume, oldAccount);
             DiskOfferingVO diskOfferingVO = _diskOfferingDao.findById(volume.getDiskOfferingId());
             _resourceLimitMgr.decrementVolumeResourceCount(oldAccount.getAccountId(), volume.isDisplay(), volume.getSize(), diskOfferingVO);
 
-            logger.trace(String.format("Setting the new account [%s] and domain [%s] for volume [%s].", newAccount, newAccount.getDomainId(), volume));
+            logger.trace("Setting the new account [{}] and domain [{}] for volume [{}].", newAccount, newAccount.getDomainId(), volume);
             volume.setAccountId(newAccountId);
             volume.setDomainId(newAccount.getDomainId());
 
             _volsDao.persist(volume);
 
-            logger.trace(String.format("Incrementing volume [%s] and primary storage resource count for the new account [%s].", volume, newAccount));
+            logger.trace("Incrementing volume [{}] and primary storage resource count for the new account [{}].", volume, newAccount);
             _resourceLimitMgr.incrementVolumeResourceCount(newAccount.getAccountId(), volume.isDisplay(), volume.getSize(), diskOfferingVO);
 
-            logger.trace(String.format("Generating a create volume event for volume [%s].", volume));
+            logger.trace("Generating a create volume event for volume [{}].", volume);
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                     volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
         }
@@ -7647,7 +7647,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected void updateVmNetwork(AssignVMCmd cmd, Account caller, UserVmVO vm, Account newAccount, VirtualMachineTemplate template)
             throws InsufficientCapacityException, ResourceAllocationException {
 
-        logger.trace(String.format("Updating network for VM [%s].", vm));
+        logger.trace("Updating network for VM [{}].", vm);
 
         VirtualMachine vmoi = _itMgr.findById(vm.getId());
         VirtualMachineProfileImpl vmOldProfile = new VirtualMachineProfileImpl(vmoi);
@@ -7698,10 +7698,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     protected void checkCallerAccessToAccounts(Account caller, Account oldAccount, Account newAccount) {
-        logger.trace(String.format("Verifying if caller [%s] has access to old account [%s].", caller, oldAccount));
+        logger.trace("Verifying if caller [{}] has access to old account [{}].", caller, oldAccount);
         _accountMgr.checkAccess(caller, null, true, oldAccount);
 
-        logger.trace(String.format("Verifying if caller [%s] has access to new account [%s].", caller, newAccount));
+        logger.trace("Verifying if caller [{}] has access to new account [{}].", caller, newAccount);
         _accountMgr.checkAccess(caller, null, true, newAccount);
     }
 
@@ -7732,19 +7732,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Cannot move VM with Network IDs; this is a basic zone VM.");
         }
 
-        logger.trace(String.format("Cleanup of old security groups for VM [%s]. They will be recreated for the new account once the VM is started.", vm));
+        logger.trace("Cleanup of old security groups for VM [{}]. They will be recreated for the new account once the VM is started.", vm);
         _securityGroupMgr.removeInstanceFromGroups(cmd.getVmId());
 
         cleanupOfOldOwnerNicsForNetwork(vmOldProfile);
 
-        List<NetworkVO> networkList = new ArrayList<NetworkVO>();
+        List<NetworkVO> networkList = new ArrayList<>();
         Network defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
         addDefaultNetworkToNetworkList(networkList, defaultNetwork);
 
-        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>();
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<>();
         NicProfile profile = new NicProfile();
         profile.setDefaultNic(true);
-        networks.put(networkList.get(0), new ArrayList<NicProfile>(Arrays.asList(profile)));
+        networks.put(networkList.get(0), new ArrayList<>(Arrays.asList(profile)));
 
         allocateNetworksForVm(vm, networks);
 
@@ -7782,7 +7782,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<>();
 
         if (_networkModel.checkSecurityGroupSupportForNetwork(newAccount, zone, networkIdList, securityGroupIdList))  {
-            logger.debug(String.format("Cleanup of old security groups for VM [%s]. They will be recreated for the new account once the VM is started.", vm));
+            logger.debug("Cleanup of old security groups for VM [{}]. They will be recreated for the new account once the VM is started.", vm);
             _securityGroupMgr.removeInstanceFromGroups(cmd.getVmId());
 
             addNetworksToNetworkIdList(vm, newAccount, vmOldProfile, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
@@ -7812,11 +7812,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         addNicsToApplicableNetworksAndReturnDefaultNetwork(applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics, networks);
 
         allocateNetworksForVm(vm, networks);
-        logger.debug(String.format("Adding [%s] networks to VM [%s].", networks.size(), vm.getInstanceName()));
+        logger.debug("Adding [{}] networks to VM [{}].", networks.size(), vm.getInstanceName());
     }
 
     protected void cleanupOfOldOwnerNicsForNetwork(VirtualMachineProfileImpl vmOldProfile) {
-        logger.trace(String.format("Cleanup of old owner network for VM [%s].", vmOldProfile));
+        logger.trace("Cleanup of old owner network for VM [{}].", vmOldProfile);
 
         _networkMgr.cleanupNics(vmOldProfile);
         _networkMgr.removeNics(vmOldProfile);
@@ -7833,7 +7833,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     protected void allocateNetworksForVm(UserVmVO vm, LinkedHashMap<Network, List<? extends NicProfile>> networks) throws InsufficientCapacityException {
-        logger.trace(String.format("Allocating networks for VM [%s].", vm));
+        logger.trace("Allocating networks for VM [{}].", vm);
 
         VirtualMachine vmi = _itMgr.findById(vm.getId());
         VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
@@ -7849,7 +7849,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Security group feature is not supported for VMWare hypervisor.");
         } else if (!isVmWare && (defaultNetwork == null || _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork)) && _networkModel.canAddDefaultSecurityGroup()) {
             if (securityGroupIdList == null) {
-                securityGroupIdList = new ArrayList<Long>();
+                securityGroupIdList = new ArrayList<>();
             }
 
             addDefaultSecurityGroupToSecurityGroupIdList(newAccount, securityGroupIdList);
@@ -7907,7 +7907,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             for (NetworkVO appNet : applicableNetworks) {
                 defaultNic.setRequestedIPv4(requestedIPv4ForNics.get(appNet.getId()));
                 defaultNic.setRequestedIPv6(requestedIPv6ForNics.get(appNet.getId()));
-                networks.put(appNet, new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
+                networks.put(appNet, new ArrayList<>(Arrays.asList(defaultNic)));
 
                 defaultNic = new NicProfile();
             }
@@ -7976,7 +7976,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 defaultGroupPresent = true;
             }
         } else {
-            logger.debug(String.format("Could not find a default security group for account [%s]. Creating a new one.", newAccount));
+            logger.debug("Could not find a default security group for account [{}]. Creating a new one.", newAccount);
             defaultGroup = _securityGroupMgr.createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, newAccount.getDomainId(),
                     newAccountId, newAccount.getAccountName());
         }
@@ -7999,7 +7999,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      */
     protected void keepOldSharedNetworkForVm(UserVmVO vm, Account newAccount, List<Long> networkIdList, Set<NetworkVO> applicableNetworks, Map<Long, String> requestedIPv4ForNics,
                                              Map<Long, String> requestedIPv6ForNics) {
-        logger.trace(String.format("Attempting to keep old shared network for VM [%s].", vm));
+        logger.trace("Attempting to keep old shared network for VM [{}].", vm);
 
         if (CollectionUtils.isNotEmpty(networkIdList)) {
             return;
@@ -8018,8 +8018,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             requestedIPv4ForNics.put(defaultNetworkOldId, defaultNicOld.getIPv4Address());
             requestedIPv6ForNics.put(defaultNetworkOldId, defaultNicOld.getIPv6Address());
 
-            logger.debug(String.format("Using old shared network [%s] with old IP [%s] on default NIC of VM [%s].", defaultNicOld.getIPv4Address(), defaultNetworkOld,
-                    vm));
+            logger.debug("Using old shared network [{}] with old IP [{}] on default NIC of VM [{}].", defaultNicOld.getIPv4Address(), defaultNetworkOld, vm);
         }
     }
 
@@ -8036,7 +8035,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      */
     protected void addAdditionalNetworksToVm(UserVmVO vm, Account newAccount, List<Long> networkIdList, Set<NetworkVO> applicableNetworks, Map<Long, String> requestedIPv4ForNics,
                                              Map<Long, String> requestedIPv6ForNics) {
-        logger.trace(String.format("Adding additional networks to VM [%s].", vm));
+        logger.trace("Adding additional networks to VM [{}].", vm);
 
         if (CollectionUtils.isEmpty(networkIdList)) {
             return;
@@ -8062,10 +8061,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (nicOld != null) {
                     requestedIPv4ForNics.put(networkId, nicOld.getIPv4Address());
                     requestedIPv6ForNics.put(networkId, nicOld.getIPv6Address());
-                    logger.debug(String.format("Using old shared network [%s] with old IP [%s] on NIC of VM [%s].", network, nicOld.getIPv4Address(), vm));
+                    logger.debug("Using old shared network [{}] with old IP [{}] on NIC of VM [{}].", network, nicOld.getIPv4Address(), vm);
                 }
             }
-            logger.debug(String.format("Added network [%s] to VM [%s].", network.getName(), vm.getId()));
+            logger.debug("Added network [{}] to VM [{}].", network.getName(), vm.getId());
             applicableNetworks.add(network);
         }
     }
@@ -8100,7 +8099,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         Long requiredOfferingId = requiredOffering.getId();
-        logger.debug(String.format("Creating network for account [%s] from the network offering [%s] as a part of VM deployment process.", newAccount, requiredOfferingId));
+        logger.debug("Creating network for account [{}] from the network offering [{}] as a part of VM deployment process.", newAccount, requiredOfferingId);
 
         String newAccountName = newAccount.getAccountName();
         Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferingId, newAccountName + "-network",
@@ -8117,7 +8116,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     protected Network implementNetwork(Account caller, DataCenterVO zone, Network newNetwork) {
-        logger.trace(String.format("Implementing network [%s].", newNetwork));
+        logger.trace("Implementing network [{}].", newNetwork);
 
         DeployDestination dest = new DeployDestination(zone, null, null, null);
 
@@ -8126,19 +8125,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         UserVO callerUser = _userDao.findById(CallContext.current().getCallingUserId());
         ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), journal, callerUser, caller);
 
-        logger.debug(String.format("Implementing the network for account [%s] as a part of network provision for persistent networks.", newNetwork));
+        logger.debug("Implementing the network for account [{}] as a part of network provision for persistent networks.", newNetwork);
 
         try {
             Pair<? extends NetworkGuru, ? extends Network> implementedNetwork = _networkMgr.implementNetwork(newNetwork.getId(), dest, context);
 
             if (implementedNetwork == null || implementedNetwork.first() == null || implementedNetwork.second() == null) {
-                logger.warn(String.format("Failed to implement network [%s].", newNetwork));
+                logger.warn("Failed to implement network [{}].", newNetwork);
             } else {
                 newNetwork = implementedNetwork.second();
             }
         } catch (Exception ex) {
-            logger.warn(String.format("Failed to implement network [%s] elements and resources as a part of network provision for persistent network due to [%s].", newNetwork,
-                    ex.getMessage()), ex);
+            logger.warn("Failed to implement network [{}] elements and resources as a part of network provision for persistent network due to [{}].", newNetwork, ex.getMessage(), ex);
             throw new CloudRuntimeException(String.format("Failed to implement network [%s] elements and resources as a part of network provision.", newNetwork));
         }
 
