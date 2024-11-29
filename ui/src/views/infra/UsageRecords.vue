@@ -72,7 +72,7 @@
     </a-card>
   </a-affix>
   <a-col>
-    <a-card size="small" :loading="serverMetricsLoading" v-if="'listUsageServerMetrics' in this.$store.getters.apis">
+    <a-card size="small" :loading="serverMetricsLoading" v-if="'listUsageServerMetrics' in $store.getters.apis">
       <a-row justify="space-around">
         <a-card-grid style="width: 30%; text-align: center; font-size: small;">
           <a-statistic
