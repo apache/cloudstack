@@ -161,7 +161,7 @@
               />
             </a-form-item>
           </a-col>
-          <a-col :span="3" v-if="'listUsageTypes' in this.$store.getters.apis">
+          <a-col :span="3" v-if="'listUsageTypes' in $store.getters.apis">
             <a-form-item
               ref="type"
               name="type"
