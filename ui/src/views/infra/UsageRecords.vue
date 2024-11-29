@@ -59,7 +59,7 @@
             </a-col>&nbsp;&nbsp;
             <a-col>
               <tooltip-button
-                v-if="'removeRawUsageRecords' in this.$store.getters.apis"
+                v-if="'removeRawUsageRecords' in $store.getters.apis"
                 type="danger"
                 icon="delete-outlined"
                 :tooltip="$t('label.usage.records.purge')"
