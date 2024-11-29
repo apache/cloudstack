@@ -251,6 +251,15 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     /* (non-Javadoc)
+     * @see com.cloud.resource.ResourceManager#createHostAndAgent(java.lang.Long, com.cloud.resource.ServerResource, java.util.Map, boolean, java.util.List, boolean, boolean)
+     */
+    @Override
+    public Host createHostAndAgent(final Long hostId, final ServerResource resource, final Map<String, String> details, final boolean old, final List<String> hostTags, final boolean forRebalance, boolean isTransferredConnection) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
      * @see com.cloud.resource.ResourceManager#addHost(long, com.cloud.resource.ServerResource, com.cloud.host.Host.Type, java.util.Map)
      */
     @Override

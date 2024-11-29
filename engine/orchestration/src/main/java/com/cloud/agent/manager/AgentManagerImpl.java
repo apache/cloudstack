@@ -772,6 +772,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     protected boolean loadDirectlyConnectedHost(final HostVO host, final boolean forRebalance) {
+        return loadDirectlyConnectedHost(host, forRebalance, false);
+    }
+
+    protected boolean loadDirectlyConnectedHost(final HostVO host, final boolean forRebalance, final boolean isTransferredConnection) {
         boolean initialized = false;
         ServerResource resource = null;
         try {
@@ -800,7 +804,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         if (forRebalance) {
             tapLoadingAgents(host.getId(), TapAgentsAction.Add);
-            final Host h = _resourceMgr.createHostAndAgent(host.getId(), resource, host.getDetails(), false, null, true);
+            final Host h = _resourceMgr.createHostAndAgent(host.getId(), resource, host.getDetails(), false, null, true, isTransferredConnection);
             tapLoadingAgents(host.getId(), TapAgentsAction.Del);
 
             return h == null ? false : true;
