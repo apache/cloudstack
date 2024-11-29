@@ -7516,13 +7516,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         logger.trace("Verifying if CPU and RAM for VM [{}] do not exceed account [{}] limit.", vm, account);
 
-        if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
+        if (!countOnlyRunningVmsInResourceLimitation()) {
             resourceLimitService.checkVmResourceLimit(account, vm.isDisplayVm(), offering, template);
         }
 
         logger.trace("Verifying if volume size for VM [{}] does not exceed account [{}] limit.", vm, account);
 
         checkVolumesLimits(account, volumes);
+    }
+
+    protected boolean countOnlyRunningVmsInResourceLimitation() {
+        return VirtualMachineManager.ResourceCountRunningVMsonly.value();
     }
 
     protected void validateIfNewOwnerHasAccessToTemplate(UserVmVO vm, Account newAccount, VirtualMachineTemplate template) {

@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
@@ -1916,13 +1917,25 @@ public class UserVmManagerImplTest {
     }
 
     @Test
-    public void verifyResourceLimitsForAccountAndStorageTestDoesNotCallResourceLimitCheck() throws ResourceAllocationException {
+    public void verifyResourceLimitsForAccountAndStorageTestCountOnlyRunningVmsInResourceLimitationIsTrueDoesNotCallVmResourceLimitCheck() throws ResourceAllocationException {
         LinkedList<VolumeVO> volumeVoList = new LinkedList<VolumeVO>();
+        Mockito.doReturn(true).when(userVmManagerImpl).countOnlyRunningVmsInResourceLimitation();
 
         userVmManagerImpl.verifyResourceLimitsForAccountAndStorage(accountMock, userVmVoMock, serviceOfferingVoMock, volumeVoList, virtualMachineTemplateMock);
 
-         Mockito.verify(resourceLimitMgr, Mockito.never()).checkVmResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any());
+        Mockito.verify(resourceLimitMgr, Mockito.never()).checkVmResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any());
+        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.volume, 0l);
+        Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.primary_storage, 0l);
+    }
 
+    @Test
+    public void verifyResourceLimitsForAccountAndStorageTestCountOnlyRunningVmsInResourceLimitationIsFalseCallsVmResourceLimitCheck() throws ResourceAllocationException {
+        LinkedList<VolumeVO> volumeVoList = new LinkedList<VolumeVO>();
+        Mockito.doReturn(false).when(userVmManagerImpl).countOnlyRunningVmsInResourceLimitation();
+
+        userVmManagerImpl.verifyResourceLimitsForAccountAndStorage(accountMock, userVmVoMock, serviceOfferingVoMock, volumeVoList, virtualMachineTemplateMock);
+
+        Mockito.verify(resourceLimitMgr).checkVmResourceLimit(Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any());
         Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.volume, 0l);
         Mockito.verify(resourceLimitMgr).checkResourceLimit(accountMock, Resource.ResourceType.primary_storage, 0l);
     }
@@ -1940,11 +1953,9 @@ public class UserVmManagerImplTest {
 
     @Test
     public void validateIfNewOwnerHasAccessToTemplateTestCallCheckAccessWhenTemplateIsNotPublic() {
-        Mockito.doReturn(accountMock).when(accountManager).getAccount(Mockito.anyLong());
-
         userVmManagerImpl.validateIfNewOwnerHasAccessToTemplate(userVmVoMock, accountMock, virtualMachineTemplateMock);
 
-        Mockito.verify(accountManager).checkAccess(accountMock, null, true, accountMock);
+        Mockito.verify(accountManager).checkAccess(accountMock, SecurityChecker.AccessType.UseEntry, true, virtualMachineTemplateMock);
     }
 
     @Test
@@ -2472,11 +2483,10 @@ public class UserVmManagerImplTest {
         Mockito.doReturn(physicalNetworkVo).when(physicalNetworkDaoMock).findById(Mockito.anyLong());
         Mockito.doReturn(false).when(networkOfferingVoMock).isPersistent();
         Mockito.doReturn(networkMock).when(_networkMgr).createGuestNetwork(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyString(),
-                Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.anyBoolean(),
-                Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyString(),
-                Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyString(), Mockito.any(), Mockito.anyInt());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.doReturn(1l).when(networkMock).getId();
         Mockito.doReturn(networkMock).when(_networkDao).findById(Mockito.anyLong());
 
@@ -2713,7 +2723,7 @@ public class UserVmManagerImplTest {
         LinkedList<Long> securityGroupIdList = Mockito.mock(LinkedList.class);
         LinkedList<Long> networkIdList = new LinkedList<Long>();
 
-        Mockito.doReturn(true).when(_dcMock).isSecurityGroupEnabled();
+        Mockito.doReturn(true).when(networkModel).checkSecurityGroupSupportForNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
             userVmManagerImpl.updateAdvancedTypeNetworkForVm(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock,
@@ -2735,7 +2745,7 @@ public class UserVmManagerImplTest {
         Mockito.doReturn(networkMock).when(_networkDao).findById(Mockito.anyLong());
         Mockito.doReturn(true).when(userVmManagerImpl).canAccountUseNetwork(accountMock, networkMock);
 
-        Mockito.doReturn(true).when(_dcMock).isSecurityGroupEnabled();
+        Mockito.doReturn(true).when(networkModel).checkSecurityGroupSupportForNetwork(accountMock, _dcMock, networkIdList, securityGroupIdList);
 
         userVmManagerImpl.updateAdvancedTypeNetworkForVm(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock, _dcMock,
                 networkIdList, securityGroupIdList);
@@ -2753,7 +2763,7 @@ public class UserVmManagerImplTest {
 
         securityGroupIdList.add(1l);
 
-        Mockito.doReturn(false).when(_dcMock).isSecurityGroupEnabled();
+        Mockito.doReturn(false).when(networkModel).checkSecurityGroupSupportForNetwork(accountMock, _dcMock, networkIdList, securityGroupIdList);
 
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
             userVmManagerImpl.updateAdvancedTypeNetworkForVm(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock,
@@ -2773,7 +2783,7 @@ public class UserVmManagerImplTest {
         Mockito.doReturn(networkMock).when(userVmManagerImpl).addNicsToApplicableNetworksAndReturnDefaultNetwork(Mockito.any(), Mockito.anyMap(), Mockito.anyMap(), Mockito.any());
         Mockito.doNothing().when(userVmManagerImpl).selectApplicableNetworkToCreateVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
-        Mockito.doReturn(false).when(_dcMock).isSecurityGroupEnabled();
+        Mockito.doReturn(false).when(networkModel).checkSecurityGroupSupportForNetwork(accountMock, _dcMock, networkIdList, securityGroupIdList);
         Mockito.doReturn(true).when(securityGroupIdList).isEmpty();
 
         userVmManagerImpl.updateAdvancedTypeNetworkForVm(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock, _dcMock,
@@ -2792,7 +2802,7 @@ public class UserVmManagerImplTest {
         LinkedList<Long> securityGroupIdList = Mockito.mock(LinkedList.class);
         LinkedList<Long> networkIdList = new LinkedList<Long>();
 
-        Mockito.doReturn(false).when(_dcMock).isSecurityGroupEnabled();
+        Mockito.doReturn(false).when(networkModel).checkSecurityGroupSupportForNetwork(accountMock, _dcMock, networkIdList, securityGroupIdList);
         Mockito.doReturn(true).when(securityGroupIdList).isEmpty();
 
         Mockito.doReturn(new NicVO()).when(nicDao).findDefaultNicForVM(Mockito.anyLong());
