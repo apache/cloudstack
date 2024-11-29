@@ -761,12 +761,17 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     @Override
     public boolean executeRebalanceRequest(final long agentId, final long currentOwnerId, final long futureOwnerId, final Event event) throws AgentUnavailableException, OperationTimedoutException {
+        return executeRebalanceRequest(agentId, currentOwnerId, futureOwnerId, event, false);
+    }
+
+    @Override
+    public boolean executeRebalanceRequest(final long agentId, final long currentOwnerId, final long futureOwnerId, final Event event, boolean isConnectionTransfer) throws AgentUnavailableException, OperationTimedoutException {
         boolean result = false;
         if (event == Event.RequestAgentRebalance) {
             return setToWaitForRebalance(agentId, currentOwnerId, futureOwnerId);
         } else if (event == Event.StartAgentRebalance) {
             try {
-                result = rebalanceHost(agentId, currentOwnerId, futureOwnerId);
+                result = rebalanceHost(agentId, currentOwnerId, futureOwnerId, isConnectionTransfer);
             } catch (final Exception e) {
                 logger.warn("Unable to rebalance host id={} ({})",  agentId, findAttache(agentId), e);
             }
@@ -890,7 +895,11 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     private Answer[] sendRebalanceCommand(final long peer, final long agentId, final long currentOwnerId, final long futureOwnerId, final Event event) {
-        final TransferAgentCommand transfer = new TransferAgentCommand(agentId, currentOwnerId, futureOwnerId, event);
+        return sendRebalanceCommand(peer, agentId, currentOwnerId, futureOwnerId, event, false);
+    }
+
+    private Answer[] sendRebalanceCommand(final long peer, final long agentId, final long currentOwnerId, final long futureOwnerId, final Event event, final boolean isConnectionTransfer) {
+        final TransferAgentCommand transfer = new TransferAgentCommand(agentId, currentOwnerId, futureOwnerId, event, isConnectionTransfer);
         final Commands commands = new Commands(Command.OnError.Stop);
         commands.addCommand(transfer);
 
@@ -1023,7 +1032,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     }
 
     protected boolean rebalanceHost(final long hostId, final long currentOwnerId, final long futureOwnerId) throws AgentUnavailableException {
+        return rebalanceHost(hostId, currentOwnerId, futureOwnerId, false);
+    }
 
+    protected boolean rebalanceHost(final long hostId, final long currentOwnerId, final long futureOwnerId, final boolean isConnectionTransfer) throws AgentUnavailableException {
         boolean result = true;
         if (currentOwnerId == _nodeId) {
             if (!startRebalance(hostId)) {
@@ -1032,7 +1044,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 return false;
             }
             try {
-                final Answer[] answer = sendRebalanceCommand(futureOwnerId, hostId, currentOwnerId, futureOwnerId, Event.StartAgentRebalance);
+                final Answer[] answer = sendRebalanceCommand(futureOwnerId, hostId, currentOwnerId, futureOwnerId, Event.StartAgentRebalance, isConnectionTransfer);
                 if (answer == null || !answer[0].getResult()) {
                     result = false;
                 }
@@ -1062,7 +1074,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
                 if (result) {
                     logger.debug("Loading directly connected host {} to the management server {} as a part of rebalance process", host, _nodeId);
-                    result = loadDirectlyConnectedHost(host, true);
+                    result = loadDirectlyConnectedHost(host, true, isConnectionTransfer);
                 } else {
                     logger.warn("Failed to disconnect {} as a part of rebalance process without notification", host);
                 }
@@ -1272,10 +1284,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             } else if (cmds.length == 1 && cmds[0] instanceof TransferAgentCommand) {
                 final TransferAgentCommand cmd = (TransferAgentCommand)cmds[0];
 
-                logger.debug("Intercepting command for agent rebalancing: agent {} event: {}", cmd.getAgentId(), cmd.getEvent());
+                logger.debug("Intercepting command for agent rebalancing: agent: {}, event: {}, connection transfer: {}", cmd.getAgentId(), cmd.getEvent(), cmd.isConnectionTransfer());
                 boolean result = false;
                 try {
-                    result = rebalanceAgent(cmd.getAgentId(), cmd.getEvent(), cmd.getCurrentOwner(), cmd.getFutureOwner());
+                    result = rebalanceAgent(cmd.getAgentId(), cmd.getEvent(), cmd.getCurrentOwner(), cmd.getFutureOwner(), cmd.isConnectionTransfer());
                     logger.debug("Result is {}", result);
 
                 } catch (final AgentUnavailableException e) {
@@ -1431,7 +1443,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     _mshostCounter++;
 
                     _hostTransferDao.startAgentTransfering(host.getId(), fromMsId, msHost.getMsid());
-                    if (!rebalanceAgent(host.getId(), Event.StartAgentRebalance, fromMsId, msHost.getMsid())) {
+                    if (!rebalanceAgent(host.getId(), Event.StartAgentRebalance, fromMsId, msHost.getMsid(), true)) {
                         agentTransferFailedCount++;
                     } else {
                         updateLastManagementServer(host.getId(), fromMsId);
@@ -1521,6 +1533,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
 
     public boolean rebalanceAgent(final long agentId, final Event event, final long currentOwnerId, final long futureOwnerId) throws AgentUnavailableException, OperationTimedoutException {
         return executeRebalanceRequest(agentId, currentOwnerId, futureOwnerId, event);
+    }
+
+    public boolean rebalanceAgent(final long agentId, final Event event, final long currentOwnerId, final long futureOwnerId, boolean isConnectionTransfer) throws AgentUnavailableException, OperationTimedoutException {
+        return executeRebalanceRequest(agentId, currentOwnerId, futureOwnerId, event, isConnectionTransfer);
     }
 
     public boolean isAgentRebalanceEnabled() {
