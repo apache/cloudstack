@@ -199,7 +199,7 @@ public class ProjectAccountDaoImpl extends GenericDaoBase<ProjectAccountVO, Long
         SearchCriteria<ProjectAccountVO> sc = AllFieldsSearch.create();
         sc.setParameters("userId", userId);
 
-        int count = remove(sc);
+        int removedCount = remove(sc);
         s_logger.debug(String.format("Removed user [%s] from %s project(s).", userId, count));
     }
 
