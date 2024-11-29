@@ -50,7 +50,7 @@
           <a-row justify="end">
             <a-col>
               <tooltip-button
-                v-if="'generateUsageRecords' in this.$store.getters.apis"
+                v-if="'generateUsageRecords' in $store.getters.apis"
                 type="primary"
                 icon="hdd-outlined"
                 :tooltip="$t('label.usage.records.generate')"
