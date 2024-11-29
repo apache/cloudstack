@@ -2471,10 +2471,12 @@ public class UserVmManagerImplTest {
 
         Mockito.doReturn(physicalNetworkVo).when(physicalNetworkDaoMock).findById(Mockito.anyLong());
         Mockito.doReturn(false).when(networkOfferingVoMock).isPersistent();
-        Mockito.doReturn(networkMock).when(_networkMgr).createGuestNetwork(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.any(), Mockito.any(),
-                Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.any(),
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyBoolean(), Mockito.any(), Mockito.any(), Mockito.any(),
-                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doReturn(networkMock).when(_networkMgr).createGuestNetwork(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(),
+                Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyString(),
+                Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.anyBoolean(),
+                Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyString(),
+                Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(),
+                Mockito.anyString(), Mockito.anyString(), Mockito.any(), Mockito.anyInt());
         Mockito.doReturn(1l).when(networkMock).getId();
         Mockito.doReturn(networkMock).when(_networkDao).findById(Mockito.anyLong());
 
