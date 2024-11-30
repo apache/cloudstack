@@ -65,10 +65,8 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.network.BgpPeerVO;
+import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
-import org.apache.cloudstack.network.dao.BgpPeerDao;
-import org.apache.cloudstack.network.dao.BgpPeerNetworkMapDao;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.CloudStackVersion;
@@ -114,6 +112,7 @@ import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.bgp.BGPService;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.Config;
@@ -348,9 +347,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
     @Inject
-    BgpPeerDao bgpPeerDao;
-    @Inject
-    BgpPeerNetworkMapDao bgpPeerNetworkMapDao;
+    BGPService bgpService;
 
     private int _routerRamSize;
     private int _routerCpuMHz;
@@ -2508,12 +2505,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (guestNetwork.getVpcId() != null) {
             final Vpc vpc = _vpcDao.findById(guestNetwork.getVpcId());
             if (routedIpv4Manager.isDynamicRoutedVpc(vpc)) {
-                final List<BgpPeerVO> bgpPeers = bgpPeerDao.listNonRevokeByVpcId(guestNetwork.getVpcId());
+                List<? extends BgpPeer> bgpPeers = bgpService.getBgpPeersForVpc(vpc);
                 _commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, guestNetwork);
             }
         } else {
             if (routedIpv4Manager.isDynamicRoutedNetwork(guestNetwork)) {
-                final List<BgpPeerVO> bgpPeers = bgpPeerDao.listNonRevokeByNetworkId(guestNetworkId);
+                List<? extends BgpPeer> bgpPeers = bgpService.getBgpPeersForNetwork(guestNetwork);
                 _commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, guestNetwork);
             }
         }

@@ -986,6 +986,7 @@ public class ApiConstants {
     public static final String ACL_NAME = "aclname";
     public static final String NUMBER = "number";
     public static final String IS_DYNAMICALLY_SCALABLE = "isdynamicallyscalable";
+    public static final String ROUTED_MODE_ENABLED = "routedmodeenabled";
     public static final String ROUTING = "isrouting";
     public static final String ROUTING_MODE = "routingmode";
     public static final String MAX_CONNECTIONS = "maxconnections";
