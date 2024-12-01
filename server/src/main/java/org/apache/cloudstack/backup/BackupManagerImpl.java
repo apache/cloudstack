@@ -443,13 +443,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm.getBackupOfferingId() == null) {
             throw new CloudRuntimeException("Cannot configure backup schedule for the VM without having any backup offering");
         }
-        if (maxBackups <= 0) {
+        if (maxBackups != null && maxBackups <= 0) {
             throw new InvalidParameterValueException(String.format("maxBackups [%s] for instance %s should be greater than 0.", maxBackups, vm.getName()));
         }
 
         Backup.Type backupType = Backup.Type.valueOf(intervalType.name());
         int intervalMaxBackups = backupType.getMax();
-        if (maxBackups > intervalMaxBackups) {
+        if (maxBackups != null && maxBackups > intervalMaxBackups) {
             throw new InvalidParameterValueException(String.format("maxBackups [%s] for instance %s exceeds limit [%s] for interval type [%s].", maxBackups, vm.getName(),
                     intervalMaxBackups, intervalType));
         }
@@ -458,7 +458,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         long accountLimit = resourceLimitMgr.findCorrectResourceLimitForAccount(owner, Resource.ResourceType.backup, null);
         long domainLimit = resourceLimitMgr.findCorrectResourceLimitForDomain(domainManager.getDomain(owner.getDomainId()), Resource.ResourceType.backup, null);
-        if (!accountManager.isRootAdmin(owner.getId()) && ((accountLimit != -1 && maxBackups > accountLimit) || (domainLimit != -1 && maxBackups > domainLimit))) {
+        if (maxBackups != null && !accountManager.isRootAdmin(owner.getId()) && ((accountLimit != -1 && maxBackups > accountLimit) || (domainLimit != -1 && maxBackups > domainLimit))) {
             String message = "domain/account";
             if (owner.getType() == Account.Type.PROJECT) {
                 message = "domain/project";
@@ -469,6 +469,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final BackupOffering offering = backupOfferingDao.findById(vm.getBackupOfferingId());
         if (offering == null || !offering.isUserDrivenBackupAllowed()) {
             throw new CloudRuntimeException("The selected backup offering does not allow user-defined backup schedule");
+        }
+
+        if (maxBackups == null && !"veeam".equals(offering.getProvider())) {
+            throw new CloudRuntimeException("Please specify the maximum number of buckets to retain.");
+        }
+        if (maxBackups != null && "veeam".equals(offering.getProvider())) {
+            throw new CloudRuntimeException("The maximum backups to retain cannot be configured through CloudStack for Veeam. Retention is managed directly in Veeam based on the settings specified when creating the backup job.");
         }
 
         final String timezoneId = timeZone.getID();
@@ -535,7 +542,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (schedule == null) {
             return;
         }
-        int maxBackups = schedule.getMaxBackups();
+        Integer maxBackups = schedule.getMaxBackups();
+        if (maxBackups == null) {
+            return;
+        }
         List<BackupVO> backups = backupDao.listBackupsByVMandIntervalType(vmId, backupType);
         while (backups.size() > maxBackups) {
             BackupVO oldestBackup = backups.get(0);

@@ -418,8 +418,8 @@ public class BackupManagerTest {
         Long accountId = 5L;
         Long backupId = 6L;
         Long oldestBackupId = 7L;
-        Long newBackupSize = 1000000L;
-        Long oldBackupSize = 9999999L;
+        Long newBackupSize = 1000000000L;
+        Long oldBackupSize = 400000000L;
 
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
         when(vmInstanceDao.findById(vmId)).thenReturn(vm);
@@ -448,6 +448,7 @@ public class BackupManagerTest {
         BackupProvider backupProvider = mock(BackupProvider.class);
         Backup backup = mock(Backup.class);
         when(backup.getId()).thenReturn(backupId);
+        when(backup.getProtectedSize()).thenReturn(newBackupSize);
         when(backupProvider.getName()).thenReturn("test");
         when(backupProvider.takeBackup(vm)).thenReturn(new Pair<>(true, backup));
         Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
@@ -456,7 +457,6 @@ public class BackupManagerTest {
 
         BackupVO backupVO = mock(BackupVO.class);
         when(backupVO.getId()).thenReturn(backupId);
-        when(backupVO.getProtectedSize()).thenReturn(newBackupSize);
         BackupVO oldestBackupVO = mock(BackupVO.class);
         when(oldestBackupVO.getProtectedSize()).thenReturn(oldBackupSize);
         when(oldestBackupVO.getId()).thenReturn(oldestBackupId);

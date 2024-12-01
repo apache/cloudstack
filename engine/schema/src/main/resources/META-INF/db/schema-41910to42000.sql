@@ -412,7 +412,7 @@ CREATE TABLE `cloud`.`backup_repository` (
 ALTER TABLE `cloud`.`backup_schedule` DROP FOREIGN KEY fk_backup_schedule__vm_id;
 ALTER TABLE `cloud`.`backup_schedule` DROP INDEX vm_id;
 ALTER TABLE `cloud`.`backup_schedule` ADD CONSTRAINT fk_backup_schedule__vm_id FOREIGN KEY (vm_id) REFERENCES vm_instance(id) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`backup_schedule` ADD COLUMN `max_backups` int(8) NOT NULL default 0 COMMENT 'maximum number of backups to maintain';
+ALTER TABLE `cloud`.`backup_schedule` ADD COLUMN `max_backups` int(8) default NULL COMMENT 'maximum number of backups to maintain';
 ALTER TABLE `cloud`.`backups` ADD COLUMN `backup_interval_type` int(5) COMMENT 'type of backup, e.g. manual, recurring - hourly, daily, weekly or monthly';
 
 -- Add volume details to the backups table to keep track of the volumes being backed up

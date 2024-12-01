@@ -205,7 +205,6 @@ export default {
         timeSelect: [{ type: 'object', required: true, message: this.$t('message.error.time') }],
         'day-of-week': [{ type: 'number', required: true, message: `${this.$t('message.error.select')}` }],
         'day-of-month': [{ required: true, message: `${this.$t('message.error.select')}` }],
-        maxbackups: [{ required: true, message: this.$t('message.error.required.input') }],
         timezone: [{ required: true, message: `${this.$t('message.error.select')}` }]
       })
     },
