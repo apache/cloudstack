@@ -736,7 +736,7 @@
       <div class="account-center-tags" v-if="showKeys || resource.apikeyaccess">
         <a-divider/>
       </div>
-      <div class="account-center-tags" v-if="resource.apikeyaccess">
+      <div class="account-center-tags" v-if="resource.apikeyaccess && resource.account">
         <div class="resource-detail-item">
           <div class="resource-detail-item__label">{{ $t('label.apikeyaccess') }}</div>
           <div class="resource-detail-item__details">
