@@ -436,7 +436,6 @@ public class BackupManagerTest {
         when(offering.getProvider()).thenReturn("test");
 
         Account account = Mockito.mock(Account.class);
-        when(account.getId()).thenReturn(accountId);
         when(accountManager.getAccount(accountId)).thenReturn(account);
 
         BackupScheduleVO schedule = mock(BackupScheduleVO.class);
