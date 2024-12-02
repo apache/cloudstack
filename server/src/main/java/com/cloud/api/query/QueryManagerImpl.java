@@ -143,6 +143,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementVO;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
@@ -613,6 +614,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Inject
     private ManagementServerHostPeerJoinDao mshostPeerJoinDao;
 
+    @Inject
+    private AsyncJobManager jobManager;
 
     private SearchCriteria<ServiceOfferingJoinVO> getMinimumCpuServiceOfferingJoinSearchCriteria(int cpu) {
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
@@ -5436,6 +5439,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
         mgmtResponse.setAgentsCount((long) hostDao.countByMs(mgmt.getMsid()));
+        mgmtResponse.setPendingJobsCount(jobManager.countPendingNonPseudoJobs(mgmt.getMsid()));
         mgmtResponse.setObjectName("managementserver");
         return mgmtResponse;
     }

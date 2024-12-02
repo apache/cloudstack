@@ -1687,6 +1687,7 @@
 "label.peerstate": "Peer State",
 "label.peerstate.lastupdated": "Peer State Updated Time",
 "label.pending.jobs": "Pending Jobs",
+"label.pendingjobscount": "Number Of pending jobs",
 "label.per.account": "Per Account",
 "label.per.zone": "Per zone",
 "label.percentage": "Percentage",
