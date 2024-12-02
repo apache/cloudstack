@@ -382,6 +382,14 @@ public class ApiConstants {
     public static final String PATH = "path";
     public static final String PAYLOAD = "payload";
     public static final String PAYLOAD_URL = "payloadurl";
+    public static final String PEERS = "peers";
+    public static final String PEER_ID = "peerid";
+    public static final String PEER_NAME = "peername";
+    public static final String PEER_MSID = "peermsid";
+    public static final String PEER_RUNID = "peerrunid";
+    public static final String PEER_SERVICE_IP = "peerserviceip";
+    public static final String PEER_SERVICE_PORT = "peerserviceport";
+    public static final String PEER_STATE = "peerstate";
     public static final String POD_ID = "podid";
     public static final String POD_NAME = "podname";
     public static final String POD_IDS = "podids";

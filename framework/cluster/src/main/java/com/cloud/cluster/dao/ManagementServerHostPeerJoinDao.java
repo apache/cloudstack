@@ -16,21 +16,12 @@
 // under the License.
 package com.cloud.cluster.dao;
 
-import org.apache.cloudstack.management.ManagementServerHost;
-import com.cloud.cluster.ManagementServerHostPeerVO;
+import com.cloud.cluster.ManagementServerHostPeerJoinVO;
 import com.cloud.utils.db.GenericDao;
 
-import java.util.Date;
+import java.util.List;
 
-public interface ManagementServerHostPeerDao extends GenericDao<ManagementServerHostPeerVO, Long> {
-    void clearPeerInfo(long ownerMshost);
+public interface ManagementServerHostPeerJoinDao extends GenericDao<ManagementServerHostPeerJoinVO, Long> {
 
-    void updatePeerInfo(long ownerMshost, long peerMshost, long peerRunid, ManagementServerHost.State peerState);
-
-    int countStateSeenInPeers(long peerMshost, long runid, ManagementServerHost.State state);
-
-    boolean isPeerUpState(long peerMshost, Date cutTime);
-
-    boolean isPeerUpState(long ownerMshost, long peerMshost, Date cutTime);
-
+    List<ManagementServerHostPeerJoinVO> listByOwnerMshostId(long ownerMshostId);
 }

@@ -15,10 +15,14 @@
 -- specific language governing permissions and limitations
 -- under the License.
 
---;
--- Schema upgrade from 4.20.0.0 to 4.20.1.0
---;
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`;
 
--- Add column api_key_access to user and account tables
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user', 'api_key_access', 'boolean DEFAULT NULL COMMENT "is api key access allowed for the user" AFTER `secret_key`');
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.account', 'api_key_access', 'boolean DEFAULT NULL COMMENT "is api key access allowed for the account" ');
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY` (
+	IN in_table_name VARCHAR(200)
+    , IN in_key_name VARCHAR(200)
+    , IN in_foreign_key VARCHAR(200)
+    , IN in_references VARCHAR(1000)
+)
+BEGIN
+
+    DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; SET @ddl = CONCAT_WS(' ', 'ALTER TABLE ', in_table_name, ' ADD CONSTRAINT ', in_key_name, ' FOREIGN KEY ', in_foreign_key, ' REFERENCES ', in_references, ' ON DELETE CASCADE'); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
