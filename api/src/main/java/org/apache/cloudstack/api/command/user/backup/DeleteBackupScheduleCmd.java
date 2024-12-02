@@ -54,7 +54,7 @@ public class DeleteBackupScheduleCmd  extends BaseCmd {
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
-            required = false,
+            required = true,
             description = "ID of the VM")
     private Long vmId;
 
@@ -73,7 +73,7 @@ public class DeleteBackupScheduleCmd  extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.deleteBackupSchedule(vmId);
+            boolean result = backupManager.deleteBackupSchedule(getVmId());
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());

@@ -412,8 +412,6 @@ CREATE TABLE `cloud`.`backup_repository` (
 ALTER TABLE `cloud`.`backup_schedule` DROP FOREIGN KEY fk_backup_schedule__vm_id;
 ALTER TABLE `cloud`.`backup_schedule` DROP INDEX vm_id;
 ALTER TABLE `cloud`.`backup_schedule` ADD CONSTRAINT fk_backup_schedule__vm_id FOREIGN KEY (vm_id) REFERENCES vm_instance(id) ON DELETE CASCADE;
-ALTER TABLE `cloud`.`backup_schedule` ADD COLUMN `max_backups` int(8) default NULL COMMENT 'maximum number of backups to maintain';
-ALTER TABLE `cloud`.`backups` ADD COLUMN `backup_interval_type` int(5) COMMENT 'type of backup, e.g. manual, recurring - hourly, daily, weekly or monthly';
 
 -- Add volume details to the backups table to keep track of the volumes being backed up
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'backed_volumes', 'text DEFAULT NULL COMMENT "details of backed-up volumes" ');
@@ -427,7 +425,3 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_instance', 'delete_protection', 'boolean DEFAULT FALSE COMMENT "delete protection for vm" ');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'delete_protection', 'boolean DEFAULT FALSE COMMENT "delete protection for volumes" ');
-
---- TODO: Move to 42000to42100.sql
--- Add Backup related settings to a new Subgroup
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Backup', NULL, 5, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
