@@ -40,7 +40,6 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.dao.BucketDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.ResourceLimitService;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BucketApiServiceImplTest {
