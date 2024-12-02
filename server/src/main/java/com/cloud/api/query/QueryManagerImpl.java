@@ -36,7 +36,6 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import com.cloud.cpu.CPU;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -114,6 +113,7 @@ import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
+import org.apache.cloudstack.api.response.PeerManagementServerNodeResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -214,8 +214,11 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.cluster.ManagementServerHostPeerJoinVO;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.cluster.dao.ManagementServerHostPeerJoinDao;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DedicatedResourceVO;
@@ -606,6 +609,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private ClusterDao clusterDao;
+
+    @Inject
+    private ManagementServerHostPeerJoinDao mshostPeerJoinDao;
 
 
     private SearchCriteria<ServiceOfferingJoinVO> getMinimumCpuServiceOfferingJoinSearchCriteria(int cpu) {
@@ -5342,7 +5348,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         List<ManagementServerResponse> hostResponses = new ArrayList<>();
 
         for (ManagementServerJoinVO host : result.first()) {
-            ManagementServerResponse hostResponse = createManagementServerResponse(host);
+            ManagementServerResponse hostResponse = createManagementServerResponse(host, cmd.getPeers());
             hostResponses.add(hostResponse);
         }
 
@@ -5365,7 +5371,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return managementServerJoinDao.searchAndCount(sc, null);
     }
 
-    protected ManagementServerResponse createManagementServerResponse(ManagementServerJoinVO mgmt) {
+    protected ManagementServerResponse createManagementServerResponse(ManagementServerJoinVO mgmt, boolean listPeers) {
         ManagementServerResponse mgmtResponse = new ManagementServerResponse();
         mgmtResponse.setId(mgmt.getUuid());
         mgmtResponse.setName(mgmt.getName());
@@ -5378,8 +5384,32 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         mgmtResponse.setLastServerStop(mgmt.getLastJvmStop());
         mgmtResponse.setLastBoot(mgmt.getLastSystemBoot());
         mgmtResponse.setServiceIp(mgmt.getServiceIP());
+        if (listPeers) {
+            List<ManagementServerHostPeerJoinVO> peers = mshostPeerJoinDao.listByOwnerMshostId(mgmt.getId());
+            for (ManagementServerHostPeerJoinVO peer: peers) {
+                mgmtResponse.addPeer(createPeerManagementServerNodeResponse(peer));
+            }
+        }
         mgmtResponse.setObjectName("managementserver");
         return mgmtResponse;
+    }
+
+    private PeerManagementServerNodeResponse createPeerManagementServerNodeResponse(ManagementServerHostPeerJoinVO peer) {
+        PeerManagementServerNodeResponse response = new PeerManagementServerNodeResponse();
+
+        response.setState(peer.getPeerState());
+        response.setLastUpdated(peer.getLastUpdateTime());
+
+        response.setPeerId(peer.getPeerMshostUuid());
+        response.setPeerName(peer.getPeerMshostName());
+        response.setPeerMsId(String.valueOf(peer.getPeerMshostMsId()));
+        response.setPeerRunId(String.valueOf(peer.getPeerMshostRunId()));
+        response.setPeerState(peer.getPeerMshostState());
+        response.setPeerServiceIp(peer.getPeerMshostServiceIp());
+        response.setPeerServicePort(String.valueOf(peer.getPeerMshostServicePort()));
+
+        response.setObjectName("peermanagementserver");
+        return response;
     }
 
     @Override
