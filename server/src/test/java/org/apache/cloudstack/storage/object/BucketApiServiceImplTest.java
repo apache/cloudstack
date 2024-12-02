@@ -82,7 +82,6 @@ public class BucketApiServiceImplTest {
         Mockito.when(objectStoreVO.getId()).thenReturn(objectStoreId);
         Mockito.when(objectStoreDao.findById(poolId)).thenReturn(objectStoreVO);
         ObjectStoreEntity objectStore = Mockito.mock(ObjectStoreEntity.class);
-        Mockito.when(objectStore.getId()).thenReturn(objectStoreId);
         Mockito.when(dataStoreMgr.getDataStore(objectStoreId, DataStoreRole.Object)).thenReturn(objectStore);
         Mockito.when(objectStore.createUser(accountId)).thenReturn(true);
 
@@ -169,14 +168,12 @@ public class BucketApiServiceImplTest {
         Mockito.when(bucketDao.findById(bucketId)).thenReturn(bucket);
 
         Account account = Mockito.mock(Account.class);
-        Mockito.when(accountManager.getActiveAccountById(accountId)).thenReturn(account);
 
         ObjectStoreVO objectStoreVO = Mockito.mock(ObjectStoreVO.class);
         Mockito.when(objectStoreVO.getId()).thenReturn(objectStoreId);
         Mockito.when(objectStoreDao.findById(objectStoreId)).thenReturn(objectStoreVO);
         ObjectStoreEntity objectStore = Mockito.mock(ObjectStoreEntity.class);
         Mockito.when(dataStoreMgr.getDataStore(objectStoreId, DataStoreRole.Object)).thenReturn(objectStore);
-        Mockito.when(objectStore.deleteBucket(Mockito.any(BucketTO.class))).thenReturn(true);
 
         bucketApiService.updateBucket(cmd, null);
 
