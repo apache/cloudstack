@@ -1317,7 +1317,6 @@ public enum Config {
             "20",
             "The default maximum number of snapshots that can be created for an account",
             null),
-    // TODO : use configKey instead?
     DefaultMaxAccountBackups(
             "Account Defaults",
             ManagementServer.class,

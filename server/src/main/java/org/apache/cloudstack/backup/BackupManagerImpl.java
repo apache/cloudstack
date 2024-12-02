@@ -1292,6 +1292,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                         true, 0);
                 final Map<String, String> params = new HashMap<String, String>();
                 params.put(ApiConstants.VIRTUAL_MACHINE_ID, "" + vmId);
+                params.put(ApiConstants.SCHEDULE_ID, "" + backupScheduleId);
                 params.put("ctxUserId", "1");
                 params.put("ctxAccountId", "" + vm.getAccountId());
                 params.put("ctxStartEventId", String.valueOf(eventId));
