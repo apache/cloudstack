@@ -1198,7 +1198,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         @Override
         protected void runInContext() {
             try {
-                logger.debug("Simulating start for resource {} (id: {}, uuid: {}, name; {})", resource.getName(), id, uuid, name);
+                logger.debug("Simulating start for resource {} (id: {}, uuid: {}, name {})", resource.getName(), id, uuid, name);
 
                 if (tapLoadingAgents(id, TapAgentsAction.Add)) {
                     try {

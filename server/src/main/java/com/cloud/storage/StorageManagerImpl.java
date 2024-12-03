@@ -3197,8 +3197,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         if (usedPercentage > storageAllocatedThreshold) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Insufficient un-allocated capacity on: {} for storage allocation since its allocated percentage: {}" + 
-                        + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: {}", pool, usedPercentage, storageAllocatedThreshold);
+                logger.debug("Insufficient un-allocated capacity on: {} for storage allocation since its allocated percentage: {}" +
+                        " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: {}", pool, usedPercentage, storageAllocatedThreshold);
             }
             if (!forVolumeResize) {
                 return false;
