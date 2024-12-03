@@ -311,7 +311,7 @@ export default {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
-        } else if (item === 'resourcetype') {
+        } else if (['resourcetype', 'apikeyaccess'].includes(item)) {
           type = 'autocomplete'
         } else if (item === 'isencrypted') {
           type = 'boolean'
@@ -423,6 +423,17 @@ export default {
           { value: 'QuotaTariff' }
         ]
         this.fields[resourceTypeIndex].loading = false
+      }
+
+      if (arrayField.includes('apikeyaccess')) {
+        const apiKeyAccessIndex = this.fields.findIndex(item => item.name === 'apikeyaccess')
+        this.fields[apiKeyAccessIndex].loading = true
+        this.fields[apiKeyAccessIndex].opts = [
+          { value: 'Disabled' },
+          { value: 'Enabled' },
+          { value: 'Inherit' }
+        ]
+        this.fields[apiKeyAccessIndex].loading = false
       }
     },
     async fetchDynamicFieldData (arrayField, searchKeyword) {

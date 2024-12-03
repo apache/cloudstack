@@ -105,13 +105,13 @@ public class ViewResponseHelper {
     protected Logger logger = LogManager.getLogger(getClass());
 
     public static List<UserResponse> createUserResponse(UserAccountJoinVO... users) {
-        return createUserResponse(null, users);
+        return createUserResponse(ResponseView.Restricted, null, users);
     }
 
-    public static List<UserResponse> createUserResponse(Long domainId, UserAccountJoinVO... users) {
+    public static List<UserResponse> createUserResponse(ResponseView responseView, Long domainId, UserAccountJoinVO... users) {
         List<UserResponse> respList = new ArrayList<UserResponse>();
         for (UserAccountJoinVO vt : users) {
-            respList.add(ApiDBUtils.newUserResponse(vt, domainId));
+            respList.add(ApiDBUtils.newUserResponse(responseView, domainId, vt));
         }
         return respList;
     }
