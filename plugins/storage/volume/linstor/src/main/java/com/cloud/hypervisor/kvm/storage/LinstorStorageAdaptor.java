@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.kvm.storage;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -48,6 +49,7 @@ import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.Resource;
 import com.linbit.linstor.api.model.ResourceConnectionModify;
 import com.linbit.linstor.api.model.ResourceDefinition;
+import com.linbit.linstor.api.model.ResourceDefinitionModify;
 import com.linbit.linstor.api.model.ResourceGroupSpawn;
 import com.linbit.linstor.api.model.ResourceMakeAvailable;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
@@ -152,7 +154,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo,
-                                            Storage.StoragePoolType type, Map<String, String> details)
+                                            Storage.StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage)
     {
         logger.debug("Linstor createStoragePool: name: '{}', host: '{}', path: {}, userinfo: {}", name, host, path, userInfo);
         LinstorStoragePool storagePool = new LinstorStoragePool(name, host, port, userInfo, type, this);
@@ -235,6 +237,34 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    private void setAllowTwoPrimariesOnRD(DevelopersApi api, String rscName) throws ApiException {
+        ResourceDefinitionModify rdm = new ResourceDefinitionModify();
+        Properties props = new Properties();
+        props.put("DrbdOptions/Net/allow-two-primaries", "yes");
+        props.put("DrbdOptions/Net/protocol", "C");
+        rdm.setOverrideProps(props);
+        ApiCallRcList answers = api.resourceDefinitionModify(rscName, rdm);
+        if (answers.hasError()) {
+            logger.error(String.format("Unable to set protocol C and 'allow-two-primaries' on %s", rscName));
+            // do not fail here as adding allow-two-primaries property is only a problem while live migrating
+        }
+    }
+
+    private void setAllowTwoPrimariesOnRc(DevelopersApi api, String rscName, String inUseNode) throws ApiException {
+        ResourceConnectionModify rcm = new ResourceConnectionModify();
+        Properties props = new Properties();
+        props.put("DrbdOptions/Net/allow-two-primaries", "yes");
+        props.put("DrbdOptions/Net/protocol", "C");
+        rcm.setOverrideProps(props);
+        ApiCallRcList answers = api.resourceConnectionModify(rscName, inUseNode, localNodeName, rcm);
+        if (answers.hasError()) {
+            logger.error(String.format(
+                    "Unable to set protocol C and 'allow-two-primaries' on %s/%s/%s",
+                    inUseNode, localNodeName, rscName));
+            // do not fail here as adding allow-two-primaries property is only a problem while live migrating
+        }
+    }
+
     /**
      * Checks if the given resource is in use by drbd on any host and
      * if so set the drbd option allow-two-primaries
@@ -246,16 +276,13 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         String inUseNode = LinstorUtil.isResourceInUse(api, rscName);
         if (inUseNode != null && !inUseNode.equalsIgnoreCase(localNodeName)) {
             // allow 2 primaries for live migration, should be removed by disconnect on the other end
-            ResourceConnectionModify rcm = new ResourceConnectionModify();
-            Properties props = new Properties();
-            props.put("DrbdOptions/Net/allow-two-primaries", "yes");
-            props.put("DrbdOptions/Net/protocol", "C");
-            rcm.setOverrideProps(props);
-            ApiCallRcList answers = api.resourceConnectionModify(rscName, inUseNode, localNodeName, rcm);
-            if (answers.hasError()) {
-                logger.error("Unable to set protocol C and 'allow-two-primaries' on {}/{}/{}",
-                        inUseNode, localNodeName, rscName);
-                // do not fail here as adding allow-two-primaries property is only a problem while live migrating
+
+            // if non hyperconverged setup, we have to set allow-two-primaries on the resource-definition
+            // as there is no resource connection between diskless nodes.
+            if (LinstorUtil.areResourcesDiskless(api, rscName, Arrays.asList(inUseNode, localNodeName))) {
+                setAllowTwoPrimariesOnRD(api, rscName);
+            } else {
+                setAllowTwoPrimariesOnRc(api, rscName, inUseNode);
             }
         }
     }
@@ -294,11 +321,22 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         return true;
     }
 
-    private void removeTwoPrimariesRcProps(DevelopersApi api, String inUseNode, String rscName) throws ApiException {
+    private void removeTwoPrimariesRDProps(DevelopersApi api, String rscName, List<String> deleteProps)
+            throws ApiException {
+        ResourceDefinitionModify rdm = new ResourceDefinitionModify();
+        rdm.deleteProps(deleteProps);
+        ApiCallRcList answers = api.resourceDefinitionModify(rscName, rdm);
+        if (answers.hasError()) {
+            logger.error(
+                    String.format("Failed to remove 'protocol' and 'allow-two-primaries' on %s: %s",
+                            rscName, LinstorUtil.getBestErrorMessage(answers)));
+            // do not fail here as removing allow-two-primaries property isn't fatal
+        }
+    }
+
+    private void removeTwoPrimariesRcProps(DevelopersApi api, String rscName, String inUseNode, List<String> deleteProps)
+            throws ApiException {
         ResourceConnectionModify rcm = new ResourceConnectionModify();
-        List<String> deleteProps = new ArrayList<>();
-        deleteProps.add("DrbdOptions/Net/allow-two-primaries");
-        deleteProps.add("DrbdOptions/Net/protocol");
         rcm.deleteProps(deleteProps);
         ApiCallRcList answers = api.resourceConnectionModify(rscName, localNodeName, inUseNode, rcm);
         if (answers.hasError()) {
@@ -308,6 +346,15 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                             rscName, LinstorUtil.getBestErrorMessage(answers));
             // do not fail here as removing allow-two-primaries property isn't fatal
         }
+    }
+
+    private void removeTwoPrimariesProps(DevelopersApi api, String inUseNode, String rscName) throws ApiException {
+        List<String> deleteProps = new ArrayList<>();
+        deleteProps.add("DrbdOptions/Net/allow-two-primaries");
+        deleteProps.add("DrbdOptions/Net/protocol");
+
+        removeTwoPrimariesRDProps(api, rscName, deleteProps);
+        removeTwoPrimariesRcProps(api, rscName, inUseNode, deleteProps);
     }
 
     private boolean tryDisconnectLinstor(String volumePath, KVMStoragePool pool)
@@ -343,7 +390,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             try {
                 String inUseNode = LinstorUtil.isResourceInUse(api, rsc.getName());
                 if (inUseNode != null && !inUseNode.equalsIgnoreCase(localNodeName)) {
-                    removeTwoPrimariesRcProps(api, inUseNode, rsc.getName());
+                    removeTwoPrimariesProps(api, inUseNode, rsc.getName());
                 }
             } catch (ApiException apiEx) {
                 logger.error(apiEx.getBestMessage());
