@@ -37,7 +37,6 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
     protected SearchBuilder<UserVO> UsernameLikeSearch;
     protected SearchBuilder<UserVO> UserIdSearch;
     protected SearchBuilder<UserVO> AccountIdSearch;
-    protected SearchBuilder<UserVO> SecretKeySearch;
     protected SearchBuilder<UserVO> RegistrationTokenSearch;
 
     @Inject
@@ -64,10 +63,6 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
         UserIdSearch = createSearchBuilder();
         UserIdSearch.and("id", UserIdSearch.entity().getId(), SearchCriteria.Op.EQ);
         UserIdSearch.done();
-
-        SecretKeySearch = createSearchBuilder();
-        SecretKeySearch.and("secretKey", SecretKeySearch.entity().getSecretKey(), SearchCriteria.Op.EQ);
-        SecretKeySearch.done();
 
         RegistrationTokenSearch = createSearchBuilder();
         RegistrationTokenSearch.and("registrationToken", RegistrationTokenSearch.entity().getRegistrationToken(), SearchCriteria.Op.EQ);
@@ -119,13 +114,6 @@ public class UserDaoImpl extends GenericDaoBase<UserVO, Long> implements UserDao
         SearchCriteria<UserVO> sc = UsernameLikeSearch.create();
         sc.setParameters("username", "%" + username + "%");
         return listBy(sc);
-    }
-
-    @Override
-    public UserVO findUserBySecretKey(String secretKey) {
-        SearchCriteria<UserVO> sc = SecretKeySearch.create();
-        sc.setParameters("secretKey", secretKey);
-        return findOneBy(sc);
     }
 
     @Override

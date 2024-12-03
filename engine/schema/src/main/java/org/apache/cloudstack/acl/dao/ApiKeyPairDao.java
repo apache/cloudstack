@@ -14,36 +14,26 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.user.dao;
+package org.apache.cloudstack.acl.dao;
+
+import com.cloud.utils.Pair;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
+import org.apache.cloudstack.api.command.admin.user.ListUserKeysCmd;
 
 import java.util.List;
 
-import com.cloud.user.UserVO;
-import com.cloud.utils.db.GenericDao;
+public interface ApiKeyPairDao extends GenericDao<ApiKeyPairVO, Long> {
+    ApiKeyPairVO findBySecretKey(String secretKey);
 
-/*
- * Data Access Object for user table
- */
-public interface UserDao extends GenericDao<UserVO, Long> {
-    UserVO getUser(String username, String password);
+    ApiKeyPairVO findByApiKey(String apiKey);
 
-    UserVO getUserByName(String username, Long domainId);
+    ApiKeyPairVO findByUuid(String uuid);
 
-    UserVO getUser(String username);
+    Pair<List<ApiKeyPairVO>, Integer> listApiKeysByUserOrApiKeyId(Long userId, Long apiKeyId);
 
-    UserVO getUser(long userId);
+    ApiKeyPairVO getLastApiKeyCreatedByUser(Long userId);
 
-    List<UserVO> findUsersLike(String username);
-
-    List<UserVO> listByAccount(long accountId);
-
-    /**
-     * Finds a user based on the registration token provided.
-     * @param registrationToken
-     * @return
-     */
-    UserVO findUserByRegistrationToken(String registrationToken);
-
-    List<UserVO> findUsersByName(String username);
+    Pair<List<ApiKeyPairVO>, Integer> listByUserIdsPaginated(List<Long> userIds, ListUserKeysCmd cmd);
 
 }

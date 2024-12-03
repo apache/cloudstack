@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import com.cloud.network.NetworkModel;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupVO;
@@ -510,8 +511,9 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
             throw new InvalidParameterValueException("AutoScale User id does not belong to the same account");
         }
 
-        String apiKey = user.getApiKey();
-        String secretKey = user.getSecretKey();
+        ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(user.getId());
+        String apiKey = latestKeypair.getApiKey();
+        String secretKey = latestKeypair.getSecretKey();
         String csUrl = ApiServiceConfiguration.ApiServletPath.value();
 
         if (apiKey == null) {

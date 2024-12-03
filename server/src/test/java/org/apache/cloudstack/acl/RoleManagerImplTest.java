@@ -90,17 +90,17 @@ public class RoleManagerImplTest {
         Mockito.doReturn(RolePermissionEntity.Permission.ALLOW).when(rolePermission1Mock).getPermission();
         Mockito.doReturn(RolePermissionEntity.Permission.ALLOW).when(rolePermission2Mock).getPermission();
 
-        List<RolePermission> lessPermissionsRolePermissions = Collections.singletonList(rolePermission1Mock);
+        List<RolePermissionEntity> lessPermissionsRolePermissions = Collections.singletonList(rolePermission1Mock);
         Mockito.doReturn(1L).when(lessPermissionsRoleMock).getId();
-        Mockito.when(roleManagerImpl.findAllPermissionsBy(1L)).thenReturn(lessPermissionsRolePermissions);
+        Mockito.when(roleManagerImpl.findAllRolePermissionsEntityBy(lessPermissionsRoleMock.getId())).thenReturn(lessPermissionsRolePermissions);
 
-        List<RolePermission> morePermissionsRolePermissions = List.of(rolePermission1Mock, rolePermission2Mock);
+        List<RolePermissionEntity> morePermissionsRolePermissions = List.of(rolePermission1Mock, rolePermission2Mock);
         Mockito.doReturn(2L).when(morePermissionsRoleMock).getId();
-        Mockito.when(roleManagerImpl.findAllPermissionsBy(morePermissionsRoleMock.getId())).thenReturn(morePermissionsRolePermissions);
+        Mockito.when(roleManagerImpl.findAllRolePermissionsEntityBy(morePermissionsRoleMock.getId())).thenReturn(morePermissionsRolePermissions);
 
-        List<RolePermission> differentPermissionsRolePermissions = Collections.singletonList(rolePermission2Mock);
+        List<RolePermissionEntity> differentPermissionsRolePermissions = Collections.singletonList(rolePermission2Mock);
         Mockito.doReturn(3L).when(differentPermissionsRoleMock).getId();
-        Mockito.when(roleManagerImpl.findAllPermissionsBy(differentPermissionsRoleMock.getId())).thenReturn(differentPermissionsRolePermissions);
+        Mockito.when(roleManagerImpl.findAllRolePermissionsEntityBy(differentPermissionsRoleMock.getId())).thenReturn(differentPermissionsRolePermissions);
     }
 
     @Before
@@ -226,7 +226,6 @@ public class RoleManagerImplTest {
         List<Role> roles = new ArrayList<>();
 
         List<RolePermission> callerAccountRolePermissions = List.of(rolePermission1Mock, rolePermission2Mock);
-        Mockito.when(roleManagerImpl.findAllPermissionsBy(callerAccountRoleMock.getId())).thenReturn(callerAccountRolePermissions);
 
         roles.add(callerAccountRoleMock);
         roles.add(lessPermissionsRoleMock);
@@ -243,9 +242,8 @@ public class RoleManagerImplTest {
         setUpRoleVisibilityTests();
         List<Role> roles = new ArrayList<>();
 
-        List<RolePermission> callerAccountRolePermissions = Collections.singletonList(rolePermission1Mock);
-        Mockito.when(roleManagerImpl.findAllPermissionsBy(callerAccountRoleMock.getId())).thenReturn(callerAccountRolePermissions);
-
+        List<RolePermissionEntity> callerAccountRolePermissions = Collections.singletonList(rolePermission1Mock);
+        Mockito.when(roleManagerImpl.findAllRolePermissionsEntityBy(callerAccountRoleMock.getId())).thenReturn(callerAccountRolePermissions);
 
         roles.add(callerAccountRoleMock);
         roles.add(morePermissionsRoleMock);
@@ -261,8 +259,8 @@ public class RoleManagerImplTest {
         setUpRoleVisibilityTests();
         List<Role> roles = new ArrayList<>();
 
-        List<RolePermission> callerAccountRolePermissions = Collections.singletonList(rolePermission1Mock);
-        Mockito.when(roleManagerImpl.findAllPermissionsBy(callerAccountRoleMock.getId())).thenReturn(callerAccountRolePermissions);
+        List<RolePermissionEntity> callerAccountRolePermissions = Collections.singletonList(rolePermission1Mock);
+        Mockito.when(roleManagerImpl.findAllRolePermissionsEntityBy(callerAccountRoleMock.getId())).thenReturn(callerAccountRolePermissions);
 
         roles.add(callerAccountRoleMock);
         roles.add(differentPermissionsRoleMock);
@@ -279,7 +277,7 @@ public class RoleManagerImplTest {
         rolePermissions.put("api1", Permission.ALLOW);
         rolePermissions.put("api2", Permission.ALLOW);
 
-        boolean result = roleManagerImpl.roleHasPermission(rolePermissions, lessPermissionsRoleMock);
+        boolean result = roleManagerImpl.roleHasPermission(rolePermissions, Collections.singletonList(rolePermission1Mock));
 
         Assert.assertTrue(result);
     }
@@ -290,7 +288,7 @@ public class RoleManagerImplTest {
         rolePermissions.put("api2", Permission.ALLOW);
         rolePermissions.put("api3", Permission.ALLOW);
 
-        boolean result = roleManagerImpl.roleHasPermission(rolePermissions, morePermissionsRoleMock);
+        boolean result = roleManagerImpl.roleHasPermission(rolePermissions, Collections.singletonList(rolePermission1Mock));
 
         Assert.assertFalse(result);
     }
@@ -301,7 +299,7 @@ public class RoleManagerImplTest {
         rolePermissions.put("api1", Permission.ALLOW);
         rolePermissions.put("api2", Permission.DENY);
 
-        boolean result = roleManagerImpl.roleHasPermission(rolePermissions, morePermissionsRoleMock);
+        boolean result = roleManagerImpl.roleHasPermission(rolePermissions, List.of(rolePermission1Mock, rolePermission2Mock));
 
         Assert.assertFalse(result);
     }
@@ -310,7 +308,7 @@ public class RoleManagerImplTest {
     public void getRolePermissionsTestRoleReturnsRolePermissions() {
         setUpRoleVisibilityTests();
 
-        Map<String, Permission> roleRulesAndPermissions = roleManagerImpl.getRoleRulesAndPermissions(morePermissionsRoleMock.getId());
+        Map<String, Permission> roleRulesAndPermissions = roleManagerImpl.getRoleRulesAndPermissions(List.of(rolePermission1Mock, rolePermission2Mock));
 
         Assert.assertEquals(2, roleRulesAndPermissions.size());
         Assert.assertEquals(roleRulesAndPermissions.get("api1"), Permission.ALLOW);

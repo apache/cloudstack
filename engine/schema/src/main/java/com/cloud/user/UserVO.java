@@ -33,7 +33,6 @@ import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import com.cloud.user.Account.State;
-import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 import org.apache.commons.lang3.StringUtils;
 
@@ -70,13 +69,6 @@ public class UserVO implements User, Identity, InternalIdentity {
     @Column(name = "state")
     @Enumerated(value = EnumType.STRING)
     private State state;
-
-    @Column(name = "api_key")
-    private String apiKey = null;
-
-    @Encrypt
-    @Column(name = "secret_key")
-    private String secretKey = null;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
@@ -147,8 +139,6 @@ public class UserVO implements User, Identity, InternalIdentity {
         this.setTimezone(user.getTimezone());
         this.setUuid(user.getUuid());
         this.setSource(user.getSource());
-        this.setApiKey(user.getApiKey());
-        this.setSecretKey(user.getSecretKey());
         this.setExternalEntity(user.getExternalEntity());
         this.setRegistered(user.isRegistered());
         this.setRegistrationToken(user.getRegistrationToken());
@@ -238,26 +228,6 @@ public class UserVO implements User, Identity, InternalIdentity {
     @Override
     public void setState(State state) {
         this.state = state;
-    }
-
-    @Override
-    public String getApiKey() {
-        return apiKey;
-    }
-
-    @Override
-    public void setApiKey(String apiKey) {
-        this.apiKey = apiKey;
-    }
-
-    @Override
-    public String getSecretKey() {
-        return secretKey;
-    }
-
-    @Override
-    public void setSecretKey(String secretKey) {
-        this.secretKey = secretKey;
     }
 
     @Override

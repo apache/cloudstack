@@ -25,6 +25,10 @@ import java.util.Set;
 import com.cloud.bgp.ASNumber;
 import com.cloud.bgp.ASNumberRange;
 
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
+import org.apache.cloudstack.api.response.ApiKeyPairResponse;
+import org.apache.cloudstack.api.response.BaseRolePermissionResponse;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -560,6 +564,10 @@ public interface ResponseGenerator {
     ObjectStoreResponse createObjectStoreResponse(ObjectStore os);
 
     BucketResponse createBucketResponse(Bucket bucket);
+
+    ApiKeyPairResponse createKeyPairResponse(ApiKeyPair keyPair);
+
+    ListResponse<BaseRolePermissionResponse> createKeypairPermissionsResponse(List<ApiKeyPairPermission> permissions);
 
     ASNRangeResponse createASNumberRangeResponse(ASNumberRange asnRange);
 
