@@ -24,7 +24,9 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.management.ManagementServerHost.State;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @EntityReference(value = ManagementServerHost.class)
 public class ManagementServerResponse extends BaseResponse {
@@ -75,6 +77,10 @@ public class ManagementServerResponse extends BaseResponse {
     @SerializedName(ApiConstants.SERVICE_IP)
     @Param(description = "the IP Address for this Management Server")
     private String serviceIp;
+
+    @SerializedName(ApiConstants.PEERS)
+    @Param(description = "the Management Server Peers")
+    private List<PeerManagementServerNodeResponse> peers;
 
     public String getId() {
         return this.id;
@@ -170,5 +176,20 @@ public class ManagementServerResponse extends BaseResponse {
 
     public String getKernelVersion() {
         return kernelVersion;
+    }
+
+    public List<PeerManagementServerNodeResponse> getPeers() {
+        return peers;
+    }
+
+    public void setPeers(List<PeerManagementServerNodeResponse> peers) {
+        this.peers = peers;
+    }
+
+    public void addPeer(PeerManagementServerNodeResponse peer) {
+        if (peers == null) {
+            peers = new ArrayList<>();
+        }
+        peers.add(peer);
     }
 }

@@ -157,7 +157,7 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
                 .map(quotaUsageVO -> new Pair<>(quotaUsageVO.getStartDate(), quotaUsageVO.getEndDate()))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        logger.info(String.format("Processing quota balance for account[{}] between [{}] and [{}].", accountToString, startDate, lastQuotaUsageEndDate));
+        logger.info("Processing quota balance for account [{}] between [{}] and [{}].", accountToString, startDate, lastQuotaUsageEndDate);
 
         long accountId = accountVo.getAccountId();
         long domainId = accountVo.getDomainId();

@@ -136,7 +136,6 @@ public class VMSnapshotManagerTest {
     VMSnapshotDetailsDao _vmSnapshotDetailsDao;
     @Mock
     UserVmManager _userVmManager;
-    int _vmSnapshotMax = 10;
 
     private static final long TEST_VM_ID = 3L;
     private static final long SERVICE_OFFERING_ID = 1L;
@@ -193,8 +192,6 @@ public class VMSnapshotManagerTest {
         _vmSnapshotMgr._serviceOfferingDetailsDao = _serviceOfferingDetailsDao;
 
         doNothing().when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
-
-        _vmSnapshotMgr._vmSnapshotMax = _vmSnapshotMax;
 
         _vmSnapshotMgr._serviceOfferingDao = _serviceOfferingDao;
         _vmSnapshotMgr._userVmDetailsDao = _userVmDetailsDao;

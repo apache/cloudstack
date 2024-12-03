@@ -41,8 +41,8 @@ import java.util.List;
 
 @Component
 public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements AccountDao {
-    private static final String FIND_USER_ACCOUNT_BY_API_KEY = "SELECT u.id, u.username, u.account_id, u.secret_key, u.state, "
-        + "a.id, a.account_name, a.type, a.role_id, a.domain_id, a.state " + "FROM `cloud`.`user` u, `cloud`.`account` a "
+    private static final String FIND_USER_ACCOUNT_BY_API_KEY = "SELECT u.id, u.username, u.account_id, u.secret_key, u.state, u.api_key_access, "
+        + "a.id, a.account_name, a.type, a.role_id, a.domain_id, a.state, a.api_key_access " + "FROM `cloud`.`user` u, `cloud`.`account` a "
         + "WHERE u.account_id = a.id AND u.api_key = ? and u.removed IS NULL";
 
     protected final SearchBuilder<AccountVO> AllFieldsSearch;
@@ -148,13 +148,25 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
                 u.setAccountId(rs.getLong(3));
                 u.setSecretKey(DBEncryptionUtil.decrypt(rs.getString(4)));
                 u.setState(State.getValueOf(rs.getString(5)));
+                boolean apiKeyAccess = rs.getBoolean(6);
+                if (rs.wasNull()) {
+                    u.setApiKeyAccess(null);
+                } else {
+                    u.setApiKeyAccess(apiKeyAccess);
+                }
 
-                AccountVO a = new AccountVO(rs.getLong(6));
-                a.setAccountName(rs.getString(7));
-                a.setType(Account.Type.getFromValue(rs.getInt(8)));
-                a.setRoleId(rs.getLong(9));
-                a.setDomainId(rs.getLong(10));
-                a.setState(State.getValueOf(rs.getString(11)));
+                AccountVO a = new AccountVO(rs.getLong(7));
+                a.setAccountName(rs.getString(8));
+                a.setType(Account.Type.getFromValue(rs.getInt(9)));
+                a.setRoleId(rs.getLong(10));
+                a.setDomainId(rs.getLong(11));
+                a.setState(State.getValueOf(rs.getString(12)));
+                apiKeyAccess = rs.getBoolean(13);
+                if (rs.wasNull()) {
+                    a.setApiKeyAccess(null);
+                } else {
+                    a.setApiKeyAccess(apiKeyAccess);
+                }
 
                 userAcctPair = new Pair<User, Account>(u, a);
             }

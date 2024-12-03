@@ -53,6 +53,7 @@ import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
@@ -106,6 +107,7 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
@@ -309,6 +311,7 @@ import com.googlecode.ipv6.IPv6Network;
 import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
 import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
 import static com.cloud.offering.NetworkOffering.RoutingMode.Static;
+import static org.apache.cloudstack.framework.config.ConfigKey.CATEGORY_SYSTEM;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final String PERACCOUNT = "peraccount";
@@ -590,6 +593,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         weightBasedParametersForValidation.add(Config.LocalStorageCapacityThreshold.key());
         weightBasedParametersForValidation.add(CapacityManager.StorageAllocatedCapacityDisableThreshold.key());
         weightBasedParametersForValidation.add(CapacityManager.StorageCapacityDisableThreshold.key());
+        weightBasedParametersForValidation.add(CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.key());
         weightBasedParametersForValidation.add(DeploymentClusterPlanner.ClusterCPUCapacityDisableThreshold.key());
         weightBasedParametersForValidation.add(DeploymentClusterPlanner.ClusterMemoryCapacityDisableThreshold.key());
         weightBasedParametersForValidation.add(Config.AgentLoadThreshold.key());
@@ -706,6 +710,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 value = DBEncryptionUtil.encrypt(value);
             }
 
+            ApiCommandResourceType resourceType;
             ConfigKey.Scope scopeVal = ConfigKey.Scope.valueOf(scope);
             switch (scopeVal) {
             case Zone:
@@ -713,6 +718,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (zone == null) {
                     throw new InvalidParameterValueException("unable to find zone by id " + resourceId);
                 }
+                resourceType = ApiCommandResourceType.Zone;
                 _dcDetailsDao.addDetail(resourceId, name, value, true);
                 break;
             case Cluster:
@@ -720,6 +726,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (cluster == null) {
                     throw new InvalidParameterValueException("unable to find cluster by id " + resourceId);
                 }
+                resourceType = ApiCommandResourceType.Cluster;
                 String newName = name;
                 if (name.equalsIgnoreCase("cpu.overprovisioning.factor")) {
                     newName = "cpuOvercommitRatio";
@@ -742,6 +749,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (pool == null) {
                     throw new InvalidParameterValueException("unable to find storage pool by id " + resourceId);
                 }
+                resourceType = ApiCommandResourceType.StoragePool;
                 if(name.equals(CapacityManager.StorageOverprovisioningFactor.key())) {
                     if(!pool.getPoolType().supportsOverProvisioning() ) {
                         throw new InvalidParameterValueException("Unable to update storage pool with id " + resourceId + ". Overprovision not supported for " + pool.getPoolType());
@@ -763,6 +771,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (account == null) {
                     throw new InvalidParameterValueException("unable to find account by id " + resourceId);
                 }
+                resourceType = ApiCommandResourceType.Account;
                 AccountDetailVO accountDetailVO = _accountDetailsDao.findDetail(resourceId, name);
                 if (accountDetailVO == null) {
                     accountDetailVO = new AccountDetailVO(resourceId, name, value);
@@ -776,6 +785,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             case ImageStore:
                 final ImageStoreVO imgStore = _imageStoreDao.findById(resourceId);
                 Preconditions.checkState(imgStore != null);
+                resourceType = ApiCommandResourceType.ImageStore;
                 _imageStoreDetailsDao.addDetail(resourceId, name, value, true);
                 break;
 
@@ -784,6 +794,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 if (domain == null) {
                     throw new InvalidParameterValueException("unable to find domain by id " + resourceId);
                 }
+                resourceType = ApiCommandResourceType.Domain;
                 DomainDetailVO domainDetailVO = _domainDetailsDao.findDetail(resourceId, name);
                 if (domainDetailVO == null) {
                     domainDetailVO = new DomainDetailVO(resourceId, name, value);
@@ -797,6 +808,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             default:
                 throw new InvalidParameterValueException("Scope provided is invalid");
             }
+
+            CallContext.current().setEventResourceType(resourceType);
+            CallContext.current().setEventResourceId(resourceId);
+            CallContext.current().setEventDetails(String.format(" Name: %s, New Value: %s, Scope: %s", name, value, scope));
 
             _configDepot.invalidateConfigCache(name, scopeVal, resourceId);
             return valueEncrypted ? DBEncryptionUtil.decrypt(value) : value;
@@ -955,6 +970,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             category = config.getCategory();
         }
 
+        if (CATEGORY_SYSTEM.equals(category) && !_accountMgr.isRootAdmin(caller.getId())) {
+            logger.warn("Only Root Admin is allowed to edit the configuration " + name);
+            throw new CloudRuntimeException("Only Root Admin is allowed to edit this configuration.");
+        }
+
         if (value == null) {
             return _configDao.findByName(name);
         }
@@ -1006,7 +1026,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (value.isEmpty() || value.equals("null")) {
             value = (id == null) ? null : "";
         }
-
         final String updatedValue = updateConfiguration(userId, name, category, value, scope, id);
         if (value == null && updatedValue == null || updatedValue.equalsIgnoreCase(value)) {
             return _configDao.findByName(name);
@@ -6673,6 +6692,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new InvalidParameterValueException("networkMode should be set only for Isolated network offerings");
             }
             if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode)) {
+                if (!RoutedIpv4Manager.RoutedNetworkVpcEnabled.value()) {
+                    throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for Routed networks", RoutedIpv4Manager.RoutedNetworkVpcEnabled.key()));
+                }
+                if (zoneIds != null) {
+                    for (Long zoneId: zoneIds) {
+                        if (!RoutedIpv4Manager.RoutedNetworkVpcEnabled.valueIn(zoneId)) {
+                            throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for Routed networks in zone (ID: %s)", RoutedIpv4Manager.RoutedNetworkVpcEnabled.key(), zoneId));
+                        }
+                    }
+                }
                 boolean useVirtualRouterOnly = true;
                 for (Service service : serviceProviderMap.keySet()) {
                     Set<Provider> providers = serviceProviderMap.get(service);

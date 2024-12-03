@@ -130,7 +130,7 @@ public class ManagementServerHostDaoImpl extends GenericDaoBase<ManagementServer
         try {
             txn.start();
 
-            pstmt = txn.prepareAutoCloseStatement("update mshost set last_update=?, removed=null, alert_count=0 where id=? and runid=?");
+            pstmt = txn.prepareAutoCloseStatement("update mshost set last_update=?, removed=null, alert_count=0, state='Up' where id=? and runid=?");
             pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), lastUpdate));
             pstmt.setLong(2, id);
             pstmt.setLong(3, runid);

@@ -189,6 +189,9 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
     @Column(name = "default")
     boolean isDefault;
 
+    @Column(name = "api_key_access")
+    Boolean apiKeyAccess;
+
     public AccountJoinVO() {
     }
 
@@ -392,5 +395,9 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
 
     public boolean isDefault() {
         return isDefault;
+    }
+
+    public Boolean getApiKeyAccess() {
+        return apiKeyAccess;
     }
 }

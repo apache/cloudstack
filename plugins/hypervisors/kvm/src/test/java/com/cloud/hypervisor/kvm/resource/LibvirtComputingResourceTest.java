@@ -58,9 +58,12 @@ import javax.xml.xpath.XPathFactory;
 
 import com.cloud.utils.net.NetUtils;
 
+import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.MemStat;
@@ -6414,5 +6417,115 @@ public class LibvirtComputingResourceTest {
         Assert.assertEquals(newStats.getDiskWriteIOs() - oldStats.getDiskWriteIOs(), metrics.getDiskWriteIOs(), 0);
         Assert.assertEquals(newStats.getDiskReadKBs() - oldStats.getDiskReadKBs(), metrics.getDiskReadKBs(), 0);
         Assert.assertEquals(newStats.getDiskWriteKBs() - oldStats.getDiskWriteKBs(), metrics.getDiskWriteKBs(), 0);
+    }
+
+    @Test
+    public void createLinstorVdb() throws LibvirtException, InternalErrorException, URISyntaxException {
+        final Connect connect = Mockito.mock(Connect.class);
+
+        final int id = random.nextInt(65534);
+        final String name = "test-instance-1";
+
+        final int cpus = 2;
+        final int speed = 1024;
+        final int minRam = 256 * 1024;
+        final int maxRam = 512 * 1024;
+        final String os = "Ubuntu";
+        final String vncPassword = "mySuperSecretPassword";
+
+        final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, speed, minRam,
+                maxRam, BootloaderType.HVM, os, false, false, vncPassword);
+        to.setVncAddr("");
+        to.setArch("x86_64");
+        to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
+        to.setVcpuMaxLimit(cpus + 1);
+        final HashMap<String, String> vmToDetails = new HashMap<>();
+        to.setDetails(vmToDetails);
+
+        String diskLinPath = "9ebe53c1-3d35-46e5-b7aa-6fc223ba0fcf";
+        final DiskTO diskTO = new DiskTO();
+        diskTO.setDiskSeq(1L);
+        diskTO.setType(Volume.Type.ROOT);
+        diskTO.setDetails(new HashMap<>());
+        diskTO.setPath(diskLinPath);
+
+        final PrimaryDataStoreTO primaryDataStoreTO = Mockito.mock(PrimaryDataStoreTO.class);
+        String pDSTOUUID = "9ebe53c1-3d35-46e5-b7aa-6fc223ac4fcf";
+        when(primaryDataStoreTO.getPoolType()).thenReturn(StoragePoolType.Linstor);
+        when(primaryDataStoreTO.getUuid()).thenReturn(pDSTOUUID);
+
+        VolumeObjectTO dataTO = new VolumeObjectTO();
+
+        dataTO.setUuid("12be53c1-3d35-46e5-b7aa-6fc223ba0f34");
+        dataTO.setPath(diskTO.getPath());
+        dataTO.setDataStore(primaryDataStoreTO);
+        diskTO.setData(dataTO);
+        to.setDisks(new DiskTO[]{diskTO});
+
+        String path = "/dev/drbd1020";
+        final KVMStoragePoolManager storagePoolMgr = Mockito.mock(KVMStoragePoolManager.class);
+        final KVMStoragePool storagePool = Mockito.mock(KVMStoragePool.class);
+        final KVMPhysicalDisk vol = Mockito.mock(KVMPhysicalDisk.class);
+
+        when(libvirtComputingResourceSpy.getStoragePoolMgr()).thenReturn(storagePoolMgr);
+        when(storagePool.getType()).thenReturn(StoragePoolType.Linstor);
+        when(storagePoolMgr.getPhysicalDisk(StoragePoolType.Linstor, pDSTOUUID, diskLinPath)).thenReturn(vol);
+        when(vol.getPath()).thenReturn(path);
+        when(vol.getPool()).thenReturn(storagePool);
+        when(vol.getFormat()).thenReturn(PhysicalDiskFormat.RAW);
+
+        // 1. test Bus: IDE and broken qemu version -> NO discard
+        when(libvirtComputingResourceSpy.getHypervisorQemuVersion()).thenReturn(6000000L);
+        vmToDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, DiskDef.DiskBus.IDE.name());
+        {
+            LibvirtVMDef vm = new LibvirtVMDef();
+            vm.addComp(new DevicesDef());
+            libvirtComputingResourceSpy.createVbd(connect, to, name, vm);
+
+            DiskDef rootDisk = vm.getDevices().getDisks().get(0);
+            assertEquals(DiskDef.DiskType.BLOCK, rootDisk.getDiskType());
+            assertEquals(DiskDef.DiskBus.IDE, rootDisk.getBusType());
+            assertEquals(DiskDef.DiscardType.IGNORE, rootDisk.getDiscard());
+        }
+
+        // 2. test Bus: VIRTIO and broken qemu version -> discard unmap
+        vmToDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, DiskDef.DiskBus.VIRTIO.name());
+        {
+            LibvirtVMDef vm = new LibvirtVMDef();
+            vm.addComp(new DevicesDef());
+            libvirtComputingResourceSpy.createVbd(connect, to, name, vm);
+
+            DiskDef rootDisk = vm.getDevices().getDisks().get(0);
+            assertEquals(DiskDef.DiskType.BLOCK, rootDisk.getDiskType());
+            assertEquals(DiskDef.DiskBus.VIRTIO, rootDisk.getBusType());
+            assertEquals(DiskDef.DiscardType.UNMAP, rootDisk.getDiscard());
+        }
+
+        // 3. test Bus; IDE and "good" qemu version -> discard unmap
+        vmToDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, DiskDef.DiskBus.IDE.name());
+        when(libvirtComputingResourceSpy.getHypervisorQemuVersion()).thenReturn(7000000L);
+        {
+            LibvirtVMDef vm = new LibvirtVMDef();
+            vm.addComp(new DevicesDef());
+            libvirtComputingResourceSpy.createVbd(connect, to, name, vm);
+
+            DiskDef rootDisk = vm.getDevices().getDisks().get(0);
+            assertEquals(DiskDef.DiskType.BLOCK, rootDisk.getDiskType());
+            assertEquals(DiskDef.DiskBus.IDE, rootDisk.getBusType());
+            assertEquals(DiskDef.DiscardType.UNMAP, rootDisk.getDiscard());
+        }
+
+        // 4. test Bus: VIRTIO and "good" qemu version -> discard unmap
+        vmToDetails.put(VmDetailConstants.ROOT_DISK_CONTROLLER, DiskDef.DiskBus.VIRTIO.name());
+        {
+            LibvirtVMDef vm = new LibvirtVMDef();
+            vm.addComp(new DevicesDef());
+            libvirtComputingResourceSpy.createVbd(connect, to, name, vm);
+
+            DiskDef rootDisk = vm.getDevices().getDisks().get(0);
+            assertEquals(DiskDef.DiskType.BLOCK, rootDisk.getDiskType());
+            assertEquals(DiskDef.DiskBus.VIRTIO, rootDisk.getBusType());
+            assertEquals(DiskDef.DiscardType.UNMAP, rootDisk.getDiscard());
+        }
     }
 }

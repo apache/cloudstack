@@ -169,7 +169,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     }
 
     @Override
-    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, Storage.StoragePoolType type, Map<String, String> details) {
+    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, Storage.StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage) {
         LOGGER.info(String.format("createStoragePool(uuid,host,port,path,type) called with args (%s, %s, %s, %s, %s)", uuid, host, ""+port, path, type));
         MultipathSCSIPool storagePool = new MultipathSCSIPool(uuid, host, port, path, type, details, this);
         MapStorageUuidToStoragePool.put(uuid, storagePool);

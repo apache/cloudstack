@@ -21,6 +21,7 @@ import com.cloud.network.Network;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.user.bgp.ListASNumbersCmd;
+import org.apache.cloudstack.network.BgpPeer;
 
 import java.util.List;
 
@@ -36,4 +37,8 @@ public interface BGPService {
     boolean applyBgpPeers(Network network, boolean continueOnError) throws ResourceUnavailableException;
 
     boolean applyBgpPeers(Vpc vpc, boolean continueOnError) throws ResourceUnavailableException;
+
+    List<? extends BgpPeer> getBgpPeersForNetwork(Network network);
+
+    List<? extends BgpPeer> getBgpPeersForVpc(Vpc vpc);
 }

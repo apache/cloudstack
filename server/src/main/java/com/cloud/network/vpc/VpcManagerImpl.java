@@ -500,6 +500,18 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
             networkMode = NetworkOffering.NetworkMode.valueOf(networkModeStr);
         }
+        if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode)) {
+            if (!RoutedIpv4Manager.RoutedNetworkVpcEnabled.value()) {
+                throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for Routed VPCs", RoutedIpv4Manager.RoutedNetworkVpcEnabled.key()));
+            }
+            if (zoneIds != null) {
+                for (Long zoneId: zoneIds) {
+                    if (!RoutedIpv4Manager.RoutedNetworkVpcEnabled.valueIn(zoneId)) {
+                        throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for Routed VPCs in zone (ID: %s)", RoutedIpv4Manager.RoutedNetworkVpcEnabled.key(), zoneId));
+                    }
+                }
+            }
+        }
         boolean specifyAsNumber = cmd.getSpecifyAsNumber();
         String routingModeString = cmd.getRoutingMode();
 
@@ -1161,12 +1173,17 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw ex;
         }
 
+        if (NetworkOffering.NetworkMode.ROUTED.equals(vpcOff.getNetworkMode())
+                && !routedIpv4Manager.RoutedNetworkVpcEnabled.valueIn(zoneId)) {
+            throw new InvalidParameterValueException("Routed VPC is not enabled in this zone");
+        }
+
         if (NetworkOffering.RoutingMode.Dynamic.equals(vpcOff.getRoutingMode()) && vpcOff.isSpecifyAsNumber() && asNumber == null) {
             throw new InvalidParameterValueException("AS number is required for the VPC but not passed.");
         }
 
         // Validate VPC cidr/cidrsize
-        validateVpcCidrSize(caller, owner.getAccountId(), vpcOff, cidr, cidrSize);
+        validateVpcCidrSize(caller, owner.getAccountId(), vpcOff, cidr, cidrSize, zoneId);
 
         // Validate BGP peers
         if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
@@ -1251,7 +1268,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return newVpc;
     }
 
-    private void validateVpcCidrSize(Account caller, long accountId, VpcOffering vpcOffering, String cidr, Integer cidrSize) {
+    private void validateVpcCidrSize(Account caller, long accountId, VpcOffering vpcOffering, String cidr, Integer cidrSize, long zoneId) {
         if (ObjectUtils.allNull(cidr, cidrSize)) {
             throw new InvalidParameterValueException("VPC cidr or cidr size must be specified");
         }

@@ -17,6 +17,7 @@
 package org.apache.cloudstack.storage.datastore.util;
 
 import com.linbit.linstor.api.ApiClient;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
@@ -33,6 +34,7 @@ import com.linbit.linstor.api.model.Volume;
 
 import javax.annotation.Nonnull;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -208,6 +210,28 @@ public class LinstorUtil {
         }
         LOGGER.error("isResourceInUse: null returned from resourceList");
         return null;
+    }
+
+    /**
+     * Check if the given resources are diskless.
+     *
+     * @param api developer api object to use
+     * @param rscName resource name to check in use state.
+     * @return NodeName where the resource is inUse, if not in use `null`
+     * @throws ApiException forwards api errors
+     */
+    public static boolean areResourcesDiskless(DevelopersApi api, String rscName, Collection<String> nodeNames)
+            throws ApiException {
+        List<Resource> rscs = api.resourceList(rscName, null, null);
+        if (rscs != null) {
+            Collection<String> disklessNodes = rscs.stream()
+                .filter(rsc -> rsc.getFlags() != null && (rsc.getFlags().contains(ApiConsts.FLAG_DISKLESS) ||
+                        rsc.getFlags().contains(ApiConsts.FLAG_DRBD_DISKLESS)))
+                    .map(rsc -> rsc.getNodeName().toLowerCase())
+                    .collect(Collectors.toList());
+            return disklessNodes.containsAll(nodeNames.stream().map(String::toLowerCase).collect(Collectors.toList()));
+        }
+        return false;
     }
 
     /**

@@ -86,6 +86,6 @@ public class LibvirtStorageAdaptorTest {
 
         Map<String, String> details = new HashMap<>();
         details.put("nfsmountopts", "vers=4.1, nconnect=4");
-        KVMStoragePool pool = libvirtStorageAdaptor.createStoragePool(uuid, null, 0, dir, null, Storage.StoragePoolType.NetworkFilesystem, details);
+        KVMStoragePool pool = libvirtStorageAdaptor.createStoragePool(uuid, null, 0, dir, null, Storage.StoragePoolType.NetworkFilesystem, details, true);
     }
 }
