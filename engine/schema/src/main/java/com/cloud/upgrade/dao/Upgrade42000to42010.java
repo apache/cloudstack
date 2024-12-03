@@ -16,12 +16,14 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import com.cloud.utils.exception.CloudRuntimeException;
-
 import java.io.InputStream;
 import java.sql.Connection;
 
-public class Upgrade42000to42010 implements DbUpgrade {
+import com.cloud.upgrade.SystemVmTemplateRegistration;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+public class Upgrade42000to42010 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
+    private SystemVmTemplateRegistration systemVmTemplateRegistration;
 
     @Override
     public String[] getUpgradableVersionRange() {
@@ -62,5 +64,20 @@ public class Upgrade42000to42010 implements DbUpgrade {
         }
 
         return new InputStream[] {script};
+    }
+
+    private void initSystemVmTemplateRegistration() {
+        systemVmTemplateRegistration = new SystemVmTemplateRegistration("");
+    }
+
+    @Override
+    public void updateSystemVmTemplates(Connection conn) {
+        logger.debug("Updating System Vm template IDs");
+        initSystemVmTemplateRegistration();
+        try {
+            systemVmTemplateRegistration.updateSystemVmTemplates(conn);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
+        }
     }
 }
