@@ -391,6 +391,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     ConfigDepot configDepot;
     @Inject
     ConfigurationDao configurationDao;
+    @Inject
+    private ImageStoreDetailsUtil imageStoreDetailsUtil;
 
     protected List<StoragePoolDiscoverer> _discoverers;
 
@@ -3425,6 +3427,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                 throw new CloudRuntimeException("Failed to create temporary file path to mount the store");
                             }
                             Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
+                            String nfsVersion = imageStoreDetailsUtil.getNfsVersion(store.getId());
                             for (HypervisorType hypervisorType : hypSet) {
                                 try {
                                     if (HypervisorType.Simulator == hypervisorType) {
@@ -3441,7 +3444,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                         templateVO = _templateStoreDao.findByTemplate(templateId, DataStoreRole.Image);
                                         if (templateVO != null) {
                                             try {
-                                                if (SystemVmTemplateRegistration.validateIfSeeded(url, templateVO.getInstallPath())) {
+                                                if (SystemVmTemplateRegistration.validateIfSeeded(
+                                                        url, templateVO.getInstallPath(), nfsVersion)) {
                                                     continue;
                                                 }
                                             } catch (Exception e) {
@@ -3449,7 +3453,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                             }
                                         }
                                     }
-                                    SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath);
+                                    SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath, nfsVersion);
                                     if (templateVO != null && vmTemplateVO != null) {
                                         systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, vmTemplateVO, templateVO, filePath);
                                     } else {

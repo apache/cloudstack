@@ -789,13 +789,19 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public NetworkVO getNetworkWithSGWithFreeIPs(Long zoneId) {
+    public NetworkVO getNetworkWithSGWithFreeIPs(Account account, Long zoneId) {
         List<NetworkVO> networks = _networksDao.listByZoneSecurityGroup(zoneId);
         if (networks == null || networks.isEmpty()) {
             return null;
         }
         NetworkVO ret_network = null;
         for (NetworkVO nw : networks) {
+            try {
+                checkAccountNetworkPermissions(account, nw);
+            } catch (PermissionDeniedException e) {
+                continue;
+            }
+
             List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(nw.getId());
             for (VlanVO vlan : vlans) {
                 if (_ipAddressDao.countFreeIpsInVlan(vlan.getId()) > 0) {
