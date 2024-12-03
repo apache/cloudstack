@@ -31,20 +31,22 @@ import java.util.stream.Collectors;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.Functionality.DirectDownloadTemplate;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.Functionality.RootDiskSizeOverride;
 import static com.cloud.hypervisor.Hypervisor.HypervisorType.Functionality.VmStorageMigration;
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.Functionality.VmStorageMigrationWithSnapshots;
 
 public class Hypervisor {
     public static class HypervisorType {
         public enum Functionality {
             DirectDownloadTemplate,
             RootDiskSizeOverride,
-            VmStorageMigration
+            VmStorageMigration,
+            VmStorageMigrationWithSnapshots
         }
 
         private static final Map<String, HypervisorType> hypervisorTypeMap = new LinkedHashMap<>();
         public static final HypervisorType None = new HypervisorType("None"); //for storage hosts
         public static final HypervisorType XenServer = new HypervisorType("XenServer", ImageFormat.VHD, EnumSet.of(RootDiskSizeOverride, VmStorageMigration));
         public static final HypervisorType KVM = new HypervisorType("KVM", ImageFormat.QCOW2, EnumSet.of(DirectDownloadTemplate, RootDiskSizeOverride, VmStorageMigration));
-        public static final HypervisorType VMware = new HypervisorType("VMware", ImageFormat.OVA, EnumSet.of(RootDiskSizeOverride, VmStorageMigration));
+        public static final HypervisorType VMware = new HypervisorType("VMware", ImageFormat.OVA, EnumSet.of(RootDiskSizeOverride, VmStorageMigration, VmStorageMigrationWithSnapshots));
         public static final HypervisorType Hyperv = new HypervisorType("Hyperv");
         public static final HypervisorType VirtualBox = new HypervisorType("VirtualBox");
         public static final HypervisorType Parralels = new HypervisorType("Parralels");
