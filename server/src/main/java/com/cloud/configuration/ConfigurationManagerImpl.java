@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.hypervisor.ExternalProvisioner;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -381,6 +382,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Inject
     AlertManager _alertMgr;
     List<SecurityChecker> _secChecker;
+    List<ExternalProvisioner> externalProvisioners;
 
     @Inject
     CapacityDao _capacityDao;
@@ -534,6 +536,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private static final List<String> SUPPORTED_ROUTING_MODE_STRS = Arrays.asList(Static.toString().toLowerCase(), Dynamic.toString().toLowerCase());
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
+    public List<ExternalProvisioner> getExternalProvisioners() {
+        return externalProvisioners;
+    }
+
+    public void setExternalProvisioners(final List<ExternalProvisioner> externalProvisioners) {
+        this.externalProvisioners = externalProvisioners;
+    }
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         final String defaultPageSizeString = _configDao.getValue(Config.DefaultPageSize.key());
@@ -650,6 +660,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         if (err) {
             throw new InvalidParameterValueException("Invalid IP address value(s) specified for the config value.");
+        }
+    }
+
+    protected void validateExternalHypervisorConfigValues(final String configName, final String value) {
+        if (configName.equals("external.provisioners") && StringUtils.isNotEmpty(value)) {
+            if (externalProvisioners != null) {
+                logger.info(String.format("Found these external provisioners from the available plugins %s", externalProvisioners));
+                Set<String> externalProvisionersListFromConfig = Arrays.stream(value.split(","))
+                        .map(String::trim)
+                        .collect(Collectors.toSet());
+                Set<String> externalProvisionersListFromPlugins = externalProvisioners.stream()
+                        .map(ExternalProvisioner::getName)
+                        .collect(Collectors.toSet());
+                if (externalProvisionersListFromPlugins.containsAll(externalProvisionersListFromConfig)) {
+                    logger.info(String.format("Found the suitable external provisioner names", value));
+                    return;
+                }
+            }
+         throw new InvalidParameterValueException(String.format("Invalid value %s for the external provisioners", value));
         }
     }
 
@@ -1342,6 +1371,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         validateIpAddressRelatedConfigValues(name, value);
+        validateExternalHypervisorConfigValues(name, value);
 
         if (!shouldValidateConfigRange(name, value, configuration)) {
             return null;

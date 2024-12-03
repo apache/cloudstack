@@ -45,7 +45,7 @@ public final class IpmitoolOutOfBandManagementDriver extends AdapterBase impleme
     private final ExecutorService ipmitoolExecutor = Executors.newFixedThreadPool(OutOfBandManagementService.SyncThreadPoolSize.value(), new NamedThreadFactory("IpmiToolDriver"));
     private final IpmitoolWrapper IPMITOOL = new IpmitoolWrapper(ipmitoolExecutor);
 
-    public final ConfigKey<String> IpmiToolPath = new ConfigKey<String>("Advanced", String.class, "outofbandmanagement.ipmitool.path", "/usr/bin/ipmitool",
+    public static final ConfigKey<String> IpmiToolPath = new ConfigKey<String>("Advanced", String.class, "outofbandmanagement.ipmitool.path", "/usr/bin/ipmitool",
             "The out of band management ipmitool path used by the IpmiTool driver. Default: /usr/bin/ipmitool.", true, ConfigKey.Scope.Global);
 
     public final ConfigKey<String> IpmiToolInterface = new ConfigKey<String>("Advanced", String.class, "outofbandmanagement.ipmitool.interface", "lanplus",

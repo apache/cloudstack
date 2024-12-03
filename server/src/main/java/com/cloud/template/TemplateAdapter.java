@@ -43,6 +43,7 @@ public interface TemplateAdapter extends Adapter {
 
         public static final TemplateAdapterType Hypervisor = new TemplateAdapterType("HypervisorAdapter");
         public static final TemplateAdapterType BareMetal = new TemplateAdapterType("BareMetalAdapter");
+        public static final TemplateAdapterType External = new TemplateAdapterType("ExternalAdapter");
 
         public TemplateAdapterType(String name) {
             _name = name;

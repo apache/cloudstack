@@ -100,4 +100,9 @@ public interface VmDetailConstants {
     String VMWARE_HOST_NAME = String.format("%s-host", VMWARE_TO_KVM_PREFIX);
     String VMWARE_DISK = String.format("%s-disk", VMWARE_TO_KVM_PREFIX);
     String VMWARE_MAC_ADDRESSES = String.format("%s-mac-addresses", VMWARE_TO_KVM_PREFIX);
+    String MAC_ADDRESS = "mac_address";
+    String EXPUNGE_EXTERNAL_SERVER = "expunge.external.server";
+    String EXTERNAL_DETAIL_PREFIX = "External:";
+    String CLOUDSTACK_VM_DETAILS = "cloudstack.vm.details";
+    String CLOUDSTACK_VLAN = "cloudstack.vlan";
 }
