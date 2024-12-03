@@ -43,6 +43,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
@@ -371,6 +372,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             "user.2fa.default.provider",
             "totp",
             "The default user two factor authentication provider. Eg. totp, staticpin", true, ConfigKey.Scope.Domain);
+
+    public static final ConfigKey<Boolean> apiKeyAccess = new ConfigKey<>(ConfigKey.CATEGORY_SYSTEM, Boolean.class,
+            "api.key.access",
+            "true",
+            "Determines whether API (api-key/secret-key) access is allowed or not. Editable only by Root Admin.",
+            true,
+            ConfigKey.Scope.Domain);
 
     protected AccountManagerImpl() {
         super();
@@ -738,6 +746,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // check that resources belong to the same account
 
+    }
+
+    @Override
+    public void validateAccountHasAccessToResource(Account account, AccessType accessType, Object resource) {
+        Class<?> resourceClass = resource.getClass();
+        if (ControlledEntity.class.isAssignableFrom(resourceClass)) {
+            checkAccess(account, accessType, true, (ControlledEntity) resource);
+        } else if (Domain.class.isAssignableFrom(resourceClass)) {
+            checkAccess(account, (Domain) resource);
+        } else if (InfrastructureEntity.class.isAssignableFrom(resourceClass)) {
+            logger.trace("Validation of access to infrastructure entity has been disabled in CloudStack version 4.4.");
+        }
+        logger.debug(String.format("Account [%s] has access to resource.", account.getUuid()));
     }
 
     @Override
@@ -1449,6 +1470,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         logger.debug("Updating user with Id: " + user.getUuid());
 
         validateAndUpdateApiAndSecretKeyIfNeeded(updateUserCmd, user);
+        validateAndUpdateUserApiKeyAccess(updateUserCmd, user);
         Account account = retrieveAndValidateAccount(user);
 
         validateAndUpdateFirstNameIfNeeded(updateUserCmd, user);
@@ -1666,6 +1688,38 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         user.setApiKey(apiKey);
         user.setSecretKey(secretKey);
+    }
+
+    protected void validateAndUpdateUserApiKeyAccess(UpdateUserCmd updateUserCmd, UserVO user) {
+        if (updateUserCmd.getApiKeyAccess() != null) {
+            try {
+                ApiConstants.ApiKeyAccess access = ApiConstants.ApiKeyAccess.valueOf(updateUserCmd.getApiKeyAccess().toUpperCase());
+                user.setApiKeyAccess(access.toBoolean());
+                Long callingUserId = CallContext.current().getCallingUserId();
+                Account callingAccount = CallContext.current().getCallingAccount();
+                ActionEventUtils.onActionEvent(callingUserId, callingAccount.getAccountId(), callingAccount.getDomainId(),
+                        EventTypes.API_KEY_ACCESS_UPDATE, "Api key access was changed for the User to " + access.toString(),
+                        user.getId(), ApiCommandResourceType.User.toString());
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException("ApiKeyAccess value can only be Enabled/Disabled/Inherit");
+            }
+        }
+    }
+
+    protected void validateAndUpdateAccountApiKeyAccess(UpdateAccountCmd updateAccountCmd, AccountVO account) {
+        if (updateAccountCmd.getApiKeyAccess() != null) {
+            try {
+                ApiConstants.ApiKeyAccess access = ApiConstants.ApiKeyAccess.valueOf(updateAccountCmd.getApiKeyAccess().toUpperCase());
+                account.setApiKeyAccess(access.toBoolean());
+                Long callingUserId = CallContext.current().getCallingUserId();
+                Account callingAccount = CallContext.current().getCallingAccount();
+                ActionEventUtils.onActionEvent(callingUserId, callingAccount.getAccountId(), callingAccount.getDomainId(),
+                        EventTypes.API_KEY_ACCESS_UPDATE, "Api key access was changed for the Account to " + access.toString(),
+                        account.getId(), ApiCommandResourceType.Account.toString());
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException("ApiKeyAccess value can only be Enabled/Disabled/Inherit");
+            }
+        }
     }
 
     /**
@@ -2033,6 +2087,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // Check if user performing the action is allowed to modify this account
         Account caller = getCurrentCallingAccount();
         checkAccess(caller, _domainMgr.getDomain(account.getDomainId()));
+
+        validateAndUpdateAccountApiKeyAccess(cmd, acctForUpdate);
 
         if(newAccountName != null) {
 
@@ -2780,18 +2836,18 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public Map<String, String> getKeys(GetUserKeysCmd cmd) {
+    public Pair<Boolean, Map<String, String>> getKeys(GetUserKeysCmd cmd) {
         final long userId = cmd.getID();
         return getKeys(userId);
     }
 
     @Override
-    public Map<String, String> getKeys(Long userId) {
+    public Pair<Boolean, Map<String, String>> getKeys(Long userId) {
         User user = getActiveUser(userId);
         if (user == null) {
             throw new InvalidParameterValueException("Unable to find user by id");
         }
-        final ControlledEntity account = getAccount(getUserAccountById(userId).getAccountId()); //Extracting the Account from the userID of the requested user.
+        final Account account = getAccount(getUserAccountById(userId).getAccountId()); //Extracting the Account from the userID of the requested user.
         User caller = CallContext.current().getCallingUser();
         preventRootDomainAdminAccessToRootAdminKeys(caller, account);
         checkAccess(caller, account);
@@ -2800,7 +2856,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         keys.put("apikey", user.getApiKey());
         keys.put("secretkey", user.getSecretKey());
 
-        return keys;
+        Boolean apiKeyAccess = user.getApiKeyAccess();
+        if (apiKeyAccess == null) {
+            apiKeyAccess = account.getApiKeyAccess();
+            if (apiKeyAccess == null) {
+                apiKeyAccess = AccountManagerImpl.apiKeyAccess.valueIn(account.getDomainId());
+            }
+        }
+
+        return new Pair<Boolean, Map<String, String>>(apiKeyAccess, keys);
     }
 
     protected void preventRootDomainAdminAccessToRootAdminKeys(User caller, ControlledEntity account) {
@@ -3306,7 +3370,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {UseSecretKeyInResponse, enableUserTwoFactorAuthentication,
-                userTwoFactorAuthenticationDefaultProvider, mandateUserTwoFactorAuthentication, userTwoFactorAuthenticationIssuer};
+                userTwoFactorAuthenticationDefaultProvider, mandateUserTwoFactorAuthentication, userTwoFactorAuthenticationIssuer, apiKeyAccess};
     }
 
     public List<UserTwoFactorAuthenticator> getUserTwoFactorAuthenticationProviders() {
