@@ -37,6 +37,9 @@ public class PresetVariables {
     @PresetVariableDefinition(description = "Zone where the resource is.")
     private GenericPresetVariable zone;
 
+    @PresetVariableDefinition(description = "Configurations of the resource.")
+    private Configuration configuration;
+
     public Account getAccount() {
         return account;
     }
@@ -83,5 +86,13 @@ public class PresetVariables {
 
     public void setZone(GenericPresetVariable zone) {
         this.zone = zone;
+    }
+
+    public Configuration getConfiguration() {
+        return configuration;
+    }
+
+    public void setConfiguration(Configuration configuration) {
+        this.configuration = configuration;
     }
 }
