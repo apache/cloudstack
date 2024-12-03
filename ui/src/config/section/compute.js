@@ -542,7 +542,7 @@ export default {
         if (store.listAllProjects) {
           fields.push('project')
         }
-        if (store.apis.scaleKubernetesCluster.params.filter(x => x.name === 'autoscalingenabled').length > 0) {
+        if (store.apis.scaleKubernetesCluster?.params?.filter(x => x.name === 'autoscalingenabled').length > 0) {
           fields.splice(2, 0, 'autoscalingenabled')
         }
         fields.push('zonename')
