@@ -18,3 +18,6 @@
 --;
 -- Schema upgrade from 4.19.1.0 to 4.19.2.0
 --;
+
+-- Add last_id to the volumes table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'last_id', 'bigint(20) unsigned DEFAULT NULL');
