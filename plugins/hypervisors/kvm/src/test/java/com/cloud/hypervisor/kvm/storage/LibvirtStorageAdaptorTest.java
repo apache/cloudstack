@@ -94,8 +94,6 @@ public class LibvirtStorageAdaptorTest {
 
         Connect conn =  Mockito.mock(Connect.class);
         StoragePool sp = Mockito.mock(StoragePool.class);
-        StoragePoolInfo spinfo = Mockito.mock(StoragePoolInfo.class);
-        Mockito.when(sp.getInfo()).thenReturn(spinfo);
         Mockito.when(LibvirtConnection.getConnection()).thenReturn(conn);
         Mockito.when(conn.storagePoolLookupByUUIDString(uuid)).thenReturn(sp);
         Mockito.when(sp.isActive()).thenReturn(1);
@@ -133,6 +131,8 @@ public class LibvirtStorageAdaptorTest {
         Mockito.when(mockPool.getLocalPath()).thenReturn("/mock/path");
         Mockito.when(mockPool.getName()).thenReturn("mockPool");
         Mockito.when(Script.executePipedCommands(anyList(), Mockito.eq(1000L))).thenReturn(new Pair<>(0, "\n"));
+
+        libvirtStorageAdaptor.updateLocalPoolIops(mockPool);
 
         Mockito.verify(mockPool, never()).setUsedIops(anyLong());
     }

@@ -525,9 +525,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         if (!StoragePoolType.Filesystem.equals(pool.getType()) || StringUtils.isBlank(pool.getLocalPath())) {
             return;
         }
-        if (logger.isTraceEnabled()) {
-            logger.trace(String.format("Updating used IOPS for pool: %s", pool.getName()));
-        }
+        logger.trace("Updating used IOPS for pool: {}", pool.getName());
 
         // Run script to get data
         List<String[]> commands = new ArrayList<>();
@@ -557,18 +555,14 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 )
         });
         result = Script.executePipedCommands(commands, 10000).second();
-        if (logger.isTraceEnabled()) {
-            logger.trace(String.format("Pool used IOPS result: %s", result));
-        }
+        logger.trace("Pool used IOPS result: {}", result);
         if (StringUtils.isBlank(result)) {
             return;
         }
         try {
             double doubleValue = Double.parseDouble(result);
             pool.setUsedIops((long) doubleValue);
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Updated used IOPS: %s for pool: %s", pool.getUsedIops(), pool.getName()));
-            }
+            logger.debug("Updated used IOPS: {} for pool: {}", pool.getUsedIops(), pool.getName());
         } catch (NumberFormatException e) {
             logger.warn(String.format("Unable to parse retrieved used IOPS: %s for pool: %s", result,
                     pool.getName()));
