@@ -247,8 +247,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     /**
      * Machine type.
      */
-    private static final String PC = "pc";
-    private static final String VIRT = "virt";
+    private static final String PC = ("s390x".equals(System.getProperty("os.arch"))) ? "s390-ccw-virtio" : "pc";
+    private static final String VIRT = ("s390x".equals(System.getProperty("os.arch"))) ? "s390-ccw-virtio" : "virt";
 
     /**
      * Possible devices to add to VM.
@@ -305,6 +305,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * Constant that defines ARM64 (aarch64) guest architectures.
      */
     private static final String AARCH64 = "aarch64";
+    /**
+     * Constant that defines IBM Z Arch (s390x) guest architectures.
+     */
+    private static final String S390X = "s390x";
 
     public static final String RESIZE_NOTIFY_ONLY = "NOTIFYONLY";
     public static final String BASEPATH = "/usr/share/cloudstack-common/vms/";
@@ -1796,7 +1800,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             "^dummy",
             "^lo",
             "^p\\d+p\\d+",
-            "^vni"
+            "^vni",
+            "^enc"
     };
 
     /**
@@ -2642,12 +2647,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         devices.addDevice(createChannelDef(vmTO));
-        devices.addDevice(createWatchDogDef());
+        if (!isGuestS390x()) {
+            devices.addDevice(createWatchDogDef());
+        }
         devices.addDevice(createVideoDef(vmTO));
         devices.addDevice(createConsoleDef());
         devices.addDevice(createGraphicDef(vmTO));
-        devices.addDevice(createTabletInputDef());
-
+        if (!isGuestS390x()) {
+            devices.addDevice(createTabletInputDef());
+        }
         if (isGuestAarch64()) {
             createArm64UsbDef(devices);
         }
@@ -2754,7 +2762,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         FeaturesDef features = new FeaturesDef();
         features.addFeatures(PAE);
         features.addFeatures(APIC);
-        features.addFeatures(ACPI);
+        if (!"s390x".equals(System.getProperty("os.arch"))) {
+            features.addFeatures(ACPI);
+        }
         if (isUefiEnabled && isSecureBoot) {
             features.addFeatures(SMM);
         }
@@ -2846,6 +2856,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return AARCH64.equals(guestCpuArch);
     }
 
+    private boolean isGuestS390x() {
+        return S390X.equals(guestCpuArch);
+    }
+
     /**
      * Creates a guest definition from a VM specification.
      */
@@ -2856,7 +2870,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         guest.setManufacturer(vmTO.getMetadataManufacturer());
         guest.setProduct(vmTO.getMetadataProductName());
         guest.setGuestArch(guestCpuArch != null ? guestCpuArch : vmTO.getArch());
-        guest.setMachineType(isGuestAarch64() ? VIRT : PC);
+        guest.setMachineType((isGuestAarch64() || isGuestS390x()) ? VIRT : PC);
         guest.setBootType(GuestDef.BootType.BIOS);
         if (MapUtils.isNotEmpty(customParams)) {
             if (customParams.containsKey(GuestDef.BootType.UEFI.toString())) {
@@ -2870,7 +2884,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             guest.setIothreads(customParams.containsKey(VmDetailConstants.IOTHREADS));
         }
         guest.setUuid(uuid);
-        guest.setBootOrder(GuestDef.BootOrder.CDROM);
+        if(!isGuestS390x()) {
+            guest.setBootOrder(GuestDef.BootOrder.CDROM);
+        }
         guest.setBootOrder(GuestDef.BootOrder.HARDISK);
         return guest;
     }
@@ -3110,7 +3126,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 final DiskDef.DiskType diskType = getDiskType(physicalDisk);
                 disk.defISODisk(volPath, devId, isUefiEnabled, diskType);
 
-                if (guestCpuArch != null && guestCpuArch.equals("aarch64")) {
+                if (guestCpuArch != null && (guestCpuArch.equals("aarch64") || guestCpuArch.equals("s390x"))) {
                     disk.setBusType(DiskDef.DiskBus.SCSI);
                 }
             } else {
@@ -3208,7 +3224,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (vmSpec.getType() != VirtualMachine.Type.User) {
             final DiskDef iso = new DiskDef();
             iso.defISODisk(sysvmISOPath, DiskDef.DiskType.FILE);
-            if (guestCpuArch != null && guestCpuArch.equals("aarch64")) {
+            if (guestCpuArch != null && (guestCpuArch.equals("aarch64") || guestCpuArch.equals("s390x"))) {
                 iso.setBusType(DiskDef.DiskBus.SCSI);
             }
             vm.getDevices().addDevice(iso);
@@ -4276,7 +4292,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return DiskDef.DiskBus.VIRTIO;
         } else if (isUefiEnabled && StringUtils.startsWithAny(platformEmulator, "Windows", "Other")) {
             return DiskDef.DiskBus.SATA;
-        } else if (guestCpuArch != null && guestCpuArch.equals("aarch64")) {
+        } else if (guestCpuArch != null && (guestCpuArch.equals("aarch64") || guestCpuArch.equals("s390x"))) {
             return DiskDef.DiskBus.SCSI;
         } else {
             return DiskDef.DiskBus.IDE;
