@@ -42,7 +42,7 @@ public class ListMgmtsCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.PEERS, type = CommandType.BOOLEAN,
             description = "Whether to return the management server peers or not. By default, the management server peers will not be returned.",
-            since = "4.20.0.0")
+            since = "4.20.1.0")
     private Boolean peers;
 
     /////////////////////////////////////////////////////
