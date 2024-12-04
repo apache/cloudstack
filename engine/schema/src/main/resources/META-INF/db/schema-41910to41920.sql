@@ -20,4 +20,4 @@
 --;
 
 -- Add last_id to the volumes table
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('volumes','last_id', 'bigint(20) unsigned DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'last_id', 'bigint(20) unsigned DEFAULT NULL');
