@@ -26,15 +26,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.libvirt.Connect;
 import org.libvirt.StoragePool;
-import org.libvirt.StoragePoolInfo;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -45,6 +42,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtStoragePoolDef;
 import com.cloud.storage.Storage;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 @RunWith(MockitoJUnitRunner.class)
