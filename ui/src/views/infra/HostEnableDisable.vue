@@ -31,7 +31,7 @@
           <span v-html="$t('message.confirm.enable.host')" />
         </template>
       </a-alert>
-      <div v-show="enableKVMAutoEnableDisableSetting" class="reason">
+      <div v-show="kvmAutoEnableDisableSetting" class="reason">
         <a-form-item
           class="form__item"
           name="reason"
@@ -69,7 +69,7 @@ export default {
     return {
       resourcestate: '',
       allocationstate: '',
-      enableKVMAutoEnableDisableSetting: false
+      kvmAutoEnableDisableSetting: false
     }
   },
   created () {
@@ -90,9 +90,9 @@ export default {
       if (this.resource.hypervisor !== 'KVM') {
         return
       }
-      api('listConfigurations', { name: 'enable.kvm.host.auto.enable.disable', clusterid: this.resource.clusterid }).then(json => {
-        if (json.listconfigurationsresponse.configuration[0]) {
-          this.enableKVMAutoEnableDisableSetting = json.listconfigurationsresponse.configuration[0].value
+      api('listConfigurations', { name: 'kvm.host.auto.enable.disable', clusterid: this.resource.clusterid }).then(json => {
+        if (json.listconfigurationsresponse.configuration?.[0]) {
+          this.kvmAutoEnableDisableSetting = json?.listconfigurationsresponse?.configuration?.[0]?.value || false
         }
       })
     },

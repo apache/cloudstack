@@ -40,7 +40,7 @@ public interface AgentManager {
     static final ConfigKey<Integer> Wait = new ConfigKey<Integer>("Advanced", Integer.class, "wait", "1800", "Time in seconds to wait for control commands to return",
             true);
     ConfigKey<Boolean> KVMAutoEnableDisable = new ConfigKey<>(Boolean.class,
-                    "enable.kvm.host.auto.enable",
+                    "kvm.host.auto.enable.disable",
                     "Advanced",
                     "false",
                     "(KVM only) Enable Auto Disable/Enable KVM hosts in the cluster " +
