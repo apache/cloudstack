@@ -1268,9 +1268,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 logger.error("Unable to find host with ID: {}", hostId);
                 return;
             }
-            if (!BooleanUtils.toBoolean(EnableKVMAutoEnableDisable.valueIn(host.getClusterId()))) {
-                logger.debug("{} is disabled for the cluster {}, cannot process the health check result " +
-                        "received for the host {}", EnableKVMAutoEnableDisable.key(), host.getClusterId(), host.getName());
+            if (!BooleanUtils.toBoolean(KVMAutoEnableDisable.valueIn(host.getClusterId()))) {
+                logger.debug(String.format("%s is disabled for the cluster %s, cannot process the health check result " +
+                        "received for the host %s", KVMAutoEnableDisable.key(), host.getClusterId(), host.getName()));
                 return;
             }
 
@@ -1802,7 +1802,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
-                DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait };
+                DirectAgentPoolSize, DirectAgentThreadCap, KVMAutoEnableDisable, ReadyCommandWait };
     }
 
     protected class SetHostParamsListener implements Listener {
