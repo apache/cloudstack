@@ -2087,7 +2087,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // don't allow to delete the user from the account of type Project
         checkAccountAndAccess(user, account);
-        return _userDao.remove(deleteUserCmd.getId());
+        return Transaction.execute((TransactionCallback<Boolean>) status -> deleteAndCleanupUser(user));
+    }
+
+    protected boolean deleteAndCleanupUser(User user) {
+        long userId = user.getId();
+
+        _projectAccountDao.removeUserFromProjects(userId);
+
+        return _userDao.remove(userId);
     }
 
     @Override
