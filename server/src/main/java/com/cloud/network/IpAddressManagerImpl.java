@@ -35,6 +35,7 @@ import javax.inject.Inject;
 
 import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.vo.PublicIpQuarantineVO;
+import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -53,6 +54,7 @@ import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -261,6 +263,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Inject
     ResourceLimitService _resourceLimitMgr;
 
+    @Inject
+    ReservationDao reservationDao;
     @Inject
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     @Inject
@@ -1556,14 +1560,15 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         s_logger.debug("Associating ip " + ipToAssoc + " to network " + network);
 
-        IPAddressVO ip = _ipAddressDao.findById(ipId);
-        //update ip address with networkId
-        ip.setAssociatedWithNetworkId(networkId);
-        ip.setSourceNat(isSourceNat);
-        _ipAddressDao.update(ipId, ip);
-
         boolean success = false;
-        try {
+        IPAddressVO ip = null;
+        try (CheckedReservation publicIpReservation = new CheckedReservation(owner, ResourceType.public_ip, 1l, reservationDao, _resourceLimitMgr)) {
+            ip = _ipAddressDao.findById(ipId);
+            //update ip address with networkId
+            ip.setAssociatedWithNetworkId(networkId);
+            ip.setSourceNat(isSourceNat);
+            _ipAddressDao.update(ipId, ip);
+
             success = applyIpAssociations(network, false);
             if (success) {
                 s_logger.debug("Successfully associated ip address " + ip.getAddress().addr() + " to network " + network);
@@ -1571,6 +1576,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 s_logger.warn("Failed to associate ip address " + ip.getAddress().addr() + " to network " + network);
             }
             return _ipAddressDao.findById(ipId);
+        } catch (Exception e) {
+            s_logger.error(String.format("Failed to associate ip address %s to network %s", ipToAssoc, network), e);
+            throw new CloudRuntimeException(String.format("Failed to associate ip address %s to network %s", ipToAssoc, network), e);
         } finally {
             if (!success && releaseOnFailure) {
                 if (ip != null) {

@@ -55,6 +55,7 @@ import com.vmware.vim25.FileQueryFlags;
 import com.vmware.vim25.FolderFileInfo;
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
 import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
+import com.vmware.vim25.VirtualCdromIsoBackingInfo;
 import com.vmware.vim25.VirtualMachineConfigSummary;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.PrepareForBackupRestorationCommand;
@@ -1974,16 +1975,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             return;
         }
 
-        String msg;
-        String rootDiskController = controllerInfo.first();
-        String dataDiskController = controllerInfo.second();
-        String scsiDiskController;
-        String recommendedDiskController = null;
-
-        if (VmwareHelper.isControllerOsRecommended(dataDiskController) || VmwareHelper.isControllerOsRecommended(rootDiskController)) {
-            recommendedDiskController = vmMo.getRecommendedDiskController(null);
-        }
-        scsiDiskController = HypervisorHostHelper.getScsiController(new Pair<String, String>(rootDiskController, dataDiskController), recommendedDiskController);
+        Pair<String, String> chosenDiskControllers = VmwareHelper.chooseRequiredDiskControllers(controllerInfo, vmMo, null, null);
+        String scsiDiskController = HypervisorHostHelper.getScsiController(chosenDiskControllers);
         if (scsiDiskController == null) {
             return;
         }
@@ -2336,6 +2329,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
 
             int controllerKey;
+            Pair<String, String> chosenDiskControllers = VmwareHelper.chooseRequiredDiskControllers(controllerInfo,vmMo, null, null);
 
             //
             // Setup ROOT/DATA disk devices
@@ -2360,10 +2354,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 }
 
                 VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(diskInfoBuilder, vol, hyperHost, context);
-                String diskController = getDiskController(vmMo, matchingExistingDisk, vol, controllerInfo, deployAsIs);
-                if (DiskControllerType.getType(diskController) == DiskControllerType.osdefault) {
-                    diskController = vmMo.getRecommendedDiskController(null);
-                }
+                String diskController = getDiskController(vmMo, matchingExistingDisk, vol, chosenDiskControllers, deployAsIs);
                 if (DiskControllerType.getType(diskController) == DiskControllerType.ide) {
                     controllerKey = vmMo.getIDEControllerKey(ideUnitNumber);
                     if (vol.getType() == Volume.Type.DATADISK) {
@@ -2738,8 +2729,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     private DiskTO[] getDisks(DiskTO[] sortedDisks) {
        return Arrays.stream(sortedDisks).filter(vol -> ((vol.getPath() != null &&
-                vol.getPath().contains("configdrive"))) || (vol.getType() != Volume.Type.ISO)).toArray(DiskTO[]::new);
+                vol.getPath().contains(ConfigDrive.CONFIGDRIVEDIR))) || (vol.getType() != Volume.Type.ISO)).toArray(DiskTO[]::new);
     }
+
     private void configureIso(VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo, DiskTO vol,
                               VirtualDeviceConfigSpec[] deviceConfigSpecArray, int ideUnitNumber, int i) throws Exception {
         TemplateObjectTO iso = (TemplateObjectTO) vol.getData();
@@ -2845,27 +2837,10 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
     }
 
     private Pair<String, String> getControllerInfoFromVmSpec(VirtualMachineTO vmSpec) throws CloudRuntimeException {
-        String dataDiskController = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
-        String rootDiskController = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
-
-        // If root disk controller is scsi, then data disk controller would also be scsi instead of using 'osdefault'
-        // This helps avoid mix of different scsi subtype controllers in instance.
-        if (DiskControllerType.osdefault == DiskControllerType.getType(dataDiskController) && DiskControllerType.lsilogic == DiskControllerType.getType(rootDiskController)) {
-            dataDiskController = DiskControllerType.scsi.toString();
-        }
-
-        // Validate the controller types
-        dataDiskController = DiskControllerType.getType(dataDiskController).toString();
-        rootDiskController = DiskControllerType.getType(rootDiskController).toString();
-
-        if (DiskControllerType.getType(rootDiskController) == DiskControllerType.none) {
-            throw new CloudRuntimeException("Invalid root disk controller detected : " + rootDiskController);
-        }
-        if (DiskControllerType.getType(dataDiskController) == DiskControllerType.none) {
-            throw new CloudRuntimeException("Invalid data disk controller detected : " + dataDiskController);
-        }
-
-        return new Pair<>(rootDiskController, dataDiskController);
+        String rootDiskControllerDetail = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
+        String dataDiskControllerDetail = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
+        VmwareHelper.validateDiskControllerDetails(rootDiskControllerDetail, dataDiskControllerDetail);
+        return new Pair<>(rootDiskControllerDetail, dataDiskControllerDetail);
     }
 
     private String getBootModeFromVmSpec(VirtualMachineTO vmSpec, boolean deployAsIs) {
@@ -3613,15 +3588,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             return controllerType.toString();
         }
 
-        if (vol.getType() == Volume.Type.ROOT) {
-            s_logger.info("Chose disk controller for vol " + vol.getType() + " -> " + controllerInfo.first()
-                    + ", based on root disk controller settings at global configuration setting.");
-            return controllerInfo.first();
-        } else {
-            s_logger.info("Chose disk controller for vol " + vol.getType() + " -> " + controllerInfo.second()
-                    + ", based on default data disk controller setting i.e. Operating system recommended."); // Need to bring in global configuration setting & template level setting.
-            return controllerInfo.second();
-        }
+        return VmwareHelper.getControllerBasedOnDiskType(controllerInfo, vol);
     }
 
     private void postDiskConfigBeforeStart(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, DiskTO[] sortedDisks, int ideControllerKey,
@@ -4448,6 +4415,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                             msg = "Have problem in powering off VM " + cmd.getVmName() + ", let the process continue";
                             s_logger.warn(msg);
                         }
+
+                        disconnectConfigDriveIsoIfExists(vmMo);
                         return new StopAnswer(cmd, msg, true);
                     }
 
@@ -4463,6 +4432,30 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
         } catch (Exception e) {
             return new StopAnswer(cmd, createLogMessageException(e, cmd), false);
+        }
+    }
+
+    private void disconnectConfigDriveIsoIfExists(VirtualMachineMO vmMo) {
+        try {
+            List<VirtualDevice> isoDevices = vmMo.getIsoDevices();
+            if (CollectionUtils.isEmpty(isoDevices)) {
+                return;
+            }
+
+            for (VirtualDevice isoDevice : isoDevices) {
+                if (!(isoDevice.getBacking() instanceof VirtualCdromIsoBackingInfo)) {
+                    continue;
+                }
+                String isoFilePath = ((VirtualCdromIsoBackingInfo)isoDevice.getBacking()).getFileName();
+                if (!isoFilePath.contains(ConfigDrive.CONFIGDRIVEDIR)) {
+                    continue;
+                }
+                s_logger.info(String.format("Disconnecting config drive at location: %s", isoFilePath));
+                vmMo.detachIso(isoFilePath, true);
+                return;
+            }
+        } catch (Exception e) {
+            s_logger.warn(String.format("Couldn't check/disconnect config drive, error: %s", e.getMessage()), e);
         }
     }
 

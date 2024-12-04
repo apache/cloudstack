@@ -239,7 +239,7 @@ public class LinstorVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         final String snapshotName = vmSnapshotVO.getName();
         final List<String> failedToDelete = new ArrayList<>();
         for (VolumeObjectTO volumeObjectTO : volumeTOs) {
-            final String rscName = LinstorUtil.RSC_PREFIX + volumeObjectTO.getUuid();
+            final String rscName = LinstorUtil.RSC_PREFIX + volumeObjectTO.getPath();
             String err = linstorDeleteSnapshot(api, rscName, snapshotName);
 
             if (err != null)
@@ -292,7 +292,7 @@ public class LinstorVMSnapshotStrategy extends DefaultVMSnapshotStrategy {
         final String snapshotName = vmSnapshotVO.getName();
 
         for (VolumeObjectTO volumeObjectTO : volumeTOs) {
-            final String rscName = LinstorUtil.RSC_PREFIX + volumeObjectTO.getUuid();
+            final String rscName = LinstorUtil.RSC_PREFIX + volumeObjectTO.getPath();
             String err = linstorRevertSnapshot(api, rscName, snapshotName);
             if (err != null) {
                 throw new CloudRuntimeException(String.format(

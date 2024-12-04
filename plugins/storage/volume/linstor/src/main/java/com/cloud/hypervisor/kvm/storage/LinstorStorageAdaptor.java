@@ -16,16 +16,21 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.annotation.Nonnull;
 
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.script.Script;
+
 import org.apache.cloudstack.storage.datastore.util.LinstorUtil;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
@@ -43,6 +48,7 @@ import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.Resource;
+import com.linbit.linstor.api.model.ResourceConnectionModify;
 import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceDefinitionModify;
 import com.linbit.linstor.api.model.ResourceGroupSpawn;
@@ -51,6 +57,8 @@ import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.StoragePool;
 import com.linbit.linstor.api.model.Volume;
 import com.linbit.linstor.api.model.VolumeDefinition;
+
+import java.io.File;
 
 @StorageAdaptorInfo(storagePoolType=Storage.StoragePoolType.Linstor)
 public class LinstorStorageAdaptor implements StorageAdaptor {
@@ -145,7 +153,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
     @Override
     public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo,
-                                            Storage.StoragePoolType type, Map<String, String> details)
+                                            Storage.StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage)
     {
         s_logger.debug(String.format(
             "Linstor createStoragePool: name: '%s', host: '%s', path: %s, userinfo: %s", name, host, path, userInfo));
@@ -229,6 +237,34 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    private void setAllowTwoPrimariesOnRD(DevelopersApi api, String rscName) throws ApiException {
+        ResourceDefinitionModify rdm = new ResourceDefinitionModify();
+        Properties props = new Properties();
+        props.put("DrbdOptions/Net/allow-two-primaries", "yes");
+        props.put("DrbdOptions/Net/protocol", "C");
+        rdm.setOverrideProps(props);
+        ApiCallRcList answers = api.resourceDefinitionModify(rscName, rdm);
+        if (answers.hasError()) {
+            s_logger.error(String.format("Unable to set protocol C and 'allow-two-primaries' on %s", rscName));
+            // do not fail here as adding allow-two-primaries property is only a problem while live migrating
+        }
+    }
+
+    private void setAllowTwoPrimariesOnRc(DevelopersApi api, String rscName, String inUseNode) throws ApiException {
+        ResourceConnectionModify rcm = new ResourceConnectionModify();
+        Properties props = new Properties();
+        props.put("DrbdOptions/Net/allow-two-primaries", "yes");
+        props.put("DrbdOptions/Net/protocol", "C");
+        rcm.setOverrideProps(props);
+        ApiCallRcList answers = api.resourceConnectionModify(rscName, inUseNode, localNodeName, rcm);
+        if (answers.hasError()) {
+            s_logger.error(String.format(
+                    "Unable to set protocol C and 'allow-two-primaries' on %s/%s/%s",
+                    inUseNode, localNodeName, rscName));
+            // do not fail here as adding allow-two-primaries property is only a problem while live migrating
+        }
+    }
+
     /**
      * Checks if the given resource is in use by drbd on any host and
      * if so set the drbd option allow-two-primaries
@@ -237,16 +273,16 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
      * @throws ApiException if any problem connecting to the Linstor controller
      */
     private void allow2PrimariesIfInUse(DevelopersApi api, String rscName) throws ApiException {
-        if (LinstorUtil.isResourceInUse(api, rscName)) {
+        String inUseNode = LinstorUtil.isResourceInUse(api, rscName);
+        if (inUseNode != null && !inUseNode.equalsIgnoreCase(localNodeName)) {
             // allow 2 primaries for live migration, should be removed by disconnect on the other end
-            ResourceDefinitionModify rdm = new ResourceDefinitionModify();
-            Properties props = new Properties();
-            props.put("DrbdOptions/Net/allow-two-primaries", "yes");
-            rdm.setOverrideProps(props);
-            ApiCallRcList answers = api.resourceDefinitionModify(rscName, rdm);
-            if (answers.hasError()) {
-                s_logger.error("Unable to set 'allow-two-primaries' on " + rscName);
-                // do not fail here as adding allow-two-primaries property is only a problem while live migrating
+
+            // if non hyperconverged setup, we have to set allow-two-primaries on the resource-definition
+            // as there is no resource connection between diskless nodes.
+            if (LinstorUtil.areResourcesDiskless(api, rscName, Arrays.asList(inUseNode, localNodeName))) {
+                setAllowTwoPrimariesOnRD(api, rscName);
+            } else {
+                setAllowTwoPrimariesOnRc(api, rscName, inUseNode);
             }
         }
     }
@@ -285,6 +321,43 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         return true;
     }
 
+    private void removeTwoPrimariesRDProps(DevelopersApi api, String rscName, List<String> deleteProps)
+            throws ApiException {
+        ResourceDefinitionModify rdm = new ResourceDefinitionModify();
+        rdm.deleteProps(deleteProps);
+        ApiCallRcList answers = api.resourceDefinitionModify(rscName, rdm);
+        if (answers.hasError()) {
+            s_logger.error(
+                    String.format("Failed to remove 'protocol' and 'allow-two-primaries' on %s: %s",
+                            rscName, LinstorUtil.getBestErrorMessage(answers)));
+            // do not fail here as removing allow-two-primaries property isn't fatal
+        }
+    }
+
+    private void removeTwoPrimariesRcProps(DevelopersApi api, String rscName, String inUseNode, List<String> deleteProps)
+            throws ApiException {
+        ResourceConnectionModify rcm = new ResourceConnectionModify();
+        rcm.deleteProps(deleteProps);
+        ApiCallRcList answers = api.resourceConnectionModify(rscName, localNodeName, inUseNode, rcm);
+        if (answers.hasError()) {
+            s_logger.error(
+                    String.format("Failed to remove 'protocol' and 'allow-two-primaries' on %s/%s/%s: %s",
+                            localNodeName,
+                            inUseNode,
+                            rscName, LinstorUtil.getBestErrorMessage(answers)));
+            // do not fail here as removing allow-two-primaries property isn't fatal
+        }
+    }
+
+    private void removeTwoPrimariesProps(DevelopersApi api, String inUseNode, String rscName) throws ApiException {
+        List<String> deleteProps = new ArrayList<>();
+        deleteProps.add("DrbdOptions/Net/allow-two-primaries");
+        deleteProps.add("DrbdOptions/Net/protocol");
+
+        removeTwoPrimariesRDProps(api, rscName, deleteProps);
+        removeTwoPrimariesRcProps(api, rscName, inUseNode, deleteProps);
+    }
+
     private boolean tryDisconnectLinstor(String volumePath, KVMStoragePool pool)
     {
         if (volumePath == null) {
@@ -314,26 +387,24 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
 
         if (optRsc.isPresent()) {
+            Resource rsc = optRsc.get();
             try {
-                Resource rsc = optRsc.get();
+                String inUseNode = LinstorUtil.isResourceInUse(api, rsc.getName());
+                if (inUseNode != null && !inUseNode.equalsIgnoreCase(localNodeName)) {
+                    removeTwoPrimariesProps(api, inUseNode, rsc.getName());
+                }
+            } catch (ApiException apiEx) {
+                s_logger.error(apiEx.getBestMessage());
+                // do not fail here as removing allow-two-primaries property or deleting diskless isn't fatal
+            }
 
+            try {
                 // if diskless resource remove it, in the worst case it will be transformed to a tiebreaker
                 if (rsc.getFlags() != null &&
                         rsc.getFlags().contains(ApiConsts.FLAG_DRBD_DISKLESS) &&
                         !rsc.getFlags().contains(ApiConsts.FLAG_TIE_BREAKER)) {
                     ApiCallRcList delAnswers = api.resourceDelete(rsc.getName(), localNodeName);
                     logLinstorAnswers(delAnswers);
-                }
-
-                // remove allow-two-primaries
-                ResourceDefinitionModify rdm = new ResourceDefinitionModify();
-                rdm.deleteProps(Collections.singletonList("DrbdOptions/Net/allow-two-primaries"));
-                ApiCallRcList answers = api.resourceDefinitionModify(rsc.getName(), rdm);
-                if (answers.hasError()) {
-                    s_logger.error(
-                            String.format("Failed to remove 'allow-two-primaries' on %s: %s",
-                                    rsc.getName(), LinstorUtil.getBestErrorMessage(answers)));
-                    // do not fail here as removing allow-two-primaries property isn't fatal
                 }
             } catch (ApiException apiEx) {
                 s_logger.error(apiEx.getBestMessage());
@@ -495,6 +566,9 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         final KVMPhysicalDisk dstDisk = destPools.createPhysicalDisk(
             name, QemuImg.PhysicalDiskFormat.RAW, provisioningType, disk.getVirtualSize(), null);
 
+        final DevelopersApi api = getLinstorAPI(destPools);
+        applyAuxProps(api, name, disk.getDispName(), disk.getVmName());
+
         s_logger.debug(String.format("Linstor.copyPhysicalDisk: dstPath: %s", dstDisk.getPath()));
         final QemuImgFile destFile = new QemuImgFile(dstDisk.getPath());
         destFile.setFormat(dstDisk.getFormat());
@@ -544,13 +618,57 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         return null;
     }
 
+    private void fileExistsOrThrow(String templateFilePath) {
+        File sourceFile = new File(templateFilePath);
+        if (!sourceFile.exists()) {
+            throw new CloudRuntimeException("Direct download template file " + sourceFile +
+                    " does not exist on this host");
+        }
+    }
+
+    private String getFinalDirectDownloadPath(String templateFilePath, KVMStoragePool destPool) {
+        String finalSourcePath = templateFilePath;
+        if (LibvirtStorageAdaptor.isTemplateExtractable(templateFilePath)) {
+            finalSourcePath = templateFilePath.substring(0, templateFilePath.lastIndexOf('.'));
+            LibvirtStorageAdaptor.extractDownloadedTemplate(templateFilePath, destPool, finalSourcePath);
+        }
+        return finalSourcePath;
+    }
+
+    private void applyAuxProps(DevelopersApi api, String csPath, String csName, String csVMName) {
+        final String rscName = getLinstorRscName(csPath);
+        try {
+            LinstorUtil.applyAuxProps(api, rscName, csName, csVMName);
+        } catch (ApiException apiExc) {
+            s_logger.error(String.format("Error setting aux properties for %s", rscName));
+            logLinstorAnswers(apiExc.getApiCallRcList());
+        }
+    }
+
     @Override
     public KVMPhysicalDisk createTemplateFromDirectDownloadFile(String templateFilePath, String destTemplatePath,
                                                                 KVMStoragePool destPool, Storage.ImageFormat format,
                                                                 int timeout)
     {
-        s_logger.debug("Linstor: createTemplateFromDirectDownloadFile");
-        return null;
+        s_logger.debug(String.format("Linstor: createTemplateFromDirectDownloadFile: %s/%s", templateFilePath, format));
+        fileExistsOrThrow(templateFilePath);
+        String name = UUID.randomUUID().toString();
+
+        String finalSourcePath = getFinalDirectDownloadPath(templateFilePath, destPool);
+
+        File finalSourceFile = new File(finalSourcePath);
+        final KVMPhysicalDisk dstDisk = destPool.createPhysicalDisk(
+                name, QemuImg.PhysicalDiskFormat.RAW, Storage.ProvisioningType.THIN, finalSourceFile.length(), null);
+
+        final DevelopersApi api = getLinstorAPI(destPool);
+        applyAuxProps(api, name, finalSourceFile.getName(), null);
+
+        Script.runSimpleBashScript(
+                String.format("dd if=\"%s\" of=\"%s\" bs=64k conv=nocreat,sparse oflag=direct",
+                        finalSourcePath, dstDisk.getPath()));
+
+        Script.runSimpleBashScript("rm " + finalSourcePath);
+        return dstDisk;
     }
 
     public long getCapacity(LinstorStoragePool pool) {

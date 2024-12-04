@@ -17,13 +17,16 @@
 package org.apache.cloudstack.storage.datastore.util;
 
 import com.linbit.linstor.api.ApiClient;
+import com.linbit.linstor.api.ApiConsts;
 import com.linbit.linstor.api.ApiException;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
 import com.linbit.linstor.api.model.Node;
+import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.Resource;
+import com.linbit.linstor.api.model.ResourceDefinitionModify;
 import com.linbit.linstor.api.model.ResourceGroup;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.StoragePool;
@@ -31,6 +34,7 @@ import com.linbit.linstor.api.model.Volume;
 
 import javax.annotation.Nonnull;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -191,16 +195,41 @@ public class LinstorUtil {
      *
      * @param api developer api object to use
      * @param rscName resource name to check in use state.
-     * @return True if a resource found that is in use(primary) state, else false.
+     * @return NodeName where the resource is inUse, if not in use `null`
      * @throws ApiException forwards api errors
      */
-    public static boolean isResourceInUse(DevelopersApi api, String rscName) throws ApiException {
+    public static String isResourceInUse(DevelopersApi api, String rscName) throws ApiException {
         List<Resource> rscs = api.resourceList(rscName, null, null);
         if (rscs != null) {
             return rscs.stream()
-                    .anyMatch(rsc -> rsc.getState() != null && Boolean.TRUE.equals(rsc.getState().isInUse()));
-        }
+                    .filter(rsc -> rsc.getState() != null && Boolean.TRUE.equals(rsc.getState().isInUse()))
+                    .map(Resource::getNodeName)
+                    .findFirst()
+                    .orElse(null);
+       }
         s_logger.error("isResourceInUse: null returned from resourceList");
+        return null;
+    }
+
+    /**
+     * Check if the given resources are diskless.
+     *
+     * @param api developer api object to use
+     * @param rscName resource name to check in use state.
+     * @return NodeName where the resource is inUse, if not in use `null`
+     * @throws ApiException forwards api errors
+     */
+    public static boolean areResourcesDiskless(DevelopersApi api, String rscName, Collection<String> nodeNames)
+            throws ApiException {
+        List<Resource> rscs = api.resourceList(rscName, null, null);
+        if (rscs != null) {
+            Collection<String> disklessNodes = rscs.stream()
+                .filter(rsc -> rsc.getFlags() != null && (rsc.getFlags().contains(ApiConsts.FLAG_DISKLESS) ||
+                        rsc.getFlags().contains(ApiConsts.FLAG_DRBD_DISKLESS)))
+                    .map(rsc -> rsc.getNodeName().toLowerCase())
+                    .collect(Collectors.toList());
+            return disklessNodes.containsAll(nodeNames.stream().map(String::toLowerCase).collect(Collectors.toList()));
+        }
         return false;
     }
 
@@ -235,5 +264,27 @@ public class LinstorUtil {
         final String errMsg = "viewResources didn't return resources or volumes for " + rscName;
         s_logger.error(errMsg);
         throw new CloudRuntimeException("Linstor: " + errMsg);
+    }
+
+    public static ApiCallRcList applyAuxProps(DevelopersApi api, String rscName, String dispName, String vmName)
+            throws ApiException
+    {
+        ResourceDefinitionModify rdm = new ResourceDefinitionModify();
+        Properties props = new Properties();
+        if (dispName != null)
+        {
+            props.put("Aux/cs-name", dispName);
+        }
+        if (vmName != null)
+        {
+            props.put("Aux/cs-vm-name", vmName);
+        }
+        ApiCallRcList answers = new ApiCallRcList();
+        if (!props.isEmpty())
+        {
+            rdm.setOverrideProps(props);
+            answers = api.resourceDefinitionModify(rscName, rdm);
+        }
+        return answers;
     }
 }
