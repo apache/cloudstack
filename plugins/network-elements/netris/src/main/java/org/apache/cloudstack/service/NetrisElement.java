@@ -23,6 +23,7 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
@@ -39,15 +40,25 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.PhysicalNetworkServiceProvider;
+import com.cloud.network.PublicIpAddress;
+import com.cloud.network.SDNProviderOpObject;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.DnsServiceProvider;
+import com.cloud.network.element.IpDeployer;
 import com.cloud.network.element.NetworkACLServiceProvider;
+import com.cloud.network.element.PortForwardingServiceProvider;
+import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VpcProvider;
 import com.cloud.network.netris.NetrisService;
+import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancerContainer;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
@@ -61,27 +72,39 @@ import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.StartupNetrisCommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.resource.NetrisNetworkRule;
+import org.apache.cloudstack.resourcedetail.FirewallRuleDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 @Component
 public class NetrisElement extends AdapterBase implements DhcpServiceProvider, DnsServiceProvider, VpcProvider,
-        NetworkACLServiceProvider, ResourceStateAdapter, Listener {
+        StaticNatServiceProvider, IpDeployer, PortForwardingServiceProvider, NetworkACLServiceProvider, ResourceStateAdapter, Listener {
 
     @Inject
     NetworkModel networkModel;
@@ -101,6 +124,12 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
     private DomainDao domainDao;
     @Inject
     private VpcDao vpcDao;
+    @Inject
+    private FirewallRuleDetailsDao firewallRuleDetailsDao;
+    @Inject
+    private IPAddressDao ipAddressDao;
+    @Inject
+    private VMInstanceDao vmInstanceDao;
 
     protected Logger logger = LogManager.getLogger(getClass());
 
@@ -258,6 +287,11 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
     }
 
     @Override
+    public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Network.Service> services) throws ResourceUnavailableException {
+        return true;
+    }
+
+    @Override
     public Network.Provider getProvider() {
         return Network.Provider.Netris;
     }
@@ -397,5 +431,165 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
     @Override
     public boolean reorderAclRules(Vpc vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems) {
         return false;
+    }
+
+    @Override
+    public IpDeployer getIpDeployer(Network network) {
+        return this;
+    }
+
+    @Override
+    public boolean applyPFRules(Network network, List<PortForwardingRule> rules) throws ResourceUnavailableException {
+        if (!canHandle(network, Network.Service.PortForwarding)) {
+            return false;
+        }
+        return applyPFRulesInternal(network, rules);
+    }
+
+    private boolean addOrRemovePFRuleOnNetris(UserVm vm, PortForwardingRule rule, NetrisNetworkRule networkRule, SDNProviderOpObject netrisObject, boolean create) {
+        logger.debug("{} port forwarding rule on Netris for VM {} to ports {} - {}",
+                create ? "Creating" : "Deleting", vm.getUuid(), rule.getDestinationPortStart(), rule.getDestinationPortEnd());
+        Long vpcId = netrisObject.getVpcVO() != null ? netrisObject.getVpcVO().getId() : null;
+        String vpcName = netrisObject.getVpcVO() != null ? netrisObject.getVpcVO().getName() : null;
+        Long networkId = netrisObject.getNetworkVO() != null ? netrisObject.getNetworkVO().getId() : null;
+        String networkName = netrisObject.getNetworkVO() != null ? netrisObject.getNetworkVO().getName() : null;
+        String vpcCidr = netrisObject.getVpcVO() != null ? netrisObject.getVpcVO().getCidr() : null;
+
+        return create ?
+                netrisService.createPortForwardingRule(networkRule.getZoneId(), networkRule.getAccountId(), networkRule.getDomainId(),
+                        vpcName, vpcId, networkName, networkId, netrisObject.isVpcResource(), vpcCidr, networkRule) :
+                netrisService.deletePortForwardingRule(networkRule.getZoneId(), networkRule.getAccountId(), networkRule.getDomainId(),
+                        vpcName, vpcId, networkName, networkId, netrisObject.isVpcResource(), vpcCidr, networkRule);
+    }
+
+    private boolean applyPFRulesInternal(Network network, List<PortForwardingRule> rules) {
+        return Transaction.execute((TransactionCallback<Boolean>) status -> {
+            boolean result = true;
+            for (PortForwardingRule rule : rules) {
+                IPAddressVO publicIp = ApiDBUtils.findIpAddressById(rule.getSourceIpAddressId());
+                UserVm vm = ApiDBUtils.findUserVmById(rule.getVirtualMachineId());
+                if (vm == null && rule.getState() != FirewallRule.State.Revoke) {
+                    continue;
+                }
+                SDNProviderOpObject netrisObject = getNetrisOpObject(network);
+                String publicPort = PortForwardingServiceProvider.getPublicPortRange(rule);
+                String privatePort = PortForwardingServiceProvider.getPrivatePFPortRange(rule);
+                FirewallRuleDetailVO ruleDetail = firewallRuleDetailsDao.findDetail(rule.getId(), ApiConstants.NETRIS_DETAIL_KEY);
+
+                NetrisNetworkRule networkRule = new NetrisNetworkRule();
+                networkRule.setDomainId(netrisObject.getDomainId());
+                networkRule.setAccountId(netrisObject.getAccountId());
+                networkRule.setZoneId(netrisObject.getZoneId());
+                networkRule.setNetworkResourceId(netrisObject.getNetworkResourceId());
+                networkRule.setNetworkResourceName(netrisObject.getNetworkResourceName());
+                networkRule.setVpcResource(netrisObject.isVpcResource());
+                networkRule.setVmId(Objects.nonNull(vm) ? vm.getId() : 0);
+                networkRule.setVmIp(Objects.nonNull(vm) ? vm.getPrivateIpAddress() : null);
+                networkRule.setPublicIp(publicIp.getAddress().addr());
+                networkRule.setPrivatePort(privatePort);
+                networkRule.setPublicPort(publicPort);
+                networkRule.setRuleId(rule.getId());
+                networkRule.setProtocol(rule.getProtocol().toUpperCase(Locale.ROOT));
+
+                if (Arrays.asList(FirewallRule.State.Add, FirewallRule.State.Active).contains(rule.getState())) {
+                    boolean pfRuleResult = addOrRemovePFRuleOnNetris(vm, rule, networkRule, netrisObject, true);
+                    if (pfRuleResult) {
+                        logger.debug("Port forwarding rule {} created on Netris, adding detail on firewall rules details", rule.getId());
+                        if (ruleDetail == null && FirewallRule.State.Add == rule.getState()) {
+                            logger.debug("Adding new firewall detail for rule {}", rule.getId());
+                            firewallRuleDetailsDao.addDetail(rule.getId(), ApiConstants.NETRIS_DETAIL_KEY, "true", false);
+                        } else if (ruleDetail != null) {
+                            logger.debug("Updating firewall detail for rule {}", rule.getId());
+                            ruleDetail.setValue("true");
+                            firewallRuleDetailsDao.update(ruleDetail.getId(), ruleDetail);
+                        }
+                    }
+                    result &= pfRuleResult;
+                } else if (rule.getState() == FirewallRule.State.Revoke) {
+                    boolean pfRuleResult = addOrRemovePFRuleOnNetris(vm, rule, networkRule, netrisObject, false);
+                    if (pfRuleResult && ruleDetail != null) {
+                        logger.debug("Updating firewall rule detail {} for rule {}, set to false", ruleDetail.getId(), rule.getId());
+                        ruleDetail.setValue("false");
+                        firewallRuleDetailsDao.update(ruleDetail.getId(), ruleDetail);
+                    }
+                    result &= pfRuleResult;
+                }
+            }
+            return result;
+        });
+    }
+
+    private SDNProviderOpObject getNetrisOpObject(Network network) {
+        Pair<VpcVO, NetworkVO> vpcOrNetwork = getVpcOrNetwork(network.getVpcId(), network.getId());
+        VpcVO vpc = vpcOrNetwork.first();
+        NetworkVO networkVO = vpcOrNetwork.second();
+        long domainId = getResourceId("domain", vpc, networkVO);
+        long accountId = getResourceId("account", vpc, networkVO);
+        long zoneId = getResourceId("zone", vpc, networkVO);
+
+        return new SDNProviderOpObject.Builder()
+                .vpcVO(vpc)
+                .networkVO(networkVO)
+                .domainId(domainId)
+                .accountId(accountId)
+                .zoneId(zoneId)
+                .build();
+    }
+
+    public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
+        for(StaticNat staticNat : rules) {
+            long sourceIpAddressId = staticNat.getSourceIpAddressId();
+            IPAddressVO ipAddressVO = ipAddressDao.findByIdIncludingRemoved(sourceIpAddressId);
+            VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(ipAddressVO.getAssociatedWithVmId());
+            // floating ip is released when nic was deleted
+            if (vm == null || networkModel.getNicInNetworkIncludingRemoved(vm.getId(), config.getId()) == null) {
+                continue;
+            }
+            Pair<VpcVO, NetworkVO> vpcOrNetwork = getVpcOrNetwork(config.getVpcId(), config.getId());
+            VpcVO vpc = vpcOrNetwork.first();
+            NetworkVO network = vpcOrNetwork.second();
+            Long networkResourceId = Objects.nonNull(vpc) ? vpc.getId() : network.getId();
+            String networkResourceName = Objects.nonNull(vpc) ? vpc.getName() : network.getName();
+            boolean isVpcResource = Objects.nonNull(vpc);
+            if (!staticNat.isForRevoke()) {
+                return netrisService.createStaticNatRule(config.getDataCenterId(), config.getAccountId(), config.getDomainId(),
+                       networkResourceName, networkResourceId, isVpcResource, vpc.getCidr(),
+                        ipAddressVO.getAddress().addr(), staticNat.getDestIpAddress());
+            } else {
+                return netrisService.deleteStaticNatRule(config.getDataCenterId(), config.getAccountId(), config.getDomainId(),
+                        networkResourceName, networkResourceId, isVpcResource, ipAddressVO.getAddress().addr());
+            }
+        }
+        return false;
+    }
+
+    public Pair<VpcVO, NetworkVO> getVpcOrNetwork(Long vpcId, long networkId) {
+        VpcVO vpc = null;
+        NetworkVO network = null;
+        if (Objects.nonNull(vpcId)) {
+            vpc = vpcDao.findById(vpcId);
+            if (Objects.isNull(vpc)) {
+                throw new CloudRuntimeException(String.format("Failed to find VPC with id: %s", vpcId));
+            }
+        } else {
+            network = networkDao.findById(networkId);
+            if (Objects.isNull(network)) {
+                throw new CloudRuntimeException(String.format("Failed to find network with id: %s", networkId));
+            }
+        }
+        return new Pair<>(vpc, network);
+    }
+
+    private long getResourceId(String resource, VpcVO vpc, NetworkVO network) {
+        switch (resource) {
+            case "domain":
+                return Objects.nonNull(vpc) ? vpc.getDomainId() : network.getDomainId();
+            case "account":
+                return Objects.nonNull(vpc) ? vpc.getAccountId() : network.getAccountId();
+            case "zone":
+                return Objects.nonNull(vpc) ? vpc.getZoneId() : network.getDataCenterId();
+            default:
+                return 0;
+        }
     }
 }

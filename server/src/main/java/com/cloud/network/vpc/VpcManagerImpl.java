@@ -454,6 +454,24 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                             State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.ROUTED, null, false);
 
                 }
+
+                // configure default vpc offering with Netris as network service provider in NAT mode
+                if (_vpcOffDao.findByUniqueName(VpcOffering.DEFAULT_VPC_NAT_NETRIS_OFFERING_NAME) == null) {
+                    logger.debug(String.format("Creating default VPC offering for Netris network service provider %s in NAT mode", VpcOffering.DEFAULT_VPC_NAT_NETRIS_OFFERING_NAME));
+                    final Map<Service, Set<Provider>> svcProviderMap = new HashMap<>();
+                    final Set<Provider> defaultProviders = Set.of(Provider.Netris);
+                    for (final Service svc : getSupportedServices()) {
+                        if (List.of(Service.UserData, Service.Dhcp, Service.Dns).contains(svc)) {
+                            final Set<Provider> userDataProvider = Set.of(Provider.VPCVirtualRouter);
+                            svcProviderMap.put(svc, userDataProvider);
+                        } else {
+                            svcProviderMap.put(svc, defaultProviders);
+                        }
+                    }
+                    createVpcOffering(VpcOffering.DEFAULT_VPC_NAT_NETRIS_OFFERING_NAME, VpcOffering.DEFAULT_VPC_NAT_NETRIS_OFFERING_NAME, svcProviderMap, false,
+                            State.Enabled, null, false, false, false, NetworkOffering.NetworkMode.NATTED, null, false);
+
+                }
             }
         });
 

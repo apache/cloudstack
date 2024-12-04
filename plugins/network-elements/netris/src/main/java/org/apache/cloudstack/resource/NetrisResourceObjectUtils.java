@@ -22,14 +22,14 @@ import org.apache.commons.lang3.ArrayUtils;
 public class NetrisResourceObjectUtils {
 
     public enum NetrisObjectType {
-        VPC, IPAM_ALLOCATION, IPAM_SUBNET, VNET
+        VPC, IPAM_ALLOCATION, IPAM_SUBNET, VNET, SNAT, STATICNAT, DNAT
     }
 
     public static String retrieveNetrisResourceObjectName(NetrisCommand cmd, NetrisObjectType netrisObjectType, String... suffixes) {
         long zoneId = cmd.getZoneId();
         Long accountId = cmd.getAccountId();
         Long domainId = cmd.getDomainId();
-        long objectId = cmd.getId();
+        Long objectId = cmd.getId();
         String objectName = cmd.getName();
         boolean isVpc = cmd.isVpc();
         boolean isZoneLevel = accountId == null && domainId == null;
@@ -59,6 +59,18 @@ public class NetrisResourceObjectUtils {
                 if (!isZoneLevel) {
                     stringBuilder.append(String.format("-N%s", objectId));
                 }
+                break;
+            case SNAT:
+                stringBuilder.append(String.format("%s%s-%s", prefix, suffixes[0], "SNAT"));
+                suffixes = new String[0];
+                break;
+            case STATICNAT:
+                stringBuilder.append(String.format("%s%s-%s", prefix, suffixes[0], "STATICNAT"));
+                suffixes = new String[0];
+                break;
+            case DNAT:
+                stringBuilder.append(String.format("%s%s-%s", prefix, suffixes[0], "DNAT"));
+                suffixes = ArrayUtils.subarray(suffixes, 1, suffixes.length);
                 break;
             case VNET:
                break;

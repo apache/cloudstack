@@ -28,8 +28,10 @@ import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkMigrationResponder;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.guru.GuestNetworkGuru;
@@ -57,6 +59,8 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
 
     @Inject
     private NetrisService netrisService;
+    @Inject
+    NetworkModel networkModel;
 
     public NetrisGuestNetworkGuru() {
         super();
@@ -236,6 +240,18 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
 
         if (isNull(network.getVpcId()) && networkOfferingVO.getNetworkMode().equals(NetworkOffering.NetworkMode.NATTED)) {
             // Netris Natted mode
+            long domainId = domain.getId();
+            long accountId = account.getId();
+            long dataCenterId = zone.getId();
+            long resourceId = network.getId();
+            PublicIpAddress ipAddress = networkModel.getSourceNatIpAddressForGuestNetwork(account, network);
+            String snatIP = ipAddress.getAddress().addr();
+            boolean result = netrisService.createSnatRule(dataCenterId, accountId, domainId, vpc.getName(), vpc.getId(), network.getName(), resourceId, nonNull(network.getVpcId()), vpc.getCidr(), snatIP);
+            if (!result) {
+                String msg = String.format("Could not create Netris Nat Rule for IP %s", snatIP);
+                logger.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
         }
 
         return nicProfile;
@@ -277,7 +293,7 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
             vpcName = vpc.getName();
             vpcId = vpc.getId();
         } else {
-            logger.debug(String.format("Creating a Tier 1 Gateway for the network %s before creating the NSX segment", networkVO.getName()));
+            logger.debug(String.format("Creating IPAM Allocation before creating IPAM Subnet", networkVO.getName()));
             long networkOfferingId = networkVO.getNetworkOfferingId();
             NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(networkOfferingId);
             boolean isSourceNatSupported = !NetworkOffering.NetworkMode.ROUTED.equals(networkOfferingVO.getNetworkMode()) &&

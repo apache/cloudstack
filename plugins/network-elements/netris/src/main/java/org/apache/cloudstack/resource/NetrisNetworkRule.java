@@ -18,30 +18,5 @@ package org.apache.cloudstack.resource;
 
 import com.cloud.network.SDNProviderNetworkRule;
 
-import java.util.List;
-
-public class NsxNetworkRule extends SDNProviderNetworkRule {
-
-    public enum NsxRuleAction {
-        ALLOW, DROP
-    }
-
-    private List<NsxLoadBalancerMember> memberList;
-    private NsxRuleAction aclAction;
-
-    public List<NsxLoadBalancerMember> getMemberList() {
-        return memberList;
-    }
-
-    public void setMemberList(List<NsxLoadBalancerMember> memberList) {
-        this.memberList = memberList;
-    }
-
-    public NsxRuleAction getAclAction() {
-        return aclAction;
-    }
-
-    public void setAclAction(NsxRuleAction aclAction) {
-        this.aclAction = aclAction;
-    }
+public class NetrisNetworkRule extends SDNProviderNetworkRule {
 }

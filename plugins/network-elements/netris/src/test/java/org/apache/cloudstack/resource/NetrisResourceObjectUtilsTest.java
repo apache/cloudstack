@@ -17,6 +17,7 @@
 package org.apache.cloudstack.resource;
 
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisNatCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
 import org.junit.Assert;
 import org.junit.Test;
@@ -53,5 +54,16 @@ public class NetrisResourceObjectUtilsTest {
         String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC);
         String expectedNetrisVpcName = String.format("D%s-A%s-Z%s-V%s-%s", domainId, accountId, zoneId, vpcId, vpcName);
         Assert.assertEquals(expectedNetrisVpcName, netrisVpcName);
+    }
+
+    @Test
+    public void testSuffixesForDNAT() {
+        CreateOrUpdateNetrisNatCommand cmd = new CreateOrUpdateNetrisNatCommand(zoneId, accountId, domainId, vpcName, vpcId, vpcName, null, true, vpcCidr);
+        cmd.setNatRuleType("DNAT");
+        long ruleId = 23L;
+        String ruleName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.DNAT,
+                String.valueOf(vpcId), String.format("R%s", ruleId));
+        String expectedNetrisRuleName = String.format("D%s-A%s-Z%s-V%s-DNAT-R%s", domainId, accountId, zoneId, vpcId, ruleId);
+        Assert.assertEquals(expectedNetrisRuleName, ruleName);
     }
 }
