@@ -551,7 +551,7 @@ public class StatsCollectorTest {
 
         setCollectorIopsStats(poolId, capacityIops, usedIops);
 
-        boolean result = statsCollector.isPoolNeedsIopsStatsUpdating(false, mockPool, capacityIops, usedIops);
+        boolean result = statsCollector.isPoolNeedsIopsStatsUpdate(mockPool, capacityIops, usedIops);
         Assert.assertFalse(result);
         Mockito.verify(mockPool, Mockito.never()).setCapacityIops(Mockito.anyLong());
         Mockito.verify(mockPool, Mockito.never()).setUsedIops(Mockito.anyLong());
@@ -566,7 +566,7 @@ public class StatsCollectorTest {
 
         setCollectorIopsStats(poolId, 90L, 50L);
 
-        boolean result = statsCollector.isPoolNeedsIopsStatsUpdating(false, mockPool, 120L, 50L);
+        boolean result = statsCollector.isPoolNeedsIopsStatsUpdate(mockPool, 120L, 50L);
         Assert.assertTrue(result);
         Mockito.verify(mockPool).setCapacityIops(120L);
         Mockito.verify(mockPool, Mockito.never()).setUsedIops(Mockito.anyLong());
@@ -581,7 +581,7 @@ public class StatsCollectorTest {
 
         setCollectorIopsStats(poolId, 100L, 45L);
 
-        boolean result = statsCollector.isPoolNeedsIopsStatsUpdating(false, mockPool, 100L, 60L);
+        boolean result = statsCollector.isPoolNeedsIopsStatsUpdate(mockPool, 100L, 60L);
         Assert.assertTrue(result);
         Mockito.verify(mockPool).setUsedIops(60L);
         Mockito.verify(mockPool, Mockito.never()).setCapacityIops(Mockito.anyLong());
@@ -596,7 +596,7 @@ public class StatsCollectorTest {
 
         setCollectorIopsStats(poolId, 90L, 45L);
 
-        boolean result = statsCollector.isPoolNeedsIopsStatsUpdating(false, mockPool, 120L, 60L);
+        boolean result = statsCollector.isPoolNeedsIopsStatsUpdate(mockPool, 120L, 60L);
         Assert.assertTrue(result);
         Mockito.verify(mockPool).setCapacityIops(120L);
         Mockito.verify(mockPool).setUsedIops(60L);
@@ -607,7 +607,7 @@ public class StatsCollectorTest {
         long poolId = 1L;
         when(mockPool.getId()).thenReturn(poolId);
 
-        boolean result = statsCollector.isPoolNeedsIopsStatsUpdating(false, mockPool, null, null);
+        boolean result = statsCollector.isPoolNeedsIopsStatsUpdate(mockPool, null, null);
         Assert.assertFalse(result);
         Mockito.verify(mockPool, Mockito.never()).setCapacityIops(Mockito.anyLong());
         Mockito.verify(mockPool, Mockito.never()).setUsedIops(Mockito.anyLong());
