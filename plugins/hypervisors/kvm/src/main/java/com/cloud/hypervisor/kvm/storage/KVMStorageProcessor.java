@@ -1119,11 +1119,12 @@ public class KVMStorageProcessor implements StorageProcessor {
                 storagePool = storagePoolMgr.getStoragePoolByURI(path);
             }
             final KVMPhysicalDisk isoVol = storagePool.getPhysicalDisk(name);
+            final DiskDef.DiskType isoDiskType = LibvirtComputingResource.getDiskType(isoVol);
             isoPath = isoVol.getPath();
 
-            iso.defISODisk(isoPath, isUefiEnabled);
+            iso.defISODisk(isoPath, isUefiEnabled, isoDiskType);
         } else {
-            iso.defISODisk(null, isUefiEnabled);
+            iso.defISODisk(null, isUefiEnabled, DiskDef.DiskType.FILE);
         }
 
         final List<DiskDef> disks = resource.getDisks(conn, vmName);

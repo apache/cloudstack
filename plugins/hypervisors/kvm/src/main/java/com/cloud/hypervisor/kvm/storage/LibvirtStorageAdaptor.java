@@ -173,7 +173,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      * Checks if downloaded template is extractable
      * @return true if it should be extracted, false if not
      */
-    private boolean isTemplateExtractable(String templatePath) {
+    public static boolean isTemplateExtractable(String templatePath) {
         String type = Script.runSimpleBashScript("file " + templatePath + " | awk -F' ' '{print $2}'");
         return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip") || type.equalsIgnoreCase("zip");
     }
@@ -183,7 +183,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      * @param downloadedTemplateFile
      * @param templateUuid
      */
-    private String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateUuid) {
+    public static String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateUuid) {
         if (downloadedTemplateFile.endsWith(".zip")) {
             return "unzip -p " + downloadedTemplateFile + " | cat > " + templateUuid;
         } else if (downloadedTemplateFile.endsWith(".bz2")) {
@@ -198,7 +198,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     /**
      * Extract downloaded template into installPath, remove compressed file
      */
-    private void extractDownloadedTemplate(String downloadedTemplateFile, KVMStoragePool destPool, String destinationFile) {
+    public static void extractDownloadedTemplate(String downloadedTemplateFile, KVMStoragePool destPool, String destinationFile) {
         String extractCommand = getExtractCommandForDownloadedFile(downloadedTemplateFile, destinationFile);
         Script.runSimpleBashScript(extractCommand);
         Script.runSimpleBashScript("rm -f " + downloadedTemplateFile);
