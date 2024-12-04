@@ -19,6 +19,7 @@ package com.cloud.configuration;
 import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
 import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
 import static com.cloud.offering.NetworkOffering.RoutingMode.Static;
+import static org.apache.cloudstack.framework.config.ConfigKey.CATEGORY_SYSTEM;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
@@ -312,14 +313,6 @@ import com.google.common.collect.Sets;
 import com.googlecode.ipv6.IPv6Address;
 import com.googlecode.ipv6.IPv6Network;
 
-<<<<<<< HEAD
-=======
-import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
-import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
-import static com.cloud.offering.NetworkOffering.RoutingMode.Static;
-import static org.apache.cloudstack.framework.config.ConfigKey.CATEGORY_SYSTEM;
-
->>>>>>> apache/4.20
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final String PERACCOUNT = "peraccount";
     public static final String PERZONE = "perzone";
