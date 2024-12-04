@@ -24,8 +24,13 @@ import com.cloud.capacity.dao.CapacityDaoImpl.SummedCapacity;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface CapacityDao extends GenericDao<CapacityVO, Long> {
+
+    ConfigKey<Boolean> allowRoutersOnDedicatedResources =  new ConfigKey<>("Advanced", Boolean.class, "allow.routers.on.dedicated.resources", "false",
+            "Allow deploying virtual routers on dedicated Hosts, Clusters, Pods, and Zones", true);
+
     CapacityVO findByHostIdType(Long hostId, short capacityType);
 
     List<Long> listClustersInZoneOrPodByHostCapacities(long id, long vmId, int requiredCpu, long requiredRam, short capacityTypeForOrdering, boolean isZone);
@@ -38,7 +43,7 @@ public interface CapacityDao extends GenericDao<CapacityVO, Long> {
 
     List<SummedCapacity> findNonSharedStorageForClusterPodZone(Long zoneId, Long podId, Long clusterId);
 
-    Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, long vmId, short capacityType, boolean isZone);
+    Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, long vmId, short capacityType,  boolean isVr, boolean isZone);
 
     Ternary<Long, Long, Long> findCapacityByZoneAndHostTag(Long zoneId, String hostTag);
 
