@@ -78,7 +78,7 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
             }
         } catch (Exception e){
             logger.warn("OOBM service is not configured or enabled for this host " + r.getName() + " error is " + e.getMessage());
-            throw new HARecoveryException(" OOBM service is not configured or enabled for this host " + r.getName() , e);
+            throw new HARecoveryException(" OOBM service is not configured or enabled for this host " + r.getName(), e);
         }
     }
 
