@@ -549,6 +549,7 @@ class TestScaleVm(cloudstackTestCase):
             serviceofferingid=self.small_offering.id,
             mode=self.services["mode"]
         )
+        self.cleanup.append(self.virtual_machine_in_user_account)
 
         if self.hypervisor.lower() == "vmware":
             sshClient = self.virtual_machine_in_user_account.get_ssh_client()
@@ -599,7 +600,6 @@ class TestScaleVm(cloudstackTestCase):
             self.cleanup.append(self.bigger_offering)
         else:
             self.bigger_offering = self.big_offering
-
         self.debug("Scaling VM-ID: %s to service offering: %s and state %s" % (
             self.virtual_machine_in_user_account.id,
             self.bigger_offering.id,
@@ -694,7 +694,7 @@ class TestScaleVm(cloudstackTestCase):
             serviceofferingid=self.ServiceOffering1WithDiskOffering1.id,
             mode=self.services["mode"]
         )
-
+        self._cleanup.append(self.virtual_machine_test)
         if self.hypervisor.lower() == "vmware":
             sshClient = self.virtual_machine_test.get_ssh_client()
             result = str(
