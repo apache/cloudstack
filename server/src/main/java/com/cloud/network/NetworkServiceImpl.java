@@ -1384,7 +1384,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    void validateNetworkCidrSize(Account caller, Integer cidrSize, String cidr, NetworkOffering networkOffering, long accountId) {
+    void validateNetworkCidrSize(Account caller, Integer cidrSize, String cidr, NetworkOffering networkOffering, long accountId, long zoneId) {
         if (!GuestType.Isolated.equals(networkOffering.getGuestType())) {
             if (cidrSize != null) {
                 throw new InvalidParameterValueException("network cidr size is only applicable on Isolated networks");
@@ -1405,11 +1405,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (cidrSize == null) {
                 throw new InvalidParameterValueException("network cidr or cidr size is required for Isolated networks with ROUTED mode");
             }
-            Integer maxCidrSize = routedIpv4Manager.RoutedNetworkIPv4MaxCidrSize.valueIn(accountId);
+            Integer maxCidrSize = RoutedIpv4Manager.RoutedNetworkIPv4MaxCidrSize.valueIn(accountId);
             if (cidrSize > maxCidrSize) {
                 throw new InvalidParameterValueException("network cidr size cannot be bigger than maximum cidr size " + maxCidrSize);
             }
-            Integer minCidrSize = routedIpv4Manager.RoutedNetworkIPv4MinCidrSize.valueIn(accountId);
+            Integer minCidrSize = RoutedIpv4Manager.RoutedNetworkIPv4MinCidrSize.valueIn(accountId);
             if (cidrSize < minCidrSize) {
                 throw new InvalidParameterValueException("network cidr size cannot be smaller than minimum cidr size " + minCidrSize);
             }
@@ -1651,11 +1651,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
+        if (NetworkOffering.NetworkMode.ROUTED.equals(ntwkOff.getNetworkMode())
+                && !routedIpv4Manager.isRoutedNetworkVpcEnabled(zone.getId())) {
+            throw new InvalidParameterValueException("Routed network is not enabled in this zone");
+        }
+
         if (isNonVpcNetworkSupportingDynamicRouting(ntwkOff) && ntwkOff.isSpecifyAsNumber() && asNumber == null) {
             throw new InvalidParameterValueException("AS number is required for the network but not passed.");
         }
 
-        validateNetworkCidrSize(caller, networkCidrSize, cidr, ntwkOff, owner.getAccountId());
+        validateNetworkCidrSize(caller, networkCidrSize, cidr, ntwkOff, owner.getAccountId(), zone.getId());
 
         validateSharedNetworkRouterIPs(gateway, startIP, endIP, netmask, routerIPv4, routerIPv6, startIPv6, endIPv6, ip6Cidr, ntwkOff);
 

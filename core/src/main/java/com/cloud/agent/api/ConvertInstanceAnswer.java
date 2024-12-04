@@ -20,6 +20,8 @@ import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
 public class ConvertInstanceAnswer extends Answer {
 
+    private String temporaryConvertUuid;
+
     public ConvertInstanceAnswer() {
         super();
     }
@@ -32,6 +34,15 @@ public class ConvertInstanceAnswer extends Answer {
     public ConvertInstanceAnswer(Command command, UnmanagedInstanceTO convertedInstance) {
         super(command, true, "");
         this.convertedInstance = convertedInstance;
+    }
+
+    public ConvertInstanceAnswer(Command command, String temporaryConvertUuid) {
+        super(command, true, "");
+        this.temporaryConvertUuid = temporaryConvertUuid;
+    }
+
+    public String getTemporaryConvertUuid() {
+        return temporaryConvertUuid;
     }
 
     public UnmanagedInstanceTO getConvertedInstance() {

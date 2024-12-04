@@ -23,12 +23,14 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -37,6 +39,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.cloudstack.alert.AlertService;
+import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.user.address.UpdateQuarantinedIpCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
@@ -753,13 +756,14 @@ public class NetworkServiceImplTest {
     }
 
     @Test
-    public void testCreateIpv4RoutedNetwork() throws InsufficientCapacityException, ResourceAllocationException {
+    public void testCreateIpv4RoutedNetwork() {
         registerCallContext();
         CreateNetworkCmd cmd = Mockito.mock(CreateNetworkCmd.class);
         Mockito.when(cmd.getCidrSize()).thenReturn(24);
         prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false, false, true);
         when(networkOfferingVO.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
         when(networkOfferingVO.getRoutingMode()).thenReturn(NetworkOffering.RoutingMode.Static);
+        when(routedIpv4Manager.isRoutedNetworkVpcEnabled(nullable(Long.class))).thenReturn(true);
         when(routedIpv4Manager.isVirtualRouterGateway(networkOfferingVO)).thenReturn(true);
         doNothing().when(routedIpv4Manager).assignIpv4SubnetToNetwork(nullable(Network.class));
 
@@ -775,6 +779,92 @@ public class NetworkServiceImplTest {
         }
 
         Mockito.verify(routedIpv4Manager).assignIpv4SubnetToNetwork(nullable(Network.class));
+    }
+
+    @Test
+    public void testCreateIpv4RoutedNetworkWithBgpPeersFailure1() {
+        registerCallContext();
+        CreateNetworkCmdByAdmin cmd = Mockito.mock(CreateNetworkCmdByAdmin.class);
+        Mockito.when(cmd.getCidrSize()).thenReturn(24);
+        List<Long> bgpPeerIds = Arrays.asList(11L, 12L);
+        Mockito.when(cmd.getBgpPeerIds()).thenReturn(bgpPeerIds);
+
+        prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false, true, true);
+        when(networkOfferingVO.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
+        when(networkOfferingVO.getRoutingMode()).thenReturn(NetworkOffering.RoutingMode.Static);
+        when(routedIpv4Manager.isRoutedNetworkVpcEnabled(nullable(Long.class))).thenReturn(true);
+        when(routedIpv4Manager.isVirtualRouterGateway(networkOfferingVO)).thenReturn(true);
+
+        DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+        when(cmd.getZoneId()).thenReturn(zoneId);
+        when(dcDao.findById(zoneId)).thenReturn(zone);
+        when(zone.getId()).thenReturn(zoneId);
+
+        try {
+            service.createGuestNetwork(cmd);
+        } catch (InsufficientCapacityException | ResourceAllocationException e) {
+            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
+        } catch (InvalidParameterValueException ex) {
+            Assert.assertEquals("The BGP peers of VPC tiers will inherit from the VPC, do not add separately.", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void testCreateIpv4RoutedNetworkWithBgpPeersFailure2() {
+        registerCallContext();
+        CreateNetworkCmdByAdmin cmd = Mockito.mock(CreateNetworkCmdByAdmin.class);
+        Mockito.when(cmd.getCidrSize()).thenReturn(24);
+        List<Long> bgpPeerIds = Arrays.asList(11L, 12L);
+        Mockito.when(cmd.getBgpPeerIds()).thenReturn(bgpPeerIds);
+
+        prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false, false, true);
+        when(networkOfferingVO.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
+        when(networkOfferingVO.getRoutingMode()).thenReturn(NetworkOffering.RoutingMode.Static);
+        when(routedIpv4Manager.isRoutedNetworkVpcEnabled(nullable(Long.class))).thenReturn(true);
+        when(routedIpv4Manager.isVirtualRouterGateway(networkOfferingVO)).thenReturn(true);
+
+        DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+        when(cmd.getZoneId()).thenReturn(zoneId);
+        when(dcDao.findById(zoneId)).thenReturn(zone);
+        when(zone.getId()).thenReturn(zoneId);
+
+        try {
+            service.createGuestNetwork(cmd);
+        } catch (InsufficientCapacityException | ResourceAllocationException e) {
+            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
+        } catch (InvalidParameterValueException ex) {
+            Assert.assertEquals("The network offering does not support Dynamic routing", ex.getMessage());
+        }
+    }
+
+    @Test
+    public void testCreateIpv4RoutedNetworkWithBgpPeersFailure3() {
+        registerCallContext();
+        CreateNetworkCmdByAdmin cmd = Mockito.mock(CreateNetworkCmdByAdmin.class);
+        Mockito.when(cmd.getCidrSize()).thenReturn(24);
+        List<Long> bgpPeerIds = Arrays.asList(11L, 12L);
+        Mockito.when(cmd.getBgpPeerIds()).thenReturn(bgpPeerIds);
+
+        prepareCreateNetworkDnsMocks(cmd, Network.GuestType.Isolated, false, false, true);
+        when(networkOfferingVO.getNetworkMode()).thenReturn(NetworkOffering.NetworkMode.ROUTED);
+        when(networkOfferingVO.getRoutingMode()).thenReturn(NetworkOffering.RoutingMode.Static);
+        when(routedIpv4Manager.isRoutedNetworkVpcEnabled(nullable(Long.class))).thenReturn(true);
+        when(routedIpv4Manager.isVirtualRouterGateway(networkOfferingVO)).thenReturn(true);
+        when(routedIpv4Manager.isDynamicRoutedNetwork(networkOfferingVO)).thenReturn(true);
+        doThrow(new InvalidParameterValueException("validation error")).when(routedIpv4Manager).validateBgpPeers(nullable(Account.class), nullable(Long.class), any(List.class));
+
+        DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+        when(cmd.getZoneId()).thenReturn(zoneId);
+        when(dcDao.findById(zoneId)).thenReturn(zone);
+        when(zone.getId()).thenReturn(zoneId);
+
+        try {
+            service.createGuestNetwork(cmd);
+        } catch (InsufficientCapacityException | ResourceAllocationException e) {
+            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
+        } catch (InvalidParameterValueException ex) {
+            Assert.assertEquals("validation error", ex.getMessage());
+        }
     }
 
     @Test
