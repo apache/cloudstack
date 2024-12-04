@@ -30,6 +30,8 @@ import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisNatCommand;
+import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.NetrisAnswer;
@@ -97,6 +99,10 @@ public class NetrisResource implements ServerResource {
           return executeRequest((DeleteNetrisVnetCommand) cmd);
         } else if (cmd instanceof SetupNetrisPublicRangeCommand) {
             return executeRequest((SetupNetrisPublicRangeCommand) cmd);
+        } else if (cmd instanceof DeleteNetrisNatRuleCommand) {
+            return executeRequest((DeleteNetrisNatRuleCommand) cmd);
+        } else if (cmd instanceof CreateOrUpdateNetrisNatCommand) {
+          return executeRequest((CreateOrUpdateNetrisNatCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -257,6 +263,36 @@ public class NetrisResource implements ServerResource {
         boolean result = netrisApiClient.setupZoneLevelPublicRange(cmd);
         if (!result) {
             return new NetrisAnswer(cmd, false, "Netris Setup for Public Range failed");
+        }
+        return new NetrisAnswer(cmd, true, "OK");
+    }
+
+    private Answer executeRequest(CreateOrUpdateNetrisNatCommand cmd) {
+        String natRuleType = cmd.getNatRuleType();
+        if ("SNAT".equals(natRuleType)) {
+            boolean result = netrisApiClient.createOrUpdateSNATRule(cmd);
+            if (!result) {
+                return new NetrisAnswer(cmd, false, String.format("Failed to create SNAT rule on Netris for network %s", cmd.getName()));
+            }
+        } else if ("DNAT".equals(natRuleType)) {
+            boolean result = netrisApiClient.createOrUpdateDNATRule(cmd);
+            if (!result) {
+                return new NetrisAnswer(cmd, false, String.format("Failed to create DNAT rule on Netris for network %s", cmd.getName()));
+            }
+        } else if ("STATICNAT".equals(natRuleType)) {
+            boolean result = netrisApiClient.createStaticNatRule(cmd);
+            if (!result) {
+                return new NetrisAnswer(cmd, false, String.format("Failed to create SNAT rule on Netris for network %s", cmd.getName()));
+            }
+        }
+
+        return new NetrisAnswer(cmd, true, "OK");
+    }
+
+    private Answer executeRequest(DeleteNetrisNatRuleCommand cmd) {
+        boolean result = netrisApiClient.deleteNatRule(cmd);
+        if (!result) {
+            return new NetrisAnswer(cmd, false, String.format("Netris NAT rule: %s deletion failed", cmd.getNatRuleName()));
         }
         return new NetrisAnswer(cmd, true, "OK");
     }

@@ -128,6 +128,15 @@ public class NetrisPublicNetworkGuru extends PublicNetworkGuru {
                 if (!hasNatSupport) {
                     return nic;
                 }
+
+                String snatIP = ipAddress.getAddress().addr();
+                result = netrisService.createSnatRule(dataCenterId, accountId, domainId, vpc.getName(), vpc.getId(), network.getName(), network.getId(), isForVpc, vpc.getCidr(), snatIP);
+                if (!result) {
+                    String msg = String.format("Could not create Netris Nat Rule for IP %s", snatIP);
+                    logger.error(msg);
+                    throw new CloudRuntimeException(msg);
+                }
+
             }
         }
         return nic;

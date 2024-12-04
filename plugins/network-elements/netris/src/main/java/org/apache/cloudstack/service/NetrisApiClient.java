@@ -22,6 +22,8 @@ import io.netris.model.VPCListing;
 import io.netris.model.response.TenantResponse;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisNatCommand;
+import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
@@ -48,8 +50,18 @@ public interface NetrisApiClient {
      */
     boolean deleteVpc(DeleteNetrisVpcCommand cmd);
 
+    /**
+     * Creation of a VPC network tier creates the following Netris resources:
+     * - Creates a Netris IPAM Subnet for the specified network tier's CIDR
+     * - Creates a Netris vNet
+     */
     boolean createVnet(CreateNetrisVnetCommand cmd);
 
+    /**
+     * Deletion of a VPC network tier deletes the following Netris resources:
+     * - Deletes the Netris IPAM Subnet for the specified network tier's CIDR
+     * - Deletes the Netris vNet
+     */
     boolean deleteVnet(DeleteNetrisVnetCommand cmd);
 
     /**
@@ -58,4 +70,8 @@ public interface NetrisApiClient {
      * - Check the IPAM subnet for NAT purpose for the range start-end. In case it doesn't exist, create it
      */
     boolean setupZoneLevelPublicRange(SetupNetrisPublicRangeCommand cmd);
+    boolean createOrUpdateSNATRule(CreateOrUpdateNetrisNatCommand cmd);
+    boolean createOrUpdateDNATRule(CreateOrUpdateNetrisNatCommand cmd);
+    boolean createStaticNatRule(CreateOrUpdateNetrisNatCommand cmd);
+    boolean deleteNatRule(DeleteNetrisNatRuleCommand cmd);
 }

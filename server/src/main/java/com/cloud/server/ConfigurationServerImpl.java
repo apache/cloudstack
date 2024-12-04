@@ -1220,6 +1220,10 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                 // Offering #14 - network offering for Netris provider for VPCs - ROUTED mode
                 createAndPersistDefaultProviderOffering(NetworkOffering.DEFAULT_ROUTED_NETRIS_OFFERING_FOR_VPC, "Offering for Netris enabled networks on VPCs - ROUTED mode",
                         NetworkOffering.NetworkMode.ROUTED, true, true, Provider.Netris);
+
+                // Offering #15 - network offering for Netris provider for VPCs - NATTED mode
+                createAndPersistDefaultProviderOffering(NetworkOffering.DEFAULT_NAT_NETRIS_OFFERING_FOR_VPC, "Offering for Netris enabled networks on VPCs - NAT mode",
+                        NetworkOffering.NetworkMode.NATTED, true, true, Provider.Netris);
             }
         });
     }

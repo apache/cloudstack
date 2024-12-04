@@ -25,6 +25,7 @@ import io.netris.api.v1.AuthenticationApi;
 import io.netris.api.v1.SitesApi;
 import io.netris.api.v1.TenantsApi;
 import io.netris.api.v2.IpamApi;
+import io.netris.api.v2.NatApi;
 import io.netris.api.v2.VNetApi;
 import io.netris.api.v2.VpcApi;
 import io.netris.model.AllocationBody;
@@ -32,6 +33,8 @@ import io.netris.model.AllocationBodyVpc;
 import io.netris.model.FilterBySites;
 import io.netris.model.FilterByVpc;
 import io.netris.model.GetSiteBody;
+import io.netris.model.InlineResponse20015;
+import io.netris.model.InlineResponse20016;
 import io.netris.model.InlineResponse2004;
 import io.netris.model.InlineResponse2004Data;
 import io.netris.model.IpTree;
@@ -39,6 +42,12 @@ import io.netris.model.IpTreeAllocation;
 import io.netris.model.IpTreeAllocationTenant;
 import io.netris.model.IpTreeSubnet;
 import io.netris.model.IpTreeSubnetSites;
+import io.netris.model.NatBodySiteSite;
+import io.netris.model.NatBodyVpcVpc;
+import io.netris.model.NatGetBody;
+import io.netris.model.NatPostBody;
+import io.netris.model.NatPutBody;
+import io.netris.model.NatResponseGetOk;
 import io.netris.model.SitesResponseOK;
 import io.netris.model.SubnetBody;
 import io.netris.model.SubnetResBody;
@@ -62,13 +71,16 @@ import io.netris.model.VnetsBody;
 import io.netris.model.response.AuthResponse;
 import io.netris.model.response.TenantResponse;
 import io.netris.model.response.TenantsResponse;
+import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisNatCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
 import org.apache.cloudstack.resource.NetrisResourceObjectUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -245,8 +257,50 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return createdIpamAllocation != null;
     }
 
+    @Override
+    public boolean deleteNatRule(DeleteNetrisNatRuleCommand cmd) {
+        try {
+            String suffix = getNetrisVpcNameSuffix(cmd.getVpcId(), cmd.getVpcName(), cmd.getId(), cmd.getName(), cmd.isVpc());
+            String vpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, suffix);
+            VPCListing vpcResource = getVpcByNameAndTenant(vpcName);
+            if (vpcResource == null) {
+                logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", vpcName, tenantId);
+                return false;
+            }
+            String natRuleName = cmd.getNatRuleName();
+            NatGetBody existingNatRule = netrisNatRuleExists(natRuleName);
+            boolean ruleExists = Objects.nonNull(existingNatRule);
+            if (ruleExists) {
+                deleteNatRule(natRuleName, existingNatRule.getId(), vpcResource.getName());
+                if (cmd.getNatRuleType().equals("STATICNAT")) {
+                    deleteNatSubnet(vpcResource.getId(), cmd.getNatIp());
+                }
+            }
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Error deleting Netris NAT Rule", e);
+        }
+        return true;
+    }
+
+    private void deleteNatSubnet(Integer netrisVpcId, String natIp) {
+        FilterByVpc vpcFilter = new FilterByVpc();
+        vpcFilter.add(netrisVpcId);
+        String netrisSubnetName = natIp + "/32";
+        deleteSubnetInternal(vpcFilter, null, netrisSubnetName);
+    }
+
+    public void deleteNatRule(String natRuleName, Integer snatRuleId, String netrisVpcName) {
+        logger.debug("Deleting NAT rule on Netris: {} for VPC {}", natRuleName, netrisVpcName);
+        try {
+            NatApi natApi = apiClient.getApiStubForMethod(NatApi.class);
+            natApi.apiV2NatIdDelete(snatRuleId);
+        } catch (ApiException e) {
+            logAndThrowException(String.format("Failed to delete NAT rule: %s for VPC: %s", natRuleName, netrisVpcName), e);
+        }
+    }
+
     private void deleteVpcIpamAllocationInternal(VPCListing vpcResource, String vpcCidr) {
-        logger.debug(String.format("Deleting Netris VPC IPAM Allocation %s for VPC %s", vpcCidr, vpcResource.getName()));
+        logger.debug("Deleting Netris VPC IPAM Allocation {} for VPC {}", vpcCidr, vpcResource.getName());
         try {
             VpcApi vpcApi = apiClient.getApiStubForMethod(VpcApi.class);
             VPCResponseResourceOK vpcResourcesResponse = vpcApi.apiV2VpcVpcIdResourcesGet(vpcResource.getId());
@@ -300,12 +354,20 @@ public class NetrisApiClientImpl implements NetrisApiClient {
 
     @Override
     public boolean deleteVpc(DeleteNetrisVpcCommand cmd) {
+        String suffix = String.valueOf(cmd.getId());
         String vpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC);
         VPCListing vpcResource = getVpcByNameAndTenant(vpcName);
         if (vpcResource == null) {
-            logger.error(String.format("Could not find the Netris VPC resource with name %s and tenant ID %s", vpcName, tenantId));
+            logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", vpcName, tenantId);
             return false;
         }
+        String snatRuleName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.SNAT, suffix);
+        NatGetBody existingNatRule = netrisNatRuleExists(snatRuleName);
+        boolean ruleExists = Objects.nonNull(existingNatRule);
+        if (ruleExists) {
+            deleteNatRule(snatRuleName, existingNatRule.getId(), vpcResource.getName());
+        }
+
         String vpcCidr = cmd.getCidr();
         deleteVpcIpamAllocationInternal(vpcResource, vpcCidr);
         VPCResponseObjectOK response = deleteVpcInternal(vpcResource);
@@ -424,7 +486,9 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         filterByVpc.add(vpc.getId());
         SubnetResBody subnetResBody = ipamApi.apiV2IpamSubnetsGet(filterByVpc);
         List<IpTreeSubnet> exactSubnetList = subnetResBody.getData().stream()
-                .filter(x -> x.getAllocationID().equals(ipamAllocationId) && x.getPrefix().equals(exactCidr) && x.getPurpose() == purpose)
+                .filter(x -> ipamAllocationId != null ?
+                        x.getAllocationID().equals(ipamAllocationId) && x.getPrefix().equals(exactCidr) && x.getPurpose() == purpose :
+                        x.getPrefix().equals(exactCidr) && x.getPurpose() == purpose)
                 .collect(Collectors.toList());
         return CollectionUtils.isEmpty(exactSubnetList) ? null : exactSubnetList.get(0);
     }
@@ -460,6 +524,288 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return true;
     }
 
+    private boolean createOrUpdateNatRuleInternal(CreateOrUpdateNetrisNatCommand cmd) {
+        String ruleName = cmd.getNatRuleName();
+        long vpcId = cmd.getVpcId();
+        Long networkId = cmd.getId();
+        String networkName = cmd.getName();
+        String vpcName = cmd.getVpcName();
+        String vpcCidr = cmd.getVpcCidr();
+        boolean isVpc = cmd.isVpc();
+        NatPostBody.ActionEnum action = getNatActionFromRuleType(cmd.getNatRuleType());
+        NatPostBody.ProtocolEnum protocol = getProtocolFromString(cmd.getProtocol());
+        NatPostBody.StateEnum state = getStateFromString(cmd.getState());
+
+        String vNetName = isVpc ?
+                String.format("V%s-N%s-%s", vpcId, networkId, networkName) :
+                String.format("N%s-%s", networkId, networkName);
+        String vpcSuffix = getNetrisVpcNameSuffix(vpcId, vpcName, networkId, networkName, isVpc);
+        String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, vpcSuffix);
+        VPCListing vpcResource = getVpcByNameAndTenant(netrisVpcName);
+        if (vpcResource == null) {
+            logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", netrisVpcName, tenantId);
+            return false;
+        }
+
+        String targetIpSubnet = null;
+        if (NatPostBody.ActionEnum.SNAT == action) {
+            targetIpSubnet = cmd.getNatIp() + "/32";
+        } else if (NatPostBody.ActionEnum.DNAT == action) {
+            targetIpSubnet = cmd.getDestinationAddress() + "/32";
+        }
+
+        if (StringUtils.isNotBlank(targetIpSubnet) && existsDestinationSubnet(targetIpSubnet)) {
+            logger.debug(String.format("Creating subnet with NAT purpose for %s", targetIpSubnet));
+            createNatSubnet(targetIpSubnet, vpcResource.getId());
+        }
+
+        NatGetBody existingNatRule = netrisNatRuleExists(ruleName);
+        boolean ruleExists = Objects.nonNull(existingNatRule);
+        if (!ruleExists) {
+            String destinationAddress = action == NatPostBody.ActionEnum.SNAT ? "0.0.0.0/0" : cmd.getDestinationAddress() + "/32";
+            String destinationPort = cmd.getDestinationPort();
+            String sourceAddress = action == NatPostBody.ActionEnum.SNAT ? vpcCidr : "0.0.0.0/0";
+            String sourcePort = "1-65535";
+            String snatToIp = action == NatPostBody.ActionEnum.SNAT ? targetIpSubnet : null;
+            String dnatToIp = action == NatPostBody.ActionEnum.DNAT ? cmd.getSourceAddress() + "/32" : null;
+            String dnatToPort = action == NatPostBody.ActionEnum.DNAT ? cmd.getSourcePort() : null;
+            return createNatRuleInternal(ruleName, action, protocol, state, destinationAddress, destinationPort,
+                    sourceAddress, sourcePort, snatToIp, dnatToIp, dnatToPort, netrisVpcName, networkName, vNetName);
+        } else if (NatPostBody.ActionEnum.SNAT == action) {
+            return updateSnatRuleInternal(ruleName, targetIpSubnet, netrisVpcName, networkName, vNetName, existingNatRule.getId(), vpcCidr);
+        }
+        return true;
+    }
+
+    private NatPostBody.StateEnum getStateFromString(String state) {
+        return NatPostBody.StateEnum.fromValue(state);
+    }
+
+    private NatPostBody.ActionEnum getNatActionFromRuleType(String natRuleType) {
+        return NatPostBody.ActionEnum.fromValue(natRuleType);
+    }
+
+    @Override
+    public boolean createOrUpdateSNATRule(CreateOrUpdateNetrisNatCommand cmd) {
+        return createOrUpdateNatRuleInternal(cmd);
+    }
+
+    private boolean existsDestinationSubnet(String destinationSubnet) {
+        try {
+            FilterByVpc vpcFilter = new FilterByVpc();
+            vpcFilter.add(getSystemVpc().getId());
+            List<IpTreeSubnet> targetSubnetList = getSubnet(vpcFilter, destinationSubnet);
+            return targetSubnetList != null;
+        } catch (ApiException e) {
+            logAndThrowException(String.format("Error checking if subnet %s exists: %s", destinationSubnet, e.getMessage()), e);
+            return false;
+        }
+    }
+
+    @Override
+    public boolean createStaticNatRule(CreateOrUpdateNetrisNatCommand cmd) {
+        String staticNatRuleName = cmd.getNatRuleName();
+        String natIP = cmd.getNatIp() + "/32";
+        String vmIp = cmd.getVmIp() + "/32";
+        String vpcName = cmd.getVpcName();
+        String vpcCidr = cmd.getVpcCidr();
+        Long vpcId = cmd.getVpcId();
+        Long networkId = cmd.getId();
+        String networkName = cmd.getName();
+        boolean isVpc = cmd.isVpc();
+
+        try {
+            String vpcSuffix = getNetrisVpcNameSuffix(vpcId, vpcName, networkId, networkName, isVpc);
+            String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, vpcSuffix);
+            VPCListing vpcResource = getVpcByNameAndTenant(netrisVpcName);
+            if (vpcResource == null) {
+                logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", netrisVpcName, tenantId);
+                return false;
+            }
+            // Create a /32 subnet for the DNAT IP
+            createNatSubnet(natIP, vpcResource.getId());
+            NatApi natApi = apiClient.getApiStubForMethod(NatApi.class);
+            NatPostBody natBody = new NatPostBody();
+            natBody.setAction(NatPostBody.ActionEnum.DNAT);
+            natBody.setDestinationAddress(natIP);
+            natBody.setName(staticNatRuleName);
+            natBody.setProtocol(NatPostBody.ProtocolEnum.ALL);
+            natBody.setState(NatPostBody.StateEnum.ENABLED);
+            natBody.setComment(String.format("Static NAT rule for %s", netrisVpcName));
+
+            NatBodySiteSite site = new NatBodySiteSite();
+            site.setId(siteId);
+            site.setName(siteName);
+            natBody.setSite(site);
+            natBody.setSourceAddress("0.0.0.0/0");
+            natBody.setDnatToIP(vmIp);
+
+            NatBodyVpcVpc vpc = new NatBodyVpcVpc();
+            vpc.setId(vpcResource.getId());
+            vpc.setName(vpcResource.getName());
+            natBody.setVpc(vpc);
+
+            InlineResponse20015 natResponse = natApi.apiV2NatPost(natBody);
+            if (natResponse == null || !natResponse.isIsSuccess()) {
+                String reason = natResponse == null ? "Empty response" : "Operation failed on Netris";
+                logger.debug("The Netris static NAT (DNAT) rule creation failed for netris VPC - {}: {}", netrisVpcName, reason);
+                throw new CloudRuntimeException(reason);
+            }
+        } catch (ApiException e) {
+            logAndThrowException(String.format("Failed to create Static NAT (DNAT) rule for network : %s", Objects.nonNull(vpcName) ? vpcName : networkName), e);
+        }
+        return true;
+    }
+
+    private void createNatSubnet(String natIp, Integer netrisVpcId) {
+        try {
+            FilterByVpc vpcFilter = new FilterByVpc();
+            vpcFilter.add(netrisVpcId);
+            String netrisSubnetName = natIp;
+            List<IpTreeSubnet> matchedSubnets = getSubnet(vpcFilter, netrisSubnetName);
+            if (matchedSubnets.isEmpty()) {
+                VPCListing systemVpc = getSystemVpc();
+                createIpamSubnetInternal(natIp, natIp, SubnetBody.PurposeEnum.NAT, systemVpc);
+                return;
+            }
+            logger.debug("NAT subnet: {} already exists", natIp);
+        } catch (ApiException e) {
+            throw new CloudRuntimeException(String.format("Failed to create subnet for %s with NAT purpose", natIp));
+        }
+    }
+
+    private NatPostBody.ProtocolEnum getProtocolFromString(String protocol) {
+        return NatPostBody.ProtocolEnum.fromValue(protocol);
+    }
+
+    private NatPostBody createNatRulePostBody(String ruleName, NatPostBody.ActionEnum action, NatPostBody.ProtocolEnum protocol, NatPostBody.StateEnum state,
+                                              String destinationAddress, String destinationPort,
+                                              String sourceAddress, String sourcePort,
+                                              String dnatToIp, String dnatToPort,
+                                              String netrisVpcName, String snatIP, String comment) {
+        NatPostBody natBody = new NatPostBody();
+        natBody.setAction(action);
+        natBody.setName(ruleName);
+        natBody.setProtocol(protocol);
+        natBody.setState(state);
+        if (StringUtils.isNotBlank(comment)) {
+            natBody.setComment(comment);
+        }
+
+        natBody.setDestinationAddress(destinationAddress);
+        if (StringUtils.isNotBlank(destinationPort)) {
+            natBody.setDestinationPort(destinationPort);
+        }
+
+        if (StringUtils.isNotBlank(sourceAddress)) {
+            natBody.setSourceAddress(sourceAddress);
+        }
+        if (StringUtils.isNotBlank(sourcePort)) {
+            natBody.setSourcePort(sourcePort);
+        }
+
+        NatBodySiteSite site = new NatBodySiteSite();
+        site.setId(siteId);
+        site.setName(siteName);
+        natBody.setSite(site);
+
+        if (StringUtils.isNotBlank(snatIP)) {
+            natBody.setSourceAddress(snatIP);
+            natBody.setSnatToIP(snatIP);
+        }
+
+        if (StringUtils.isNotBlank(dnatToIp)) {
+            natBody.setDnatToIP(dnatToIp);
+        }
+        if (StringUtils.isNotBlank(dnatToPort)) {
+            natBody.setDnatToPort(Integer.valueOf(dnatToPort));
+        }
+
+        NatBodyVpcVpc vpc = new NatBodyVpcVpc();
+        VPCListing vpcResource = getVpcByNameAndTenant(netrisVpcName);
+        if (vpcResource == null) {
+            logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", netrisVpcName, tenantId);
+            return null;
+        }
+        vpc.setId(vpcResource.getId());
+        vpc.setName(vpcResource.getName());
+        natBody.setVpc(vpc);
+        return natBody;
+    }
+
+    @Override
+    public boolean createOrUpdateDNATRule(CreateOrUpdateNetrisNatCommand cmd) {
+        return createOrUpdateNatRuleInternal(cmd);
+    }
+
+    private boolean createNatRuleInternal(String ruleName, NatPostBody.ActionEnum action, NatPostBody.ProtocolEnum protocol, NatPostBody.StateEnum state,
+                                          String destinationAddress, String destinationPort, String sourceAddress, String sourcePort,
+                                          String sNatToIp, String dNatToIp, String dNatToPort,
+                                          String netrisVpcName, String networkName, String vNetName) {
+        try {
+            NatApi natApi = apiClient.getApiStubForMethod(NatApi.class);
+            String comment = String.format("NAT rule for %s with action %s", netrisVpcName, action.name());
+            NatPostBody natBody = createNatRulePostBody(ruleName, action, protocol, state,
+                    destinationAddress, destinationPort, sourceAddress, sourcePort,
+                    dNatToIp, dNatToPort, netrisVpcName, sNatToIp, comment);
+            if (natBody == null) {
+                return false;
+            }
+            InlineResponse20015 natResponse = natApi.apiV2NatPost(natBody);
+            if (natResponse == null || !natResponse.isIsSuccess()) {
+                String reason = natResponse == null ? "Empty response" : "Operation failed on Netris";
+                logger.debug("The Netris NAT rule {} creation failed for network(vNet) - {}({}): {}", action.name(), networkName, vNetName, reason);
+                throw new CloudRuntimeException(reason);
+            }
+        } catch (ApiException e) {
+            logAndThrowException(String.format("Failed to create NAT rule %s for network(vNet): %s(%s)", action.name(), networkName, vNetName), e);
+        }
+        return true;
+    }
+
+    private void updateNatRequest(NatPostBody natBody) {
+
+    }
+
+    private boolean updateSnatRuleInternal(String snatRuleName, String snatIP, String netrisVpcName, String networkName,
+                                           String vNetName, Integer netisSnatId, String vpcCidr) {
+        try {
+            NatApi natApi = apiClient.getApiStubForMethod(NatApi.class);
+            NatPutBody natBody = new NatPutBody();
+            natBody.setAction(NatPutBody.ActionEnum.SNAT);
+            natBody.setDestinationAddress("0.0.0.0/0");
+            natBody.setName(snatRuleName);
+            natBody.setProtocol(NatPutBody.ProtocolEnum.ALL);
+
+            NatBodySiteSite site = new NatBodySiteSite();
+            site.setId(siteId);
+            site.setName(siteName);
+            natBody.setSite(site);
+            natBody.setSourceAddress(vpcCidr);
+            natBody.setSnatToIP(snatIP);
+
+            NatBodyVpcVpc vpc = new NatBodyVpcVpc();
+            VPCListing vpcResource = getVpcByNameAndTenant(netrisVpcName);
+            if (vpcResource == null) {
+                logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", netrisVpcName, tenantId);
+                return false;
+            }
+            vpc.setId(vpcResource.getId());
+            vpc.setName(vpcResource.getName());
+            natBody.setVpc(vpc);
+
+            InlineResponse20016 natUpdateResponse = natApi.apiV2NatIdPut(natBody, netisSnatId);
+            if (natUpdateResponse == null || !natUpdateResponse.isIsSuccess()) {
+                String reason = natUpdateResponse == null ? "Empty response" : "Operation failed on Netris";
+                logger.debug("Update of Netris SNAT rule failed for network(vNet) - {}({}): {}", networkName, vNetName, reason);
+                throw new CloudRuntimeException(reason);
+            }
+        } catch (ApiException e) {
+            logAndThrowException(String.format("Failed to create SNAT rule for network(vNet): %s(%s)", networkName, vNetName), e);
+        }
+        return true;
+    }
+
     private void deleteVnetInternal(VPCListing associatedVpc, FilterBySites siteFilter, FilterByVpc vpcFilter, String netrisVnetName, String vNetName) {
         try {
             VNetApi vNetApi = apiClient.getApiStubForMethod(VNetApi.class);
@@ -483,21 +829,35 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         }
     }
 
-    private void deleteSubnetInternal(FilterByVpc vpcFilter, String netrisVnetName, String netrisSubnetName) {
+    private List<IpTreeSubnet> getSubnet(FilterByVpc vpcFilter, String netrisSubnetName) {
         try {
-            logger.debug("Deleting Netris VPC IPAM Subnet {} for vNet: {}", netrisSubnetName, netrisVnetName);
             IpamApi ipamApi = apiClient.getApiStubForMethod(IpamApi.class);
             SubnetResBody subnetsResponse = ipamApi.apiV2IpamSubnetsGet(vpcFilter);
             List<IpTreeSubnet> subnets = subnetsResponse.getData();
-            List<IpTreeSubnet> matchedSubnets = subnets.stream().filter(subnet -> subnet.getName().equals(netrisSubnetName)).collect(Collectors.toList());
+            return subnets.stream().filter(subnet -> subnet.getName().equals(netrisSubnetName)).collect(Collectors.toList());
+        } catch (ApiException e) {
+            logAndThrowException(String.format("Failed to get IPAM subnet: %s", netrisSubnetName), e);
+        }
+        return new ArrayList<>();
+    }
+
+    private void deleteSubnetInternal(FilterByVpc vpcFilter, String netrisVnetName, String netrisSubnetName) {
+        try {
+            String logString = "";
+            if (Objects.nonNull(netrisVnetName)) {
+                logString = String.format("for vNet: %s ", netrisVnetName);
+            }
+            logger.debug("Deleting Netris VPC IPAM Subnet {} {}", netrisSubnetName, logString);
+            IpamApi ipamApi = apiClient.getApiStubForMethod(IpamApi.class);
+            List<IpTreeSubnet> matchedSubnets = getSubnet(vpcFilter, netrisSubnetName);
             if (CollectionUtils.isEmpty(matchedSubnets)) {
-                logger.debug("IPAM subnet: {} for the given vNet: {} appears to already be deleted on Netris", netrisSubnetName, netrisVnetName);
+                logger.debug("IPAM subnet: {} {} appears to already be deleted on Netris", netrisSubnetName, logString);
                 return;
             }
 
             ipamApi.apiV2IpamTypeIdDelete("subnet", matchedSubnets.get(0).getId().intValue());
         } catch (ApiException e) {
-            logAndThrowException(String.format("Failed to delete vNet: %s", netrisVnetName), e);
+            logAndThrowException(String.format("Failed to delete subnet: %s", netrisSubnetName), e);
         }
     }
 
@@ -606,5 +966,24 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             suffix = String.format("%s-%s", networkId, networkName);
         }
         return suffix;
+    }
+
+    private NatGetBody netrisNatRuleExists(String netrisNatRule) {
+        try {
+            NatApi natApi = apiClient.getApiStubForMethod(NatApi.class);
+            //NatResponseGetOk response = natApi.apiV2NatGet(null, Arrays.asList(new BigDecimal(vpcId)));
+            NatResponseGetOk response = natApi.apiV2NatGet(null, null);
+            if (Objects.isNull(response) || !response.isIsSuccess()) {
+                throw new CloudRuntimeException("Failed to list Netris NAT rules");
+            }
+            List<NatGetBody> data = response.getData().stream().filter(natData -> natData.getName().equals(netrisNatRule)).collect(Collectors.toList());
+            if (data.isEmpty()) {
+                return null;
+            }
+            return data.get(0);
+
+        } catch (ApiException e) {
+            throw new CloudRuntimeException("Failed to list Netris NAT rules");
+        }
     }
 }

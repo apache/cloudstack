@@ -22,11 +22,11 @@ public class NetrisCommand extends Command {
     private final long zoneId;
     private final Long accountId;
     private final Long domainId;
-    private final String name;
-    private final long id;
+    private String name;
+    private final Long id;
     private final boolean isVpc;
 
-    public NetrisCommand(long zoneId, Long accountId, Long domainId, String name, long id, boolean isVpc) {
+    public NetrisCommand(long zoneId, Long accountId, Long domainId, String name, Long id, boolean isVpc) {
         this.zoneId = zoneId;
         this.accountId = accountId;
         this.domainId = domainId;
@@ -40,7 +40,11 @@ public class NetrisCommand extends Command {
         return name;
     }
 
-    public long getId() {
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Long getId() {
         return id;
     }
 
