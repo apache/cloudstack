@@ -1750,7 +1750,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                 pool.setUsedBytes(usedBytes);
                                 poolNeedsUpdating = true;
                             }
-                            poolNeedsUpdating = isPoolNeedsIopsStatsUpdating(poolNeedsUpdating, pool, capacityIops, usedIops);
+                            poolNeedsUpdating = isPoolNeedsIopsStatsUpdate(pool, capacityIops, usedIops) || poolNeedsUpdating;
                             if (poolNeedsUpdating) {
                                 pool.setUpdateTime(new Date());
                                 _storagePoolDao.update(pool.getId(), pool);
@@ -1782,7 +1782,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
     }
 
-    protected boolean isPoolNeedsIopsStatsUpdating(boolean poolNeedsUpdating, StoragePoolVO pool, Long capacityIops, Long usedIops) {
+    protected boolean isPoolNeedsIopsStatsUpdate(StoragePoolVO pool, Long capacityIops, Long usedIops) {
+        boolean poolNeedsUpdating = false;
         long poolId = pool.getId();
         if (capacityIops != null && ((_storagePoolStats.get(poolId) != null &&
                 !capacityIops.equals(_storagePoolStats.get(poolId).getCapacityIops())) ||
