@@ -69,12 +69,24 @@ public class DetachVolumeCmd extends BaseAsyncCmd implements UserCmd {
         return id;
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public Long getDeviceId() {
         return deviceId;
     }
 
+    public void setDeviceId(Long deviceId) {
+        this.deviceId = deviceId;
+    }
+
     public Long getVirtualMachineId() {
         return virtualMachineId;
+    }
+
+    public void setVirtualMachineId(Long virtualMachineId) {
+        this.virtualMachineId = virtualMachineId;
     }
 
     /////////////////////////////////////////////////////
