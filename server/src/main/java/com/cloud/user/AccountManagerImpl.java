@@ -1459,6 +1459,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      * <ul>
      *  <li> If 'password' is blank, we throw an {@link InvalidParameterValueException};
      *  <li> If 'current password' is not provided and user is not an Admin, we throw an {@link InvalidParameterValueException};
+     *  <li> If the user whose password is being changed has a source equal to {@link User.Source#SAML2}, {@link User.Source#SAML2DISABLED} or {@link User.Source#LDAP},
+     *      we throw an {@link InvalidParameterValueException};
      *  <li> If a normal user is calling this method, we use {@link #validateCurrentPassword(UserVO, String)} to check if the provided old password matches the database one;
      * </ul>
      *
@@ -1471,6 +1473,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         if (StringUtils.isBlank(newPassword)) {
             throw new InvalidParameterValueException("Password cannot be empty or blank.");
+        }
+
+        User.Source userSource = user.getSource();
+        if (userSource == User.Source.SAML2 || userSource == User.Source.SAML2DISABLED || userSource == User.Source.LDAP) {
+            s_logger.warn(String.format("Unable to update the password for user [%d], as its source is [%s].", user.getId(), user.getSource().toString()));
+            throw new InvalidParameterValueException("CloudStack does not support updating passwords for SAML or LDAP users. Please contact your cloud administrator for assistance.");
         }
 
         passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(newPassword, user.getUsername(), getAccount(user.getAccountId()).getDomainId());
