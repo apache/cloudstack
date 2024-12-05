@@ -25,6 +25,8 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManagerImpl;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
@@ -123,6 +125,12 @@ public class ManagementServerImplTest {
     @Mock
     UserDataManager userDataManager;
 
+    @Mock
+    VpcDao vpcDao;
+
+    @Mock
+    NetworkDao networkDao;
+
     @Spy
     ManagementServerImpl spy = new ManagementServerImpl();
 
@@ -145,6 +153,8 @@ public class ManagementServerImplTest {
         spy._UserVmDetailsDao = userVmDetailsDao;
         spy._detailsDao = hostDetailsDao;
         spy.userDataManager = userDataManager;
+        spy._vpcDao = vpcDao;
+        spy.networkDao = networkDao;
     }
 
     @After

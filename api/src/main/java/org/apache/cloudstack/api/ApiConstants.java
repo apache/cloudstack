@@ -212,6 +212,7 @@ public class ApiConstants {
     public static final String FORMAT = "format";
     public static final String FOR_VIRTUAL_NETWORK = "forvirtualnetwork";
     public static final String FOR_SYSTEM_VMS = "forsystemvms";
+    public static final String FOR_PROVIDER = "forprovider";
     public static final String FULL_PATH = "fullpath";
     public static final String GATEWAY = "gateway";
     public static final String IP6_GATEWAY = "ip6gateway";

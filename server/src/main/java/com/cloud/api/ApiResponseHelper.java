@@ -1168,6 +1168,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         ipResponse.setPortable(ipAddr.isPortable());
         ipResponse.setForSystemVms(ipAddr.isForSystemVms());
+        if (Objects.nonNull(getProviderFromVlanDetailKey(vlan))) {
+            ipResponse.setForProvider(true);
+        }
 
         //set tag information
         List<? extends ResourceTag> tags = ApiDBUtils.listByResourceTypeAndId(ResourceObjectType.PublicIpAddress, ipAddr.getId());
