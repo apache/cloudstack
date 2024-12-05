@@ -35,6 +35,7 @@ import org.apache.cloudstack.ha.provider.host.HAAbstractHostProvider;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement.PowerOperation;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
 import org.joda.time.DateTime;
+import com.cloud.host.Status;
 
 import javax.inject.Inject;
 
@@ -84,11 +85,12 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
 
     @Override
     public boolean fence(Host r) throws HAFenceException {
+        
         try {
             // host exists and is managed OOB
             if (r != null && outOfBandManagementService.isOutOfBandManagementEnabled(r)) {
                 // check host status
-                if (Host.Status.DOWN.equals(r.getStatus())) {
+                if (Status.Down.equals(r.getStatus())) {
                     logger.info("Host " + r.getName() + " is already down. Returning success.");
                     return true;
                 } else {
