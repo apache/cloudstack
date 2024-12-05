@@ -33,9 +33,11 @@ public interface ManagementServerHostDao extends GenericDao<ManagementServerHost
 
     int increaseAlertCount(long id);
 
-    void update(long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate);
+    void update(long id, long runid, String name, String version, String serviceIP, int servicePort, Date lastUpdate, ManagementServerHost.State state);
 
     void update(long id, long runid, Date lastUpdate);
+
+    boolean updateState(long id, ManagementServerHost.State newState);
 
     List<ManagementServerHostVO> getActiveList(Date cutTime);
 
@@ -46,6 +48,8 @@ public interface ManagementServerHostDao extends GenericDao<ManagementServerHost
     void update(long id, long runId, State state, Date lastUpdate);
 
     List<ManagementServerHostVO> listBy(ManagementServerHost.State... states);
+
+    List<String> listNonUpStateMsIPs();
 
     /**
      * Lists msids for which hosts are orphaned, i.e. msids that hosts refer as their owning ms whilst no mshost entry exists with those msids

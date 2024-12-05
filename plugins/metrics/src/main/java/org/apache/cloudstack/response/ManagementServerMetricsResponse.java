@@ -22,12 +22,21 @@ import org.apache.cloudstack.api.MetricConstants;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 
 import java.util.Date;
+import java.util.List;
 
 public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     @SerializedName(MetricConstants.AVAILABLE_PROCESSORS)
     @Param(description = "the number of processors available to the JVM")
     private Integer availableProcessors;
+
+    @SerializedName(MetricConstants.LAST_AGENTS)
+    @Param(description = "the last agents this Management Server is responsible for, before preparing for maintenance", since = "4.18.1")
+    private List<String> lastAgents;
+
+    @SerializedName(MetricConstants.AGENTS)
+    @Param(description = "the agents this Management Server is responsible for", since = "4.18.1")
+    private List<String> agents;
 
     @SerializedName(MetricConstants.AGENT_COUNT)
     @Param(description = "the number of agents this Management Server is responsible for")
@@ -119,6 +128,14 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
 
     public void setAvailableProcessors(int availableProcessors) {
         this.availableProcessors = availableProcessors;
+    }
+
+    public void setLastAgents(List<String> lastAgents) {
+        this.lastAgents = lastAgents;
+    }
+
+    public void setAgents(List<String> agents) {
+        this.agents = agents;
     }
 
     public void setAgentCount(int agentCount) {
