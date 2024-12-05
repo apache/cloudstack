@@ -656,7 +656,7 @@ public class EncryptionSecretKeyChanger {
         String sqlTemplateDeployAsIsDetails = "SELECT template_deploy_as_is_details.value " +
                 "FROM template_deploy_as_is_details JOIN vm_instance " +
                 "WHERE template_deploy_as_is_details.template_id = vm_instance.vm_template_id " +
-                "vm_instance.id = %s AND template_deploy_as_is_details.name = '%s' LIMIT 1";
+                "AND vm_instance.id = %s AND template_deploy_as_is_details.name = '%s' LIMIT 1";
         try (PreparedStatement selectPstmt = conn.prepareStatement("SELECT id, vm_id, name, value FROM user_vm_deploy_as_is_details");
              ResultSet rs = selectPstmt.executeQuery();
              PreparedStatement updatePstmt = conn.prepareStatement("UPDATE user_vm_deploy_as_is_details SET value=? WHERE id=?")
