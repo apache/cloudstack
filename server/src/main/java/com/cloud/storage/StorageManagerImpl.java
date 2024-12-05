@@ -553,7 +553,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return answers[0];
     }
 
-    private Pair<Long, Long> getStoragePoolIopsStats(PrimaryDataStoreDriver primaryStoreDriver, StoragePool pool) {
+    protected Pair<Long, Long> getStoragePoolIopsStats(PrimaryDataStoreDriver primaryStoreDriver, StoragePool pool) {
         Pair<Long, Long> result = primaryStoreDriver.getStorageIopsStats(pool);
         if (result != null) {
             return result;
