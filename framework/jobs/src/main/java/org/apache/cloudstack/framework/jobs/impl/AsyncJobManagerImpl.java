@@ -174,7 +174,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private ExecutorService _apiJobExecutor;
     private ExecutorService _workerJobExecutor;
 
-    private boolean asyncJobsEnabled = true;
+    private boolean asyncJobsDisabled = false;
+    private long asyncJobsDisabledTime = 0;
 
     @Override
     public String getConfigComponentName() {
@@ -218,16 +219,48 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         return submitAsyncJob(job, false);
     }
 
-    private void checkAsyncJobsAllowed() {
-        if (!isAsyncJobsEnabled()) {
-            throw new CloudRuntimeException("Maintenance or Shutdown has been initiated on this management server. Can not accept new jobs");
+    private void checkAsyncJobAllowed(AsyncJob job) {
+        if (isAsyncJobsEnabled()) {
+            return;
         }
+
+        if (job instanceof VmWorkJobVO) {
+            String related = job.getRelated();
+            if (StringUtils.isNotBlank(related)) {
+                AsyncJob relatedJob = _jobDao.findByIdIncludingRemoved(Long.parseLong(related));
+                if (relatedJob != null) {
+                    long relatedJobCreatedTime = relatedJob.getCreated().getTime();
+                    if ((asyncJobsDisabledTime - relatedJobCreatedTime) >= 0) {
+                        return;
+                    }
+                }
+            }
+        }
+
+        throw new CloudRuntimeException("Maintenance or Shutdown has been initiated on this management server. Can not accept new jobs");
+    }
+
+    private boolean checkSyncQueueItemAllowed(SyncQueueItemVO item) {
+        if (isAsyncJobsEnabled()) {
+            return true;
+        }
+
+        Long contentId = item.getContentId();
+        AsyncJob relatedJob = _jobDao.findByIdIncludingRemoved(contentId);
+        if (relatedJob != null) {
+            long relatedJobCreatedTime = relatedJob.getCreated().getTime();
+            if ((asyncJobsDisabledTime - relatedJobCreatedTime) >= 0) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @SuppressWarnings("unchecked")
     @DB
     public long submitAsyncJob(AsyncJob job, boolean scheduleJobExecutionInContext) {
-        checkAsyncJobsAllowed();
+        checkAsyncJobAllowed(job);
 
         @SuppressWarnings("rawtypes")
         GenericDao dao = GenericDaoBase.getDao(job.getClass());
@@ -248,7 +281,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     @DB
     public long submitAsyncJob(final AsyncJob job, final String syncObjType, final long syncObjId) {
-        checkAsyncJobsAllowed();
+        checkAsyncJobAllowed(job);
 
         try {
             @SuppressWarnings("rawtypes")
@@ -1301,16 +1334,18 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public void enableAsyncJobs() {
-        this.asyncJobsEnabled = true;
+        this.asyncJobsDisabled = false;
+        this.asyncJobsDisabledTime = 0;
     }
 
     @Override
     public void disableAsyncJobs() {
-        this.asyncJobsEnabled = false;
+        this.asyncJobsDisabled = true;
+        this.asyncJobsDisabledTime = System.currentTimeMillis();
     }
 
     @Override
     public boolean isAsyncJobsEnabled() {
-        return asyncJobsEnabled;
+        return !asyncJobsDisabled;
     }
 }
