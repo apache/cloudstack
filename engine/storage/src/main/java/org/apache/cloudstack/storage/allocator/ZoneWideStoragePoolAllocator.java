@@ -96,7 +96,7 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
             }
             StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(storage.getId());
             if (filter(avoid, storagePool, dskCh, plan)) {
-                logger.debug(String.format("Found suitable zone wide storage pool [%s] to allocate disk [%s] to it, adding to list.", storagePool, dskCh));
+                logger.debug("Found suitable zone wide storage pool [{}] to allocate disk [{}] to it, adding to list.", storagePool, dskCh);
                 suitablePools.add(storagePool);
             } else {
                 if (canAddStoragePoolToAvoidSet(storage)) {
