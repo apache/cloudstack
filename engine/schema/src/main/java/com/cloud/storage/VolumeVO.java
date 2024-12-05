@@ -50,6 +50,9 @@ public class VolumeVO implements Volume {
     @Column(name = "id")
     long id;
 
+    @Column(name = "last_id")
+    private long lastId;
+
     @Column(name = "name")
     String name;
 
@@ -181,6 +184,9 @@ public class VolumeVO implements Volume {
 
     @Column(name = "encrypt_format")
     private String encryptFormat;
+
+    @Column(name = "delete_protection")
+    private boolean deleteProtection;
 
 
     // Real Constructor
@@ -678,4 +684,21 @@ public class VolumeVO implements Volume {
     public String getEncryptFormat() { return encryptFormat; }
 
     public void setEncryptFormat(String encryptFormat) { this.encryptFormat = encryptFormat; }
+
+    @Override
+    public boolean isDeleteProtection() {
+        return deleteProtection;
+    }
+
+    public void setDeleteProtection(boolean deleteProtection) {
+        this.deleteProtection = deleteProtection;
+    }
+
+    public long getLastId() {
+        return lastId;
+    }
+
+    public void setLastId(long lastId) {
+        this.lastId = lastId;
+    }
 }

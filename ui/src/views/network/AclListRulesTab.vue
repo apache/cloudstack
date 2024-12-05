@@ -17,7 +17,8 @@
 
 <template>
   <a-spin :spinning="fetchLoading">
-    <div style="width: 100%; display: flex">
+
+     <div style="width: 100%; display: flex">
       <a-button
         type="dashed"
         style="width: 100%; margin-right: 10px"
@@ -31,6 +32,14 @@
         <template #icon><download-outlined /></template>
         {{ $t('label.acl.export') }}
       </a-button>
+      <div class="search-bar">
+        <a-input-search
+          style="width: 25vw;float: right;margin-left: 10px; z-index: 8"
+          :placeholder="$t('label.search')"
+          v-model:value="searchQuery"
+          @search="fetchData"
+        />
+      </div>
     </div>
 
     <div class="list">
@@ -324,6 +333,7 @@ export default {
   },
   data () {
     return {
+      searchQuery: '', // Bind this to the search input
       acls: [],
       fetchLoading: false,
       protocolNumbers: [],
@@ -433,7 +443,11 @@ export default {
     },
     fetchData () {
       this.fetchLoading = true
-      api('listNetworkACLs', { aclid: this.resource.id }).then(json => {
+      const params = {
+        aclid: this.resource.id,
+        keyword: this.searchQuery
+      }
+      api('listNetworkACLs', params).then(json => {
         this.acls = json.listnetworkaclsresponse.networkacl || []
         if (this.acls.length > 0) {
           this.acls.sort((a, b) => a.number - b.number)

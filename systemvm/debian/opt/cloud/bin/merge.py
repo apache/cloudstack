@@ -37,6 +37,7 @@ import cs_site2sitevpn
 import cs_remoteaccessvpn
 import cs_vpnusers
 import cs_staticroutes
+import cs_bgppeers
 
 
 class DataBag:
@@ -132,6 +133,8 @@ class updateDataBag:
             dbag = self.process_vpnusers(self.db.getDataBag())
         elif self.qFile.type == 'staticroutes':
             dbag = self.process_staticroutes(self.db.getDataBag())
+        elif self.qFile.type == 'bgppeers':
+            dbag = self.process_bgppeers(self.db.getDataBag())
         elif self.qFile.type == 'ipaliases':
             self.db.setKey('ips')
             self.db.load()
@@ -191,6 +194,9 @@ class updateDataBag:
 
     def process_staticroutes(self, dbag):
         return cs_staticroutes.merge(dbag, self.qFile.data)
+
+    def process_bgppeers(self, dbag):
+        return cs_bgppeers.merge(dbag, self.qFile.data)
 
     def processVMpassword(self, dbag):
         return cs_vmp.merge(dbag, self.qFile.data)

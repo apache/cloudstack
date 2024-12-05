@@ -114,7 +114,12 @@
               <status :text="text ? text : ''" displayText />
             </template>
             <template v-if="column.key === 'port'" :name="text" :record="record">
-              {{ cksSshStartingPort + index }}
+              <div v-if="network.type === 'Shared' || network.ip4routing">
+                {{ cksSshPortSharedNetwork }}
+              </div>
+              <div v-else>
+                {{ cksSshStartingPort + index }}
+              </div>
             </template>
             <template v-if="column.key === 'actions'">
               <a-tooltip placement="bottom" >
@@ -214,6 +219,7 @@ export default {
       publicIpAddress: null,
       currentTab: 'details',
       cksSshStartingPort: 2222,
+      cksSshPortSharedNetwork: 22,
       annotations: []
     }
   },
@@ -278,7 +284,7 @@ export default {
     }
   },
   mounted () {
-    if (this.$store.getters.apis.scaleKubernetesCluster.params.filter(x => x.name === 'nodeids').length > 0 && this.resource.clustertype === 'CloudManaged') {
+    if (this.$store.getters.apis.scaleKubernetesCluster?.params?.filter(x => x.name === 'nodeids').length > 0 && this.resource.clustertype === 'CloudManaged') {
       this.vmColumns.push({
         key: 'actions',
         title: this.$t('label.actions'),
@@ -409,7 +415,7 @@ export default {
     },
     async fetchPublicIpAddress () {
       await this.fetchNetwork()
-      if (this.network && this.network.type === 'Shared') {
+      if (this.network && (this.network.type === 'Shared' || this.network.ip4routing)) {
         this.publicIpAddress = null
         return
       }
