@@ -85,7 +85,6 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
 
     @Override
     public boolean fence(Host r) throws HAFenceException {
-        
         try {
             // host exists and is managed OOB
             if (r != null && outOfBandManagementService.isOutOfBandManagementEnabled(r)) {
