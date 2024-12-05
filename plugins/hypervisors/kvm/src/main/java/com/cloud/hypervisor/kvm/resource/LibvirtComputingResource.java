@@ -2762,7 +2762,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         FeaturesDef features = new FeaturesDef();
         features.addFeatures(PAE);
         features.addFeatures(APIC);
-        if (!"s390x".equals(System.getProperty("os.arch"))) {
+        if (!isGuestS390x()) {
             features.addFeatures(ACPI);
         }
         if (isUefiEnabled && isSecureBoot) {
