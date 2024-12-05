@@ -266,7 +266,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                     map(SnapshotDataStoreVO::getParentSnapshotId).
                     filter(parentSnapshotId -> parentSnapshotId != 0).findFirst().orElse(0L);
         }
-        return snapshotDataStoreVOList.get(0).getSnapshotId();
+        return snapshotDataStoreVOList.stream().map(SnapshotDataStoreVO::getSnapshotId).findFirst().orElse(0L);
     }
 
     @Override
