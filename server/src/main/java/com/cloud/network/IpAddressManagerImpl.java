@@ -33,7 +33,13 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.dao.VlanDetailsDao;
+import com.cloud.network.dao.NetrisProviderDao;
+import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.element.NetrisProviderVO;
+import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -189,6 +195,7 @@ import com.cloud.vm.dao.NicIpAliasDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.commons.lang3.ObjectUtils;
 
 public class IpAddressManagerImpl extends ManagerBase implements IpAddressManager, Configurable {
 
@@ -313,6 +320,12 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     private AnnotationDao annotationDao;
     @Inject
     MessageBus messageBus;
+    @Inject
+    NsxProviderDao nsxProviderDao;
+    @Inject
+    NetrisProviderDao netrisProviderDao;
+    @Inject
+    VlanDetailsDao vlanDetailsDao;
 
     @Inject
     PublicIpQuarantineDao publicIpQuarantineDao;
@@ -1301,6 +1314,30 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
     }
 
+    /**
+     * When the zone is linked to external provider NSX or Netris: check if the IP to be associated is from the suitable pool
+     * Otherwise, no checks are performed
+     */
+    private void checkPublicIpOnExternalProviderZone(DataCenter zone, String ip) {
+        long zoneId = zone.getId();
+        NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(zoneId);
+        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+        if (ObjectUtils.allNull(netrisProvider, nsxProvider)) {
+            return;
+        }
+        IPAddressVO ipAddress = _ipAddressDao.findByIpAndDcId(zoneId, ip);
+        if (ipAddress != null) {
+            String detailKey = nsxProvider != null ? ApiConstants.NSX_DETAIL_KEY : ApiConstants.NETRIS_DETAIL_KEY;
+            VlanDetailsVO vlanDetailVO = vlanDetailsDao.findDetail(ipAddress.getVlanId(), detailKey);
+            if (vlanDetailVO == null || vlanDetailVO.getValue().equalsIgnoreCase("false")) {
+                String msg = String.format("Cannot acquire IP %s on the zone %s as the IP is not from the reserved pool " +
+                        "for the external provider", ip, zone.getName());
+                logger.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+        }
+    }
+
     @DB
     @Override
     public IpAddress allocateIp(final Account ipOwner, final boolean isSystem, Account caller, long callerUserId, final DataCenter zone, final Boolean displayIp, final String ipaddress)
@@ -1308,6 +1345,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         final VlanType vlanType = VlanType.VirtualNetwork;
         final boolean assign = false;
+
+        checkPublicIpOnExternalProviderZone(zone, ipaddress);
 
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
             // zone is of type DataCenter. See DataCenterVO.java.

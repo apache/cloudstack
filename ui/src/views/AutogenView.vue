@@ -1001,6 +1001,19 @@ export default {
         }
 
         this.items = json[responseName][objectName]
+        var filteredItems = []
+        if (this.apiName === 'listPublicIpAddresses') {
+          for (var zone of this.$store.getters.zones) {
+            const zoneIps = this.items.filter(item => item.zoneid === zone.id)
+            const providerIps = zoneIps.filter(item => item.forprovider === true)
+            if (providerIps.length === 0) {
+              filteredItems.push(...zoneIps)
+            } else {
+              filteredItems.push(...providerIps)
+            }
+          }
+          this.items = filteredItems
+        }
         if (!this.items || this.items.length === 0) {
           this.items = []
         }
@@ -1931,7 +1944,6 @@ export default {
           this.rules[field.name].push(rule)
           break
         case (this.currentAction.mapping && field.name in this.currentAction.mapping && 'options' in this.currentAction.mapping[field.name]):
-          console.log('op: ' + field)
           rule.required = field.required
           rule.message = this.$t('message.error.select')
           this.rules[field.name].push(rule)
@@ -1942,20 +1954,17 @@ export default {
           this.rules[field.name].push(rule)
           break
         case (field.type === 'uuid'):
-          console.log('uuid: ' + field)
           rule.required = field.required
           rule.message = this.$t('message.error.select')
           this.rules[field.name].push(rule)
           break
         case (field.type === 'list'):
-          console.log('list: ' + field)
           rule.type = 'array'
           rule.required = field.required
           rule.message = this.$t('message.error.select')
           this.rules[field.name].push(rule)
           break
         case (field.type === 'long'):
-          console.log(field)
           rule.type = 'number'
           rule.required = field.required
           rule.message = this.$t('message.validate.number')
