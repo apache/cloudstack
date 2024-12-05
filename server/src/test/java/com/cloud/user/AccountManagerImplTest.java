@@ -874,6 +874,36 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, currentPassword, false);
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateUserPasswordAndUpdateIfNeededTestSaml2UserShouldNotBeAllowedToUpdateTheirPassword() {
+        String newPassword = "newPassword";
+        String currentPassword = "theCurrentPassword";
+
+        Mockito.when(userVoMock.getSource()).thenReturn(User.Source.SAML2);
+
+        accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, currentPassword, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateUserPasswordAndUpdateIfNeededTestSaml2DisabledUserShouldNotBeAllowedToUpdateTheirPassword() {
+        String newPassword = "newPassword";
+        String currentPassword = "theCurrentPassword";
+
+        Mockito.when(userVoMock.getSource()).thenReturn(User.Source.SAML2DISABLED);
+
+        accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, currentPassword, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateUserPasswordAndUpdateIfNeededTestLdapUserShouldNotBeAllowedToUpdateTheirPassword() {
+        String newPassword = "newPassword";
+        String currentPassword = "theCurrentPassword";
+
+        Mockito.when(userVoMock.getSource()).thenReturn(User.Source.LDAP);
+
+        accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, currentPassword, false);
+    }
+
     private String configureUserMockAuthenticators(String newPassword) {
         accountManagerImpl._userPasswordEncoders = new ArrayList<>();
         UserAuthenticator authenticatorMock1 = Mockito.mock(UserAuthenticator.class);
