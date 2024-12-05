@@ -137,6 +137,9 @@ public class KVMHostInfo {
         try {
             LOGGER.info("Fetching CPU speed from command \"lscpu\".");
             String command = "lscpu | grep -i 'Model name' | head -n 1 | egrep -o '[[:digit:]].[[:digit:]]+GHz' | sed 's/GHz//g'";
+            if("s390x".equals(System.getProperty("os.arch"))) {
+                command = "lscpu | grep 'CPU dynamic MHz' | cut -d ':' -f 2 | tr -d ' ' | awk '{printf \"%.1f\\n\", $1 / 1000}'";
+            }
             String result = Script.runSimpleBashScript(command);
             long speed = (long) (Float.parseFloat(result) * 1000);
             LOGGER.info(String.format("Command [%s] resulted in the value [%s] for CPU speed.", command, speed));

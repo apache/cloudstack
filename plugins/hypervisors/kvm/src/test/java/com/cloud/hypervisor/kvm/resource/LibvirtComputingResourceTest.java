@@ -401,7 +401,7 @@ public class LibvirtComputingResourceTest {
         VirtualMachineTO to = createDefaultVM(false);
         LibvirtVMDef vm = new LibvirtVMDef();
         GuestDef guestDef = libvirtComputingResourceSpy.createGuestFromSpec(to, vm, to.getUuid(), null);
-        verifySysInfo(guestDef, "smbios", to.getUuid(), "pc");
+        verifySysInfo(guestDef, "smbios", to.getUuid(), "s390x".equals(System.getProperty("os.arch")) ? "s390-ccw-virtio" : "pc");
         Assert.assertEquals(GuestDef.BootType.BIOS, guestDef.getBootType());
         Assert.assertNull(guestDef.getBootMode());
     }
@@ -826,7 +826,7 @@ public class LibvirtComputingResourceTest {
     }
 
     private void verifyOsType(Document domainDoc) {
-        assertXpath(domainDoc, "/domain/os/type/@machine", "pc");
+        assertXpath(domainDoc, "/domain/os/type/@machine", "s390x".equals(System.getProperty("os.arch")) ? "s390-ccw-virtio" : "pc");
         assertXpath(domainDoc, "/domain/os/type/text()", "hvm");
     }
 
