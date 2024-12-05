@@ -1467,7 +1467,10 @@ class CsForwardingRules(CsDataBag):
         self.fw.append(["filter", "", fw7])
 
     def forward_vpc(self, rule):
-        fw_prerout_rule = "-A PREROUTING -d %s/32 " % (rule["public_ip"])
+        fw_prerout_rule = "-A PREROUTING"
+        if "source_cidr_list" in rule and rule["source_cidr_list"]:
+            fw_prerout_rule += " -s %s" % rule["source_cidr_list"]
+        fw_prerout_rule += " -d %s/32" % rule["public_ip"]
         if not rule["protocol"] == "any":
             fw_prerout_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
         if not rule["public_ports"] == "any":
@@ -1476,7 +1479,10 @@ class CsForwardingRules(CsDataBag):
         if not rule["internal_ports"] == "any":
             fw_prerout_rule += ":" + self.portsToString(rule["internal_ports"], "-")
 
-        fw_output_rule = "-A OUTPUT -d %s/32" % rule["public_ip"]
+        fw_output_rule = "-A OUTPUT"
+        if "source_cidr_list" in rule and rule["source_cidr_list"]:
+            fw_output_rule += " -s %s" % rule["source_cidr_list"]
+        fw_output_rule += " -d %s/32" % rule["public_ip"]
         if not rule["protocol"] == "any":
             fw_output_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
         if not rule["public_ports"] == "any":
