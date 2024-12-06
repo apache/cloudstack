@@ -19,9 +19,9 @@ package org.apache.cloudstack.service;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class NetrisProviderServiceImplTest {
+public class NetrisServiceImplTest {
 
-    private NetrisProviderServiceImpl service = new NetrisProviderServiceImpl();
+    private NetrisServiceImpl service = new NetrisServiceImpl();
 
     @Test
     public void testCalculateSubnetCidrFromIpRange() {
