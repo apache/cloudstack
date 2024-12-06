@@ -32,6 +32,7 @@ SELECT
     `storage_pool`.`removed` AS `removed`,
     `storage_pool`.`capacity_bytes` AS `capacity_bytes`,
     `storage_pool`.`capacity_iops` AS `capacity_iops`,
+    `storage_pool`.`used_iops` AS `used_iops`,
     `storage_pool`.`scope` AS `scope`,
     `storage_pool`.`hypervisor` AS `hypervisor`,
     `storage_pool`.`storage_provider_name` AS `storage_provider_name`,
