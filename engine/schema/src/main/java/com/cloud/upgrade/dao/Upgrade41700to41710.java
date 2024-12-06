@@ -99,46 +99,58 @@ public class Upgrade41700to41710 extends DbUpgradeAbstractImpl implements DbUpgr
         }
     }
 
+    protected PrimaryDataStoreDao getStorageDao() {
+        if (storageDao == null) {
+            storageDao = new PrimaryDataStoreDaoImpl();
+        }
+        return storageDao;
+    }
+
+    protected VolumeDao getVolumeDao() {
+        if (volumeDao == null) {
+            volumeDao = new VolumeDaoImpl();
+        }
+        return volumeDao;
+    }
+
     /*
     GenericDao.customSearch using GenericSearchBuilder and GenericDao.update using
     GenericDao.createSearchBuilder used here to prevent any future issues when new fields
     are added to StoragePoolVO or VolumeVO and this upgrade path starts to fail.
      */
-    private void updateStorPoolStorageType() {
-        storageDao = new PrimaryDataStoreDaoImpl();
-        StoragePoolVO pool = storageDao.createForUpdate();
+    protected void updateStorPoolStorageType() {
+        StoragePoolVO pool = getStorageDao().createForUpdate();
         pool.setPoolType(StoragePoolType.StorPool);
-        SearchBuilder<StoragePoolVO> sb = storageDao.createSearchBuilder();
+        SearchBuilder<StoragePoolVO> sb = getStorageDao().createSearchBuilder();
         sb.and("provider", sb.entity().getStorageProviderName(), SearchCriteria.Op.EQ);
         sb.and("type", sb.entity().getPoolType(), SearchCriteria.Op.EQ);
         sb.done();
         SearchCriteria<StoragePoolVO> sc = sb.create();
         sc.setParameters("provider", StoragePoolType.StorPool.name());
         sc.setParameters("type", StoragePoolType.SharedMountPoint.name());
-        storageDao.update(pool, sc);
+        getStorageDao().update(pool, sc);
 
-        GenericSearchBuilder<StoragePoolVO, Long> gSb = storageDao.createSearchBuilder(Long.class);
+        GenericSearchBuilder<StoragePoolVO, Long> gSb = getStorageDao().createSearchBuilder(Long.class);
         gSb.selectFields(gSb.entity().getId());
         gSb.and("provider", gSb.entity().getStorageProviderName(), SearchCriteria.Op.EQ);
         gSb.done();
         SearchCriteria<Long> gSc = gSb.create();
         gSc.setParameters("provider", StoragePoolType.StorPool.name());
-        List<Long> poolIds = storageDao.customSearch(gSc, null);
-        if (CollectionUtils.isEmpty(poolIds)) {
-            return;
-        }
+        List<Long> poolIds = getStorageDao().customSearch(gSc, null);
         updateStorageTypeForStorPoolVolumes(poolIds);
     }
 
-    private void updateStorageTypeForStorPoolVolumes(List<Long> storagePoolIds) {
-        volumeDao = new VolumeDaoImpl();
-        VolumeVO volume = volumeDao.createForUpdate();
+    protected void updateStorageTypeForStorPoolVolumes(List<Long> storagePoolIds) {
+        if (CollectionUtils.isEmpty(storagePoolIds)) {
+            return;
+        }
+        VolumeVO volume = getVolumeDao().createForUpdate();
         volume.setPoolType(StoragePoolType.StorPool);
-        SearchBuilder<VolumeVO> sb = volumeDao.createSearchBuilder();
+        SearchBuilder<VolumeVO> sb = getVolumeDao().createSearchBuilder();
         sb.and("poolId", sb.entity().getPoolId(), SearchCriteria.Op.IN);
         sb.done();
         SearchCriteria<VolumeVO> sc = sb.create();
         sc.setParameters("poolId", storagePoolIds.toArray());
-        volumeDao.update(volume, sc);
+        getVolumeDao().update(volume, sc);
     }
 }
