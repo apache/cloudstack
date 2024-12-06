@@ -16,12 +16,9 @@
 -- under the License.
 
 --;
--- Schema upgrade from 4.20.0.0 to 4.21.0.0
+-- Schema upgrade from 4.20.1.0 to 4.21.0.0
 --;
 
 -- Add columns max_backup and backup_interval_type to backup table
 ALTER TABLE `cloud`.`backup_schedule` ADD COLUMN `max_backups` int(8) default NULL COMMENT 'maximum number of backups to maintain';
 ALTER TABLE `cloud`.`backups` ADD COLUMN `backup_interval_type` int(5) COMMENT 'type of backup, e.g. manual, recurring - hourly, daily, weekly or monthly';
-
--- Add Backup related settings to a new Subgroup
-INSERT INTO `cloud`.`configuration_subgroup` (`name`, `keywords`, `precedence`, `group_id`) VALUES ('Backup', NULL, 5, (SELECT id FROM `cloud`.`configuration_group` WHERE `name` = 'Storage'));
