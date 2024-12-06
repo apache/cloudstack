@@ -262,23 +262,23 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
                 primaryDataStoreInfo.getPodId(), primaryDataStoreInfo.getDataCenterId());
         if (hostsInCluster.isEmpty()) {
             primaryDataStoreDao.expunge(primaryDataStoreInfo.getId());
-            throw new CloudRuntimeException("No hosts are Up to associate a storage pool with in cluster: " + primaryDataStoreInfo.getClusterId());
+            throw new CloudRuntimeException("No hosts are Up to associate a storage pool with in cluster: " + cluster);
         }
 
-        logger.debug("Attaching the pool to each of the hosts in the cluster: " + primaryDataStoreInfo.getClusterId());
+        logger.debug("Attaching the pool to each of the hosts in the cluster: {}", cluster);
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO host : hostsInCluster) {
             try {
-                if (storageMgr.connectHostToSharedPool(host.getId(), primaryDataStoreInfo.getId())) {
+                if (storageMgr.connectHostToSharedPool(host, primaryDataStoreInfo.getId())) {
                     poolHosts.add(host);
                 }
             } catch (Exception e) {
-                logger.warn("Unable to establish a connection between host: " + host + " and pool: " + dataStore + "on the cluster: " + primaryDataStoreInfo.getClusterId(), e);
+                logger.warn(String.format("Unable to establish a connection between host: %s and pool: %s on the cluster: %s", host, dataStore, cluster), e);
             }
         }
 
         if (poolHosts.isEmpty()) {
-            logger.warn("No host can access storage pool '" + primaryDataStoreInfo + "' on cluster '" + primaryDataStoreInfo.getClusterId() + "'.");
+            logger.warn("No host can access storage pool '{}' on cluster '{}'.", primaryDataStoreInfo, cluster);
         }
 
         dataStoreHelper.attachCluster(dataStore);
@@ -301,7 +301,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO host : hosts) {
             try {
-                if (storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId())) {
+                if (storageMgr.connectHostToSharedPool(host, dataStore.getId())) {
                     poolHosts.add(host);
                 }
             } catch (Exception e) {
@@ -360,17 +360,17 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
             DeleteStoragePoolCommand deleteStoragePoolCommand = new DeleteStoragePoolCommand(storagePool);
             final Answer answer = agentMgr.easySend(poolHostVO.getHostId(), deleteStoragePoolCommand);
             if (answer != null && answer.getResult()) {
-                logger.info("Successfully deleted storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId());
+                logger.info("Successfully deleted storage pool: {} from host: {}", storagePool, poolHostVO.getHostId());
             } else {
                 if (answer != null) {
-                    logger.error("Failed to delete storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId() + " , result: " + answer.getResult());
+                    logger.error("Failed to delete storage pool: {} from host: {} , result: {}", storagePool, poolHostVO.getHostId(), answer.getResult());
                 } else {
-                    logger.error("Failed to delete storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId());
+                    logger.error("Failed to delete storage pool: {} from host: {}", storagePool, poolHostVO.getHostId());
                 }
             }
         }
 
-        ScaleIOGatewayClientConnectionPool.getInstance().removeClient(dataStore.getId());
+        ScaleIOGatewayClientConnectionPool.getInstance().removeClient(dataStore);
 
         return dataStoreHelper.deletePrimaryDataStore(dataStore);
     }

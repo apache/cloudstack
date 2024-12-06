@@ -377,7 +377,7 @@ public class ElastistorPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLif
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO h : allHosts) {
             try {
-                storageMgr.connectHostToSharedPool(h.getId(), primarystore.getId());
+                storageMgr.connectHostToSharedPool(h, primarystore.getId());
                 poolHosts.add(h);
             } catch (Exception e) {
                 logger.warn("Unable to establish a connection between " + h + " and " + primarystore, e);
@@ -433,7 +433,7 @@ public class ElastistorPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLif
         List<HostVO> poolHosts = new ArrayList<HostVO>();
         for (HostVO host : hosts) {
             try {
-                storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
+                storageMgr.connectHostToSharedPool(host, dataStore.getId());
                 poolHosts.add(host);
             } catch (Exception e) {
                 logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);

@@ -410,7 +410,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle extends BasePrimaryDataSto
 
         for (HostVO host : allHosts) {
             try {
-                storageMgr.connectHostToSharedPool(host.getId(), primaryDataStoreInfo.getId());
+                storageMgr.connectHostToSharedPool(host, primaryDataStoreInfo.getId());
 
                 poolHosts.add(host);
             } catch (Exception e) {
