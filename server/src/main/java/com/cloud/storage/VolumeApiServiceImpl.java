@@ -3201,6 +3201,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         VMInstanceVO vm = null;
         if (instanceId != null) {
             vm = _vmInstanceDao.findById(instanceId);
+            checkIfVmIsStarting(vm, vol);
         }
 
         // Check that Vm to which this volume is attached does not have VM Snapshots
@@ -3396,6 +3397,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return orchestrateMigrateVolume(vol, destPool, liveMigrateVolume, newDiskOffering);
+    }
+
+    private void checkIfVmIsStarting(VMInstanceVO vm, VolumeVO vol) {
+        if (vm.getState().equals(State.Starting)) {
+            s_logger.debug(String.format("Unable to migrate volume: [%s] Id: [%s] because the VM: [%s] Id: [%s] has not started yet.", vol.getName(), vol.getId(), vm.getInstanceName(), vm.getUuid()));
+
+            throw new CloudRuntimeException("Volume migration is not allowed while the VM is starting.");
+        }
     }
 
     private boolean isSourceOrDestNotOnStorPool(StoragePoolVO storagePoolVO, StoragePoolVO destinationStoragePoolVo) {
