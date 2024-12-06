@@ -16,25 +16,6 @@
 // under the License.
 package com.cloud.dc.dao;
 
-import com.cloud.cpu.CPU;
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.ClusterDetailsVO;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.HostPodVO;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.org.Grouping;
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.GenericSearchBuilder;
-import com.cloud.utils.db.JoinBuilder;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria.Func;
-import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.springframework.stereotype.Component;
-
-import javax.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -45,6 +26,28 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+
+import org.springframework.stereotype.Component;
+
+import com.cloud.cpu.CPU;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.HostPodVO;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.org.Grouping;
+import com.cloud.org.Managed;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Func;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements ClusterDao {
@@ -58,7 +61,6 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     protected final SearchBuilder<ClusterVO> ClusterSearch;
     protected final SearchBuilder<ClusterVO> ClusterDistinctArchSearch;
     protected final SearchBuilder<ClusterVO> ClusterArchSearch;
-
     protected GenericSearchBuilder<ClusterVO, Long> ClusterIdSearch;
 
     private static final String GET_POD_CLUSTER_MAP_PREFIX = "SELECT pod_id, id FROM cloud.cluster WHERE cluster.id IN( ";
@@ -98,6 +100,8 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
 
         ZoneClusterSearch = createSearchBuilder();
         ZoneClusterSearch.and("dataCenterId", ZoneClusterSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        ZoneClusterSearch.and("allocationState", ZoneClusterSearch.entity().getAllocationState(), Op.EQ);
+        ZoneClusterSearch.and("managedState", ZoneClusterSearch.entity().getManagedState(), Op.EQ);
         ZoneClusterSearch.done();
 
         ClusterIdSearch = createSearchBuilder(Long.class);
@@ -167,23 +171,15 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
             sc.setParameters("zoneId", zoneId);
         }
         List<ClusterVO> clusters = listBy(sc);
-        List<HypervisorType> hypers = new ArrayList<HypervisorType>(4);
-        for (ClusterVO cluster : clusters) {
-            hypers.add(cluster.getHypervisorType());
-        }
-
-        return hypers;
+        return clusters.stream()
+                .map(ClusterVO::getHypervisorType)
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     @Override
-    public Set<HypervisorType> getDistictAvailableHypervisorsAcrossClusters() {
-        SearchCriteria<ClusterVO> sc = ClusterSearch.create();
-        List<ClusterVO> clusters = listBy(sc);
-        Set<HypervisorType> hypers = new HashSet<>();
-        for (ClusterVO cluster : clusters) {
-            hypers.add(cluster.getHypervisorType());
-        }
-        return hypers;
+    public Set<HypervisorType> getDistinctAvailableHypervisorsAcrossClusters() {
+        return new HashSet<>(getAvailableHypervisorInZone(null));
     }
 
     @Override
@@ -267,6 +263,23 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     }
 
     @Override
+    public Integer countAllByDcId(long zoneId) {
+        SearchCriteria<ClusterVO> sc = ZoneClusterSearch.create();
+        sc.setParameters("dataCenterId", zoneId);
+        return getCount(sc);
+    }
+
+    @Override
+    public Integer countAllManagedAndEnabledByDcId(long zoneId) {
+        SearchCriteria<ClusterVO> sc = ZoneClusterSearch.create();
+        sc.setParameters("dataCenterId", zoneId);
+        sc.setParameters("allocationState", Grouping.AllocationState.Enabled);
+        sc.setParameters("managedState", Managed.ManagedState.Managed);
+
+        return getCount(sc);
+    }
+
+    @Override
     public List<ClusterVO> listClustersByDcId(long zoneId) {
         SearchCriteria<ClusterVO> sc = ZoneClusterSearch.create();
         sc.setParameters("dataCenterId", zoneId);
@@ -289,7 +302,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     }
 
     @Override
-    public List<Long> listAllClusters(Long zoneId) {
+    public List<Long> listAllClusterIds(Long zoneId) {
         SearchCriteria<Long> sc = ClusterIdSearch.create();
         if (zoneId != null) {
             sc.setParameters("dataCenterId", zoneId);

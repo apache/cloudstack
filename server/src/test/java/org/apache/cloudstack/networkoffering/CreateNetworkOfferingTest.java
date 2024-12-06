@@ -18,7 +18,6 @@
 package org.apache.cloudstack.networkoffering;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
 
 import java.util.HashMap;
@@ -28,21 +27,21 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.network.dao.PublicIpQuarantineDao;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDao;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.event.dao.UsageEventDetailsDao;
@@ -52,6 +51,7 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
@@ -61,48 +61,44 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
-import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.dao.UserVmDetailsDao;
+
 import junit.framework.TestCase;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = "classpath:/createNetworkOffering.xml")
+@RunWith(MockitoJUnitRunner.class)
 public class CreateNetworkOfferingTest extends TestCase {
 
-    @Inject
-    ConfigurationManager configMgr;
-
-    @Inject
+    @Mock
     ConfigurationDao configDao;
 
-    @Inject
+    @Mock
     NetworkOfferingDao offDao;
 
-    @Inject
+    @Mock
     NetworkOfferingServiceMapDao mapDao;
 
-    @Inject
+    @Mock
     AccountManager accountMgr;
 
-    @Inject
+    @Mock
     VpcManager vpcMgr;
 
-    @Inject
+    @Mock
     UserVmDetailsDao userVmDetailsDao;
 
-    @Inject
+    @Mock
     UsageEventDao UsageEventDao;
 
-    @Inject
+    @Mock
     UsageEventDetailsDao usageEventDetailsDao;
 
-    @Inject
+    @Mock
     UserIpAddressDetailsDao userIpAddressDetailsDao;
 
-    @Inject
+    @Mock
     LoadBalancerVMMapDao _loadBalancerVMMapDao;
 
-    @Inject
+    @Mock
     AnnotationDao annotationDao;
     @Inject
     VlanDetailsDao vlanDetailsDao;
@@ -110,15 +106,12 @@ public class CreateNetworkOfferingTest extends TestCase {
     @Inject
     PublicIpQuarantineDao publicIpQuarantineDao;
 
+    @InjectMocks
+    ConfigurationManager configMgr = new ConfigurationManagerImpl();
+
     @Override
     @Before
     public void setUp() {
-        ComponentContext.initComponentsLifeCycle();
-
-        ConfigurationVO configVO = new ConfigurationVO("200", "200", "200", "200", "200", "200");
-        Mockito.when(configDao.findByName(anyString())).thenReturn(configVO);
-
-        Mockito.when(offDao.persist(any(NetworkOfferingVO.class))).thenReturn(new NetworkOfferingVO());
         Mockito.when(offDao.persist(any(NetworkOfferingVO.class), nullable(Map.class))).thenReturn(new NetworkOfferingVO());
         Mockito.when(mapDao.persist(any(NetworkOfferingServiceMapVO.class))).thenReturn(new NetworkOfferingServiceMapVO());
         Mockito.when(accountMgr.getSystemUser()).thenReturn(new UserVO(1));

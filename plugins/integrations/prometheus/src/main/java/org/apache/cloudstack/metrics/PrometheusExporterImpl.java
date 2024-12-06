@@ -298,8 +298,8 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
                     metricsList.add(new ItemHostMemory(zoneName, zoneUuid, null, null, null, null, ALLOCATED, allocatedCapacityByTag.third(), 0, tag));
                 });
 
-        List<HostTagVO> allHostTagVOS = hostDao.listAll().stream()
-                .flatMap( h -> _hostTagsDao.getHostTags(h.getId()).stream())
+        List<HostTagVO> allHostTagVOS = hostDao.listAllIds().stream()
+                .flatMap( h -> _hostTagsDao.getHostTags(h).stream())
                 .distinct()
                 .collect(Collectors.toList());
         List<String> allHostTags = new ArrayList<>();
