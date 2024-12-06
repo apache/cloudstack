@@ -1004,19 +1004,6 @@ export default {
         }
 
         this.items = json[responseName][objectName]
-        var filteredItems = []
-        if (this.apiName === 'listPublicIpAddresses') {
-          for (var zone of this.$store.getters.zones) {
-            const zoneIps = this.items.filter(item => item.zoneid === zone.id)
-            const providerIps = zoneIps.filter(item => item.forprovider === true)
-            if (providerIps.length === 0) {
-              filteredItems.push(...zoneIps)
-            } else {
-              filteredItems.push(...providerIps)
-            }
-          }
-          this.items = filteredItems
-        }
         if (!this.items || this.items.length === 0) {
           this.items = []
         }
