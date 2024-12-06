@@ -554,7 +554,7 @@ class CsIP:
             if self.address["source_nat"]:
                 self.fw.append(["nat", "front",
                                 "-A POSTROUTING -o %s -j SNAT --to-source %s" %
-                                (self.dev, self.address['public_ip'])])
+                                (self.address['device'], self.address['public_ip'])])
             if self.get_gateway() == self.get_ip_address():
                 for inf, addresses in self.config.address().dbag.iteritems():
                     if not inf.startswith("eth"):
@@ -693,11 +693,8 @@ class CsIP:
                 vpccidr = cmdline.get_vpccidr()
                 self.fw.append(
                     ["filter", 3, "-A FORWARD -s %s ! -d %s -j ACCEPT" % (vpccidr, vpccidr)])
-                self.fw.append(
-                    ["nat", "", "-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
-            elif cmdline.get_source_nat_ip() and not self.is_private_gateway():
-                self.fw.append(
-                    ["nat", "", "-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, cmdline.get_source_nat_ip())])
+            self.fw.append(
+                ["nat", "", "-A POSTROUTING -j SNAT -o %s --to-source %s" % (self.dev, self.address['public_ip'])])
 
     def list(self):
         self.iplist = {}
