@@ -477,7 +477,7 @@ public class UserVmManagerTest {
         CallContext.register(user, caller);
         try {
 
-            _userVmMgr.moveVMToUser(cmd);
+            _userVmMgr.moveVmToUser(cmd);
         } finally {
             CallContext.unregister();
         }
@@ -527,7 +527,7 @@ public class UserVmManagerTest {
         when(_accountMgr.isRootAdmin(anyLong())).thenReturn(true);
 
         try {
-            _userVmMgr.moveVMToUser(cmd);
+            _userVmMgr.moveVmToUser(cmd);
         } finally {
             CallContext.unregister();
         }
