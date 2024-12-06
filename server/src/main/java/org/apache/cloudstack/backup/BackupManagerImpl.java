@@ -618,7 +618,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         if (backupProvider != null) {
             Pair<Boolean, Backup> result = backupProvider.takeBackup(vm);
-            if (result.first() == false) {
+            if (!result.first()) {
                 throw new CloudRuntimeException("Failed to create VM backup");
             }
             Backup backup = result.second();
