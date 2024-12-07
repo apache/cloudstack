@@ -17,6 +17,7 @@
 
 %define __os_install_post %{nil}
 %global debug_package %{nil}
+%define _binaries_in_noarch_packages_terminate_build   0
 
 # DISABLE the post-percentinstall java repacking and line number stripping
 # we need to find a way to just disable the java repacking and line number stripping, but not the autodeps
