@@ -1317,22 +1317,6 @@ public enum Config {
             "20",
             "The default maximum number of snapshots that can be created for an account",
             null),
-    DefaultMaxAccountBackups(
-            "Account Defaults",
-            ManagementServer.class,
-            Long.class,
-            "max.account.backups",
-            "20",
-            "The default maximum number of backups that can be created for an account",
-            null),
-    DefaultMaxAccountBackupStorage(
-            "Account Defaults",
-            ManagementServer.class,
-            Long.class,
-            "max.account.backup.storage",
-            "400",
-            "The default maximum backup storage space (in GiB) that can be used for an account",
-            null),
     DefaultMaxAccountVolumes(
             "Account Defaults",
             ManagementServer.class,
@@ -1389,22 +1373,6 @@ public enum Config {
                 "10",
                 "The default maximum number of projects that can be created for an account",
                 null),
-    DefaultMaxAccountBuckets(
-            "Account Defaults",
-            ManagementServer.class,
-            Long.class,
-            "max.account.buckets",
-            "20",
-            "The default maximum number of buckets that can be created for an account",
-            null),
-    DefaultMaxAccountObjectStorage(
-            "Account Defaults",
-            ManagementServer.class,
-            Long.class,
-            "max.account.object.storage",
-            "400",
-            "The default maximum object storage space (in GiB) that can be used for an account",
-            null),
 
     //disabling lb as cluster sync does not work with distributed cluster
     SubDomainNetworkAccess(
@@ -1447,8 +1415,6 @@ public enum Config {
     DefaultMaxDomainPublicIPs("Domain Defaults", ManagementServer.class, Long.class, "max.domain.public.ips", "40", "The default maximum number of public IPs that can be consumed by a domain", null),
     DefaultMaxDomainTemplates("Domain Defaults", ManagementServer.class, Long.class, "max.domain.templates", "40", "The default maximum number of templates that can be deployed for a domain", null),
     DefaultMaxDomainSnapshots("Domain Defaults", ManagementServer.class, Long.class, "max.domain.snapshots", "40", "The default maximum number of snapshots that can be created for a domain", null),
-    DefaultMaxDomainBackups("Domain Defaults", ManagementServer.class, Long.class, "max.domain.backups", "40", "The default maximum number of backups that can be created for a domain", null),
-    DefaultMaxDomainBackupStorage("Domain Defaults", ManagementServer.class, Long.class, "max.domain.backup.storage", "800", "The default maximum backup storage space (in GiB) that can be used for a domain", null),
     DefaultMaxDomainVolumes("Domain Defaults", ManagementServer.class, Long.class, "max.domain.volumes", "40", "The default maximum number of volumes that can be created for a domain", null),
     DefaultMaxDomainNetworks("Domain Defaults", ManagementServer.class, Long.class, "max.domain.networks", "40", "The default maximum number of networks that can be created for a domain", null),
     DefaultMaxDomainVpcs("Domain Defaults", ManagementServer.class, Long.class, "max.domain.vpcs", "40", "The default maximum number of vpcs that can be created for a domain", null),
@@ -1457,8 +1423,6 @@ public enum Config {
     DefaultMaxDomainPrimaryStorage("Domain Defaults", ManagementServer.class, Long.class, "max.domain.primary.storage", "400", "The default maximum primary storage space (in GiB) that can be used for a domain", null),
     DefaultMaxDomainSecondaryStorage("Domain Defaults", ManagementServer.class, Long.class, "max.domain.secondary.storage", "800", "The default maximum secondary storage space (in GiB) that can be used for a domain", null),
     DefaultMaxDomainProjects("Domain Defaults",ManagementServer.class,Long.class,"max.domain.projects","50","The default maximum number of projects that can be created for a domain",null),
-    DefaultMaxDomainBuckets("Domain Defaults", ManagementServer.class, Long.class, "max.domain.buckets", "40", "The default maximum number of buckets that can be created for a domain", null),
-    DefaultMaxDomainObjectStorage("Domain Defaults", ManagementServer.class, Long.class, "max.domain.object.storage", "800", "The default maximum object storage space (in GiB) that can be used for a domain", null),
 
     DefaultMaxProjectUserVms(
             "Project Defaults",
@@ -1491,23 +1455,6 @@ public enum Config {
             "max.project.snapshots",
             "20",
             "The default maximum number of snapshots that can be created for a project",
-            null),
-    // Move to configkey?
-    DefaultMaxProjectBackups(
-            "Project Defaults",
-            ManagementServer.class,
-            Long.class,
-            "max.project.backups",
-            "20",
-            "The default maximum number of backups that can be created for a project",
-            null),
-    DefaultMaxProjectBackupStorage(
-            "Project Defaults",
-            ManagementServer.class,
-            Long.class,
-            "max.project.backup.storage",
-            "400",
-            "The default maximum backup storage space (in GiB) that can be used for a project",
             null),
     DefaultMaxProjectVolumes(
             "Project Defaults",
@@ -1556,22 +1503,6 @@ public enum Config {
             "max.project.primary.storage",
             "200",
             "The default maximum primary storage space (in GiB) that can be used for an project",
-            null),
-    DefaultMaxProjectBuckets(
-            "Project Defaults",
-            ManagementServer.class,
-            Long.class,
-            "max.project.buckets",
-            "20",
-            "The default maximum number of buckets that can be created for a project",
-            null),
-    DefaultMaxProjectObjectStorage(
-            "Project Defaults",
-            ManagementServer.class,
-            Long.class,
-            "max.project.object.storage",
-            "400",
-            "The default maximum object storage space (in GiB) that can be used for a project",
             null),
 
     ProjectInviteRequired(

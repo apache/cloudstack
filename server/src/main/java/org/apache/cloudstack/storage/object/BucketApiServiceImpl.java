@@ -103,6 +103,12 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {
+                DefaultMaxAccountBuckets,
+                DefaultMaxAccountObjectStorage,
+                DefaultMaxProjectBuckets,
+                DefaultMaxProjectObjectStorage,
+                DefaultMaxDomainBuckets,
+                DefaultMaxDomainObjectStorage
         };
     }
 

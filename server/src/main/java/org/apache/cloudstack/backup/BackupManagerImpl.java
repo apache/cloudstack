@@ -1161,7 +1161,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 BackupHourlyMax,
                 BackupDailyMax,
                 BackupWeeklyMax,
-                BackupMonthlyMax
+                BackupMonthlyMax,
+                DefaultMaxAccountBackups,
+                DefaultMaxAccountBackupStorage,
+                DefaultMaxProjectBackups,
+                DefaultMaxProjectBackupStorage,
+                DefaultMaxDomainBackups,
+                DefaultMaxDomainBackupStorage
         };
     }
 
