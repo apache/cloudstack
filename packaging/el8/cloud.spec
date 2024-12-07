@@ -35,6 +35,7 @@ Group:     System Environment/Libraries
 # FIXME do groups for every single one of the subpackages
 Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
+BuildArch: noarch
 
 BuildRequires: (java-11-openjdk-devel or java-17-openjdk-devel)
 #BuildRequires: ws-commons-util
