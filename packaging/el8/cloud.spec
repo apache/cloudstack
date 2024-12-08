@@ -17,8 +17,8 @@
 
 %define __os_install_post %{nil}
 %global debug_package %{nil}
+%global __requires_exclude %__requires_exclude|^libc.so.*
 %define _binaries_in_noarch_packages_terminate_build   0
-%define __requires_exclude libc.so.6
 
 # DISABLE the post-percentinstall java repacking and line number stripping
 # we need to find a way to just disable the java repacking and line number stripping, but not the autodeps
@@ -48,6 +48,7 @@ BuildRequires: /usr/bin/mkisofs
 BuildRequires: python3-setuptools
 BuildRequires: wget
 BuildRequires: nodejs
+AutoReqProv: no
 
 %description
 CloudStack is a highly-scalable elastic, open source,
