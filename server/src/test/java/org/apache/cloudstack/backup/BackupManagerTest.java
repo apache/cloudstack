@@ -18,8 +18,11 @@ package org.apache.cloudstack.backup;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Resource;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEventUtils;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Volume;
@@ -69,12 +72,14 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -115,6 +120,9 @@ public class BackupManagerTest {
 
     @Mock
     BackupDao backupDao;
+
+    @Mock
+    DataCenterDao dataCenterDao;
 
     @Mock
     AlertManager alertManager;
@@ -364,6 +372,7 @@ public class BackupManagerTest {
             }
         }
     }
+
     private void overrideBackupFrameworkConfigValue() {
         ConfigKey configKey = BackupManager.BackupFrameworkEnabled;
         this.configDepotImpl = (ConfigDepotImpl)ReflectionTestUtils.getField(configKey, "s_depot");
@@ -372,8 +381,57 @@ public class BackupManagerTest {
                 Mockito.eq(ConfigKey.Scope.Global), Mockito.isNull())).thenReturn("true");
         Mockito.when(configDepot.getConfigStringValue(Mockito.eq(BackupManager.BackupFrameworkEnabled.key()),
                 Mockito.eq(ConfigKey.Scope.Zone), Mockito.anyLong())).thenReturn("true");
+        Mockito.when(configDepot.getConfigStringValue(Mockito.eq(BackupManager.BackupProviderPlugin.key()),
+                Mockito.eq(ConfigKey.Scope.Zone), Mockito.anyLong())).thenReturn("testbackupprovider");
         ReflectionTestUtils.setField(configKey, "s_depot", configDepot);
         updatedConfigKeyDepot = true;
+    }
+
+    @Test
+    public void testConfigureBackupSchedule() {
+        Long vmId = 1L;
+        Long zoneId = 2L;
+        Long accountId = 3L;
+        Long domainId = 4L;
+        Long backupOfferingId = 5L;
+
+        CreateBackupScheduleCmd cmd = Mockito.mock(CreateBackupScheduleCmd.class);
+        when(cmd.getVmId()).thenReturn(vmId);
+        when(cmd.getTimezone()).thenReturn("GMT");
+        when(cmd.getIntervalType()).thenReturn(DateUtil.IntervalType.DAILY);
+        when(cmd.getMaxBackups()).thenReturn(8);
+        when(cmd.getSchedule()).thenReturn("00:00:00");
+
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+        when(vm.getDataCenterId()).thenReturn(zoneId);
+        when(vm.getAccountId()).thenReturn(accountId);
+        when(vm.getBackupOfferingId()).thenReturn(backupOfferingId);
+
+        overrideBackupFrameworkConfigValue();
+
+        Account account = Mockito.mock(Account.class);
+        when(accountManager.getAccount(accountId)).thenReturn(account);
+        when(account.getDomainId()).thenReturn(domainId);
+        Domain domain = Mockito.mock(Domain.class);
+        when(domainManager.getDomain(domainId)).thenReturn(domain);
+        when(resourceLimitMgr.findCorrectResourceLimitForAccount(account, Resource.ResourceType.backup, null)).thenReturn(8L);
+        when(resourceLimitMgr.findCorrectResourceLimitForDomain(domain, Resource.ResourceType.backup, null)).thenReturn(8L);
+
+        BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
+        when(backupOfferingDao.findById(backupOfferingId)).thenReturn(offering);
+        when(offering.isUserDrivenBackupAllowed()).thenReturn(true);
+        when(offering.getProvider()).thenReturn("test");
+
+        BackupScheduleVO schedule = mock(BackupScheduleVO.class);
+        when(backupScheduleDao.findByVMAndIntervalType(vmId, DateUtil.IntervalType.DAILY)).thenReturn(schedule);
+
+        backupManager.configureBackupSchedule(cmd);
+
+        verify(schedule, times(1)).setScheduleType((short) DateUtil.IntervalType.DAILY.ordinal());
+        verify(schedule, times(1)).setSchedule("00:00:00");
+        verify(schedule, times(1)).setTimezone(TimeZone.getTimeZone("GMT").getID());
+        verify(schedule, times(1)).setMaxBackups(8);
     }
 
     @Test
@@ -521,5 +579,82 @@ public class BackupManagerTest {
         String msg = "Backup storage space resource limit exceeded for account id : " + accountId + ". Failed to create backup";
         Mockito.verify(alertManager, times(1)).sendAlert(AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg, "Backup storage space resource limit exceeded for account id : " + accountId
                 + ". Failed to create backups; please use updateResourceLimit to increase the limit");
+    }
+
+    @Test
+    public void testBackupSyncTask() {
+        Long dataCenterId = 1L;
+        Long vmId = 2L;
+        Long accountId = 3L;
+        Long backup2Id = 4L;
+        String restorePoint1ExternalId = "1234";
+        Long backup1Size = 1 * Resource.ResourceType.bytesToGiB;
+        Long backup2Size = 2 * Resource.ResourceType.bytesToGiB;
+        Long newBackupSize = 3 * Resource.ResourceType.bytesToGiB;
+        Long metricSize = 4 * Resource.ResourceType.bytesToGiB;
+
+        overrideBackupFrameworkConfigValue();
+
+        DataCenterVO dataCenter = mock(DataCenterVO.class);
+        when(dataCenter.getId()).thenReturn(dataCenterId);
+        when(dataCenterDao.listAllZones()).thenReturn(List.of(dataCenter));
+
+        BackupProvider backupProvider = mock(BackupProvider.class);
+        when(backupProvider.getName()).thenReturn("testbackupprovider");
+        backupManager.setBackupProviders(List.of(backupProvider));
+        backupManager.start();
+
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getAccountId()).thenReturn(accountId);
+        when(vmInstanceDao.listByZoneWithBackups(dataCenterId, null)).thenReturn(List.of(vm));
+        Backup.Metric metric = new Backup.Metric(null, metricSize);
+        Map<VirtualMachine, Backup.Metric> metricMap = new HashMap<>();
+        metricMap.put(vm, metric);
+        when(backupProvider.getBackupMetrics(Mockito.anyLong(), Mockito.anyList())).thenReturn(metricMap);
+
+        Backup.RestorePoint restorePoint1 = new Backup.RestorePoint(restorePoint1ExternalId, DateUtil.now(), "Root");
+        Backup.RestorePoint restorePoint2 = new Backup.RestorePoint("12345", DateUtil.now(), "Root");
+        List<Backup.RestorePoint> restorePoints = new ArrayList<>(List.of(restorePoint1, restorePoint2));
+        when(backupProvider.listRestorePoints(vm)).thenReturn(restorePoints);
+
+        BackupVO backupInDb1 = new BackupVO();
+        backupInDb1.setProtectedSize(backup1Size);
+        backupInDb1.setExternalId(restorePoint1ExternalId);
+
+        BackupVO backupInDb2 = new BackupVO();
+        backupInDb2.setProtectedSize(backup2Size);
+        backupInDb2.setExternalId(null);
+        ReflectionTestUtils.setField(backupInDb2, "id", backup2Id);
+        when(backupDao.findById(backup2Id)).thenReturn(backupInDb2);
+
+        when(backupDao.listByVmId(null, vmId)).thenReturn(List.of(backupInDb1, backupInDb2));
+
+        BackupVO newBackupEntry = new BackupVO();
+        newBackupEntry.setProtectedSize(newBackupSize);
+        when(backupProvider.createNewBackupEntryForRestorePoint(restorePoint2, vm ,metric)).thenReturn(newBackupEntry);
+
+        try (MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
+            Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                    Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyString(),
+                    Mockito.anyLong(), Mockito.anyString())).thenReturn(1L);
+
+            try (MockedStatic<UsageEventUtils> ignored2 = Mockito.mockStatic(UsageEventUtils.class)) {
+
+                BackupManagerImpl.BackupSyncTask backupSyncTask = backupManager.new BackupSyncTask(backupManager);
+                backupSyncTask.runInContext();
+
+                verify(resourceLimitMgr, times(1)).decrementResourceCount(accountId, Resource.ResourceType.backup_storage, backup1Size);
+                verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup_storage, metricSize);
+                Assert.assertEquals(backupInDb1.getProtectedSize(), metricSize);
+
+                verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup);
+                verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup_storage, newBackupSize);
+
+                verify(resourceLimitMgr, times(1)).decrementResourceCount(accountId, Resource.ResourceType.backup);
+                verify(resourceLimitMgr, times(1)).decrementResourceCount(accountId, Resource.ResourceType.backup_storage, backup2Size);
+            }
+        }
     }
 }

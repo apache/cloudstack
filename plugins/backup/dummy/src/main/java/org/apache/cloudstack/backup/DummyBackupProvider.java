@@ -102,7 +102,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Override
     public List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
-        return List.of();
+        return null;
     }
 
     @Override

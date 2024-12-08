@@ -1367,7 +1367,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
      * This background task syncs backups from providers side in CloudStack db
      * along with creation of usage records
      */
-    private final class BackupSyncTask extends ManagedContextRunnable implements BackgroundPollTask {
+    protected final class BackupSyncTask extends ManagedContextRunnable implements BackgroundPollTask {
         private BackupManager backupManager;
 
         public BackupSyncTask(final BackupManager backupManager) {
@@ -1470,6 +1470,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                     }
                     for (final Long backupIdToRemove : removeList) {
                         logger.warn(String.format("Removing backup with ID: [%s].", backupIdToRemove));
+                        Backup backup = backupDao.findById(backupIdToRemove);
+                        resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
+                        resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getProtectedSize());
                         backupDao.remove(backupIdToRemove);
                     }
                 }
