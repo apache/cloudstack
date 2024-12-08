@@ -121,7 +121,7 @@ Requires: qemu-kvm
 Requires: cryptsetup
 Requires: rng-tools
 Requires: (libgcrypt > 1.8.3 or libgcrypt20)
-Requires: ((selinux-tools if qemu-tools) or (qemu-img or qemu-tools))
+Requires: (selinux-tools if selinux-tools)
 Provides: cloud-agent
 Group: System Environment/Libraries
 %description agent
