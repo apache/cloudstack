@@ -41,7 +41,7 @@ import javax.inject.Inject;
 import java.security.InvalidParameterException;
 
 public final class KVMHAProvider extends HAAbstractHostProvider implements HAProvider<Host>, Configurable {
-    private final static Logger LOG = Logger.getLogger(KVMHAProvider.class);
+    private final static Logger logger = Logger.getLogger(KVMHAProvider.class);
 
     @Inject
     protected KVMHostActivityChecker hostActivityChecker;
@@ -76,11 +76,11 @@ public final class KVMHAProvider extends HAAbstractHostProvider implements HAPro
                 final OutOfBandManagementResponse resp = outOfBandManagementService.executePowerOperation(r, PowerOperation.RESET, null);
                 return resp.getSuccess();
             } else {
-                LOG.warn("OOBM recover operation failed for the host " + r.getName());
+                logger.warn("OOBM recover operation failed for the host " + r.getName());
                 return false;
             }
         } catch (Exception e){
-            LOG.warn("OOBM service is not configured or enabled for this host " + r.getName() + " error is " + e.getMessage());
+            logger.warn("OOBM service is not configured or enabled for this host " + r.getName() + " error is " + e.getMessage());
             throw new HARecoveryException(" OOBM service is not configured or enabled for this host " + r.getName(), e);
         }
     }
