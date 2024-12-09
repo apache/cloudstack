@@ -17,43 +17,73 @@
 package com.cloud.hypervisor.kvm.storage;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
 
-import junit.framework.TestCase;
 import org.mockito.junit.MockitoJUnitRunner;
 
-
 @RunWith(MockitoJUnitRunner.class)
-public class KVMPhysicalDiskTest extends TestCase {
+public class KVMPhysicalDiskTest {
+    @Mock
+    KVMStoragePool kvmStoragePoolMock;
+
+    private final String authUserName = "admin";
+
+    private final String authSecret = "supersecret";
 
     @Test
     public void testRBDStringBuilder() {
-        assertEquals(KVMPhysicalDisk.RBDStringBuilder("ceph-monitor", 8000, "admin", "supersecret", "volume1"),
-                     "rbd:volume1:mon_host=ceph-monitor\\:8000:auth_supported=cephx:id=admin:key=supersecret:rbd_default_format=2:client_mount_timeout=30");
+        String monHosts = "ceph-monitor";
+        int monPort = 8000;
+
+        Mockito.doReturn(monHosts).when(kvmStoragePoolMock).getSourceHost();
+        Mockito.doReturn(monPort).when(kvmStoragePoolMock).getSourcePort();
+        Mockito.doReturn(authUserName).when(kvmStoragePoolMock).getAuthUserName();
+        Mockito.doReturn(authSecret).when(kvmStoragePoolMock).getAuthSecret();
+
+        String expected = "rbd:volume1:mon_host=ceph-monitor\\:8000:auth_supported=cephx:id=admin:key=supersecret:rbd_default_format=2:client_mount_timeout=30";
+        String result = KVMPhysicalDisk.RBDStringBuilder(kvmStoragePoolMock, "volume1");
+
+        Assert.assertEquals(expected, result);
     }
 
     @Test
     public void testRBDStringBuilder2() {
         String monHosts = "ceph-monitor1,ceph-monitor2,ceph-monitor3";
         int monPort = 3300;
+
+        Mockito.doReturn(monHosts).when(kvmStoragePoolMock).getSourceHost();
+        Mockito.doReturn(monPort).when(kvmStoragePoolMock).getSourcePort();
+        Mockito.doReturn(authUserName).when(kvmStoragePoolMock).getAuthUserName();
+        Mockito.doReturn(authSecret).when(kvmStoragePoolMock).getAuthSecret();
+
         String expected = "rbd:volume1:" +
                 "mon_host=ceph-monitor1\\:3300\\;ceph-monitor2\\:3300\\;ceph-monitor3\\:3300:" +
                 "auth_supported=cephx:id=admin:key=supersecret:rbd_default_format=2:client_mount_timeout=30";
-        String actualResult = KVMPhysicalDisk.RBDStringBuilder(monHosts, monPort, "admin", "supersecret", "volume1");
-        assertEquals(expected, actualResult);
+        String actualResult = KVMPhysicalDisk.RBDStringBuilder(kvmStoragePoolMock, "volume1");
+
+        Assert.assertEquals(expected, actualResult);
     }
 
     @Test
     public void testRBDStringBuilder3() {
         String monHosts = "[fc00:1234::1],[fc00:1234::2],[fc00:1234::3]";
         int monPort = 3300;
+
+        Mockito.doReturn(monHosts).when(kvmStoragePoolMock).getSourceHost();
+        Mockito.doReturn(monPort).when(kvmStoragePoolMock).getSourcePort();
+        Mockito.doReturn(authUserName).when(kvmStoragePoolMock).getAuthUserName();
+        Mockito.doReturn(authSecret).when(kvmStoragePoolMock).getAuthSecret();
+
         String expected = "rbd:volume1:" +
                 "mon_host=[fc00\\:1234\\:\\:1]\\:3300\\;[fc00\\:1234\\:\\:2]\\:3300\\;[fc00\\:1234\\:\\:3]\\:3300:" +
                 "auth_supported=cephx:id=admin:key=supersecret:rbd_default_format=2:client_mount_timeout=30";
-        String actualResult = KVMPhysicalDisk.RBDStringBuilder(monHosts, monPort, "admin", "supersecret", "volume1");
-        assertEquals(expected, actualResult);
+        String actualResult = KVMPhysicalDisk.RBDStringBuilder(kvmStoragePoolMock, "volume1");
+
+        Assert.assertEquals(expected, actualResult);
     }
 
     @Test
@@ -64,18 +94,18 @@ public class KVMPhysicalDiskTest extends TestCase {
         LibvirtStoragePool pool = Mockito.mock(LibvirtStoragePool.class);
 
         KVMPhysicalDisk disk = new KVMPhysicalDisk(path, name, pool);
-        assertEquals(disk.getName(), name);
-        assertEquals(disk.getPath(), path);
-        assertEquals(disk.getPool(), pool);
-        assertEquals(disk.getSize(), 0);
-        assertEquals(disk.getVirtualSize(), 0);
+        Assert.assertEquals(disk.getName(), name);
+        Assert.assertEquals(disk.getPath(), path);
+        Assert.assertEquals(disk.getPool(), pool);
+        Assert.assertEquals(disk.getSize(), 0);
+        Assert.assertEquals(disk.getVirtualSize(), 0);
 
         disk.setSize(1024);
         disk.setVirtualSize(2048);
-        assertEquals(disk.getSize(), 1024);
-        assertEquals(disk.getVirtualSize(), 2048);
+        Assert.assertEquals(disk.getSize(), 1024);
+        Assert.assertEquals(disk.getVirtualSize(), 2048);
 
         disk.setFormat(PhysicalDiskFormat.RAW);
-        assertEquals(disk.getFormat(), PhysicalDiskFormat.RAW);
+        Assert.assertEquals(disk.getFormat(), PhysicalDiskFormat.RAW);
     }
 }
