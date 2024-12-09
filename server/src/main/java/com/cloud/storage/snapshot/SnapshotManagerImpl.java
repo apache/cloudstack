@@ -108,6 +108,7 @@ import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
+
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -153,12 +154,15 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -2102,33 +2106,45 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         List<Long> poolsToBeRemoved = new ArrayList<>();
         for (Long poolId : poolIds) {
             PrimaryDataStore dataStore = (PrimaryDataStore) dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
-            if (dataStore == null) {
-                poolsToBeRemoved.add(poolId);
-                continue;
-            }
+            if (isObjectNull(dataStore == null, poolsToBeRemoved, poolId)) continue;
+
             SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshot.getId(), poolId, DataStoreRole.Primary);
-            if (snapshotInfo != null) {
-                logger.debug(String.format("Snapshot [%s] already exist on pool [%s]", snapshot.getUuid(), dataStore.getName()));
-                continue;
-            }
+            if (isSnapshotExistsOnPool(snapshot, dataStore, snapshotInfo)) continue;
 
             VolumeVO volume = _volsDao.findById(snapshot.getVolumeId());
-            if (volume == null) {
-                poolsToBeRemoved.add(poolId);
-                continue;
-            }
-            if (!dataStore.getDriver().getCapabilities()
-                    .containsKey(DataStoreCapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE.toString())
-                    && dataStore.getPoolType() != volume.getPoolType()) {
-                poolsToBeRemoved.add(poolId);
-                logger.debug(String.format("The %s  does not support copy to %s between zones", dataStore.getPoolType(), volume.getPoolType()));
-            }
+            if (isObjectNull(volume == null, poolsToBeRemoved, poolId)) continue;
+            doesStorageSupportCopySnapshot(poolsToBeRemoved, poolId, dataStore, volume);
         }
         poolIds.removeAll(poolsToBeRemoved);
         if (CollectionUtils.isEmpty(poolIds)) {
             return false;
         }
         return true;
+    }
+
+    private void doesStorageSupportCopySnapshot(List<Long> poolsToBeRemoved, Long poolId, PrimaryDataStore dataStore, VolumeVO volume) {
+        if (!dataStore.getDriver().getCapabilities()
+                .containsKey(DataStoreCapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE.toString())
+                && dataStore.getPoolType() != volume.getPoolType()) {
+            poolsToBeRemoved.add(poolId);
+            logger.debug(String.format("The %s  does not support copy to %s between zones", dataStore.getPoolType(), volume.getPoolType()));
+        }
+    }
+
+    private boolean isSnapshotExistsOnPool(Snapshot snapshot, PrimaryDataStore dataStore, SnapshotInfo snapshotInfo) {
+        if (snapshotInfo != null) {
+            logger.debug(String.format("Snapshot [%s] already exist on pool [%s]", snapshot.getUuid(), dataStore.getName()));
+            return true;
+        }
+        return false;
+    }
+
+    private static boolean isObjectNull(boolean object, List<Long> poolsToBeRemoved, Long poolId) {
+        if (object) {
+            poolsToBeRemoved.add(poolId);
+            return true;
+        }
+        return false;
     }
 
     private void copySnapshotToPrimaryDifferentZone(List<Long> poolIds, SnapshotVO snapshot) {

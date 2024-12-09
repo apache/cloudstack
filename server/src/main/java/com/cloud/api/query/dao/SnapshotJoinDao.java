@@ -22,6 +22,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.SearchCriteria;
+
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 
@@ -38,5 +39,5 @@ public interface SnapshotJoinDao extends GenericDao<SnapshotJoinVO, Long> {
     List<SnapshotJoinVO> searchBySnapshotStorePair(String... pairs);
     List<SnapshotJoinVO> findByDistinctIds(Long zoneId, Long... ids);
 
-    List<SnapshotJoinVO> listBySnapshotIdAndZoneId(Long zoneId, Long id);
+    List<SnapshotJoinVO> listBySnapshotIdAndZoneId(Long zoneId, Long snapshotId);
 }
