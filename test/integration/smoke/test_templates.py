@@ -255,13 +255,7 @@ class TestCreateTemplate(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            #Clean up, terminate the created templates
-            cleanup_resources(self.apiclient, reversed(self.cleanup))
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestCreateTemplate, self).tearDown()
 
     @classmethod
     def setUpClass(cls):
@@ -323,6 +317,7 @@ class TestCreateTemplate(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                     )
+            cls._cleanup.append(cls.virtual_machine)
             #Stop virtual machine
             cls.virtual_machine.stop(cls.apiclient)
 
@@ -341,14 +336,7 @@ class TestCreateTemplate(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.apiclient, reversed(cls._cleanup))
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-
-        return
+        super(TestCreateTemplate, cls).tearDownClass()
 
     @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_CreateTemplateWithDuplicateName(self):
@@ -485,6 +473,7 @@ class TestTemplates(cloudstackTestCase):
                                     cls.apiclient,
                                     cls.services["disk_offering"]
                                     )
+        cls._cleanup.append(cls.disk_offering)
         template = get_template(
                             cls.apiclient,
                             cls.zone.id,
@@ -508,15 +497,18 @@ class TestTemplates(cloudstackTestCase):
                             admin=True,
                             domainid=cls.domain.id
                             )
+        cls._cleanup.append(cls.account)
         cls.user = Account.create(
                             cls.apiclient,
                             cls.services["account"],
                             domainid=cls.domain.id
                             )
+        cls._cleanup.append(cls.user)
         cls.service_offering = ServiceOffering.create(
                                             cls.apiclient,
                                             cls.services["service_offerings"]["tiny"]
                                         )
+        cls._cleanup.append(cls.service_offering)
         #create virtual machine
         cls.virtual_machine = VirtualMachine.create(
                                     cls.apiclient,
@@ -527,6 +519,7 @@ class TestTemplates(cloudstackTestCase):
                                     serviceofferingid=cls.service_offering.id,
                                     mode=cls.services["mode"]
                                     )
+        cls._cleanup.append(cls.virtual_machine)
         #Stop virtual machine
         cls.virtual_machine.stop(cls.apiclient)
 
@@ -559,24 +552,10 @@ class TestTemplates(cloudstackTestCase):
                                          account=cls.account.name,
                                          domainid=cls.account.domainid
                                          )
-        cls._cleanup = [
-                        cls.service_offering,
-                        cls.disk_offering,
-                        cls.account,
-                        cls.user
-                        ]
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cls.apiclient = super(TestTemplates, cls).getClsTestClient().getApiClient()
-            #Cleanup created resources such as templates and VMs
-            cleanup_resources(cls.apiclient, cls._cleanup)
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-
-        return
+        super(TestTemplates, cls).tearDownClass()
 
     def setUp(self):
 
@@ -1024,6 +1003,11 @@ class TestCopyAndDeleteTemplatesAcrossZones(cloudstackTestCase):
                 cls.services["disk_offering"]
             )
             cls._cleanup.append(cls.disk_offering)
+            cls.service_offering = ServiceOffering.create(
+                cls.apiclient,
+                cls.services["service_offerings"]["tiny"]
+            )
+            cls._cleanup.append(cls.service_offering)
             cls.template = get_template(
                 cls.apiclient,
                 cls.zone.id,
@@ -1046,11 +1030,7 @@ class TestCopyAndDeleteTemplatesAcrossZones(cloudstackTestCase):
                 domainid=cls.domain.id
             )
             cls._cleanup.append(cls.account)
-            cls.service_offering = ServiceOffering.create(
-                cls.apiclient,
-                cls.services["service_offerings"]["tiny"]
-            )
-            cls._cleanup.append(cls.service_offering)
+
             #create virtual machine
             cls.virtual_machine = VirtualMachine.create(
                 cls.apiclient,
@@ -1061,6 +1041,7 @@ class TestCopyAndDeleteTemplatesAcrossZones(cloudstackTestCase):
                 serviceofferingid=cls.service_offering.id,
                 mode=cls.services["mode"]
             )
+            cls._cleanup.append(cls.virtual_machine)
             #Stop virtual machine
             cls.virtual_machine.stop(cls.apiclient)
 
@@ -1079,12 +1060,7 @@ class TestCopyAndDeleteTemplatesAcrossZones(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+       super(TestCopyAndDeleteTemplatesAcrossZones, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -1097,12 +1073,7 @@ class TestCopyAndDeleteTemplatesAcrossZones(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            #Clean up, terminate the created templates
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestCopyAndDeleteTemplatesAcrossZones, self).tearDown()
 
     @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_09_copy_delete_template(self):

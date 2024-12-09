@@ -101,6 +101,7 @@ class TestResourceNames(cloudstackTestCase):
             serviceofferingid=cls.service_offering.id,
             mode=cls.services['mode']
         )
+        cls._cleanup.append(cls.virtual_machine)
 
     @classmethod
     def tearDownClass(cls):
@@ -178,7 +179,6 @@ class TestResourceNames(cloudstackTestCase):
             domainid=self.account.domainid,
             diskofferingid=self.disk_offering.id
         )
-        # self.cleanup.append(self.volume)
         self.virtual_machine.attach_volume(self.apiclient, self.volume)
         list_volume_response = Volume.list(
             self.apiclient,

@@ -35,6 +35,7 @@ class TestConsoleEndpoint(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls._cleanup = []
 
         cls.template = get_template(
             cls.apiclient,
@@ -55,10 +56,12 @@ class TestConsoleEndpoint(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
+        cls._cleanup.append(cls.service_offering)
         cls.vm1 = VirtualMachine.create(
             cls.apiclient,
             cls.services["virtual_machine"],
@@ -67,20 +70,13 @@ class TestConsoleEndpoint(cloudstackTestCase):
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id
         )
+        cls._cleanup.append(cls.vm1)
 
-        cls._cleanup = [
-            cls.service_offering,
-            cls.vm1,
-            cls.account
-        ]
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            cleanup_resources(cls.apiclient, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        super(TestConsoleEndpoint, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
