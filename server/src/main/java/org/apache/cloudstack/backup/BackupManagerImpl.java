@@ -527,15 +527,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return backupScheduleDao.remove(schedule.getId());
     }
 
-    private boolean deleteAllVMBackupSchedules(long vmId) {
-        List<BackupScheduleVO> vmBackupSchedules = backupScheduleDao.listByVM(vmId);
-        boolean success = true;
-        for (BackupScheduleVO vmBackupSchedule : vmBackupSchedules) {
-            success = success && backupScheduleDao.remove(vmBackupSchedule.getId());
-        }
-        return success;
-    }
-
     private void postCreateScheduledBackup(Backup.Type backupType, Long vmId) {
         DateUtil.IntervalType intervalType = DateUtil.IntervalType.valueOf(backupType.name());
         final BackupScheduleVO schedule = backupScheduleDao.findByVMAndIntervalType(vmId, intervalType);

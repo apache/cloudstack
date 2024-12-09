@@ -473,24 +473,26 @@ public class ResourceLimitManagerImplTest extends TestCase {
 
     @Test
     public void testFindCorrectResourceLimitForAccountId1() {
-//        long accountId = 1L;
-//        Mockito.when(accountManager.isRootAdmin(accountId)).thenReturn(true);
-//        long result = resourceLimitManager.findCorrectResourceLimitForAccount(accountId, null, Resource.ResourceType.cpu);
-//        Assert.assertEquals(Resource.RESOURCE_UNLIMITED, result);
-//
-//        accountId = 2L;
-//        Mockito.when(accountManager.isRootAdmin(accountId)).thenReturn(false);
-//        Long limit = 100L;
-//        long result = resourceLimitManager.findCorrectResourceLimitForAccount(accountId, limit, Resource.ResourceType.cpu);
-//        Assert.assertEquals(limit.longValue(), result);
-//
-//        long defaultAccountCpuMax = 25L;
-//        Mockito.when(accountManager.isRootAdmin(accountId)).thenReturn(false);
-//        Map<String, Long> accountResourceLimitMap = new HashMap<>();
-//        accountResourceLimitMap.put(Resource.ResourceType.cpu.name(), defaultAccountCpuMax);
-//        resourceLimitManager.accountResourceLimitMap = accountResourceLimitMap;
-//        result = resourceLimitManager.findCorrectResourceLimitForAccount(accountId, null, Resource.ResourceType.cpu);
-//        Assert.assertEquals(defaultAccountCpuMax, result);
+        long accountId = 1L;
+        Mockito.when(accountManager.isRootAdmin(accountId)).thenReturn(true);
+        long result = resourceLimitManager.findCorrectResourceLimitForAccount(accountId, null, Resource.ResourceType.cpu);
+        Assert.assertEquals(Resource.RESOURCE_UNLIMITED, result);
+
+        accountId = 2L;
+        AccountVO account = mock(AccountVO.class);
+        Mockito.when(accountManager.isRootAdmin(accountId)).thenReturn(false);
+        Mockito.when(accountDao.findById(accountId)).thenReturn(account);
+        Long limit = 100L;
+        result = resourceLimitManager.findCorrectResourceLimitForAccount(accountId, limit, Resource.ResourceType.cpu);
+        Assert.assertEquals(limit.longValue(), result);
+
+        long defaultAccountCpuMax = 25L;
+        Mockito.when(accountManager.isRootAdmin(accountId)).thenReturn(false);
+        Map<String, Long> accountResourceLimitMap = new HashMap<>();
+        accountResourceLimitMap.put(Resource.ResourceType.cpu.name(), defaultAccountCpuMax);
+        resourceLimitManager.accountResourceLimitMap = accountResourceLimitMap;
+        result = resourceLimitManager.findCorrectResourceLimitForAccount(accountId, null, Resource.ResourceType.cpu);
+        Assert.assertEquals(defaultAccountCpuMax, result);
     }
 
     @Test
@@ -1253,9 +1255,8 @@ public class ResourceLimitManagerImplTest extends TestCase {
     }
 
     @Test
-    public void testUpdateResourceLimit() {
+    public void testUpdateResourceLimitForAccount() {
         Long accountId = 1L;
-        Long domainId = 2L;
         Long resourceLimitId = 3L;
         Integer typeId = 13;
         Long maxGB = 10L;
@@ -1273,13 +1274,44 @@ public class ResourceLimitManagerImplTest extends TestCase {
                     Mockito.anyString(), Mockito.anyString(),
                     Mockito.anyLong(), Mockito.anyString())).thenReturn(1L);
 
-            resourceLimitManager.updateResourceLimit(accountId, domainId, typeId, maxGB, null);
+            resourceLimitManager.updateResourceLimit(accountId, null, typeId, maxGB, null);
 
             Mockito.verify(resourceLimitDao, Mockito.times(1)).update(resourceLimitId, maxBytes);
             Mockito.verify(resourceLimitDao, Mockito.never()).persist(Mockito.any());
             actionEventUtilsMockedStatic.verify(() -> ActionEventUtils.onActionEvent(0L, 0L, 0L, EventTypes.EVENT_RESOURCE_LIMIT_UPDATE,
                     "Resource limit updated. Resource Type: " + Resource.ResourceType.backup_storage.toString() + ", New Value: " + maxBytes,
                     accountId, ApiCommandResourceType.Account.toString()));
+        }
+    }
+
+    @Test
+    public void testUpdateResourceLimitForDomain() {
+        Long domainId = 2L;
+        Long resourceLimitId = 3L;
+        Integer typeId = 13;
+        Long maxGB = 10L;
+        Long maxBytes = maxGB * Resource.ResourceType.bytesToGiB;
+
+        Domain domain = mock(Domain.class);
+        when(domain.getParent()).thenReturn(null);
+        when(entityManager.findById(Domain.class, domainId)).thenReturn(domain);
+        ResourceLimitVO resourceLimitVO = mock(ResourceLimitVO.class);
+        when(resourceLimitVO.getId()).thenReturn(resourceLimitId);
+        when(resourceLimitDao.findByOwnerIdAndTypeAndTag(domainId, Resource.ResourceOwnerType.Domain, Resource.ResourceType.backup_storage, null)).thenReturn(resourceLimitVO);
+
+        try (MockedStatic<ActionEventUtils> actionEventUtilsMockedStatic = Mockito.mockStatic(ActionEventUtils.class)) {
+            Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                    Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyString(),
+                    Mockito.anyLong(), Mockito.anyString())).thenReturn(1L);
+
+            resourceLimitManager.updateResourceLimit(null, domainId, typeId, maxGB, null);
+
+            Mockito.verify(resourceLimitDao, Mockito.times(1)).update(resourceLimitId, maxBytes);
+            Mockito.verify(resourceLimitDao, Mockito.never()).persist(Mockito.any());
+            actionEventUtilsMockedStatic.verify(() -> ActionEventUtils.onActionEvent(0L, 0L, 0L, EventTypes.EVENT_RESOURCE_LIMIT_UPDATE,
+                    "Resource limit updated. Resource Type: " + Resource.ResourceType.backup_storage.toString() + ", New Value: " + maxBytes,
+                    domainId, ApiCommandResourceType.Domain.toString()));
         }
     }
 }
