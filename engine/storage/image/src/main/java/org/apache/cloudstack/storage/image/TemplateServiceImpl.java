@@ -395,7 +395,7 @@ public class TemplateServiceImpl implements TemplateService {
                                             logger.error("Unexpected state transition exception for template {}. Details: {}", tmplt, e.getMessage());
                                         }
                                     } else if (tmplt.getUrl() == null) {
-                                        msg = "Private template (" + tmplt + ") with install path " + tmpltInfo.getInstallPath() + " is corrupted, please check in image store: " + tmpltStore.getDataStoreId();
+                                        msg = String.format("Private template (%s) with install path %s is corrupted, please check in image store: %s", tmplt, tmpltInfo.getInstallPath(), store);
                                         logger.warn(msg);
                                     } else {
                                         logger.info("Removing template_store_ref entry for corrupted template {}", tmplt);
@@ -1023,20 +1023,20 @@ public class TemplateServiceImpl implements TemplateService {
     // This routine is used to push templates currently on cache store, but not in region store to region store.
     // used in migrating existing NFS secondary storage to S3.
     @Override
-    public void syncTemplateToRegionStore(long templateId, DataStore store) {
+    public void syncTemplateToRegionStore(VirtualMachineTemplate template, DataStore store) {
         if (_storeMgr.isRegionStore(store)) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Sync template " + templateId + " from cache to object store...");
+                logger.debug("Sync template {} from cache to object store...", template);
             }
             // if template is on region wide object store, check if it is really downloaded there (by checking install_path). Sync template to region
             // wide store if it is not there physically.
-            TemplateInfo tmplOnStore = _templateFactory.getTemplate(templateId, store);
+            TemplateInfo tmplOnStore = _templateFactory.getTemplate(template.getId(), store);
             if (tmplOnStore == null) {
-                throw new CloudRuntimeException(String.format("Cannot find an entry in template_store_ref for template %d on region store: %s", templateId, store));
+                throw new CloudRuntimeException(String.format("Cannot find an entry in template_store_ref for template %s on region store: %s", template, store));
             }
             if (tmplOnStore.getInstallPath() == null || tmplOnStore.getInstallPath().length() == 0) {
                 // template is not on region store yet, sync to region store
-                TemplateInfo srcTemplate = _templateFactory.getReadyTemplateOnCache(templateId);
+                TemplateInfo srcTemplate = _templateFactory.getReadyTemplateOnCache(template.getId());
                 if (srcTemplate == null) {
                     throw new CloudRuntimeException(String.format("Cannot find template %s on cache store", tmplOnStore));
                 }

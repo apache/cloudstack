@@ -163,7 +163,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             Map<String, String> srcVolumeDestSnapshotMap = new HashMap<>();
             List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
 
-            StoragePoolVO storagePool = vmSnapshotHelper.getStoragePoolForVM(userVm.getId());
+            StoragePoolVO storagePool = vmSnapshotHelper.getStoragePoolForVM(userVm);
             long prev_chain_size = 0;
             long virtual_size=0;
             for (VolumeObjectTO volume : volumeTOs) {
@@ -291,7 +291,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
         boolean result = false;
         try {
             List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
-            StoragePoolVO storagePool = vmSnapshotHelper.getStoragePoolForVM(userVm.getId());
+            StoragePoolVO storagePool = vmSnapshotHelper.getStoragePoolForVM(userVm);
             Long storagePoolId = storagePool.getId();
             Map<String, String> srcSnapshotDestVolumeMap = new HashMap<>();
             for (VolumeObjectTO volume : volumeTOs) {
@@ -379,7 +379,7 @@ public class ScaleIOVMSnapshotStrategy extends ManagerBase implements VMSnapshot
 
         try {
             List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(vmSnapshot.getVmId());
-            StoragePoolVO storagePool = vmSnapshotHelper.getStoragePoolForVM(userVm.getId());
+            StoragePoolVO storagePool = vmSnapshotHelper.getStoragePoolForVM(userVm);
             String systemId = storagePoolDetailsDao.findDetail(storagePool.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
             if (systemId == null) {
                 throw new CloudRuntimeException("Failed to get the system id for PowerFlex storage pool for deleting VM snapshot: " + vmSnapshot.getName());

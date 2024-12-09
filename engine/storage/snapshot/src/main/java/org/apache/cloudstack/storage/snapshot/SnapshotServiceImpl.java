@@ -198,7 +198,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         AsyncCallFuture<SnapshotResult> future = context.future;
         SnapshotResult snapResult = new SnapshotResult(snapshot, result.getAnswer());
         if (result.isFailed()) {
-            logger.debug("create snapshot " + context.snapshot.getName() + " failed: " + result.getResult());
+            logger.debug("create snapshot {} failed: {}", context.snapshot, result.getResult());
             try {
                 snapshot.processEvent(Snapshot.Event.OperationFailed);
                 snapshot.processEvent(Event.OperationFailed);

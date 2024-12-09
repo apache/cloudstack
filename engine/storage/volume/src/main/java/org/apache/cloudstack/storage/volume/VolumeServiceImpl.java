@@ -915,7 +915,7 @@ public class VolumeServiceImpl implements VolumeService {
         VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(destPrimaryDataStore.getId(), templateOnPrimary.getId(), srcTemplateInfo.getDeployAsIsConfiguration());
 
         if (templatePoolRef == null) {
-            throw new CloudRuntimeException("Failed to find template " + srcTemplateInfo.getUniqueName() + " in storage pool " + destPrimaryDataStore.getId());
+            throw new CloudRuntimeException("Failed to find template " + srcTemplateInfo.getUniqueName() + " in storage pool " + destPrimaryDataStore);
         } else if (templatePoolRef.getState() == ObjectInDataStoreStateMachine.State.Ready) {
             // Template already exists
             return templateOnPrimary;
@@ -1098,13 +1098,9 @@ public class VolumeServiceImpl implements VolumeService {
         Answer answer = agentMgr.easySend(host.getId(), cmd);
 
         if (answer == null) {
-            String msg = "Unable to get an answer to the modify targets command";
-
-            logger.warn(msg);
+            logger.warn("Unable to get an answer to the modify targets command");
         } else if (!answer.getResult()) {
-            String msg = String.format("Unable to modify target on the following host: %s", host);
-
-            logger.warn(msg);
+            logger.warn("Unable to modify target on the following host: {}", host);
         }
     }
 
@@ -1152,7 +1148,7 @@ public class VolumeServiceImpl implements VolumeService {
         VMTemplateStoragePoolVO templatePoolRef = _tmpltPoolDao.findByPoolTemplate(destPrimaryDataStore.getId(), srcTemplateOnPrimary.getId(), null);
 
         if (templatePoolRef == null) {
-            throw new CloudRuntimeException(String.format("Failed to find template %s in storage pool %s", srcTemplateOnPrimary.getUniqueName(), srcTemplateOnPrimary));
+            throw new CloudRuntimeException(String.format("Failed to find template %s in storage pool %s", srcTemplateOnPrimary.getImage(), srcTemplateOnPrimary));
         }
 
         if (templatePoolRef.getDownloadState() == Status.NOT_DOWNLOADED) {
