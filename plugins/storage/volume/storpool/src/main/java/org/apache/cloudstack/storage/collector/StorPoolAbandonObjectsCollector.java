@@ -20,8 +20,10 @@
 package org.apache.cloudstack.storage.collector;
 
 import com.cloud.dc.dao.ClusterDao;
+
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
+
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -29,8 +31,10 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -41,6 +45,7 @@ import org.apache.cloudstack.storage.datastore.util.StorPoolHelper;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
+
 import org.apache.commons.collections.CollectionUtils;
 
 import javax.inject.Inject;
