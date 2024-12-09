@@ -143,7 +143,6 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
         when(_dataStoreMgr.getDataStore(anyLong(), eq(DataStoreRole.Primary))).thenReturn(store);
         when(store.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
         when(store.isShared()).thenReturn(true);
-        when(store.getName()).thenReturn("newPool");
         when(store.getStorageProviderName()).thenReturn("default");
 
 
@@ -179,7 +178,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
 
         CloudRuntimeException exception = new CloudRuntimeException(exceptionString);
         StorageManager storageManager = Mockito.mock(StorageManager.class);
-        Mockito.when(storageManager.connectHostToSharedPool(Mockito.anyLong(), Mockito.anyLong())).thenThrow(exception);
+        Mockito.when(storageManager.connectHostToSharedPool(Mockito.any(), Mockito.anyLong())).thenThrow(exception);
         Mockito.when(storageManager.getStoragePoolMountFailureReason(exceptionString)).thenReturn(mountFailureReason);
         ReflectionTestUtils.setField(_cloudStackPrimaryDataStoreLifeCycle, "storageMgr", storageManager);
 
