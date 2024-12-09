@@ -3388,7 +3388,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
         // In case of VMware, if ROOT volume is being cold-migrated, then ensure destination storage pool is in the same Datacenter as the VM.
         if (vm != null && vm.getHypervisorType().equals(HypervisorType.VMware)) {
-            if (!liveMigrateVolume && vol.volumeType.equals(Volume.Type.ROOT)) {
+            if (!liveMigrateVolume && vol.getVolumeType().equals(Volume.Type.ROOT)) {
                 Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
                 HostVO host = _hostDao.findById(hostId);
                 if (host != null) {
