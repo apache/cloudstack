@@ -18,6 +18,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
 import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
+import static org.apache.cloudstack.utils.linux.KVMHostInfo.isHostS390x;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -245,10 +246,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final String SECURE = "secure";
 
     /**
+     * Machine type for s390x architecture
+     */
+    private static final String S390X_VIRTIO_DEVICE = "s390-ccw-virtio";
+
+    /**
      * Machine type.
      */
-    private static final String PC = ("s390x".equals(System.getProperty("os.arch"))) ? "s390-ccw-virtio" : "pc";
-    private static final String VIRT = ("s390x".equals(System.getProperty("os.arch"))) ? "s390-ccw-virtio" : "virt";
+    private static final String PC = isHostS390x() ? S390X_VIRTIO_DEVICE : "pc";
+    private static final String VIRT = isHostS390x() ? S390X_VIRTIO_DEVICE : "virt";
 
     /**
      * Possible devices to add to VM.
@@ -2762,7 +2768,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         FeaturesDef features = new FeaturesDef();
         features.addFeatures(PAE);
         features.addFeatures(APIC);
-        if (!isGuestS390x()) {
+        if (!isHostS390x()) {
             features.addFeatures(ACPI);
         }
         if (isUefiEnabled && isSecureBoot) {
