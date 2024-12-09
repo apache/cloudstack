@@ -19,11 +19,24 @@
 package org.apache.cloudstack.storage.datastore.driver;
 
 import com.cloud.storage.dao.SnapshotDetailsVO;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
+
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.tags.dao.ResourceTagDao;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -69,6 +82,7 @@ import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
+
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 
@@ -113,17 +127,6 @@ import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -191,6 +194,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     public Map<String, String> getCapabilities() {
         Map<String, String> mapCapabilities = new HashMap<>();
         mapCapabilities.put(DataStoreCapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE.toString(), Boolean.TRUE.toString());
+        mapCapabilities.put(DataStoreCapabilities.CAN_CREATE_TEMPLATE_FROM_SNAPSHOT.toString(), Boolean.TRUE.toString());
         return mapCapabilities;
     }
 
@@ -525,14 +529,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 err = String.format("Could not delete volume due to %s", e.getMessage());
             }
         } else if (data.getType() == DataObjectType.SNAPSHOT) {
-            SnapshotInfo snapshot = (SnapshotInfo) data;
-            SpConnectionDesc conn = StorPoolUtil.getSpConnection(snapshot.getDataStore().getUuid(), snapshot.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
-            String name = StorPoolStorageAdaptor.getVolumeNameFromPath(snapshot.getPath(), true);
-            SpApiResponse resp = StorPoolUtil.snapshotDelete(name, conn);
-            if (resp.getError() != null) {
-                err = String.format("Failed to clean-up Storpool snapshot %s. Error: %s", name, resp.getError());
-                StorPoolUtil.spLog(err);
-            }
+            err = deleteSnapshot((SnapshotInfo) data, err);
         } else {
             err = String.format("Invalid DataObjectType \"%s\" passed to deleteAsync", data.getType());
         }
@@ -545,6 +542,18 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         CommandResult res = new CommandResult();
         res.setResult(err);
         callback.complete(res);
+    }
+
+    private String deleteSnapshot(SnapshotInfo data, String err) {
+        SnapshotInfo snapshot = data;
+        SpConnectionDesc conn = StorPoolUtil.getSpConnection(snapshot.getDataStore().getUuid(), snapshot.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
+        String name = StorPoolStorageAdaptor.getVolumeNameFromPath(snapshot.getPath(), true);
+        SpApiResponse resp = StorPoolUtil.snapshotDelete(name, conn);
+        if (resp.getError() != null) {
+            err = String.format("Failed to clean-up Storpool snapshot %s. Error: %s", name, resp.getError());
+            StorPoolUtil.spLog(err);
+        }
+        return err;
     }
 
     private void tryToSnapshotVolumeBeforeDelete(VolumeInfo vinfo, DataStore dataStore, String name, SpConnectionDesc conn) {
