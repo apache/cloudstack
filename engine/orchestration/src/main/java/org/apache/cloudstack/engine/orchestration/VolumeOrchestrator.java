@@ -107,6 +107,7 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
+
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
@@ -151,10 +152,12 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+
 import org.jetbrains.annotations.Nullable;
 
 import javax.inject.Inject;
@@ -565,14 +568,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         SnapshotInfo snapInfo = snapshotFactory.getSnapshotWithRoleAndZone(snapshot.getId(), dataStoreRole, zoneId);
 
         boolean kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole, volume.getDataCenterId());
-        boolean skipCopyToSecondary = false;
-        boolean keepOnPrimary = snapshotHelper.isStorPoolStorage(snapInfo);
+        boolean keepOnPrimary = snapshotHelper.isStorageSupportSnapshotToTemplate(snapInfo);
 
-        if (kvmSnapshotOnlyInPrimaryStorage && keepOnPrimary) {
-            skipCopyToSecondary = true;
-        }
         try {
-            if (!skipCopyToSecondary) {
+            if (!keepOnPrimary) {
                 snapInfo = snapshotHelper.backupSnapshotToSecondaryStorageIfNotExists(snapInfo, dataStoreRole, snapshot, kvmSnapshotOnlyInPrimaryStorage);
             }
         } catch (CloudRuntimeException e) {
@@ -581,7 +580,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         // don't try to perform a sync if the DataStoreRole of the snapshot is equal to DataStoreRole.Primary
-        if (!DataStoreRole.Primary.equals(dataStoreRole) || (kvmSnapshotOnlyInPrimaryStorage && !skipCopyToSecondary)) {
+        if (!DataStoreRole.Primary.equals(dataStoreRole) || !keepOnPrimary) {
             try {
                 // sync snapshot to region store if necessary
                 DataStore snapStore = snapInfo.getDataStore();
