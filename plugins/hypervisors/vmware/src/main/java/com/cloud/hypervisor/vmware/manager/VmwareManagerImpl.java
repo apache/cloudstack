@@ -1593,6 +1593,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         String datacenterName = cmd.getDatacenterName();
         String username = cmd.getUsername();
         String password = cmd.getPassword();
+        Integer maxObjects = cmd.getMaxNumber();
         Long existingVcenterId = cmd.getExistingVcenterId();
         String keyword = cmd.getKeyword();
 
@@ -1632,7 +1633,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 s_logger.error(msg);
                 throw new InvalidParameterValueException(msg);
             }
-            List<UnmanagedInstanceTO> instances = dcMo.getAllVmsOnDatacenter();
+            List<UnmanagedInstanceTO> instances = dcMo.getVmsOnDatacenter(maxObjects);
             return StringUtils.isBlank(keyword) ? instances :
                     instances.stream().filter(x -> x.getName().toLowerCase().contains(keyword.toLowerCase())).collect(Collectors.toList());
         } catch (Exception e) {
