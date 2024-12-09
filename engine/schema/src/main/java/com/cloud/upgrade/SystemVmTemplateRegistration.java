@@ -794,11 +794,14 @@ public class SystemVmTemplateRegistration {
                                     Long templateId = getRegisteredTemplateId(hypervisorAndTemplateName);
                                     if (templateId != null) {
                                         VMTemplateVO templateVO = vmTemplateDao.findById(templateId);
-                                        TemplateDataStoreVO templateDataStoreVO = templateDataStoreDao.findByTemplate(templateId, DataStoreRole.Image);
-                                        String installPath = templateDataStoreVO.getInstallPath();
-                                        if (validateIfSeeded(storeUrlAndId.first(), installPath, nfsVersion)) {
-                                            continue;
-                                        } else if (templateVO != null) {
+                                        TemplateDataStoreVO templateDataStoreVO = templateDataStoreDao.findByStoreTemplate(storeUrlAndId.second(), templateId);
+                                        if (templateDataStoreVO != null) {
+                                            String installPath = templateDataStoreVO.getInstallPath();
+                                            if (validateIfSeeded(storeUrlAndId.first(), installPath, nfsVersion)) {
+                                                continue;
+                                            }
+                                        }
+                                        if (templateVO != null) {
                                             registerTemplate(hypervisorAndTemplateName, storeUrlAndId, templateVO, templateDataStoreVO, filePath);
                                             continue;
                                         }
