@@ -48,6 +48,9 @@ public class VpcGatewayVO implements VpcGateway {
     @Column(name = "netmask")
     String netmask;
 
+    @Column(name = "description")
+    String description;
+
     @Column(name = "vlan_tag")
     String broadcastUri;
 
@@ -106,9 +109,10 @@ public class VpcGatewayVO implements VpcGateway {
      * @param domainId TODO
      * @param account_id
      * @param sourceNat
+     * @param description
      */
     public VpcGatewayVO(String ip4Address, Type type, long vpcId, long zoneId, long networkId, String broadcastUri, String gateway, String netmask, long accountId,
-            long domainId, boolean sourceNat, long networkACLId) {
+            long domainId, boolean sourceNat, long networkACLId, String description) {
         this.ip4Address = ip4Address;
         this.type = type;
         this.vpcId = vpcId;
@@ -123,7 +127,7 @@ public class VpcGatewayVO implements VpcGateway {
         state = State.Creating;
         this.sourceNat = sourceNat;
         this.networkACLId = networkACLId;
-
+        this.description = description;
     }
 
     @Override
@@ -228,5 +232,14 @@ public class VpcGatewayVO implements VpcGateway {
 
     public void setVpcId(Long vpcId) {
         this.vpcId = vpcId;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }
