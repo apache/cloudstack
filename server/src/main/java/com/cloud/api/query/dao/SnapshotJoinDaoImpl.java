@@ -32,6 +32,7 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VMInstanceVO;
+
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ResponseObject;
@@ -264,15 +265,15 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         return searchIncludingRemoved(sc, searchFilter, null, false);
     }
 
-    public List<SnapshotJoinVO> listBySnapshotIdAndZoneId(Long zoneId, Long id) {
-        if (id == null) {
+    public List<SnapshotJoinVO> listBySnapshotIdAndZoneId(Long zoneId, Long snapshotId) {
+        if (snapshotId == null) {
             return new ArrayList<>();
         }
         SearchCriteria<SnapshotJoinVO> sc = snapshotByZoneSearch.create();
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
         }
-        sc.setParameters("id", id);
+        sc.setParameters("id", snapshotId);
         return listBy(sc);
     }
 }

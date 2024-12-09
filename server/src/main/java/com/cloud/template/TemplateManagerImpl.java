@@ -122,9 +122,11 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -197,8 +199,10 @@ import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.apache.cloudstack.storage.template.VnfTemplateUtils;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
@@ -1676,19 +1680,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
                 snapInfo = _snapshotFactory.getSnapshotWithRoleAndZone(snapshotId, dataStoreRole, zoneId);
                 boolean skipCopyToSecondary = false;
-                boolean keepOnPrimary = snapshotHelper.isStorPoolStorage(snapInfo);
-                if (kvmSnapshotOnlyInPrimaryStorage && keepOnPrimary) {
-                    skipCopyToSecondary = true;
-                }
-                if (dataStoreRole == DataStoreRole.Image || !skipCopyToSecondary) {
-                    snapInfo = snapshotHelper.backupSnapshotToSecondaryStorageIfNotExists(snapInfo, dataStoreRole, snapshot, kvmSnapshotOnlyInPrimaryStorage);
-                    _accountMgr.checkAccess(caller, null, true, snapInfo);
-                    DataStore snapStore = snapInfo.getDataStore();
-
-                    if (snapStore != null) {
-                        store = snapStore; // pick snapshot image store to create template
-                    }
-                } else if (keepOnPrimary) {
+                boolean keepOnPrimary = snapshotHelper.isStorageSupportSnapshotToTemplate(snapInfo);
+                if (keepOnPrimary) {
                     ImageStoreVO imageStore = _imgStoreDao.findOneByZoneAndProtocol(zoneId, "nfs");
                     if (imageStore == null) {
                         throw new CloudRuntimeException(String.format("Could not find an NFS secondary storage pool on zone %s to use as a temporary location " +
@@ -1697,6 +1690,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     DataStore dataStore = _dataStoreMgr.getDataStore(imageStore.getId(), DataStoreRole.Image);
                     if (dataStore != null) {
                         store = dataStore;
+                    }
+                } else if (dataStoreRole == DataStoreRole.Image) {
+                    snapInfo = snapshotHelper.backupSnapshotToSecondaryStorageIfNotExists(snapInfo, dataStoreRole, snapshot, kvmSnapshotOnlyInPrimaryStorage);
+                    _accountMgr.checkAccess(caller, null, true, snapInfo);
+                    DataStore snapStore = snapInfo.getDataStore();
+
+                    if (snapStore != null) {
+                        store = snapStore; // pick snapshot image store to create template
                     }
                 }
 
