@@ -63,6 +63,8 @@ import org.apache.commons.collections.CollectionUtils;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -201,6 +203,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                 snapshotObject.processEvent(event);
         }
     }
+
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
         logger.debug("StorpoolSnapshotStrategy.canHandle: snapshot {}, op={}", snapshot, op);
@@ -414,38 +417,25 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
         SnapshotInfo srcSnapshot = (SnapshotInfo) snapshot;
         SnapshotInfo destSnapshot = (SnapshotInfo) snapshotDest;
         String err = null;
+        String snapshotName = StorPoolStorageAdaptor.getVolumeNameFromPath(srcSnapshot.getPath(), false);
         if (location != null) {
-            SpConnectionDesc connectionLocal = StorPoolUtil.getSpConnection(snapshot.getDataStore().getUuid(),
-                    snapshot.getDataStore().getId(), storagePoolDetailsDao, _primaryDataStoreDao);
-            String snapshotName = StorPoolStorageAdaptor.getVolumeNameFromPath(srcSnapshot.getPath(), false);
-            Long clusterId = StorPoolHelper.findClusterIdByGlobalId(StorPoolUtil.getSnapshotClusterId("~" + snapshotName, connectionLocal), clusterDao);
-            connectionLocal = StorPoolHelper.getSpConnectionDesc(connectionLocal, clusterId);
-            SpApiResponse resp = StorPoolUtil.snapshotExport("~" + snapshotName, location, connectionLocal);
+            SpApiResponse resp = exportSnapshot(snapshot, location, snapshotName);
             if (resp.getError() != null) {
                 StorPoolUtil.spLog("Failed to export snapshot %s from %s due to %s", snapshotName, location, resp.getError());
                 err = String.format("Failed to export snapshot %s from %s due to %s", snapshotName, location, resp.getError());
-                res = new CreateCmdResult(destSnapshot.getPath(), null);
-                res.setResult(err);
-                callback.complete(res);
+                completeCallback(callback, res, destSnapshot.getPath(), err);
                 return;
             }
-            String detail = "~" + snapshotName + ";" + location;
-            SnapshotDetailsVO snapshotForRecovery = new SnapshotDetailsVO(snapshot.getId(), StorPoolUtil.SP_RECOVERED_SNAPSHOT, detail, true);
-            _snapshotDetailsDao.persist(snapshotForRecovery);
+            keepExportedSnapshot(snapshot, location, snapshotName);
+
             SpConnectionDesc connectionRemote = StorPoolUtil.getSpConnection(storagePoolVO.getUuid(),
                     storagePoolVO.getId(), storagePoolDetailsDao, _primaryDataStoreDao);
-            String localLocation = StorPoolConfigurationManager.StorPoolClusterLocation
-                    .valueIn(snapshot.getDataStore().getId());
-            StoragePoolDetailVO template = storagePoolDetailsDao.findDetail(storagePoolVO.getId(),
-                    StorPoolUtil.SP_TEMPLATE);
-            SpApiResponse respFromRemote = StorPoolUtil.snapshotFromRemote(snapshotName, localLocation,
-                    template.getValue(), connectionRemote);
+            SpApiResponse respFromRemote = copySnapshotFromRemote(snapshot, storagePoolVO, snapshotName, connectionRemote);
+
             if (respFromRemote.getError() != null) {
                 StorPoolUtil.spLog("Failed to copy snapshot %s to %s due to %s", snapshotName, location, respFromRemote.getError());
                 err = String.format("Failed to copy snapshot %s to %s due to %s", snapshotName, location, respFromRemote.getError());
-                res = new CreateCmdResult(destSnapshot.getPath(), null);
-                res.setResult(err);
-                callback.complete(res);
+                completeCallback(callback, res, destSnapshot.getPath(), err);
                 return;
             }
             StorPoolUtil.spLog("The snapshot [%s] was copied from remote", snapshotName);
@@ -454,26 +444,59 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
             if (respFromRemote.getError() != null) {
                 StorPoolUtil.spLog("Failed to reconcile snapshot %s from %s due to %s", snapshotName, location, respFromRemote.getError());
                 err = String.format("Failed to reconcile snapshot %s from %s due to %s", snapshotName, location, respFromRemote.getError());
-                res = new CreateCmdResult(destSnapshot.getPath(), null);
-                res.setResult(err);
-                callback.complete(res);
+                completeCallback(callback, res, destSnapshot.getPath(), err);
                 return;
             }
-            SnapshotDataStoreVO snapshotStore = _snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Primary, snapshotDest.getDataStore().getId(), destSnapshot.getSnapshotId());
-            snapshotStore.setInstallPath(srcSnapshot.getPath());
-            _snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
-
+            updateSnapshotPath(snapshotDest, srcSnapshot, destSnapshot);
         } else {
-            res = new CreateCmdResult(destSnapshot.getPath(), null);
-            res.setResult("The snapshot is not in the right location");
-            callback.complete(res);
-            return;
+            completeCallback(callback, res, destSnapshot.getPath(), "The snapshot is not in the right location");
         }
         SnapshotObjectTO snap = (SnapshotObjectTO) snapshotDest.getTO();
         snap.setPath(srcSnapshot.getPath());
         CreateObjectAnswer answer = new CreateObjectAnswer(snap);
-        res = new CreateCmdResult(destSnapshot.getPath(), answer);
+        completeCallback(callback, res, destSnapshot.getPath(), err);
+    }
+
+    private void completeCallback(AsyncCompletionCallback<CreateCmdResult> callback, CreateCmdResult res, String snapshotPath, String err) {
+        res = new CreateCmdResult(snapshotPath, null);
         res.setResult(err);
         callback.complete(res);
+    }
+
+    private void updateSnapshotPath(DataObject snapshotDest, SnapshotInfo srcSnapshot, SnapshotInfo destSnapshot) {
+
+        SnapshotDataStoreVO snapshotStore = _snapshotStoreDao.findByStoreSnapshot(DataStoreRole.Primary, snapshotDest.getDataStore().getId(), destSnapshot.getSnapshotId());
+        snapshotStore.setInstallPath(srcSnapshot.getPath());
+        _snapshotStoreDao.update(snapshotStore.getId(), snapshotStore);
+    }
+
+    @NotNull
+    private SpApiResponse copySnapshotFromRemote(DataObject snapshot, StoragePoolVO storagePoolVO, String snapshotName, SpConnectionDesc connectionRemote) {
+
+        String localLocation = StorPoolConfigurationManager.StorPoolClusterLocation
+                .valueIn(snapshot.getDataStore().getId());
+        StoragePoolDetailVO template = storagePoolDetailsDao.findDetail(storagePoolVO.getId(),
+                StorPoolUtil.SP_TEMPLATE);
+        SpApiResponse respFromRemote = StorPoolUtil.snapshotFromRemote(snapshotName, localLocation,
+                template.getValue(), connectionRemote);
+        return respFromRemote;
+    }
+
+    private void keepExportedSnapshot(DataObject snapshot, String location, String snapshotName) {
+
+        String detail = "~" + snapshotName + ";" + location;
+        SnapshotDetailsVO snapshotForRecovery = new SnapshotDetailsVO(snapshot.getId(), StorPoolUtil.SP_RECOVERED_SNAPSHOT, detail, true);
+        _snapshotDetailsDao.persist(snapshotForRecovery);
+    }
+
+    @NotNull
+    private SpApiResponse exportSnapshot(DataObject snapshot, String location, String snapshotName) {
+
+        SpConnectionDesc connectionLocal = StorPoolUtil.getSpConnection(snapshot.getDataStore().getUuid(),
+                snapshot.getDataStore().getId(), storagePoolDetailsDao, _primaryDataStoreDao);
+        Long clusterId = StorPoolHelper.findClusterIdByGlobalId(StorPoolUtil.getSnapshotClusterId("~" + snapshotName, connectionLocal), clusterDao);
+        connectionLocal = StorPoolHelper.getSpConnectionDesc(connectionLocal, clusterId);
+        SpApiResponse resp = StorPoolUtil.snapshotExport("~" + snapshotName, location, connectionLocal);
+        return resp;
     }
 }
