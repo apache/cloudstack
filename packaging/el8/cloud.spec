@@ -48,7 +48,7 @@ BuildRequires: /usr/bin/mkisofs
 BuildRequires: python3-setuptools
 BuildRequires: wget
 BuildRequires: nodejs
-AutoReqProv: no
+AutoReq: no
 
 %description
 CloudStack is a highly-scalable elastic, open source,
