@@ -578,14 +578,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         SnapshotInfo snapInfo = snapshotFactory.getSnapshotWithRoleAndZone(snapshot.getId(), dataStoreRole, zoneId);
 
         boolean kvmSnapshotOnlyInPrimaryStorage = snapshotHelper.isKvmSnapshotOnlyInPrimaryStorage(snapshot, dataStoreRole, volume.getDataCenterId());
-        boolean skipCopyToSecondary = false;
-        boolean keepOnPrimary = snapshotHelper.isStorPoolStorage(snapInfo);
+        boolean keepOnPrimary = snapshotHelper.isStorageSupportSnapshotToTemplate(snapInfo);
 
-        if (kvmSnapshotOnlyInPrimaryStorage && keepOnPrimary) {
-            skipCopyToSecondary = true;
-        }
         try {
-            if (!skipCopyToSecondary) {
+            if (!keepOnPrimary) {
                 snapInfo = snapshotHelper.backupSnapshotToSecondaryStorageIfNotExists(snapInfo, dataStoreRole, snapshot, kvmSnapshotOnlyInPrimaryStorage);
             }
         } catch (CloudRuntimeException e) {
@@ -599,7 +595,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         // don't try to perform a sync if the DataStoreRole of the snapshot is equal to DataStoreRole.Primary
-        if (!DataStoreRole.Primary.equals(dataStoreRole) || (kvmSnapshotOnlyInPrimaryStorage && !skipCopyToSecondary)) {
+        if (!DataStoreRole.Primary.equals(dataStoreRole) || !keepOnPrimary) {
             try {
                 // sync snapshot to region store if necessary
                 DataStore snapStore = snapInfo.getDataStore();
