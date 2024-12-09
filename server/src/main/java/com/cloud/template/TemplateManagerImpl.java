@@ -1702,19 +1702,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 boolean kvmIncrementalSnapshot = SnapshotManager.kvmIncrementalSnapshot.valueIn(_hostDao.findClusterIdByVolumeInfo(snapInfo.getBaseVolume()));
 
                 boolean skipCopyToSecondary = false;
-                boolean keepOnPrimary = snapshotHelper.isStorPoolStorage(snapInfo);
-                if (kvmSnapshotOnlyInPrimaryStorage && keepOnPrimary) {
-                    skipCopyToSecondary = true;
-                }
-                if (dataStoreRole == DataStoreRole.Image || !skipCopyToSecondary) {
-                    snapInfo = snapshotHelper.backupSnapshotToSecondaryStorageIfNotExists(snapInfo, dataStoreRole, snapshot, kvmSnapshotOnlyInPrimaryStorage);
-                    _accountMgr.checkAccess(caller, null, true, snapInfo);
-                    DataStore snapStore = snapInfo.getDataStore();
-
-                    if (snapStore != null) {
-                        store = snapStore; // pick snapshot image store to create template
-                    }
-                } else if (keepOnPrimary) {
+                boolean keepOnPrimary = snapshotHelper.isStorageSupportSnapshotToTemplate(snapInfo);
+                if (keepOnPrimary) {
                     ImageStoreVO imageStore = _imgStoreDao.findOneByZoneAndProtocol(zoneId, "nfs");
                     if (imageStore == null) {
                         throw new CloudRuntimeException(String.format("Could not find an NFS secondary storage pool on zone %s to use as a temporary location " +
@@ -1723,6 +1712,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     DataStore dataStore = _dataStoreMgr.getDataStore(imageStore.getId(), DataStoreRole.Image);
                     if (dataStore != null) {
                         store = dataStore;
+                    }
+                } else if (dataStoreRole == DataStoreRole.Image) {
+                    snapInfo = snapshotHelper.backupSnapshotToSecondaryStorageIfNotExists(snapInfo, dataStoreRole, snapshot, kvmSnapshotOnlyInPrimaryStorage);
+                    _accountMgr.checkAccess(caller, null, true, snapInfo);
+                    DataStore snapStore = snapInfo.getDataStore();
+
+                    if (snapStore != null) {
+                        store = snapStore; // pick snapshot image store to create template
                     }
                 }
                 if (kvmIncrementalSnapshot && DataStoreRole.Image.equals(dataStoreRole)) {

@@ -30,6 +30,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.utils.exception.CloudRuntimeException;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -42,11 +43,14 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -100,7 +104,7 @@ public class SnapshotHelper {
         long storeId = snapInfo.getDataStore().getId();
         long zoneId = dataStorageManager.getStoreZoneId(storeId, snapInfo.getDataStore().getRole());
 
-        if (isStorPoolStorage(snapInfo)) {
+        if (isStorageSupportSnapshotToTemplate(snapInfo)) {
             logger.debug("The primary storage does not delete the snapshots even if there is a backup on secondary");
             return;
         }
@@ -146,10 +150,10 @@ public class SnapshotHelper {
         snapshotDataStoreDao.expungeReferenceBySnapshotIdAndDataStoreRole(snapInfo.getId(), storeId, DataStoreRole.Image);
     }
 
-    public boolean isStorPoolStorage(SnapshotInfo snapInfo) {
+    public boolean isStorageSupportSnapshotToTemplate(SnapshotInfo snapInfo) {
         if (DataStoreRole.Primary.equals(snapInfo.getDataStore().getRole())) {
-            StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(snapInfo.getDataStore().getId());
-            return storagePoolVO != null && StoragePoolType.StorPool.equals(storagePoolVO.getPoolType());
+            Map<String, String> capabilities = snapInfo.getDataStore().getDriver().getCapabilities();
+            return org.apache.commons.collections4.MapUtils.isNotEmpty(capabilities) && capabilities.containsKey(DataStoreCapabilities.CAN_CREATE_TEMPLATE_FROM_SNAPSHOT.toString());
         }
         return false;
     }

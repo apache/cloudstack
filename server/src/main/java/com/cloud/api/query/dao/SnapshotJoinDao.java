@@ -35,5 +35,5 @@ public interface SnapshotJoinDao extends GenericDao<SnapshotJoinVO, Long> {
 
     List<SnapshotJoinVO> findByDistinctIds(Long zoneId, Long... ids);
 
-    List<SnapshotJoinVO> listBySnapshotIdAndZoneId(Long zoneId, Long id);
+    List<SnapshotJoinVO> listBySnapshotIdAndZoneId(Long zoneId, Long snapshotId);
 }

@@ -44,5 +44,9 @@ public enum DataStoreCapabilities {
     /**
     * indicates that the driver supports copying snapshot between zones on pools of the same type
     */
-    CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE
+    CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE,
+    /**
+     * indicates that this driver supports the option to create a template from the back-end snapshot
+     */
+    CAN_CREATE_TEMPLATE_FROM_SNAPSHOT
 }

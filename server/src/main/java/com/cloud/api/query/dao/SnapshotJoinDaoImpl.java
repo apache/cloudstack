@@ -26,18 +26,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.annotation.AnnotationService;
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.response.SnapshotResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.query.QueryService;
-
-import org.apache.commons.collections.CollectionUtils;
-
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.SnapshotJoinVO;
@@ -53,6 +41,18 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VMInstanceVO;
+
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ResponseObject;
+import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.query.QueryService;
+
+import org.apache.commons.collections.CollectionUtils;
 
 public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<SnapshotJoinVO, SnapshotResponse> implements SnapshotJoinDao {
 
@@ -300,15 +300,15 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         return searchIncludingRemoved(sc, searchFilter, null, false);
     }
 
-    public List<SnapshotJoinVO> listBySnapshotIdAndZoneId(Long zoneId, Long id) {
-        if (id == null) {
+    public List<SnapshotJoinVO> listBySnapshotIdAndZoneId(Long zoneId, Long snapshotId) {
+        if (snapshotId == null) {
             return new ArrayList<>();
         }
         SearchCriteria<SnapshotJoinVO> sc = snapshotByZoneSearch.create();
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
         }
-        sc.setParameters("id", id);
+        sc.setParameters("id", snapshotId);
         return listBy(sc);
     }
 }
