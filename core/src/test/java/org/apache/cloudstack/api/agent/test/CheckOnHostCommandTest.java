@@ -190,6 +190,11 @@ public class CheckOnHostCommandTest {
         };
 
         @Override
+        public Long getLastManagementServerId() {
+            return null;
+        };
+
+        @Override
         public Date getRemoved() {
             Date date = null;
             try {
