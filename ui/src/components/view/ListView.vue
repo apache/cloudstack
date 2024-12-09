@@ -26,7 +26,7 @@
     :rowSelection="explicitlyAllowRowSelection || enableGroupAction() || $route.name === 'event' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange, columnWidth: 30} : null"
     :rowClassName="getRowClassName"
     @resizeColumn="handleResizeColumn"
-    style="overflow-y: auto"
+    :style="{ 'overflow-y': this.$route.name === 'usage' ? 'hidden' : 'auto' }"
   >
     <template #customFilterDropdown>
       <div style="padding: 8px" class="filter-dropdown">
