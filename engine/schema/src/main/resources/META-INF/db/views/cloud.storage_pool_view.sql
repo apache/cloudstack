@@ -31,6 +31,7 @@ SELECT
     `storage_pool`.`created` AS `created`,
     `storage_pool`.`removed` AS `removed`,
     `storage_pool`.`capacity_bytes` AS `capacity_bytes`,
+    `storage_pool`.`used_bytes` AS `used_bytes`,
     `storage_pool`.`capacity_iops` AS `capacity_iops`,
     `storage_pool`.`used_iops` AS `used_iops`,
     `storage_pool`.`scope` AS `scope`,
