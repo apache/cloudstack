@@ -50,6 +50,10 @@ public interface AgentManager {
     ConfigKey<Integer> ReadyCommandWait = new ConfigKey<Integer>("Advanced", Integer.class, "ready.command.wait",
             "60", "Time in seconds to wait for Ready command to return", true);
 
+    ConfigKey<String> GranularWaitTimeForCommands = new ConfigKey<>("Advanced", String.class, "commands.timeout", "",
+            "This timeout overrides the wait global config. This holds a comma separated key value pairs containing timeout (in seconds) for specific commands. " +
+                    "For example: DhcpEntryCommand=600, SavePasswordCommand=300, VmDataCommand=300", false);
+
     public enum TapAgentsAction {
         Add, Del, Contains,
     }
