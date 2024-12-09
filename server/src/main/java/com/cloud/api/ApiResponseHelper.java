@@ -639,6 +639,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         cfgResponse.setSubGroup(configGroupAndSubGroup.second());
         cfgResponse.setDescription(cfg.getDescription());
         cfgResponse.setName(cfg.getName());
+        cfgResponse.setScope(cfg.getScope());
         if (cfg.isEncrypted()) {
             cfgResponse.setValue(DBEncryptionUtil.encrypt(cfg.getValue()));
         } else {

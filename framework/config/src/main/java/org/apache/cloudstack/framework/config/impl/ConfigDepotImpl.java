@@ -402,4 +402,9 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     public boolean isNewConfig(ConfigKey<?> configKey) {
         return newConfigs.contains(configKey.key());
     }
+
+    @Override
+    public Pair<ConfigKey.Scope, Long> getParentScope(ConfigKey.Scope scope, Long id) {
+        return _configDao.getParentScope(scope, id);
+    }
 }

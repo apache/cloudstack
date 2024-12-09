@@ -16,7 +16,10 @@
 // under the License.
 package com.cloud.vpc.dao;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDaoBase;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 
@@ -117,4 +120,8 @@ public class MockConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, St
     public void invalidateCache() {
     }
 
+    @Override
+    public Pair<ConfigKey.Scope, Long> getParentScope(ConfigKey.Scope scope, Long id) {
+        return null;
+    }
 }

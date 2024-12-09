@@ -17,6 +17,8 @@
 package org.apache.cloudstack.framework.config;
 
 import java.sql.Date;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl;
 
@@ -37,7 +39,46 @@ public class ConfigKey<T> {
     public static final String CATEGORY_SYSTEM = "System";
 
     public enum Scope {
-        Global, Zone, Cluster, StoragePool, Account, ManagementServer, ImageStore, Domain
+        Global(null),
+        Zone(Global),
+        Cluster(Zone),
+        StoragePool(Cluster),
+        ManagementServer(Global),
+        ImageStore(Zone),
+        Domain(Global),
+        Account(Domain);
+
+        private final Scope parent;
+
+        Scope(Scope parent) {
+            this.parent = parent;
+        }
+
+        public Scope getParent() {
+            return parent;
+        }
+
+        public boolean isDescendantOf(Scope other) {
+            Scope current = this;
+            while (current != null) {
+                if (current == other) {
+                    return true;
+                }
+                current = current.getParent();
+            }
+            return false;
+        }
+
+        public static List<Scope> getAllDescendants(String str) {
+            Scope s1 = Scope.valueOf(str);
+            List<Scope> scopes = new ArrayList<>();
+            for (Scope s : Scope.values()) {
+                if (s.isDescendantOf(s1)) {
+                    scopes.add(s);
+                }
+            }
+            return scopes;
+        }
     }
 
     public enum Kind {
@@ -229,6 +270,10 @@ public class ConfigKey<T> {
 
         String value = s_depot != null ? s_depot.getConfigStringValue(_name, scope, id) : null;
         if (value == null) {
+            Pair<Scope, Long> parentScope = s_depot != null ? s_depot.getParentScope(scope, id) : null;
+            if (parentScope != null) {
+                return valueInScope(parentScope.first(), parentScope.second());
+            }
             return value();
         }
         return valueOf(value);

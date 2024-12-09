@@ -2297,7 +2297,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 && scope.equals(ConfigKey.Scope.Domain.toString())) {
                 sc.addAnd("scope", SearchCriteria.Op.IN, ConfigKey.Scope.Domain.toString(), ConfigKey.Scope.Account.toString());
             } else {
-                sc.addAnd("scope", SearchCriteria.Op.EQ, scope);
+                ConfigKey.Scope scopeVal = ConfigKey.Scope.valueOf(scope);
+                List<ConfigKey.Scope> scopes = ConfigKey.Scope.getAllDescendants(scope);
+                List<String> scopeStrs = scopes.stream().map(Enum::toString).collect(Collectors.toList());
+                sc.addAnd("scope", SearchCriteria.Op.IN, scopeStrs.toArray());
             }
         }
 
