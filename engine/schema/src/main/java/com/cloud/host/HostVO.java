@@ -782,4 +782,12 @@ public class HostVO implements Host {
     public PartitionType partitionType() {
         return PartitionType.Host;
     }
+
+    public long getDom0MinMemory() {
+        return dom0MinMemory;
+    }
+
+    public void setDom0MinMemory(long dom0MinMemory) {
+        this.dom0MinMemory = dom0MinMemory;
+    }
 }
