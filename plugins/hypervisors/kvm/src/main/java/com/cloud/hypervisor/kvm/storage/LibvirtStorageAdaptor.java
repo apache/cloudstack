@@ -548,7 +548,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 Script.getExecutableAbsolutePath("bash"),
                 "-c",
                 String.format(
-                        "%s -z %s 1 2 | %s 'NR==7 {read=$4; write=$5; total=read+write; print total}'",
+                        "%s -z %s 1 2 | %s 'NR==7 {print $2}'",
                         Script.getExecutableAbsolutePath("iostat"),
                         result,
                         Script.getExecutableAbsolutePath("awk")
