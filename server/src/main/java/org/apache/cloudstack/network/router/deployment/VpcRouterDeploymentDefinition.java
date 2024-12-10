@@ -113,7 +113,7 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     @Override
     protected boolean prepareDeployment() {
         //Check if the VR is the src NAT provider...
-        isPublicNetwork = vpcMgr.isSrcNatIpRequired(vpc.getVpcOfferingId());
+        isPublicNetwork = vpcMgr.isSrcNatIpRequiredForVpcVr(vpc.getVpcOfferingId());
 
         // Check if public network has to be set on VR
         return true;

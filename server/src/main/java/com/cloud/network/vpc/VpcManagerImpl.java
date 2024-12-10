@@ -3402,6 +3402,15 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 && vpcOffSvcProvidersMap.get(Service.Gateway).contains(Network.Provider.VPCVirtualRouter));
     }
 
+    @Override
+    public boolean isSrcNatIpRequiredForVpcVr(long vpcOfferingId) {
+        final Map<Network.Service, Set<Network.Provider>> vpcOffSvcProvidersMap = getVpcOffSvcProvidersMap(vpcOfferingId);
+        return (Objects.nonNull(vpcOffSvcProvidersMap.get(Network.Service.SourceNat))
+                && vpcOffSvcProvidersMap.get(Network.Service.SourceNat).contains(Network.Provider.VPCVirtualRouter))
+                || (Objects.nonNull(vpcOffSvcProvidersMap.get(Network.Service.Gateway))
+                && vpcOffSvcProvidersMap.get(Service.Gateway).contains(Network.Provider.VPCVirtualRouter));
+    }
+
     /**
      * rollingRestartVpc performs restart of routers of a VPC by first
      * deploying a new VR and then destroying old VRs in rolling fashion. For
