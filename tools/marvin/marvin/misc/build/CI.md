@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-
 about
 =====
 
@@ -33,7 +32,6 @@ components
 . jenkins jnlp slave
 . scheduling
 . networking setup
-
 
 [insert diagram here]
 
@@ -95,7 +93,6 @@ a. single zone/pod/cluster
 b. multiple cluster
 c. inter-zone tests
 d. multi-pod tests
-
 
 marvin integration
 ==================
