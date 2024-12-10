@@ -320,7 +320,6 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
 
         if (State.Up.equals(msHost.getState())) {
             msHostDao.updateState(msHost.getId(), State.PreparingForShutDown);
-            msHost.setState(State.PreparingForShutDown);
         }
 
         final Command[] cmds = new Command[1];
@@ -331,9 +330,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
             throw new CloudRuntimeException(result);
         }
 
-        if (!State.Maintenance.equals(msHost.getState())) {
-            msHostDao.updateState(msHost.getId(), State.ShuttingDown);
-        }
+        msHostDao.updateState(msHost.getId(), State.ShuttingDown);
         return prepareMaintenanceResponse(cmd.getManagementServerId());
     }
 
@@ -538,7 +535,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
                 // No more pending jobs. Good to terminate
                 if (managementServerMaintenanceManager.isShutdownTriggered()) {
                     logger.info("MS is Shutting Down Now");
-                    // Keeps Maintenance state, Otherwise updates state to ShuttingDown followed by Down
+                    // update state to down ?
                     System.exit(0);
                 }
                 if (managementServerMaintenanceManager.isPreparingForMaintenance()) {
