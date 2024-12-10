@@ -17,7 +17,7 @@
 
 %define __os_install_post %{nil}
 %global debug_package %{nil}
-%global __requires_exclude ^libc.so.*
+%global __requires_exclude *libc.so.*
 %define _binaries_in_noarch_packages_terminate_build   0
 
 # DISABLE the post-percentinstall java repacking and line number stripping
@@ -48,7 +48,6 @@ BuildRequires: /usr/bin/mkisofs
 BuildRequires: python3-setuptools
 BuildRequires: wget
 BuildRequires: nodejs
-AutoReq: no
 
 %description
 CloudStack is a highly-scalable elastic, open source,
