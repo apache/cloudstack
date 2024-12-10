@@ -2739,8 +2739,12 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     // return pair of VirtualDisk and disk device bus name(ide0:0, etc)
-    public Pair<VirtualDisk, String> getDiskDevice(String vmdkDatastorePath, boolean matchExactly) throws Exception {
+    public Pair<VirtualDisk, String> getDiskDevice(String vmdkDatastorePath, boolean matchExactly, boolean ignoreDotOnPath) throws Exception {
         List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
+
+        if (ignoreDotOnPath) {
+            vmdkDatastorePath = vmdkDatastorePath + ".";
+        }
 
         DatastoreFile dsSrcFile = new DatastoreFile(vmdkDatastorePath);
         String srcBaseName = dsSrcFile.getFileBaseName();
