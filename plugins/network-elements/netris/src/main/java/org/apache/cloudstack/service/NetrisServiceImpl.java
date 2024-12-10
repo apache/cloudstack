@@ -203,6 +203,8 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         String vxlanId = Networks.BroadcastDomainType.getValue(network.getBroadcastUri());
         CreateNetrisVnetCommand cmd = new CreateNetrisVnetCommand(zoneId, accountId, domainId, vpcName, vpcId, networkName, networkId, cidr, network.getGateway(), !Objects.isNull(vpcId));
         cmd.setVxlanId(Integer.parseInt(vxlanId));
+        NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(zoneId);
+        cmd.setNetrisTag(netrisProvider.getNetrisTag());
         NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
         return answer.getResult();
     }

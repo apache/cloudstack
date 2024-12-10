@@ -86,6 +86,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -382,7 +383,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         Long networkId = cmd.getId();
         String vnetCidr = cmd.getCidr();
         Integer vxlanId = cmd.getVxlanId();
-        String gateway = cmd.getGateway();
+        String netrisTag = cmd.getNetrisTag();
         String netmask = vnetCidr.split("/")[1];
         String netrisGateway = cmd.getGateway() + "/" + netmask;
         boolean isVpc = cmd.isVpc();
@@ -407,7 +408,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         createIpamSubnetInternal(netrisSubnetName, vnetCidr, SubnetBody.PurposeEnum.COMMON, associatedVpc);
         logger.debug("Successfully created IPAM Subnet {} for network {} on Netris", netrisSubnetName, networkName);
 
-        VnetResAddBody vnetResponse = createVnetInternal(associatedVpc, netrisVnetName, netrisGateway, vxlanId);
+        VnetResAddBody vnetResponse = createVnetInternal(associatedVpc, netrisVnetName, netrisGateway, vxlanId, netrisTag);
         if (vnetResponse == null || !vnetResponse.isIsSuccess()) {
             String reason = vnetResponse == null ? "Empty response" : "Operation failed on Netris";
             logger.debug("The Netris vNet creation {} failed: {}", vNetName, reason);
@@ -899,7 +900,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         }
     }
 
-    VnetResAddBody createVnetInternal(VPCListing associatedVpc, String netrisVnetName, String netrisGateway, Integer vxlanId) {
+    VnetResAddBody createVnetInternal(VPCListing associatedVpc, String netrisVnetName, String netrisGateway, Integer vxlanId, String netrisTag) {
         logger.debug("Creating Netris VPC vNet {} for CIDR {}", netrisVnetName, netrisGateway);
         try {
             VnetAddBody vnetBody = new VnetAddBody();
@@ -949,6 +950,8 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             vpc.setName(associatedVpc.getName());
             vpc.setId(associatedVpc.getId());
             vnetBody.setVpc(vpc);
+
+            vnetBody.setTags(Collections.singletonList(netrisTag));
 
             VNetApi vnetApi = apiClient.getApiStubForMethod(VNetApi.class);
             return vnetApi.apiV2VnetPost(vnetBody);

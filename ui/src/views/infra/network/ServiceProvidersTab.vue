@@ -1169,7 +1169,7 @@ export default {
                   value: (record) => { return record.zoneid }
                 }
               },
-              columns: ['name', 'hostname', 'port', 'site', 'tenantname']
+              columns: ['name', 'hostname', 'port', 'site', 'tenantname', 'netristag']
             }
           ]
         }

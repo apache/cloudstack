@@ -4580,12 +4580,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Unable to find zone by id " + zoneId);
         }
 
-        // If external provider is provided, verify zone has that provider enabled
+        // If external provider is provided, verify zone has that provider enabled and the controller added
         Provider provider = cmd.getProvider();
-        if (Objects.nonNull(provider)) {
+        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+        NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(zoneId);
+        if (Objects.nonNull(provider) && ObjectUtils.anyNotNull(nsxProvider, netrisProvider)) {
             boolean unsupported =
-                    (Provider.Nsx == provider && nsxProviderDao.findByZoneId(zoneId) == null) ||
-                            (Provider.Netris == provider && netrisProviderDao.findByZoneId(zoneId) == null);
+                    (Provider.Nsx == provider && nsxProvider == null) ||
+                            (Provider.Netris == provider && netrisProvider == null);
             if (unsupported) {
                 throw new InvalidParameterValueException(String.format("Cannot add public IP range as the zone does not support provider: %s", provider.getName()));
             }
@@ -4762,7 +4764,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
             });
 
-            if (provider == Provider.Netris) {
+            if (provider == Provider.Netris && netrisProviderDao.findByZoneId(zoneId) != null) {
                 netrisService.createIPAMAllocationsForZoneLevelPublicRanges(zoneId);
             }
             messageBus.publish(_name, MESSAGE_CREATE_VLAN_IP_RANGE_EVENT, PublishScope.LOCAL, vlan);

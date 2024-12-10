@@ -57,6 +57,10 @@ public class NetrisProviderResponse extends BaseResponse {
     @Param(description = "Netris Admin tenant name")
     private String tenantName;
 
+    @SerializedName(ApiConstants.NETRIS_TAG)
+    @Param(description = "Netris Tag for vNets")
+    private String netrisTag;
+
     public String getName() {
         return name;
     }
@@ -119,5 +123,13 @@ public class NetrisProviderResponse extends BaseResponse {
 
     public void setTenantName(String tenantName) {
         this.tenantName = tenantName;
+    }
+
+    public String getNetrisTag() {
+        return netrisTag;
+    }
+
+    public void setNetrisTag(String netrisTag) {
+        this.netrisTag = netrisTag;
     }
 }

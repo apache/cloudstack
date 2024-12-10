@@ -439,6 +439,7 @@ CREATE TABLE `cloud`.`netris_providers` (
     `password` varchar(255) NOT NULL,
     `site_name` varchar(255) NOT NULL,
     `tenant_name` varchar(255) NOT NULL,
+    `netris_tag` varchar(255) NOT NULL,
     `created` datetime NOT NULL COMMENT 'created date',
     `removed` datetime COMMENT 'removed date if not null',
     PRIMARY KEY (`id`),
