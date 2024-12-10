@@ -519,6 +519,12 @@ export default {
           key: 'tenantName',
           placeHolder: 'message.installwizard.tooltip.netris.provider.tenant.name',
           required: true
+        },
+        {
+          title: 'label.netris.provider.tag',
+          key: 'netrisTag',
+          placeHolder: 'message.installwizard.tooltip.netris.provider.tag',
+          required: true
         }
       ]
       return fields

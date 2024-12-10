@@ -86,6 +86,7 @@ public class NetrisProviderServiceImpl implements NetrisProviderService {
         final String password = cmd.getPassword();
         final String tenantName = cmd.getTenantName();
         final String siteName = cmd.getSiteName();
+        final String netrisTag = cmd.getNetrisTag();
 
         Map<String, String> params = new HashMap<>();
         params.put("guid", UUID.randomUUID().toString());
@@ -97,6 +98,7 @@ public class NetrisProviderServiceImpl implements NetrisProviderService {
         params.put("password", password);
         params.put("siteName", siteName);
         params.put("tenantName", tenantName);
+        params.put("netrisTag", netrisTag);
 
         Map<String, Object> hostdetails = new HashMap<>(params);
         NetrisProvider netrisProvider;
@@ -117,6 +119,7 @@ public class NetrisProviderServiceImpl implements NetrisProviderService {
                             .setPassword(password)
                             .setSiteName(siteName)
                             .setTenantName(tenantName)
+                            .setNetrisTag(netrisTag)
                             .build();
 
                     netrisProviderDao.persist(netrisProviderVO);
@@ -190,6 +193,7 @@ public class NetrisProviderServiceImpl implements NetrisProviderService {
         response.setZoneName(zone.getName());
         response.setSiteName(provider.getSiteName());
         response.setTenantName(provider.getTenantName());
+        response.setNetrisTag(provider.getNetrisTag());
         response.setObjectName("netrisProvider");
         return response;
     }

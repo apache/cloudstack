@@ -68,6 +68,9 @@ public class AddNetrisProviderCmd extends BaseCmd {
     @Parameter(name = ApiConstants.TENANT_NAME, type = CommandType.STRING, required = true, description = "Password to login into Netris")
     private String tenantName;
 
+    @Parameter(name = ApiConstants.NETRIS_TAG, type = CommandType.STRING, required = true, description = "Netris tag for vNets")
+    private String netrisTag;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -102,6 +105,10 @@ public class AddNetrisProviderCmd extends BaseCmd {
 
     public String getTenantName() {
         return tenantName;
+    }
+
+    public String getNetrisTag() {
+        return netrisTag;
     }
 
     @Override

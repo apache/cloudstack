@@ -1127,6 +1127,7 @@ export default {
           providerParams.zoneid = this.stepData.zoneReturned.id
           providerParams.sitename = this.prefillContent?.siteName || ''
           providerParams.tenantname = this.prefillContent?.tenantName || ''
+          providerParams.netristag = this.prefillContent?.netrisTag || ''
 
           await this.addNetrisProvider(providerParams)
           this.stepData.stepMove.push('addNetrisProvider')

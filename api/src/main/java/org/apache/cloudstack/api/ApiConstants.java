@@ -1162,6 +1162,7 @@ public class ApiConstants {
     public static final String HAS_RULES = "hasrules";
     public static final String NSX_DETAIL_KEY = "forNsx";
     public static final String NETRIS_DETAIL_KEY = "forNetris";
+    public static final String NETRIS_TAG = "netristag";
     public static final String DISK_PATH = "diskpath";
     public static final String IMPORT_SOURCE = "importsource";
     public static final String TEMP_PATH = "temppath";

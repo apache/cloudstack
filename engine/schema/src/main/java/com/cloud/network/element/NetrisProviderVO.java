@@ -66,6 +66,9 @@ public class NetrisProviderVO implements NetrisProvider {
     @Column(name = "tenant_name")
     private String tenantName;
 
+    @Column(name = "netris_tag")
+    private String netrisTag;
+
     @Column(name = "created")
     private Date created;
 
@@ -171,6 +174,14 @@ public class NetrisProviderVO implements NetrisProvider {
         this.tenantName = tenantName;
     }
 
+    public String getNetrisTag() {
+        return netrisTag;
+    }
+
+    public void setNetrisTag(String netrisTag) {
+        this.netrisTag = netrisTag;
+    }
+
     public Date getCreated() {
         return created;
     }
@@ -197,6 +208,7 @@ public class NetrisProviderVO implements NetrisProvider {
         private String password;
         private String siteName;
         private String tenantName;
+        private String netrisTag;
 
         public Builder() {
             // Default constructor
@@ -246,6 +258,12 @@ public class NetrisProviderVO implements NetrisProvider {
             this.tenantName = tenantName;
             return this;
         }
+
+        public Builder setNetrisTag(String netrisTag) {
+            this.netrisTag = netrisTag;
+            return this;
+        }
+
         public NetrisProviderVO build() {
             NetrisProviderVO provider = new NetrisProviderVO();
             provider.setZoneId(this.zoneId);
@@ -258,6 +276,7 @@ public class NetrisProviderVO implements NetrisProvider {
             provider.setPassword(this.password);
             provider.setSiteName(this.siteName);
             provider.setTenantName(this.tenantName);
+            provider.setNetrisTag(this.netrisTag);
             provider.setCreated(new Date());
             return provider;
         }
