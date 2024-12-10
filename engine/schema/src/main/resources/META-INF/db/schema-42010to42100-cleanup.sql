@@ -16,16 +16,5 @@
 -- under the License.
 
 --;
--- Schema upgrade from 4.20.1.0 to 4.21.0.0
+-- Schema upgrade cleanup from 4.20.1.0 to 4.21.0.0
 --;
-
--- Add console_endpoint_creator_address column to cloud.console_session table
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.console_session', 'console_endpoint_creator_address', 'VARCHAR(45)');
-
--- Add client_address column to cloud.console_session table
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.console_session', 'client_address', 'VARCHAR(45)');
-
---- KVM Incremental Snapshots
-
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'kvm_checkpoint_path', 'varchar(255)');
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'end_of_chain', 'int(1) unsigned');
