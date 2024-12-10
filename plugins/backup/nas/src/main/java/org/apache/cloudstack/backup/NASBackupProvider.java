@@ -390,7 +390,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
-    public boolean removeVMFromBackupOffering(VirtualMachine vm) {
+    public boolean removeVMFromBackupOffering(VirtualMachine vm, boolean removeBackups) {
         return true;
     }
 
