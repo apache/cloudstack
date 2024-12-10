@@ -106,6 +106,7 @@ class TestMaxCPULimits(cloudstackTestCase):
                      projectid=project.id,
                      networkids=networks,
                      serviceofferingid=service_off.id)
+            self.cleanup.append(vm)
             vms = VirtualMachine.list(api_client, id=vm.id, listall=True)
             self.assertIsInstance(vms,
                                   list,
@@ -229,7 +230,6 @@ class TestMaxCPULimits(cloudstackTestCase):
             self.apiclient,
             self.testdata["service_offering_multiple_cores"]
         )
-        # Adding to cleanup list after execution
         self.cleanup.append(self.service_offering)
 
         self.debug("Setting up account and domain hierarchy")
@@ -242,7 +242,7 @@ class TestMaxCPULimits(cloudstackTestCase):
         self.debug("Deploying instance with account: %s" %
                    self.child_do_admin.name)
 
-        self.createInstance(account=self.child_do_admin,
+        self.vm1 = self.createInstance(account=self.child_do_admin,
             service_off=self.service_offering, api_client=api_client_admin)
 
         self.debug("Deploying instance when CPU limit is reached in account")
@@ -305,7 +305,6 @@ class TestMaxCPULimits(cloudstackTestCase):
             self.apiclient,
             self.testdata["service_offering_multiple_cores"]
         )
-        # Adding to cleanup list after execution
         self.cleanup.append(self.service_offering)
 
         self.debug("Setting up account and domain hierarchy")
@@ -317,9 +316,9 @@ class TestMaxCPULimits(cloudstackTestCase):
 
         self.debug("Deploying instance with account: %s" %
                    self.child_do_admin.name)
-        self.createInstance(account=self.child_do_admin,
+        self.vm2 = self.createInstance(account=self.child_do_admin,
             service_off=self.service_offering, api_client=api_client_admin)
-
+        # Adding to cleanup list after execution
         self.debug("Deploying instance in project when CPU limit is reached in account")
 
         with self.assertRaises(Exception):

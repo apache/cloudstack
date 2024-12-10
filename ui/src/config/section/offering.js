@@ -31,9 +31,9 @@ export default {
       permission: ['listServiceOfferings'],
       searchFilters: ['name', 'zoneid', 'domainid', 'cpunumber', 'cpuspeed', 'memory'],
       params: () => {
-        var params = {}
+        var params = { state: 'all' }
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
-          params = { isrecursive: 'true' }
+          params.isrecursive = true
         }
         return params
       },
@@ -121,16 +121,33 @@ export default {
         popup: true,
         show: (record) => { return record.state !== 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
-      }, {
-        api: 'deleteServiceOffering',
+      },
+      {
+        api: 'updateServiceOffering',
         icon: 'pause-circle-outlined',
         label: 'label.action.disable.service.offering',
         message: 'message.action.disable.service.offering',
+        dataView: true,
+        args: ['state'],
+        mapping: {
+          state: {
+            value: (record) => { return 'Inactive' }
+          }
+        },
+        groupAction: true,
+        popup: true,
+        show: (record) => { return record.state === 'Active' },
+        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
+      },
+      {
+        api: 'deleteServiceOffering',
+        icon: 'delete-outlined',
+        label: 'label.action.delete.service.offering',
+        message: 'message.action.delete.service.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         groupAction: true,
         popup: true,
-        show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
     },
@@ -141,7 +158,7 @@ export default {
       docHelp: 'adminguide/service_offerings.html#system-service-offerings',
       permission: ['listServiceOfferings', 'listInfrastructure'],
       searchFilters: ['name', 'zoneid', 'domainid', 'cpunumber', 'cpuspeed', 'memory'],
-      params: { issystem: 'true', isrecursive: 'true' },
+      params: { issystem: 'true', isrecursive: 'true', state: 'all' },
       columns: ['name', 'state', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'order'],
       filters: ['active', 'inactive'],
       details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'storagetags', 'hosttags', 'tags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness'],
@@ -198,16 +215,33 @@ export default {
         show: (record) => { return record.state !== 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
       }, {
-        api: 'deleteServiceOffering',
+        api: 'updateServiceOffering',
         icon: 'pause-circle-outlined',
         label: 'label.action.disable.system.service.offering',
         message: 'message.action.disable.system.service.offering',
+        dataView: true,
+        params: { issystem: 'true' },
+        args: ['state'],
+        mapping: {
+          state: {
+            value: (record) => { return 'Inactive' }
+          }
+        },
+        groupAction: true,
+        popup: true,
+        show: (record) => { return record.state === 'Active' },
+        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
+      },
+      {
+        api: 'deleteServiceOffering',
+        icon: 'delete-outlined',
+        label: 'label.action.delete.system.service.offering',
+        message: 'message.action.delete.system.service.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         params: { issystem: 'true' },
         groupAction: true,
         popup: true,
-        show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
     },
@@ -219,9 +253,9 @@ export default {
       permission: ['listDiskOfferings'],
       searchFilters: ['name', 'zoneid', 'domainid', 'storageid'],
       params: () => {
-        var params = {}
+        var params = { state: 'all' }
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
-          params = { isrecursive: 'true' }
+          params.isrecursive = 'true'
         }
         return params
       },
@@ -301,15 +335,31 @@ export default {
         show: (record) => { return record.state !== 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
       }, {
-        api: 'deleteDiskOffering',
+        api: 'updateDiskOffering',
         icon: 'pause-circle-outlined',
         label: 'label.action.disable.disk.offering',
         message: 'message.action.disable.disk.offering',
+        dataView: true,
+        params: { issystem: 'true' },
+        args: ['state'],
+        mapping: {
+          state: {
+            value: (record) => { return 'Inactive' }
+          }
+        },
+        groupAction: true,
+        popup: true,
+        show: (record) => { return record.state === 'Active' },
+        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
+      }, {
+        api: 'deleteDiskOffering',
+        icon: 'delete-outlined',
+        label: 'label.action.delete.disk.offering',
+        message: 'message.action.delete.disk.offering',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
         groupAction: true,
         popup: true,
-        show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
       }]
     },

@@ -343,6 +343,7 @@ class TestVolumes(cloudstackTestCase):
             mode=cls.services["mode"]
         )
         cls._cleanup.append(cls.virtual_machine)
+
         pools = StoragePool.list(cls.apiclient)
 
         if cls.hypervisor.lower() == 'lxc' and cls.storage_pools.type.lower() != 'rbd':
@@ -641,7 +642,6 @@ class TestVolumes(cloudstackTestCase):
             self.apiclient,
             self.services["disk_offering"]
         )
-        self.cleanup.append(disk_offering_20_GB)
 
         cmd = resizeVolume.resizeVolumeCmd()
         cmd.id = self.volume.id
@@ -691,7 +691,6 @@ class TestVolumes(cloudstackTestCase):
                 self.apiclient,
                 self.services["disk_offering"]
             )
-            self.cleanup.append(disk_offering_10_GB)
 
             cmd = resizeVolume.resizeVolumeCmd()
             cmd.id = self.volume.id
