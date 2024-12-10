@@ -90,7 +90,7 @@ public class SspElementTest {
 
         when(_element._physicalNetworkServiceProviderDao.findByServiceProvider(physicalNetworkId, "StratosphereSsp")).thenReturn(nspvo);
 
-        // and zone api server, credentail is configured
+        // and zone API server, credential is configured
         when(credential.getUsername()).thenReturn("foo");
         when(credential.getPassword()).thenReturn("bar");
 
@@ -120,7 +120,7 @@ public class SspElementTest {
         // ssp is ready
         assertTrue(_element.isReady(nspvo));
 
-        // If you don't call addstratospheressp api, ssp won't be ready
+        // If you don't call addstratospheressp API, ssp won't be ready
         when(_element._sspCredentialDao.findByZone(dataCenterId.longValue())).thenReturn(null);
         when(_element._resourceMgr.listAllHostsInOneZoneByType(Host.Type.L2Networking, dataCenterId)).thenReturn(Arrays.<HostVO> asList());
         assertFalse(_element.isReady(nspvo));
@@ -133,7 +133,7 @@ public class SspElementTest {
         // ssp is active
         assertTrue(_element.canHandle(psvo));
 
-        // You can disable ssp temporary by truning the state disabled
+        // You can disable ssp temporary by turning the state disabled
         when(nspvo.getState()).thenReturn(PhysicalNetworkServiceProvider.State.Disabled);
         assertFalse(_element.canHandle(psvo));
 
@@ -146,7 +146,7 @@ public class SspElementTest {
         when(nspvo.getState()).thenReturn(PhysicalNetworkServiceProvider.State.Enabled);
         when(_element._physicalNetworkServiceProviderDao.findByServiceProvider(physicalNetworkId, "StratosphereSsp")).thenReturn(nspvo);
 
-        // If you don't call addstratospheressp api, ssp won't be active
+        // If you don't call addstratospheressp API, ssp won't be active
         when(_element._sspCredentialDao.findByZone(dataCenterId.longValue())).thenReturn(null);
         when(_element._resourceMgr.listAllHostsInOneZoneByType(Host.Type.L2Networking, dataCenterId)).thenReturn(Arrays.<HostVO> asList());
         assertFalse(_element.canHandle(psvo));
