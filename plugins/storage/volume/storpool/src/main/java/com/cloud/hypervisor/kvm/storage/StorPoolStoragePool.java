@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -301,5 +302,12 @@ public class StorPoolStoragePool implements KVMStoragePool {
     @Override
     public Boolean vmActivityCheck(HAStoragePool pool, HostTO host, Duration activityScriptTimeout, String volumeUuidListString, String vmActivityCheckPath, long duration) {
         return checkingHeartBeat(pool, host);
+    }
+
+    @Override
+    public void customizeLibvirtDiskDef(LibvirtVMDef.DiskDef disk) {
+        if (LibvirtVMDef.DiskDef.DiskBus.VIRTIO.equals(disk.getBusType()) || LibvirtVMDef.DiskDef.DiskBus.SCSI.equals(disk.getBusType())) {
+            disk.setDiscard(LibvirtVMDef.DiskDef.DiscardType.UNMAP);
+        }
     }
 }
