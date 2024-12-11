@@ -195,7 +195,6 @@ export default {
         {
           title: 'label.arch',
           key: 'arch',
-          placeHolder: 'message.error.cluster.name',
           required: false,
           select: true,
           options: this.archTypes
