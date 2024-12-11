@@ -63,6 +63,10 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "the OS category name of the host")
     private String osCategoryName;
 
+    @SerializedName(ApiConstants.GUEST_OS_RULE)
+    @Param(description = "the guest OS rule")
+    private String guestOsRule;
+
     @SerializedName(ApiConstants.IP_ADDRESS)
     @Param(description = "the IP address of the host")
     private String ipAddress;
@@ -869,5 +873,9 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public Boolean getInstanceConversionSupported() {
         return instanceConversionSupported;
+    }
+
+    public void setGuestOsRule(String guestOsRule) {
+        this.guestOsRule = guestOsRule;
     }
 }

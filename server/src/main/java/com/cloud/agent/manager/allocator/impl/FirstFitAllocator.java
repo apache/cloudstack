@@ -114,7 +114,7 @@ public class FirstFitAllocator extends BaseAllocator {
         String hostTagOnTemplate = template.getTemplateTag();
         String paramAsStringToLog = String.format("zone [%s], pod [%s], cluster [%s]", dcId, podId, clusterId);
 
-        List<HostVO> suitableHosts = retrieveHosts(vmProfile, type, (List<HostVO>) hosts, clusterId, podId, dcId, hostTagOnOffering, hostTagOnTemplate);
+        List<HostVO> suitableHosts = retrieveHosts(vmProfile, type, (List<HostVO>) hosts, template, clusterId, podId, dcId, hostTagOnOffering, hostTagOnTemplate);
 
         if (suitableHosts.isEmpty()) {
             logger.info("No suitable host found for VM [{}] in {}.", vmProfile, paramAsStringToLog);
@@ -128,8 +128,8 @@ public class FirstFitAllocator extends BaseAllocator {
         return allocateTo(plan, offering, template, avoid, suitableHosts, returnUpTo, considerReservedCapacity, account);
     }
 
-    protected List<HostVO> retrieveHosts(VirtualMachineProfile vmProfile, Type type, List<HostVO> hostsToFilter, Long clusterId, Long podId, long dcId, String hostTagOnOffering,
-                                         String hostTagOnTemplate) {
+    protected List<HostVO> retrieveHosts(VirtualMachineProfile vmProfile, Type type, List<HostVO> hostsToFilter, VMTemplateVO template, Long clusterId, Long podId, long dcId,
+                                         String hostTagOnOffering, String hostTagOnTemplate) {
         String haVmTag = (String) vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
         List<HostVO> clusterHosts;
 
@@ -150,6 +150,7 @@ public class FirstFitAllocator extends BaseAllocator {
         filterHostsWithUefiEnabled(type, vmProfile, clusterId, podId, dcId, clusterHosts);
 
         addHostsBasedOnTagRules(hostTagOnOffering, clusterHosts);
+        filterHostsBasedOnGuestOsRules(template, clusterHosts);
 
         return clusterHosts;
 
@@ -458,7 +459,7 @@ public class FirstFitAllocator extends BaseAllocator {
     }
 
     protected String getHostGuestOSCategory(Host host) {
-        DetailVO hostDetail = _hostDetailsDao.findDetail(host.getId(), "guest.os.category.id");
+        DetailVO hostDetail = _hostDetailsDao.findDetail(host.getId(), Host.GUEST_OS_CATEGORY_ID);
         if (hostDetail != null) {
             String guestOSCategoryIdString = hostDetail.getValue();
             long guestOSCategoryId;

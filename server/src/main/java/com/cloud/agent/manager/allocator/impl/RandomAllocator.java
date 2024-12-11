@@ -115,6 +115,7 @@ public class RandomAllocator extends BaseAllocator {
         }
 
         addHostsBasedOnTagRules(offeringHostTag, availableHosts);
+        filterHostsBasedOnGuestOsRules(template, availableHosts);
 
         return availableHosts;
     }

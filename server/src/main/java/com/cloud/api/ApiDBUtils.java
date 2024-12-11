@@ -31,6 +31,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import com.cloud.cpu.CPU;
+import com.cloud.storage.GuestOSVO;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -2290,5 +2291,16 @@ public class ApiDBUtils {
 
     public static List<CPU.CPUArch> listZoneClustersArchs(long zoneId) {
         return s_clusterDao.getClustersArchsByZone(zoneId);
+    }
+
+    public static String getTemplateGuestOSName(VMTemplateVO template) {
+        long guestOSId = template.getGuestOSId();
+        GuestOSVO guestOS = s_guestOSDao.findById(guestOSId);
+
+        if (guestOS == null) {
+            return null;
+        }
+
+        return guestOS.getDisplayName();
     }
 }

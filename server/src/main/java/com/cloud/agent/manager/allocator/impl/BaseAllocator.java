@@ -17,11 +17,13 @@
 package com.cloud.agent.manager.allocator.impl;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
+import com.cloud.api.ApiDBUtils;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import org.apache.commons.collections.CollectionUtils;
@@ -67,6 +69,29 @@ public abstract class BaseAllocator extends AdapterBase implements HostAllocator
 
         logger.info("Found hosts %s with tag rules matching the compute offering tag [{}].", hostsWithTagRules, hostTagOnOffering);
         clusterHosts.addAll(hostsWithTagRules);
+    }
+
+    protected void filterHostsBasedOnGuestOsRules(VMTemplateVO vmTemplate, List<? extends Host> clusterHosts) {
+        if (clusterHosts.isEmpty()) {
+            logger.info("Will not filter hosts based on guest OS as there is no available hosts left to verify.");
+            return;
+        }
+
+        String templateGuestOSName = ApiDBUtils.getTemplateGuestOSName(vmTemplate);
+        List<HostVO> incompatibleHosts = hostDao.findHostsWithGuestOsRulesThatDidNotMatchOsOfGuestVm(templateGuestOSName);
+
+        if (incompatibleHosts.isEmpty()) {
+            logger.info("No incompatible hosts found with guest OS rules matching the VM guest OS [{}].", templateGuestOSName);
+            return;
+        }
+
+        logger.info("Found incompatible hosts {} with guest OS rules that did not match the VM guest OS [{}]. They will be removed from the suitable hosts list.",
+                incompatibleHosts, templateGuestOSName);
+        clusterHosts.removeAll(incompatibleHosts);
+
+        if (clusterHosts.isEmpty()) {
+            logger.info("After filtering by guest OS rules, no compatible hosts were found for VM with OS [{}].", templateGuestOSName);
+        }
     }
 
     /**

@@ -45,7 +45,7 @@ import javax.persistence.Transient;
 import com.cloud.cpu.CPU;
 import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
-import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
+import org.apache.cloudstack.utils.jsinterpreter.GenericRuleHelper;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
@@ -832,7 +832,8 @@ public class HostVO implements Host {
         }
 
         if (BooleanUtils.isTrue(this.getIsTagARule())) {
-            return TagAsRuleHelper.interpretTagAsRule(this.getHostTags().get(0), serviceOffering.getHostTag(), HostTagsDao.hostTagRuleExecutionTimeout.value());
+            return GenericRuleHelper.interpretTagAsRule(this.getHostTags().get(0), serviceOffering.getHostTag(), HostTagsDao.hostTagRuleExecutionTimeout.value(),
+                    HostTagsDao.hostTagRuleExecutionTimeout.key());
         }
 
         if (StringUtils.isEmpty(serviceOffering.getHostTag())) {
