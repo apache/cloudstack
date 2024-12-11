@@ -11,6 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Linstor heartbeat check now also ask linstor-controller if there is no connection between nodes
 
+## [2024-12-11]
+
+### Fixed
+
+- Only set allow-two-primaries if a live migration is performed
+
 ## [2024-10-28]
 
 ### Fixed

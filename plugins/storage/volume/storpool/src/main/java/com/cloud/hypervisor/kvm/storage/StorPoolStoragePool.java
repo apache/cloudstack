@@ -131,7 +131,7 @@ public class StorPoolStoragePool implements KVMStoragePool {
 
     @Override
     public boolean connectPhysicalDisk(String name, Map<String, String> details) {
-        return _storageAdaptor.connectPhysicalDisk(name, this, details);
+        return _storageAdaptor.connectPhysicalDisk(name, this, details, false);
     }
 
     @Override

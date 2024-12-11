@@ -120,7 +120,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
 
             skipDisconnect = true;
 
-            if (!storagePoolMgr.connectPhysicalDisksViaVmSpec(vm)) {
+            if (!storagePoolMgr.connectPhysicalDisksViaVmSpec(vm, true)) {
                 return new PrepareForMigrationAnswer(command, "failed to connect physical disks to host");
             }
 
