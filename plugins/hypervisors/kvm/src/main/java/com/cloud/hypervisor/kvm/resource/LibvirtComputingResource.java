@@ -2985,9 +2985,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static boolean useBLOCKDiskType(KVMPhysicalDisk physicalDisk) {
         return physicalDisk != null &&
-                physicalDisk.getPool().getType() == StoragePoolType.Linstor &&
+                physicalDisk.getPool() != null &&
+                StoragePoolType.Linstor.equals(physicalDisk.getPool().getType()) &&
                 physicalDisk.getFormat() != null &&
-                physicalDisk.getFormat()== PhysicalDiskFormat.RAW;
+                PhysicalDiskFormat.RAW.equals(physicalDisk.getFormat());
     }
 
     public static DiskDef.DiskType getDiskType(KVMPhysicalDisk physicalDisk) {
