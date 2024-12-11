@@ -875,6 +875,10 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return instanceConversionSupported;
     }
 
+    public String getGuestOsRule() {
+        return guestOsRule;
+    }
+
     public void setGuestOsRule(String guestOsRule) {
         this.guestOsRule = guestOsRule;
     }

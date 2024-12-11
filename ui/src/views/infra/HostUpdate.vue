@@ -125,7 +125,7 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      const guestOsRule = this.resource.details['guest.os.rule']
+      const guestOsRule = this.resource?.guestosrule
       this.form = reactive({
         name: this.resource.name,
         hosttags: this.resource.explicithosttags,
