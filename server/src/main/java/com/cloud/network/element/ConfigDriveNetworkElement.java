@@ -341,10 +341,10 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             try {
                 if (isConfigDriveIsoOnHostCache(vm.getId())) {
                     vm.setConfigDriveLocation(Location.HOST);
-                    configureConfigDriveData(vm, nic, dest);
-
-                    // Create the config drive on dest host cache
-                    createConfigDriveIsoOnHostCache(vm, dest.getHost().getId());
+                    if (configureConfigDriveData(vm, nic, dest)) {
+                        // Create the config drive on dest host cache
+                        createConfigDriveIsoOnHostCache(vm, dest.getHost().getId());
+                    }
                 } else {
                     vm.setConfigDriveLocation(getConfigDriveLocation(vm.getId()));
                     addPasswordAndUserdata(network, nic, vm, dest, context);
@@ -760,7 +760,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     private boolean configureConfigDriveData(final VirtualMachineProfile profile, final NicProfile nic, final DeployDestination dest) {
         final UserVmVO vm = _userVmDao.findById(profile.getId());
-        if (vm.getType() != VirtualMachine.Type.User) {
+        if (vm == null || vm.getType() != VirtualMachine.Type.User) {
             return false;
         }
         final Nic defaultNic = _networkModel.getDefaultNic(vm.getId());
