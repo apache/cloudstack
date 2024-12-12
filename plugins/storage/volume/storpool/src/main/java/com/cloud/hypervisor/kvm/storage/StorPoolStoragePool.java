@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,6 +29,7 @@ import com.cloud.agent.api.to.HostTO;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.hypervisor.kvm.resource.KVMHABase.HAStoragePool;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.script.OutputInterpreter;
