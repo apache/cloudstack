@@ -197,7 +197,7 @@ export default {
           key: 'arch',
           required: false,
           select: true,
-          options: this.archTypes
+          options: this.architectureTypes
         },
         {
           title: 'label.vcenter.host',
@@ -853,7 +853,7 @@ export default {
       primaryStorageScopes: [],
       primaryStorageProtocols: [],
       primaryStorageProviders: [],
-      archTypes: [{
+      architectureTypes: [{
         id: 'x86_64',
         description: 'AMD 64 bits (x86_64)'
       }, {
