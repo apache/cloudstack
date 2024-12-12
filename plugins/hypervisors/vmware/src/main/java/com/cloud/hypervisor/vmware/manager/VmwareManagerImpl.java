@@ -1634,7 +1634,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 s_logger.error(msg);
                 throw new InvalidParameterValueException(msg);
             }
-            List<UnmanagedInstanceTO> instances = dcMo.getVmsOnDatacenter(maxObjects, nextPage);
+            List<UnmanagedInstanceTO> instances = java.util.Collections.synchronizedList(new ArrayList());
+            instances.addAll(dcMo.getVmsOnDatacenter(maxObjects, null).second());
             return StringUtils.isBlank(keyword) ? instances :
                     instances.stream().filter(x -> x.getName().toLowerCase().contains(keyword.toLowerCase())).collect(Collectors.toList());
         } catch (Exception e) {
@@ -1697,7 +1698,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     /**
-     * This task is to cleanup templates from primary storage that are otherwise not cleaned by the {@link com.cloud.storage.StorageManagerImpl.StorageGarbageCollector}.
+     * This task is to clean-up templates from primary storage that are otherwise not cleaned by the {@link com.cloud.storage.StorageManagerImpl.StorageGarbageCollector}.
      * it is called at regular intervals when storage.template.cleanup.enabled == true
      * It collect all templates that
      * - are deleted from cloudstack

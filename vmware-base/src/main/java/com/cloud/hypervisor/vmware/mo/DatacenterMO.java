@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -40,6 +41,9 @@ import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VirtualEthernetCardDistributedVirtualPortBackingInfo;
 import com.vmware.vim25.RetrieveOptions;
+import com.vmware.vim25.RetrieveResult;
+import com.vmware.vim25.InvalidPropertyFaultMsg;
+import com.vmware.vim25.RuntimeFaultFaultMsg;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
@@ -162,9 +166,11 @@ public class DatacenterMO extends BaseMO {
         return null;
     }
 
-    public List<UnmanagedInstanceTO> getVmsOnDatacenter(Integer maxObjects, boolean nextPage) throws Exception {
+    public Pair<String, List<UnmanagedInstanceTO>> getVmsOnDatacenter(Integer maxObjects, String token) throws Exception {
         List<UnmanagedInstanceTO> vms = new ArrayList<>();
-        List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name"}, maxObjects, nextPage);
+        Pair<String, List<ObjectContent>> objectContents = getVmPropertiesOnDatacenterVmFolder(new String[] {"name"}, maxObjects, token);
+        Pair<String, List<UnmanagedInstanceTO>> retval = new Pair<>(objectContents.first(), vms);
+        List<ObjectContent> ocs = objectContents.second();
         if (ocs != null) {
             for (ObjectContent oc : ocs) {
                 ManagedObjectReference vmMor = oc.getObj();
@@ -183,7 +189,7 @@ public class DatacenterMO extends BaseMO {
             }
         }
 
-        return vms;
+        return retval;
     }
 
     public List<HostMO> getAllHostsOnDatacenter() throws Exception {
@@ -311,19 +317,32 @@ public class DatacenterMO extends BaseMO {
 
     }
 
-    public List<ObjectContent> getVmPropertiesOnDatacenterVmFolder(String[] propertyPaths) throws Exception {
-        return getVmPropertiesOnDatacenterVmFolder(propertyPaths, null, false);
+    public List<ObjectContent> getVmPropertiesOnDatacenterVmFolder(String[] propertyPaths) throws  InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
+        return getVmPropertiesOnDatacenterVmFolder(propertyPaths, null, null).second();
     }
 
     /**
      *
      * @param propertyPaths Vmware side property names to query, for instance {"name"}
      * @param maxObjects the number of objects to retrieve
-     * @param nextPage restart the query or continue a previous query
+     * @param tokenForPriorQuery restart the query or continue a previous query
      * @return The propertyPaths requested for the objects of type "VirtualMachine" in a list are found/returned by the DC
      * @throws Exception generic {code}Exception{code} as thrown by Vmware.
      */
-    public List<ObjectContent> getVmPropertiesOnDatacenterVmFolder(String[] propertyPaths, Integer maxObjects, boolean nextPage) throws Exception {
+    public Pair<String, List<ObjectContent>> getVmPropertiesOnDatacenterVmFolder(String[] propertyPaths, Integer maxObjects, String tokenForPriorQuery) throws  InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
+        if(StringUtils.isNotBlank(tokenForPriorQuery)) {
+            return retrieveNextSetOfPropertiesOnDatacenterVmFolder(tokenForPriorQuery);
+        } else {
+            return retrieveNextSetOfPropertiesOnDatacenterVmFolder(propertyPaths, maxObjects);
+        }
+    }
+
+    private Pair<String, List<ObjectContent>> retrieveNextSetOfPropertiesOnDatacenterVmFolder(String tokenForPriorQuery) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
+        RetrieveResult result = _context.getService().continueRetrievePropertiesEx(_context.getPropertyCollector(), tokenForPriorQuery);
+        return createReturnObjectPair(result);
+    }
+
+    private Pair<String, List<ObjectContent>> retrieveNextSetOfPropertiesOnDatacenterVmFolder(String[] propertyPaths, Integer maxObjects) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
         PropertySpec pSpec = new PropertySpec();
         pSpec.setType("VirtualMachine");
         pSpec.getPathSet().addAll(Arrays.asList(propertyPaths));
@@ -355,11 +374,18 @@ public class DatacenterMO extends BaseMO {
         pfSpecArr.add(pfSpec);
 
         RetrieveOptions ro = new RetrieveOptions();
-        if(maxObjects != null && maxObjects > 0) {
+        if (maxObjects != null && maxObjects > 0) {
             ro.setMaxObjects(maxObjects);
         }
 
-        return _context.getService().retrievePropertiesEx(_context.getPropertyCollector(), pfSpecArr, ro).getObjects();
+        RetrieveResult result = _context.getService().retrievePropertiesEx(_context.getPropertyCollector(), pfSpecArr, ro);
+        return createReturnObjectPair(result);
+    }
+
+    private static Pair<String, List<ObjectContent>> createReturnObjectPair(RetrieveResult result) {
+        String tokenForRetrievingNewResults = result.getToken();
+        List<ObjectContent> listOfObjects = result.getObjects();
+        return new Pair<>(tokenForRetrievingNewResults, listOfObjects);
     }
 
     public static Pair<DatacenterMO, String> getOwnerDatacenter(VmwareContext context, ManagedObjectReference morEntity) throws Exception {
