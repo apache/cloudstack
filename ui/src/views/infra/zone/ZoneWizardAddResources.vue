@@ -862,7 +862,7 @@ export default {
       }],
       storageProviders: [],
       currentStep: null,
-      options: ['primaryStorageScope', 'primaryStorageProtocol', 'provider', 'primaryStorageProvider', 'archType']
+      options: ['primaryStorageScope', 'primaryStorageProtocol', 'provider', 'primaryStorageProvider']
     }
   },
   created () {
