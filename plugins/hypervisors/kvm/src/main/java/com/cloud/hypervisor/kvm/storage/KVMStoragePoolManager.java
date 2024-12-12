@@ -296,7 +296,7 @@ public class KVMStoragePoolManager {
         String uuid = null;
         String sourceHost = "";
         StoragePoolType protocol = null;
-        final String scheme = storageUri.getScheme().toLowerCase();
+        final String scheme = (storageUri.getScheme() != null) ? storageUri.getScheme().toLowerCase() : "";
         List<String> acceptedSchemes = List.of("nfs", "networkfilesystem", "filesystem");
         if (acceptedSchemes.contains(scheme)) {
             sourcePath = storageUri.getPath();
