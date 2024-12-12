@@ -213,6 +213,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.management.ManagementServerHost;
@@ -639,7 +640,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         cfgResponse.setSubGroup(configGroupAndSubGroup.second());
         cfgResponse.setDescription(cfg.getDescription());
         cfgResponse.setName(cfg.getName());
-        cfgResponse.setScope(cfg.getScope());
+        cfgResponse.setScope(ConfigKey.Scope.decodeAsCsv(cfg.getScope()));
         if (cfg.isEncrypted()) {
             cfgResponse.setValue(DBEncryptionUtil.encrypt(cfg.getValue()));
         } else {

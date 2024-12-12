@@ -87,6 +87,41 @@ public class DatabaseAccessObject {
         return columnExists;
     }
 
+    public String getColumnType(Connection conn, String tableName, String columnName) {
+        try (PreparedStatement pstmt = conn.prepareStatement(String.format("DESCRIBE %s %s", tableName, columnName));){
+            ResultSet rs = pstmt.executeQuery();
+            if (rs.next()) {
+                return rs.getString("Type");
+            }
+        } catch (SQLException e) {
+            logger.debug("Type for column {} can not be retrieved in {} ignoring exception: {}", columnName, tableName, e.getMessage());
+        }
+        return null;
+    }
+
+    public void addColumn(Connection conn, String tableName, String columnName, String columnDefinition) {
+        System.out.println("------------------------" + String.format("ALTER TABLE %s ADD COLUMN %s %s", tableName, columnName, columnDefinition));
+        try (PreparedStatement pstmt = conn.prepareStatement(String.format("ALTER TABLE %s ADD COLUMN %s %s", tableName, columnName, columnDefinition));){
+            pstmt.executeUpdate();
+            System.out.println("column added------------------------" + String.format("ALTER TABLE %s ADD COLUMN %s %s", tableName, columnName, columnDefinition));
+            logger.debug("Column {} is added successfully from the table {}", columnName, tableName);
+        } catch (SQLException e) {
+            System.out.println("column not added------------------------" + e.getMessage());
+            logger.warn("Unable to add column {} to table {} due to exception", columnName, tableName, e);
+        }
+    }
+
+    public void changeColumn(Connection conn, String tableName, String oldColumnName, String newColumnName, String columnDefinition) {
+        try (PreparedStatement pstmt = conn.prepareStatement(String.format("ALTER TABLE %s CHANGE COLUMN %s %s %s", tableName, oldColumnName, newColumnName, columnDefinition));){
+            pstmt.executeUpdate();
+            System.out.println("column changed------------------------" + String.format("ALTER TABLE %s CHANGE COLUMN %s %s %s", tableName, oldColumnName, newColumnName, columnDefinition));
+            logger.debug("Column {} is changed successfully to {} from the table {}", oldColumnName, newColumnName, tableName);
+        } catch (SQLException e) {
+            System.out.println("column not changed------------------------" + e.getMessage());
+            logger.warn("Unable to add column {} to {} from the table {} due to exception", oldColumnName, newColumnName, tableName, e);
+        }
+    }
+
     public String generateIndexName(String tableName, String... columnName) {
         return String.format("i_%s__%s", tableName, StringUtils.join(columnName, "__"));
     }

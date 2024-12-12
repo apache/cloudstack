@@ -18,10 +18,8 @@ package org.apache.cloudstack.framework.config.dao;
 
 import java.util.Map;
 
-import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 
-import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
 public interface ConfigurationDao extends GenericDao<ConfigurationVO, String> {
@@ -69,5 +67,4 @@ public interface ConfigurationDao extends GenericDao<ConfigurationVO, String> {
     boolean update(String name, String category, String value);
 
     void invalidateCache();
-    Pair<ConfigKey.Scope, Long> getParentScope(ConfigKey.Scope scope, Long id);
 }

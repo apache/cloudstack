@@ -711,6 +711,6 @@ public class Upgrade41720to41800 extends DbUpgradeAbstractImpl implements DbUpgr
     }
 
     private void updateConfigurationGroups() {
-        configGroupsAggregator.updateConfigurationGroups();
+//        configGroupsAggregator.updateConfigurationGroups();
     }
 }

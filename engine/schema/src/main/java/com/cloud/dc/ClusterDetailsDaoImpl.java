@@ -20,10 +20,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.org.Cluster;
+import com.cloud.utils.Pair;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -31,6 +36,10 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long> implements ClusterDetailsDao, ScopedConfigStorage {
+
+    @Inject
+    ClusterDao clusterDao;
+
     protected final SearchBuilder<ClusterDetailsVO> ClusterSearch;
     protected final SearchBuilder<ClusterDetailsVO> DetailSearch;
 
@@ -159,5 +168,14 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
         }
 
         return name;
+    }
+
+    @Override
+    public Pair<Scope, Long> getParentScope(long id) {
+        Cluster cluster = clusterDao.findById(id);
+        if (cluster == null) {
+            return null;
+        }
+        return new Pair<>(getScope().getParent(), cluster.getDataCenterId());
     }
 }

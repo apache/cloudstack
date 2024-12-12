@@ -34,6 +34,7 @@ import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.domain.dao.DomainDetailsDao;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.QueryBuilder;
@@ -161,5 +162,14 @@ public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long>
             return DBEncryptionUtil.decrypt(accountDetailVO.getValue());
         }
         return accountDetailVO.getValue();
+    }
+
+    @Override
+    public Pair<Scope, Long> getParentScope(long id) {
+        Account account = _accountDao.findById(id);
+        if (account == null) {
+            return null;
+        }
+        return new Pair<>(getScope().getParent(), account.getDomainId());
     }
 }

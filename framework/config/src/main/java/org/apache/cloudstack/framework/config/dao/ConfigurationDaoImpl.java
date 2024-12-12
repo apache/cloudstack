@@ -25,15 +25,9 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.springframework.stereotype.Component;
 
-import com.cloud.org.Cluster;
-import com.cloud.storage.ImageStore;
-import com.cloud.storage.StoragePool;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
@@ -217,48 +211,4 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         sc.setParameters("name", name);
         return findOneIncludingRemovedBy(sc);
     }
-
-    @Override
-    public Pair<ConfigKey.Scope, Long> getParentScope(ConfigKey.Scope scope, Long id) {
-        if (scope == null || scope.getParent() == null || ConfigKey.Scope.Global.equals(scope.getParent())
-                || id == null) {
-            return null;
-        }
-        switch (scope) {
-            case Account: {
-                Account account = entityManager.findById(Account.class, id);
-                if (account != null) {
-                    return new Pair<>(scope.getParent(), account.getDomainId());
-                }
-                break;
-            }
-            case ImageStore: {
-                ImageStore store = entityManager.findById(ImageStore.class, id);
-                if (store != null) {
-                    return new Pair<>(scope.getParent(), store.getDataCenterId());
-                }
-                break;
-            }
-            case StoragePool: {
-                StoragePool pool = entityManager.findById(StoragePool.class, id);
-                if (pool != null) {
-                    if (pool.getClusterId() != null) {
-                        return new Pair<>(scope.getParent(), pool.getClusterId());
-                    } else {
-                        return new Pair<>(ConfigKey.Scope.Zone, pool.getDataCenterId());
-                    }
-                }
-                break;
-            }
-            case Cluster: {
-                Cluster cluster = entityManager.findById(Cluster.class, id);
-                if (cluster != null) {
-                    return new Pair<>(scope.getParent(), cluster.getDataCenterId());
-                }
-                break;
-            }
-        }
-        return null;
-    }
-
 }
