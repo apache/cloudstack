@@ -24,8 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.Backup.Metric;
-import org.apache.cloudstack.backup.backroll.BackrollService.NotOkBodyException;
-import org.apache.cloudstack.backup.backroll.model.BackrollBackup;
 import org.apache.cloudstack.backup.backroll.model.BackrollBackupMetrics;
 import org.apache.cloudstack.backup.backroll.model.BackrollOffering;
 import org.apache.cloudstack.backup.backroll.model.BackrollTaskStatus;
@@ -159,6 +157,11 @@ public class BackrollClient {
         isBackupDeleted = backrollBackupsFromVMResponse.state.equals(TaskState.SUCCESS);
 
         return isBackupDeleted;
+    }
+
+    public void triggerTaskStatus(String urlToRequest)
+        throws IOException, BackrollApiException{
+            httpProvider.waitGetWithoutParseResponse(urlToRequest);
     }
 
     public Metric getVirtualMachineMetrics(final String vmId) throws IOException, BackrollApiException {

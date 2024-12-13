@@ -31,7 +31,6 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.backup.Backup.Metric;
 import org.apache.cloudstack.backup.backroll.BackrollClient;
-import org.apache.cloudstack.backup.backroll.BackrollService;
 import org.apache.cloudstack.backup.backroll.model.BackrollBackupMetrics;
 import org.apache.cloudstack.backup.backroll.model.BackrollTaskStatus;
 import org.apache.cloudstack.backup.backroll.model.BackrollVmBackup;
@@ -44,6 +43,8 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.ParseException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joda.time.DateTime;
 
 import com.cloud.utils.Pair;
@@ -78,6 +79,15 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
     private BackupDao backupDao;
     @Inject
     private VMInstanceDao vmInstanceDao;
+
+    public BackrollBackupProvider(BackupDao backupDao, VMInstanceDao vmInstanceDao, BackrollClient client, Logger logger){
+        this.backupDao = backupDao;
+        this.vmInstanceDao = vmInstanceDao;
+        this.backrollClient = client;
+        this.logger = logger;
+    }
+
+    public BackrollBackupProvider(){}
 
     @Override
     public String getName() {
@@ -209,7 +219,7 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
                 syncBackups(vm, null);
                 return result;
             }
-        } catch (KeyManagementException | NoSuchAlgorithmException | ParseException | InterruptedException | IOException e) {
+        } catch (ParseException | BackrollApiException | IOException e) {
             throw new CloudRuntimeException("Failed to take backup");
         }
         return false;
@@ -254,7 +264,6 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
                                 backupToUpdate.setSize(backupMetrics.getDeduplicated()); // real size
                                 backupToUpdate.setProtectedSize(backupMetrics.getSize()); // total size
                             }
-                        } catch (KeyManagementException | NoSuchAlgorithmException | IOException e) {
                         } catch (BackrollApiException | IOException e) {
                             logger.error(e);
                             throw new CloudRuntimeException("Failed to get backup metrics");
