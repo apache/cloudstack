@@ -711,7 +711,6 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         natBody.setSite(site);
 
         if (StringUtils.isNotBlank(snatIP)) {
-            natBody.setSourceAddress(snatIP);
             natBody.setSnatToIP(snatIP);
         }
 
