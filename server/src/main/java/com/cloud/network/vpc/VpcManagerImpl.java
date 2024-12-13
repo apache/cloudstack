@@ -71,6 +71,8 @@ import org.apache.cloudstack.api.command.user.vpc.RestartVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
@@ -195,7 +197,7 @@ import com.cloud.vm.dao.NicDao;
 
 import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
 
-public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService {
+public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService, Configurable {
 
     public static final String SERVICE = "service";
     public static final String CAPABILITYTYPE = "capabilitytype";
@@ -499,6 +501,18 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NetworkMode.values()));
             }
             networkMode = NetworkOffering.NetworkMode.valueOf(networkModeStr);
+        }
+        if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode)) {
+            if (!RoutedIpv4Manager.RoutedNetworkVpcEnabled.value()) {
+                throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for Routed VPCs", RoutedIpv4Manager.RoutedNetworkVpcEnabled.key()));
+            }
+            if (zoneIds != null) {
+                for (Long zoneId: zoneIds) {
+                    if (!RoutedIpv4Manager.RoutedNetworkVpcEnabled.valueIn(zoneId)) {
+                        throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for Routed VPCs in zone (ID: %s)", RoutedIpv4Manager.RoutedNetworkVpcEnabled.key(), zoneId));
+                    }
+                }
+            }
         }
         boolean specifyAsNumber = cmd.getSpecifyAsNumber();
         String routingModeString = cmd.getRoutingMode();
@@ -1161,12 +1175,17 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw ex;
         }
 
+        if (NetworkOffering.NetworkMode.ROUTED.equals(vpcOff.getNetworkMode())
+                && !routedIpv4Manager.RoutedNetworkVpcEnabled.valueIn(zoneId)) {
+            throw new InvalidParameterValueException("Routed VPC is not enabled in this zone");
+        }
+
         if (NetworkOffering.RoutingMode.Dynamic.equals(vpcOff.getRoutingMode()) && vpcOff.isSpecifyAsNumber() && asNumber == null) {
             throw new InvalidParameterValueException("AS number is required for the VPC but not passed.");
         }
 
         // Validate VPC cidr/cidrsize
-        validateVpcCidrSize(caller, owner.getAccountId(), vpcOff, cidr, cidrSize);
+        validateVpcCidrSize(caller, owner.getAccountId(), vpcOff, cidr, cidrSize, zoneId);
 
         // Validate BGP peers
         if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
@@ -1251,7 +1270,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return newVpc;
     }
 
-    private void validateVpcCidrSize(Account caller, long accountId, VpcOffering vpcOffering, String cidr, Integer cidrSize) {
+    private void validateVpcCidrSize(Account caller, long accountId, VpcOffering vpcOffering, String cidr, Integer cidrSize, long zoneId) {
         if (ObjectUtils.allNull(cidr, cidrSize)) {
             throw new InvalidParameterValueException("VPC cidr or cidr size must be specified");
         }
@@ -3113,6 +3132,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             _staticRouteDao.update(route.getId(), route);
             logger.debug("Marked static route " + route + " with state " + StaticRoute.State.Revoke);
         }
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return VpcManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[]{
+                VpcTierNamePrepend,
+                VpcTierNamePrependDelimiter
+        };
     }
 
     protected class VpcCleanupTask extends ManagedContextRunnable {
