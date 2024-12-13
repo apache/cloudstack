@@ -36,6 +36,7 @@ public class MockVolumeDaoImpl extends GenericDaoBase<MockVolumeVO, Long> implem
     protected final SearchBuilder<MockVolumeVO> namePoolSearch;
     protected final SearchBuilder<MockVolumeVO> nameSearch;
     protected final GenericSearchBuilder<MockVolumeVO, Long> totalSearch;
+    protected final SearchBuilder<MockVolumeVO> countSearch;
 
     @Override
     public List<MockVolumeVO> findByStorageIdAndType(long id, MockVolumeType type) {
@@ -51,6 +52,13 @@ public class MockVolumeDaoImpl extends GenericDaoBase<MockVolumeVO, Long> implem
 
         sc.setParameters("poolId", id);
         return customSearch(sc, null).get(0);
+    }
+
+    @Override
+    public int countForStorageId(long id) {
+        SearchCriteria<MockVolumeVO> sc = countSearch.create();
+        sc.setParameters("poolId", id);
+        return getCount(sc);
     }
 
     @Override
@@ -98,6 +106,10 @@ public class MockVolumeDaoImpl extends GenericDaoBase<MockVolumeVO, Long> implem
         totalSearch.select(null, Func.SUM, totalSearch.entity().getSize());
         totalSearch.and("poolId", totalSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
         totalSearch.done();
+
+        countSearch = createSearchBuilder();
+        countSearch.and("poolId", countSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
+        countSearch.done();
 
     }
 }

@@ -44,6 +44,8 @@ public class LibvirtStoragePool implements KVMStoragePool {
     protected String uuid;
     protected long capacity;
     protected long used;
+    protected Long capacityIops;
+    protected Long usedIops;
     protected long available;
     protected String name;
     protected String localPath;
@@ -82,18 +84,36 @@ public class LibvirtStoragePool implements KVMStoragePool {
         this.used = used;
     }
 
-    public void setAvailable(long available) {
-        this.available = available;
-    }
-
     @Override
     public long getUsed() {
         return this.used;
     }
 
     @Override
+    public Long getCapacityIops() {
+        return capacityIops;
+    }
+
+    public void setCapacityIops(Long capacityIops) {
+        this.capacityIops = capacityIops;
+    }
+
+    @Override
+    public Long getUsedIops() {
+        return usedIops;
+    }
+
+    public void setUsedIops(Long usedIops) {
+        this.usedIops = usedIops;
+    }
+
+    @Override
     public long getAvailable() {
         return this.available;
+    }
+
+    public void setAvailable(long available) {
+        this.available = available;
     }
 
     public StoragePoolType getStoragePoolType() {
