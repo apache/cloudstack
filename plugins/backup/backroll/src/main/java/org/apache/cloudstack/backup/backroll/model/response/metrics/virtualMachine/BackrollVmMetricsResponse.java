@@ -16,12 +16,11 @@
 // under the License.
 package org.apache.cloudstack.backup.backroll.model.response.metrics.virtualMachine;
 
+import org.apache.cloudstack.backup.backroll.model.response.BackrollAsyncResponse;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class BackrollVmMetricsResponse {
-    @JsonProperty("state")
-    public String state;
-
+public class BackrollVmMetricsResponse extends BackrollAsyncResponse{
     @JsonProperty("info")
     public MetricsInfos infos;
 }

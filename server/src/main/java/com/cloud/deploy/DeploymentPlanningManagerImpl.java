@@ -1795,7 +1795,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 useLocalStorage = diskOffering.isUseLocalStorage();
             }
             diskProfile.setUseLocalStorage(useLocalStorage);
-            logger.debug(String.format("Calling StoragePoolAllocators to find suitable pools to allocate volume [{}] necessary to deploy VM [{}].", toBeCreated.getUuid(), vmProfile.getUuid()));
+            logger.debug("Calling StoragePoolAllocators to find suitable pools to allocate volume [{}] necessary to deploy VM [{}].", toBeCreated.getUuid(), vmProfile.getUuid());
             boolean foundPotentialPools = tryToFindPotentialPoolsToAlocateVolume(vmProfile, plan, avoid, returnUpTo, suitableVolumeStoragePools, toBeCreated, diskProfile);
 
             if (avoid.getPoolsToAvoid() != null) {
