@@ -84,7 +84,7 @@
           }"
           :options="groups.opts" />
       </a-form-item>
-      <a-form-item>
+      <a-form-item v-if="userDataEnabled">
         <template #label>
           <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
         </template>
@@ -109,6 +109,13 @@
             </div>
           </a-select-option>
         </a-select>
+      </a-form-item>
+
+      <a-form-item name="deleteprotection" ref="deleteprotection">
+        <template #label>
+          <tooltip-label :title="$t('label.deleteprotection')" :tooltip="apiParams.deleteprotection.description"/>
+        </template>
+        <a-switch v-model:checked="form.deleteprotection" />
       </a-form-item>
 
       <div :span="24" class="action-button">
@@ -143,6 +150,7 @@ export default {
     return {
       serviceOffering: {},
       template: {},
+      userDataEnabled: false,
       securityGroupsEnabled: false,
       dynamicScalingVmConfig: false,
       loading: false,
@@ -175,6 +183,7 @@ export default {
         displayname: this.resource.displayname,
         ostypeid: this.resource.ostypeid,
         isdynamicallyscalable: this.resource.isdynamicallyscalable,
+        deleteprotection: this.resource.deleteprotection,
         group: this.resource.group,
         securitygroupids: this.resource.securitygroup.map(x => x.id),
         userdata: '',
@@ -289,15 +298,37 @@ export default {
       return decodedData.toString('utf-8')
     },
     fetchUserData () {
-      const params = {
-        id: this.resource.id,
-        userdata: true
+      let networkId
+      this.resource.nic.forEach(nic => {
+        if (nic.isdefault) {
+          networkId = nic.networkid
+        }
+      })
+      if (!networkId) {
+        return
       }
+      const listNetworkParams = {
+        id: networkId,
+        listall: true
+      }
+      api(`listNetworks`, listNetworkParams).then(json => {
+        json.listnetworksresponse.network[0].service.forEach(service => {
+          if (service.name === 'UserData') {
+            this.userDataEnabled = true
 
-      api('listVirtualMachines', params).then(json => {
-        this.form.userdata = this.decodeUserData(json.listvirtualmachinesresponse.virtualmachine[0].userdata || '')
+            const listVmParams = {
+              id: this.resource.id,
+              userdata: true,
+              listall: true
+            }
+            api('listVirtualMachines', listVmParams).then(json => {
+              this.form.userdata = atob(json.listvirtualmachinesresponse.virtualmachine[0].userdata || '')
+            })
+          }
+        })
       })
     },
+
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
@@ -313,6 +344,9 @@ export default {
         }
         if (values.isdynamicallyscalable !== undefined) {
           params.isdynamicallyscalable = values.isdynamicallyscalable
+        }
+        if (values.deleteprotection !== undefined) {
+          params.deleteprotection = values.deleteprotection
         }
         if (values.haenable !== undefined) {
           params.haenable = values.haenable

@@ -114,7 +114,7 @@ class PasswordRequestHandler(BaseHTTPRequestHandler):
         if requestType == 'send_my_password':
             password = getPassword(clientAddress)
             if not password:
-                self.wfile.write('saved_password')
+                self.wfile.write('saved_password'.encode())
                 syslog.syslog('serve_password: requested password not found for %s' % clientAddress)
             else:
                 self.wfile.write(password.encode())
@@ -122,11 +122,11 @@ class PasswordRequestHandler(BaseHTTPRequestHandler):
         elif requestType == 'saved_password':
             removePassword(clientAddress)
             savePasswordFile()
-            self.wfile.write('saved_password')
+            self.wfile.write('saved_password'.encode())
             syslog.syslog('serve_password: saved_password ack received from %s' % clientAddress)
         else:
             self.send_response(400)
-            self.wfile.write('bad_request')
+            self.wfile.write('bad_request'.encode())
             syslog.syslog('serve_password: bad_request from IP %s' % clientAddress)
         return
 

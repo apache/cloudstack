@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
+import org.apache.cloudstack.dedicated.DedicatedResourceResponse;
 
 import com.cloud.serializer.Param;
 
@@ -56,6 +57,10 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
     @Param(description = "the domain name of the affinity group")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the affinity group belongs to", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName(ApiConstants.PROJECT_ID)
     @Param(description = "the project ID of the affinity group")
     private String projectId;
@@ -71,6 +76,10 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
     @SerializedName("virtualmachineIds")
     @Param(description = "virtual machine IDs associated with this affinity group")
     private List<String> vmIdList;
+
+    @SerializedName("dedicatedresources")
+    @Param(description = "dedicated resources associated with this affinity group")
+    private List<DedicatedResourceResponse> dedicatedResources;
 
     public AffinityGroupResponse() {
     }
@@ -113,6 +122,11 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     @Override
@@ -160,6 +174,14 @@ public class AffinityGroupResponse extends BaseResponse implements ControlledVie
         }
 
         this.vmIdList.add(vmId);
+    }
+
+    public void addDedicatedResource(DedicatedResourceResponse dedicatedResourceResponse) {
+        if (this.dedicatedResources == null) {
+            this.dedicatedResources = new ArrayList<>();
+        }
+
+        this.dedicatedResources.add(dedicatedResourceResponse);
     }
 
 }

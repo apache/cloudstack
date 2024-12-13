@@ -20,6 +20,7 @@ import java.util.List;
 
 
 import com.cloud.user.AccountManagerImpl;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.response.UserResponse;
@@ -52,7 +53,7 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
     }
 
     @Override
-    public UserResponse newUserResponse(UserAccountJoinVO usr) {
+    public UserResponse newUserResponse(ResponseView view, UserAccountJoinVO usr) {
         UserResponse userResponse = new UserResponse();
         userResponse.setAccountId(usr.getAccountUuid());
         userResponse.setAccountName(usr.getAccountName());
@@ -75,6 +76,9 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
         long domainId = usr.getDomainId();
         boolean is2FAmandated = Boolean.TRUE.equals(AccountManagerImpl.enableUserTwoFactorAuthentication.valueIn(domainId)) && Boolean.TRUE.equals(AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(domainId));
         userResponse.set2FAmandated(is2FAmandated);
+        if (view == ResponseView.Full) {
+            userResponse.setApiKeyAccess(usr.getApiKeyAccess());
+        }
 
         // set async job
         if (usr.getJobId() != null) {

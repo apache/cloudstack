@@ -73,6 +73,7 @@ import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 
@@ -81,6 +82,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     private StorageLayer _storageLayer;
     private String _mountPoint = "/mnt";
     private String _manageSnapshotPath;
+    private static final ConcurrentHashMap<String, Integer> storagePoolRefCounts = new ConcurrentHashMap<>();
 
     private String rbdTemplateSnapName = "cloudstack-base-snap";
     private static final int RBD_FEATURE_LAYERING = 1;
@@ -171,7 +173,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      * Checks if downloaded template is extractable
      * @return true if it should be extracted, false if not
      */
-    private boolean isTemplateExtractable(String templatePath) {
+    public static boolean isTemplateExtractable(String templatePath) {
         String type = Script.runSimpleBashScript("file " + templatePath + " | awk -F' ' '{print $2}'");
         return type.equalsIgnoreCase("bzip2") || type.equalsIgnoreCase("gzip") || type.equalsIgnoreCase("zip");
     }
@@ -181,7 +183,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
      * @param downloadedTemplateFile
      * @param templateUuid
      */
-    private String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateUuid) {
+    public static String getExtractCommandForDownloadedFile(String downloadedTemplateFile, String templateUuid) {
         if (downloadedTemplateFile.endsWith(".zip")) {
             return "unzip -p " + downloadedTemplateFile + " | cat > " + templateUuid;
         } else if (downloadedTemplateFile.endsWith(".bz2")) {
@@ -196,7 +198,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     /**
      * Extract downloaded template into installPath, remove compressed file
      */
-    private void extractDownloadedTemplate(String downloadedTemplateFile, KVMStoragePool destPool, String destinationFile) {
+    public static void extractDownloadedTemplate(String downloadedTemplateFile, KVMStoragePool destPool, String destinationFile) {
         String extractCommand = getExtractCommandForDownloadedFile(downloadedTemplateFile, destinationFile);
         Script.runSimpleBashScript(extractCommand);
         Script.runSimpleBashScript("rm -f " + downloadedTemplateFile);
@@ -350,7 +352,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         String volgroupName = path;
         volgroupName = volgroupName.replaceFirst("/", "");
 
-        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(PoolType.loggerICAL, volgroupName, uuid, host, volgroupPath, volgroupPath);
+        LibvirtStoragePoolDef spd = new LibvirtStoragePoolDef(PoolType.LOGICAL, volgroupName, uuid, host, volgroupPath, volgroupPath);
         StoragePool sp = null;
         try {
             logger.debug(spd.toString());
@@ -542,7 +544,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 type = StoragePoolType.Filesystem;
             } else if (spd.getPoolType() == LibvirtStoragePoolDef.PoolType.RBD) {
                 type = StoragePoolType.RBD;
-            } else if (spd.getPoolType() == LibvirtStoragePoolDef.PoolType.loggerICAL) {
+            } else if (spd.getPoolType() == LibvirtStoragePoolDef.PoolType.LOGICAL) {
                 type = StoragePoolType.CLVM;
             } else if (spd.getPoolType() == LibvirtStoragePoolDef.PoolType.GLUSTERFS) {
                 type = StoragePoolType.Gluster;
@@ -644,8 +646,44 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    /**
+     * adjust refcount
+     */
+    private int adjustStoragePoolRefCount(String uuid, int adjustment) {
+        final String mutexKey = storagePoolRefCounts.keySet().stream()
+                .filter(k -> k.equals(uuid))
+                .findFirst()
+                .orElse(uuid);
+        synchronized (mutexKey) {
+            // some access on the storagePoolRefCounts.key(mutexKey) element
+            int refCount = storagePoolRefCounts.computeIfAbsent(mutexKey, k -> 0);
+            refCount += adjustment;
+            if (refCount < 1) {
+                storagePoolRefCounts.remove(mutexKey);
+            } else {
+                storagePoolRefCounts.put(mutexKey, refCount);
+            }
+            return refCount;
+        }
+    }
+    /**
+     * Thread-safe increment storage pool usage refcount
+     * @param uuid UUID of the storage pool to increment the count
+     */
+    private void incStoragePoolRefCount(String uuid) {
+        adjustStoragePoolRefCount(uuid, 1);
+    }
+    /**
+     * Thread-safe decrement storage pool usage refcount for the given uuid and return if storage pool still in use.
+     * @param uuid UUID of the storage pool to decrement the count
+     * @return true if the storage pool is still used, else false.
+     */
+    private boolean decStoragePoolRefCount(String uuid) {
+        return adjustStoragePoolRefCount(uuid, -1) > 0;
+    }
+
     @Override
-    public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details) {
+    public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage) {
         logger.info("Attempting to create storage pool " + name + " (" + type.toString() + ") in libvirt");
 
         StoragePool sp = null;
@@ -751,6 +789,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         try {
+            if (!isPrimaryStorage) {
+                // only ref count storage pools for secondary storage, as primary storage is assumed
+                // to be always mounted, as long the primary storage isn't fully deleted.
+                incStoragePoolRefCount(name);
+            }
+
             if (sp.isActive() == 0) {
                 logger.debug("Attempting to activate pool " + name);
                 sp.create(0);
@@ -762,6 +806,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
             return getStoragePool(name);
         } catch (LibvirtException e) {
+            decStoragePoolRefCount(name);
             String error = e.toString();
             if (error.contains("Storage source conflict")) {
                 throw new CloudRuntimeException("A pool matching this location already exists in libvirt, " +
@@ -773,9 +818,52 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
     }
 
+    private boolean destroyStoragePool(Connect conn, String uuid) throws LibvirtException {
+        StoragePool sp;
+        try {
+            sp = conn.storagePoolLookupByUUIDString(uuid);
+        } catch (LibvirtException exc) {
+            logger.warn("Storage pool " + uuid + " doesn't exist in libvirt. Assuming it is already removed");
+            logger.warn(exc.getStackTrace());
+            return true;
+        }
+
+        if (sp != null) {
+            if (sp.isPersistent() == 1) {
+                sp.destroy();
+                sp.undefine();
+            } else {
+                sp.destroy();
+            }
+            sp.free();
+
+            return true;
+        } else {
+            logger.warn("Storage pool " + uuid + " doesn't exist in libvirt. Assuming it is already removed");
+            return false;
+        }
+    }
+
+    private boolean destroyStoragePoolHandleException(Connect conn, String uuid)
+    {
+        try {
+            return destroyStoragePool(conn, uuid);
+        } catch (LibvirtException e) {
+            logger.error(String.format("Failed to destroy libvirt pool %s: %s", uuid, e));
+        }
+        return false;
+    }
+
     @Override
     public boolean deleteStoragePool(String uuid) {
         logger.info("Attempting to remove storage pool " + uuid + " from libvirt");
+
+        // decrement and check if storage pool still in use
+        if (decStoragePoolRefCount(uuid)) {
+            logger.info(String.format("deleteStoragePool: Storage pool %s still in use", uuid));
+            return true;
+        }
+
         Connect conn = null;
         try {
             conn = LibvirtConnection.getConnection();
@@ -783,15 +871,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             throw new CloudRuntimeException(e.toString());
         }
 
-        StoragePool sp = null;
         Secret s = null;
-
-        try {
-            sp = conn.storagePoolLookupByUUIDString(uuid);
-        } catch (LibvirtException e) {
-            logger.warn("Storage pool " + uuid + " doesn't exist in libvirt. Assuming it is already removed");
-            return true;
-        }
 
         /*
          * Some storage pools, like RBD also have 'secret' information stored in libvirt
@@ -804,13 +884,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         }
 
         try {
-            if (sp.isPersistent() == 1) {
-                sp.destroy();
-                sp.undefine();
-            } else {
-                sp.destroy();
-            }
-            sp.free();
+            destroyStoragePool(conn, uuid);
             if (s != null) {
                 s.undefine();
                 s.free();
@@ -828,6 +902,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                 String result = Script.runSimpleBashScript("sleep 5 && umount " + targetPath);
                 if (result == null) {
                     logger.info("Succeeded in unmounting " + targetPath);
+                    destroyStoragePoolHandleException(conn, uuid);
                     return true;
                 }
                 logger.error("Failed to unmount " + targetPath);
@@ -1386,7 +1461,10 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
          */
 
         KVMStoragePool srcPool = disk.getPool();
-        PhysicalDiskFormat sourceFormat = disk.getFormat();
+        /* Linstor images are always stored as RAW, but Linstor uses qcow2 in DB,
+           to support snapshots(backuped) as qcow2 files. */
+        PhysicalDiskFormat sourceFormat = srcPool.getType() != StoragePoolType.Linstor ?
+                disk.getFormat() : PhysicalDiskFormat.RAW;
         String sourcePath = disk.getPath();
 
         KVMPhysicalDisk newDisk;

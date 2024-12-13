@@ -439,18 +439,23 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
+    public void validateAccountHasAccessToResource(Account account, AccessType accessType, Object resource) {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
     public Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly) {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Map<String, String> getKeys(GetUserKeysCmd cmd) {
+    public Pair<Boolean, Map<String, String>> getKeys(GetUserKeysCmd cmd) {
         return null;
     }
 
     @Override
-    public Map<String, String> getKeys(Long userId) {
+    public Pair<Boolean, Map<String, String>> getKeys(Long userId) {
         return null;
     }
 
@@ -464,6 +469,10 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         return null;
     }
 
+    @Override
+    public void checkApiAccess(Account account, String command) throws PermissionDeniedException {
+
+    }
     @Override
     public void checkAccess(User user, ControlledEntity entity)
         throws PermissionDeniedException {
@@ -482,5 +491,9 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     @Override
     public List<String> getApiNameList() {
         return null;
+    }
+
+    @Override
+    public void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword, boolean skipCurrentPassValidation) {
     }
 }

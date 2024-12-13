@@ -80,7 +80,7 @@
                           </span>
                           <global-outlined v-else style="margin-right: 5px" />
                         </span>
-                        <span v-if="(field.name.startsWith('domain') || field.name === 'account')">
+                        <span v-if="(field.name.startsWith('domain') || field.name === 'account' || field.name.startsWith('associatednetwork'))">
                           <span v-if="opt.icon">
                             <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                           </span>
@@ -111,6 +111,10 @@
                       <tooltip-button :tooltip="$t('label.clear')" icon="close-outlined" size="small" @onClick="inputKey = inputValue = ''" />
                     </a-input-group>
                   </div>
+                  <a-switch
+                    v-else-if="field.type==='boolean'"
+                    v-model:checked="form[field.name]"
+                  />
                   <a-auto-complete
                     v-else-if="field.type==='autocomplete'"
                     v-model:value="form[field.name]"
@@ -162,6 +166,7 @@ import { isAdmin } from '@/role'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import Status from '@/components/widgets/Status'
+import { i18n } from '@/locales'
 
 export default {
   name: 'SearchView',
@@ -290,15 +295,26 @@ export default {
         if (item === 'groupid' && !('listInstanceGroups' in this.$store.getters.apis)) {
           return true
         }
+        if (item === 'associatednetworkid' && this.$route.meta.name === 'asnumbers') {
+          item = 'networkid'
+        }
+        if (item === 'usagetype' && !('listUsageTypes' in this.$store.getters.apis)) {
+          return true
+        }
+        if (item === 'isencrypted' && !('listVolumes' in this.$store.getters.apis)) {
+          return true
+        }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
-          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid'].includes(item)
+          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'networkid', 'usagetype', 'restartrequired', 'guestiptype'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
-        } else if (item === 'resourcetype') {
+        } else if (['resourcetype', 'apikeyaccess'].includes(item)) {
           type = 'autocomplete'
+        } else if (item === 'isencrypted') {
+          type = 'boolean'
         }
 
         this.fields.push({
@@ -312,9 +328,9 @@ export default {
       return arrayField
     },
     fetchStaticFieldData (arrayField) {
-      if (arrayField.includes('type')) {
-        if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
-          const typeIndex = this.fields.findIndex(item => item.name === 'type')
+      if (arrayField.includes('type') || arrayField.includes('guestiptype')) {
+        if (this.$route.path.includes('/guestnetwork') || this.$route.path.includes('/networkoffering')) {
+          const typeIndex = this.fields.findIndex(item => ['type', 'guestiptype'].includes(item.name))
           this.fields[typeIndex].loading = true
           this.fields[typeIndex].opts = this.fetchGuestNetworkTypes()
           this.fields[typeIndex].loading = false
@@ -382,6 +398,16 @@ export default {
         this.fields[providerIndex].loading = false
       }
 
+      if (arrayField.includes('restartrequired')) {
+        const restartRequiredIndex = this.fields.findIndex(item => item.name === 'restartrequired')
+        this.fields[restartRequiredIndex].loading = true
+        this.fields[restartRequiredIndex].opts = [
+          { id: 'true', name: 'label.yes' },
+          { id: 'false', name: 'label.no' }
+        ]
+        this.fields[restartRequiredIndex].loading = false
+      }
+
       if (arrayField.includes('resourcetype')) {
         const resourceTypeIndex = this.fields.findIndex(item => item.name === 'resourcetype')
         this.fields[resourceTypeIndex].loading = true
@@ -397,6 +423,17 @@ export default {
           { value: 'QuotaTariff' }
         ]
         this.fields[resourceTypeIndex].loading = false
+      }
+
+      if (arrayField.includes('apikeyaccess')) {
+        const apiKeyAccessIndex = this.fields.findIndex(item => item.name === 'apikeyaccess')
+        this.fields[apiKeyAccessIndex].loading = true
+        this.fields[apiKeyAccessIndex].opts = [
+          { value: 'Disabled' },
+          { value: 'Enabled' },
+          { value: 'Inherit' }
+        ]
+        this.fields[apiKeyAccessIndex].loading = false
       }
     },
     async fetchDynamicFieldData (arrayField, searchKeyword) {
@@ -414,6 +451,9 @@ export default {
       let managementServerIdIndex = -1
       let serviceOfferingIndex = -1
       let diskOfferingIndex = -1
+      let networkIndex = -1
+      let usageTypeIndex = -1
+      let volumeIndex = -1
 
       if (arrayField.includes('type')) {
         if (this.$route.path === '/alert') {
@@ -499,6 +539,24 @@ export default {
         promises.push(await this.fetchDiskOfferings(searchKeyword))
       }
 
+      if (arrayField.includes('networkid')) {
+        networkIndex = this.fields.findIndex(item => item.name === 'networkid')
+        this.fields[networkIndex].loading = true
+        promises.push(await this.fetchNetworks(searchKeyword))
+      }
+
+      if (arrayField.includes('usagetype')) {
+        usageTypeIndex = this.fields.findIndex(item => item.name === 'usagetype')
+        this.fields[usageTypeIndex].loading = true
+        promises.push(await this.fetchUsageTypes())
+      }
+
+      if (arrayField.includes('isencrypted')) {
+        volumeIndex = this.fields.findIndex(item => item.name === 'isencrypted')
+        this.fields[volumeIndex].loading = true
+        promises.push(await this.fetchVolumes(searchKeyword))
+      }
+
       Promise.all(promises).then(response => {
         if (typeIndex > -1) {
           const types = response.filter(item => item.type === 'type')
@@ -581,6 +639,20 @@ export default {
             this.fields[diskOfferingIndex].opts = this.sortArray(diskOfferings[0].data)
           }
         }
+
+        if (networkIndex > -1) {
+          const networks = response.filter(item => item.type === 'networkid')
+          if (networks && networks.length > 0) {
+            this.fields[networkIndex].opts = this.sortArray(networks[0].data)
+          }
+        }
+
+        if (usageTypeIndex > -1) {
+          const usageTypes = response.filter(item => item.type === 'usagetype')
+          if (usageTypes?.length > 0) {
+            this.fields[usageTypeIndex].opts = this.sortArray(usageTypes[0].data)
+          }
+        }
       }).finally(() => {
         if (typeIndex > -1) {
           this.fields[typeIndex].loading = false
@@ -618,9 +690,19 @@ export default {
         if (diskOfferingIndex > -1) {
           this.fields[diskOfferingIndex].loading = false
         }
+        if (networkIndex > -1) {
+          this.fields[networkIndex].loading = false
+        }
+        if (usageTypeIndex > -1) {
+          this.fields[usageTypeIndex].loading = false
+        }
         if (Array.isArray(arrayField)) {
           this.fillFormFieldValues()
         }
+        if (networkIndex > -1) {
+          this.fields[networkIndex].loading = false
+        }
+        this.fillFormFieldValues()
       })
     },
     initFormFieldData () {
@@ -670,7 +752,7 @@ export default {
     },
     fetchDomains (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listDomains', { listAll: true, showicon: true, keyword: searchKeyword }).then(json => {
+        api('listDomains', { listAll: true, details: 'min', showicon: true, keyword: searchKeyword }).then(json => {
           const domain = json.listdomainsresponse.domain
           resolve({
             type: 'domainid',
@@ -805,6 +887,19 @@ export default {
         })
       })
     },
+    fetchNetworks (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listNetworks', { listAll: true, keyword: searchKeyword }).then(json => {
+          const networks = json.listnetworksresponse.network
+          resolve({
+            type: 'networkid',
+            data: networks
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
     fetchAlertTypes () {
       if (this.alertTypes.length > 0) {
         return new Promise((resolve, reject) => {
@@ -863,6 +958,19 @@ export default {
         })
       }
     },
+    fetchVolumes (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listvolumes', { listAll: true, isencrypted: searchKeyword }).then(json => {
+          const volumes = json.listvolumesresponse.volume
+          resolve({
+            type: 'isencrypted',
+            data: volumes
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
     fetchManagementServers (searchKeyword) {
       return new Promise((resolve, reject) => {
         api('listManagementServers', { listAll: true, keyword: searchKeyword }).then(json => {
@@ -878,7 +986,7 @@ export default {
     },
     fetchGuestNetworkTypes () {
       const types = []
-      if (this.apiName.indexOf('listNetworks') > -1) {
+      if (['listNetworks', 'listNetworkOfferings'].includes(this.apiName)) {
         types.push({
           id: 'Isolated',
           name: 'label.isolated'
@@ -1164,6 +1272,27 @@ export default {
         name: 'label.error.upper'
       })
       return levels
+    },
+    fetchUsageTypes () {
+      return new Promise((resolve, reject) => {
+        api('listUsageTypes')
+          .then(json => {
+            const usageTypes = json.listusagetypesresponse.usagetype.map(entry => {
+              return {
+                id: entry.id,
+                name: i18n.global.t(entry.name)
+              }
+            })
+
+            resolve({
+              type: 'usagetype',
+              data: usageTypes
+            })
+          })
+          .catch(error => {
+            reject(error.response.headers['x-description'])
+          })
+      })
     },
     onSearch (value) {
       this.paramsFilter = {}

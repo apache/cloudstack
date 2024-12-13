@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.host;
 
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.fsm.StateObject;
@@ -208,4 +209,6 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
     boolean isDisabled();
 
     ResourceState getResourceState();
+
+    CPU.CPUArch getArch();
 }

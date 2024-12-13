@@ -17,6 +17,7 @@
 package com.cloud.user;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.persistence.Column;
@@ -361,6 +362,9 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
 
     @Override
     public Map<String, String> getDetails() {
+        if (details == null) {
+            details = new HashMap<>();
+        }
         return details;
     }
 

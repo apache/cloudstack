@@ -84,7 +84,8 @@ function generateRouterMap (section) {
           searchFilters: child.searchFilters,
           related: child.related,
           actions: child.actions,
-          tabs: child.tabs
+          tabs: child.tabs,
+          customParamHandler: child.customParamHandler
         },
         component: component,
         hideChildrenInMenu: true,
@@ -224,7 +225,6 @@ export function asyncRouterMap () {
       generateRouterMap(tools),
       generateRouterMap(quota),
       generateRouterMap(cloudian),
-
       {
         path: '/exception',
         name: 'exception',
@@ -300,6 +300,16 @@ export const constantRouterMap = [
         path: 'login',
         name: 'login',
         component: () => import(/* webpackChunkName: "auth" */ '@/views/auth/Login')
+      },
+      {
+        path: 'forgotPassword',
+        name: 'forgotPassword',
+        component: () => import(/* webpackChunkName: "auth" */ '@/views/auth/ForgotPassword')
+      },
+      {
+        path: 'resetPassword',
+        name: 'resetPassword',
+        component: () => import(/* webpackChunkName: "auth" */ '@/views/auth/ResetPassword')
       }
     ]
   },

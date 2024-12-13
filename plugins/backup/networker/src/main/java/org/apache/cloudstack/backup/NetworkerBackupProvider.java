@@ -372,7 +372,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid) {
+    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
         String networkerServer;
         VolumeVO volume = volumeDao.findByUuid(volumeUuid);
         VMInstanceVO backupSourceVm = vmInstanceDao.findById(backup.getVmId());
@@ -512,6 +512,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         LOG.info ("EMC Networker finished backup job for vm " + vm.getName() + " with saveset Time: " + saveTime);
         BackupVO backup = getClient(vm.getDataCenterId()).registerBackupForVm(vm, backupJobStart, saveTime);
         if (backup != null) {
+            backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
             backupDao.persist(backup);
             return true;
         } else {

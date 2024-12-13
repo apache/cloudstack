@@ -248,8 +248,8 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
     }
 
     @Override
-    public void acquireSession(String sessionUuid) {
-        consoleSessionDao.acquireSession(sessionUuid);
+    public void acquireSession(String sessionUuid, String clientAddress) {
+        consoleSessionDao.acquireSession(sessionUuid, clientAddress);
     }
 
     protected boolean checkSessionPermission(VirtualMachine vm, Account account) {
@@ -389,7 +389,7 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         String url = generateConsoleAccessUrl(rootUrl, param, token, vncPort, vm, hostVo, details);
 
         logger.debug("Adding allowed session: " + sessionUuid);
-        persistConsoleSession(sessionUuid, vm.getId(), hostVo.getId());
+        persistConsoleSession(sessionUuid, vm.getId(), hostVo.getId(), addr);
         managementServer.setConsoleAccessForVm(vm.getId(), sessionUuid);
 
         ConsoleEndpoint consoleEndpoint = new ConsoleEndpoint(true, url);
@@ -403,13 +403,14 @@ public class ConsoleAccessManagerImpl extends ManagerBase implements ConsoleAcce
         return consoleEndpoint;
     }
 
-    protected void persistConsoleSession(String sessionUuid, long instanceId, long hostId) {
+    protected void persistConsoleSession(String sessionUuid, long instanceId, long hostId, String consoleEndpointCreatorAddress) {
         ConsoleSessionVO consoleSessionVo = new ConsoleSessionVO();
         consoleSessionVo.setUuid(sessionUuid);
         consoleSessionVo.setAccountId(CallContext.current().getCallingAccountId());
         consoleSessionVo.setUserId(CallContext.current().getCallingUserId());
         consoleSessionVo.setInstanceId(instanceId);
         consoleSessionVo.setHostId(hostId);
+        consoleSessionVo.setConsoleEndpointCreatorAddress(consoleEndpointCreatorAddress);
         consoleSessionDao.persist(consoleSessionVo);
     }
 

@@ -16,6 +16,7 @@
 //under the License.
 package org.apache.cloudstack.api.response;
 
+import com.cloud.user.User;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
@@ -25,6 +26,7 @@ import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
+import org.apache.cloudstack.api.command.QuotaValidateActivationRuleCmd;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
@@ -41,7 +43,9 @@ public interface QuotaResponseBuilder {
 
     Pair<List<QuotaTariffVO>, Integer> listQuotaTariffPlans(QuotaTariffListCmd cmd);
 
-    QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO configuration);
+    QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO quotaTariff, boolean returnActivationRule);
+
+    boolean isUserAllowedToSeeActivationRules(User user);
 
     QuotaStatementResponse createQuotaStatementResponse(List<QuotaUsageVO> quotaUsage);
 
@@ -85,4 +89,6 @@ public interface QuotaResponseBuilder {
     QuotaConfigureEmailResponse createQuotaConfigureEmailResponse(QuotaEmailConfigurationVO quotaEmailConfigurationVO, Double minBalance, long accountId);
 
     List<QuotaConfigureEmailResponse> listEmailConfiguration(long accountId);
+
+    QuotaValidateActivationRuleResponse validateActivationRule(QuotaValidateActivationRuleCmd cmd);
 }

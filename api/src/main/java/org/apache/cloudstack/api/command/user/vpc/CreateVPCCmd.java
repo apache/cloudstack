@@ -75,9 +75,14 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     private String displayText;
 
-    @Parameter(name = ApiConstants.CIDR, type = CommandType.STRING, required = true, description = "the cidr of the VPC. All VPC " +
-            "guest networks' cidrs should be within this CIDR")
+    @Parameter(name = ApiConstants.CIDR, type = CommandType.STRING,
+            description = "the cidr of the VPC. All VPC guest networks' cidrs should be within this CIDR")
     private String cidr;
+
+    @Parameter(name = ApiConstants.CIDR_SIZE, type = CommandType.INTEGER,
+            description = "the CIDR size of VPC. For regular users, this is required for VPC with ROUTED mode.",
+            since = "4.20.0")
+    private Integer cidrSize;
 
     @Parameter(name = ApiConstants.VPC_OFF_ID, type = CommandType.UUID, entityType = VpcOfferingResponse.class,
                required = true, description = "the ID of the VPC offering")
@@ -117,6 +122,9 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
             since = "4.19")
     private String sourceNatIP;
 
+    @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, since = "4.20.0", description="the AS Number of the VPC tiers")
+    private Long asNumber;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -139,6 +147,10 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public String getCidr() {
         return cidr;
+    }
+
+    public Integer getCidrSize() {
+        return cidrSize;
     }
 
     public String getDisplayText() {
@@ -187,6 +199,10 @@ public class CreateVPCCmd extends BaseAsyncCreateCmd implements UserCmd {
 
     public String getSourceNatIP() {
         return sourceNatIP;
+    }
+
+    public Long getAsNumber() {
+        return asNumber;
     }
 
     /////////////////////////////////////////////////////

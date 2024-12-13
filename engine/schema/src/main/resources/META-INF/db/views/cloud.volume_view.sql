@@ -40,6 +40,7 @@ SELECT
     `volumes`.`chain_info` AS `chain_info`,
     `volumes`.`external_uuid` AS `external_uuid`,
     `volumes`.`encrypt_format` AS `encrypt_format`,
+    `volumes`.`delete_protection` AS `delete_protection`,
     `account`.`id` AS `account_id`,
     `account`.`uuid` AS `account_uuid`,
     `account`.`account_name` AS `account_name`,

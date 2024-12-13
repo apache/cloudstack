@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -42,6 +43,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
@@ -109,6 +111,18 @@ public class StorageManagerImplTest {
     @Spy
     @InjectMocks
     private StorageManagerImpl storageManagerImpl;
+
+    @Mock
+    private StoragePoolVO storagePoolVOMock;
+
+    @Mock
+    private VolumeVO volume1VOMock;
+
+    @Mock
+    private VolumeVO volume2VOMock;
+
+    @Mock
+    private VMInstanceVO vmInstanceVOMock;
 
     @Test
     public void createLocalStoragePoolName() {
@@ -515,6 +529,24 @@ public class StorageManagerImplTest {
                 .update(StorageManager.DataStoreDownloadFollowRedirects.key(),StorageManager.DataStoreDownloadFollowRedirects.defaultValue());
     }
 
+    @Test
+    public void getStoragePoolNonDestroyedVolumesLogTestNonDestroyedVolumesReturnLog() {
+        Mockito.doReturn(1L).when(storagePoolVOMock).getId();
+        Mockito.doReturn(1L).when(volume1VOMock).getInstanceId();
+        Mockito.doReturn("786633d1-a942-4374-9d56-322dd4b0d202").when(volume1VOMock).getUuid();
+        Mockito.doReturn(1L).when(volume2VOMock).getInstanceId();
+        Mockito.doReturn("ffb46333-e983-4c21-b5f0-51c5877a3805").when(volume2VOMock).getUuid();
+        Mockito.doReturn("58760044-928f-4c4e-9fef-d0e48423595e").when(vmInstanceVOMock).getUuid();
+
+        Mockito.when(_volumeDao.findByPoolId(storagePoolVOMock.getId(), null)).thenReturn(List.of(volume1VOMock, volume2VOMock));
+        Mockito.doReturn(vmInstanceVOMock).when(vmInstanceDao).findById(Mockito.anyLong());
+
+        String log = storageManagerImpl.getStoragePoolNonDestroyedVolumesLog(storagePoolVOMock.getId());
+        String expected = String.format("[Volume [%s] (attached to VM [%s]), Volume [%s] (attached to VM [%s])]", volume1VOMock.getUuid(), vmInstanceVOMock.getUuid(), volume2VOMock.getUuid(), vmInstanceVOMock.getUuid());
+
+        Assert.assertEquals(expected, log);
+    }
+
     private ChangeStoragePoolScopeCmd mockChangeStoragePooolScopeCmd(String newScope) {
         ChangeStoragePoolScopeCmd cmd = new ChangeStoragePoolScopeCmd();
         ReflectionTestUtils.setField(cmd, "id", 1L);
@@ -725,5 +757,82 @@ public class StorageManagerImplTest {
         String error = "Mount failed on kvm host. An incorrect mount option was specified.\nIncorrect mount option.";
         String failureReason = storageManagerImpl.getStoragePoolMountFailureReason(error);
         Assert.assertEquals(failureReason, "An incorrect mount option was specified");
+    }
+
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
+        Field f = ConfigKey.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(configKey, o);
+    }
+
+    private Long testCheckPoolforSpaceForResizeSetup(StoragePoolVO pool, Long allocatedSizeWithTemplate) {
+        Long poolId = 10L;
+        Long zoneId = 2L;
+
+        Long capacityBytes = (long) (allocatedSizeWithTemplate / Double.valueOf(CapacityManager.StorageAllocatedCapacityDisableThreshold.defaultValue())
+                        / Double.valueOf(CapacityManager.StorageOverprovisioningFactor.defaultValue()));
+        Long maxAllocatedSizeForResize = (long) (capacityBytes * Double.valueOf(CapacityManager.StorageOverprovisioningFactor.defaultValue())
+                * Double.valueOf(CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.defaultValue()));
+
+        System.out.println("maxAllocatedSizeForResize = " + maxAllocatedSizeForResize);
+        System.out.println("allocatedSizeWithTemplate = " + allocatedSizeWithTemplate);
+
+        Mockito.when(pool.getId()).thenReturn(poolId);
+        Mockito.when(pool.getCapacityBytes()).thenReturn(capacityBytes);
+        Mockito.when(pool.getDataCenterId()).thenReturn(zoneId);
+        Mockito.when(storagePoolDao.findById(poolId)).thenReturn(pool);
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+
+        return maxAllocatedSizeForResize - allocatedSizeWithTemplate;
+    }
+
+    @Test
+    public void testCheckPoolforSpaceForResize1() {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+
+        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
+        Long totalAskingSize = maxAskingSize / 2;
+
+        boolean result = storageManagerImpl.checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, false);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testCheckPoolforSpaceForResize2() {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+
+        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
+        Long totalAskingSize = maxAskingSize / 2;
+
+        boolean result = storageManagerImpl.checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, true);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testCheckPoolforSpaceForResize3() throws NoSuchFieldException, IllegalAccessException {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+
+        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
+        Long totalAskingSize = maxAskingSize + 1;
+        overrideDefaultConfigValue(StorageManagerImpl.AllowVolumeReSizeBeyondAllocation, "_defaultValue", "true");
+
+        boolean result = storageManagerImpl.checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, true);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testCheckPoolforSpaceForResize4() throws NoSuchFieldException, IllegalAccessException {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+
+        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
+        Long totalAskingSize = maxAskingSize / 2;
+        overrideDefaultConfigValue(StorageManagerImpl.AllowVolumeReSizeBeyondAllocation, "_defaultValue", "true");
+
+        boolean result = storageManagerImpl.checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, true);
+        Assert.assertTrue(result);
     }
 }
