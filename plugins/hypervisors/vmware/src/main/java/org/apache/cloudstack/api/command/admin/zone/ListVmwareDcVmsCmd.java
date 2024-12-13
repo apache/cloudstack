@@ -79,6 +79,9 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
                     " If no previous call has been done, this is the same as the first page")
     private Integer pageNumber;
 
+    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, description = "force retrieving new results, ignoring any cached data.")
+    private Boolean forced;
+
     public String getVcenter() {
         return vcenter;
     }
@@ -97,6 +100,10 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
 
     public Integer getPageNumber() {
         return pageNumber;
+    }
+
+    public boolean isForced() {
+        return forced == null ? true : forced;
     }
 
     public String getDatacenterName() {
