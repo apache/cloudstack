@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.Backup.Metric;
+import org.apache.cloudstack.backup.backroll.BackrollService.NotOkBodyException;
 import org.apache.cloudstack.backup.backroll.model.BackrollBackup;
 import org.apache.cloudstack.backup.backroll.model.BackrollBackupMetrics;
 import org.apache.cloudstack.backup.backroll.model.BackrollOffering;
@@ -89,9 +90,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+
+
 public class BackrollClient {
 
-    private Logger logger = LogManager.getLogger(BackrollClient.class);
+    protected Logger logger = LogManager.getLogger(BackrollClient.class);
 
     private final URI apiURI;
 
@@ -100,17 +103,19 @@ public class BackrollClient {
     private String password = null;
     private boolean validateCertificate = false;
     private RequestConfig config = null;
+    private BackrollService backrollService;
 
     private int restoreTimeout;
 
     public BackrollClient(final String url, final String appname, final String password,
             final boolean validateCertificate, final int timeout,
-            final int restoreTimeout)
+            final int restoreTimeout, final BackrollService backrollService)
             throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
         this.apiURI = new URI(url);
         this.restoreTimeout = restoreTimeout;
         this.appname = appname;
         this.password = password;
+        this.backrollService = backrollService;
 
         this.config = RequestConfig.custom()
             .setConnectTimeout(timeout * 1000)
@@ -139,63 +144,13 @@ public class BackrollClient {
         closeableHttpResponse.close();
     }
 
-    public String startBackupJob(final String jobId) throws KeyManagementException, NoSuchAlgorithmException, IOException {
-        logger.info("Trying to start backup for Backroll job: {}", jobId);
-        String backupJob = "";
-
-        loginIfAuthenticationFailed();
-
-        try {
-            CloseableHttpResponse response = post(String.format("/tasks/singlebackup/%s", jobId), null);
-            String result = okBody(response);
+    private String triggerBackrollTaskForVM(final String vmId, JSONObject jsonBody, final String task) throws InterruptedException, KeyManagementException, ParseException, NoSuchAlgorithmException, IOException, NotOkBodyException {
+            CloseableHttpResponse response = backrollService.post(apiURI,String.format("/tasks/%s/%s",task, vmId) ,jsonBody);
+            String result = backrollService.okBody(response);
             BackrollTaskRequestResponse requestResponse = new ObjectMapper().readValue(result, BackrollTaskRequestResponse.class);
             response.close();
-            backupJob = requestResponse.location.replace("/api/v1/status/", "");
-        } catch (final Exception e) {
-            logger.error("Failed to start Backroll backup job due to: {}", e.getMessage());
-        }
-        return StringUtils.isEmpty(backupJob) ? null : backupJob;
-    }
-
-    public String getBackupOfferingUrl() throws KeyManagementException, NoSuchAlgorithmException, IOException {
-        logger.info("Trying to list backroll backup policies");
-
-        loginIfAuthenticationFailed();
-        String url = "";
-
-        try {
-            CloseableHttpResponse response = get("/backup_policies");
-            String result = okBody(response);
-            logger.info("BackrollClient:getBackupOfferingUrl:result:  " + result);
-            //BackrollTaskRequestResponse requestResponse = parse(result);
-            BackrollTaskRequestResponse requestResponse = new ObjectMapper().readValue(result, BackrollTaskRequestResponse.class);
-            logger.info("BackrollClient:getBackupOfferingUrl:Apres PArse:  " + requestResponse.location);
-            response.close();
-            url = requestResponse.location.replace("/api/v1", "");
-        } catch (final Exception e) {
-            logger.info("Failed to list Backroll jobs due to: {}", e.getMessage());
-            logger.error("Failed to list Backroll jobs due to: {}", e.getMessage());
-        }
-        return StringUtils.isEmpty(url) ? null : url;
-    }
-
-    public List<BackupOffering> getBackupOfferings(String idTask) throws KeyManagementException, ParseException, NoSuchAlgorithmException, IOException {
-        logger.info("Trying to list backroll backup policies");
-
-        loginIfAuthenticationFailed();
-        final List<BackupOffering> policies = new ArrayList<>();
-
-        try {
-            String results = waitGet(idTask);
-            BackupPoliciesResponse backupPoliciesResponse = new ObjectMapper().readValue(results, BackupPoliciesResponse.class);
-
-            for (final BackrollBackupPolicyResponse policy : backupPoliciesResponse.backupPolicies) {
-                policies.add(new BackrollOffering(policy.name, policy.id));
-            }
-        } catch (final IOException | InterruptedException e) {
-            logger.error("Failed to list Backroll jobs due to: {}", e.getMessage());
-        }
-        return policies;
+            String urlToRequest = requestResponse.location.replace("/api/v1", "");
+            return urlToRequest;
     }
 
     public boolean restoreVMFromBackup(final String vmId, final String backupName) throws KeyManagementException, ParseException, NoSuchAlgorithmException, IOException {
@@ -216,12 +171,8 @@ public class BackrollClient {
                 logger.error("Backroll Error: {}", e.getMessage());
             }
 
-            CloseableHttpResponse response = post(String.format("/tasks/restore/%s", vmId), jsonBody);
-            String result = okBody(response);
-            BackrollTaskRequestResponse requestResponse = new ObjectMapper().readValue(result, BackrollTaskRequestResponse.class);
-            response.close();
-            String urlToRequest = requestResponse.location.replace("/api/v1", "");
-            result = waitGet(urlToRequest);
+            String urlToRequest = triggerBackrollTaskForVM(vmId, jsonBody, "restore");
+            String result = backrollService.waitGet(apiURI,urlToRequest);
 
             if(result.contains("SUCCESS")) {
                 logger.debug("RESTORE SUCCESS");
@@ -237,6 +188,65 @@ public class BackrollClient {
         return isRestoreOk;
     }
 
+    public void triggerTaskStatus(String urlToRequest)
+        throws IOException, InterruptedException, KeyManagementException, ParseException, NoSuchAlgorithmException{
+            backrollService.waitGet(apiURI,urlToRequest);
+    }
+
+    public String startBackupJob(final String vmId) throws KeyManagementException, NoSuchAlgorithmException, IOException {
+        logger.info("Trying to start backup for Backroll job: {}", vmId);
+        loginIfAuthenticationFailed();
+
+        try {
+            String urlToRequest = triggerBackrollTaskForVM(vmId, null, "singlebackup");
+            return urlToRequest;
+        } catch (final Exception e) {
+            logger.error("Failed to start Backroll backup job due to: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    public String getBackupOfferingUrl() throws KeyManagementException, NoSuchAlgorithmException, IOException {
+        logger.info("Trying to list backroll backup policies");
+
+        loginIfAuthenticationFailed();
+        String url = "";
+
+        try {
+            CloseableHttpResponse response = backrollService.get(apiURI,"/backup_policies");
+            String result = backrollService.okBody(response);
+            logger.info("BackrollClient:getBackupOfferingUrl:result:  " + result);
+            //BackrollTaskRequestResponse requestResponse = parse(result);
+            BackrollTaskRequestResponse requestResponse = new ObjectMapper().readValue(result, BackrollTaskRequestResponse.class);
+            logger.info("BackrollClient:getBackupOfferingUrl:Apres PArse:  " + requestResponse.location);
+            response.close();
+            url = requestResponse.location.replace("/api/v1", "");
+        } catch (final Exception e) {
+            logger.info("Failed to list Backroll jobs due to: {}", e.getMessage());
+            logger.error("Failed to list Backroll jobs due to: {}", e.getMessage());
+        }
+        return StringUtils.isEmpty(url) ? null : url;
+    }
+
+    public List<BackupOffering> getBackupOfferings(String idTask) throws KeyManagementException, ParseException, NoSuchAlgorithmException, IOException {
+        logger.info("Trying to list backroll backup policies");
+
+        loginIfAuthenticationFailed();
+        final List<BackupOffering> policies = new ArrayList<>();
+
+        try {
+            String results = backrollService.waitGet(apiURI,idTask);
+            BackupPoliciesResponse backupPoliciesResponse = new ObjectMapper().readValue(results, BackupPoliciesResponse.class);
+
+            for (final BackrollBackupPolicyResponse policy : backupPoliciesResponse.backupPolicies) {
+                policies.add(new BackrollOffering(policy.name, policy.id));
+            }
+        } catch (final IOException | InterruptedException e) {
+            logger.error("Failed to list Backroll jobs due to: {}", e.getMessage());
+        }
+        return policies;
+    }
+
     public BackrollTaskStatus checkBackupTaskStatus(String taskId) throws KeyManagementException, ParseException, NoSuchAlgorithmException, IOException {
         logger.info("Trying to get backup status for Backroll task: {}", taskId);
 
@@ -246,7 +256,7 @@ public class BackrollClient {
 
         try {
 
-            String body = okBody(get("/status/" + taskId));
+            String body = backrollService.okBody(backrollService.get(apiURI,"/status/" + taskId));
 
             if (body.contains(TaskState.FAILURE) || body.contains(TaskState.PENDING)) {
                 BackrollBackupStatusResponse backupStatusRequestResponse = new ObjectMapper().readValue(body, BackrollBackupStatusResponse.class);
@@ -277,13 +287,13 @@ public class BackrollClient {
 
         try {
 
-            CloseableHttpResponse response = delete(String.format("/virtualmachines/%s/backups/%s", vmId, backupName));
-            String result = okBody(response);
+            CloseableHttpResponse response = backrollService.delete(apiURI,String.format("/virtualmachines/%s/backups/%s", vmId, backupName));
+            String result = backrollService.okBody(response);
             BackrollTaskRequestResponse requestResponse = new ObjectMapper().readValue(result, BackrollTaskRequestResponse.class);
             response.close();
             String urlToRequest = requestResponse.location.replace("/api/v1", "");
 
-            result = waitGet(urlToRequest);
+            result = backrollService.waitGet(apiURI,urlToRequest);
             BackrollBackupsFromVMResponse backrollBackupsFromVMResponse = new ObjectMapper().readValue(result, BackrollBackupsFromVMResponse.class);
             logger.debug(backrollBackupsFromVMResponse.state);
             isBackupDeleted = backrollBackupsFromVMResponse.state.equals(TaskState.SUCCESS);
@@ -305,13 +315,13 @@ public class BackrollClient {
 
         try {
 
-            CloseableHttpResponse response = get(String.format("/virtualmachines/%s/repository", vmId));
-            String result = okBody(response);
+            CloseableHttpResponse response = backrollService.get(apiURI,String.format("/virtualmachines/%s/repository", vmId));
+            String result = backrollService.okBody(response);
             BackrollTaskRequestResponse requestResponse = new ObjectMapper().readValue(result, BackrollTaskRequestResponse.class);
             response.close();
             String urlToRequest = requestResponse.location.replace("/api/v1", "");
 
-            result = waitGet(urlToRequest);
+            result = backrollService.waitGet(apiURI,urlToRequest);
             BackrollVmMetricsResponse vmMetricsResponse =new ObjectMapper().readValue(result, BackrollVmMetricsResponse.class);
 
             if (vmMetricsResponse != null && vmMetricsResponse.state.equals(TaskState.SUCCESS)) {
@@ -342,15 +352,15 @@ public class BackrollClient {
 
         try {
 
-            CloseableHttpResponse response = get(String.format("/virtualmachines/%s/backups/%s", vmId, backupId));
-            String result = okBody(response);
+            CloseableHttpResponse response = backrollService.get(apiURI,String.format("/virtualmachines/%s/backups/%s", vmId, backupId));
+            String result = backrollService.okBody(response);
             BackrollTaskRequestResponse requestResponse = new ObjectMapper().readValue(result, BackrollTaskRequestResponse.class);
             response.close();
             String urlToRequest = requestResponse.location.replace("/api/v1", "");
 
             logger.debug(urlToRequest);
 
-            result = waitGet(urlToRequest);
+            result = backrollService.waitGet(apiURI,urlToRequest);
             BackrollBackupMetricsResponse metricsResponse = new ObjectMapper().readValue(result, BackrollBackupMetricsResponse.class);
             if (metricsResponse.info != null) {
                 metrics = new BackrollBackupMetrics(Long.parseLong(metricsResponse.info.originalSize),
@@ -365,21 +375,21 @@ public class BackrollClient {
     }
 
     public List<BackrollVmBackup> getAllBackupsfromVirtualMachine(String vmId) {
-        logger.info("Trying to retrieve all backups for vm {}", vmId);
+        //logger.info("Trying to retrieve all backups for vm {}", vmId);
 
         List<BackrollVmBackup> backups = new ArrayList<BackrollVmBackup>();
 
         try {
 
-            CloseableHttpResponse response = get(String.format("/virtualmachines/%s/backups", vmId));
-            String result = okBody(response);
+            CloseableHttpResponse response = backrollService.get(apiURI, String.format("/virtualmachines/%s/backups", vmId));
+            String result = backrollService.okBody(response);
             BackrollTaskRequestResponse requestResponse = new ObjectMapper().readValue(result, BackrollTaskRequestResponse.class);
             response.close();
             String urlToRequest = requestResponse.location.replace("/api/v1", "");
 
-            logger.debug(urlToRequest);
+            //logger.debug(urlToRequest);
 
-            result = waitGet(urlToRequest);
+            result = backrollService.waitGet(apiURI,urlToRequest);
             VirtualMachineBackupsResponse virtualMachineBackupsResponse = new ObjectMapper().readValue(result, VirtualMachineBackupsResponse.class);
 
             if (virtualMachineBackupsResponse.state.equals(TaskState.SUCCESS)) {
@@ -397,112 +407,9 @@ public class BackrollClient {
         return backups;
     }
 
-    private CloseableHttpResponse post(final String path, final JSONObject json) throws IOException, KeyManagementException, NoSuchAlgorithmException {
-        CloseableHttpClient httpClient = createHttpClient();
-
-        String xml = null;
-        StringEntity params = null;
-        if (json != null) {
-            logger.debug("JSON {}", json.toString());
-            params = new StringEntity(json.toString(), ContentType.APPLICATION_JSON);
-        }
-
-        String url = apiURI.toString() + path;
-        final HttpPost request = new HttpPost(url);
-
-        if (params != null) {
-            request.setEntity(params);
-        }
-
-        request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + backrollToken);
-        request.setHeader("Content-type", "application/json");
-
-        final CloseableHttpResponse response = httpClient.execute(request);
-
-        logger.debug("Response received in POST request with body {} is: {} for URL {}.", xml, response.toString(), url);
-
-        return response;
-    }
-
-    protected CloseableHttpResponse get(String path) throws IOException, KeyManagementException, NoSuchAlgorithmException {
-        CloseableHttpClient httpClient = createHttpClient();
-
-        String url = apiURI.toString() + path;
-        logger.debug("Backroll URL {}", url);
-
-        HttpGet request = new HttpGet(url);
-        request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + backrollToken);
-        request.setHeader("Content-type", "application/json");
-        CloseableHttpResponse  response = httpClient.execute(request);
-        logger.debug("Response received in GET request is: {} for URL: {}.", response.toString(), url);
-        return response;
-    }
-
-    protected CloseableHttpResponse delete(String path) throws IOException, KeyManagementException, NoSuchAlgorithmException {
-        CloseableHttpClient httpClient = createHttpClient();
-
-        String url = apiURI.toString() + path;
-        final HttpDelete request = new HttpDelete(url);
-        request.setHeader(HttpHeaders.AUTHORIZATION, "Bearer " + backrollToken);
-        request.setHeader("Content-type", "application/json");
-        final CloseableHttpResponse response = httpClient.execute(request);
-        logger.debug("Response received in GET request is: {} for URL: {}.", response.toString(), url);
-        return response;
-    }
-
     private boolean isResponseAuthorized(final HttpResponse response) {
         return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK
                 || response.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED;
-    }
-
-    private class NotOkBodyException extends Exception {
-    }
-
-    private String okBody(final CloseableHttpResponse response)
-            throws ParseException, IOException, NotOkBodyException {
-        String result = "";
-        switch (response.getStatusLine().getStatusCode()) {
-            case HttpStatus.SC_OK:
-            case HttpStatus.SC_ACCEPTED:
-                HttpEntity bodyEntity = response.getEntity();
-                try {
-                    result = EntityUtils.toString(bodyEntity);
-                    EntityUtils.consumeQuietly(bodyEntity);
-                    closeConnection(response);
-                    return result;
-                } finally {
-                    EntityUtils.consumeQuietly(bodyEntity);
-                }
-            default:
-                closeConnection(response);
-                throw new NotOkBodyException();
-        }
-    }
-
-    private <T> T parse(final String json)
-            throws JsonMappingException, JsonProcessingException {
-        return new ObjectMapper().readValue(json, new TypeReference<T>() {
-        });
-    }
-
-    private String waitGet(String url)
-            throws IOException, InterruptedException, KeyManagementException, ParseException, NoSuchAlgorithmException {
-        // int threshold = 30; // 5 minutes
-        int maxAttempts = 12; // 2 minutes
-
-        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
-            try {
-                String body = okBody(get(url));
-                if (!body.contains(TaskState.PENDING)) {
-                    return body;
-                }
-            } catch (final NotOkBodyException e) {
-                throw new CloudRuntimeException("An error occured with Backroll");
-            }
-            TimeUnit.SECONDS.sleep(10);
-        }
-
-        return null;
     }
 
     private boolean isAuthenticated() throws KeyManagementException, NoSuchAlgorithmException {
@@ -513,7 +420,7 @@ public class BackrollClient {
         }
 
         try {
-            CloseableHttpResponse response = post("/auth", null);
+            CloseableHttpResponse response = backrollService.post(apiURI,"/auth", null);
             result = isResponseAuthorized(response);
             EntityUtils.consumeQuietly(response.getEntity());
             closeConnection(response);
@@ -529,58 +436,6 @@ public class BackrollClient {
         }
     }
 
-    // private void login(final String appname, final String appsecret) throws IOException, KeyManagementException, NoSuchAlgorithmException  {
-    //     logger.info("Backroll client -  start login");
-    //     CloseableHttpClient httpClient = createHttpClient();
-    //     CloseableHttpResponse response = null;
-    //     final HttpPost request = new HttpPost(apiURI.toString() + "/login");
-    //     request.addHeader("content-type", "application/json");
-
-    //     JSONObject jsonBody = new JSONObject();
-    //     StringEntity params;
-
-    //     try {
-    //         jsonBody.put("app_id", appname);
-    //         jsonBody.put("app_secret", appsecret);
-    //         params = new StringEntity(jsonBody.toString());
-    //         request.setEntity(params);
-
-    //         response = httpClient.execute(request);
-
-    //         try {
-    //             HttpEntity body = response.getEntity();
-    //             String bodyStr = EntityUtils.toString(body);
-
-    //             LoginApiResponse loginResponse = new ObjectMapper().readValue(bodyStr, LoginApiResponse.class);
-    //             backrollToken = loginResponse.accessToken;
-    //             logger.debug(String.format("Backroll client -  Token : %s", backrollToken));
-
-    //             EntityUtils.consumeQuietly(response.getEntity());
-
-    //             if (StringUtils.isEmpty(loginResponse.accessToken)) {
-    //                 throw new CloudRuntimeException("Backroll token is not available to perform API requests");
-    //             }
-    //         } catch  (final Exception e) {
-    //             EntityUtils.consumeQuietly(response.getEntity());
-    //             if (response.getStatusLine().getStatusCode() != HttpStatus.SC_CREATED) {
-    //                 throw new CloudRuntimeException(
-    //                         "Failed to create and authenticate Backroll client, please check the settings.");
-    //             } else {
-    //                 throw new ServerApiException(ApiErrorCode.UNAUTHORIZED,
-    //                         "Backroll API call unauthorized, please ask your administrator to fix integration issues.");
-    //             }
-    //         }
-
-    //     } catch (final IOException e) {
-    //         throw new CloudRuntimeException("Failed to authenticate Backroll API service due to:" + e.getMessage());
-    //     } catch (JSONException e) {
-    //         e.printStackTrace();
-    //     }
-    //     finally {
-    //         closeConnection(response);
-    //     }
-    //     logger.info("Backroll client -  end login");
-    // }
 
     private void login(final String appname, final String appsecret) throws IOException, KeyManagementException, NoSuchAlgorithmException {
         logger.debug("Backroll client -  start login");
@@ -602,7 +457,7 @@ public class BackrollClient {
 
             response = httpClient.execute(request);
             try {
-                String toto = okBody(response);
+                String toto = backrollService.okBody(response);
                 ObjectMapper objectMapper = new ObjectMapper();
                 logger.info("BACKROLL:     " + toto);
                 LoginApiResponse loginResponse = objectMapper.readValue(toto, LoginApiResponse.class);
@@ -637,14 +492,14 @@ public class BackrollClient {
         try {
             logger.info("start to list Backroll backups for vm {}", vmId);
 
-            CloseableHttpResponse response = get("/virtualmachines/" + vmId + "/backups");
-            String result = okBody(response);
+            CloseableHttpResponse response = backrollService.get(apiURI,"/virtualmachines/" + vmId + "/backups");
+            String result = backrollService.okBody(response);
             BackrollTaskRequestResponse requestResponse = new ObjectMapper().readValue(result, BackrollTaskRequestResponse.class);
             response.close();
             String urlToRequest = requestResponse.location.replace("/api/v1", "");
 
             logger.debug(urlToRequest);
-            result = waitGet(urlToRequest);
+            result = backrollService.waitGet(apiURI,urlToRequest);
             BackrollBackupsFromVMResponse backrollBackupsFromVMResponse = new ObjectMapper().readValue(result, BackrollBackupsFromVMResponse.class);
 
             final List<BackrollBackup> backups = new ArrayList<>();
