@@ -289,11 +289,14 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
             List<String> services = new ArrayList<>(List.of(
                     Dhcp.getName(),
                     Dns.getName(),
-                    StaticNat.getName(),
-                    SourceNat.getName(),
-                    PortForwarding.getName(),
                     UserData.getName()
             ));
+            if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode())) {
+                services.addAll(Arrays.asList(
+                        StaticNat.getName(),
+                        SourceNat.getName(),
+                        PortForwarding.getName()));
+            }
             if (getNsxSupportsLbService()) {
                 services.add(Lb.getName());
             }
@@ -405,8 +408,9 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
                 continue;
             if (routerSupported.contains(service))
                 serviceProviderMap.put(service, List.of(routerProvider));
-            else
-                serviceProviderMap.put(service, List.of(provider));
+            else if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode()) || NetworkACL.getName().equalsIgnoreCase(service)) {
+                    serviceProviderMap.put(service, List.of(provider));
+                }
             if (!getNsxSupportsLbService()) {
                 serviceProviderMap.remove(Lb.getName());
             }

@@ -26,10 +26,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
 import com.cloud.network.VirtualRouterProvider;
+import com.cloud.offering.NetworkOffering;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.CollectionUtils;
@@ -179,12 +181,15 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             supportedServices = new ArrayList<>(List.of(
                     Dhcp.getName(),
                     Dns.getName(),
-                    StaticNat.getName(),
-                    SourceNat.getName(),
                     NetworkACL.getName(),
-                    PortForwarding.getName(),
                     UserData.getName()
                     ));
+            if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode())) {
+                supportedServices.addAll(Arrays.asList(
+                        StaticNat.getName(),
+                        SourceNat.getName(),
+                        PortForwarding.getName()));
+            }
             if (getNsxSupportsLbService()) {
                 supportedServices.add(Lb.getName());
             }
@@ -243,8 +248,10 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
                 continue;
             if (routerSupported.contains(service))
                 serviceProviderMap.put(service, List.of(VirtualRouterProvider.Type.VPCVirtualRouter.name()));
-            else
+            else if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode()) ||
+                    Stream.of(NetworkACL.getName()).anyMatch(s -> s.equalsIgnoreCase(service))) {
                 serviceProviderMap.put(service, List.of(provider));
+            }
         }
         if (!getNsxSupportsLbService()) {
             serviceProviderMap.remove(Lb.getName());

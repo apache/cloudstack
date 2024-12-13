@@ -956,10 +956,12 @@ export default {
           Dhcp: this.forVpc ? this.VPCVR : this.VR,
           Dns: this.forVpc ? this.VPCVR : this.VR,
           UserData: this.forVpc ? this.VPCVR : this.VR,
-          SourceNat: this.NSX,
-          StaticNat: this.NSX,
-          PortForwarding: this.NSX,
-          Lb: this.NSX,
+          ...(this.networkmode === 'NATTED' && {
+            SourceNat: this.NSX,
+            StaticNat: this.NSX,
+            PortForwarding: this.NSX,
+            Lb: this.NSX
+          }),
           ...(forVpc && { NetworkACL: this.NSX }),
           ...(!forVpc && { Firewall: this.NSX })
         }
@@ -968,10 +970,12 @@ export default {
           Dhcp: this.forVpc ? this.VPCVR : this.VR,
           Dns: this.forVpc ? this.VPCVR : this.VR,
           UserData: this.forVpc ? this.VPCVR : this.VR,
-          SourceNat: this.Netris,
-          StaticNat: this.Netris,
-          PortForwarding: this.Netris,
-          Lb: this.Netris,
+          ...(this.networkmode === 'NATTED' && {
+            SourceNat: this.Netris,
+            StaticNat: this.Netris,
+            PortForwarding: this.Netris,
+            Lb: this.Netris
+          }),
           ...(forVpc && { NetworkACL: this.Netris }),
           ...(!forVpc && { Firewall: this.Netris })
         }
@@ -985,10 +989,12 @@ export default {
           Dhcp: this.forVpc ? this.VPCVR : this.VR,
           Dns: this.forVpc ? this.VPCVR : this.VR,
           UserData: this.forVpc ? this.VPCVR : this.VR,
-          SourceNat: this.NSX,
-          StaticNat: this.NSX,
-          PortForwarding: this.NSX,
-          Lb: this.NSX,
+          ...(this.networkmode === 'NATTED' && {
+            SourceNat: this.NSX,
+            StaticNat: this.NSX,
+            PortForwarding: this.NSX,
+            Lb: this.NSX
+          }),
           ...(this.forVpc && { NetworkACL: this.NSX }),
           ...(!this.forVpc && { Firewall: this.NSX })
         }
@@ -997,10 +1003,12 @@ export default {
           Dhcp: this.forVpc ? this.VPCVR : this.VR,
           Dns: this.forVpc ? this.VPCVR : this.VR,
           UserData: this.forVpc ? this.VPCVR : this.VR,
-          SourceNat: this.Netris,
-          StaticNat: this.Netris,
-          PortForwarding: this.Netris,
-          Lb: this.Netris,
+          ...(this.networkmode === 'NATTED' && {
+            SourceNat: this.Netris,
+            StaticNat: this.Netris,
+            PortForwarding: this.Netris,
+            Lb: this.Netris
+          }),
           ...(this.forVpc && { NetworkACL: this.Netris }),
           ...(!this.forVpc && { Firewall: this.Netris })
         }
