@@ -107,7 +107,7 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
                 return results;
             }
         } catch (ParseException | BackrollApiException | IOException e) {
-            logger.info("BackrollProvider: catch erreur: " + e);
+            logger.info("BackrollProvider: catch erreur: {}", e);
             throw new CloudRuntimeException("Failed to load backup offerings");
         }
         return new ArrayList<BackupOffering>();
