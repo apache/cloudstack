@@ -73,6 +73,7 @@ import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.junit.After;
 import org.junit.Assert;
@@ -87,6 +88,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -98,6 +100,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -539,6 +542,30 @@ public class VpcManagerImplTest {
         }
 
         verify(routedIpv4Manager).getOrCreateIpv4SubnetForVpc(any(), anyString());
+    }
+
+    @Test
+    public void testCreateRoutedVpcWithDynamicRouting() {
+        mockVpcDnsResources(true, false);
+        VpcVO vpc = Mockito.mock(VpcVO.class);
+        Mockito.when(vpcDao.persist(any(), anyMap())).thenReturn(vpc);
+        Mockito.when(vpc.getUuid()).thenReturn("uuid");
+        doReturn(true).when(routedIpv4Manager).isRoutedVpc(any());
+        doReturn(true).when(routedIpv4Manager).isVpcVirtualRouterGateway(vpcOfferingVO);
+        doReturn(true).when(routedIpv4Manager).isDynamicRoutedVpc(vpcOfferingVO);
+        Ipv4GuestSubnetNetworkMap ipv4GuestSubnetNetworkMap = Mockito.mock(Ipv4GuestSubnetNetworkMap.class);
+        doReturn(ipv4GuestSubnetNetworkMap).when(routedIpv4Manager).getOrCreateIpv4SubnetForVpc(any(), anyInt());
+        List<Long> bgpPeerIds = Arrays.asList(11L, 12L);
+        try {
+            doNothing().when(resourceLimitService).checkResourceLimit(account, Resource.ResourceType.vpc);
+            manager.createVpc(zoneId, vpcOfferingId, vpcOwnerId, vpcName, vpcName, null, vpcDomain,
+                    ip4Dns[0], ip4Dns[1], null, null, true, 1500, 24, null, bgpPeerIds);
+        } catch (ResourceAllocationException e) {
+            Assert.fail(String.format("failure with exception: %s", e.getMessage()));
+        }
+
+        verify(routedIpv4Manager).getOrCreateIpv4SubnetForVpc(any(), anyInt());
+        verify(routedIpv4Manager).validateBgpPeers(any(), any(), any());
     }
 
     @Test

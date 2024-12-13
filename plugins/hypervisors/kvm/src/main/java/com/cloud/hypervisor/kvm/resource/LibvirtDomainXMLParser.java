@@ -127,11 +127,10 @@ public class LibvirtDomainXMLParser {
                             }
                             def.defFileBasedDisk(diskFile, diskLabel, DiskDef.DiskBus.valueOf(bus.toUpperCase()), fmt);
                         } else if (device.equalsIgnoreCase("cdrom")) {
-                            def.defISODisk(diskFile, i+1, diskLabel);
+                            def.defISODisk(diskFile, i+1, diskLabel, DiskDef.DiskType.FILE);
                         }
                     } else if (type.equalsIgnoreCase("block")) {
-                        def.defBlockBasedDisk(diskDev, diskLabel,
-                            DiskDef.DiskBus.valueOf(bus.toUpperCase()));
+                        parseDiskBlock(def, device, diskDev, diskLabel, bus, diskFile, i);
                     }
                     if (StringUtils.isNotBlank(diskCacheMode)) {
                         def.setCacheMode(DiskDef.DiskCacheMode.valueOf(diskCacheMode.toUpperCase()));
@@ -448,6 +447,25 @@ public class LibvirtDomainXMLParser {
         }
         Element node = (Element)tagNode.item(0);
         return node.getAttribute(attr);
+    }
+
+    /**
+     * Parse the disk block part of the libvirt XML.
+     * @param def
+     * @param device
+     * @param diskDev
+     * @param diskLabel
+     * @param bus
+     * @param diskFile
+     * @param curDiskIndex
+     */
+    private void parseDiskBlock(DiskDef def, String device, String diskDev, String diskLabel, String bus,
+                                String diskFile, int curDiskIndex) {
+        if (device.equalsIgnoreCase("disk")) {
+            def.defBlockBasedDisk(diskDev, diskLabel, DiskDef.DiskBus.valueOf(bus.toUpperCase()));
+        } else if (device.equalsIgnoreCase("cdrom")) {
+            def.defISODisk(diskFile, curDiskIndex+1, diskLabel, DiskDef.DiskType.BLOCK);
+        }
     }
 
     public Integer getVncPort() {

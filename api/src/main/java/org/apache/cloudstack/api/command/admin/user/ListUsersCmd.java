@@ -19,20 +19,23 @@ package org.apache.cloudstack.api.command.admin.user;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
 import com.cloud.user.Account;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 
 import java.util.List;
 
 @APICommand(name = "listUsers", description = "Lists user accounts", responseObject = UserResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class ListUsersCmd extends BaseListAccountResourcesCmd {
+        responseView = ResponseView.Restricted, requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
+public class ListUsersCmd extends BaseListAccountResourcesCmd implements UserCmd {
 
 
     /////////////////////////////////////////////////////
@@ -52,6 +55,9 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd {
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "List user by the username")
     private String username;
+
+    @Parameter(name = ApiConstants.API_KEY_ACCESS, type = CommandType.STRING, description = "List users by the Api key access value", since = "4.20.1.0", authorized = {RoleType.Admin})
+    private String apiKeyAccess;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON, type = CommandType.BOOLEAN,
             description = "flag to display the resource icon for users")
@@ -77,6 +83,10 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd {
         return username;
     }
 
+    public String getApiKeyAccess() {
+        return apiKeyAccess;
+    }
+
     public Boolean getShowIcon() {
         return showIcon != null ? showIcon : false;
     }
@@ -87,7 +97,7 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd {
 
     @Override
     public void execute() {
-        ListResponse<UserResponse> response = _queryService.searchForUsers(this);
+        ListResponse<UserResponse> response = _queryService.searchForUsers(getResponseView(), this);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
         if (response != null && response.getCount() > 0 && getShowIcon()) {

@@ -373,6 +373,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             "totp",
             "The default user two factor authentication provider. Eg. totp, staticpin", true, ConfigKey.Scope.Domain);
 
+    public static final ConfigKey<Boolean> apiKeyAccess = new ConfigKey<>(ConfigKey.CATEGORY_SYSTEM, Boolean.class,
+            "api.key.access",
+            "true",
+            "Determines whether API (api-key/secret-key) access is allowed or not. Editable only by Root Admin.",
+            true,
+            ConfigKey.Scope.Domain);
+
     protected AccountManagerImpl() {
         super();
     }
@@ -1463,6 +1470,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         logger.debug("Updating user with Id: " + user.getUuid());
 
         validateAndUpdateApiAndSecretKeyIfNeeded(updateUserCmd, user);
+        validateAndUpdateUserApiKeyAccess(updateUserCmd, user);
         Account account = retrieveAndValidateAccount(user);
 
         validateAndUpdateFirstNameIfNeeded(updateUserCmd, user);
@@ -1492,6 +1500,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      * <ul>
      *  <li> If 'password' is blank, we throw an {@link InvalidParameterValueException};
      *  <li> If 'current password' is not provided and user is not an Admin, we throw an {@link InvalidParameterValueException};
+     *  <li> If the user whose password is being changed has a source equal to {@link User.Source#SAML2}, {@link User.Source#SAML2DISABLED} or {@link User.Source#LDAP},
+     *      we throw an {@link InvalidParameterValueException};
      *  <li> If a normal user is calling this method, we use {@link #validateCurrentPassword(UserVO, String)} to check if the provided old password matches the database one;
      * </ul>
      *
@@ -1504,6 +1514,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         if (StringUtils.isBlank(newPassword)) {
             throw new InvalidParameterValueException("Password cannot be empty or blank.");
+        }
+
+        User.Source userSource = user.getSource();
+        if (userSource == User.Source.SAML2 || userSource == User.Source.SAML2DISABLED || userSource == User.Source.LDAP) {
+            logger.warn(String.format("Unable to update the password for user [%d], as its source is [%s].", user.getId(), user.getSource().toString()));
+            throw new InvalidParameterValueException("CloudStack does not support updating passwords for SAML or LDAP users. Please contact your cloud administrator for assistance.");
         }
 
         passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(newPassword, user.getUsername(), getAccount(user.getAccountId()).getDomainId());
@@ -1680,6 +1696,38 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         user.setApiKey(apiKey);
         user.setSecretKey(secretKey);
+    }
+
+    protected void validateAndUpdateUserApiKeyAccess(UpdateUserCmd updateUserCmd, UserVO user) {
+        if (updateUserCmd.getApiKeyAccess() != null) {
+            try {
+                ApiConstants.ApiKeyAccess access = ApiConstants.ApiKeyAccess.valueOf(updateUserCmd.getApiKeyAccess().toUpperCase());
+                user.setApiKeyAccess(access.toBoolean());
+                Long callingUserId = CallContext.current().getCallingUserId();
+                Account callingAccount = CallContext.current().getCallingAccount();
+                ActionEventUtils.onActionEvent(callingUserId, callingAccount.getAccountId(), callingAccount.getDomainId(),
+                        EventTypes.API_KEY_ACCESS_UPDATE, "Api key access was changed for the User to " + access.toString(),
+                        user.getId(), ApiCommandResourceType.User.toString());
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException("ApiKeyAccess value can only be Enabled/Disabled/Inherit");
+            }
+        }
+    }
+
+    protected void validateAndUpdateAccountApiKeyAccess(UpdateAccountCmd updateAccountCmd, AccountVO account) {
+        if (updateAccountCmd.getApiKeyAccess() != null) {
+            try {
+                ApiConstants.ApiKeyAccess access = ApiConstants.ApiKeyAccess.valueOf(updateAccountCmd.getApiKeyAccess().toUpperCase());
+                account.setApiKeyAccess(access.toBoolean());
+                Long callingUserId = CallContext.current().getCallingUserId();
+                Account callingAccount = CallContext.current().getCallingAccount();
+                ActionEventUtils.onActionEvent(callingUserId, callingAccount.getAccountId(), callingAccount.getDomainId(),
+                        EventTypes.API_KEY_ACCESS_UPDATE, "Api key access was changed for the Account to " + access.toString(),
+                        account.getId(), ApiCommandResourceType.Account.toString());
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException("ApiKeyAccess value can only be Enabled/Disabled/Inherit");
+            }
+        }
     }
 
     /**
@@ -2047,6 +2095,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // Check if user performing the action is allowed to modify this account
         Account caller = getCurrentCallingAccount();
         checkAccess(caller, _domainMgr.getDomain(account.getDomainId()));
+
+        validateAndUpdateAccountApiKeyAccess(cmd, acctForUpdate);
 
         if(newAccountName != null) {
 
@@ -2794,18 +2844,18 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public Map<String, String> getKeys(GetUserKeysCmd cmd) {
+    public Pair<Boolean, Map<String, String>> getKeys(GetUserKeysCmd cmd) {
         final long userId = cmd.getID();
         return getKeys(userId);
     }
 
     @Override
-    public Map<String, String> getKeys(Long userId) {
+    public Pair<Boolean, Map<String, String>> getKeys(Long userId) {
         User user = getActiveUser(userId);
         if (user == null) {
             throw new InvalidParameterValueException("Unable to find user by id");
         }
-        final ControlledEntity account = getAccount(getUserAccountById(userId).getAccountId()); //Extracting the Account from the userID of the requested user.
+        final Account account = getAccount(getUserAccountById(userId).getAccountId()); //Extracting the Account from the userID of the requested user.
         User caller = CallContext.current().getCallingUser();
         preventRootDomainAdminAccessToRootAdminKeys(caller, account);
         checkAccess(caller, account);
@@ -2814,7 +2864,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         keys.put("apikey", user.getApiKey());
         keys.put("secretkey", user.getSecretKey());
 
-        return keys;
+        Boolean apiKeyAccess = user.getApiKeyAccess();
+        if (apiKeyAccess == null) {
+            apiKeyAccess = account.getApiKeyAccess();
+            if (apiKeyAccess == null) {
+                apiKeyAccess = AccountManagerImpl.apiKeyAccess.valueIn(account.getDomainId());
+            }
+        }
+
+        return new Pair<Boolean, Map<String, String>>(apiKeyAccess, keys);
     }
 
     protected void preventRootDomainAdminAccessToRootAdminKeys(User caller, ControlledEntity account) {
@@ -3320,7 +3378,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {UseSecretKeyInResponse, enableUserTwoFactorAuthentication,
-                userTwoFactorAuthenticationDefaultProvider, mandateUserTwoFactorAuthentication, userTwoFactorAuthenticationIssuer};
+                userTwoFactorAuthenticationDefaultProvider, mandateUserTwoFactorAuthentication, userTwoFactorAuthenticationIssuer, apiKeyAccess};
     }
 
     public List<UserTwoFactorAuthenticator> getUserTwoFactorAuthenticationProviders() {

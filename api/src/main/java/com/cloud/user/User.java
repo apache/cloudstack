@@ -94,4 +94,9 @@ public interface User extends OwnedBy, InternalIdentity {
     public boolean isUser2faEnabled();
 
     public String getKeyFor2fa();
+
+    public void setApiKeyAccess(Boolean apiKeyAccess);
+
+    public Boolean getApiKeyAccess();
+
 }
