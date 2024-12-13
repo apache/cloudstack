@@ -3403,13 +3403,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         if (configdrive != null) {
             try {
+                s_logger.debug(String.format("Detaching ConfigDrive ISO of the VM %s, at path %s", vmName, configdrive.getDiskPath()));
                 String result = attachOrDetachISO(conn, vmName, configdrive.getDiskPath(), false, CONFIG_DRIVE_ISO_DEVICE_ID);
                 if (result != null) {
-                    s_logger.warn("Detach ConfigDrive ISO with result: " + result);
+                    s_logger.warn(String.format("Detach ConfigDrive ISO of the VM %s, at path %s with %s: ", vmName, configdrive.getDiskPath(), result));
                 }
+                s_logger.debug(String.format("Attaching ConfigDrive ISO of the VM %s, at path %s", vmName, configdrive.getDiskPath()));
                 result = attachOrDetachISO(conn, vmName, configdrive.getDiskPath(), true, CONFIG_DRIVE_ISO_DEVICE_ID);
                 if (result != null) {
-                    s_logger.warn("Attach ConfigDrive ISO with result: " + result);
+                    s_logger.warn(String.format("Attach ConfigDrive ISO of the VM %s, at path %s with %s: ", vmName, configdrive.getDiskPath(), result));
                 }
             } catch (final LibvirtException | InternalErrorException | URISyntaxException e) {
                 final String msg = "Detach and attach ConfigDrive ISO failed due to " + e.toString();
@@ -3421,7 +3423,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, final Integer diskSeq) throws LibvirtException, URISyntaxException,
             InternalErrorException {
         final DiskDef iso = new DiskDef();
-        if (isoPath != null && isAttach) {
+        if (isAttach && StringUtils.isNotBlank(isoPath) && isoPath.lastIndexOf("/") > 0) {
             final int index = isoPath.lastIndexOf("/");
             final String path = isoPath.substring(0, index);
             final String name = isoPath.substring(index + 1);
