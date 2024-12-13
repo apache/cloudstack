@@ -14,13 +14,15 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.backup.backroll.model.response.metrics.virtualMachineBackups;
+package org.apache.cloudstack.backup.backroll.model.response.restore;
 
 import org.apache.cloudstack.backup.backroll.model.response.BackrollAsyncResponse;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class VirtualMachineBackupsResponse extends BackrollAsyncResponse {
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class BackrollRestoreResponse extends BackrollAsyncResponse {
     @JsonProperty("info")
-    public Archives info;
+    public String info;
 }

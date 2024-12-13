@@ -18,12 +18,12 @@ package org.apache.cloudstack.backup.backroll.model.response.policy;
 
 import java.util.List;
 
+import org.apache.cloudstack.backup.backroll.model.response.BackrollAsyncResponse;
+
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class BackupPoliciesResponse {
-    @JsonProperty("state")
-    public String state;
+public class BackupPoliciesResponse extends BackrollAsyncResponse {
 
     @JsonProperty("info")
     @JsonFormat(with = JsonFormat.Feature.ACCEPT_SINGLE_VALUE_AS_ARRAY)

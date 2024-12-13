@@ -16,12 +16,11 @@
 // under the License.
 package org.apache.cloudstack.backup.backroll.model.response.metrics.backup;
 
+import org.apache.cloudstack.backup.backroll.model.response.BackrollAsyncResponse;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class BackrollBackupMetricsResponse {
-    @JsonProperty("state")
-    public String state;
-
+public class BackrollBackupMetricsResponse extends BackrollAsyncResponse {
     @JsonProperty("info")
     public BackupMetricsInfo info;
 }
