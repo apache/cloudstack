@@ -67,7 +67,7 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd implements UserCmd
     private Boolean showIcon;
 
     @Parameter(name = ApiConstants.USER_SOURCE, type = CommandType.STRING, since = "4.21.0.0",
-            description = "List users by their authentication source. Valid values are: native, LDAP, SAML2 and SAML2DISABLED.")
+            description = "List users by their authentication source. Valid values are: native, ldap, saml2 and saml2disabled.")
     private String userSource;
 
     /////////////////////////////////////////////////////
@@ -104,8 +104,8 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd implements UserCmd
         }
 
         User.Source source = EnumUtils.getEnumIgnoreCase(User.Source.class, userSource);
-        if (source == null || source == User.Source.OAUTH2) {
-            throw new InvalidParameterValueException(String.format("Invalid user source: %s. Valid values are: native, LDAP, SAML2 and SAML2DISABLED.", source));
+        if (source == null || List.of(User.Source.OAUTH2, User.Source.UNKNOWN).contains(source)) {
+            throw new InvalidParameterValueException(String.format("Invalid user source: %s. Valid values are: native, ldap, saml2 and saml2disabled.", source));
         }
 
         if (source == User.Source.NATIVE) {
