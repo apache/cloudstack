@@ -128,7 +128,6 @@ public class VmwareTrafficLabel implements TrafficLabel {
     }
 
     // Getter to ensure traffic shaping consistency across all NICs
-    public boolean isTrafficShapingConsistent() {
-        return isTrafficShapingConsistent;
+
     }
 }
