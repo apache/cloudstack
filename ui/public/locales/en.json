@@ -1396,6 +1396,7 @@
 "label.max.migrations": "Max. migrations",
 "label.maxbackup": "Max. Backups",
 "label.maxbackupstorage": "Max. Backup Storage (GiB)",
+"label.maxbackups.to.retain": "Max. Backups to retain",
 "label.maxbucket": "Max. Buckets",
 "label.maxcpu": "Max. CPU cores",
 "label.maxcpunumber": "Max CPU cores",

@@ -392,7 +392,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Override
     public List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
-        return List.of();
+        return null;
     }
 
     @Override

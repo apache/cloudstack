@@ -108,7 +108,7 @@
               <a-form-item :label="$t('label.keep')" name="maxbackups" ref="maxbackups">
                 <a-tooltip
                   placement="right"
-                  :title="$t('label.backup')">
+                  :title="$t('label.maxbackups.to.retain')">
                   <a-input-number
                     style="width: 100%"
                     v-model:value="form.maxbackups"
