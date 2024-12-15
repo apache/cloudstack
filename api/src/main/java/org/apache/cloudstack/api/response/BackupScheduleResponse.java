@@ -49,6 +49,10 @@ public class BackupScheduleResponse extends BaseResponse {
     @Param(description = "the time zone of the backup schedule")
     private String timezone;
 
+    @SerializedName(ApiConstants.MAX_BACKUPS)
+    @Param(description = "maximum number of backups retained")
+    private Integer maxBakups;
+
     public String getVmName() {
         return vmName;
     }
@@ -87,5 +91,9 @@ public class BackupScheduleResponse extends BaseResponse {
 
     public void setTimezone(String timezone) {
         this.timezone = timezone;
+    }
+
+    public void setMaxBakups(Integer maxBakups) {
+        this.maxBakups = maxBakups;
     }
 }
