@@ -124,6 +124,9 @@
               </div>
             </div>
           </div>
+          <div v-else-if="item === 'usersource'">
+            {{ $t(getUserSourceLabel(dataResource[item])) }}
+          </div>
           <div v-else>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
@@ -406,6 +409,15 @@ export default {
       })
 
       return resources
+    },
+    getUserSourceLabel (source) {
+      if (source === 'saml2') {
+        source = 'saml'
+      } else if (source === 'saml2disabled') {
+        source = 'saml.disabled'
+      }
+
+      return `label.${source}`
     }
   }
 }
