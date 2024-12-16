@@ -80,7 +80,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
             DataCenter dc = _dcDao.findById(h.getDataCenterId());
             Pod pod = _podDao.findById(h.getPodId());
             Cluster c = _clusterDao.findById(h.getClusterId());
-            logger.debug("Start baremetal vm " + vm.getId() + " on last stayed host " + h.getId());
+            logger.debug(String.format("Start baremetal vm %s on last stayed host %s", vm, h));
             return new DeployDestination(dc, pod, c, h);
         }
 
@@ -124,7 +124,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
             if (haVmTag == null) {
                 hosts = _resourceMgr.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
             } else {
-                logger.warn("Cannot find HA host with tag " + haVmTag + " in cluster id=" + cluster.getId() + ", pod id=" + cluster.getPodId() + ", data center id=" +
+                logger.warn("Cannot find HA host with tag " + haVmTag + " in cluster " + cluster + ", pod id=" + cluster.getPodId() + ", data center id=" +
                     cluster.getDataCenterId());
                 return null;
             }
@@ -136,7 +136,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
                 Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
 
                 if (_capacityMgr.checkIfHostHasCapacity(h, cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
-                    logger.debug("Find host " + h.getId() + " has enough capacity");
+                    logger.debug(String.format("Find host %s has enough capacity", h));
                     DataCenter dc = _dcDao.findById(h.getDataCenterId());
                     Pod pod = _podDao.findById(h.getPodId());
                     return new DeployDestination(dc, pod, cluster, h);

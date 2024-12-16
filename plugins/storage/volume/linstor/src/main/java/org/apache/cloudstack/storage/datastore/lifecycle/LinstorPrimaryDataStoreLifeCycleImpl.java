@@ -173,22 +173,22 @@ public class LinstorPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLi
         return dataStoreHelper.createPrimaryDataStore(parameters);
     }
 
-    protected boolean createStoragePool(long hostId, StoragePool pool) {
-        logger.debug("creating pool " + pool.getName() + " on  host " + hostId);
+    protected boolean createStoragePool(Host host, StoragePool pool) {
+        logger.debug(String.format("creating pool %s on  host %s", pool, host));
 
         if (pool.getPoolType() != Storage.StoragePoolType.Linstor) {
             logger.warn(" Doesn't support storage pool type " + pool.getPoolType());
             return false;
         }
         CreateStoragePoolCommand cmd = new CreateStoragePoolCommand(true, pool);
-        final Answer answer = _agentMgr.easySend(hostId, cmd);
+        final Answer answer = _agentMgr.easySend(host.getId(), cmd);
         if (answer != null && answer.getResult()) {
             return true;
         } else {
             _primaryDataStoreDao.expunge(pool.getId());
             String msg = answer != null ?
-                "Can not create storage pool through host " + hostId + " due to " + answer.getDetails() :
-                "Can not create storage pool through host " + hostId + " due to CreateStoragePoolCommand returns null";
+                    String.format("Can not create storage pool %s through host %s due to %s", pool, host, answer.getDetails()) :
+                    String.format("Can not create storage pool %s through host %s due to CreateStoragePoolCommand returns null", pool, host);
             logger.warn(msg);
             throw new CloudRuntimeException(msg);
         }
@@ -219,7 +219,7 @@ public class LinstorPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLi
         List<HostVO> poolHosts = new ArrayList<>();
         for (HostVO host : allHosts) {
             try {
-                createStoragePool(host.getId(), primaryDataStoreInfo);
+                createStoragePool(host, primaryDataStoreInfo);
 
                 _storageMgr.connectHostToSharedPool(host, primaryDataStoreInfo.getId());
 

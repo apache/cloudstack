@@ -330,7 +330,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
         List<HostVO> allHosts =
                 _resourceMgr.listAllUpHosts(Host.Type.Routing, clusterId, podId, zoneId);
         if (allHosts.isEmpty()) {
-            throw new CloudRuntimeException("No host up to associate a storage pool with in zone: " + zoneId + " pod: " + podId + " cluster: " + clusterId);
+            throw new CloudRuntimeException(String.format("No host up to associate a storage pool with in zone: %s pod: %s cluster: %s",
+                    zoneDao.findById(zoneId), podDao.findById(podId), clusterDao.findById(clusterId)));
         }
 
         boolean success = false;
@@ -342,7 +343,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
                 return;
             } else {
                 if (answer != null) {
-                    throw new InvalidParameterValueException(String.format("Provided vCenter server details does not match with the existing vCenter in zone: %s", zoneDao.findById(zoneId)));
+                    throw new InvalidParameterValueException(String.format("Provided vCenter server details does not match with the existing vCenter in zone: %s",
+                            zoneDao.findById(zoneId)));
                 } else {
                     logger.warn("Can not validate vCenter through host {} due to ValidateVcenterDetailsCommand returns null", h);
                 }
@@ -447,7 +449,7 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
                 poolHosts.add(host);
             } catch (StorageConflictException se) {
                     primaryDataStoreDao.expunge(dataStore.getId());
-                    throw new CloudRuntimeException("Storage has already been added as local storage to host: " + host.getName());
+                throw new CloudRuntimeException(String.format("Storage has already been added as local storage to host: %s", host));
             } catch (Exception e) {
                 logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
                 String reason = storageMgr.getStoragePoolMountFailureReason(e.getMessage());

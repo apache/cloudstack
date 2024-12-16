@@ -302,8 +302,8 @@ public class DateraHostListener implements HypervisorHostListener {
             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
 
             throw new CloudRuntimeException(String.format(
-                    "Unable to establish a connection from agent to storage pool %s due to %s (%d)",
-                    storagePool, answer.getDetails(), storagePool.getId()));
+                    "Unable to establish a connection from agent to storage pool %s due to %s",
+                    storagePool, answer.getDetails()));
         }
 
         assert (answer instanceof ModifyStoragePoolAnswer) : String.format("ModifyStoragePoolAnswer expected ; Pool = %s Host = %d", storagePool, hostId);

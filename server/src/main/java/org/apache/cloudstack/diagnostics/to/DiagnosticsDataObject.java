@@ -35,6 +35,14 @@ public class DiagnosticsDataObject implements DataObject {
     }
 
     @Override
+    public String toString() {
+        return "DiagnosticsDataObject{" +
+                "dataTO=" + dataTO +
+                ", dataStore=" + getDataStore() +
+                '}';
+    }
+
+    @Override
     public long getId() {
         return 0;
     }
