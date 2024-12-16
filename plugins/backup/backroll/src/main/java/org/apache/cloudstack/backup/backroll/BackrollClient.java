@@ -72,7 +72,8 @@ public class BackrollClient {
         logger.info("Trying to start backup for Backroll job: {}", jobId);
         String backupJob = "";
         BackrollTaskRequestResponse requestResponse = httpProvider.post(String.format("/tasks/singlebackup/%s", jobId), null, BackrollTaskRequestResponse.class);
-        backupJob = requestResponse.location.replace("/api/v1/status/", "");
+        logger.info("BackupJob status link: {}", requestResponse.location);
+        backupJob = requestResponse.location.replace("/api/v1", "");
         return StringUtils.isEmpty(backupJob) ? null : backupJob;
     }
 

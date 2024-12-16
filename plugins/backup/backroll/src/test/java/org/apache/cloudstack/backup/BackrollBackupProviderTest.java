@@ -20,12 +20,11 @@ import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.cloudstack.backup.backroll.BackrollClient;
@@ -35,6 +34,7 @@ import org.apache.cloudstack.backup.backroll.model.BackrollVmBackup;
 import org.apache.cloudstack.backup.backroll.model.BackrollBackupMetrics;
 import org.apache.cloudstack.backup.backroll.model.response.TaskState;
 import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.ParseException;
 import org.apache.logging.log4j.Logger;
 import org.junit.Before;
@@ -46,7 +46,11 @@ import org.mockito.Spy;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
+
+import net.bytebuddy.agent.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+
+import net.bytebuddy.agent.VirtualMachine;
 
 import net.bytebuddy.agent.VirtualMachine;
 
@@ -75,18 +79,38 @@ public class BackrollBackupProviderTest {
         backupProviderMock = mock(BackrollBackupProvider.class);
         backupProvider = new BackrollBackupProvider(backupDao, vmInstanceDao, clientMock, Mockito.mock(Logger.class));
     }
+
+    @Test
+    public void listBackupOfferings_Test() {
+
+    }
+
+    @Test
+    public void takeBackup_Test() {
+    }
+
+    @Test
+    public void getBackupMetrics_Test() {
+    }
+
+    @Test
+    public void restoreVMFromBackup_Test() {
+
+    }
+
+
     @Test
      public void syncBackups_Test() throws BackrollApiException, IOException  {
         VMInstanceVO vmInstanceVO = new VMInstanceVO();
         vmInstanceVO.setInstanceName("test");
-        vmInstanceVO.setDataCenterId(2l);        
+        vmInstanceVO.setDataCenterId(2l);
         vmInstanceVO.setBackupOfferingId(2l);
         Backup.Metric metric = new Backup.Metric(2L, 3L);
 
         BackupVO backupBackingUp = new BackupVO();
         backupBackingUp.setVmId(1l);
         backupBackingUp.setExternalId("abc,defgh");
-        backupBackingUp.setType("Full");        
+        backupBackingUp.setType("Full");
         backupBackingUp.setSize(2L);
         backupBackingUp.setZoneId(2l);
         backupBackingUp.setStatus(Backup.Status.BackingUp);
@@ -95,7 +119,7 @@ public class BackrollBackupProviderTest {
         backupBackedUp.setVmId(6l);
         backupBackedUp.setExternalId("abc,defgh");
         backupBackedUp.setType("Full");
-        backupBackedUp.setZoneId(2l);       
+        backupBackedUp.setZoneId(2l);
         backupBackedUp.setSize(2L);
         backupBackedUp.setStatus(Backup.Status.BackedUp);
 
@@ -103,7 +127,7 @@ public class BackrollBackupProviderTest {
         backupFailed.setVmId(6l);
         backupFailed.setExternalId("abc,defgh");
         backupFailed.setType("Full");
-        backupFailed.setZoneId(2l);       
+        backupFailed.setZoneId(2l);
         backupFailed.setSize(2L);
         backupFailed.setStatus(Backup.Status.Failed);
 
