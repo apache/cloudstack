@@ -3424,15 +3424,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             InternalErrorException {
         final DiskDef iso = new DiskDef();
         if (isAttach && StringUtils.isNotBlank(isoPath) && isoPath.lastIndexOf("/") > 0) {
-            final int index = isoPath.lastIndexOf("/");
-            final String path = isoPath.substring(0, index);
-            final String name = isoPath.substring(index + 1);
-            final KVMStoragePool secondaryPool = storagePoolManager.getStoragePoolByURI(path);
-            final KVMPhysicalDisk isoVol = secondaryPool.getPhysicalDisk(name);
-            final DiskDef.DiskType diskType = getDiskType(isoVol);
-            isoPath = isoVol.getPath();
+            if (isoPath.startsWith(getConfigPath() + "/" + ConfigDrive.CONFIGDRIVEDIR) && isoPath.contains(vmName)) {
+                iso.defISODisk(isoPath, diskSeq, DiskDef.DiskType.FILE);
+            } else {
+                final int index = isoPath.lastIndexOf("/");
+                final String path = isoPath.substring(0, index);
+                final String name = isoPath.substring(index + 1);
+                final KVMStoragePool storagePool = storagePoolManager.getStoragePoolByURI(path);
+                final KVMPhysicalDisk isoVol = storagePool.getPhysicalDisk(name);
+                final DiskDef.DiskType diskType = getDiskType(isoVol);
+                isoPath = isoVol.getPath();
 
-            iso.defISODisk(isoPath, diskSeq, diskType);
+                iso.defISODisk(isoPath, diskSeq, diskType);
+            }
         } else {
             iso.defISODisk(null, diskSeq, DiskDef.DiskType.FILE);
         }

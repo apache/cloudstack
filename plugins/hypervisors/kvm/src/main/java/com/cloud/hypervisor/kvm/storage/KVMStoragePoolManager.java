@@ -287,6 +287,7 @@ public class KVMStoragePoolManager {
         URI storageUri = null;
 
         try {
+            s_logger.debug("Get storage pool by uri: " + uri);
             storageUri = new URI(uri);
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(e.toString());
