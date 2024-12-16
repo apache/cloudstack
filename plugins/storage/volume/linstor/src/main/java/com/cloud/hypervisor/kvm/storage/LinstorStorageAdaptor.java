@@ -45,6 +45,7 @@ import com.linbit.linstor.api.Configuration;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
+import com.linbit.linstor.api.model.Node;
 import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.Resource;
@@ -707,6 +708,21 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                     .sum() * 1024; // linstor uses Kib
             s_logger.debug("Linstor: getUsed() -> " + used);
             return used;
+        } catch (ApiException apiEx) {
+            s_logger.error(apiEx.getMessage());
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+    }
+
+    public boolean isNodeOnline(LinstorStoragePool pool, String nodeName) {
+        DevelopersApi linstorApi = getLinstorAPI(pool);
+        try {
+            List<Node> node = linstorApi.nodeList(Collections.singletonList(nodeName), Collections.emptyList(), null, null);
+            if (node == null || node.isEmpty()) {
+                return false;
+            }
+
+            return Node.ConnectionStatusEnum.ONLINE.equals(node.get(0).getConnectionStatus());
         } catch (ApiException apiEx) {
             s_logger.error(apiEx.getMessage());
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
