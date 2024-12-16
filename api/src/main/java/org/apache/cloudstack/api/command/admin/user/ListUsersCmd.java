@@ -105,7 +105,7 @@ public class ListUsersCmd extends BaseListAccountResourcesCmd implements UserCmd
 
         User.Source source = EnumUtils.getEnumIgnoreCase(User.Source.class, userSource);
         if (source == null || List.of(User.Source.OAUTH2, User.Source.UNKNOWN).contains(source)) {
-            throw new InvalidParameterValueException(String.format("Invalid user source: %s. Valid values are: native, ldap, saml2 and saml2disabled.", source));
+            throw new InvalidParameterValueException(String.format("Invalid user source: %s. Valid values are: native, ldap, saml2 and saml2disabled.", userSource));
         }
 
         if (source == User.Source.NATIVE) {
