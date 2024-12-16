@@ -396,7 +396,7 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
         logger.debug("Backroll Provider GetClient with zone id {}", zoneId);
         try {
             if (backrollClient == null) {
-                logger.debug("backroll client null - instanciation of new one ");
+                logger.debug("backroll client null - instantiation of new one ");
                 BackrollHttpClientProvider provider = new BackrollHttpClientProvider(BackrollUrlConfigKey.valueIn(zoneId), BackrollAppNameConfigKey.valueIn(zoneId), BackrollPasswordConfigKey.valueIn(zoneId), true, 300, 600);
                 backrollClient = new BackrollClient(provider);
             }
