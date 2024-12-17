@@ -34,12 +34,12 @@
                   <resource-icon :image="getImage(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon)" size="4x" style="margin-right: 5px"/>
                 </span>
                 <span v-else>
-                  <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="setResourceOsType"/>
+                  <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="3x" @update-osname="setResourceOsType"/>
                   <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :icon="$route.meta.icon" />
                   <font-awesome-icon
                     v-else-if="$route.meta.icon && Array.isArray($route.meta.icon)"
                     :icon="$route.meta.icon"
-                    size="4x"
+                    size="3x"
                     class="anticon"
                     :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
                   <render-icon v-else style="font-size: 36px" :svgIcon="$route.meta.icon" />
@@ -185,7 +185,10 @@
         <div class="resource-detail-item" v-if="('cpunumber' in resource && 'cpuspeed' in resource) || resource.cputotal">
           <div class="resource-detail-item__label">{{ $t('label.cpu') }}</div>
           <div class="resource-detail-item__details">
-            <appstore-outlined />
+            <font-awesome-icon
+              :icon="['fa-solid', 'fa-microchip']"
+              class="anticon"
+              :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
             <span v-if="'cpunumber' in resource && 'cpuspeed' in resource">{{ resource.cpunumber }} CPU x {{ (resource.cpuspeed / 1000.0).toFixed(2) }} GHz
               <a-tooltip placement="top">
                 <template #title>
@@ -223,7 +226,11 @@
         <div class="resource-detail-item" v-if="'memory' in resource">
           <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
           <div class="resource-detail-item__details">
-            <bulb-outlined />{{ resource.memory + ' ' + $t('label.mb.memory') }}
+            <font-awesome-icon
+              :icon="['fa-solid', 'fa-memory']"
+              class="anticon"
+              :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+            {{ resource.memory + ' ' + $t('label.mb.memory') }}
           </div>
           <div>
             <span v-if="resource.memorykbs && resource.memoryintfreekbs">
@@ -364,7 +371,10 @@
                 v-for="(eth, index) in resource.nic"
                 :key="eth.id"
                 style="margin-left: -24px; margin-top: 5px;">
-                <api-outlined />
+                <font-awesome-icon
+                  :icon="['fa-solid', 'fa-ethernet']"
+                  class="anticon"
+                  :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
                 <strong>eth{{ index }}</strong>&nbsp;
                 <copy-label :label="eth.ip6address ? eth.ipaddress + ', ' + eth.ip6address : eth.ipaddress" />&nbsp;
                 <a-tag v-if="eth.isdefault">
@@ -389,7 +399,11 @@
                 v-for="network in resource.networks"
                 :key="network.id"
                 style="margin-top: 5px;">
-                <api-outlined />{{ network.name }}
+                <font-awesome-icon
+                  :icon="['fa-solid', 'fa-ethernet']"
+                  class="anticon"
+                  :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+                {{ network.name }}
                 <span v-if="resource.defaultnetworkid === network.id">
                   ({{ $t('label.default') }})
                 </span>
