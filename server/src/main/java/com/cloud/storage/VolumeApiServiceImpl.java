@@ -161,6 +161,7 @@ import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementService;
 import com.cloud.server.ResourceTag;
+import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -347,7 +348,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     protected StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject
     private BackupDao backupDao;
-
+    @Inject
+    private StatsCollector statsCollector;
 
     protected Gson _gson;
 
@@ -5152,6 +5154,21 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _workJobDao.persist(workJob);
 
         return workJob;
+    }
+
+    @Override
+    public Long getVolumePhysicalUsed(ImageFormat format, String path, String chainInfo) {
+        VolumeStats vs = null;
+        if (format == ImageFormat.VHD || format == ImageFormat.QCOW2 || format == ImageFormat.RAW) {
+            if (path != null) {
+                vs = statsCollector.getVolumeStats(path);
+            }
+        } else if (format == ImageFormat.OVA) {
+            if (chainInfo != null) {
+                vs = statsCollector.getVolumeStats(chainInfo);
+            }
+        }
+        return (vs == null) ? null : vs.getPhysicalSize();
     }
 
     @Override
