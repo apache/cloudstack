@@ -32,7 +32,7 @@ import java.util.List;
  */
 public interface HighAvailabilityManager extends Manager {
 
-    public ConfigKey<Boolean> ForceHA = new ConfigKey<>("Advanced", Boolean.class, "force.ha", "false",
+    ConfigKey<Boolean> ForceHA = new ConfigKey<>("Advanced", Boolean.class, "force.ha", "false",
         "Force High-Availability to happen even if the VM says no.", true, Cluster);
 
     ConfigKey<Integer> HAWorkers = new ConfigKey<>("Advanced", Integer.class, "ha.workers", "5",
@@ -112,7 +112,7 @@ public interface HighAvailabilityManager extends Manager {
 
     void cancelDestroy(VMInstanceVO vm, Long hostId);
 
-    void scheduleDestroy(VMInstanceVO vm, long hostId);
+    boolean scheduleDestroy(VMInstanceVO vm, long hostId);
 
     /**
      * Schedule restarts for all vms running on the host.
@@ -143,7 +143,7 @@ public interface HighAvailabilityManager extends Manager {
      * @param host host the virtual machine is on.
      * @param type which type of stop is requested.
      */
-    void scheduleStop(VMInstanceVO vm, long hostId, WorkType type);
+    boolean scheduleStop(VMInstanceVO vm, long hostId, WorkType type);
 
     void cancelScheduledMigrations(HostVO host);
 
