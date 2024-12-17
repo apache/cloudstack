@@ -4581,7 +4581,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 controllerInfo.put(VmDetailConstants.ROOT_DISK_CONTROLLER, vm.getDetail(VmDetailConstants.ROOT_DISK_CONTROLLER));
                 controllerInfo.put(VmDetailConstants.DATA_DISK_CONTROLLER, vm.getDetail(VmDetailConstants.DATA_DISK_CONTROLLER));
                 cmd.setControllerInfo(controllerInfo);
-                logger.debug(String.format("Attach volume %s on VM %s has controller info: %s", volumeToAttach, vm, controllerInfo));
+                logger.debug("Attach volume {} on VM {} has controller info: {}", volumeToAttach, vm, controllerInfo);
 
                 try {
                     answer = (AttachAnswer)_agentMgr.send(hostId, cmd);

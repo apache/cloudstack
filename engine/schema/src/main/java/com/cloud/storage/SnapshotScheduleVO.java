@@ -30,8 +30,6 @@ import javax.persistence.TemporalType;
 
 import com.cloud.storage.snapshot.SnapshotSchedule;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
 
 @Entity
 @Table(name = "snapshot_schedule")

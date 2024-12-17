@@ -1438,7 +1438,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         lbvm.setRevoke(true);
                         _lb2VmMapDao.persist(lbvm);
                     }
-                    logger.debug("Set load balancer rule for revoke: rule {}, vmId {}", loadBalancer, instanceId);
+                    logger.debug("Set load balancer rule for revoke: rule {}, vm {}", loadBalancer::toString, () -> _vmDao.findById(instanceId));
 
                 } else {
                     for (String vmIp: lbVmIps) {
@@ -1448,7 +1448,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                         }
                         map.setRevoke(true);
                         _lb2VmMapDao.persist(map);
-                        logger.debug("Set load balancer rule for revoke: rule {}, vmId {}, vmip {}", loadBalancer, instanceId, vmIp);
+                        logger.debug("Set load balancer rule for revoke: rule {}, vmId {}, vmip {}", loadBalancer::toString, () -> _vmDao.findById(instanceId), vmIp::toString);
                     }
                 }
             }
@@ -1526,7 +1526,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
             map.setRevoke(true);
             _lb2VmMapDao.persist(map);
-            logger.debug("Set load balancer rule for revoke: rule id " + map.getLoadBalancerId() + ", vmId " + instanceId);
+            logger.debug("Set load balancer rule for revoke: rule {}, vm {}", () -> _lbDao.findById(map.getLoadBalancerId()), () -> _vmDao.findById(instanceId));
         }
 
         // Reapply all lbs that had the vm assigned
@@ -1600,7 +1600,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     for (LoadBalancerVMMapVO map : maps) {
                         map.setRevoke(true);
                         _lb2VmMapDao.persist(map);
-                        logger.debug("Set load balancer rule for revoke: rule {}, vmId {}", lb, map.getInstanceId());
+                        logger.debug("Set load balancer rule for revoke: rule {}, vmId {}", lb::toString, () -> _vmDao.findById(map.getInstanceId()));
                     }
                 }
 
