@@ -542,7 +542,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             BackupVO oldestBackup = backups.get(0);
             if (deleteBackup(oldestBackup.getId(), false)) {
                 ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, oldestBackup.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_BACKUP_DELETE,
-                        "Successfully deleted oldest snapshot: " + oldestBackup.getId(), oldestBackup.getId(), ApiCommandResourceType.Backup.toString(), 0);
+                        "Successfully deleted oldest backup: " + oldestBackup.getId(), oldestBackup.getId(), ApiCommandResourceType.Backup.toString(), 0);
             }
             backups.remove(oldestBackup);
         }
