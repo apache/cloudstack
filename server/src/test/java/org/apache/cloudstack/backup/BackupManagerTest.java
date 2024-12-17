@@ -31,6 +31,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
@@ -237,7 +238,7 @@ public class BackupManagerTest {
 
         Mockito.when(backupProvider.restoreBackedUpVolume(Mockito.any(), Mockito.eq(volumeUuid),
                 Mockito.eq("127.0.0.1"), Mockito.eq("e9804933-8609-4de3-bccc-6278072a496c"), Mockito.eq(vmNameAndState))).thenReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success"));
-        Pair<Boolean,String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeUuid, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
+        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeUuid, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
 
         assertEquals(Boolean.TRUE, restoreBackedUpVolume.first());
         assertEquals("Success", restoreBackedUpVolume.second());
@@ -258,7 +259,7 @@ public class BackupManagerTest {
         Pair<String, VirtualMachine.State> vmNameAndState = new Pair<>("i-2-3-VM", VirtualMachine.State.Running);
         Mockito.when(backupProvider.restoreBackedUpVolume(Mockito.any(), Mockito.eq(volumeUuid),
                 Mockito.eq("127.0.0.1"), Mockito.eq("datastore-name"), Mockito.eq(vmNameAndState))).thenReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success2"));
-        Pair<Boolean,String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeUuid, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
+        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeUuid, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
 
         assertEquals(Boolean.TRUE, restoreBackedUpVolume.first());
         assertEquals("Success2", restoreBackedUpVolume.second());
@@ -279,8 +280,8 @@ public class BackupManagerTest {
         Pair<String, VirtualMachine.State> vmNameAndState = new Pair<>("i-2-3-VM", VirtualMachine.State.Running);
 
         Mockito.when(backupProvider.restoreBackedUpVolume(Mockito.any(), Mockito.eq(volumeUuid),
-                Mockito.eq("hostname"), Mockito.eq("e9804933-8609-4de3-bccc-6278072a496c"), Mockito.eq(vmNameAndState) )).thenReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success3"));
-        Pair<Boolean,String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeUuid, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
+                Mockito.eq("hostname"), Mockito.eq("e9804933-8609-4de3-bccc-6278072a496c"), Mockito.eq(vmNameAndState))).thenReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success3"));
+        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeUuid, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
 
         assertEquals(Boolean.TRUE, restoreBackedUpVolume.first());
         assertEquals("Success3", restoreBackedUpVolume.second());
@@ -301,8 +302,8 @@ public class BackupManagerTest {
         Pair<String, VirtualMachine.State> vmNameAndState = new Pair<>("i-2-3-VM", VirtualMachine.State.Running);
 
         Mockito.when(backupProvider.restoreBackedUpVolume(Mockito.any(), Mockito.eq(volumeUuid),
-                Mockito.eq("hostname"), Mockito.eq("datastore-name"),  Mockito.eq(vmNameAndState))).thenReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success4"));
-        Pair<Boolean,String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeUuid, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
+                Mockito.eq("hostname"), Mockito.eq("datastore-name"), Mockito.eq(vmNameAndState))).thenReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success4"));
+        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeUuid, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
 
         assertEquals(Boolean.TRUE, restoreBackedUpVolume.first());
         assertEquals("Success4", restoreBackedUpVolume.second());
@@ -375,7 +376,7 @@ public class BackupManagerTest {
 
     private void overrideBackupFrameworkConfigValue() {
         ConfigKey configKey = BackupManager.BackupFrameworkEnabled;
-        this.configDepotImpl = (ConfigDepotImpl)ReflectionTestUtils.getField(configKey, "s_depot");
+        this.configDepotImpl = (ConfigDepotImpl) ReflectionTestUtils.getField(configKey, "s_depot");
         ConfigDepotImpl configDepot = Mockito.mock(ConfigDepotImpl.class);
         Mockito.when(configDepot.getConfigStringValue(Mockito.eq(BackupManager.BackupFrameworkEnabled.key()),
                 Mockito.eq(ConfigKey.Scope.Global), Mockito.isNull())).thenReturn("true");
@@ -505,7 +506,7 @@ public class BackupManagerTest {
         BackupProvider backupProvider = mock(BackupProvider.class);
         Backup backup = mock(Backup.class);
         when(backup.getId()).thenReturn(backupId);
-        when(backup.getProtectedSize()).thenReturn(newBackupSize);
+        when(backup.getSize()).thenReturn(newBackupSize);
         when(backupProvider.getName()).thenReturn("test");
         when(backupProvider.takeBackup(vm)).thenReturn(new Pair<>(true, backup));
         Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
@@ -515,7 +516,7 @@ public class BackupManagerTest {
         BackupVO backupVO = mock(BackupVO.class);
         when(backupVO.getId()).thenReturn(backupId);
         BackupVO oldestBackupVO = mock(BackupVO.class);
-        when(oldestBackupVO.getProtectedSize()).thenReturn(oldBackupSize);
+        when(oldestBackupVO.getSize()).thenReturn(oldBackupSize);
         when(oldestBackupVO.getId()).thenReturn(oldestBackupId);
         when(oldestBackupVO.getVmId()).thenReturn(vmId);
         when(oldestBackupVO.getBackupOfferingId()).thenReturn(backupOfferingId);
@@ -608,7 +609,7 @@ public class BackupManagerTest {
         when(vm.getId()).thenReturn(vmId);
         when(vm.getAccountId()).thenReturn(accountId);
         when(vmInstanceDao.listByZoneWithBackups(dataCenterId, null)).thenReturn(List.of(vm));
-        Backup.Metric metric = new Backup.Metric(null, metricSize);
+        Backup.Metric metric = new Backup.Metric(metricSize, null);
         Map<VirtualMachine, Backup.Metric> metricMap = new HashMap<>();
         metricMap.put(vm, metric);
         when(backupProvider.getBackupMetrics(Mockito.anyLong(), Mockito.anyList())).thenReturn(metricMap);
@@ -619,11 +620,11 @@ public class BackupManagerTest {
         when(backupProvider.listRestorePoints(vm)).thenReturn(restorePoints);
 
         BackupVO backupInDb1 = new BackupVO();
-        backupInDb1.setProtectedSize(backup1Size);
+        backupInDb1.setSize(backup1Size);
         backupInDb1.setExternalId(restorePoint1ExternalId);
 
         BackupVO backupInDb2 = new BackupVO();
-        backupInDb2.setProtectedSize(backup2Size);
+        backupInDb2.setSize(backup2Size);
         backupInDb2.setExternalId(null);
         ReflectionTestUtils.setField(backupInDb2, "id", backup2Id);
         when(backupDao.findById(backup2Id)).thenReturn(backupInDb2);
@@ -631,8 +632,8 @@ public class BackupManagerTest {
         when(backupDao.listByVmId(null, vmId)).thenReturn(List.of(backupInDb1, backupInDb2));
 
         BackupVO newBackupEntry = new BackupVO();
-        newBackupEntry.setProtectedSize(newBackupSize);
-        when(backupProvider.createNewBackupEntryForRestorePoint(restorePoint2, vm ,metric)).thenReturn(newBackupEntry);
+        newBackupEntry.setSize(newBackupSize);
+        when(backupProvider.createNewBackupEntryForRestorePoint(restorePoint2, vm, metric)).thenReturn(newBackupEntry);
 
         try (MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
             Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
@@ -647,7 +648,7 @@ public class BackupManagerTest {
 
                 verify(resourceLimitMgr, times(1)).decrementResourceCount(accountId, Resource.ResourceType.backup_storage, backup1Size);
                 verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup_storage, metricSize);
-                Assert.assertEquals(backupInDb1.getProtectedSize(), metricSize);
+                Assert.assertEquals(backupInDb1.getSize(), metricSize);
 
                 verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup);
                 verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup_storage, newBackupSize);
