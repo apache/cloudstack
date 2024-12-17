@@ -618,7 +618,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 vmBackup.setBackupIntervalType((short) type.ordinal());
                 backupDao.update(vmBackup.getId(), vmBackup);
                 resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
-                resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getProtectedSize());
+                resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
             }
             if (type != Backup.Type.MANUAL) {
                 postCreateScheduledBackup(type, vm.getId());
@@ -997,7 +997,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         boolean result = backupProvider.deleteBackup(backup, forced);
         if (result) {
             resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
-            resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getProtectedSize());
+            resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
             return backupDao.remove(backup.getId());
         }
         throw new CloudRuntimeException("Failed to delete the backup");
@@ -1413,10 +1413,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                         logger.debug(String.format("Update backup with [uuid: %s, external id: %s] from [size: %s, protected size: %s] to [size: %s, protected size: %s].",
                                 backup.getUuid(), backup.getExternalId(), backup.getSize(), backup.getProtectedSize(), metric.getBackupSize(), metric.getDataSize()));
 
-                        resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getProtectedSize());
+                        resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
                         ((BackupVO) backup).setSize(metric.getBackupSize());
                         ((BackupVO) backup).setProtectedSize(metric.getDataSize());
-                        resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getProtectedSize());
+                        resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
 
                         backupDao.update(backup.getId(), ((BackupVO) backup));
                     }
@@ -1449,7 +1449,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
                         Backup backup = backupProvider.createNewBackupEntryForRestorePoint(restorePoint, vm, metric);
                         resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
-                        resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getProtectedSize());
+                        resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
 
                         logger.debug(String.format("Creating a new entry in backups: [uuid: %s, vm_id: %s, external_id: %s, type: %s, date: %s, backup_offering_id: %s, account_id: %s, "
                                         + "domain_id: %s, zone_id: %s].", backup.getUuid(), backup.getVmId(), backup.getExternalId(), backup.getType(), backup.getDate(),
@@ -1463,7 +1463,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                         logger.warn(String.format("Removing backup with ID: [%s].", backupIdToRemove));
                         Backup backup = backupDao.findById(backupIdToRemove);
                         resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
-                        resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getProtectedSize());
+                        resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
                         backupDao.remove(backupIdToRemove);
                     }
                 }
