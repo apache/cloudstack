@@ -419,7 +419,7 @@ public class UserVmManagerTest {
         doReturn(VirtualMachine.State.Running).when(_vmInstance).getState();
 
         //when(ApiDBUtils.getCpuOverprovisioningFactor()).thenReturn(3f);
-        when(_capacityMgr.checkIfHostHasCapacity(anyLong(), anyInt(), anyLong(), anyBoolean(), anyFloat(), anyFloat(), anyBoolean())).thenReturn(false);
+        when(_capacityMgr.checkIfHostHasCapacity(any(), anyInt(), anyLong(), anyBoolean(), anyFloat(), anyFloat(), anyBoolean())).thenReturn(false);
         when(_itMgr.reConfigureVm(_vmInstance.getUuid(), so2, so1, new HashMap<String, String>(), false)).thenReturn(_vmInstance);
 
         doReturn(true).when(_itMgr).upgradeVmDb(anyLong(), so1, so2);
