@@ -31,7 +31,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
