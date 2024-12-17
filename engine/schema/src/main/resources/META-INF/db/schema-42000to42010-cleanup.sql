@@ -18,3 +18,6 @@
 --;
 -- Schema upgrade cleanup from 4.20.0.0 to 4.20.1.0
 --;
+
+-- Delete `project_account` entries for users that were removed
+DELETE FROM `cloud`.`project_account` WHERE `user_id` IN (SELECT `id` FROM `cloud`.`user` WHERE `removed`);
