@@ -617,7 +617,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
             }
         }
 
-        _rulesMgr.applyStaticNatsForNetwork(networkInNewPhysicalNet.getId(), false, networkAccount);
+        _rulesMgr.applyStaticNatsForNetwork(networkInNewPhysicalNet, false, networkAccount);
     }
 
     private void copyNicDetails(long originalNicId, long dstNicId) {

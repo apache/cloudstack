@@ -1761,7 +1761,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
 
         // apply static nat
-        if (!_rulesMgr.applyStaticNatsForNetwork(networkId, false, caller)) {
+        if (!_rulesMgr.applyStaticNatsForNetwork(network, false, caller)) {
             logger.warn("Failed to apply static nats a part of network {} restart", network);
             success = false;
         }
@@ -4215,7 +4215,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         //release all static nats for the network
-        if (!_rulesMgr.applyStaticNatForNetwork(network.getId(), false, caller, true)) {
+        if (!_rulesMgr.applyStaticNatForNetwork(network, false, caller, true)) {
             logger.warn("Failed to disable static nats as part of shutdownNetworkRules for network {}", network);
             success = false;
         }

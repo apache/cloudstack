@@ -3838,7 +3838,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         logger.debug("Received startup command from hypervisor host. host: {}", agent);
 
-        _syncMgr.resetHostSyncState(agent.getId());
+        _syncMgr.resetHostSyncState(agent);
 
         if (forRebalance) {
             logger.debug("Not processing listener {} as connect happens on rebalance process", this);
@@ -5795,18 +5795,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public Pair<Long, Long> findClusterAndHostIdForVm(VirtualMachine vm, boolean skipCurrentHostForStartingVm) {
         Long hostId = null;
+        Host host = null;
         if (!skipCurrentHostForStartingVm || !State.Starting.equals(vm.getState())) {
             hostId = vm.getHostId();
         }
         Long clusterId = null;
         if(hostId == null) {
+            if (vm.getLastHostId() == null) {
+                return findClusterAndHostIdForVmFromVolumes(vm.getId());
+            }
             hostId = vm.getLastHostId();
-            logger.debug("host id is null, using last host id {}", hostId);
+            host = _hostDao.findById(hostId);
+            logger.debug("host id is null, using last host {} with id {}", host, hostId);
         }
-        if (hostId == null) {
-            return findClusterAndHostIdForVmFromVolumes(vm.getId());
-        }
-        HostVO host = _hostDao.findById(hostId);
+        host = host == null ? _hostDao.findById(hostId) : host;
         if (host != null) {
             clusterId = host.getClusterId();
         }

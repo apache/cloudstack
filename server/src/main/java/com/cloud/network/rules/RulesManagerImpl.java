@@ -975,7 +975,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         List<StaticNatRule> staticNatRules = new ArrayList<StaticNatRule>();
 
         if (rules.size() == 0) {
-            logger.debug("There are no static nat rules to apply for network id=" + networkId);
+            logger.debug("There are no static nat rules to apply for network {}", _networkModel.getNetwork(networkId));
             return true;
         }
 
@@ -1000,10 +1000,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     }
 
     @Override
-    public boolean applyStaticNatsForNetwork(long networkId, boolean continueOnError, Account caller) {
-        List<IPAddressVO> ips = _ipAddressDao.listStaticNatPublicIps(networkId);
+    public boolean applyStaticNatsForNetwork(Network network, boolean continueOnError, Account caller) {
+        List<IPAddressVO> ips = _ipAddressDao.listStaticNatPublicIps(network.getId());
         if (ips.isEmpty()) {
-            logger.debug("There are no static nat to apply for network id=" + networkId);
+            logger.debug("There are no static nat to apply for network {}", network);
             return true;
         }
 
@@ -1015,7 +1015,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         for (IPAddressVO ip : ips) {
             // Get nic IP4 address
             //String dstIp = _networkModel.getIpInNetwork(ip.getAssociatedWithVmId(), networkId);
-            StaticNatImpl staticNat = new StaticNatImpl(ip.getAllocatedToAccountId(), ip.getAllocatedInDomainId(), networkId, ip.getId(), ip.getVmIp(), false);
+            StaticNatImpl staticNat = new StaticNatImpl(ip.getAllocatedToAccountId(), ip.getAllocatedInDomainId(), network.getId(), ip.getId(), ip.getVmIp(), false);
             staticNats.add(staticNat);
         }
 
@@ -1399,8 +1399,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     }
 
     @Override
-    public boolean applyStaticNatForNetwork(long networkId, boolean continueOnError, Account caller, boolean forRevoke) {
-        List<? extends IpAddress> staticNatIps = _ipAddressDao.listStaticNatPublicIps(networkId);
+    public boolean applyStaticNatForNetwork(Network network, boolean continueOnError, Account caller, boolean forRevoke) {
+        List<? extends IpAddress> staticNatIps = _ipAddressDao.listStaticNatPublicIps(network.getId());
 
         List<StaticNat> staticNats = new ArrayList<StaticNat>();
         for (IpAddress staticNatIp : staticNatIps) {
@@ -1409,7 +1409,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         if (staticNats != null && !staticNats.isEmpty()) {
             if (forRevoke) {
-                logger.debug("Found " + staticNats.size() + " static nats to disable for network id " + networkId);
+                logger.debug("Found {} static nats to disable for network {}", staticNats.size(), network);
             }
             try {
                 if (!_ipAddrMgr.applyStaticNats(staticNats, continueOnError, forRevoke)) {
@@ -1420,7 +1420,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
                 return false;
             }
         } else {
-            logger.debug("Found 0 static nat rules to apply for network id " + networkId);
+            logger.debug("Found 0 static nat rules to apply for network id {}", network);
         }
 
         return true;

@@ -153,8 +153,8 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             final HAConfig.HAState nextState = HAConfig.HAState.getStateMachine().getNextState(currentHAState, event);
             boolean result = HAConfig.HAState.getStateMachine().transitTo(haConfig, event, null, haConfigDao);
             if (result) {
-                final String message = String.format("Transitioned host HA state from:%s to:%s due to event:%s for the host id:%d",
-                        currentHAState, nextState, event, haConfig.getResourceId());
+                final String message = String.format("Transitioned host HA state from: %s to: %s due to event:%s for the host %s with id: %d",
+                        currentHAState, nextState, event, hostDao.findByIdIncludingRemoved(haConfig.getResourceId()), haConfig.getResourceId());
                 logger.debug(message);
 
                 if (nextState == HAConfig.HAState.Recovering || nextState == HAConfig.HAState.Fencing || nextState == HAConfig.HAState.Fenced) {
@@ -164,7 +164,8 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
             }
             return result;
         } catch (NoTransitionException e) {
-            logger.warn(String.format("Unable to find next HA state for current HA state=[%s] for event=[%s] for host=[%s].", currentHAState, event, haConfig.getResourceId()), e);
+            logger.warn("Unable to find next HA state for current HA state=[{}] for event=[{}] for host {} with id {}.",
+                    currentHAState, event, hostDao.findByIdIncludingRemoved(haConfig.getResourceId()), haConfig.getResourceId(), e);
         }
         return false;
     }

@@ -2426,7 +2426,7 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             logger.debug("Checking for free space on the host for downloading the template with physical size: " + templateSize + " and virtual size: " + cmd.getTemplateSize());
             if (!isEnoughSpaceForDownloadTemplateOnTemporaryLocation(templateSize)) {
-                String msg = String.format("Not enough space on the defined temporary location to download the template %swith id %d", cmd.getDestData(), cmd.getTemplateId());
+                String msg = String.format("Not enough space on the defined temporary location to download the template %s with id %d", cmd.getDestData(), cmd.getTemplateId());
                 logger.error(msg);
                 return new DirectDownloadAnswer(false, msg, true);
             }

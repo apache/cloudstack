@@ -710,7 +710,6 @@ public class UserVmManagerImplTest {
         Mockito.when(newRootDiskOffering.getId()).thenReturn(diskOfferingId);
         Mockito.when(newRootDiskOffering.getMinIops()).thenReturn(offeringMinIops);
         Mockito.when(newRootDiskOffering.getMaxIops()).thenReturn(offeringMaxIops);
-        Mockito.when(newRootDiskOffering.getName()).thenReturn("OfferingName");
         return newRootDiskOffering;
     }
 
