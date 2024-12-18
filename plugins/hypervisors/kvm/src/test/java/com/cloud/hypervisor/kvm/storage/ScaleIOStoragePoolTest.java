@@ -195,7 +195,7 @@ public class ScaleIOStoragePoolTest {
 
         when(adapter.getPhysicalDisk(volumeId, pool)).thenReturn(disk);
 
-        final boolean result = adapter.connectPhysicalDisk(volumePath, pool, null);
+        final boolean result = adapter.connectPhysicalDisk(volumePath, pool, null, false);
         assertTrue(result);
     }
 }

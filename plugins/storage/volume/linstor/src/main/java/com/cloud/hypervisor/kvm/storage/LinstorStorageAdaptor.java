@@ -274,6 +274,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
      * @throws ApiException if any problem connecting to the Linstor controller
      */
     private void allow2PrimariesIfInUse(DevelopersApi api, String rscName) throws ApiException {
+        s_logger.debug("enabling allow-two-primaries");
         String inUseNode = LinstorUtil.isResourceInUse(api, rscName);
         if (inUseNode != null && !inUseNode.equalsIgnoreCase(localNodeName)) {
             // allow 2 primaries for live migration, should be removed by disconnect on the other end
@@ -289,7 +290,8 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details)
+    public boolean connectPhysicalDisk(
+            String volumePath, KVMStoragePool pool, Map<String, String> details, boolean isVMMigration)
     {
         s_logger.debug(String.format("Linstor: connectPhysicalDisk %s:%s -> %s", pool.getUuid(), volumePath, details));
         if (volumePath == null) {
@@ -312,12 +314,13 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
         }
 
-        try
-        {
-            allow2PrimariesIfInUse(api, rscName);
-        } catch (ApiException apiEx) {
-            s_logger.error(apiEx);
-            // do not fail here as adding allow-two-primaries property is only a problem while live migrating
+        if (isVMMigration) {
+            try {
+                allow2PrimariesIfInUse(api, rscName);
+            } catch (ApiException apiEx) {
+                s_logger.error(apiEx);
+                // do not fail here as adding allow-two-primaries property is only a problem while live migrating
+            }
         }
         return true;
     }

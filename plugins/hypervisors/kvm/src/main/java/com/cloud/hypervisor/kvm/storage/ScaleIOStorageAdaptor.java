@@ -178,7 +178,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             return null;
         }
 
-        if(!connectPhysicalDisk(name, pool, null)) {
+        if(!connectPhysicalDisk(name, pool, null, false)) {
             throw new CloudRuntimeException(String.format("Failed to ensure disk %s was present", name));
         }
 
@@ -221,7 +221,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details) {
+    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details, boolean isMigration) {
         if (StringUtils.isEmpty(volumePath) || pool == null) {
             LOGGER.error("Unable to connect physical disk due to insufficient data");
             throw new CloudRuntimeException("Unable to connect physical disk due to insufficient data");

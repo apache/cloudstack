@@ -133,10 +133,10 @@ public class KVMStoragePoolManager {
         StorageAdaptor adaptor = getStorageAdaptor(type);
         KVMStoragePool pool = adaptor.getStoragePool(poolUuid);
 
-        return adaptor.connectPhysicalDisk(volPath, pool, details);
+        return adaptor.connectPhysicalDisk(volPath, pool, details, false);
     }
 
-    public boolean connectPhysicalDisksViaVmSpec(VirtualMachineTO vmSpec) {
+    public boolean connectPhysicalDisksViaVmSpec(VirtualMachineTO vmSpec, boolean isVMMigrate) {
         boolean result = false;
 
         final String vmName = vmSpec.getName();
@@ -159,7 +159,7 @@ public class KVMStoragePoolManager {
             KVMStoragePool pool = getStoragePool(store.getPoolType(), store.getUuid());
             StorageAdaptor adaptor = getStorageAdaptor(pool.getType());
 
-            result = adaptor.connectPhysicalDisk(vol.getPath(), pool, disk.getDetails());
+            result = adaptor.connectPhysicalDisk(vol.getPath(), pool, disk.getDetails(), isVMMigrate);
 
             if (!result) {
                 s_logger.error("Failed to connect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());

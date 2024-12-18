@@ -1549,7 +1549,7 @@ public class LibvirtComputingResourceTest {
 
         when(libvirtComputingResourceMock.getVifDriver(nicTO.getType(), nicTO.getName())).thenReturn(vifDriver);
         when(libvirtComputingResourceMock.getStoragePoolMgr()).thenReturn(storagePoolManager);
-        when(storagePoolManager.connectPhysicalDisksViaVmSpec(vm)).thenReturn(true);
+        when(storagePoolManager.connectPhysicalDisksViaVmSpec(vm, true)).thenReturn(true);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -5095,7 +5095,7 @@ public class LibvirtComputingResourceTest {
             fail(e.getMessage());
         }
 
-        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec)).thenReturn(false);
+        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec, false)).thenReturn(false);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -5296,7 +5296,7 @@ public class LibvirtComputingResourceTest {
             fail(e.getMessage());
         }
 
-        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec)).thenReturn(true);
+        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec, false)).thenReturn(true);
         try {
             doNothing().when(libvirtComputingResourceMock).createVifs(vmSpec, vmDef);
 
@@ -5375,7 +5375,7 @@ public class LibvirtComputingResourceTest {
             fail(e.getMessage());
         }
 
-        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec)).thenReturn(true);
+        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec, false)).thenReturn(true);
         try {
             doNothing().when(libvirtComputingResourceMock).createVifs(vmSpec, vmDef);
 
@@ -5452,7 +5452,7 @@ public class LibvirtComputingResourceTest {
             fail(e.getMessage());
         }
 
-        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec)).thenReturn(true);
+        when(storagePoolMgr.connectPhysicalDisksViaVmSpec(vmSpec, false)).thenReturn(true);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
