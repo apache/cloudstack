@@ -357,6 +357,7 @@ export default {
               entityid: values.samlentity,
               userid: user.id
             }).then(response => {
+              this.$emit('refresh-data')
               this.$notification.success({
                 message: this.$t('label.samlenable'),
                 description: this.$t('message.success.enable.saml.auth')
