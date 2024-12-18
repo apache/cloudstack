@@ -585,7 +585,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         Long backupSize = 0L;
         for (final Volume volume: volumeDao.findByInstance(vmId)) {
             if (Volume.State.Ready.equals(volume.getState())) {
-                Long volumeSize = volumeApiService.getVolumePhysicalUsed(volume.getFormat(), volume.getPath(), volume.getChainInfo());
+                Long volumeSize = volumeApiService.getVolumePhysicalSize(volume.getFormat(), volume.getPath(), volume.getChainInfo());
                 if (volumeSize == null) {
                     volumeSize = volume.getSize();
                 }

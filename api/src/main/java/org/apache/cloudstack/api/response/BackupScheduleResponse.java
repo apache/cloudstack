@@ -37,15 +37,15 @@ public class BackupScheduleResponse extends BaseResponse {
     @Param(description = "ID of the VM")
     private String vmId;
 
-    @SerializedName("schedule")
+    @SerializedName(ApiConstants.SCHEDULE)
     @Param(description = "time the backup is scheduled to be taken.")
     private String schedule;
 
-    @SerializedName("intervaltype")
+    @SerializedName(ApiConstants.INTERVAL_TYPE)
     @Param(description = "the interval type of the backup schedule")
     private DateUtil.IntervalType intervalType;
 
-    @SerializedName("timezone")
+    @SerializedName(ApiConstants.TIMEZONE)
     @Param(description = "the time zone of the backup schedule")
     private String timezone;
 

@@ -5157,7 +5157,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     @Override
-    public Long getVolumePhysicalUsed(ImageFormat format, String path, String chainInfo) {
+    public Long getVolumePhysicalSize(ImageFormat format, String path, String chainInfo) {
         VolumeStats vs = null;
         if (format == ImageFormat.VHD || format == ImageFormat.QCOW2 || format == ImageFormat.RAW) {
             if (path != null) {
