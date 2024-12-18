@@ -1558,21 +1558,13 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
-    public List<UnmanagedInstanceTO> listVMsInDatacenter(ListVmwareDcVmsCmd cmd) {
+    public Pair<String, List<UnmanagedInstanceTO>> listVMsInDatacenter(ListVmwareDcVmsCmd cmd) {
         String vcenter = cmd.getVcenter();
         String datacenterName = cmd.getDatacenterName();
         String username = cmd.getUsername();
         String password = cmd.getPassword();
         Integer maxObjects = cmd.getPageSize();
-        boolean forced = cmd.isForced();
-        // TODO refactor to check if the page is available
-        boolean nextPage = cmd.getPageNumber() == null || cmd.getPageNumber() <= 1;
-        if (forced) {
-//             remove existing data from local map
-        }
-        if (nextPage) {
-//            check if there is a next page possible
-        }
+        String token = cmd.getToken();
 
         Long existingVcenterId = cmd.getExistingVcenterId();
         String keyword = cmd.getKeyword();
@@ -1613,10 +1605,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 s_logger.error(msg);
                 throw new InvalidParameterValueException(msg);
             }
-            List<UnmanagedInstanceTO> instances = Collections.synchronizedList(new ArrayList<>());
-            instances.addAll(dcMo.getVmsOnDatacenter(maxObjects, null).second());
-            return StringUtils.isBlank(keyword) ? instances :
-                    instances.stream().filter(x -> x.getName().toLowerCase().contains(keyword.toLowerCase())).collect(Collectors.toList());
+            return dcMo.getVmsOnDatacenter(maxObjects, token);
         } catch (InvalidParameterValueException | VmwareClientException | InvalidLocaleFaultMsg | InvalidLoginFaultMsg |
                  RuntimeFaultFaultMsg | URISyntaxException | InvalidPropertyFaultMsg | InvocationTargetException |
                  NoSuchMethodException | IllegalAccessException e) {
