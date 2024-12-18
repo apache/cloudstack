@@ -1069,7 +1069,7 @@ public class NetUtils {
             s_logger.warn("Domain name label may contain only the ASCII letters 'a' through 'z' (in a case-insensitive manner)");
             return false;
         } else if (hostName.startsWith("-") || hostName.endsWith("-")) {
-            s_logger.warn("Domain name label can not start  with a hyphen and digit, and must not end with a hyphen");
+            s_logger.warn("Domain name label can not start or end with a hyphen");
             return false;
         } else if (isHostName && START_HOSTNAME_PATTERN.matcher(hostName).matches()) {
             s_logger.warn("Host name can't start with digit");
