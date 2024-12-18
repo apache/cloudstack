@@ -287,6 +287,7 @@ public class KVMStoragePoolManager {
         URI storageUri = null;
 
         try {
+            s_logger.debug("Get storage pool by uri: " + uri);
             storageUri = new URI(uri);
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(e.toString());
@@ -296,7 +297,7 @@ public class KVMStoragePoolManager {
         String uuid = null;
         String sourceHost = "";
         StoragePoolType protocol = null;
-        final String scheme = storageUri.getScheme().toLowerCase();
+        final String scheme = (storageUri.getScheme() != null) ? storageUri.getScheme().toLowerCase() : "";
         List<String> acceptedSchemes = List.of("nfs", "networkfilesystem", "filesystem");
         if (acceptedSchemes.contains(scheme)) {
             sourcePath = storageUri.getPath();
