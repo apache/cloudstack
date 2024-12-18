@@ -23,6 +23,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -31,7 +32,6 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.VmwareDatacenterResponse;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
@@ -73,11 +73,10 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.PAGE_SIZE, type = CommandType.INTEGER, description = "The maximum number of results to return.")
     private Integer pageSize;
 
-    @Parameter(name = ApiConstants.PAGE, type = CommandType.INTEGER,
-            description = "For listVmwareDcVms, the maximum number of results to return is either 0, 1 or more." +
-                    " When more than 1, the next page as returned by the vcenter will be propagated to the caller." +
-                    " If no previous call has been done, this is the same as the first page")
-    private Integer pageNumber;
+    @Parameter(name = ApiConstants.TOKEN, type = CommandType.STRING,
+            description = "For listVmwareDcVms, if the maximum number of results (the `pagesize`) is exceeded, " +
+                    " a token is returned. This token can be used in subsequent calls to retrieve more results")
+    private String token;
 
     @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, description = "force retrieving new results, ignoring any cached data.")
     private Boolean forced;
@@ -94,16 +93,8 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
         return password;
     }
 
-    public Integer getPageSize() {
-        return pageSize;
-    }
-
-    public Integer getPageNumber() {
-        return pageNumber;
-    }
-
-    public boolean isForced() {
-        return forced == null ? true : forced;
+    public String getToken() {
+        return token;
     }
 
     public String getDatacenterName() {
@@ -118,7 +109,8 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         checkParameters();
         try {
-            List<UnmanagedInstanceTO> vms = _vmwareDatacenterService.listVMsInDatacenter(this);
+            Pair<String, List<UnmanagedInstanceTO>> results = _vmwareDatacenterService.listVMsInDatacenter(this);
+            List<UnmanagedInstanceTO> vms = results.second();
             List<BaseResponse> baseResponseList = new ArrayList<>();
             if (CollectionUtils.isNotEmpty(vms)) {
                 for (UnmanagedInstanceTO vmwareVm : vms) {
@@ -130,9 +122,10 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
             if (CollectionUtils.isEmpty(pagingList)) {
                 pagingList = baseResponseList;
             }
-            ListResponse<BaseResponse> response = new ListResponse<>();
+            VmwarRequestReponse<BaseResponse> response = new VmwarRequestReponse<>();
             response.setResponses(pagingList, baseResponseList.size());
             response.setResponseName(getCommandName());
+            response.setToken(results.first());
             setResponseObject(response);
         } catch (CloudRuntimeException e) {
             String errorMsg = String.format("Error retrieving VMs from VMware VC: %s", e.getMessage());
