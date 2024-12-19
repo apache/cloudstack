@@ -695,7 +695,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String keyword = null;
 
         Pair<List<UserAccountJoinVO>, Integer> result =  getUserListInternal(caller, permittedAccounts, listAll, id,
-                username, type, accountName, state, keyword, null, domainId, recursive, null);
+                username, type, accountName, state, keyword, null, domainId, recursive, null, null);
         ListResponse<UserResponse> response = new ListResponse<UserResponse>();
         List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(ResponseView.Restricted, CallContext.current().getCallingAccount().getDomainId(),
                 result.first().toArray(new UserAccountJoinVO[result.first().size()]));
@@ -723,6 +723,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object state = cmd.getState();
         String keyword = cmd.getKeyword();
         String apiKeyAccess = cmd.getApiKeyAccess();
+        User.Source userSource = cmd.getUserSource();
 
         Long domainId = cmd.getDomainId();
         boolean recursive = cmd.isRecursive();
@@ -731,11 +732,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Filter searchFilter = new Filter(UserAccountJoinVO.class, "id", true, startIndex, pageSizeVal);
 
-        return getUserListInternal(caller, permittedAccounts, listAll, id, username, type, accountName, state, keyword, apiKeyAccess, domainId, recursive, searchFilter);
+        return getUserListInternal(caller, permittedAccounts, listAll, id, username, type, accountName, state, keyword, apiKeyAccess, domainId, recursive, searchFilter, userSource);
     }
 
     private Pair<List<UserAccountJoinVO>, Integer> getUserListInternal(Account caller, List<Long> permittedAccounts, boolean listAll, Long id, Object username, Object type,
-            String accountName, Object state, String keyword, String apiKeyAccess, Long domainId, boolean recursive, Filter searchFilter) {
+            String accountName, Object state, String keyword, String apiKeyAccess, Long domainId, boolean recursive, Filter searchFilter, User.Source userSource) {
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, recursive, null);
         accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject, listAll, false);
         domainId = domainIdRecursiveListProject.first();
@@ -761,6 +762,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
         sb.and("accountName", sb.entity().getAccountName(), Op.EQ);
         sb.and("state", sb.entity().getState(), Op.EQ);
+        sb.and("userSource", sb.entity().getSource(), Op.EQ);
         if (apiKeyAccess != null) {
             sb.and("apiKeyAccess", sb.entity().getApiKeyAccess(), Op.EQ);
         }
@@ -825,6 +827,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             } catch (IllegalArgumentException ex) {
                 throw new InvalidParameterValueException("ApiKeyAccess value can only be Enabled/Disabled/Inherit");
             }
+        }
+
+        if (userSource != null) {
+            sc.setParameters("userSource", userSource.toString());
         }
 
         return _userAccountJoinDao.searchAndCount(sc, searchFilter);
