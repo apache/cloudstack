@@ -947,7 +947,7 @@ class TestVPC(cloudstackTestCase):
             networkids=[str(network_1.id)]
         )
         self.debug("Deployed VM in network: %s" % network_1.id)
-
+        self.cleanup.append(vm_1)
         vm_2 = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
@@ -956,6 +956,7 @@ class TestVPC(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             networkids=[str(network_1.id)]
         )
+        self.cleanup.append(vm_2)
         self.debug("Deployed VM in network: %s" % network_1.id)
 
         self.debug("deploying VMs in network: %s" % network_2.name)
@@ -968,6 +969,7 @@ class TestVPC(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             networkids=[str(network_2.id)]
         )
+        self.cleanup.append(vm_3)
         self.debug("Deployed VM in network: %s" % network_2.id)
 
         vm_4 = VirtualMachine.create(
@@ -978,6 +980,7 @@ class TestVPC(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             networkids=[str(network_2.id)]
         )
+        self.cleanup.append(vm_4)
         self.debug("Deployed VM in network: %s" % network_2.id)
 
         self.debug("Associating public IP for network: %s" % network_1.name)
@@ -1293,6 +1296,7 @@ class TestVPC(cloudstackTestCase):
             networkids=[str(network_1.id)]
         )
         self.debug("Deployed VM in network: %s" % network_1.id)
+        self.cleanup.append(vm_1)
 
         vm_2 = VirtualMachine.create(
             self.apiclient,
@@ -1303,6 +1307,7 @@ class TestVPC(cloudstackTestCase):
             networkids=[str(network_1.id)]
         )
         self.debug("Deployed VM in network: %s" % network_1.id)
+        self.cleanup.append(vm_2)
 
         self.debug("deploying VMs in network: %s" % network_2.name)
         # Spawn an instance in that network
@@ -1315,6 +1320,7 @@ class TestVPC(cloudstackTestCase):
             networkids=[str(network_2.id)]
         )
         self.debug("Deployed VM in network: %s" % network_2.id)
+        self.cleanup.append(vm_3)
 
         vm_4 = VirtualMachine.create(
             self.apiclient,
@@ -1325,6 +1331,7 @@ class TestVPC(cloudstackTestCase):
             networkids=[str(network_2.id)]
         )
         self.debug("Deployed VM in network: %s" % network_2.id)
+        self.cleanup.append(vm_4)
 
         self.debug("Associating public IP for network: %s" % network_1.name)
         public_ip_1 = PublicIPAddress.create(
@@ -1738,7 +1745,7 @@ class TestVPC(cloudstackTestCase):
             networkids=[str(network.id)]
         )
         self.debug("Deployed VM in network: %s" % network.id)
-
+        self.cleanup.append(virtual_machine)
         self.validate_vm_netdomain(
             virtual_machine,
             vpc,
@@ -1945,7 +1952,7 @@ class TestVPC(cloudstackTestCase):
             networkids=[str(network.id)]
         )
         self.debug("Deployed VM in network: %s" % network.id)
-
+        self.cleanup.append(virtual_machine)
         self.validate_vm_netdomain(virtual_machine, vpc, network, netdomain)
 
     @attr(tags=["advanced", "intervlan"], required_hardware="false")
@@ -2017,7 +2024,7 @@ class TestVPC(cloudstackTestCase):
             networkids=[str(network.id)]
         )
         self.debug("Deployed VM in network: %s" % network.id)
-
+        self.cleanup.append(virtual_machine)
         self.assertNotEqual(virtual_machine,
                             None,
                             "VM creation in the network failed")
@@ -2094,7 +2101,7 @@ class TestVPC(cloudstackTestCase):
             networkids=[str(network.id)]
         )
         self.debug("Deployed VM in network: %s" % network.id)
-
+        self.cleanup.append(virtual_machine)
         self.assertNotEqual(virtual_machine,
                             None,
                             "VM creation in the network failed")
@@ -2173,7 +2180,7 @@ class TestVPC(cloudstackTestCase):
             networkids=[str(network.id)]
         )
         self.debug("Deployed VM in network: %s" % network.id)
-
+        self.cleanup.append(virtual_machine)
         self.assertNotEqual(virtual_machine,
                             None,
                             "VM creation in the network failed")
@@ -2494,6 +2501,7 @@ class TestVPC(cloudstackTestCase):
             networkids=[str(network.id)]
         )
         self.debug("Deployed VM in network: %s" % network.id)
+        self.cleanup.append(vm)
         self.assertIsNotNone(
             vm,
             "Failed to create VM with first ip address in the CIDR as the vm ip"

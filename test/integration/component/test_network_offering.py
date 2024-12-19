@@ -1388,19 +1388,17 @@ class TestNOWithOnlySourceNAT(cloudstackTestCase):
             cls.services["service_offering"]
         )
 
-        cls.cleanup = [
+        cls._cleanup = [
             cls.service_offering,
         ]
         return
 
     @classmethod
     def tearDownClass(cls):
-        try:
-            #Cleanup resources used
-            cleanup_resources(cls.apiclient, cls.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestNOWithOnlySourceNAT, cls).tearDownClass()
+
+    def tearDown(self):
+        super(TestNOWithOnlySourceNAT, self).tearDown()
 
     @attr(tags=["advanced", "advancedns"], required_hardware="false")
     def test_create_network_with_snat(self):
@@ -1446,10 +1444,11 @@ class TestNOWithOnlySourceNAT(cloudstackTestCase):
             zoneid=self.zone.id
         )
         self.debug("Created guest network with ID: %s within account %s" % (self.network.id, self.account.name))
+        self.cleanup.append(self.network)
 
         self.debug("Deploying VM in account: %s on the network %s" % (self.account.name, self.network.id))
         # Spawn an instance in that network
-        VirtualMachine.create(
+        self.vm1 = VirtualMachine.create(
             self.apiclient,
             self.services["virtual_machine"],
             accountid=self.account.name,
@@ -1457,6 +1456,8 @@ class TestNOWithOnlySourceNAT(cloudstackTestCase):
             serviceofferingid=self.service_offering.id,
             networkids=[str(self.network.id)]
         )
+        self.cleanup.append(self.vm1)
+
         self.debug("Deployed VM in network: %s" % self.network.id)
 
         src_nat_list = PublicIPAddress.list(
