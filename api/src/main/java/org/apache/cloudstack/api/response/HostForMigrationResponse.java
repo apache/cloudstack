@@ -172,7 +172,7 @@ public class HostForMigrationResponse extends BaseResponse {
     @Param(description = "the date and time the host was last pinged")
     private Date lastPinged;
 
-    @SerializedName("managementserverid")
+    @SerializedName(ApiConstants.MANAGEMENT_SERVER_ID)
     @Param(description = "the management server ID of the host")
     private Long managementServerId;
 
