@@ -41,6 +41,18 @@ public class UuidUtils {
     }
 
     /**
+     * Checks if a string is a valid 32 characters UUID without hyphens, e.g. 24abcb8f4211374fa2e1e5c0b7e88a2d
+     */
+    public static boolean isUuidWithoutHyphens(String uuid) {
+        try {
+            normalize(uuid);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
      * Returns a valid UUID in string format from a 32 digit UUID string without hyphens.
      * Example: 24abcb8f4211374fa2e1e5c0b7e88a2d -> 24abcb8f-4211-374f-a2e1-e5c0b7e88a2d
      */

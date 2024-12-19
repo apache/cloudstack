@@ -43,7 +43,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 
 public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements BackupDao {
-
+    private static final Gson GSON = new Gson();
     @Inject
     AccountDao accountDao;
 
@@ -144,43 +144,48 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
 
     @Override
     public BackupResponse newBackupResponse(Backup backup) {
-        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
-        AccountVO account = accountDao.findByIdIncludingRemoved(vm.getAccountId());
-        DomainVO domain = domainDao.findByIdIncludingRemoved(vm.getDomainId());
-        DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(vm.getDataCenterId());
-        Long offeringId = backup.getBackupOfferingId();
-        if (offeringId == null) {
-            offeringId = vm.getBackupOfferingId();
-        }
-        BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(offeringId);
+        try {
+            VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
+            AccountVO account = accountDao.findByIdIncludingRemoved(vm.getAccountId());
+            DomainVO domain = domainDao.findByIdIncludingRemoved(vm.getDomainId());
+            DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(vm.getDataCenterId());
+            Long offeringId = backup.getBackupOfferingId();
+            if (offeringId == null) {
+                offeringId = vm.getBackupOfferingId();
+            }
+            BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(offeringId);
 
-        BackupResponse response = new BackupResponse();
-        response.setId(backup.getUuid());
-        response.setVmId(vm.getUuid());
-        response.setVmName(vm.getHostName());
-        response.setExternalId(backup.getExternalId());
-        response.setType(backup.getType());
-        response.setDate(backup.getDate());
-        response.setSize(backup.getSize());
-        response.setProtectedSize(backup.getProtectedSize());
-        response.setStatus(backup.getStatus());
-        // ACS 4.20: For backups taken prior this release the backup.backed_volumes column would be empty hence use vm_instance.backup_volumes
-        String backedUpVolumes;
-        if (Objects.isNull(backup.getBackedUpVolumes())) {
-            backedUpVolumes = new Gson().toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class);
-        } else {
-            backedUpVolumes = new Gson().toJson(backup.getBackedUpVolumes().toArray(), Backup.VolumeInfo[].class);
+            BackupResponse response = new BackupResponse();
+            response.setId(backup.getUuid());
+            response.setVmId(vm.getUuid());
+            response.setVmName(vm.getHostName());
+            response.setExternalId(backup.getExternalId());
+            response.setType(backup.getType());
+            response.setDate(backup.getDate());
+            response.setSize(backup.getSize());
+            response.setProtectedSize(backup.getProtectedSize());
+            response.setStatus(backup.getStatus());
+            // ACS 4.20: For backups taken prior this release the backup.backed_volumes column would be empty hence use vm_instance.backup_volumes
+            String backedUpVolumes;
+            if (Objects.isNull(backup.getBackedUpVolumes())) {
+                backedUpVolumes = new Gson().toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class);
+            } else {
+                backedUpVolumes = new Gson().toJson(backup.getBackedUpVolumes().toArray(), Backup.VolumeInfo[].class);
+            }
+            response.setVolumes(backedUpVolumes);
+            response.setBackupOfferingId(offering.getUuid());
+            response.setBackupOffering(offering.getName());
+            response.setAccountId(account.getUuid());
+            response.setAccount(account.getAccountName());
+            response.setDomainId(domain.getUuid());
+            response.setDomain(domain.getName());
+            response.setZoneId(zone.getUuid());
+            response.setZone(zone.getName());
+            response.setObjectName("backup");
+            return response;
+        } catch (Exception e) {
+            logger.error("Failed to create backup response from Backup [id: {}, vmId: {}] due to: [{}].", backup.getId(), backup.getVmId(), e.getMessage(), e);
+            return null;
         }
-        response.setVolumes(backedUpVolumes);
-        response.setBackupOfferingId(offering.getUuid());
-        response.setBackupOffering(offering.getName());
-        response.setAccountId(account.getUuid());
-        response.setAccount(account.getAccountName());
-        response.setDomainId(domain.getUuid());
-        response.setDomain(domain.getName());
-        response.setZoneId(zone.getUuid());
-        response.setZone(zone.getName());
-        response.setObjectName("backup");
-        return response;
     }
 }
