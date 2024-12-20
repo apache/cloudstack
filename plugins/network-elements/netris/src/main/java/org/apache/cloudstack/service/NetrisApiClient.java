@@ -20,10 +20,12 @@ import io.netris.ApiException;
 import io.netris.model.GetSiteBody;
 import io.netris.model.VPCListing;
 import io.netris.model.response.TenantResponse;
+import org.apache.cloudstack.agent.api.AddOrUpdateNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisNatCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
+import org.apache.cloudstack.agent.api.DeleteNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
@@ -74,4 +76,6 @@ public interface NetrisApiClient {
     boolean createOrUpdateDNATRule(CreateOrUpdateNetrisNatCommand cmd);
     boolean createStaticNatRule(CreateOrUpdateNetrisNatCommand cmd);
     boolean deleteNatRule(DeleteNetrisNatRuleCommand cmd);
+    boolean addOrUpdateStaticRoute(AddOrUpdateNetrisStaticRouteCommand cmd);
+    boolean deleteStaticRoute(DeleteNetrisStaticRouteCommand cmd);
 }

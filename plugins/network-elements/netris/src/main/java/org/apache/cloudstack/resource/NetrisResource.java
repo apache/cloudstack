@@ -28,10 +28,12 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.agent.api.AddOrUpdateNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisNatCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
+import org.apache.cloudstack.agent.api.DeleteNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.NetrisAnswer;
@@ -102,7 +104,11 @@ public class NetrisResource implements ServerResource {
         } else if (cmd instanceof DeleteNetrisNatRuleCommand) {
             return executeRequest((DeleteNetrisNatRuleCommand) cmd);
         } else if (cmd instanceof CreateOrUpdateNetrisNatCommand) {
-          return executeRequest((CreateOrUpdateNetrisNatCommand) cmd);
+            return executeRequest((CreateOrUpdateNetrisNatCommand) cmd);
+        } else if (cmd instanceof DeleteNetrisStaticRouteCommand) {
+            return executeRequest((DeleteNetrisStaticRouteCommand) cmd);
+        } else if (cmd instanceof AddOrUpdateNetrisStaticRouteCommand) {
+            return executeRequest((AddOrUpdateNetrisStaticRouteCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -293,6 +299,22 @@ public class NetrisResource implements ServerResource {
         boolean result = netrisApiClient.deleteNatRule(cmd);
         if (!result) {
             return new NetrisAnswer(cmd, false, String.format("Netris NAT rule: %s deletion failed", cmd.getNatRuleName()));
+        }
+        return new NetrisAnswer(cmd, true, "OK");
+    }
+
+    private Answer executeRequest(AddOrUpdateNetrisStaticRouteCommand cmd) {
+        boolean result = netrisApiClient.addOrUpdateStaticRoute(cmd);
+        if (!result) {
+            return new NetrisAnswer(cmd, false, String.format("Failed to add static route for VPC: %s, prefix: %s, nextHop: %s ", cmd.getName(), cmd.getPrefix(), cmd.getNextHop()));
+        }
+        return new NetrisAnswer(cmd, true, "OK");
+    }
+
+    private Answer executeRequest(DeleteNetrisStaticRouteCommand cmd) {
+        boolean result = netrisApiClient.deleteStaticRoute(cmd);
+        if (!result) {
+            return new NetrisAnswer(cmd, false, String.format("Failed to add static route for VPC: %s, prefix: %s, nextHop: %s ", cmd.getName(), cmd.getPrefix(), cmd.getNextHop()));
         }
         return new NetrisAnswer(cmd, true, "OK");
     }
