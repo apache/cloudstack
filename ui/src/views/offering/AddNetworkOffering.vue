@@ -464,7 +464,7 @@
         <a-form-item
           name="conservemode"
           ref="conservemode"
-          v-if="(guestType === 'shared' || guestType === 'isolated') && !isVpcVirtualRouterForAtLeastOneService &&
+          v-if="(guestType === 'shared' || guestType === 'isolated') &&
           (form.provider !== 'NSX' && form.provider !== 'Netris') && networkmode !== 'ROUTED'">
           <template #label>
             <tooltip-label :title="$t('label.conservemode')" :tooltip="apiParams.conservemode.description"/>

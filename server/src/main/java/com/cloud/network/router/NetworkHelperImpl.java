@@ -28,6 +28,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.utils.validation.ChecksumUtil;
 import org.apache.cloudstack.api.ApiConstants;
@@ -176,6 +177,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     CapacityManager capacityMgr;
     @Inject
     VpcDao vpcDao;
+    @Inject
+    VpcManager vpcManager;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -276,6 +279,10 @@ public class NetworkHelperImpl implements NetworkHelper {
         _itMgr.expunge(router.getUuid());
         _routerHealthCheckResultDao.expungeHealthChecks(router.getId());
         _routerDao.remove(router.getId());
+
+        if (router.getVpcId() != null) {
+            vpcManager.reconfigStaticNatForVpcVr(router.getVpcId());
+        }
         return router;
     }
 
@@ -773,7 +780,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             logger.debug("Adding nic for Virtual Router in Guest network " + guestNetwork);
             String defaultNetworkStartIp = null, defaultNetworkStartIpv6 = null;
             final Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, routerDeploymentDefinition.getPodId());
-            if (!routerDeploymentDefinition.isPublicNetwork()) {
+            if (!routerDeploymentDefinition.isPublicNetwork() || !vpcManager.isSrcNatIpRequiredForVpcVr(routerDeploymentDefinition.getVpc().getVpcOfferingId())) {
                 if (guestNetwork.getCidr() != null) {
                     if (placeholder != null && placeholder.getIPv4Address() != null) {
                         logger.debug("Requesting ipv4 address " + placeholder.getIPv4Address() + " stored in placeholder nic for the network "

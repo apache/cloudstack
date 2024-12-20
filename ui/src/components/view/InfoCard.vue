@@ -443,7 +443,7 @@
           <div class="resource-detail-item__label">{{ $t('label.vmname') }}</div>
           <div class="resource-detail-item__details">
             <desktop-outlined />
-            <router-link :to="{ path: createPathBasedOnVmType(resource.vmtype, resource.virtualmachineid) }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
+            <router-link :to="{ path: createPathBasedOnVmType(resource.vmtype || resource.virtualmachinetype, resource.virtualmachineid) }">{{ resource.vmname || resource.vm || resource.virtualmachinename || resource.virtualmachineid }} </router-link>
             <status class="status status--end" :text="resource.vmstate" v-if="resource.vmstate"/>
           </div>
         </div>

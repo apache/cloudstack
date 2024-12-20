@@ -453,3 +453,9 @@ ALTER TABLE `cloud`.`network_offerings` DROP COLUMN `for_nsx`;
 
 -- Drop the Tungsten and NSX columns from the VPC offerings (replaced by checking the provider on the vpc_offering_service_map table)
 ALTER TABLE `cloud`.`vpc_offerings` DROP COLUMN `for_nsx`;
+
+-- Add next_hop to the static_routes table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.static_routes', 'next_hop', 'varchar(50) COMMENT "next hop of the static route" AFTER `vpc_gateway_id`');
+
+-- Add `for_router` to `user_ip_address` table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user_ip_address', 'for_router', 'tinyint(1) DEFAULT 0 COMMENT "True if the ip address is used by Domain Router to expose services"');

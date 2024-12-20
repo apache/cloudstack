@@ -1058,7 +1058,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return Transaction.execute(new TransactionCallback<NicVO>() {
             @Override
             public NicVO doInTransaction(TransactionStatus status) {
-                NicVO vo = _nicDao.findByIp4AddressAndNetworkId(profile.getIPv4Address(), networkId);
+                NicVO vo = _nicDao.findNonPlaceHolderByIp4AddressAndNetworkId(profile.getIPv4Address(), networkId);
                 if (vo == null) {
                     applyProfileToNic(nic, profile, deviceId);
                     vo = _nicDao.persist(nic);
@@ -1707,6 +1707,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     }
                 }
             }
+            if (network.getVpcId() != null) {
+                _vpcMgr.reconfigStaticNatForVpcVr(network.getVpcId());
+                try {
+                    _vpcMgr.applyStaticRouteForVpcVpnIfNeeded(network.getVpcId(), true);
+                } catch (ResourceUnavailableException e) {
+                    logger.error("Unable to apply static routes for vpc " + network.getVpcId() + " due to " + e.getMessage());
+                }
+            }
         } finally {
             for (final NetworkElement element : networkElements) {
                 if (element instanceof AggregatedCommandExecutor && providersToImplement.contains(element.getProvider())) {
@@ -1952,6 +1960,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                                 ip.setOneToOneNat(false);
                                 ip.setAssociatedWithVmId(null);
                                 ip.setVmIp(null);
+                                ip.setForRouter(false);
                                 _ipAddressDao.update(ip.getId(), ip);
                             }
                         }
@@ -3292,6 +3301,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     logger.warn("Unable to complete shutdown of the network elements due to element: {}", element.getName(), e);
                     success = false;
                 }
+            }
+        }
+        if (network.getVpcId() != null) {
+            _vpcMgr.reconfigStaticNatForVpcVr(network.getVpcId());
+            try {
+                _vpcMgr.applyStaticRouteForVpcVpnIfNeeded(network.getVpcId(), true);
+            } catch (ResourceUnavailableException e) {
+                logger.error("Unable to apply static routes for vpc " + network.getVpcId() + " due to " + e.getMessage());
             }
         }
         return success;
@@ -4874,7 +4891,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[]{NetworkGcWait, NetworkGcInterval, NetworkLockTimeout,
+        return new ConfigKey<?>[]{NetworkGcWait, NetworkGcInterval, NetworkLockTimeout, DeniedRoutes,
                 GuestDomainSuffix, NetworkThrottlingRate, MinVRVersion,
                 PromiscuousMode, MacAddressChanges, ForgedTransmits, MacLearning, RollingRestartEnabled,
                 TUNGSTEN_ENABLED, NSX_ENABLED, NETRIS_ENABLED };

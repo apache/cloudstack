@@ -69,6 +69,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         AllFieldsSearch.and("secondaryip", AllFieldsSearch.entity().getSecondaryIp(), Op.EQ);
         AllFieldsSearch.and("nicid", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.and("strategy", AllFieldsSearch.entity().getReservationStrategy(), Op.EQ);
+        AllFieldsSearch.and("strategyNEQ", AllFieldsSearch.entity().getReservationStrategy(), Op.NEQ);
         AllFieldsSearch.and("reserverName",AllFieldsSearch.entity().getReserver(),Op.EQ);
         AllFieldsSearch.and("macAddress", AllFieldsSearch.entity().getMacAddress(), Op.EQ);
         AllFieldsSearch.and("deviceid", AllFieldsSearch.entity().getDeviceId(), Op.EQ);
@@ -196,6 +197,15 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     }
 
     @Override
+    public NicVO findNonPlaceHolderByNetworkIdAndType(long networkId, VirtualMachine.Type vmType) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("vmType", vmType);
+        sc.setParameters("strategyNEQ", Nic.ReservationStrategy.PlaceHolder.toString());
+        return findOneBy(sc);
+    }
+
+    @Override
     public NicVO findByNetworkIdTypeAndGateway(long networkId, VirtualMachine.Type vmType, String gateway) {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
@@ -221,6 +231,16 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         sc.setParameters("network", networkId);
         return findOneBy(sc);
     }
+
+    @Override
+    public NicVO findNonPlaceHolderByIp4AddressAndNetworkId(String ip4Address, long networkId) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("address", ip4Address);
+        sc.setParameters("network", networkId);
+        sc.setParameters("strategyNEQ", Nic.ReservationStrategy.PlaceHolder.toString());
+        return findOneBy(sc);
+    }
+
 
     @Override
     public NicVO findByNetworkIdAndMacAddress(long networkId, String mac) {

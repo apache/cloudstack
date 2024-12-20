@@ -1826,6 +1826,22 @@ public class NetUtils {
     }
 
     /**
+     Return the size of smallest CIDR which contains the IP range (startIp-endIp).
+     */
+    public static int getBigCidrSizeOfIpRange(long startIp, long endIp) {
+        assert startIp <= MAX_IPv4_ADDR : "Keep startIp smaller than or equals to " + MAX_IPv4_ADDR;
+        assert endIp <= MAX_IPv4_ADDR : "Keep endIp smaller than or equals to " + MAX_IPv4_ADDR;
+        for (int cidrSize = MAX_CIDR; cidrSize >= 1; cidrSize--) {
+            long minStartIp = startIp & (((long) 0xffffffff) >> (MAX_CIDR - cidrSize) << (MAX_CIDR - cidrSize));
+            long maxEndIp = (minStartIp | (((long) 0x1) << (MAX_CIDR - cidrSize)) - 1);
+            if (minStartIp <= startIp && maxEndIp >= endIp) {
+                return cidrSize;
+            }
+        }
+        return MAX_CIDR;
+    }
+
+    /**
      Return the list of pairs (Network Address, Network cidrsize)
      */
     public static List<Pair<Long, Integer>> splitIpRangeIntoSubnets(long startIp, long endIp) {
