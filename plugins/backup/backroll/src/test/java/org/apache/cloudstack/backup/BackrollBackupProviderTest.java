@@ -51,7 +51,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
 
 public class BackrollBackupProviderTest {
     @Mock

@@ -16,30 +16,20 @@
 // under the License.
 package org.apache.cloudstack.backup.backroll.utils;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
-import java.net.http.HttpResponse;
 
-import org.apache.cloudstack.backup.BackrollBackupProvider;
-import org.apache.cloudstack.backup.backroll.BackrollClient;
 import org.apache.cloudstack.backup.backroll.model.response.api.LoginApiResponse;
 import org.apache.cloudstack.backup.backroll.model.response.metrics.virtualMachineBackups.VirtualMachineBackupsResponse;
 import org.apache.cloudstack.backup.backroll.utils.BackrollHttpClientProvider.NotOkBodyException;
-import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
-import org.apache.http.ParseException;
 import org.apache.http.StatusLine;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -48,7 +38,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.logging.log4j.Logger;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Test;
@@ -73,7 +62,6 @@ public class BackrollHttpClientProviderTest {
 
     @Before
     public void setUp() throws Exception {
-        Long zoneId = 2L;
         MockitoAnnotations.openMocks(this);
         backupHttpClientProvider = BackrollHttpClientProvider.createProvider(backupHttpClientProvider,
                 "http://api.backup.demo.ccc:5050/api/v1", "backroll-api", "VviX8dALauSyYJMqVYJqf3UyZOpO3joS", false,
