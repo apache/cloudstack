@@ -3441,7 +3441,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                     TemplateDataStoreVO templateVO = null;
                                     if (templateId != null) {
                                         vmTemplateVO = _templateDao.findById(templateId);
-                                        templateVO = _templateStoreDao.findByTemplate(templateId, DataStoreRole.Image);
+                                        templateVO = _templateStoreDao.findByStoreTemplate(store.getId(), templateId);
                                         if (templateVO != null) {
                                             try {
                                                 if (SystemVmTemplateRegistration.validateIfSeeded(
