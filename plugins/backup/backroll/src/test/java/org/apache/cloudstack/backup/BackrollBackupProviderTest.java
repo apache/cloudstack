@@ -17,8 +17,10 @@
 package org.apache.cloudstack.backup;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -33,6 +35,7 @@ import org.apache.cloudstack.backup.backroll.model.BackrollVmBackup;
 import org.apache.cloudstack.backup.backroll.model.BackrollBackupMetrics;
 import org.apache.cloudstack.backup.backroll.model.BackrollOffering;
 import org.apache.cloudstack.backup.backroll.model.response.TaskState;
+import org.apache.cloudstack.backup.Backup.Metric;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.logging.log4j.Logger;
 import org.junit.Before;
@@ -42,9 +45,14 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.VirtualMachine;
+
+
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 public class BackrollBackupProviderTest {
     @Mock
@@ -81,67 +89,72 @@ public class BackrollBackupProviderTest {
     }
 
     @Test
-    public void takeBackup_Test() {
-        // logger.info("Starting backup for VM ID {} on backroll provider", vm.getUuid());
-        // final BackrollClient client = getClient(vm.getDataCenterId());
+    public void takeBackup_Test() throws BackrollApiException, IOException {
 
-        // try {
-        //     String urlToRequest = client.startBackupJob(vm.getUuid());
+        VMInstanceVO vmInstanceVO = new VMInstanceVO();
+        vmInstanceVO.setInstanceName("test");
+        vmInstanceVO.setDataCenterId(2l);
+        vmInstanceVO.setUuid(UUID.randomUUID().toString());
+        vmInstanceVO.setBackupOfferingId(2L);
 
-        //     String backupJob = urlToRequest.replace("/status/", "");
-        //     if (!StringUtils.isEmpty(backupJob)) {
-        //         BackupVO backup = new BackupVO();
-        //         backup.setVmId(vm.getId());
-        //         backup.setExternalId(backupJob);
-        //         backup.setType("INCREMENTAL");
-        //         backup.setDate(new DateTime().toDate());
-        //         backup.setSize(0L);
-        //         backup.setProtectedSize(0L);
-        //         backup.setStatus(Backup.Status.BackingUp);
-        //         backup.setBackupOfferingId(vm.getBackupOfferingId());
-        //         backup.setAccountId(vm.getAccountId());
-        //         backup.setDomainId(vm.getDomainId());
-        //         backup.setZoneId(vm.getDataCenterId());
-        //         Boolean result = backupDao.persist(backup) != null;
-        //         client.triggerTaskStatus(urlToRequest);
-        //         syncBackups(vm, null);
-        //         return result;
-        //     }
-        // } catch (ParseException | BackrollApiException | IOException e) {
-        //     logger.debug(e.getMessage());
-        //     throw new CloudRuntimeException("Failed to take backup");
-        // }
-        // return false;
+        Mockito.doReturn("/status/f32092e4-3e8a-461b-8733-ed93e23fa782").when(clientMock).startBackupJob(Mockito.anyString());
+        Mockito.doReturn(new BackupVO()).when(backupDao).persist(Mockito.any(BackupVO.class));
+        Mockito.doNothing().when(clientMock).triggerTaskStatus(Mockito.anyString());
+        syncBackups_Test();
+        Boolean result = backupProvider.takeBackup(vmInstanceVO);
+        assertTrue(result);
     }
 
     @Test
-    public void getBackupMetrics_Test() {
-        // final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
-        // if (CollectionUtils.isEmpty(vms)) {
-        //     logger.warn("Unable to get VM Backup Metrics because the list of VMs is empty.");
-        //     return metrics;
-        // }
+    public void restoreBackedUpVolume_Test() {
+        try{
+            backupProvider.restoreBackedUpVolume(new BackupVO(), "dummyString", "dummyString", "dummyString", new Pair<String,VirtualMachine.State>("dummyString", VirtualMachine.State.Shutdown));
+        } catch (Exception e) {
+            assertEquals(CloudRuntimeException.class, e.getClass());
+            String expected = String.format("Backroll plugin does not support this feature");
+            assertEquals(expected , e.getMessage());
+        }
+    }
 
-        // List<String> vmUuids = vms.stream().filter(Objects::nonNull).map(VirtualMachine::getUuid).collect(Collectors.toList());
-        // logger.debug("Get Backup Metrics for VMs: {}.", String.join(", ", vmUuids));
+    @Test
+    public void getConfigKeys_Test() {
+        assertEquals(3, backupProvider.getConfigKeys().length);
+    }
 
-        // BackrollClient client = getClient(zoneId);
-        // for (final VirtualMachine vm : vms) {
-        //     if (vm == null) {
-        //         continue;
-        //     }
+    @Test
+    public void getConfigComponentName_Test() {
+        assertEquals(BackupService.class.getSimpleName(), backupProvider.getConfigComponentName());
+    }
 
-        //     Metric metric;
-        //     try {
-        //         metric = client.getVirtualMachineMetrics(vm.getUuid());
-        //     } catch (BackrollApiException | IOException e) {
-        //         throw new CloudRuntimeException("Failed to retrieve backup metrics");
-        //     }
-        //     logger.debug("Metrics for VM [uuid: {}, name: {}] is [backup size: {}, data size: {}].", vm.getUuid(),
-        //             vm.getInstanceName(), metric.getBackupSize(), metric.getDataSize());
-        //     metrics.put(vm, metric);
-        // }
-        // return metrics;
+    @Test
+    public void getBackupMetricsEmpty_Test() {
+        assertEquals(backupProvider.getBackupMetrics(2L, Arrays.asList()).size(), 0);
+    }
+
+    @Test
+    public void getBackupMetrics_Test() throws BackrollApiException, IOException{
+        VMInstanceVO vmInstanceVO = new VMInstanceVO();
+        vmInstanceVO.setInstanceName("test");
+        vmInstanceVO.setDataCenterId(1l);
+        vmInstanceVO.setBackupOfferingId(1l);
+
+        VMInstanceVO vmInstanceVO2 = new VMInstanceVO();
+        vmInstanceVO2.setInstanceName("test2");
+        vmInstanceVO2.setDataCenterId(2l);
+        vmInstanceVO2.setBackupOfferingId(2l);
+
+
+        VMInstanceVO vmInstanceVO3 = new VMInstanceVO();
+        vmInstanceVO3.setInstanceName("test3");
+        vmInstanceVO3.setDataCenterId(3l);
+        vmInstanceVO3.setBackupOfferingId(3l);
+
+        Metric metric = new Metric(2L, 3L);
+
+        Mockito.doReturn(metric).when(clientMock).getVirtualMachineMetrics(Mockito.anyString());
+        assertEquals(backupProvider.getBackupMetrics(2L, Arrays.asList(vmInstanceVO, vmInstanceVO2, vmInstanceVO3)).size(), 1);
+
+        Mockito.verify(clientMock, times(3)).getVirtualMachineMetrics(Mockito.anyString());
     }
 
     @Test
@@ -179,18 +192,41 @@ public class BackrollBackupProviderTest {
     }
 
     @Test
+    public void getDescription_Test(){
+        assertEquals("Backroll Backup Plugin", backupProvider.getDescription());
+    }
+
+    @Test
+    public void isValidProviderOffering_Test(){
+        assertTrue(backupProvider.isValidProviderOffering(2L, "dummyString"));
+    }
+
+    @Test
+    public void getName_Test(){
+        assertEquals("backroll", backupProvider.getName());
+    }
+
+    @Test
+    public void assignVMToBackupOffering_Test() {
+        VMInstanceVO vmInstanceVO = new VMInstanceVO();
+        BackrollOffering backrollOf = new BackrollOffering("dummyName", UUID.randomUUID().toString());
+        assertTrue(backupProvider.assignVMToBackupOffering(vmInstanceVO, backrollOf));
+    }
+
+
+    @Test
     public void removeVMFromBackupOffering_Test(){
         assertTrue(backupProvider.removeVMFromBackupOffering(new VMInstanceVO()));
     }
 
     @Test
     public void willDeleteBackupsOnOfferingRemoval_Test(){
-        assertTrue(backupProvider.willDeleteBackupsOnOfferingRemoval());
+        assertFalse(backupProvider.willDeleteBackupsOnOfferingRemoval());
     }
 
 
     @Test
-     public void syncBackups_Test() throws BackrollApiException, IOException  {
+    public void syncBackups_Test() throws BackrollApiException, IOException  {
         VMInstanceVO vmInstanceVO = new VMInstanceVO();
         vmInstanceVO.setInstanceName("test");
         vmInstanceVO.setDataCenterId(2l);

@@ -184,7 +184,7 @@ public class BackrollClientTest {
 
         String response = client.startBackupJob("dummyJobId");
 
-        assertEquals("f32092e4-3e8a-461b-8733-ed93e23fa782", response);
+        assertEquals("/status/f32092e4-3e8a-461b-8733-ed93e23fa782", response);
     }
 
     @Test
