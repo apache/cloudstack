@@ -260,8 +260,6 @@ public class BackrollHttpClientProvider {
     }
 
     public  <T> T waitGet(String url, Class<T> classOfT)  throws IOException, BackrollApiException {
-        loginIfAuthenticationFailed();
-
         // int threshold = 30; // 5 minutes
         int maxAttempts = 12; // 2 minutes
 

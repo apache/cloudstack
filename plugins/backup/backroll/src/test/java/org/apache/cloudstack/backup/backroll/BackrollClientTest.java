@@ -31,6 +31,8 @@ import org.apache.cloudstack.backup.backroll.model.BackrollTaskStatus;
 import org.apache.cloudstack.backup.backroll.model.BackrollVmBackup;
 import org.apache.cloudstack.backup.backroll.model.response.BackrollTaskRequestResponse;
 import org.apache.cloudstack.backup.backroll.model.response.TaskState;
+import org.apache.cloudstack.backup.backroll.model.response.archive.BackrollArchiveResponse;
+import org.apache.cloudstack.backup.backroll.model.response.archive.BackrollArchivesResponse;
 import org.apache.cloudstack.backup.backroll.model.response.archive.BackrollBackupsFromVMResponse;
 import org.apache.cloudstack.backup.backroll.model.response.metrics.backup.BackrollBackupMetricsResponse;
 import org.apache.cloudstack.backup.backroll.model.response.metrics.backup.BackupMetricsInfo;
@@ -134,6 +136,8 @@ public class BackrollClientTest {
 
         BackrollBackupsFromVMResponse mockResponse = new BackrollBackupsFromVMResponse();
         mockResponse.state = TaskState.SUCCESS;
+        mockResponse.archives = new BackrollArchivesResponse();
+        mockResponse.archives.archives = Arrays.asList(new BackrollArchiveResponse());
 
         doReturn(backrollTaskReqResponseMock).when(backrollHttpClientProviderMock).delete(Mockito.matches(".*/virtualmachines/.*"), Mockito.any());
         doReturn(mockResponse).when(backrollHttpClientProviderMock).waitGet(Mockito.anyString(), Mockito.any());
