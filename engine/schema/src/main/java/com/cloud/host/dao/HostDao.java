@@ -166,7 +166,7 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
      */
     List<String> listOrderedHostsHypervisorVersionsInDatacenter(long datacenterId, HypervisorType hypervisorType);
 
-    List<HostVO> findHostsWithTagRuleThatMatchComputeOferringTags(String computeOfferingTags);
+    List<HostVO> findHostsWithTagRuleThatMatchComputeOfferingTags(String computeOfferingTags);
 
     List<Long> findClustersThatMatchHostTagRule(String computeOfferingTags);
 
