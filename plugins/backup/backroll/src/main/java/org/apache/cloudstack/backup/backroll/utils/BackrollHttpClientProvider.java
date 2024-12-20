@@ -308,7 +308,7 @@ public class BackrollHttpClientProvider {
         return null;
     }
 
-    private boolean isAuthenticated() throws BackrollApiException, IOException {
+    protected boolean isAuthenticated() throws BackrollApiException, IOException {
         boolean result = false;
 
         if(StringUtils.isEmpty(backrollToken)) {
@@ -343,7 +343,7 @@ public class BackrollHttpClientProvider {
         }
     }
 
-    private void login(final String appname, final String appsecret) throws BackrollApiException, IOException {
+    protected void login(final String appname, final String appsecret) throws BackrollApiException, IOException {
         logger.debug("Backroll client -  start login");
 
         CloseableHttpClient httpClient = createHttpClient();
