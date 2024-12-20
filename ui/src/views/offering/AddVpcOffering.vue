@@ -283,6 +283,7 @@ export default {
       sourceNatServiceChecked: false,
       selectedServiceProviderMap: {},
       ipv6NetworkOfferingEnabled: false,
+      routedNetworkEnabled: false,
       routingMode: 'static',
       networkmode: '',
       networkmodes: [
@@ -351,6 +352,7 @@ export default {
       this.fetchZoneData()
       this.fetchSupportedServiceData()
       this.fetchIpv6NetworkOfferingConfiguration()
+      this.fetchRoutedNetworkConfiguration()
     },
     isAdmin () {
       return isAdmin()
@@ -361,6 +363,17 @@ export default {
       api('listConfigurations', params).then(json => {
         var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
         this.ipv6NetworkOfferingEnabled = value === 'true'
+      })
+    },
+    fetchRoutedNetworkConfiguration () {
+      this.routedNetworkEnabled = false
+      var params = { name: 'routed.network.vpc.enabled' }
+      api('listConfigurations', params).then(json => {
+        var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
+        this.routedNetworkEnabled = value === 'true'
+        if (!this.routedNetworkEnabled) {
+          this.networkmodes.pop()
+        }
       })
     },
     fetchDomainData () {
