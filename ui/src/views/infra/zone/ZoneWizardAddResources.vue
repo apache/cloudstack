@@ -462,7 +462,7 @@ export default {
           title: 'label.rados.monitor',
           key: 'primaryStorageRADOSMonitor',
           placeHolder: 'message.error.rados.monitor',
-          required: false,
+          required: true,
           display: {
             primaryStorageProtocol: ['rbd']
           }
@@ -471,6 +471,14 @@ export default {
           title: 'label.rados.pool',
           key: 'primaryStorageRADOSPool',
           placeHolder: 'message.error.rados.pool',
+          required: true,
+          display: {
+            primaryStorageProtocol: ['rbd']
+          }
+        },
+        {
+          title: 'label.data.pool',
+          key: 'primaryStorageDataPool',
           required: false,
           display: {
             primaryStorageProtocol: ['rbd']
@@ -480,7 +488,7 @@ export default {
           title: 'label.rados.user',
           key: 'primaryStorageRADOSUser',
           placeHolder: 'message.error.rados.user',
-          required: false,
+          required: true,
           display: {
             primaryStorageProtocol: ['rbd']
           }
@@ -489,7 +497,7 @@ export default {
           title: 'label.rados.secret',
           key: 'primaryStorageRADOSSecret',
           placeHolder: 'message.error.rados.secret',
-          required: false,
+          required: true,
           display: {
             primaryStorageProtocol: ['rbd']
           }

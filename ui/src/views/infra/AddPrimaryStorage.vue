@@ -370,6 +370,12 @@
           <a-form-item name="radospool" ref="radospool" :label="$t('label.rados.pool')">
             <a-input v-model:value="form.radospool" :placeholder="$t('label.rados.pool')"/>
           </a-form-item>
+          <a-form-item name="datapool" ref="datapool">
+            <template #label>
+              <tooltip-label :title="$t('label.data.pool')" :tooltip="$t('label.data.pool.description')"/>
+            </template>
+            <a-input v-model:value="form.datapool" :placeholder="$t('label.data.pool')"/>
+          </a-form-item>
           <a-form-item name="radosuser" ref="radosuser" :label="$t('label.rados.user')">
             <a-input v-model:value="form.radosuser" :placeholder="$t('label.rados.user')" />
           </a-form-item>
@@ -499,6 +505,10 @@ export default {
         powerflexGatewayUsername: [{ required: true, message: this.$t('label.required') }],
         powerflexGatewayPassword: [{ required: true, message: this.$t('label.required') }],
         powerflexStoragePool: [{ required: true, message: this.$t('label.required') }],
+        radosmonitor: [{ required: true, message: this.$t('label.required') }],
+        radospool: [{ required: true, message: this.$t('label.required') }],
+        radosuser: [{ required: true, message: this.$t('label.required') }],
+        radossecret: [{ required: true, message: this.$t('label.required') }],
         username: [{ required: true, message: this.$t('label.required') }],
         password: [{ required: true, message: this.$t('label.required') }],
         primeraURL: [{ required: true, message: this.$t('label.url') }],
@@ -845,6 +855,9 @@ export default {
           url = this.clvmURL(vg)
         } else if (values.protocol === 'RBD') {
           url = this.rbdURL(values.radosmonitor, values.radospool, values.radosuser, values.radossecret)
+          if (values.datapool) {
+            params['details[0].rbd_default_data_pool'] = values.datapool
+          }
         } else if (values.protocol === 'vmfs') {
           path = values.vCenterDataCenter
           if (path.substring(0, 1) !== '/') {
