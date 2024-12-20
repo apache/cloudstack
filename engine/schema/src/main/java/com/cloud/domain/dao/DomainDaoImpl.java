@@ -19,6 +19,7 @@ package com.cloud.domain.dao;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -236,6 +237,15 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
         SearchCriteria<Long> sc = FindIdsOfAllChildrenSearch.create();
         sc.setParameters("path", path + "%");
         return customSearch(sc, null);
+    }
+
+    @Override
+    public List<Long> getDomainAndChildrenIds(long domainId) {
+        DomainVO domain = findById(domainId);
+        if (domain != null) {
+            return getDomainChildrenIds(domain.getPath());
+        }
+        return new ArrayList<>();
     }
 
     @Override
