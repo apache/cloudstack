@@ -122,8 +122,6 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
-import com.cloud.network.security.SecurityGroupService;
-import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
@@ -137,6 +135,8 @@ import com.cloud.network.dao.RemoteAccessVpnVO;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.security.SecurityGroupManager;
+import com.cloud.network.security.SecurityGroupService;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
@@ -1335,16 +1335,33 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return _userAccountDao.findById(userId);
     }
 
-    private boolean isValidRoleChange(Account account, Role role) {
-        Long currentAccRoleId = account.getRoleId();
-        Role currentRole = roleService.findRole(currentAccRoleId);
-
-        if (role.getRoleType().ordinal() < currentRole.getRoleType().ordinal() && ((account.getType() == Account.Type.NORMAL && role.getRoleType().getAccountType().ordinal() > Account.Type.NORMAL.ordinal()) ||
-                account.getType().ordinal() > Account.Type.NORMAL.ordinal() && role.getRoleType().getAccountType().ordinal() < account.getType().ordinal() && role.getRoleType().getAccountType().ordinal() > 0)) {
-            throw new PermissionDeniedException(String.format("Unable to update account role to %s as you are " +
-                    "attempting to escalate the account %s to account type %s which has higher privileges", role.getName(), account.getAccountName(), role.getRoleType().getAccountType().name()));
+    /*
+     Role change should follow the below conditions:
+     - Caller should not be of Unknown role type
+     - New role's type should not be Unknown
+     - Caller should not be able to escalate or de-escalate an account's role which is of higher role type
+     - New role should not be of type Admin with domain other than ROOT domain
+     */
+    protected void validateRoleChange(Account account, Role role, Account caller) {
+        Role currentRole = roleService.findRole(account.getRoleId());
+        Role callerRole = roleService.findRole(caller.getRoleId());
+        String errorMsg = String.format("Unable to update account role to %s, ", role.getName());
+        if (RoleType.Unknown.equals(callerRole.getRoleType())) {
+            throw new PermissionDeniedException(String.format("%s as the caller privileges are unknown", errorMsg));
         }
-        return true;
+        if (RoleType.Unknown.equals(role.getRoleType())) {
+            throw new PermissionDeniedException(String.format("%s as the new role privileges are unknown", errorMsg));
+        }
+        if (!callerRole.getRoleType().equals(RoleType.Admin) &&
+                (role.getRoleType().ordinal() < callerRole.getRoleType().ordinal() ||
+                        currentRole.getRoleType().ordinal() < callerRole.getRoleType().ordinal())) {
+            throw new PermissionDeniedException(String.format("%s as either current or new role has higher " +
+                    "privileges than the caller", errorMsg));
+        }
+        if (role.getRoleType().equals(RoleType.Admin) && account.getDomainId() != Domain.ROOT_DOMAIN) {
+            throw new PermissionDeniedException(String.format("%s as the user does not belong to the ROOT domain",
+                    errorMsg));
+        }
     }
 
     /**
@@ -2136,7 +2153,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             Role role = roleService.findRole(roleId);
-            isValidRoleChange(account, role);
+            validateRoleChange(account, role, caller);
             acctForUpdate.setRoleId(roleId);
             acctForUpdate.setType(role.getRoleType().getAccountType());
             checkRoleEscalation(getCurrentCallingAccount(), acctForUpdate);

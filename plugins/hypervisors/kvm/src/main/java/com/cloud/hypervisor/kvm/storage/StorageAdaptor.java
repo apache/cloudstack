@@ -52,8 +52,15 @@ public interface StorageAdaptor {
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
             PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
 
-    // given disk path (per database) and pool, prepare disk on host
-    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details);
+    /**
+     * given disk path (per database) and pool, prepare disk on host
+     * @param volumePath volume path
+     * @param pool storage pool the disk is part of
+     * @param details disk details map
+     * @param isVMMigrate Indicates if request is while VM is migration
+     * @return true if connect was a success
+     */
+    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate);
 
     // given disk path (per database) and pool, clean up disk on host
     public boolean disconnectPhysicalDisk(String volumePath, KVMStoragePool pool);
