@@ -152,7 +152,7 @@ fi
 currentBranch=$(git branch | grep "^*" | sed -e "s/^[*] //")
 if [ "${prDestinationBranch}" != "${currentBranch}" ] && [ ${force} -lt 1 ]; then
   echo "ERROR: This PR is made against branch '${prDestinationBranch}' while your current checked out branch is '${currentBranch}'."
-  echo "ERROR: Please make sure you're in the right branch and run this script again."
+  echo "ERROR: Please make sure you're in the right branch and run this scipt again."
   clean_up_and_exit 1
 elif [ "${prDestinationBranch}" != "${currentBranch}" ] && [ ${force} -eq 1 ]; then
   echo "WARNING: You used --force to merge to '${currentBranch}' while this PR is for branch '${prDestinationBranch}'."
