@@ -75,7 +75,7 @@ public interface BackupProvider {
      * @param backup
      * @return
      */
-    boolean takeBackup(VirtualMachine vm);
+    Backup takeBackup(VirtualMachine vm);
 
     /**
      * Delete an existing backup
