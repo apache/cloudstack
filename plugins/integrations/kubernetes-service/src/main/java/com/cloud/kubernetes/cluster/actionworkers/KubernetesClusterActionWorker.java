@@ -480,7 +480,7 @@ public class KubernetesClusterActionWorker {
             try {
                 templateService.attachIso(iso.getId(), vm.getId(), true);
                 if (logger.isInfoEnabled()) {
-                    logger.info(String.format("Attached binaries ISO for VM : %s in cluster: %s", vm.getDisplayName(), kubernetesCluster.getName()));
+                    logger.info("Attached binaries ISO for VM: {} in cluster: {}", vm, kubernetesCluster);
                 }
             } catch (CloudRuntimeException ex) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Failed to attach binaries ISO for VM : %s in the Kubernetes cluster name: %s", vm.getDisplayName(), kubernetesCluster.getName()), kubernetesCluster.getId(), failedEvent, ex);
@@ -502,17 +502,17 @@ public class KubernetesClusterActionWorker {
             try {
                 result = templateService.detachIso(vm.getId(), true);
             } catch (CloudRuntimeException ex) {
-                logger.warn(String.format("Failed to detach binaries ISO from VM : %s in the Kubernetes cluster : %s ", vm.getDisplayName(), kubernetesCluster.getName()), ex);
+                logger.warn("Failed to detach binaries ISO from VM: {} in the Kubernetes cluster: {} ", vm, kubernetesCluster, ex);
             } finally {
                 CallContext.unregister();
             }
             if (result) {
                 if (logger.isInfoEnabled()) {
-                    logger.info(String.format("Detached Kubernetes binaries from VM : %s in the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
+                    logger.info("Detached Kubernetes binaries from VM: {} in the Kubernetes cluster: {}", vm, kubernetesCluster);
                 }
                 continue;
             }
-            logger.warn(String.format("Failed to detach binaries ISO from VM : %s in the Kubernetes cluster : %s ", vm.getDisplayName(), kubernetesCluster.getName()));
+            logger.warn("Failed to detach binaries ISO from VM: {} in the Kubernetes cluster: {} ", vm, kubernetesCluster);
         }
     }
 

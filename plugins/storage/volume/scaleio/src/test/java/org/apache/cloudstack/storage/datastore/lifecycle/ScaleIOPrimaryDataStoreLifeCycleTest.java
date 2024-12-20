@@ -131,7 +131,7 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
         ScaleIOGatewayClientImpl client = mock(ScaleIOGatewayClientImpl.class);
         ScaleIOGatewayClientConnectionPool pool = mock(ScaleIOGatewayClientConnectionPool.class);
         scaleIOGatewayClientConnectionPoolMocked.when(() -> ScaleIOGatewayClientConnectionPool.getInstance()).thenReturn(pool);
-        lenient().when(pool.getClient(1L, storagePoolDetailsDao)).thenReturn(client);
+        lenient().when(pool.getClient(dataStore, storagePoolDetailsDao)).thenReturn(client);
 
         lenient().when(client.haveConnectedSdcs()).thenReturn(true);
 
@@ -152,7 +152,6 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
         when(dataStoreMgr.getDataStore(anyLong(), eq(DataStoreRole.Primary))).thenReturn(store);
         when(store.getId()).thenReturn(1L);
         when(store.isShared()).thenReturn(true);
-        when(store.getName()).thenReturn("ScaleIOPool");
         when(store.getStorageProviderName()).thenReturn(ScaleIOUtil.PROVIDER_NAME);
 
         when(dataStoreProviderMgr.getDataStoreProvider(ScaleIOUtil.PROVIDER_NAME)).thenReturn(dataStoreProvider);

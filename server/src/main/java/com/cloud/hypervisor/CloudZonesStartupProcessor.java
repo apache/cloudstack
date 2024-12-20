@@ -131,13 +131,13 @@ public class CloudZonesStartupProcessor extends AdapterBase implements StartupCo
             }
         }
         if (logger.isDebugEnabled()) {
-            logger.debug("Successfully loaded the DataCenter from the zone token passed in ");
+            logger.debug("Successfully loaded the DataCenter {} from the zone token passed in ", zone);
         }
 
         HostPodVO pod = findPod(startup, zone.getId(), Host.Type.Routing); //yes, routing
         Long podId = null;
         if (pod != null) {
-            logger.debug("Found pod " + pod.getName() + " for the secondary storage host " + startup.getName());
+            logger.debug("Found pod {} for the secondary storage host {}", pod, startup.getName());
             podId = pod.getId();
         }
         host.setDataCenterId(zone.getId());

@@ -932,7 +932,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
             if ((caller.getAccountId() == accountId.longValue()) && (_accountMgr.isDomainAdmin(caller.getId()) || caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN)) {
                 // If the admin is trying to update their own account, disallow.
-                throw new PermissionDeniedException("Unable to update resource limit for their own account " + accountId + ", permission denied");
+                throw new PermissionDeniedException(String.format("Unable to update resource limit for their own account %s, permission denied", account));
             }
 
             if (account.getType() == Account.Type.PROJECT) {
@@ -976,8 +976,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 DomainVO parentDomain = _domainDao.findById(parentDomainId);
                 long parentMaximum = findCorrectResourceLimitForDomain(parentDomain, resourceType, tag);
                 if ((parentMaximum >= 0) && (max.longValue() > parentMaximum)) {
-                    throw new InvalidParameterValueException("Domain " + domain.getName() + "(id: " + parentDomain.getId() + ") has maximum allowed resource limit " + parentMaximum + " for "
-                            + resourceType + ", please specify a value less than or equal to " + parentMaximum);
+                    throw new InvalidParameterValueException(String.format("Domain %s has maximum allowed resource limit %d for %s, please specify a value less than or equal to %d", parentDomain, parentMaximum, resourceType, parentMaximum));
                 }
             }
             ownerType = ResourceOwnerType.Domain;
@@ -1012,7 +1011,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                             "host tags: %s, storage tags: %s",
                     StringUtils.join(hostTags), StringUtils.join(storageTags));
             if (ObjectUtils.allNotNull(ownerId, ownerType)) {
-                msg = String.format("%s for %s ID: %d", msg, ownerType.getName().toLowerCase(), ownerId);
+                msg = String.format("%s for %s", msg, ownerType == ResourceOwnerType.Account ? _accountDao.findById(ownerId) : _domainDao.findById(ownerId));
             }
             logger.debug(msg);
         }

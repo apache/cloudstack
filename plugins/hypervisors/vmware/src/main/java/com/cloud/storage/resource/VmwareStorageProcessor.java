@@ -493,8 +493,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                                                                             boolean createSnapshot, String nfsVersion, String configuration) throws Exception {
         String secondaryMountPoint = mountService.getMountPoint(secondaryStorageUrl, nfsVersion);
 
-        logger.info(String.format("Init copy of template [name: %s, path in secondary storage: %s, configuration: %s] in secondary storage [url: %s, mount point: %s] to primary storage.",
-                templateName, templatePathAtSecondaryStorage, configuration, secondaryStorageUrl, secondaryMountPoint));
+        logger.info(String.format("Init copy of template [uuid: %s, name: %s, path in secondary storage: %s, configuration: %s] in secondary storage [url: %s, mount point: %s] to primary storage.",
+                templateUuid, templateName, templatePathAtSecondaryStorage, configuration, secondaryStorageUrl, secondaryMountPoint));
 
         String srcOVAFileName =
                 VmwareStorageLayoutHelper.getTemplateOnSecStorageFilePath(secondaryMountPoint, templatePathAtSecondaryStorage, templateName,
@@ -2534,7 +2534,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     if (vmMo != null) {
                         if (logger.isInfoEnabled()) {
                             if (deployAsIs) {
-                                logger.info("Destroying root volume " + vol.getPath() + " of deploy-as-is VM " + vmName);
+                                logger.info(String.format("Destroying root volume %s of deploy-as-is VM %s", vol, vmName));
                             } else {
                                 logger.info("Destroy root volume and VM itself. vmName " + vmName);
                             }
@@ -2585,7 +2585,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
                         }
                     } else if (deployAsIs) {
                         if (logger.isInfoEnabled()) {
-                            logger.info("Destroying root volume " + vol.getPath() + " of already removed deploy-as-is VM " + vmName);
+                            logger.info(String.format("Destroying root volume %s of already removed deploy-as-is VM %s", vol, vmName));
                         }
                         // The disks of the deploy-as-is VM have been detached from the VM and moved to root folder
                         String deployAsIsRootDiskPath = dsMo.searchFileInSubFolders(vol.getPath() + VmwareResource.VMDK_EXTENSION,
@@ -3859,7 +3859,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             String volumePath = volumeTO.getPath();
             if (!file.getFileBaseName().equalsIgnoreCase(volumePath)) {
                 if (logger.isInfoEnabled()) {
-                    logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumePath + " -> " + file.getFileBaseName());
+                    logger.info(String.format("Detected disk-chain top file change on volume: %s -> %s", volumeTO, file.getFileBaseName()));
                 }
                 volumePathChangeObserved = true;
                 volumePath = file.getFileBaseName();
@@ -3871,7 +3871,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             if (diskDatastoreMoFromVM != null) {
                 String actualPoolUuid = diskDatastoreMoFromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
                 if (!actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
-                    logger.warn(String.format("Volume %s found to be in a different storage pool %s", volumePath, actualPoolUuid));
+                    logger.warn(String.format("Volume %s found to be in a different storage pool %s", volumeTO, actualPoolUuid));
                     datastoreChangeObserved = true;
                     volumeTO.setDataStoreUuid(actualPoolUuid);
                     volumeTO.setChainInfo(_gson.toJson(matchingExistingDisk));

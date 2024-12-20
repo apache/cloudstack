@@ -265,9 +265,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             //for network with label on target host
             Commands fetchIfaceCmds =
                     new Commands(new OvsFetchInterfaceCommand(physNetLabel));
-            logger.debug("Ask host " + host.getId() +
-                    " to retrieve interface for phy net with label:" +
-                    physNetLabel);
+            logger.debug(String.format("Ask host %s to retrieve interface for phy net with label: %s", host, physNetLabel));
             Answer[] fetchIfaceAnswers = _agentMgr.send(host.getId(), fetchIfaceCmds);
             //And finally save it for future use
             endpointIp = handleFetchInterfaceAnswer(fetchIfaceAnswers, host.getId());
@@ -318,7 +316,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             OvsTunnelNetworkVO ta = _tunnelNetworkDao.findByFromToNetwork(hostId, rh.longValue(), nw.getId());
             // Try and create the tunnel even if a previous attempt failed
             if (ta == null || ta.getState().equals(OvsTunnel.State.Failed.name())) {
-                logger.debug("Attempting to create tunnel from:" + hostId + " to:" + rh.longValue());
+                logger.debug(String.format("Attempting to create tunnel from: %s to: %d", host, rh));
                 if (ta == null) {
                     createTunnelRecord(hostId, rh.longValue(), nw.getId(), key);
                 }
@@ -331,8 +329,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                     hostId, nw.getId());
             // Try and create the tunnel even if a previous attempt failed
             if (ta == null || ta.getState().equals(OvsTunnel.State.Failed.name())) {
-                logger.debug("Attempting to create tunnel from:" +
-                        rh.longValue() + " to:" + hostId);
+                logger.debug(String.format("Attempting to create tunnel from: %d to: %s", rh, host));
                 if (ta == null) {
                     createTunnelRecord(rh.longValue(), hostId,
                             nw.getId(), key);
@@ -346,22 +343,19 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         try {
             String myIp = getGreEndpointIP(host, nw);
             if (myIp == null)
-                throw new GreTunnelException("Unable to retrieve the source " + "endpoint for the GRE tunnel." + "Failure is on host:" + host.getId());
+                throw new GreTunnelException(String.format("Unable to retrieve the source endpoint for the GRE tunnel. Failure is on host: %s", host));
             boolean noHost = true;
             for (Long i : toHostIds) {
                 HostVO rHost = _hostDao.findById(i);
                 String otherIp = getGreEndpointIP(rHost, nw);
                 if (otherIp == null)
                     throw new GreTunnelException(
-                            "Unable to retrieve the remote "
-                                    + "endpoint for the GRE tunnel."
-                                    + "Failure is on host:" + rHost.getId());
+                            String.format("Unable to retrieve the remote endpoint for the GRE tunnel. Failure is on host: %s", rHost));
                 Commands cmds = new Commands(
                         new OvsCreateTunnelCommand(otherIp, key,
                                 Long.valueOf(hostId), i, nw.getId(), myIp, bridgeName, nw.getUuid()));
-                logger.debug("Attempting to create tunnel from:" + hostId + " to:" + i + " for the network " + nw.getId());
-                logger.debug("Ask host " + hostId
-                        + " to create gre tunnel to " + i);
+                logger.debug(String.format("Attempting to create tunnel from %s to %s for the network %s", host, rHost, nw));
+                logger.debug(String.format("Ask host %s to create gre tunnel to %s", host, rHost));
                 Answer[] answers = _agentMgr.send(hostId, cmds);
                 handleCreateTunnelAnswer(answers);
                 noHost = false;
@@ -372,8 +366,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 String otherIp = getGreEndpointIP(rHost, nw);
                 Commands cmds = new Commands(new OvsCreateTunnelCommand(myIp,
                         key, i, Long.valueOf(hostId), nw.getId(), otherIp, bridgeName, nw.getUuid()));
-                logger.debug("Ask host " + i + " to create gre tunnel to "
-                        + hostId);
+                logger.debug(String.format("Ask host %s to create gre tunnel to %s", rHost, host));
                 Answer[] answers = _agentMgr.send(i, cmds);
                 handleCreateTunnelAnswer(answers);
                 noHost = false;
@@ -383,7 +376,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             // anyway. This will ensure VIF rules will be triggered
             if (noHost) {
                 Commands cmds = new Commands(new OvsSetupBridgeCommand(bridgeName, hostId, nw.getId()));
-                logger.debug("Ask host " + hostId + " to configure bridge for network:" + nw.getId());
+                logger.debug(String.format("Ask host %s to configure bridge for network:%s", host, nw));
                 Answer[] answers = _agentMgr.send(hostId, cmds);
                 handleSetupBridgeAnswer(answers);
             }
@@ -451,7 +444,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             _tunnelNetworkDao.releaseFromLockTable(lock.getId());
 
             logger.debug(String.format("Destroy bridge for" +
-                    "network %1$s successful", networkId));
+                    "network %1$s successful", lock));
         } else {
             logger.debug(String.format("Destroy bridge for" +
                     "network %1$s failed", networkId));
@@ -487,8 +480,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                         if (p.getState().equals(OvsTunnel.State.Established.name())) {
                             Command cmd= new OvsDestroyTunnelCommand(p.getNetworkId(), bridgeName,
                                     p.getPortName());
-                            logger.debug("Destroying tunnel to " + host.getId() +
-                                    " from " + p.getFrom());
+                            logger.debug(String.format("Destroying tunnel to %s from %d", host, p.getFrom()));
                             Answer ans = _agentMgr.send(p.getFrom(), cmd);
                             handleDestroyTunnelAnswer(ans, p.getFrom(), p.getTo(), p.getNetworkId());
                         }
@@ -497,7 +489,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
 
                 Command cmd = new OvsDestroyBridgeCommand(nw.getId(), generateBridgeNameForVpc(nw.getVpcId()),
                         host.getId());
-                logger.debug("Destroying bridge for network " + nw.getId() + " on host:" + host.getId());
+                logger.debug(String.format("Destroying bridge for network %s on host: %s", nw, host));
                 Answer ans = _agentMgr.send(host.getId(), cmd);
                 handleDestroyBridgeAnswer(ans, host.getId(), nw.getId());
             } catch (Exception e) {
@@ -515,7 +507,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 int key = getGreKey(nw);
                 String bridgeName = generateBridgeName(nw, key);
                 Command cmd = new OvsDestroyBridgeCommand(nw.getId(), bridgeName, host.getId());
-                logger.debug("Destroying bridge for network " + nw.getId() + " on host:" + host.getId());
+                logger.debug(String.format("Destroying bridge for network %s on host: %s", nw, host));
                 Answer ans = _agentMgr.send(host.getId(), cmd);
                 handleDestroyBridgeAnswer(ans, host.getId(), nw.getId());
 
@@ -528,8 +520,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                     if (p.getState().equals(OvsTunnel.State.Established.name())) {
                         cmd = new OvsDestroyTunnelCommand(p.getNetworkId(), bridgeName,
                                 p.getPortName());
-                        logger.debug("Destroying tunnel to " + host.getId() +
-                                " from " + p.getFrom());
+                        logger.debug(String.format("Destroying tunnel to %s from %d", host, p.getFrom()));
                         ans = _agentMgr.send(p.getFrom(), cmd);
                         handleDestroyTunnelAnswer(ans, p.getFrom(),
                                 p.getTo(), p.getNetworkId());
@@ -565,8 +556,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             // since this is the first VM from the VPC being launched on the host, first setup the bridge
             try {
                 Commands cmds = new Commands(new OvsSetupBridgeCommand(bridgeName, hostId, null));
-                logger.debug("Ask host " + hostId + " to create bridge for vpc " + vpcId + " and configure the "
-                        + " bridge for distributed routing.");
+                logger.debug(String.format("Ask host %s to create bridge for vpc %d and configure the  bridge for distributed routing.", host, vpcId));
                 Answer[] answers = _agentMgr.send(hostId, cmds);
                 handleSetupBridgeAnswer(answers);
             } catch (OperationTimedoutException | AgentUnavailableException e) {
@@ -578,8 +568,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             cmd.setSequenceNumber(getNextRoutingPolicyUpdateSequenceNumber(vpcId));
 
             if (!sendVpcRoutingPolicyChangeUpdate(cmd, hostId, bridgeName)) {
-                logger.debug("Failed to send VPC routing policy change update to host : " + hostId +
-                        ". But moving on with sending the updates to the rest of the hosts.");
+                logger.debug(String.format("Failed to send VPC routing policy change update to host: %s. But moving on with sending the updates to the rest of the hosts.", host));
             }
         }
 
@@ -602,7 +591,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 tunnelRecord = _tunnelNetworkDao.findByFromToNetwork(hostId, rh.longValue(), vpcNetwork.getId());
                 // Try and create the tunnel if does not exit or previous attempt failed
                 if (tunnelRecord == null || tunnelRecord.getState().equals(OvsTunnel.State.Failed.name())) {
-                    logger.debug("Attempting to create tunnel from:" + hostId + " to:" + rh.longValue());
+                    logger.debug(String.format("Attempting to create tunnel from: %s to: %d", host, rh));
                     if (tunnelRecord == null) {
                         createTunnelRecord(hostId, rh.longValue(), vpcNetwork.getId(), key);
                     }
@@ -613,7 +602,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 tunnelRecord = _tunnelNetworkDao.findByFromToNetwork(rh.longValue(), hostId, vpcNetwork.getId());
                 // Try and create the tunnel if does not exit or previous attempt failed
                 if (tunnelRecord == null || tunnelRecord.getState().equals(OvsTunnel.State.Failed.name())) {
-                    logger.debug("Attempting to create tunnel from:" + rh.longValue() + " to:" + hostId);
+                    logger.debug(String.format("Attempting to create tunnel from: %d to: %s", rh, host));
                     if (tunnelRecord == null) {
                         createTunnelRecord(rh.longValue(), hostId, vpcNetwork.getId(), key);
                     }
@@ -626,23 +615,18 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             try {
                 String myIp = getGreEndpointIP(host, vpcNetwork);
                 if (myIp == null)
-                    throw new GreTunnelException("Unable to retrieve the source " + "endpoint for the GRE tunnel."
-                            + "Failure is on host:" + host.getId());
+                    throw new GreTunnelException(String.format("Unable to retrieve the source endpoint for the GRE tunnel.Failure is on host: %s", host));
                 boolean noHost = true;
 
                 for (Long i : toHostIds) {
                     HostVO rHost = _hostDao.findById(i);
                     String otherIp = getGreEndpointIP(rHost, vpcNetwork);
                     if (otherIp == null)
-                        throw new GreTunnelException(
-                                "Unable to retrieve the remote endpoint for the GRE tunnel."
-                                        + "Failure is on host:" + rHost.getId());
+                        throw new GreTunnelException(String.format("Unable to retrieve the remote endpoint for the GRE tunnel. Failure is on host: %s", rHost));
                     Commands cmds = new Commands( new OvsCreateTunnelCommand(otherIp, key, Long.valueOf(hostId),
                                      i, vpcNetwork.getId(), myIp, bridgeName, vpcNetwork.getUuid()));
-                    logger.debug("Attempting to create tunnel from:" + hostId + " to:" + i + " for the network "
-                            + vpcNetwork.getId());
-                    logger.debug("Ask host " + hostId
-                            + " to create gre tunnel to " + i);
+                    logger.debug(String.format("Attempting to create tunnel from: %s to: %s for the network %s", host, rHost, vpcNetwork));
+                    logger.debug(String.format("Ask host %s to create gre tunnel to %s", host, rHost));
                     Answer[] answers = _agentMgr.send(hostId, cmds);
                     handleCreateTunnelAnswer(answers);
                 }
@@ -653,8 +637,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                     Commands cmds = new Commands(new OvsCreateTunnelCommand(myIp,
                             key, i, Long.valueOf(hostId), vpcNetwork.getId(), otherIp, bridgeName,
                             vpcNetwork.getUuid()));
-                    logger.debug("Ask host " + i + " to create gre tunnel to "
-                            + hostId);
+                    logger.debug(String.format("Ask host %s to create gre tunnel to %s", rHost, host));
                     Answer[] answers = _agentMgr.send(i, cmds);
                     handleCreateTunnelAnswer(answers);
                 }

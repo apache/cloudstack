@@ -260,7 +260,7 @@ public class DateraPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCyc
 
         for (HostVO host : allHosts) {
             try {
-                _storageMgr.connectHostToSharedPool(host.getId(), primaryDataStoreInfo.getId());
+                _storageMgr.connectHostToSharedPool(host, primaryDataStoreInfo.getId());
 
                 poolHosts.add(host);
             } catch (Exception e) {
@@ -302,7 +302,7 @@ public class DateraPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCyc
 
         for (HostVO host : hosts) {
             try {
-                _storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
+                _storageMgr.connectHostToSharedPool(host, dataStore.getId());
             } catch (Exception e) {
                 logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
             }

@@ -384,4 +384,9 @@ public class NetworkProfile implements Network {
         return networkCidrSize;
     }
 
+    @Override
+    public String toString() {
+        return String.format("NetworkProfile {\"id\": %s, \"name\": \"%s\", \"uuid\": \"%s\", \"networkofferingid\": %d}", id, name, uuid, networkOfferingId);
+    }
+
 }

@@ -264,6 +264,6 @@ public class TemplateObjectTO extends DownloadableObjectTO implements DataTO {
 
     @Override
     public String toString() {
-        return new StringBuilder("TemplateTO[id=").append(id).append("|origUrl=").append(origUrl).append("|name").append(name).append("]").toString();
+        return String.format("TemplateTO[id=%d|uuid=%s|origUrl=%s|name%s]", id, uuid, origUrl, name);
     }
 }

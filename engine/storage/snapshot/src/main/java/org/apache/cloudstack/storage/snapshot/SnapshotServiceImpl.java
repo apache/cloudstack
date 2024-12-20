@@ -198,7 +198,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         AsyncCallFuture<SnapshotResult> future = context.future;
         SnapshotResult snapResult = new SnapshotResult(snapshot, result.getAnswer());
         if (result.isFailed()) {
-            logger.debug("create snapshot " + context.snapshot.getName() + " failed: " + result.getResult());
+            logger.debug("create snapshot {} failed: {}", context.snapshot, result.getResult());
             try {
                 snapshot.processEvent(Snapshot.Event.OperationFailed);
                 snapshot.processEvent(Event.OperationFailed);
@@ -267,14 +267,14 @@ public class SnapshotServiceImpl implements SnapshotService {
             PrimaryDataStoreDriver primaryStore = (PrimaryDataStoreDriver)snapshotOnPrimary.getDataStore().getDriver();
             primaryStore.takeSnapshot(snapshot, caller);
         } catch (Exception e) {
-            logger.debug("Failed to take snapshot: " + snapshot.getId(), e);
+            logger.debug("Failed to take snapshot: {}", snapshot, e);
             try {
                 snapshot.processEvent(Snapshot.Event.OperationFailed);
                 snapshot.processEvent(Event.OperationFailed);
             } catch (NoTransitionException e1) {
                 logger.debug("Failed to change state for event: OperationFailed", e);
             }
-            throw new CloudRuntimeException("Failed to take snapshot" + snapshot.getId());
+            throw new CloudRuntimeException(String.format("Failed to take snapshot %s", snapshot));
         }
 
         SnapshotResult result;
@@ -407,7 +407,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                 if (createSnapshotPayload.getAsyncBackup()) {
                     _snapshotDao.remove(srcSnapshot.getId());
                     destSnapshot.processEvent(Event.OperationFailed);
-                    throw new SnapshotBackupException("Failed in creating backup of snapshot with ID "+srcSnapshot.getId());
+                    throw new SnapshotBackupException(String.format("Failed in creating backup of snapshot %s", srcSnapshot));
                 } else {
                     destSnapshot.processEvent(Event.OperationFailed);
                     //if backup snapshot failed, mark srcSnapshot in snapshot_store_ref as failed also
@@ -486,7 +486,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         SnapshotResult res = null;
         try {
             if (result.isFailed()) {
-                logger.debug(String.format("Failed to delete snapshot [%s] due to: [%s].", snapshot.getUuid(), result.getResult()));
+                logger.debug("Failed to delete snapshot [{}] due to: [{}].", snapshot, result.getResult());
                 snapshot.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
                 res = new SnapshotResult(context.snapshot, null);
                 res.setResult(result.getResult());
@@ -495,8 +495,8 @@ public class SnapshotServiceImpl implements SnapshotService {
                 res = new SnapshotResult(context.snapshot, null);
             }
         } catch (Exception e) {
-            logger.error(String.format("An exception occurred while processing an event in delete snapshot callback from snapshot [%s].", snapshot.getUuid()));
-            logger.debug(String.format("Exception while processing an event in delete snapshot callback from snapshot [%s].", snapshot.getUuid()), e);
+            logger.error("An exception occurred while processing an event in delete snapshot callback from snapshot [{}].", snapshot);
+            logger.debug("Exception while processing an event in delete snapshot callback from snapshot [{}].", snapshot, e);
             res.setResult(e.toString());
         }
         future.complete(res);
@@ -541,11 +541,11 @@ public class SnapshotServiceImpl implements SnapshotService {
             if (result.isFailed()) {
                 throw new CloudRuntimeException(result.getResult());
             }
-            logger.debug(String.format("Successfully deleted snapshot [%s] with ID [%s].", snapInfo.getName(), snapInfo.getUuid()));
+            logger.debug("Successfully deleted snapshot [{}].", snapInfo);
             return true;
         } catch (InterruptedException | ExecutionException e) {
-            logger.error(String.format("Failed to delete snapshot [%s] due to: [%s].", snapInfo.getUuid(), e.getMessage()));
-            logger.debug(String.format("Failed to delete snapshot [%s].", snapInfo.getUuid()), e);
+            logger.error("Failed to delete snapshot [{}] due to: [{}].", snapInfo, e.getMessage());
+            logger.debug("Failed to delete snapshot [{}].", snapInfo, e);
         }
 
         return false;
@@ -556,7 +556,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         PrimaryDataStore store = null;
         SnapshotInfo snapshotOnPrimaryStore = _snapshotFactory.getSnapshotOnPrimaryStore(snapshot.getId());
         if (snapshotOnPrimaryStore == null) {
-            logger.warn("Cannot find an entry for snapshot " + snapshot.getId() + " on primary storage pools, searching with volume's primary storage pool");
+            logger.warn("Cannot find an entry for snapshot {} on primary storage pools, searching with volume's primary storage pool", snapshot);
             VolumeInfo volumeInfo = volFactory.getVolume(snapshot.getVolumeId(), DataStoreRole.Primary);
             store = (PrimaryDataStore)volumeInfo.getDataStore();
         } else {
@@ -595,7 +595,7 @@ public class SnapshotServiceImpl implements SnapshotService {
             List<SnapshotVO> snapshots = _snapshotDao.listByStatus(volumeId, Snapshot.State.BackedUp);
             if (snapshots != null) {
                 for (SnapshotVO snapshot : snapshots) {
-                    syncSnapshotToRegionStore(snapshot.getId(), store);
+                    syncSnapshotToRegionStore(snapshot, store);
                 }
             }
         }
@@ -603,53 +603,49 @@ public class SnapshotServiceImpl implements SnapshotService {
 
     @Override
     public void cleanupVolumeDuringSnapshotFailure(Long volumeId, Long snapshotId) {
-        SnapshotVO snaphsot = _snapshotDao.findById(snapshotId);
+        SnapshotVO snapshot = _snapshotDao.findById(snapshotId);
 
-        if (snaphsot != null) {
-            if (snaphsot.getState() != Snapshot.State.BackedUp) {
+        if (snapshot != null) {
+            if (snapshot.getState() != Snapshot.State.BackedUp) {
                 List<SnapshotDataStoreVO> snapshotDataStoreVOs = _snapshotStoreDao.findBySnapshotId(snapshotId);
                 for (SnapshotDataStoreVO snapshotDataStoreVO : snapshotDataStoreVOs) {
-                    logger.debug("Remove snapshot " + snapshotId + ", status " + snapshotDataStoreVO.getState() +
-                            " on snapshot_store_ref table with id: " + snapshotDataStoreVO.getId());
+                    logger.debug("Remove snapshot {}, status {} on snapshot_store_ref table with id: {}", snapshot, snapshotDataStoreVO.getState(), snapshotDataStoreVO.getId());
 
                     _snapshotStoreDao.remove(snapshotDataStoreVO.getId());
                 }
 
-                logger.debug("Remove snapshot " + snapshotId + " status " + snaphsot.getState() + " from snapshot table");
+                logger.debug("Remove snapshot {} status {} from snapshot table", snapshot, snapshot.getState());
                 _snapshotDao.remove(snapshotId);
             }
         }
-
-
     }
 
     // push one individual snapshots currently on cache store to region store if it is not there already
-    private void syncSnapshotToRegionStore(long snapshotId, DataStore store){
+    private void syncSnapshotToRegionStore(SnapshotVO snapshot, DataStore store){
         // if snapshot is already on region wide object store, check if it is really downloaded there (by checking install_path). Sync snapshot to region
         // wide store if it is not there physically.
-        SnapshotInfo snapOnStore = _snapshotFactory.getSnapshot(snapshotId, store);
+        SnapshotInfo snapOnStore = _snapshotFactory.getSnapshot(snapshot.getId(), store);
         if (snapOnStore == null) {
-            throw new CloudRuntimeException("Cannot find an entry in snapshot_store_ref for snapshot " + snapshotId + " on region store: " + store.getName());
+            throw new CloudRuntimeException(String.format("Cannot find an entry in snapshot_store_ref for snapshot %s on region store: %s", snapshot, store));
         }
         if (snapOnStore.getPath() == null || snapOnStore.getPath().length() == 0) {
             if (logger.isDebugEnabled()) {
-                logger.debug("sync snapshot " + snapshotId + " from cache to object store...");
+                logger.debug("sync snapshot {} from cache to object store...", snapshot);
             }
             // snapshot is not on region store yet, sync to region store
-            SnapshotInfo srcSnapshot = _snapshotFactory.getReadySnapshotOnCache(snapshotId);
+            SnapshotInfo srcSnapshot = _snapshotFactory.getReadySnapshotOnCache(snapshot.getId());
             if (srcSnapshot == null) {
-                throw new CloudRuntimeException("Cannot find snapshot " + snapshotId + "  on cache store");
+                throw new CloudRuntimeException(String.format("Cannot find snapshot %s on cache store", snapshot));
             }
             AsyncCallFuture<SnapshotResult> future = syncToRegionStoreAsync(srcSnapshot, store);
             try {
                 SnapshotResult result = future.get();
                 if (result.isFailed()) {
-                    throw new CloudRuntimeException("sync snapshot from cache to region wide store failed for image store " + store.getName() + ":"
-                            + result.getResult());
+                    throw new CloudRuntimeException(String.format("sync snapshot from cache to region wide store failed for image store %s: %s", store, result.getResult()));
                 }
                 _cacheMgr.releaseCacheObject(srcSnapshot); // reduce reference count for template on cache, so it can recycled by schedule
             } catch (Exception ex) {
-                throw new CloudRuntimeException("sync snapshot from cache to region wide store failed for image store " + store.getName());
+                throw new CloudRuntimeException(String.format("sync snapshot from cache to region wide store failed for image store %s", store));
             }
         }
 
@@ -723,7 +719,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                     _snapshotDao.remove(srcSnapshot.getId());
                 } catch (NoTransitionException ex) {
                     logger.debug("Failed to create backup " + ex.toString());
-                    throw new CloudRuntimeException("Failed to backup snapshot" + snapshot.getId());
+                    throw new CloudRuntimeException(String.format("Failed to backup snapshot%s", snapshot));
                 }
             }
         });
@@ -769,7 +765,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         AsyncCallFuture<CreateCmdResult> future = new AsyncCallFuture<>();
         EndPoint ep = epSelector.select(snapshot);
         if (ep == null) {
-            logger.error(String.format("Failed to find endpoint for generating copy URL for snapshot %d with store %d", snapshot.getId(), snapshot.getDataStore().getId()));
+            logger.error(String.format("Failed to find endpoint for generating copy URL for snapshot %s with store %s", snapshot.getSnapshotVO(), snapshot.getDataStore()));
             throw new ResourceUnavailableException("No secondary VM in running state in source snapshot zone", DataCenter.class, snapshot.getDataCenterId());
         }
         DataStore store = snapshot.getDataStore();

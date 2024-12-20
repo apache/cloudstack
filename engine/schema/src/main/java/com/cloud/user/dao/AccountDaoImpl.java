@@ -310,7 +310,7 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
         if (!account.getNeedsCleanup()) {
             account.setNeedsCleanup(true);
             if (!update(accountId, account)) {
-                logger.warn("Failed to mark account id=" + accountId + " for cleanup");
+                logger.warn("Failed to mark account {} for cleanup", account);
             }
         }
     }

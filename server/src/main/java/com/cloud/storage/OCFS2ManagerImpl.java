@@ -105,11 +105,11 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
         for (HostVO h : hosts) {
             Answer ans = _agentMgr.easySend(h.getId(), cmd);
             if (ans == null) {
-                logger.debug("Host " + h.getId() + " is not in UP state, skip preparing OCFS2 node on it");
+                logger.debug("Host {} is not in UP state, skip preparing OCFS2 node on it", h);
                 continue;
             }
             if (!ans.getResult()) {
-                logger.warn("PrepareOCFS2NodesCommand failed on host " + h.getId() + " " + ans.getDetails());
+                logger.warn("PrepareOCFS2NodesCommand failed on host {} {}", h, ans.getDetails());
                 return false;
             }
         }
@@ -150,7 +150,7 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
         sc.and(sc.entity().getType(), Op.EQ, Host.Type.Routing);
         List<HostVO> hosts = sc.list();
         if (hosts.isEmpty()) {
-            logger.debug("There is no host in cluster " + clusterId + ", no need to prepare OCFS2 nodes");
+            logger.debug("There is no host in cluster {}, no need to prepare OCFS2 nodes", cluster);
             return true;
         }
 
@@ -178,8 +178,8 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
     @Override
     public void processDeletHostEventAfter(Host host) {
         String errMsg =
-            String.format("Prepare OCFS2 nodes failed after delete host %1$s (zone:%2$s, pod:%3$s, cluster:%4$s", host.getId(), host.getDataCenterId(), host.getPodId(),
-                host.getClusterId());
+            String.format("Prepare OCFS2 nodes failed after delete host %s (zone: %s, pod: %s, cluster: %s",
+                    host, host.getDataCenterId(), host.getPodId(), host.getClusterId());
 
         if (host.getHypervisorType() != HypervisorType.Ovm) {
             return;
