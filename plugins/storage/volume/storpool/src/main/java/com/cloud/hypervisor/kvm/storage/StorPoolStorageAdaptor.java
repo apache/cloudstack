@@ -249,7 +249,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public boolean connectPhysicalDisk(String volumeUuid, KVMStoragePool pool, Map<String, String> details) {
+    public boolean connectPhysicalDisk(String volumeUuid, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate) {
         SP_LOG("StorPoolStorageAdaptor.connectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool);
 
         LOGGER.debug(String.format("connectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool));

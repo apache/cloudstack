@@ -27,11 +27,14 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.event.ActionEventUtils;
+
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
-
-import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
@@ -50,6 +53,7 @@ import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.acl.DomainChecker;
@@ -120,6 +124,8 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
     @Mock
     ConfigKey<Boolean> enableUserTwoFactorAuthenticationMock;
+    @Mock
+    RoleService roleService;
 
     @Before
     public void setUp() throws Exception {
@@ -1224,5 +1230,113 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
                     .thenThrow(NoSuchBeanDefinitionException.class);
             accountManagerImpl.deleteWebhooksForAccount(1L);
         }
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateRoleChangeUnknownCaller() {
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getRoleId()).thenReturn(1L);
+        Role role = Mockito.mock(Role.class);
+        Mockito.when(role.getRoleType()).thenReturn(RoleType.Unknown);
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getRoleId()).thenReturn(2L);
+        Mockito.when(roleService.findRole(2L)).thenReturn(role);
+        accountManagerImpl.validateRoleChange(account, Mockito.mock(Role.class), caller);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateRoleChangeUnknownNewRole() {
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getRoleId()).thenReturn(1L);
+        Role newRole = Mockito.mock(Role.class);
+        Mockito.when(newRole.getRoleType()).thenReturn(RoleType.Unknown);
+        Role callerRole = Mockito.mock(Role.class);
+        Mockito.when(callerRole.getRoleType()).thenReturn(RoleType.DomainAdmin);
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getRoleId()).thenReturn(2L);
+        Mockito.when(roleService.findRole(2L)).thenReturn(callerRole);
+        accountManagerImpl.validateRoleChange(account, newRole, caller);
+    }
+
+    @Test
+    public void testValidateRoleNewRoleSameCaller() {
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getRoleId()).thenReturn(1L);
+        Role currentRole = Mockito.mock(Role.class);
+        Mockito.when(currentRole.getRoleType()).thenReturn(RoleType.User);
+        Mockito.when(roleService.findRole(1L)).thenReturn(currentRole);
+        Role newRole = Mockito.mock(Role.class);
+        Mockito.when(newRole.getRoleType()).thenReturn(RoleType.DomainAdmin);
+        Role callerRole = Mockito.mock(Role.class);
+        Mockito.when(callerRole.getRoleType()).thenReturn(RoleType.DomainAdmin);
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getRoleId()).thenReturn(2L);
+        Mockito.when(roleService.findRole(2L)).thenReturn(callerRole);
+        accountManagerImpl.validateRoleChange(account, newRole, caller);
+    }
+
+    @Test
+    public void testValidateRoleCurrentRoleSameCaller() {
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getRoleId()).thenReturn(1L);
+        Role accountRole = Mockito.mock(Role.class);
+        Mockito.when(accountRole.getRoleType()).thenReturn(RoleType.DomainAdmin);
+        Role newRole = Mockito.mock(Role.class);
+        Mockito.when(newRole.getRoleType()).thenReturn(RoleType.User);
+        Role callerRole = Mockito.mock(Role.class);
+        Mockito.when(callerRole.getRoleType()).thenReturn(RoleType.DomainAdmin);
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getRoleId()).thenReturn(2L);
+        Mockito.when(roleService.findRole(1L)).thenReturn(accountRole);
+        Mockito.when(roleService.findRole(2L)).thenReturn(callerRole);
+        accountManagerImpl.validateRoleChange(account, newRole, caller);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateRoleNewRoleHigherCaller() {
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getRoleId()).thenReturn(1L);
+        Role newRole = Mockito.mock(Role.class);
+        Mockito.when(newRole.getRoleType()).thenReturn(RoleType.Admin);
+        Role callerRole = Mockito.mock(Role.class);
+        Mockito.when(callerRole.getRoleType()).thenReturn(RoleType.DomainAdmin);
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getRoleId()).thenReturn(2L);
+        Mockito.when(roleService.findRole(2L)).thenReturn(callerRole);
+        accountManagerImpl.validateRoleChange(account, newRole, caller);
+    }
+
+    @Test
+    public void testValidateRoleNewRoleLowerCaller() {
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getRoleId()).thenReturn(1L);
+        Role newRole = Mockito.mock(Role.class);
+        Mockito.when(newRole.getRoleType()).thenReturn(RoleType.User);
+        Role accountRole = Mockito.mock(Role.class);
+        Mockito.when(accountRole.getRoleType()).thenReturn(RoleType.User);
+        Role callerRole = Mockito.mock(Role.class);
+        Mockito.when(callerRole.getRoleType()).thenReturn(RoleType.DomainAdmin);
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getRoleId()).thenReturn(2L);
+        Mockito.when(roleService.findRole(1L)).thenReturn(accountRole);
+        Mockito.when(roleService.findRole(2L)).thenReturn(callerRole);
+        accountManagerImpl.validateRoleChange(account, newRole, caller);
+    }
+
+    @Test(expected = PermissionDeniedException.class)
+    public void testValidateRoleAdminCannotEscalateAdminFromNonRootDomain() {
+        Account account = Mockito.mock(Account.class);
+        Mockito.when(account.getRoleId()).thenReturn(1L);
+        Mockito.when(account.getDomainId()).thenReturn(2L);
+        Role newRole = Mockito.mock(Role.class);
+        Mockito.when(newRole.getRoleType()).thenReturn(RoleType.Admin);
+        Role accountRole = Mockito.mock(Role.class);
+        Role callerRole = Mockito.mock(Role.class);
+        Mockito.when(callerRole.getRoleType()).thenReturn(RoleType.Admin);
+        Account caller = Mockito.mock(Account.class);
+        Mockito.when(caller.getRoleId()).thenReturn(2L);
+        Mockito.when(roleService.findRole(1L)).thenReturn(accountRole);
+        Mockito.when(roleService.findRole(2L)).thenReturn(callerRole);
+        accountManagerImpl.validateRoleChange(account, newRole, caller);
     }
 }

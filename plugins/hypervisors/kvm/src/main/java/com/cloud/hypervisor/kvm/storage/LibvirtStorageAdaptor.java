@@ -1018,7 +1018,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public boolean connectPhysicalDisk(String name, KVMStoragePool pool, Map<String, String> details) {
+    public boolean connectPhysicalDisk(String name, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate) {
         // this is for managed storage that needs to prep disks prior to use
         return true;
     }
