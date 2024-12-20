@@ -123,6 +123,18 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
     @Column(name = "snapshotTotal")
     private Long snapshotTotal;
 
+    @Column(name = "backupLimit")
+    private Long backupLimit;
+
+    @Column(name = "backupTotal")
+    private Long backupTotal;
+
+    @Column(name = "backupStorageLimit")
+    private Long backupStorageLimit;
+
+    @Column(name = "backupStorageTotal")
+    private Long backupStorageTotal;
+
     @Column(name = "templateLimit")
     private Long templateLimit;
 
@@ -176,6 +188,18 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
 
     @Column(name = "secondaryStorageTotal")
     private Long secondaryStorageTotal;
+
+    @Column(name = "bucketLimit")
+    private Long bucketLimit;
+
+    @Column(name = "bucketTotal")
+    private Long bucketTotal;
+
+    @Column(name = "objectStorageLimit")
+    private Long objectStorageLimit;
+
+    @Column(name = "objectStorageTotal")
+    private Long objectStorageTotal;
 
     @Column(name = "job_id")
     private Long jobId;
@@ -293,6 +317,14 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
         return snapshotTotal;
     }
 
+    public Long getBackupTotal() {
+        return backupTotal;
+    }
+
+    public Long getBackupStorageTotal() {
+        return backupStorageTotal;
+    }
+
     public Long getTemplateTotal() {
         return templateTotal;
     }
@@ -333,6 +365,14 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
         return secondaryStorageTotal;
     }
 
+    public Long getBucketTotal() {
+        return bucketTotal;
+    }
+
+    public Long getObjectStorageTotal() {
+        return objectStorageTotal;
+    }
+
     public Long getVmLimit() {
         return vmLimit;
     }
@@ -347,6 +387,14 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
 
     public Long getSnapshotLimit() {
         return snapshotLimit;
+    }
+
+    public Long getBackupLimit() {
+        return backupLimit;
+    }
+
+    public Long getBackupStorageLimit() {
+        return backupStorageLimit;
     }
 
     public Long getTemplateLimit() {
@@ -379,6 +427,14 @@ public class AccountJoinVO extends BaseViewVO implements InternalIdentity, Ident
 
     public Long getSecondaryStorageLimit() {
         return secondaryStorageLimit;
+    }
+
+    public Long getBucketLimit() {
+        return bucketLimit;
+    }
+
+    public Long getObjectStorageLimit() {
+        return objectStorageLimit;
     }
 
     public Long getJobId() {
