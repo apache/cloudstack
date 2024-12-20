@@ -659,6 +659,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             throw new CloudRuntimeException(String.format("Unable to find the system templates or it was not downloaded in %s.", dc.toString()));
         }
 
+        _templateDao.loadDetails(template);
+
         ServiceOfferingVO serviceOffering = _serviceOffering;
         if (serviceOffering == null) {
             serviceOffering = _offeringDao.findDefaultSystemOffering(ServiceOffering.ssvmDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
@@ -669,6 +671,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         secStorageVm.setDynamicallyScalable(template.isDynamicallyScalable());
         secStorageVm.setLimitCpuUse(serviceOffering.getLimitCpuUse());
         secStorageVm = _secStorageVmDao.persist(secStorageVm);
+        secStorageVm.setDetails(template.getDetails());
+        _vmDetailsDao.saveDetails(secStorageVm);
         try {
             _itMgr.allocate(name, template, serviceOffering, networks, plan, null);
             secStorageVm = _secStorageVmDao.findById(secStorageVm.getId());
