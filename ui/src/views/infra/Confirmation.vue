@@ -24,6 +24,28 @@
         :rules="rules"
         @finish="handleSubmit"
       >
+        <a-form-item
+          ref="algorithm"
+          name="algorithm"
+          v-if="isPrepareForMaintenance">
+          <template #label>
+            <tooltip-label :title="$t('label.algorithm')" :tooltip="prepareForMaintenanceApiParams.algorithm.description"/>
+          </template>
+          <a-select
+            style="width: 500px"
+            showSearch
+            optionFilterProp="value"
+            :filterOption="(input, option) => {
+              return option.value.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-model:value="form.algorithm"
+            :placeholder="prepareForMaintenanceApiParams.algorithm.description">
+            <a-select-option v-for="opt in algorithms" :key="opt">
+              {{ opt }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-divider/>
         <a-alert type="error">
           <template #message>
             <span v-html="$t(action.currentAction.message)" />
@@ -52,9 +74,13 @@
 
 import { api } from '@/api'
 import { ref, reactive } from 'vue'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'Confirmation',
+  components: {
+    TooltipLabel
+  },
   props: {
     resource: {
       type: Object,
@@ -68,11 +94,20 @@ export default {
   inject: ['parentFetchData'],
   data () {
     return {
+      algorithms: ['', 'static', 'roundrobin', 'shuffle'],
       loading: false
     }
   },
+  beforeCreate () {
+    this.prepareForMaintenanceApiParams = this.$getApiParams('prepareForMaintenance')
+  },
   created () {
     this.initForm()
+  },
+  computed: {
+    isPrepareForMaintenance () {
+      return this.action.currentAction.api === 'prepareForMaintenance'
+    }
   },
   methods: {
     initForm () {
@@ -86,7 +121,7 @@ export default {
       })
     },
     async checkConfirmation (rule, value) {
-      if (value && value === 'SHUTDOWN') {
+      if (value && value === this.action.currentAction.confirmationText) {
         return Promise.resolve()
       }
       return Promise.reject(rule.message)
@@ -97,6 +132,9 @@ export default {
       this.formRef.value.validate().then(() => {
         this.loading = true
         const params = { managementserverid: this.resource.id }
+        if (this.isPrepareForMaintenance && this.form.algorithm !== '') {
+          params.algorithm = this.form.algorithm
+        }
         api(this.action.currentAction.api, params).then(() => {
           this.$message.success(this.$t(this.action.currentAction.label) + ' : ' + this.resource.name)
           this.closeAction()
