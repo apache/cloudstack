@@ -106,7 +106,7 @@ public class IscsiAdmStoragePool implements KVMStoragePool {
 
     @Override
     public boolean connectPhysicalDisk(String name, Map<String, String> details) {
-        return this._storageAdaptor.connectPhysicalDisk(name, this, details);
+        return this._storageAdaptor.connectPhysicalDisk(name, this, details, false);
     }
 
     @Override

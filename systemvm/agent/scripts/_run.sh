@@ -60,4 +60,4 @@ if [ "$(uname -m | grep '64')" == "" ]; then
   fi
 fi
 
-java -Djavax.net.ssl.trustStore=./certs/realhostip.keystore -Djdk.tls.ephemeralDHKeySize=2048 -Djsse.enableSNIExtension=false -Dlog.home=$LOGHOME -mx${maxmem}m -cp $CP com.cloud.agent.AgentShell $keyvalues $@
+java -Djavax.net.ssl.trustStore=./certs/realhostip.keystore -Djdk.tls.ephemeralDHKeySize=2048 -Dlog.home=$LOGHOME -mx${maxmem}m -cp $CP com.cloud.agent.AgentShell $keyvalues $@
