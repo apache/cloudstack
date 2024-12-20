@@ -18,7 +18,6 @@
 //
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -80,7 +79,6 @@ public class LibvirtConvertInstanceCommandWrapperTest {
         Mockito.when(storagePoolManager.getStoragePoolByURI(secondaryPoolUrl)).thenReturn(temporaryPool);
         KVMPhysicalDisk physicalDisk1 = Mockito.mock(KVMPhysicalDisk.class);
         KVMPhysicalDisk physicalDisk2 = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(temporaryPool.listPhysicalDisks()).thenReturn(Arrays.asList(physicalDisk1, physicalDisk2));
     }
 
     @Test
@@ -105,51 +103,6 @@ public class LibvirtConvertInstanceCommandWrapperTest {
     public void testGetTemporaryStoragePool() {
         KVMStoragePool temporaryStoragePool = convertInstanceCommandWrapper.getTemporaryStoragePool(secondaryDataStore, libvirtComputingResourceMock.getStoragePoolMgr());
         Assert.assertNotNull(temporaryStoragePool);
-    }
-
-    @Test
-    public void testGetTemporaryDisksWithPrefixFromTemporaryPool() {
-        String convertPath = "/xyz";
-        String convertPrefix = UUID.randomUUID().toString();
-        KVMPhysicalDisk physicalDisk1 = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(physicalDisk1.getName()).thenReturn("disk1");
-        KVMPhysicalDisk physicalDisk2 = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(physicalDisk2.getName()).thenReturn("disk2");
-
-        KVMPhysicalDisk convertedDisk1 = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(convertedDisk1.getName()).thenReturn(String.format("%s-sda", convertPrefix));
-        KVMPhysicalDisk convertedDisk2 = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(convertedDisk2.getName()).thenReturn(String.format("%s-sdb", convertPrefix));
-        KVMPhysicalDisk convertedXml = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(convertedXml.getName()).thenReturn(String.format("%s.xml", convertPrefix));
-        Mockito.when(temporaryPool.listPhysicalDisks()).thenReturn(Arrays.asList(physicalDisk1, physicalDisk2,
-                convertedDisk1, convertedDisk2, convertedXml));
-
-        List<KVMPhysicalDisk> convertedDisks = convertInstanceCommandWrapper.getTemporaryDisksWithPrefixFromTemporaryPool(temporaryPool, convertPath, convertPrefix);
-        Assert.assertEquals(2, convertedDisks.size());
-    }
-
-    @Test
-    public void testGetTemporaryDisksFromParsedXml() {
-        String relativePath = UUID.randomUUID().toString();
-        String fullPath = String.format("/mnt/xyz/%s", relativePath);
-
-        LibvirtVMDef.DiskDef diskDef = new LibvirtVMDef.DiskDef();
-        LibvirtVMDef.DiskDef.DiskBus bus = LibvirtVMDef.DiskDef.DiskBus.VIRTIO;
-        LibvirtVMDef.DiskDef.DiskFmtType type = LibvirtVMDef.DiskDef.DiskFmtType.QCOW2;
-        diskDef.defFileBasedDisk(fullPath, "test", bus, type);
-
-        LibvirtDomainXMLParser parser = Mockito.mock(LibvirtDomainXMLParser.class);
-        Mockito.when(parser.getDisks()).thenReturn(List.of(diskDef));
-
-        KVMPhysicalDisk convertedDisk1 = Mockito.mock(KVMPhysicalDisk.class);
-        Mockito.when(convertedDisk1.getName()).thenReturn("disk1");
-        Mockito.when(temporaryPool.getPhysicalDisk(relativePath)).thenReturn(convertedDisk1);
-
-        List<KVMPhysicalDisk> disks = convertInstanceCommandWrapper.getTemporaryDisksFromParsedXml(temporaryPool, parser, "");
-        Mockito.verify(convertInstanceCommandWrapper).sanitizeDisksPath(List.of(diskDef));
-        Assert.assertEquals(1, disks.size());
-        Assert.assertEquals("disk1", disks.get(0).getName());
     }
 
     @Test
