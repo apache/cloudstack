@@ -60,6 +60,7 @@ SELECT
     guest_os_category.id guest_os_category_id,
     guest_os_category.uuid guest_os_category_uuid,
     guest_os_category.name guest_os_category_name,
+    (SELECT `value` FROM `cloud`.`host_details` `hd` WHERE `hd`.`host_id` = `cloud`.`host`.`id` AND `hd`.`name` = 'guest.os.rule') AS `guest_os_rule`,
     mem_caps.used_capacity memory_used_capacity,
     mem_caps.reserved_capacity memory_reserved_capacity,
     cpu_caps.used_capacity cpu_used_capacity,
