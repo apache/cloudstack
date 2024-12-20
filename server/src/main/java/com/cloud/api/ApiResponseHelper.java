@@ -2754,6 +2754,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         response.setBytesReceived(bytesReceived);
         response.setBytesSent(bytesSent);
+        response.setDetails(ApiDBUtils.getNetworkDetails(network.getId()));
 
         if (networkOfferingDao.isRoutedNetwork(network.getNetworkOfferingId())) {
             if (routedIpv4Manager.isDynamicRoutedNetwork(network)) {
