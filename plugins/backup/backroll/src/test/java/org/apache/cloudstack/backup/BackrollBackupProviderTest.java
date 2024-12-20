@@ -50,9 +50,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.VirtualMachine;
-
-
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
 public class BackrollBackupProviderTest {
     @Mock
@@ -69,6 +68,15 @@ public class BackrollBackupProviderTest {
     VMInstanceDao vmInstanceDao;
 
     @Mock
+    private ConfigKey<String> BackrollUrlConfigKey;
+
+    @Mock
+    private ConfigKey<String> BackrollAppNameConfigKey;
+
+    @Mock
+    private ConfigKey<String> BackrollPasswordConfigKey;
+
+    @Mock
     BackupDao backupDao;
 
     @Before
@@ -76,8 +84,10 @@ public class BackrollBackupProviderTest {
         vmInstanceDao = mock(VMInstanceDao.class);
         clientMock = mock(BackrollClient.class);
         backupDao = mock(BackupDao.class);
-        backupProviderMock = mock(BackrollBackupProvider.class);
         backupProvider = new BackrollBackupProvider(backupDao, vmInstanceDao, clientMock, Mockito.mock(Logger.class));
+        backupProvider.BackrollAppNameConfigKey = BackrollAppNameConfigKey;
+        backupProvider.BackrollPasswordConfigKey = BackrollPasswordConfigKey;
+        backupProvider.BackrollUrlConfigKey = BackrollUrlConfigKey;
     }
 
     @Test

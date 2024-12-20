@@ -60,7 +60,7 @@ import com.cloud.utils.nio.TrustAllManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class BackrollHttpClientProvider {
-    private final URI apiURI;
+    private URI apiURI;;
     private String backrollToken = null;
     private String appname = null;
     private String password = null;
@@ -69,23 +69,25 @@ public class BackrollHttpClientProvider {
 
     private Logger logger = LogManager.getLogger(BackrollClient.class);
 
-    public BackrollHttpClientProvider(final String url, final String appname, final String password,
+    public static BackrollHttpClientProvider createProvider(BackrollHttpClientProvider backrollHttpClientProvider, final String url, final String appname, final String password,
         final boolean validateCertificate, final int timeout,
-        final int restoreTimeout)
-        throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
-        this.apiURI = new URI(url);
-        this.appname = appname;
-        this.password = password;
-        this.validateCertificate = validateCertificate;
+        final int restoreTimeout) throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
 
-        this.config = RequestConfig.custom()
+        backrollHttpClientProvider.apiURI = new URI(url);
+        backrollHttpClientProvider.appname = appname;
+        backrollHttpClientProvider.password = password;
+        backrollHttpClientProvider.validateCertificate = validateCertificate;
+
+        backrollHttpClientProvider.config = RequestConfig.custom()
             .setConnectTimeout(timeout * 1000)
             .setConnectionRequestTimeout(timeout * 1000)
             .setSocketTimeout(timeout * 1000)
             .build();
+
+        return backrollHttpClientProvider;
     }
 
-    private CloseableHttpClient createHttpClient() throws BackrollApiException {
+    protected CloseableHttpClient createHttpClient() throws BackrollApiException {
         if(!validateCertificate) {
             SSLContext sslContext;
             try {

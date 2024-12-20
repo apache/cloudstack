@@ -377,11 +377,11 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
             throw new CloudRuntimeException("You can't delete a backup while it still BackingUp");
         } else {
             logger.debug("backroll - try delete backup");
-            VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
 
             if (backup.getStatus().equals(Backup.Status.Removed) || backup.getStatus().equals(Backup.Status.Failed)){
                 return deleteBackupInDb(backup);
             } else {
+                VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
                 try {
                     if (getClient(backup.getZoneId()).deleteBackup(vm.getUuid(), getBackupName(backup))) {
                         logger.debug("Backup deletion for backup {} complete on backroll side.", backup.getUuid());
@@ -411,7 +411,7 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
         try {
             if (backrollClient == null) {
                 logger.debug("backroll client null - instantiation of new one ");
-                BackrollHttpClientProvider provider = new BackrollHttpClientProvider(BackrollUrlConfigKey.valueIn(zoneId), BackrollAppNameConfigKey.valueIn(zoneId), BackrollPasswordConfigKey.valueIn(zoneId), true, 300, 600);
+                BackrollHttpClientProvider provider = BackrollHttpClientProvider.createProvider(new BackrollHttpClientProvider(), BackrollUrlConfigKey.valueIn(zoneId), BackrollAppNameConfigKey.valueIn(zoneId), BackrollPasswordConfigKey.valueIn(zoneId), true, 300, 600);
                 backrollClient = new BackrollClient(provider);
             }
             return backrollClient;
