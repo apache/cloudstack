@@ -22,6 +22,7 @@ import io.netris.ApiClient;
 import io.netris.ApiException;
 import io.netris.ApiResponse;
 import io.netris.api.v1.AuthenticationApi;
+import io.netris.api.v1.RoutesApi;
 import io.netris.api.v1.SitesApi;
 import io.netris.api.v1.TenantsApi;
 import io.netris.api.v2.IpamApi;
@@ -35,6 +36,7 @@ import io.netris.model.FilterByVpc;
 import io.netris.model.GetSiteBody;
 import io.netris.model.InlineResponse20015;
 import io.netris.model.InlineResponse20016;
+import io.netris.model.InlineResponse2003;
 import io.netris.model.InlineResponse2004;
 import io.netris.model.InlineResponse2004Data;
 import io.netris.model.IpTree;
@@ -48,6 +50,13 @@ import io.netris.model.NatGetBody;
 import io.netris.model.NatPostBody;
 import io.netris.model.NatPutBody;
 import io.netris.model.NatResponseGetOk;
+import io.netris.model.RoutesBody;
+import io.netris.model.RoutesBodyId;
+import io.netris.model.RoutesBodyVpcVpc;
+import io.netris.model.RoutesGetBody;
+import io.netris.model.RoutesPostBody;
+import io.netris.model.RoutesPutBody;
+import io.netris.model.RoutesResponseGetOk;
 import io.netris.model.SitesResponseOK;
 import io.netris.model.SubnetBody;
 import io.netris.model.SubnetResBody;
@@ -71,10 +80,12 @@ import io.netris.model.VnetsBody;
 import io.netris.model.response.AuthResponse;
 import io.netris.model.response.TenantResponse;
 import io.netris.model.response.TenantsResponse;
+import org.apache.cloudstack.agent.api.AddOrUpdateNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisNatCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
+import org.apache.cloudstack.agent.api.DeleteNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
@@ -281,6 +292,176 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             throw new CloudRuntimeException("Error deleting Netris NAT Rule", e);
         }
         return true;
+    }
+
+    @Override
+    public boolean addOrUpdateStaticRoute(AddOrUpdateNetrisStaticRouteCommand cmd) {
+        String prefix = cmd.getPrefix();
+        String nextHop = cmd.getNextHop();
+        Long vpcId = cmd.getId();
+        String vpcName = cmd.getName();
+        boolean updateRoute = cmd.isUpdateRoute();
+        try {
+            String vpcSuffix = getNetrisVpcNameSuffix(vpcId, vpcName, null, null, true);
+            String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, vpcSuffix);
+            VPCListing vpcResource = getVpcByNameAndTenant(netrisVpcName);
+            if (vpcResource == null) {
+                logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", netrisVpcName, tenantId);
+                return false;
+            }
+
+            String[] suffixes = new String[2];
+            suffixes[0] = vpcId.toString();
+            suffixes[1] = cmd.getRouteId().toString();
+            String staticRouteId = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, suffixes);
+
+            Pair<Boolean, RoutesGetBody> existingStaticRoute = staticRouteExists(vpcResource.getId(), prefix, null, staticRouteId);
+            if (updateRoute) {
+                if (!existingStaticRoute.first()) {
+                    logger.error("The Netris static route {} does not exist for VPC {}", prefix, netrisVpcName);
+                    return false;
+                }
+                return updateStaticRouteInternal(existingStaticRoute.second().getId(), netrisVpcName, prefix, nextHop, staticRouteId);
+            } else {
+                if (existingStaticRoute.first()) {
+                    String existingNextHop = existingStaticRoute.second().getNextHop();
+                    if (existingNextHop != null && existingNextHop.equals(nextHop)) {
+                        logger.debug("The Netris static route {} already exists for VPC {}", prefix, netrisVpcName);
+                        return true;
+                    } else {
+                        logger.debug("The Netris static route {} already exists but has different next hop {} for VPC {}", prefix, nextHop, netrisVpcName);
+                        return false;
+                    }
+                }
+                return addStaticRouteInternal(vpcResource, netrisVpcName, prefix, nextHop, staticRouteId);
+            }
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Error adding Netris static route", e);
+        }
+    }
+
+    private boolean addStaticRouteInternal(VPCListing vpcResource, String netrisVpcName, String prefix, String nextHop, String staticRouteId) {
+        try {
+            RoutesApi routesApi = apiClient.getApiStubForMethod(RoutesApi.class);
+            RoutesPostBody routesPostBody = new RoutesPostBody();
+            routesPostBody.setPrefix(prefix);
+            routesPostBody.setNextHop(nextHop);
+            routesPostBody.setSiteId(new BigDecimal(siteId));
+            routesPostBody.setStateStatus(RoutesBody.StateStatusEnum.ACTIVE);
+
+            RoutesBodyVpcVpc vpcBody = new RoutesBodyVpcVpc();
+            vpcBody.setId(vpcResource.getId());
+            vpcBody.setName(vpcResource.getName());
+            vpcBody.setIsDefault(vpcResource.isIsDefault());
+            vpcBody.setIsSystem(vpcResource.isIsSystem());
+            routesPostBody.setVpc(vpcBody);
+
+            routesPostBody.setDescription(staticRouteId);
+            routesPostBody.setStateStatus(RoutesBody.StateStatusEnum.ACTIVE);
+            routesPostBody.setSwitches(Collections.emptyList());
+
+            InlineResponse2004 routeResponse = routesApi.apiRoutesPost(routesPostBody);
+            if (routeResponse == null || !routeResponse.isIsSuccess()) {
+                String reason = routeResponse == null ? "Empty response" : "Operation failed on Netris";
+                logger.debug("The Netris static route creation failed for netris VPC - {}: {}", netrisVpcName, reason);
+                throw new CloudRuntimeException(reason);
+            }
+        } catch (ApiException e) {
+            logAndThrowException("Error adding Netris static route", e);
+            return false;
+        }
+        return true;
+    }
+
+    private boolean updateStaticRouteInternal(Integer id, String netrisVpcName, String prefix, String nextHop, String staticRouteId) {
+        try {
+            RoutesApi routesApi = apiClient.getApiStubForMethod(RoutesApi.class);
+            RoutesPutBody routesPutBody = new RoutesPutBody();
+            routesPutBody.setId(id);
+            routesPutBody.setPrefix(prefix);
+            routesPutBody.setNextHop(nextHop);
+            routesPutBody.setSiteId(new BigDecimal(siteId));
+
+            routesPutBody.setDescription(staticRouteId);
+            routesPutBody.setSwitches(Collections.emptyList());
+
+            InlineResponse2003 routeResponse = routesApi.apiRoutesPut(routesPutBody);
+            if (routeResponse == null || !routeResponse.isIsSuccess()) {
+                String reason = routeResponse == null ? "Empty response" : "Operation failed on Netris";
+                logger.debug("Failed to update Netris static route for netris VPC - {}: {}", netrisVpcName, reason);
+                throw new CloudRuntimeException(reason);
+            }
+        } catch (ApiException e) {
+            logAndThrowException("Error updating Netris static route", e);
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public boolean deleteStaticRoute(DeleteNetrisStaticRouteCommand cmd) {
+        Long vpcId = cmd.getId();
+        String vpcName = cmd.getName();
+        String prefix = cmd.getPrefix();
+        String nextHop = cmd.getNextHop();
+        try {
+            String vpcSuffix = getNetrisVpcNameSuffix(vpcId, vpcName, null, null, true);
+            String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, vpcSuffix);
+            VPCListing vpcResource = getVpcByNameAndTenant(netrisVpcName);
+            if (vpcResource == null) {
+                logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", netrisVpcName, tenantId);
+                return false;
+            }
+
+            String[] suffixes = new String[2];
+            suffixes[0] = vpcId.toString();
+            suffixes[1] = cmd.getRouteId().toString();
+            String staticRouteId = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, suffixes);
+            Pair<Boolean, RoutesGetBody> existingStaticRoute = staticRouteExists(vpcResource.getId(), prefix, nextHop, staticRouteId);
+
+            if (Boolean.FALSE.equals(existingStaticRoute.first())) {
+                logger.debug("The Netris static route {} does not exist for VPC {}", prefix, netrisVpcName);
+                return true;
+            }
+            RoutesGetBody existingRoute = existingStaticRoute.second();
+            RoutesApi routesApi = apiClient.getApiStubForMethod(RoutesApi.class);
+            RoutesBodyId id = new RoutesBodyId();
+            id.setId(existingRoute.getId());
+            InlineResponse2003 routeDeleteResponse = routesApi.apiRoutesDelete(id);
+            if (routeDeleteResponse == null || !routeDeleteResponse.isIsSuccess()) {
+                String reason = routeDeleteResponse == null ? "Empty response" : "Operation failed on Netris";
+                logger.debug("The Netris static route deletion failed for netris VPC - {}: {}", netrisVpcName, reason);
+                throw new CloudRuntimeException(reason);
+            }
+            return true;
+        } catch (ApiException e) {
+            logAndThrowException("Error deleting Netris static route", e);
+        }
+        return false;
+    }
+
+    private Pair<Boolean, RoutesGetBody> staticRouteExists(Integer netrisVpcId, String prefix, String nextHop, String description) {
+        try {
+            FilterByVpc vpcFilter = new FilterByVpc();
+            vpcFilter.add(netrisVpcId);
+            FilterBySites sitesFilter = new FilterBySites();
+            sitesFilter.add(siteId);
+            RoutesApi routesApi = apiClient.getApiStubForMethod(RoutesApi.class);
+            RoutesResponseGetOk routesResponseGetOk = routesApi.apiRoutesGet(sitesFilter, vpcFilter);
+            if (Objects.isNull(routesResponseGetOk) || Boolean.FALSE.equals(routesResponseGetOk.isIsSuccess())) {
+                logger.warn("Failed to retrieve static routes");
+                return new Pair<>(false, null);
+            }
+            List<RoutesGetBody> routesList = routesResponseGetOk.getData();
+            List<RoutesGetBody> filteredList = routesList.stream()
+                    .filter(x -> x.getName().equals(prefix) &&
+                            (Objects.isNull(nextHop) || x.getNextHop().equals(nextHop)))
+                    .collect(Collectors.toList());
+            return new Pair<>(!filteredList.isEmpty(), filteredList.isEmpty() ? null : filteredList.get(0));
+        } catch (ApiException e) {
+            logAndThrowException("Error checking Netris static routes", e);
+        }
+        return new Pair<>(false, null);
     }
 
     private void deleteNatSubnet(Integer netrisVpcId, String natIp) {

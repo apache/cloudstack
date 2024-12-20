@@ -61,6 +61,7 @@ import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.PrivateGateway;
+import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcVO;
@@ -410,6 +411,15 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
 
     @Override
     public boolean applyStaticRoutes(Vpc vpc, List<StaticRouteProfile> routes) throws ResourceUnavailableException {
+        for(StaticRouteProfile staticRoute : routes) {
+            if (StaticRoute.State.Add == staticRoute.getState()) {
+                netrisService.addOrUpdateStaticRoute(vpc.getZoneId(), vpc.getAccountId(), vpc.getDomainId(), vpc.getName(), vpc.getId(), true, staticRoute.getCidr(), staticRoute.getGateway(), staticRoute.getId(), false);
+            } else if (StaticRoute.State.Revoke == staticRoute.getState()) {
+                netrisService.deleteStaticRoute(vpc.getZoneId(), vpc.getAccountId(), vpc.getDomainId(), vpc.getName(), vpc.getId(), true, staticRoute.getCidr(), staticRoute.getGateway(), staticRoute.getId());
+            } else if (StaticRoute.State.Update == staticRoute.getState()) {
+                netrisService.addOrUpdateStaticRoute(vpc.getZoneId(), vpc.getAccountId(), vpc.getDomainId(), vpc.getName(), vpc.getId(), true, staticRoute.getCidr(), staticRoute.getGateway(), staticRoute.getId(), true);
+            }
+        }
         return true;
     }
 
