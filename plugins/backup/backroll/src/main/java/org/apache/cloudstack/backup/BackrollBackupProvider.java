@@ -146,7 +146,7 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
         try {
             isSuccess = getClient(vm.getDataCenterId()).restoreVMFromBackup(vm.getUuid(), getBackupName(backup));
         } catch (ParseException | BackrollApiException | IOException e) {
-            throw new CloudRuntimeException("Failed to restore VM from Backrup");
+            throw new CloudRuntimeException("Failed to restore VM from Backup");
         }
         return isSuccess;
     }
@@ -198,7 +198,7 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
 
         try {
             String urlToRequest = client.startBackupJob(vm.getUuid());
-
+            logger.info("BackrollProvider: urlToRequest: " + urlToRequest);
             String backupJob = urlToRequest.replace("/status/", "");
             if (!StringUtils.isEmpty(backupJob)) {
                 BackupVO backup = new BackupVO();

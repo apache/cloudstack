@@ -69,10 +69,10 @@ public class BackrollClient {
     }
 
     public String startBackupJob(final String jobId) throws IOException, BackrollApiException {
-        logger.info("Trying to start backup for Backroll job: {}", jobId);
+        logger.info("startBackupJob : Trying to start backup for Backroll job: {}", jobId);
         String backupJob = "";
         BackrollTaskRequestResponse requestResponse = httpProvider.post(String.format("/tasks/singlebackup/%s", jobId), null, BackrollTaskRequestResponse.class);
-        logger.info("BackupJob status link: {}", requestResponse.location);
+        logger.info("startBackupJob : BackupJob status link: {}", requestResponse.location);
         backupJob = requestResponse.location.replace("/api/v1", "");
         return StringUtils.isEmpty(backupJob) ? null : backupJob;
     }

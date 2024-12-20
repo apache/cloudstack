@@ -136,8 +136,9 @@ public class BackrollHttpClientProvider {
             logger.debug("Response received in POST request with body {} is: {} for URL {}.", xml, response.toString(), url);
 
             String result = okBody(response);
+
             T requestResponse = new ObjectMapper().readValue(result, classOfT);
-            response.close();
+            //response.close();
 
             return requestResponse;
         } catch (ParseException | NotOkBodyException e) {
@@ -164,7 +165,7 @@ public class BackrollHttpClientProvider {
 
             String result = okBody(response);
             T requestResponse = new ObjectMapper().readValue(result, classOfT);
-            response.close();
+            //response.close();
 
             return requestResponse;
         } catch (NotOkBodyException e) {
@@ -190,7 +191,7 @@ public class BackrollHttpClientProvider {
             logger.debug("Response received in GET request is: {} for URL: {}.", response.toString(), url);
 
             String result = okBody(response);
-            response.close();
+            //response.close();
 
             return result;
         } catch (NotOkBodyException e) {
@@ -215,7 +216,7 @@ public class BackrollHttpClientProvider {
 
             String result = okBody(response);
             T requestResponse = new ObjectMapper().readValue(result, classOfT);
-            response.close();
+            //response.close();
 
             return requestResponse;
         } catch (NotOkBodyException e) {
@@ -235,7 +236,9 @@ public class BackrollHttpClientProvider {
             case HttpStatus.SC_ACCEPTED:
                 HttpEntity bodyEntity = response.getEntity();
                 try {
+                    logger.debug("bodyentity : {}", bodyEntity);
                     result = EntityUtils.toString(bodyEntity);
+                    logger.debug("bodyentity : result {}", result);
                     EntityUtils.consumeQuietly(bodyEntity);
                     return result;
                 } catch (ParseException | IOException e) {
@@ -290,6 +293,7 @@ public class BackrollHttpClientProvider {
 
             String body = getWithoutParseResponse(url);
             if (!body.contains(TaskState.PENDING)) {
+                logger.debug("waitGetWithoutParseResponse : result {}", body);
                 return body;
             }
 
@@ -301,7 +305,6 @@ public class BackrollHttpClientProvider {
                 throw new BackrollApiException();
             }
         }
-
         return null;
     }
 
