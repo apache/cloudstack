@@ -1940,18 +1940,16 @@ export default {
         this.form.userdataid = undefined
         return
       }
+
       this.form.userdataid = id
       this.userDataParams = []
       api('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
         if (resp[0]) {
-          var params = resp[0].params
-          if (params) {
-            var dataParams = params.split(',')
-          }
-          var that = this
-          dataParams.forEach(function (val, index) {
-            that.userDataParams.push({
+          const params = resp[0].params
+          const dataParams = params ? params.split(',') : []
+          dataParams.forEach((val, index) => {
+            this.userDataParams.push({
               id: index,
               key: val
             })
