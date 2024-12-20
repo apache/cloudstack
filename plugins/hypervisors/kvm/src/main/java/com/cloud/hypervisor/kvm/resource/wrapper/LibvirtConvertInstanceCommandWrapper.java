@@ -130,34 +130,25 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         final String temporaryConvertUuid = UUID.randomUUID().toString();
         boolean verboseModeEnabled = serverResource.isConvertInstanceVerboseModeEnabled();
 
+        boolean cleanupSecondaryStorage = false;
         try {
             boolean result = performInstanceConversion(sourceOVFDirPath, temporaryConvertPath, temporaryConvertUuid,
                     timeout, verboseModeEnabled);
             if (!result) {
-                String err = String.format("The virt-v2v conversion for the OVF %s failed. " +
-                                "Please check the agent logs for the virt-v2v output", ovfTemplateDirOnConversionLocation);
+                String err = String.format(
+                        "The virt-v2v conversion for the OVF %s failed. Please check the agent logs " +
+                                "for the virt-v2v output. Please try on a different kvm host which " +
+                                "has a different virt-v2v version.",
+                        ovfTemplateDirOnConversionLocation);
                 logger.error(err);
                 return new ConvertInstanceAnswer(cmd, false, err);
             }
-            String convertedBasePath = String.format("%s/%s", temporaryConvertPath, temporaryConvertUuid);
-            LibvirtDomainXMLParser xmlParser = parseMigratedVMXmlDomain(convertedBasePath);
-
-            List<KVMPhysicalDisk> temporaryDisks = xmlParser == null ?
-                    getTemporaryDisksWithPrefixFromTemporaryPool(temporaryStoragePool, temporaryConvertPath, temporaryConvertUuid) :
-                    getTemporaryDisksFromParsedXml(temporaryStoragePool, xmlParser, convertedBasePath);
-
-            List<KVMPhysicalDisk> destinationDisks = moveTemporaryDisksToDestination(temporaryDisks,
-                    destinationStoragePools, storagePoolMgr);
-
-            cleanupDisksAndDomainFromTemporaryLocation(temporaryDisks, temporaryStoragePool, temporaryConvertUuid);
-
-            UnmanagedInstanceTO convertedInstanceTO = getConvertedUnmanagedInstance(temporaryConvertUuid,
-                    destinationDisks, xmlParser);
-            return new ConvertInstanceAnswer(cmd, convertedInstanceTO);
+            return new ConvertInstanceAnswer(cmd, temporaryConvertUuid);
         } catch (Exception e) {
             String error = String.format("Error converting instance %s from %s, due to: %s",
                     sourceInstanceName, sourceHypervisorType, e.getMessage());
             logger.error(error, e);
+            cleanupSecondaryStorage = true;
             return new ConvertInstanceAnswer(cmd, false, error);
         } finally {
             if (ovfExported && StringUtils.isNotBlank(ovfTemplateDirOnConversionLocation)) {
@@ -165,7 +156,7 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
                 logger.debug("Cleaning up exported OVA at dir " + sourceOVFDir);
                 FileUtil.deletePath(sourceOVFDir);
             }
-            if (conversionTemporaryLocation instanceof NfsTO) {
+            if (cleanupSecondaryStorage && conversionTemporaryLocation instanceof NfsTO) {
                 logger.debug("Cleaning up secondary storage temporary location");
                 storagePoolMgr.deleteStoragePool(temporaryStoragePool.getType(), temporaryStoragePool.getUuid());
             }

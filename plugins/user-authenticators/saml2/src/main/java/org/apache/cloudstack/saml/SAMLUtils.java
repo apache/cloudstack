@@ -194,7 +194,7 @@ public class SAMLUtils {
         authnRequest.setID(authnId);
         authnRequest.setDestination(idpUrl);
         authnRequest.setVersion(SAMLVersion.VERSION_20);
-        authnRequest.setForceAuthn(false);
+        authnRequest.setForceAuthn(SAML2AuthManager.SAMLForceAuthn.value());
         authnRequest.setIsPassive(false);
         authnRequest.setIssueInstant(new DateTime());
         authnRequest.setProtocolBinding(SAMLConstants.SAML2_POST_BINDING_URI);
@@ -321,6 +321,7 @@ public class SAMLUtils {
         String sessionKeyCookie = String.format("%s=%s;Domain=%s;Path=%s;%s", ApiConstants.SESSIONKEY, loginResponse.getSessionKey(), domain, path, sameSite);
         LOGGER.debug("Adding sessionkey cookie to response: " + sessionKeyCookie);
         resp.addHeader("SET-COOKIE", sessionKeyCookie);
+        resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly;Path=/client/api;%s", ApiConstants.SESSIONKEY, loginResponse.getSessionKey(), sameSite));
     }
 
     /**

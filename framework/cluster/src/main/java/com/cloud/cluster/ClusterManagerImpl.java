@@ -758,21 +758,16 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         }
 
         switch (msg.getMessageType()) {
-        case nodeAdded: {
-            final List<ManagementServerHostVO> l = msg.getNodes();
-            if (l != null && l.size() > 0) {
-                for (final ManagementServerHostVO mshost : l) {
-                    _mshostPeerDao.updatePeerInfo(_mshostId, mshost.getId(), mshost.getRunid(), ManagementServerHost.State.Up);
-                }
-            }
-        }
+        case nodeAdded:
         break;
 
         case nodeRemoved: {
             final List<ManagementServerHostVO> l = msg.getNodes();
             if (l != null && l.size() > 0) {
                 for (final ManagementServerHostVO mshost : l) {
-                    _mshostPeerDao.updatePeerInfo(_mshostId, mshost.getId(), mshost.getRunid(), ManagementServerHost.State.Down);
+                    if (mshost.getId() != _mshostId) {
+                        _mshostPeerDao.updatePeerInfo(_mshostId, mshost.getId(), mshost.getRunid(), ManagementServerHost.State.Down);
+                    }
                 }
             }
         }
@@ -823,8 +818,9 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
             final List<ManagementServerHostVO> downHostList = new ArrayList<ManagementServerHostVO>();
             for (final ManagementServerHostVO host : inactiveList) {
-                if (!pingManagementNode(host)) {
-                    logger.warn("Management node " + host.getId() + " is detected inactive by timestamp and also not pingable");
+                // Check if peer state is Up in the period
+                if (!_mshostPeerDao.isPeerUpState(_mshostId, host.getId(), new Date(cutTime.getTime() - HeartbeatThreshold.value()))) {
+                    logger.warn("Management node " + host.getId() + " is detected inactive by timestamp and did not send node status to this node");
                     downHostList.add(host);
                 }
             }
@@ -898,6 +894,44 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
         final Profiler profilerInvalidatedNodeList = new Profiler();
         profilerInvalidatedNodeList.start();
+        processInvalidatedNodes(invalidatedNodeList);
+        profilerInvalidatedNodeList.stop();
+
+        final Profiler profilerRemovedList = new Profiler();
+        profilerRemovedList.start();
+        processRemovedNodes(cutTime, removedNodeList);
+        profilerRemovedList.stop();
+
+        final Profiler profilerNewList = new Profiler();
+        profilerNewList.start();
+        processNewNodes(cutTime, currentList);
+        profilerNewList.stop();
+
+        final Profiler profilerInactiveList = new Profiler();
+        profilerInactiveList.start();
+        processInactiveNodes(cutTime);
+        profilerInactiveList.stop();
+
+        profiler.stop();
+
+        logger.debug(String.format("Peer scan is finished. profiler: %s , profilerQueryActiveList: %s, " +
+                        ", profilerSyncClusterInfo: %s, profilerInvalidatedNodeList: %s, profilerRemovedList: %s," +
+                        ", profilerNewList: %s, profilerInactiveList: %s",
+                profiler, profilerQueryActiveList, profilerSyncClusterInfo, profilerInvalidatedNodeList, profilerRemovedList,
+                profilerNewList, profilerInactiveList));
+
+        if (profiler.getDurationInMillis() >= HeartbeatInterval.value()) {
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Peer scan takes too long to finish. profiler: %s , profilerQueryActiveList: %s, " +
+                        ", profilerSyncClusterInfo: %s, profilerInvalidatedNodeList: %s, profilerRemovedList: %s," +
+                        ", profilerNewList: %s, profilerInactiveList: %s",
+                        profiler, profilerQueryActiveList, profilerSyncClusterInfo, profilerInvalidatedNodeList, profilerRemovedList,
+                        profilerNewList, profilerInactiveList));
+            }
+        }
+    }
+
+    private void processInvalidatedNodes(List<ManagementServerHostVO> invalidatedNodeList) {
         // process invalidated node list
         if (invalidatedNodeList.size() > 0) {
             for (final ManagementServerHostVO mshost : invalidatedNodeList) {
@@ -911,16 +945,16 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
             queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeRemoved, invalidatedNodeList));
         }
-        profilerInvalidatedNodeList.stop();
+    }
 
-        final Profiler profilerRemovedList = new Profiler();
-        profilerRemovedList.start();
+    private void processRemovedNodes(Date cutTime, List<ManagementServerHostVO> removedNodeList) {
         // process removed node list
         final Iterator<ManagementServerHostVO> it = removedNodeList.iterator();
         while (it.hasNext()) {
             final ManagementServerHostVO mshost = it.next();
-            if (!pingManagementNode(mshost)) {
-                logger.warn("Management node " + mshost.getId() + " is detected inactive by timestamp and also not pingable");
+            // Check if peer state is Up in the period
+            if (!_mshostPeerDao.isPeerUpState(_mshostId, mshost.getId(), new Date(cutTime.getTime() - HeartbeatThreshold.value()))) {
+                logger.warn("Management node " + mshost.getId() + " is detected inactive by timestamp and did not send node status to this node");
                 _activePeers.remove(mshost.getId());
                 try {
                     JmxUtil.unregisterMBean("ClusterManager", "Node " + mshost.getId());
@@ -928,7 +962,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     logger.warn("Unable to deregiester cluster node from JMX monitoring due to exception " + e.toString());
                 }
             } else {
-                logger.info("Management node " + mshost.getId() + " is detected inactive by timestamp but is pingable");
+                logger.info("Management node " + mshost.getId() + " is detected inactive by timestamp but sent node status to this node");
                 it.remove();
             }
         }
@@ -936,8 +970,9 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         if (removedNodeList.size() > 0) {
             queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeRemoved, removedNodeList));
         }
-        profilerRemovedList.stop();
+    }
 
+    private void processNewNodes(Date cutTime, List<ManagementServerHostVO> currentList) {
         final List<ManagementServerHostVO> newNodeList = new ArrayList<ManagementServerHostVO>();
         for (final ManagementServerHostVO mshost : currentList) {
             if (!_activePeers.containsKey(mshost.getId())) {
@@ -959,17 +994,30 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         if (newNodeList.size() > 0) {
             queueNotification(new ClusterManagerMessage(ClusterManagerMessage.MessageType.nodeAdded, newNodeList));
         }
+    }
 
-        profiler.stop();
-
-        if (profiler.getDurationInMillis() >= HeartbeatInterval.value()) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Peer scan takes too long to finish. profiler: " + profiler.toString() + ", profilerQueryActiveList: " +
-                        profilerQueryActiveList.toString() + ", profilerSyncClusterInfo: " + profilerSyncClusterInfo.toString() + ", profilerInvalidatedNodeList: " +
-                        profilerInvalidatedNodeList.toString() + ", profilerRemovedList: " + profilerRemovedList.toString());
+    private void processInactiveNodes(Date cutTime) {
+        final List<ManagementServerHostVO> inactiveList = _mshostDao.getInactiveList(new Date(cutTime.getTime() - HeartbeatThreshold.value()));
+        if (inactiveList.size() > 0) {
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Found %s inactive management server node based on timestamp", inactiveList.size()));
             }
+            for (final ManagementServerHostVO host : inactiveList) {
+                logger.info(String.format("management server node msid: %s, name: %s, service ip: %s, version: %s",
+                        host.getMsid(),  host.getName(), host.getServiceIP(), host.getVersion()));
+                // Check if any peer state is Up in the period
+                if (ManagementServerHost.State.Up.equals(host.getState()) &&
+                        !_mshostPeerDao.isPeerUpState(host.getId(), new Date(cutTime.getTime() - HeartbeatThreshold.value()))) {
+                    logger.warn("Management node " + host.getId() + " is detected inactive by timestamp and did not send node status to all other nodes");
+                    host.setState(ManagementServerHost.State.Down);
+                    _mshostDao.update(host.getId(), host);
+                }
+            }
+        } else {
+            logger.info("No inactive management server node found");
         }
     }
+
 
     private static ManagementServerHostVO getInListById(final Long id, final List<ManagementServerHostVO> l) {
         for (final ManagementServerHostVO mshost : l) {

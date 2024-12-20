@@ -218,6 +218,8 @@
 
     <bean id="snapshotHelper" class="org.apache.cloudstack.snapshot.SnapshotHelper" />
 
+    <bean id="jsInterpreterHelper" class="org.apache.cloudstack.jsinterpreter.JsInterpreterHelper" />
+
     <bean id="uploadMonitorImpl" class="com.cloud.storage.upload.UploadMonitorImpl" />
     <bean id="usageServiceImpl" class="com.cloud.usage.UsageServiceImpl" />
 
