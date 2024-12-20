@@ -32,6 +32,8 @@ public interface ManagementServerHostStats {
 
     String getManagementServerHostUuid();
 
+    long getManagementServerRunId();
+
     long getSessions();
 
     double getCpuUtilization();

@@ -17,6 +17,8 @@
 package com.cloud.api;
 
 import com.cloud.domain.Domain;
+import com.cloud.user.Account;
+import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -146,5 +148,32 @@ public class ApiServerTest {
         Mockito.when(userAccount.getAccountState()).thenReturn("ENABLED");
         Mockito.when(domain.getState()).thenReturn(Domain.State.Inactive);
         apiServer.forgotPassword(userAccount, domain);
+    }
+
+    @Test
+    public void testVerifyApiKeyAccessAllowed() {
+        Long domainId = 1L;
+        User user = Mockito.mock(User.class);
+        Account account = Mockito.mock(Account.class);
+
+        Mockito.when(user.getApiKeyAccess()).thenReturn(true);
+        Assert.assertEquals(true, apiServer.verifyApiKeyAccessAllowed(user, account));
+        Mockito.verify(account, Mockito.never()).getApiKeyAccess();
+
+        Mockito.when(user.getApiKeyAccess()).thenReturn(false);
+        Assert.assertEquals(false, apiServer.verifyApiKeyAccessAllowed(user, account));
+        Mockito.verify(account, Mockito.never()).getApiKeyAccess();
+
+        Mockito.when(user.getApiKeyAccess()).thenReturn(null);
+        Mockito.when(account.getApiKeyAccess()).thenReturn(true);
+        Assert.assertEquals(true, apiServer.verifyApiKeyAccessAllowed(user, account));
+
+        Mockito.when(user.getApiKeyAccess()).thenReturn(null);
+        Mockito.when(account.getApiKeyAccess()).thenReturn(false);
+        Assert.assertEquals(false, apiServer.verifyApiKeyAccessAllowed(user, account));
+
+        Mockito.when(user.getApiKeyAccess()).thenReturn(null);
+        Mockito.when(account.getApiKeyAccess()).thenReturn(null);
+        Assert.assertEquals(true, apiServer.verifyApiKeyAccessAllowed(user, account));
     }
 }

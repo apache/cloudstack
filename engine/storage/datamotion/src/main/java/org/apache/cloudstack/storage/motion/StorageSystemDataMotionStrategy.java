@@ -2026,16 +2026,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     continue;
                 }
 
-                VMTemplateVO vmTemplate = _vmTemplateDao.findById(vmInstance.getTemplateId());
-                if (srcVolumeInfo.getTemplateId() != null &&
-                        Objects.nonNull(vmTemplate) &&
-                        !Arrays.asList(KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME, VM_IMPORT_DEFAULT_TEMPLATE_NAME).contains(vmTemplate.getName())) {
-                    logger.debug(String.format("Copying template [%s] of volume [%s] from source storage pool [%s] to target storage pool [%s].", srcVolumeInfo.getTemplateId(), srcVolumeInfo.getId(), sourceStoragePool.getId(), destStoragePool.getId()));
-                    copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
-                } else {
-                    logger.debug(String.format("Skipping copy template from source storage pool [%s] to target storage pool [%s] before migration due to volume [%s] does not have a template.", sourceStoragePool.getId(), destStoragePool.getId(), srcVolumeInfo.getId()));
-                }
-
                 MigrationOptions.Type migrationType = decideMigrationTypeAndCopyTemplateIfNeeded(destHost, vmInstance, srcVolumeInfo, sourceStoragePool, destStoragePool, destDataStore);
                 migrateNonSharedInc = migrateNonSharedInc || MigrationOptions.Type.LinkedClone.equals(migrationType);
 
@@ -2088,8 +2078,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     migrateDiskInfo = configureMigrateDiskInfo(srcVolumeInfo, destPath, backingPath);
                     migrateDiskInfo.setSourceDiskOnStorageFileSystem(isStoragePoolTypeOfFile(sourceStoragePool));
                     migrateDiskInfoList.add(migrateDiskInfo);
-                    prepareDiskWithSecretConsumerDetail(vmTO, srcVolumeInfo, destVolumeInfo.getPath());
                 }
+                prepareDiskWithSecretConsumerDetail(vmTO, srcVolumeInfo, destVolumeInfo.getPath());
 
                 migrateStorage.put(srcVolumeInfo.getPath(), migrateDiskInfo);
 
@@ -2303,6 +2293,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             if (success) {
                 VolumeVO volumeVO = _volumeDao.findById(destVolumeInfo.getId());
                 volumeVO.setFormat(ImageFormat.QCOW2);
+                volumeVO.setLastId(srcVolumeInfo.getId());
+
                 _volumeDao.update(volumeVO.getId(), volumeVO);
 
                 _volumeService.copyPoliciesBetweenVolumesAndDestroySourceVolumeAfterMigration(Event.OperationSuccessed, null, srcVolumeInfo, destVolumeInfo, false);
@@ -2489,7 +2481,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 throw new CloudRuntimeException("Destination storage pool with ID " + dataStore.getId() + " was not located.");
             }
 
-            if (srcStoragePoolVO.isManaged() && srcStoragePoolVO.getId() != destStoragePoolVO.getId()) {
+            boolean isSrcAndDestPoolPowerFlexStorage = srcStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex) && destStoragePoolVO.getPoolType().equals(Storage.StoragePoolType.PowerFlex);
+            if (srcStoragePoolVO.isManaged() && !isSrcAndDestPoolPowerFlexStorage && srcStoragePoolVO.getId() != destStoragePoolVO.getId()) {
                 throw new CloudRuntimeException("Migrating a volume online with KVM from managed storage is not currently supported.");
             }
 
