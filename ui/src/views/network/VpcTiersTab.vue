@@ -637,7 +637,7 @@ export default {
           }
         }
         this.networkOfferings = filteredOfferings
-        if (this.isNsxEnabled || ['netris', 'nsx'].includes(this.zoneExtNetProvider.toLowerCase())) {
+        if (this.isNsxEnabled || (this.zoneExtNetProvider && ['netris', 'nsx'].includes(this.zoneExtNetProvider.toLowerCase()))) {
           this.networkOfferings = this.networkOfferings.filter(offering => offering.networkmode === (this.isOfferingNatMode ? 'NATTED' : 'ROUTED'))
         }
         if (this.resource.asnumberid) {

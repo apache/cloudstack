@@ -33,7 +33,9 @@ public interface StaticRoute extends ControlledEntity, Identity, InternalIdentit
     /**
      * @return
      */
-    long getVpcGatewayId();
+    Long getVpcGatewayId();
+
+    String getNextHop();
 
     /**
      * @return

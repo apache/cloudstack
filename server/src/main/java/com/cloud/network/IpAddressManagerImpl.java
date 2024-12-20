@@ -38,6 +38,8 @@ import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.vo.PublicIpQuarantineVO;
@@ -329,6 +331,10 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @Inject
     PublicIpQuarantineDao publicIpQuarantineDao;
+    @Inject
+    RemoteAccessVpnDao remoteAccessVpnDao;
+    @Inject
+    Site2SiteVpnGatewayDao site2SiteVpnGatewayDao;
 
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;
     SearchBuilder<IPAddressVO> AssignIpAddressFromPodVlanSearch;
@@ -744,6 +750,21 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             if (ipToBeDisassociated == null) {
                 logger.error(String.format("Unable to acquire lock on public IP %s.", addrId));
                 throw new CloudRuntimeException("Unable to acquire lock on public IP.");
+            }
+
+            if (ipToBeDisassociated.isForRouter()) {
+                if (remoteAccessVpnDao.findByPublicIpAddress(ipToBeDisassociated.getId()) != null) {
+                    InvalidParameterValueException ex = new InvalidParameterValueException("Can't release IP address as the IP address is used by a Remote Access VPN");
+                    ex.addProxyObject(ipToBeDisassociated.getUuid(), "ipId");
+                    throw ex;
+
+                }
+                if (site2SiteVpnGatewayDao.findByPublicIpAddress(ipToBeDisassociated.getId()) != null) {
+                    InvalidParameterValueException ex = new InvalidParameterValueException("Can't release IP address as the IP address is used by a VPC gateway");
+                    ex.addProxyObject(ipToBeDisassociated.getUuid(), "ipId");
+                    throw ex;
+
+                }
             }
 
             PublicIpQuarantine publicIpQuarantine = null;

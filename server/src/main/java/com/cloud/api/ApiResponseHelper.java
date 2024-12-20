@@ -49,6 +49,7 @@ import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.ASNumberRangeDao;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.vpc.VpcGateway;
 import com.cloud.storage.BucketVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -1036,6 +1037,9 @@ public class ApiResponseHelper implements ResponseGenerator {
                 addSystemVmInfoToIpResponse(nic, response);
             }
         }
+        if (ipAddress.isForRouter()) {
+            response.setVirtualMachineType(Type.DomainRouter.toString());
+        }
         if (ipAddress.getAssociatedWithVmId() != null) {
             addUserVmDetailsInIpResponse(response, ipAddress);
         }
@@ -1062,12 +1066,25 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     private void addUserVmDetailsInIpResponse(IPAddressResponse response, IpAddress ipAddress) {
-        UserVm userVm = ApiDBUtils.findUserVmById(ipAddress.getAssociatedWithVmId());
-        if (userVm != null) {
-            response.setVirtualMachineId(userVm.getUuid());
-            response.setVirtualMachineName(userVm.getHostName());
-            response.setVirtualMachineType(userVm.getType().toString());
-            response.setVirtualMachineDisplayName(ObjectUtils.firstNonNull(userVm.getDisplayName(), userVm.getHostName()));
+        VirtualMachine vm = ApiDBUtils.findVMInstanceById(ipAddress.getAssociatedWithVmId());
+        if (vm == null) {
+            return;
+        }
+        if (vm.getType().equals(Type.User)) {
+            UserVm userVm = ApiDBUtils.findUserVmById(ipAddress.getAssociatedWithVmId());
+            if (userVm != null) {
+                response.setVirtualMachineId(userVm.getUuid());
+                response.setVirtualMachineName(userVm.getHostName());
+                response.setVirtualMachineType(userVm.getType().toString());
+                response.setVirtualMachineDisplayName(ObjectUtils.firstNonNull(userVm.getDisplayName(), userVm.getHostName()));
+            }
+        } else if (vm.getType().equals(Type.DomainRouter)) {
+            final boolean isAdmin = Account.Type.ADMIN.equals(CallContext.current().getCallingAccount().getType());
+            if (isAdmin) {
+                response.setVirtualMachineId(vm.getUuid());
+                response.setVirtualMachineName(vm.getHostName());
+            }
+            response.setVirtualMachineType(vm.getType().toString());
         }
     }
 
@@ -1233,6 +1250,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                     } else {
                         ipResponse.setVirtualMachineDisplayName(vm.getHostName());
                     }
+                }
+            } else if (nic.getVmType() == Type.DomainRouter) {
+                VirtualMachine vm = ApiDBUtils.findVMInstanceById(nic.getInstanceId());
+                if (vm != null) {
+                    ipResponse.setVirtualMachineId(vm.getUuid());
+                    ipResponse.setVirtualMachineName(vm.getHostName());
+                    ipResponse.setVirtualMachineType(vm.getType().toString());
                 }
             } else if (nic.getVmType().isUsedBySystem()) {
                 ipResponse.setIsSystem(true);
@@ -3157,12 +3181,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<? extends Network.Provider> serviceProviders = ApiDBUtils.getProvidersForService(service);
         List<ProviderResponse> serviceProvidersResponses = new ArrayList<ProviderResponse>();
         for (Network.Provider serviceProvider : serviceProviders) {
-            // return only Virtual Router/JuniperSRX/CiscoVnmc as a provider for the firewall
-            if (service == Service.Firewall
-                    && !(serviceProvider == Provider.VirtualRouter || serviceProvider == Provider.CiscoVnmc || serviceProvider == Provider.PaloAlto || serviceProvider == Provider.BigSwitchBcf || serviceProvider == Provider.Tungsten)) {
-                continue;
-            }
-
             ProviderResponse serviceProviderResponse = createServiceProviderResponse(serviceProvider);
             serviceProvidersResponses.add(serviceProviderResponse);
         }
@@ -3772,6 +3790,16 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (vpc != null) {
                 response.setVpcId(vpc.getUuid());
             }
+        }
+        if (result.getVpcGatewayId() != null) {
+            VpcGateway vpcGateway = _entityMgr.findById(VpcGateway.class, result.getVpcGatewayId());
+            if (vpcGateway != null) {
+                response.setVpcGatewayId(vpcGateway.getUuid());
+                response.setVpcGatewayIp(vpcGateway.getIp4Address());
+            }
+        }
+        if (result.getNextHop() != null) {
+            response.setNextHop(result.getNextHop());
         }
         response.setCidr(result.getCidr());
 

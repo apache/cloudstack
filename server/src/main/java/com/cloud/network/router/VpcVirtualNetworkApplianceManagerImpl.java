@@ -82,10 +82,9 @@ import com.cloud.network.vpc.NetworkACLManager;
 import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.PrivateIpAddress;
 import com.cloud.network.vpc.PrivateIpVO;
-import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.StaticRouteVO;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
-import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.PrivateIpDao;
@@ -321,17 +320,19 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
                 String defaultDns2 = null;
                 String defaultIp6Dns1 = null;
                 String defaultIp6Dns2 = null;
+                boolean isDnsConfigured = false;
                 // remove public and guest nics as we will plug them later
                 final Iterator<NicProfile> it = profile.getNics().iterator();
                 while (it.hasNext()) {
                     final NicProfile nic = it.next();
                     if (nic.getTrafficType() == TrafficType.Public || nic.getTrafficType() == TrafficType.Guest) {
                         // save dns information
-                        if (nic.getTrafficType() == TrafficType.Public) {
+                        if (nic.getTrafficType() == TrafficType.Public || !isDnsConfigured) {
                             defaultDns1 = nic.getIPv4Dns1();
                             defaultDns2 = nic.getIPv4Dns2();
                             defaultIp6Dns1 = nic.getIPv6Dns1();
                             defaultIp6Dns2 = nic.getIPv6Dns2();
+                            isDnsConfigured = true;
                         }
                         logger.debug("Removing nic " + nic + " of type " + nic.getTrafficType() + " from the nics passed on vm start. " + "The nic will be plugged later");
                         it.remove();
@@ -532,17 +533,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             }
 
             // 4) RE-APPLY ALL STATIC ROUTE RULES
-            final List<? extends StaticRoute> routes = _staticRouteDao.listByVpcId(domainRouterVO.getVpcId());
-            final List<StaticRouteProfile> staticRouteProfiles = new ArrayList<StaticRouteProfile>(routes.size());
-            final Map<Long, VpcGateway> gatewayMap = new HashMap<Long, VpcGateway>();
-            for (final StaticRoute route : routes) {
-                VpcGateway gateway = gatewayMap.get(route.getVpcGatewayId());
-                if (gateway == null) {
-                    gateway = _entityMgr.findById(VpcGateway.class, route.getVpcGatewayId());
-                    gatewayMap.put(gateway.getId(), gateway);
-                }
-                staticRouteProfiles.add(new StaticRouteProfile(route, gateway));
-            }
+            final List<StaticRouteVO> routes = _vpcMgr.getVpcStaticRoutes(domainRouterVO.getVpcId());
+            final List<StaticRouteProfile> staticRouteProfiles = _vpcMgr.getVpcStaticRoutes(routes);
 
             logger.debug("Found " + staticRouteProfiles.size() + " static routes to apply as a part of vpc route " + domainRouterVO + " start");
             if (!staticRouteProfiles.isEmpty()) {

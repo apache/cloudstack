@@ -1255,6 +1255,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         serviceProviderMap.put(Service.Dhcp, routerProvider);
         serviceProviderMap.put(Service.Dns, routerProvider);
         serviceProviderMap.put(Service.UserData, routerProvider);
+        serviceProviderMap.put(Service.Vpn, routerProvider);
         if (forVpc) {
             serviceProviderMap.put(Service.NetworkACL, provider);
         } else {

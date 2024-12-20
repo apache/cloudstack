@@ -381,6 +381,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             routesPutBody.setPrefix(prefix);
             routesPutBody.setNextHop(nextHop);
             routesPutBody.setSiteId(new BigDecimal(siteId));
+            routesPutBody.setStateStatus(RoutesPutBody.StateStatusEnum.ACTIVE);
 
             routesPutBody.setDescription(staticRouteId);
             routesPutBody.setSwitches(Collections.emptyList());

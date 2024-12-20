@@ -36,6 +36,7 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.addr.PublicIp;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 
@@ -177,4 +178,20 @@ public interface VpcManager {
      * @return
      */
     boolean isSrcNatIpRequired(long vpcOfferingId);
+
+    boolean isSrcNatIpRequiredForVpcVr(long vpcOfferingId);
+
+    List<StaticRouteVO> getVpcStaticRoutes(Long vpcId);
+
+    List<StaticRouteProfile> getVpcStaticRoutes(List<? extends StaticRoute> routes);
+
+    boolean isProviderSupportServiceInVpc(long vpcId, Service service, Provider provider);
+
+    IPAddressVO getIpAddressForVpcVr(Vpc vpc, IPAddressVO ipAddress, boolean allocateIpIfNeeded);
+
+    boolean configStaticNatForVpcVr(Vpc vpc, IPAddressVO ipAddress);
+
+    void reconfigStaticNatForVpcVr(Long vpcId);
+
+    boolean applyStaticRouteForVpcVpnIfNeeded(Long vpcId, boolean updateAllVpn) throws ResourceUnavailableException;
 }

@@ -257,6 +257,7 @@ public class ApiConstants {
     public static final String PREVIOUS_OWNER_ID = "previousownerid";
     public static final String PREVIOUS_OWNER_NAME = "previousownername";
     public static final String NEXT_ACL_RULE_ID = "nextaclruleid";
+    public static final String NEXT_HOP = "nexthop";
     public static final String MOVE_ACL_CONSISTENCY_HASH = "aclconsistencyhash";
     public static final String IMAGE_PATH = "imagepath";
     public static final String INSTANCE_CONVERSION_SUPPORTED = "instanceconversionsupported";
@@ -876,6 +877,8 @@ public class ApiConstants {
     public static final String NETWORK = "network";
     public static final String VPC_ID = "vpcid";
     public static final String VPC_NAME = "vpcname";
+    public static final String VPC_GATEWAY_ID = "vpcgatewayid";
+    public static final String VPC_GATEWAY_IP = "vpcgatewayip";
     public static final String GATEWAY_ID = "gatewayid";
     public static final String CAN_USE_FOR_DEPLOY = "canusefordeploy";
     public static final String RESOURCE_IDS = "resourceids";
