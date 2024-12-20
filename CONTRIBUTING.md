@@ -107,7 +107,7 @@ $ git push origin main
 $ git push origin feature_x
 ```
 
-Now that the `feature_x` branch has been pushed to your GitHub repository, you can initiate the pull request.  
+Now that the `feature_x` branch has been pushed to your GitHub repository, you can initiate the pull request.
 
 To initiate the pull request, do the following:
 
