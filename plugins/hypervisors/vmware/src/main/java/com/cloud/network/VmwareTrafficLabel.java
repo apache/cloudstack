@@ -34,31 +34,25 @@ public class VmwareTrafficLabel implements TrafficLabel {
     VirtualSwitchType _vSwitchType = VirtualSwitchType.StandardVirtualSwitch;
     String _vSwitchName = DEFAULT_VSWITCH_NAME;
     String _vlanId = Vlan.UNTAGGED;
-    // Flag to ensure traffic shaping consistency across NICs
-    boolean isTrafficShapingConsistent = false;
 
     public VmwareTrafficLabel(String networkLabel, TrafficType trafficType, VirtualSwitchType defVswitchType) {
         _trafficType = trafficType;
         _parseLabel(networkLabel, defVswitchType);
-        isTrafficShapingConsistent = true; // Ensure consistency across NICs
     }
 
     public VmwareTrafficLabel(String networkLabel, TrafficType trafficType) {
         _trafficType = trafficType;
         _parseLabel(networkLabel, VirtualSwitchType.StandardVirtualSwitch);
-        isTrafficShapingConsistent = true; // Ensure consistency across NICs
     }
 
     public VmwareTrafficLabel(TrafficType trafficType, VirtualSwitchType defVswitchType) {
-        _trafficType = trafficType; // Define traffic label with specific traffic type
+        _trafficType = trafficType;
         _parseLabel(null, defVswitchType);
-        isTrafficShapingConsistent = true; // Ensure consistency across NICs
     }
 
     public VmwareTrafficLabel(TrafficType trafficType) {
-        _trafficType = trafficType; // Define traffic label with specific traffic type
+        _trafficType = trafficType;
         _parseLabel(null, VirtualSwitchType.StandardVirtualSwitch);
-        isTrafficShapingConsistent = true; // Ensure consistency across NICs
     }
 
     public VmwareTrafficLabel() {
@@ -125,9 +119,5 @@ public class VmwareTrafficLabel implements TrafficLabel {
 
     public void setVirtualSwitchType(VirtualSwitchType vSwitchType) {
         _vSwitchType = vSwitchType;
-    }
-
-    // Getter to ensure traffic shaping consistency across all NICs
-
     }
 }
