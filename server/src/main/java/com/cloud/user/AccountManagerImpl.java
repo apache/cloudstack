@@ -690,7 +690,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (SecurityChecker checker : _securityCheckers) {
                 if (checker.checkAccess(caller, entity, accessType, apiName)) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Access to " + entity + " granted to " + caller + " by " + checker.getName());
+                        User user = CallContext.current().getCallingUser();
+                        String userName = "";
+                        if (user != null)
+                            userName = user.getUsername();
+                        s_logger.debug("Access to " + entity + " granted to " + caller + " by " + checker.getName() + " on behalf of user " + userName);
                     }
                     granted = true;
                     break;

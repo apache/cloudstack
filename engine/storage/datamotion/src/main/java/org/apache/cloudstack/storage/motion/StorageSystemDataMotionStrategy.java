@@ -39,6 +39,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -104,6 +105,7 @@ import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.MigrationOptions;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
@@ -919,11 +921,17 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
         HostVO hostVO;
 
-        if (srcStoragePoolVO.getClusterId() != null) {
-            hostVO = getHostInCluster(srcStoragePoolVO.getClusterId());
-        }
-        else {
-            hostVO = getHost(destVolumeInfo.getDataCenterId(), HypervisorType.KVM, false);
+        // if either source or destination is a local storage pool, the migration MUST be performed on that host
+        if (ScopeType.HOST.equals(srcVolumeInfo.getDataStore().getScope().getScopeType())) {
+            hostVO = _hostDao.findById(srcVolumeInfo.getDataStore().getScope().getScopeId());
+        } else if (ScopeType.HOST.equals(destVolumeInfo.getDataStore().getScope().getScopeType())) {
+            hostVO = _hostDao.findById(destVolumeInfo.getDataStore().getScope().getScopeId());
+        } else {
+            if (srcStoragePoolVO.getClusterId() != null) {
+                hostVO = getHostInCluster(srcStoragePoolVO.getClusterId());
+            } else {
+                hostVO = getHost(destVolumeInfo.getDataCenterId(), HypervisorType.KVM, false);
+            }
         }
 
         return hostVO;
@@ -1524,6 +1532,16 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 verifyFormat(templateInfo.getFormat());
             }
 
+            // this blurb handles the case where the storage system can clone a volume from a template
+            String canCloneVolumeFromTemplate = templateInfo.getDataStore().getDriver().getCapabilities().get("CAN_CLONE_VOLUME_FROM_TEMPLATE");
+            if (canCloneVolumeFromTemplate != null && canCloneVolumeFromTemplate.toLowerCase().equals("true")) {
+                DataStoreDriver driver = templateInfo.getDataStore().getDriver();
+                driver.createAsync(volumeInfo.getDataStore(), volumeInfo, null);
+                volumeInfo = _volumeDataFactory.getVolume(volumeInfo.getId(), volumeInfo.getDataStore());
+                driver.copyAsync(templateInfo, volumeInfo, null);
+                return;
+            }
+
             HostVO hostVO = null;
 
             final boolean computeClusterSupportsVolumeClone;
@@ -1558,6 +1576,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                             volumeInfo.getDataCenterId());
                 }
             }
+
+
 
             VolumeDetailVO volumeDetail = new VolumeDetailVO(volumeInfo.getId(),
                     "cloneOfTemplate",
@@ -1631,7 +1651,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 errMsg = "Create volume from template failed: " + ex.getMessage();
             }
 
-            throw new CloudRuntimeException(errMsg);
+            throw new CloudRuntimeException(errMsg, ex);
         }
         finally {
             if (copyCmdAnswer == null) {
@@ -1902,7 +1922,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             }
 
         } catch (Throwable e) {
-            LOGGER.warn("Failed to clean up temporary volume created for copy from a snapshot, transction will not be failed but an adminstrator should clean this up: " + snapshotInfo.getUuid() + " - " + snapshotInfo.getPath(), e);
+            LOGGER.warn("Failed to clean up temporary volume created for copy from a snapshot, transaction will not be failed but an administrator should clean this up: " + snapshotInfo.getUuid() + " - " + snapshotInfo.getPath(), e);
         }
     }
 
@@ -2651,7 +2671,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         catch (Exception ex) {
             errMsg = ex.getMessage();
 
-            throw new CloudRuntimeException(errMsg);
+            throw new CloudRuntimeException(errMsg, ex);
         }
         finally {
             if (copyCmdAnswer == null) {

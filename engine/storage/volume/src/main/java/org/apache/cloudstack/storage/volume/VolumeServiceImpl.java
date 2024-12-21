@@ -1033,7 +1033,9 @@ public class VolumeServiceImpl implements VolumeService {
             try {
                 grantAccess(templateOnPrimary, destHost, destPrimaryDataStore);
             } catch (Exception e) {
-                throw new StorageAccessException("Unable to grant access to template: " + templateOnPrimary.getId() + " on host: " + destHost.getId());
+                StorageAccessException e2 = new StorageAccessException("Unable to grant access to template: " + templateOnPrimary.getId() + " on host: " + destHost.getId());
+                e2.initCause(e);
+                throw e;
             }
 
             templateOnPrimary.processEvent(Event.CopyingRequested);
