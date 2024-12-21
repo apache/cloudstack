@@ -341,10 +341,10 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             try {
                 if (isConfigDriveIsoOnHostCache(vm.getId())) {
                     vm.setConfigDriveLocation(Location.HOST);
-                    configureConfigDriveData(vm, nic, dest);
-
-                    // Create the config drive on dest host cache
-                    createConfigDriveIsoOnHostCache(vm, dest.getHost().getId());
+                    if (configureConfigDriveData(vm, nic, dest)) {
+                        // Create the config drive on dest host cache
+                        createConfigDriveIsoOnHostCache(vm, dest.getHost().getId());
+                    }
                 } else {
                     vm.setConfigDriveLocation(getConfigDriveLocation(vm.getId()));
                     addPasswordAndUserdata(network, nic, vm, dest, context);
@@ -373,7 +373,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     @Override
     public void commitMigration(NicProfile nic, Network network, VirtualMachineProfile vm, ReservationContext src, ReservationContext dst) {
         try {
-            if (isConfigDriveIsoOnHostCache(vm.getId())) {
+            if (isLastConfigDriveIsoOnHostCache(vm.getId())) {
                 vm.setConfigDriveLocation(Location.HOST);
                 // Delete the config drive on src host cache
                 deleteConfigDriveIsoOnHostCache(vm.getVirtualMachine(), vm.getHostId());
@@ -530,6 +530,17 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         return false;
     }
 
+    private boolean isLastConfigDriveIsoOnHostCache(long vmId) {
+        final UserVmDetailVO vmDetailLastConfigDriveLocation = _userVmDetailsDao.findDetail(vmId, VmDetailConstants.LAST_CONFIG_DRIVE_LOCATION);
+        if (vmDetailLastConfigDriveLocation == null) {
+            return isConfigDriveIsoOnHostCache(vmId);
+        }
+        if (Location.HOST.toString().equalsIgnoreCase(vmDetailLastConfigDriveLocation.getValue())) {
+            return true;
+        }
+        return false;
+    }
+
     private boolean createConfigDriveIsoOnHostCache(VirtualMachineProfile profile, Long hostId) throws ResourceUnavailableException {
         if (hostId == null) {
             throw new ResourceUnavailableException("Config drive iso creation failed, dest host not available",
@@ -556,7 +567,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         }
 
         profile.setConfigDriveLocation(answer.getConfigDriveLocation());
-        _userVmDetailsDao.addDetail(profile.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION, answer.getConfigDriveLocation().toString(), false);
+        updateConfigDriveLocationInVMDetails(profile.getId(), answer.getConfigDriveLocation());
         addConfigDriveDisk(profile, null);
         return true;
     }
@@ -618,9 +629,21 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                     answer.getDetails()), ConfigDriveNetworkElement.class, 0L);
         }
         profile.setConfigDriveLocation(answer.getConfigDriveLocation());
-        _userVmDetailsDao.addDetail(profile.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION, answer.getConfigDriveLocation().toString(), false);
+        updateConfigDriveLocationInVMDetails(profile.getId(), answer.getConfigDriveLocation());
         addConfigDriveDisk(profile, dataStore);
         return true;
+    }
+
+    private void updateConfigDriveLocationInVMDetails(long vmId, NetworkElement.Location configDriveLocation) {
+        final UserVmDetailVO vmDetailConfigDriveLocation = _userVmDetailsDao.findDetail(vmId, VmDetailConstants.CONFIG_DRIVE_LOCATION);
+        if (vmDetailConfigDriveLocation != null) {
+            if (!configDriveLocation.toString().equalsIgnoreCase(vmDetailConfigDriveLocation.getValue())) {
+                _userVmDetailsDao.addDetail(vmId, VmDetailConstants.LAST_CONFIG_DRIVE_LOCATION, vmDetailConfigDriveLocation.getValue(), false);
+            } else {
+                _userVmDetailsDao.removeDetail(vmId, VmDetailConstants.LAST_CONFIG_DRIVE_LOCATION);
+            }
+        }
+        _userVmDetailsDao.addDetail(vmId, VmDetailConstants.CONFIG_DRIVE_LOCATION, configDriveLocation.toString(), false);
     }
 
     private Map<String, String> getVMCustomUserdataParamMap(long vmId) {
@@ -737,7 +760,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     private boolean configureConfigDriveData(final VirtualMachineProfile profile, final NicProfile nic, final DeployDestination dest) {
         final UserVmVO vm = _userVmDao.findById(profile.getId());
-        if (vm.getType() != VirtualMachine.Type.User) {
+        if (vm == null || vm.getType() != VirtualMachine.Type.User) {
             return false;
         }
         final Nic defaultNic = _networkModel.getDefaultNic(vm.getId());

@@ -30,6 +30,7 @@ import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -97,6 +98,14 @@ public class NetUtils {
     // RFC4291 IPv6 EUI-64
     public final static int IPV6_EUI64_11TH_BYTE = -1;
     public final static int IPV6_EUI64_12TH_BYTE = -2;
+
+    // Regex
+    public final static Pattern HOSTNAME_PATTERN = Pattern.compile("[a-zA-Z0-9-]+");
+    public final static Pattern START_HOSTNAME_PATTERN = Pattern.compile("^[0-9-].*");
+
+    public static String extractHost(String uri) throws URISyntaxException {
+        return (new URI(uri)).getHost();
+    }
 
     public enum InternetProtocol {
         IPv4, IPv6, DualStack;
@@ -621,6 +630,18 @@ public class NetUtils {
         return long2Ip(firstPart) + "/" + size;
     }
 
+    public static String getCleanIp4Cidr(final String cidr) {
+        if (!isValidIp4Cidr(cidr)) {
+            throw new CloudRuntimeException("Invalid CIDR: " + cidr);
+        }
+        String gateway = cidr.split("/")[0];
+        Long netmaskSize = Long.parseLong(cidr.split("/")[1]);
+        final long ip = ip2Long(gateway);
+        final long startNetMask = ip2Long(getCidrNetmask(netmaskSize));
+        final long start = (ip & startNetMask);
+        return String.format("%s/%s", long2Ip(start), netmaskSize);
+    }
+
     public static String[] getIpRangeFromCidr(final String cidr, final long size) {
         assert size < MAX_CIDR : "You do know this is not for ipv6 right?  Keep it smaller than 32 but you have " + size;
         final String[] result = new String[2];
@@ -1044,13 +1065,13 @@ public class NetUtils {
         if (hostName.length() > 63 || hostName.length() < 1) {
             s_logger.warn("Domain name label must be between 1 and 63 characters long");
             return false;
-        } else if (!hostName.toLowerCase().matches("[a-z0-9-]*")) {
+        } else if (!HOSTNAME_PATTERN.matcher(hostName).matches()) {
             s_logger.warn("Domain name label may contain only the ASCII letters 'a' through 'z' (in a case-insensitive manner)");
             return false;
         } else if (hostName.startsWith("-") || hostName.endsWith("-")) {
-            s_logger.warn("Domain name label can not start  with a hyphen and digit, and must not end with a hyphen");
+            s_logger.warn("Domain name label can not start or end with a hyphen");
             return false;
-        } else if (isHostName && hostName.matches("^[0-9-].*")) {
+        } else if (isHostName && START_HOSTNAME_PATTERN.matcher(hostName).matches()) {
             s_logger.warn("Host name can't start with digit");
             return false;
         }

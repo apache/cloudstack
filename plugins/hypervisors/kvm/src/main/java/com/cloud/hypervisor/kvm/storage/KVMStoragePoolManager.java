@@ -42,6 +42,8 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.Volume;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 
@@ -131,10 +133,10 @@ public class KVMStoragePoolManager {
         StorageAdaptor adaptor = getStorageAdaptor(type);
         KVMStoragePool pool = adaptor.getStoragePool(poolUuid);
 
-        return adaptor.connectPhysicalDisk(volPath, pool, details);
+        return adaptor.connectPhysicalDisk(volPath, pool, details, false);
     }
 
-    public boolean connectPhysicalDisksViaVmSpec(VirtualMachineTO vmSpec) {
+    public boolean connectPhysicalDisksViaVmSpec(VirtualMachineTO vmSpec, boolean isVMMigrate) {
         boolean result = false;
 
         final String vmName = vmSpec.getName();
@@ -157,7 +159,7 @@ public class KVMStoragePoolManager {
             KVMStoragePool pool = getStoragePool(store.getPoolType(), store.getUuid());
             StorageAdaptor adaptor = getStorageAdaptor(pool.getType());
 
-            result = adaptor.connectPhysicalDisk(vol.getPath(), pool, disk.getDetails());
+            result = adaptor.connectPhysicalDisk(vol.getPath(), pool, disk.getDetails(), isVMMigrate);
 
             if (!result) {
                 s_logger.error("Failed to connect disks via vm spec for vm: " + vmName + " volume:" + vol.toString());
@@ -285,6 +287,7 @@ public class KVMStoragePoolManager {
         URI storageUri = null;
 
         try {
+            s_logger.debug("Get storage pool by uri: " + uri);
             storageUri = new URI(uri);
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(e.toString());
@@ -294,7 +297,7 @@ public class KVMStoragePoolManager {
         String uuid = null;
         String sourceHost = "";
         StoragePoolType protocol = null;
-        final String scheme = storageUri.getScheme().toLowerCase();
+        final String scheme = (storageUri.getScheme() != null) ? storageUri.getScheme().toLowerCase() : "";
         List<String> acceptedSchemes = List.of("nfs", "networkfilesystem", "filesystem");
         if (acceptedSchemes.contains(scheme)) {
             sourcePath = storageUri.getPath();
@@ -359,7 +362,7 @@ public class KVMStoragePoolManager {
     //Note: due to bug CLOUDSTACK-4459, createStoragepool can be called in parallel, so need to be synced.
     private synchronized KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details, boolean primaryStorage) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
-        KVMStoragePool pool = adaptor.createStoragePool(name, host, port, path, userInfo, type, details);
+        KVMStoragePool pool = adaptor.createStoragePool(name, host, port, path, userInfo, type, details, primaryStorage);
 
         // LibvirtStorageAdaptor-specific statement
         if (pool.isPoolSupportHA() && primaryStorage) {
@@ -447,4 +450,13 @@ public class KVMStoragePoolManager {
         return adaptor.createTemplateFromDirectDownloadFile(templateFilePath, destTemplatePath, destPool, format, timeout);
     }
 
+    public Ternary<Boolean, Map<String, String>, String> prepareStorageClient(StoragePoolType type, String uuid, Map<String, String> details) {
+        StorageAdaptor adaptor = getStorageAdaptor(type);
+        return adaptor.prepareStorageClient(type, uuid, details);
+    }
+
+    public Pair<Boolean, String> unprepareStorageClient(StoragePoolType type, String uuid) {
+        StorageAdaptor adaptor = getStorageAdaptor(type);
+        return adaptor.unprepareStorageClient(type, uuid);
+    }
 }

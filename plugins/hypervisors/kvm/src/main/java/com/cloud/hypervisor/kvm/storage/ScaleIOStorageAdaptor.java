@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetupException;
@@ -43,6 +44,8 @@ import org.libvirt.LibvirtException;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.StorageManager;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
@@ -140,7 +143,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, Storage.StoragePoolType type, Map<String, String> details) {
+    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, Storage.StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage) {
         ScaleIOStoragePool storagePool = new ScaleIOStoragePool(uuid, host, port, path, type, details, this);
         MapStorageUuidToStoragePool.put(uuid, storagePool);
         return storagePool;
@@ -175,7 +178,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             return null;
         }
 
-        if(!connectPhysicalDisk(name, pool, null)) {
+        if(!connectPhysicalDisk(name, pool, null, false)) {
             throw new CloudRuntimeException(String.format("Failed to ensure disk %s was present", name));
         }
 
@@ -218,7 +221,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details) {
+    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details, boolean isMigration) {
         if (StringUtils.isEmpty(volumePath) || pool == null) {
             LOGGER.error("Unable to connect physical disk due to insufficient data");
             throw new CloudRuntimeException("Unable to connect physical disk due to insufficient data");
@@ -559,6 +562,67 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         long usableSizeBytes = getUsableBytesFromRawBytes(rawSizeBytes);
         QemuImg qemu = new QemuImg(timeout);
         qemu.resize(options, objects, usableSizeBytes);
+    }
+
+    public Ternary<Boolean, Map<String, String>, String> prepareStorageClient(Storage.StoragePoolType type, String uuid, Map<String, String> details) {
+        if (!ScaleIOUtil.isSDCServiceInstalled()) {
+            LOGGER.debug("SDC service not installed on host, preparing the SDC client not possible");
+            return new Ternary<>(false, null, "SDC service not installed on host");
+        }
+
+        if (!ScaleIOUtil.isSDCServiceEnabled()) {
+            LOGGER.debug("SDC service not enabled on host, enabling it");
+            if (!ScaleIOUtil.enableSDCService()) {
+                return new Ternary<>(false, null, "SDC service not enabled on host");
+            }
+        }
+
+        if (!ScaleIOUtil.isSDCServiceActive()) {
+            if (!ScaleIOUtil.startSDCService()) {
+                return new Ternary<>(false, null, "Couldn't start SDC service on host");
+            }
+        } else if (!ScaleIOUtil.restartSDCService()) {
+            return new Ternary<>(false, null, "Couldn't restart SDC service on host");
+        }
+
+        return new Ternary<>( true, getSDCDetails(details), "Prepared client successfully");
+    }
+
+    public Pair<Boolean, String> unprepareStorageClient(Storage.StoragePoolType type, String uuid) {
+        if (!ScaleIOUtil.isSDCServiceInstalled()) {
+            LOGGER.debug("SDC service not installed on host, no need to unprepare the SDC client");
+            return new Pair<>(true, "SDC service not installed on host, no need to unprepare the SDC client");
+        }
+
+        if (!ScaleIOUtil.isSDCServiceEnabled()) {
+            LOGGER.debug("SDC service not enabled on host, no need to unprepare the SDC client");
+            return new Pair<>(true, "SDC service not enabled on host, no need to unprepare the SDC client");
+        }
+
+        if (!ScaleIOUtil.stopSDCService()) {
+            return new Pair<>(false, "Couldn't stop SDC service on host");
+        }
+
+        return new Pair<>(true, "Unprepared SDC client successfully");
+    }
+
+    private Map<String, String> getSDCDetails(Map<String, String> details) {
+        Map<String, String> sdcDetails = new HashMap<String, String>();
+        if (details == null || !details.containsKey(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID))  {
+            return sdcDetails;
+        }
+
+        String storageSystemId = details.get(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+        String sdcId = ScaleIOUtil.getSdcId(storageSystemId);
+        if (sdcId != null) {
+            sdcDetails.put(ScaleIOGatewayClient.SDC_ID, sdcId);
+        } else {
+            String sdcGuId = ScaleIOUtil.getSdcGuid();
+            if (sdcGuId != null) {
+                sdcDetails.put(ScaleIOGatewayClient.SDC_GUID, sdcGuId);
+            }
+        }
+        return sdcDetails;
     }
 
     /**

@@ -33,6 +33,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.upgrade.dao.Upgrade41910to41920;
 import com.cloud.utils.FileUtil;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang3.StringUtils;
@@ -128,6 +129,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     private static final Logger s_logger = Logger.getLogger(DatabaseUpgradeChecker.class);
     private final DatabaseVersionHierarchy hierarchy;
     private static final String VIEWS_DIRECTORY = Paths.get("META-INF", "db", "views").toString();
+    private static final String PROCEDURES_DIRECTORY = Paths.get("META-INF", "db", "procedures").toString();
 
     @Inject
     VersionDao _dao;
@@ -226,6 +228,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 .next("4.18.0.0", new Upgrade41800to41810())
                 .next("4.18.1.0", new Upgrade41810to41900())
                 .next("4.19.0.0", new Upgrade41900to41910())
+                .next("4.19.1.0", new Upgrade41910to41920())
                 .build();
     }
 
@@ -295,83 +298,120 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     }
 
     protected void upgrade(CloudStackVersion dbVersion, CloudStackVersion currentVersion) {
+        executeProcedureScripts();
+        final DbUpgrade[] upgrades = executeUpgrades(dbVersion, currentVersion);
+
+        executeViewScripts();
+        updateSystemVmTemplates(upgrades);
+    }
+
+    protected void executeProcedureScripts() {
+        s_logger.info(String.format("Executing Stored Procedure scripts that are under resource directory [%s].", PROCEDURES_DIRECTORY));
+        List<String> filesPathUnderViewsDirectory = FileUtil.getFilesPathsUnderResourceDirectory(PROCEDURES_DIRECTORY);
+
+        try (TransactionLegacy txn = TransactionLegacy.open("execute-procedure-scripts")) {
+            Connection conn = txn.getConnection();
+
+            for (String filePath : filesPathUnderViewsDirectory) {
+                s_logger.debug(String.format("Executing PROCEDURE script [%s].", filePath));
+
+                InputStream viewScript = Thread.currentThread().getContextClassLoader().getResourceAsStream(filePath);
+                runScript(conn, viewScript);
+            }
+
+            s_logger.info(String.format("Finished execution of PROCEDURE scripts that are under resource directory [%s].", PROCEDURES_DIRECTORY));
+        } catch (SQLException e) {
+            String message = String.format("Unable to execute PROCEDURE scripts due to [%s].", e.getMessage());
+            s_logger.error(message, e);
+            throw new CloudRuntimeException(message, e);
+        }
+    }
+
+    private DbUpgrade[] executeUpgrades(CloudStackVersion dbVersion, CloudStackVersion currentVersion) {
         s_logger.info("Database upgrade must be performed from " + dbVersion + " to " + currentVersion);
 
         final DbUpgrade[] upgrades = calculateUpgradePath(dbVersion, currentVersion);
 
         for (DbUpgrade upgrade : upgrades) {
-            VersionVO version;
-            s_logger.debug("Running upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade
-                .getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
-            TransactionLegacy txn = TransactionLegacy.open("Upgrade");
-            txn.start();
+            VersionVO version = executeUpgrade(upgrade);
+            executeUpgradeCleanup(upgrade, version);
+        }
+        return upgrades;
+    }
+
+    private VersionVO executeUpgrade(DbUpgrade upgrade) {
+        VersionVO version;
+        s_logger.debug("Running upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade
+            .getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
+        TransactionLegacy txn = TransactionLegacy.open("Upgrade");
+        txn.start();
+        try {
+            Connection conn;
             try {
-                Connection conn;
-                try {
-                    conn = txn.getConnection();
-                } catch (SQLException e) {
-                    String errorMessage = "Unable to upgrade the database";
-                    s_logger.error(errorMessage, e);
-                    throw new CloudRuntimeException(errorMessage, e);
-                }
-                InputStream[] scripts = upgrade.getPrepareScripts();
-                if (scripts != null) {
-                    for (InputStream script : scripts) {
-                        runScript(conn, script);
-                    }
-                }
-
-                upgrade.performDataMigration(conn);
-
-                version = new VersionVO(upgrade.getUpgradedVersion());
-                version = _dao.persist(version);
-
-                txn.commit();
-            } catch (CloudRuntimeException e) {
+                conn = txn.getConnection();
+            } catch (SQLException e) {
                 String errorMessage = "Unable to upgrade the database";
                 s_logger.error(errorMessage, e);
                 throw new CloudRuntimeException(errorMessage, e);
-            } finally {
-                txn.close();
+            }
+            InputStream[] scripts = upgrade.getPrepareScripts();
+            if (scripts != null) {
+                for (InputStream script : scripts) {
+                    runScript(conn, script);
+                }
             }
 
-            // Run the corresponding '-cleanup.sql' script
-            txn = TransactionLegacy.open("Cleanup");
-            try {
-                s_logger.info("Cleanup upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade
-                    .getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
+            upgrade.performDataMigration(conn);
 
-                txn.start();
-                Connection conn;
-                try {
-                    conn = txn.getConnection();
-                } catch (SQLException e) {
-                    s_logger.error("Unable to cleanup the database", e);
-                    throw new CloudRuntimeException("Unable to cleanup the database", e);
-                }
+            version = new VersionVO(upgrade.getUpgradedVersion());
+            version = _dao.persist(version);
 
-                InputStream[] scripts = upgrade.getCleanupScripts();
-                if (scripts != null) {
-                    for (InputStream script : scripts) {
-                        runScript(conn, script);
-                        s_logger.debug("Cleanup script " + upgrade.getClass().getSimpleName() + " is executed successfully");
-                    }
-                }
-                txn.commit();
-
-                txn.start();
-                version.setStep(Step.Complete);
-                version.setUpdated(new Date());
-                _dao.update(version.getId(), version);
-                txn.commit();
-                s_logger.debug("Upgrade completed for version " + version.getVersion());
-            } finally {
-                txn.close();
-            }
+            txn.commit();
+        } catch (CloudRuntimeException e) {
+            String errorMessage = "Unable to upgrade the database";
+            s_logger.error(errorMessage, e);
+            throw new CloudRuntimeException(errorMessage, e);
+        } finally {
+            txn.close();
         }
+        return version;
+    }
 
-        executeViewScripts();
-        updateSystemVmTemplates(upgrades);
+    private void executeUpgradeCleanup(DbUpgrade upgrade, VersionVO version) {
+        TransactionLegacy txn;
+        // Run the corresponding '-cleanup.sql' script
+        txn = TransactionLegacy.open("Cleanup");
+        try {
+            s_logger.info("Cleanup upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade
+                .getUpgradableVersionRange()[1] + " to " + upgrade.getUpgradedVersion());
+
+            txn.start();
+            Connection conn;
+            try {
+                conn = txn.getConnection();
+            } catch (SQLException e) {
+                s_logger.error("Unable to cleanup the database", e);
+                throw new CloudRuntimeException("Unable to cleanup the database", e);
+            }
+
+            InputStream[] scripts = upgrade.getCleanupScripts();
+            if (scripts != null) {
+                for (InputStream script : scripts) {
+                    runScript(conn, script);
+                    s_logger.debug("Cleanup script " + upgrade.getClass().getSimpleName() + " is executed successfully");
+                }
+            }
+            txn.commit();
+
+            txn.start();
+            version.setStep(Step.Complete);
+            version.setUpdated(new Date());
+            _dao.update(version.getId(), version);
+            txn.commit();
+            s_logger.debug("Upgrade completed for version " + version.getVersion());
+        } finally {
+            txn.close();
+        }
     }
 
     protected void executeViewScripts() {

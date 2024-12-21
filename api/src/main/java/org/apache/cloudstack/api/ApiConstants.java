@@ -189,6 +189,7 @@ public class ApiConstants {
     public static final String FORCED = "forced";
     public static final String FORCED_DESTROY_LOCAL_STORAGE = "forcedestroylocalstorage";
     public static final String FORCE_DELETE_HOST = "forcedeletehost";
+    public static final String FORCE_MS_TO_IMPORT_VM_FILES = "forcemstoimportvmfiles";
     public static final String FORMAT = "format";
     public static final String FOR_VIRTUAL_NETWORK = "forvirtualnetwork";
     public static final String FOR_SYSTEM_VMS = "forsystemvms";
@@ -224,6 +225,7 @@ public class ApiConstants {
     public static final String ICMP_TYPE = "icmptype";
     public static final String ID = "id";
     public static final String IDS = "ids";
+    public static final String IMPORT_INSTANCE_HOST_ID = "importinstancehostid";
     public static final String INDEX = "index";
     public static final String INSTANCES_DISKS_STATS_RETENTION_ENABLED = "instancesdisksstatsretentionenabled";
     public static final String INSTANCES_DISKS_STATS_RETENTION_TIME = "instancesdisksstatsretentiontime";
@@ -236,6 +238,7 @@ public class ApiConstants {
     public static final String NEXT_ACL_RULE_ID = "nextaclruleid";
     public static final String MOVE_ACL_CONSISTENCY_HASH = "aclconsistencyhash";
     public static final String IMAGE_PATH = "imagepath";
+    public static final String INSTANCE_CONVERSION_SUPPORTED = "instanceconversionsupported";
     public static final String INTERNAL_DNS1 = "internaldns1";
     public static final String INTERNAL_DNS2 = "internaldns2";
     public static final String INTERNET_PROTOCOL = "internetprotocol";
@@ -424,6 +427,7 @@ public class ApiConstants {
     public static final String SNAPSHOT_TYPE = "snapshottype";
     public static final String SNAPSHOT_QUIESCEVM = "quiescevm";
     public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
+    public static final String SOURCE_CIDR_LIST = "sourcecidrlist";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String START_DATE = "startdate";
     public static final String START_ID = "startid";
@@ -437,6 +441,7 @@ public class ApiConstants {
     public static final String STORAGE_POLICY = "storagepolicy";
     public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
     public static final String STORAGE_CAPABILITIES = "storagecapabilities";
+    public static final String STORAGE_CUSTOM_STATS = "storagecustomstats";
     public static final String SUBNET = "subnet";
     public static final String OWNER = "owner";
     public static final String SWAP_OWNER = "swapowner";
@@ -573,6 +578,7 @@ public class ApiConstants {
     public static final String AGGREGATE_NAME = "aggregatename";
     public static final String POOL_NAME = "poolname";
     public static final String VOLUME_NAME = "volumename";
+    public static final String VOLUME_STATE = "volumestate";
     public static final String SNAPSHOT_POLICY = "snapshotpolicy";
     public static final String SNAPSHOT_RESERVATION = "snapshotreservation";
     public static final String IP_NETWORK_LIST = "iptonetworklist";
@@ -1098,6 +1104,8 @@ public class ApiConstants {
     public static final String IS_TAG_A_RULE = "istagarule";
 
     public static final String PARAMETER_DESCRIPTION_IS_TAG_A_RULE = "Whether the informed tag is a JS interpretable rule or not.";
+
+    public static final String NFS_MOUNT_OPTIONS = "nfsmountopts";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

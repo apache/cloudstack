@@ -43,6 +43,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
@@ -119,8 +120,6 @@ import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
-import com.cloud.network.security.SecurityGroupService;
-import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.VpnUserVO;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
@@ -134,6 +133,8 @@ import com.cloud.network.dao.RemoteAccessVpnVO;
 import com.cloud.network.dao.VpnUserDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.security.SecurityGroupManager;
+import com.cloud.network.security.SecurityGroupService;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcManager;
@@ -727,6 +728,19 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
+    public void validateAccountHasAccessToResource(Account account, AccessType accessType, Object resource) {
+        Class<?> resourceClass = resource.getClass();
+        if (ControlledEntity.class.isAssignableFrom(resourceClass)) {
+            checkAccess(account, accessType, true, (ControlledEntity) resource);
+        } else if (Domain.class.isAssignableFrom(resourceClass)) {
+            checkAccess(account, (Domain) resource);
+        } else if (InfrastructureEntity.class.isAssignableFrom(resourceClass)) {
+            s_logger.trace("Validation of access to infrastructure entity has been disabled in CloudStack version 4.4.");
+        }
+        s_logger.debug(String.format("Account [%s] has access to resource.", account.getUuid()));
+    }
+
+    @Override
     public Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId) {
         // We just care for resource domain admins for now, and they should be permitted to see only their zone.
         if (isResourceDomainAdmin(caller.getAccountId())) {
@@ -1291,16 +1305,33 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return _userAccountDao.findById(userId);
     }
 
-    private boolean isValidRoleChange(Account account, Role role) {
-        Long currentAccRoleId = account.getRoleId();
-        Role currentRole = roleService.findRole(currentAccRoleId);
-
-        if (role.getRoleType().ordinal() < currentRole.getRoleType().ordinal() && ((account.getType() == Account.Type.NORMAL && role.getRoleType().getAccountType().ordinal() > Account.Type.NORMAL.ordinal()) ||
-                account.getType().ordinal() > Account.Type.NORMAL.ordinal() && role.getRoleType().getAccountType().ordinal() < account.getType().ordinal() && role.getRoleType().getAccountType().ordinal() > 0)) {
-            throw new PermissionDeniedException(String.format("Unable to update account role to %s as you are " +
-                    "attempting to escalate the account %s to account type %s which has higher privileges", role.getName(), account.getAccountName(), role.getRoleType().getAccountType().name()));
+    /*
+     Role change should follow the below conditions:
+     - Caller should not be of Unknown role type
+     - New role's type should not be Unknown
+     - Caller should not be able to escalate or de-escalate an account's role which is of higher role type
+     - New role should not be of type Admin with domain other than ROOT domain
+     */
+    protected void validateRoleChange(Account account, Role role, Account caller) {
+        Role currentRole = roleService.findRole(account.getRoleId());
+        Role callerRole = roleService.findRole(caller.getRoleId());
+        String errorMsg = String.format("Unable to update account role to %s, ", role.getName());
+        if (RoleType.Unknown.equals(callerRole.getRoleType())) {
+            throw new PermissionDeniedException(String.format("%s as the caller privileges are unknown", errorMsg));
         }
-        return true;
+        if (RoleType.Unknown.equals(role.getRoleType())) {
+            throw new PermissionDeniedException(String.format("%s as the new role privileges are unknown", errorMsg));
+        }
+        if (!callerRole.getRoleType().equals(RoleType.Admin) &&
+                (role.getRoleType().ordinal() < callerRole.getRoleType().ordinal() ||
+                        currentRole.getRoleType().ordinal() < callerRole.getRoleType().ordinal())) {
+            throw new PermissionDeniedException(String.format("%s as either current or new role has higher " +
+                    "privileges than the caller", errorMsg));
+        }
+        if (role.getRoleType().equals(RoleType.Admin) && account.getDomainId() != Domain.ROOT_DOMAIN) {
+            throw new PermissionDeniedException(String.format("%s as the user does not belong to the ROOT domain",
+                    errorMsg));
+        }
     }
 
     /**
@@ -1449,6 +1480,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      * <ul>
      *  <li> If 'password' is blank, we throw an {@link InvalidParameterValueException};
      *  <li> If 'current password' is not provided and user is not an Admin, we throw an {@link InvalidParameterValueException};
+     *  <li> If the user whose password is being changed has a source equal to {@link User.Source#SAML2}, {@link User.Source#SAML2DISABLED} or {@link User.Source#LDAP},
+     *      we throw an {@link InvalidParameterValueException};
      *  <li> If a normal user is calling this method, we use {@link #validateCurrentPassword(UserVO, String)} to check if the provided old password matches the database one;
      * </ul>
      *
@@ -1461,6 +1494,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         if (StringUtils.isBlank(newPassword)) {
             throw new InvalidParameterValueException("Password cannot be empty or blank.");
+        }
+
+        User.Source userSource = user.getSource();
+        if (userSource == User.Source.SAML2 || userSource == User.Source.SAML2DISABLED || userSource == User.Source.LDAP) {
+            s_logger.warn(String.format("Unable to update the password for user [%d], as its source is [%s].", user.getId(), user.getSource().toString()));
+            throw new InvalidParameterValueException("CloudStack does not support updating passwords for SAML or LDAP users. Please contact your cloud administrator for assistance.");
         }
 
         passwordPolicy.verifyIfPasswordCompliesWithPasswordPolicies(newPassword, user.getUsername(), getAccount(user.getAccountId()).getDomainId());
@@ -2035,7 +2074,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             Role role = roleService.findRole(roleId);
-            isValidRoleChange(account, role);
+            validateRoleChange(account, role, caller);
             acctForUpdate.setRoleId(roleId);
             acctForUpdate.setType(role.getRoleType().getAccountType());
             checkRoleEscalation(getCurrentCallingAccount(), acctForUpdate);
@@ -2077,7 +2116,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // don't allow to delete the user from the account of type Project
         checkAccountAndAccess(user, account);
-        return _userDao.remove(deleteUserCmd.getId());
+        return Transaction.execute((TransactionCallback<Boolean>) status -> deleteAndCleanupUser(user));
+    }
+
+    protected boolean deleteAndCleanupUser(User user) {
+        long userId = user.getId();
+
+        _projectAccountDao.removeUserFromProjects(userId);
+
+        return _userDao.remove(userId);
     }
 
     @Override
@@ -2748,13 +2795,28 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("Unable to find user by id");
         }
         final ControlledEntity account = getAccount(getUserAccountById(userId).getAccountId()); //Extracting the Account from the userID of the requested user.
-        checkAccess(CallContext.current().getCallingUser(), account);
+        User caller = CallContext.current().getCallingUser();
+        preventRootDomainAdminAccessToRootAdminKeys(caller, account);
+        checkAccess(caller, account);
 
         Map<String, String> keys = new HashMap<String, String>();
         keys.put("apikey", user.getApiKey());
         keys.put("secretkey", user.getSecretKey());
 
         return keys;
+    }
+
+    protected void preventRootDomainAdminAccessToRootAdminKeys(User caller, ControlledEntity account) {
+        if (isDomainAdminForRootDomain(caller) && isRootAdmin(account.getAccountId())) {
+            String msg = String.format("Caller Username %s does not have access to root admin keys", caller.getUsername());
+            s_logger.error(msg);
+            throw new PermissionDeniedException(msg);
+        }
+    }
+
+    protected boolean isDomainAdminForRootDomain(User callingUser) {
+        AccountVO caller = _accountDao.findById(callingUser.getAccountId());
+        return caller.getType() == Account.Type.DOMAIN_ADMIN && caller.getDomainId() == Domain.ROOT_DOMAIN;
     }
 
     @Override
@@ -2791,6 +2853,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         Account account = _accountDao.findById(user.getAccountId());
+        preventRootDomainAdminAccessToRootAdminKeys(user, account);
         checkAccess(caller, null, true, account);
 
         // don't allow updating system user

@@ -82,7 +82,7 @@ export default {
       }, {
         name: 'vnf.appliances',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/VnfAppliancesTab.vue'))),
-        show: () => { return 'deployVnfAppliance' in store.getters.apis }
+        show: () => { return 'listVnfAppliances' in store.getters.apis }
       }, {
         name: 'guest.ip.range',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/GuestIpRanges.vue'))),
@@ -337,7 +337,7 @@ export default {
       name: 'vnfapp',
       title: 'label.vnf.appliances',
       icon: 'gateway-outlined',
-      permission: ['listVnfTemplates'],
+      permission: ['listVnfAppliances'],
       resourceType: 'UserVm',
       params: () => {
         return { details: 'servoff,tmpl,nics', isvnf: true }
@@ -758,7 +758,7 @@ export default {
         fields.push(...['domain', 'zonename'])
         return fields
       },
-      details: ['ipaddress', 'id', 'associatednetworkname', 'virtualmachinename', 'networkid', 'issourcenat', 'isstaticnat', 'virtualmachinename', 'vmipaddress', 'vlan', 'allocated', 'account', 'domain', 'zonename'],
+      details: ['ipaddress', 'id', 'associatednetworkname', 'networkid', 'issourcenat', 'isstaticnat', 'virtualmachinename', 'vmipaddress', 'vlan', 'allocated', 'account', 'domain', 'zonename'],
       filters: ['allocated', 'reserved', 'free'],
       component: shallowRef(() => import('@/views/network/PublicIpResource.vue')),
       tabs: [{
@@ -1364,7 +1364,7 @@ export default {
       permission: ['listGuestVlans'],
       resourceType: 'GuestVlan',
       filters: ['allocatedonly', 'all'],
-      columns: ['vlan', 'allocationstate', 'physicalnetworkname', 'taken', 'account', 'project', 'domain', 'zonename'],
+      columns: ['vlan', 'allocationstate', 'physicalnetworkname', 'taken', 'account', 'project', 'domain', 'zonename', 'guest.networks'],
       details: ['vlan', 'allocationstate', 'physicalnetworkname', 'taken', 'account', 'project', 'domain', 'isdedicated', 'zonename'],
       searchFilters: ['zoneid'],
       tabs: [{

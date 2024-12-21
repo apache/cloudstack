@@ -158,20 +158,32 @@
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
                   :resourceKey="cluster.id"
                   :selectOptions="kvmHostsForConversion"
-                  :checkBoxLabel="'(Optional) Select a KVM host in the cluster to perform the instance conversion through virt-v2v'"
+                  :checkBoxLabel="$t('message.select.kvm.host.instance.conversion')"
                   :defaultCheckBoxValue="false"
                   :reversed="false"
                   @handle-checkselectpair-change="updateSelectedKvmHostForConversion"
                 />
               </a-form-item>
+              <a-form-item name="importhostid" ref="importhostid">
+                <check-box-select-pair
+                  layout="vertical"
+                  v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
+                  :resourceKey="cluster.id"
+                  :selectOptions="kvmHostsForImporting"
+                  :checkBoxLabel="$t('message.select.kvm.host.instance.import')"
+                  :defaultCheckBoxValue="false"
+                  :reversed="false"
+                  @handle-checkselectpair-change="updateSelectedKvmHostForImporting"
+                />
+              </a-form-item>
               <a-form-item name="convertstorageoption" ref="convertstorageoption">
                 <check-box-select-pair
                   layout="vertical"
-                  style="margin-bottom: 20px"
+                  style="margin-bottom: 5px"
                   v-if="cluster.hypervisortype === 'KVM' && selectedVmwareVcenter"
                   :resourceKey="cluster.id"
                   :selectOptions="storageOptionsForConversion"
-                  :checkBoxLabel="'(Optional) Select a Storage temporary destination for the converted disks through virt-v2v'"
+                  :checkBoxLabel="$t('message.select.temporary.storage.instance.conversion')"
                   :defaultCheckBoxValue="false"
                   :reversed="false"
                   @handle-checkselectpair-change="updateSelectedStorageOptionForConversion"
@@ -191,6 +203,12 @@
                     {{ pool.name }}
                   </a-select-option>
                 </a-select>
+              </a-form-item>
+              <a-form-item name="forcemstoimportvmfiles" ref="forcemstoimportvmfiles" v-if="selectedVmwareVcenter">
+                <template #label>
+                  <tooltip-label :title="$t('label.force.ms.to.import.vm.files')" :tooltip="apiParams.forcemstoimportvmfiles.description"/>
+                </template>
+                <a-switch v-model:checked="form.forcemstoimportvmfiles" @change="val => { switches.forceMsToImportVmFiles = val }" />
               </a-form-item>
               <a-form-item name="serviceofferingid" ref="serviceofferingid">
                 <template #label>
@@ -488,7 +506,9 @@ export default {
       switches: {},
       loading: false,
       kvmHostsForConversion: [],
+      kvmHostsForImporting: [],
       selectedKvmHostForConversion: null,
+      selectedKvmHostForImporting: null,
       storageOptionsForConversion: [
         {
           id: 'secondary',
@@ -517,6 +537,12 @@ export default {
     this.apiParams = {}
     this.apiConfig.params.forEach(param => {
       this.apiParams[param.name] = param
+    })
+    this.apiConfig = this.$store.getters.apis.importVm || {}
+    this.apiConfig.params.forEach(param => {
+      if (!(param.name in this.apiParams)) {
+        this.apiParams[param.name] = param
+      }
     })
   },
   created () {
@@ -696,6 +722,7 @@ export default {
         rootdiskid: 0,
         migrateallowed: this.switches.migrateAllowed,
         forced: this.switches.forced,
+        forcemstoimportvmfiles: this.switches.forceMsToImportVmFiles,
         domainid: null,
         account: null
       })
@@ -717,6 +744,7 @@ export default {
         page: 1
       })
       this.fetchKvmHostsForConversion()
+      this.fetchKvmHostsForImporting()
       if (this.resource?.disk?.length > 1) {
         this.updateSelectedRootDisk()
       }
@@ -902,21 +930,47 @@ export default {
     },
     fetchKvmHostsForConversion () {
       api('listHosts', {
+        zoneid: this.zoneid,
+        hypervisor: this.cluster.hypervisortype,
+        type: 'Routing',
+        state: 'Up'
+      }).then(json => {
+        this.kvmHostsForConversion = json.listhostsresponse.host || []
+        this.kvmHostsForConversion = this.kvmHostsForConversion.filter(host => ['Enabled', 'Disabled'].includes(host.resourcestate))
+        this.kvmHostsForConversion.map(host => {
+          host.name = host.name + ' [Pod=' + host.podname + '] [Cluster=' + host.clustername + ']'
+          if (host.instanceconversionsupported !== null && host.instanceconversionsupported !== undefined && host.instanceconversionsupported) {
+            host.name = host.name + ' (' + this.$t('label.supported') + ')'
+          } else {
+            host.name = host.name + ' (' + this.$t('label.not.supported') + ')'
+          }
+        })
+      })
+    },
+    fetchKvmHostsForImporting () {
+      api('listHosts', {
         clusterid: this.cluster.id,
         hypervisor: this.cluster.hypervisortype,
         type: 'Routing',
         state: 'Up',
         resourcestate: 'Enabled'
       }).then(json => {
-        this.kvmHostsForConversion = json.listhostsresponse.host || []
+        this.kvmHostsForImporting = json.listhostsresponse.host || []
       })
     },
     fetchStoragePoolsForConversion () {
       if (this.selectedStorageOptionForConversion === 'primary') {
-        api('listStoragePools', {
-          zoneid: this.cluster.zoneid,
-          state: 'Up'
-        }).then(json => {
+        const params = {
+          clusterid: this.cluster.id,
+          status: 'Up'
+        }
+        if (this.selectedKvmHostForConversion) {
+          const kvmHost = this.kvmHostsForConversion.filter(x => x.id === this.selectedKvmHostForConversion)[0]
+          if (kvmHost.clusterid !== this.cluster.id) {
+            params.scope = 'ZONE'
+          }
+        }
+        api('listStoragePools', params).then(json => {
           this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
         })
       } else if (this.selectedStorageOptionForConversion === 'local') {
@@ -924,10 +978,18 @@ export default {
         api('listStoragePools', {
           scope: 'HOST',
           ipaddress: kvmHost.ipaddress,
-          state: 'Up'
+          status: 'Up'
         }).then(json => {
           this.storagePoolsForConversion = json.liststoragepoolsresponse.storagepool || []
         })
+      }
+    },
+    updateSelectedKvmHostForImporting (clusterid, checked, value) {
+      if (checked) {
+        this.selectedKvmHostForImporting = value
+      } else {
+        this.selectedKvmHostForImporting = null
+        this.resetStorageOptionsForConversion()
       }
     },
     updateSelectedKvmHostForConversion (clusterid, checked, value) {
@@ -1081,11 +1143,15 @@ export default {
           if (this.selectedKvmHostForConversion) {
             params.convertinstancehostid = this.selectedKvmHostForConversion
           }
+          if (this.selectedKvmHostForImporting) {
+            params.importinstancehostid = this.selectedKvmHostForImporting
+          }
           if (this.selectedStoragePoolForConversion) {
             params.convertinstancepoolid = this.selectedStoragePoolForConversion
           }
+          params.forcemstoimportvmfiles = values.forcemstoimportvmfiles
         }
-        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced']
+        var keys = ['hostname', 'domainid', 'projectid', 'account', 'migrateallowed', 'forced', 'forcemstoimportvmfiles']
         if (this.templateType !== 'auto') {
           keys.push('templateid')
         }

@@ -504,7 +504,9 @@ public class VolumeServiceImpl implements VolumeService {
                             _snapshotStoreDao.remove(snapStoreVo.getId());
                         }
                     } else {
-                        _snapshotStoreDao.remove(snapStoreVo.getId());
+                        if (!StoragePoolType.StorPool.equals(storagePoolVO.getPoolType())) {
+                            _snapshotStoreDao.remove(snapStoreVo.getId());
+                        }
                     }
                 }
                 snapshotApiService.markVolumeSnapshotsAsDestroyed(vo);
@@ -1720,6 +1722,7 @@ public class VolumeServiceImpl implements VolumeService {
             newVol.setPassphraseId(volume.getPassphraseId());
             newVol.setEncryptFormat(volume.getEncryptFormat());
         }
+        newVol.setLastId(volume.getId());
         return volDao.persist(newVol);
     }
 

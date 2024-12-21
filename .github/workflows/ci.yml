@@ -35,6 +35,7 @@ jobs:
       fail-fast: false
       matrix:
         tests: [ "smoke/test_accounts
+                  smoke/test_account_access
                   smoke/test_affinity_groups
                   smoke/test_affinity_groups_projects
                   smoke/test_annotations
@@ -219,9 +220,9 @@ jobs:
           cache: maven
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.8'
+          python-version: '3.10'
           architecture: 'x64'
 
       - name: Install Build Dependencies

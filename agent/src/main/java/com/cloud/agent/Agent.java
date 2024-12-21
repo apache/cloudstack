@@ -1141,6 +1141,12 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                     s_logger.error("Error parsing task", e);
                 }
             } else if (task.getType() == Task.Type.DISCONNECT) {
+                try {
+                    // an issue has been found if reconnect immediately after disconnecting. please refer to https://github.com/apache/cloudstack/issues/8517
+                    // wait 5 seconds before reconnecting
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                }
                 reconnect(task.getLink());
                 return;
             } else if (task.getType() == Task.Type.OTHER) {

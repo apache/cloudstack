@@ -90,7 +90,7 @@ export default {
       }, {
         name: 'vnf.settings',
         component: shallowRef(defineAsyncComponent(() => import('@/views/image/TemplateVnfSettings.vue'))),
-        show: (record) => { return record.templatetype === 'VNF' }
+        show: (record) => { return record.templatetype === 'VNF' && 'updateVnfTemplate' in store.getters.apis }
       },
       {
         name: 'events',

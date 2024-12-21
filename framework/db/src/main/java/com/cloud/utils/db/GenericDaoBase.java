@@ -421,7 +421,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                     pstmt.setObject(i++, value);
                 }
             }
-
             if (s_logger.isDebugEnabled() && lock != null) {
                 txn.registerLock(pstmt.toString());
             }
@@ -1226,9 +1225,14 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
-    // FIXME: Does not work for joins.
     @Override
     public int expunge(final SearchCriteria<T> sc) {
+        return expunge(sc, -1);
+    }
+
+    // FIXME: Does not work for joins.
+    @Override
+    public int expunge(final SearchCriteria<T> sc, long limit) {
         if (sc == null) {
             throw new CloudRuntimeException("Call to throw new expunge with null search Criteria");
         }
@@ -1239,6 +1243,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         if (sc != null && sc.getWhereClause().length() > 0) {
             str.append(sc.getWhereClause());
+        }
+
+        if (limit > 0) {
+            str.append(" LIMIT ");
+            str.append(limit);
         }
 
         final String sql = str.toString();
@@ -1332,22 +1341,39 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                     onClause.append("?");
                     joinAttrList.add(join.getFirstAttributes()[i]);
                 } else {
-                    onClause.append(joinedTableNames.getOrDefault(join.getFirstAttributes()[i].table, join.getFirstAttributes()[i].table))
-                    .append(".")
-                    .append(join.getFirstAttributes()[i].columnName);
-                }
-                onClause.append("=");
-                if (join.getSecondAttribute()[i].getValue() != null) {
-                    onClause.append("?");
-                    joinAttrList.add(join.getSecondAttribute()[i]);
-                } else {
-                    if(!joinTableAlias.equals(joinTableName)) {
-                        onClause.append(joinTableAlias);
+                    if ((join.getFirstAttributes()[i].table == null && join.getFirstAttributes()[i].value == null) ||
+                            (join.getSecondAttribute()[i].table == null && join.getSecondAttribute()[i].value == null)) {
+                        onClause.append(joinedTableNames.getOrDefault(join.getSecondAttribute()[i].table, join.getFirstAttributes()[i].table))
+                                .append(".");
+                        if (join.getFirstAttributes()[i].table == null && join.getFirstAttributes()[i].value == null) {
+                            onClause.append(join.getSecondAttribute()[i].columnName);
+                        } else {
+                            onClause.append(join.getFirstAttributes()[i].columnName);
+                        }
+
                     } else {
-                        onClause.append(joinTableName);
+                        onClause.append(joinedTableNames.getOrDefault(join.getFirstAttributes()[i].table, join.getFirstAttributes()[i].table))
+                                .append(".")
+                                .append(join.getFirstAttributes()[i].columnName);
                     }
-                    onClause.append(".")
-                    .append(join.getSecondAttribute()[i].columnName);
+                }
+                if ((join.getFirstAttributes()[i].table == null && join.getFirstAttributes()[i].value == null) ||
+                        (join.getSecondAttribute()[i].table == null && join.getSecondAttribute()[i].value == null)) {
+                    onClause.append(" IS NULL");
+                } else {
+                    onClause.append("=");
+                    if (join.getSecondAttribute()[i].getValue() != null) {
+                        onClause.append("?");
+                        joinAttrList.add(join.getSecondAttribute()[i]);
+                    } else {
+                        if (!joinTableAlias.equals(joinTableName)) {
+                            onClause.append(joinTableAlias);
+                        } else {
+                            onClause.append(joinTableName);
+                        }
+                        onClause.append(".")
+                                .append(join.getSecondAttribute()[i].columnName);
+                    }
                 }
             }
             onClause.append(" ");

@@ -50,36 +50,37 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
 
     @Override
     public Answer execute(final GetRemoteVmsCommand command, final LibvirtComputingResource libvirtComputingResource) {
-        String hypervisorURI = "qemu+tcp://" + command.getRemoteIp() + "/system";
+        String remoteIp = command.getRemoteIp();
+        String hypervisorURI = "qemu+tcp://" + remoteIp + "/system";
         HashMap<String, UnmanagedInstanceTO> unmanagedInstances = new HashMap<>();
         try {
             Connect conn = LibvirtConnection.getConnection(hypervisorURI);
             final List<String> allVmNames = libvirtComputingResource.getAllVmNames(conn);
+            s_logger.info(String.format("Found %d VMs on the remote host %s", allVmNames.size(), remoteIp));
             for (String name : allVmNames) {
                 final Domain domain = libvirtComputingResource.getDomain(conn, name);
-
                 final DomainInfo.DomainState ps = domain.getInfo().state;
                 final VirtualMachine.PowerState state = libvirtComputingResource.convertToPowerState(ps);
-                s_logger.debug("VM " + domain.getName() + " - powerstate: " + ps + ", state: " + state.toString());
+                s_logger.debug(String.format("Remote VM %s - powerstate: %s, state: %s", domain.getName(), ps.toString(), state.toString()));
 
                 if (state == VirtualMachine.PowerState.PowerOff) {
                     try {
                         UnmanagedInstanceTO instance = getUnmanagedInstance(libvirtComputingResource, domain, conn);
                         unmanagedInstances.put(instance.getName(), instance);
                     } catch (Exception e) {
-                        s_logger.error("Couldn't fetch VM " + domain.getName() + " details, due to: " + e.getMessage(), e);
+                        s_logger.error("Couldn't fetch remote VM " + domain.getName() + " details, due to: " + e.getMessage(), e);
                     }
                 }
                 domain.free();
             }
-            s_logger.debug("Found " + unmanagedInstances.size() + " stopped VMs on host " + command.getRemoteIp());
+            s_logger.debug("Found " + unmanagedInstances.size() + " stopped VMs on remote host " + remoteIp);
             return new GetRemoteVmsAnswer(command, "", unmanagedInstances);
         } catch (final LibvirtException e) {
-            s_logger.error("Failed to list stopped VMs on remote host " + command.getRemoteIp() + ", due to: " + e.getMessage(), e);
+            s_logger.error("Failed to list stopped VMs on remote host " + remoteIp + ", due to: " + e.getMessage(), e);
             if (e.getMessage().toLowerCase().contains("connection refused")) {
-                return new Answer(command, false, "Unable to connect to remote host " + command.getRemoteIp() + ", please check the libvirtd tcp connectivity and retry");
+                return new Answer(command, false, "Unable to connect to remote host " + remoteIp + ", please check the libvirtd tcp connectivity and retry");
             }
-            return new Answer(command, false, "Unable to list stopped VMs on remote host " + command.getRemoteIp() + ", due to: " + e.getMessage());
+            return new Answer(command, false, "Unable to list stopped VMs on remote host " + remoteIp + ", due to: " + e.getMessage());
         }
     }
 
@@ -105,8 +106,8 @@ public final class LibvirtGetRemoteVmsCommandWrapper extends CommandWrapper<GetR
 
             return instance;
         } catch (Exception e) {
-            s_logger.debug("Unable to retrieve unmanaged instance info,  due to: " + e.getMessage(), e);
-            throw new CloudRuntimeException("Unable to retrieve unmanaged instance info, due to: " + e.getMessage());
+            s_logger.debug("Unable to retrieve remote unmanaged instance info,  due to: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Unable to retrieve remote unmanaged instance info, due to: " + e.getMessage());
         }
     }
 

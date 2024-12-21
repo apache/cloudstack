@@ -57,7 +57,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     private static final Map<String, KVMStoragePool> storageUuidToStoragePool = new HashMap<String, KVMStoragePool>();
 
     @Override
-    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType, Map<String, String> details) {
+    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType, Map<String, String> details, boolean isPrimaryStorage) {
         SP_LOG("StorPoolStorageAdaptor.createStoragePool: uuid=%s, host=%s:%d, path=%s, userInfo=%s, type=%s", uuid, host, port, path, userInfo, storagePoolType);
 
         StorPoolStoragePool storagePool = new StorPoolStoragePool(uuid, host, port, storagePoolType, this);
@@ -244,7 +244,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public boolean connectPhysicalDisk(String volumeUuid, KVMStoragePool pool, Map<String, String> details) {
+    public boolean connectPhysicalDisk(String volumeUuid, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate) {
         SP_LOG("StorPoolStorageAdaptor.connectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool);
 
         log.debug(String.format("connectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool));

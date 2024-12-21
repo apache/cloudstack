@@ -74,7 +74,7 @@ import com.cloud.utils.UriUtils;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
+public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     private static final Logger LOGGER = Logger.getLogger(ScaleIOPrimaryDataStoreLifeCycle.class);
 
     @Inject
@@ -260,8 +260,6 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
             throw new CloudRuntimeException("Unsupported hypervisor type: " + cluster.getHypervisorType().toString());
         }
 
-        checkConnectedSdcs(dataStore.getId());
-
         PrimaryDataStoreInfo primaryDataStoreInfo = (PrimaryDataStoreInfo) dataStore;
         List<HostVO> hostsInCluster = resourceManager.listAllUpAndEnabledHosts(Host.Type.Routing, primaryDataStoreInfo.getClusterId(),
                 primaryDataStoreInfo.getPodId(), primaryDataStoreInfo.getDataCenterId());
@@ -278,14 +276,12 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
                     poolHosts.add(host);
                 }
             } catch (Exception e) {
-                LOGGER.warn("Unable to establish a connection between " + host + " and " + primaryDataStoreInfo, e);
+                LOGGER.warn("Unable to establish a connection between host: " + host + " and pool: " + dataStore + "on the cluster: " + primaryDataStoreInfo.getClusterId(), e);
             }
         }
 
         if (poolHosts.isEmpty()) {
             LOGGER.warn("No host can access storage pool '" + primaryDataStoreInfo + "' on cluster '" + primaryDataStoreInfo.getClusterId() + "'.");
-            primaryDataStoreDao.expunge(primaryDataStoreInfo.getId());
-            throw new CloudRuntimeException("Failed to create storage pool in the cluster: " + primaryDataStoreInfo.getClusterId() + " as it is not accessible to hosts");
         }
 
         dataStoreHelper.attachCluster(dataStore);
@@ -303,8 +299,6 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
             throw new CloudRuntimeException("Unsupported hypervisor type: " + hypervisorType.toString());
         }
 
-        checkConnectedSdcs(dataStore.getId());
-
         LOGGER.debug("Attaching the pool to each of the hosts in the zone: " + scope.getScopeId());
         List<HostVO> hosts = resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(hypervisorType, scope.getScopeId());
         List<HostVO> poolHosts = new ArrayList<HostVO>();
@@ -314,33 +308,15 @@ public class ScaleIOPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCyc
                     poolHosts.add(host);
                 }
             } catch (Exception e) {
-                LOGGER.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
+                LOGGER.warn("Unable to establish a connection between host: " + host + " and pool: " + dataStore + "in the zone: " + scope.getScopeId(), e);
             }
         }
         if (poolHosts.isEmpty()) {
-            LOGGER.warn("No host can access storage pool " + dataStore + " in this zone.");
-            primaryDataStoreDao.expunge(dataStore.getId());
-            throw new CloudRuntimeException("Failed to create storage pool as it is not accessible to hosts.");
+            LOGGER.warn("No host can access storage pool " + dataStore + " in the zone: " + scope.getScopeId());
         }
 
         dataStoreHelper.attachZone(dataStore);
         return true;
-    }
-
-    private void checkConnectedSdcs(Long dataStoreId) {
-        boolean haveConnectedSdcs = false;
-        try {
-            ScaleIOGatewayClient client = ScaleIOGatewayClientConnectionPool.getInstance().getClient(dataStoreId, storagePoolDetailsDao);
-            haveConnectedSdcs = client.haveConnectedSdcs();
-        } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
-            LOGGER.error(String.format("Failed to create storage pool for datastore: %s", dataStoreId), e);
-            throw new CloudRuntimeException(String.format("Failed to establish connection with PowerFlex Gateway to create storage pool for datastore: %s", dataStoreId));
-        }
-
-        if (!haveConnectedSdcs) {
-            LOGGER.debug(String.format("No connected SDCs found for the PowerFlex storage pool of datastore: %s", dataStoreId));
-            throw new CloudRuntimeException(String.format("Failed to create storage pool as connected SDCs not found for datastore: %s", dataStoreId));
-        }
     }
 
     @Override

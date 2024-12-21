@@ -145,6 +145,10 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the domain associated with the disk volume")
     private String domainName;
 
+    @SerializedName(ApiConstants.DOMAIN_PATH)
+    @Param(description = "path of the Domain the disk volume belongs to", since = "4.19.2.0")
+    private String domainPath;
+
     @SerializedName("storagetype")
     @Param(description = "shared or local storage")
     private String storageType;
@@ -211,7 +215,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
 
     @SerializedName("destroyed")
     @Param(description = "the boolean state of whether the volume is destroyed or not")
-    private Boolean destroyed;
+    private boolean destroyed;
 
     @SerializedName(ApiConstants.SERVICE_OFFERING_ID)
     @Param(description = "ID of the service offering for root disk")
@@ -227,7 +231,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
 
     @SerializedName("isextractable")
     @Param(description = "true if the volume is extractable, false otherwise")
-    private Boolean extractable;
+    private boolean extractable;
 
     @SerializedName(ApiConstants.STATUS)
     @Param(description = "the status of the volume")
@@ -235,7 +239,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
 
     @SerializedName(ApiConstants.DISPLAY_VOLUME)
     @Param(description = "an optional field whether to the display the volume to the end user or not.", authorized = {RoleType.Admin})
-    private Boolean displayVolume;
+    private boolean displayVolume;
 
     @SerializedName(ApiConstants.PATH)
     @Param(description = "the path of the volume")
@@ -318,11 +322,11 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
         return this.getId();
     }
 
-    public Boolean isDestroyed() {
+    public boolean isDestroyed() {
         return destroyed;
     }
 
-    public void setDestroyed(Boolean destroyed) {
+    public void setDestroyed(boolean destroyed) {
         this.destroyed = destroyed;
     }
 
@@ -407,6 +411,11 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
     @Override
     public void setDomainName(String domainName) {
         this.domainName = domainName;
+    }
+
+    @Override
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
     }
 
     public void setStorageType(String storageType) {
@@ -521,7 +530,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
         this.serviceOfferingDisplayText = serviceOfferingDisplayText;
     }
 
-    public void setExtractable(Boolean extractable) {
+    public void setExtractable(boolean extractable) {
         this.extractable = extractable;
     }
 
@@ -539,7 +548,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
         this.projectName = projectName;
     }
 
-    public void setDisplayVolume(Boolean displayVm) {
+    public void setDisplayVolume(boolean displayVm) {
         this.displayVolume = displayVm;
     }
 
@@ -755,7 +764,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
         return serviceOfferingDisplayText;
     }
 
-    public Boolean getExtractable() {
+    public boolean isExtractable() {
         return extractable;
     }
 
@@ -763,7 +772,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
         return status;
     }
 
-    public Boolean getDisplayVolume() {
+    public boolean isDisplayVolume() {
         return displayVolume;
     }
 

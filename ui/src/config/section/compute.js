@@ -32,7 +32,7 @@ export default {
       getApiToCall: () => store.getters.metrics ? 'listVirtualMachinesMetrics' : 'listVirtualMachines',
       resourceType: 'UserVm',
       params: () => {
-        var params = { details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp' }
+        var params = { details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff' }
         if (store.getters.metrics) {
           params = { details: 'all,stats' }
         }
@@ -120,7 +120,13 @@ export default {
           groupAction: true,
           popup: true,
           groupMap: (selection, values) => { return selection.map(x => { return { id: x, considerlasthost: values.considerlasthost } }) },
-          args: ['considerlasthost'],
+          args: (record, store) => {
+            if (['Admin'].includes(store.userInfo.roletype)) {
+              return ['considerlasthost']
+            }
+
+            return []
+          },
           show: (record) => { return ['Stopped'].includes(record.state) },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/StartVirtualMachine.vue')))
         },
@@ -531,7 +537,7 @@ export default {
         if (store.listAllProjects) {
           fields.push('project')
         }
-        if (store.apis.scaleKubernetesCluster.params.filter(x => x.name === 'autoscalingenabled').length > 0) {
+        if (store.apis.scaleKubernetesCluster?.params?.filter(x => x.name === 'autoscalingenabled').length > 0) {
           fields.splice(2, 0, 'autoscalingenabled')
         }
         fields.push('zonename')

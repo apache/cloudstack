@@ -55,7 +55,7 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType, Map<String, String> details) {
+    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType, Map<String, String> details, boolean isPrimaryStorage) {
 
         LibvirtStoragePool storagePool = new LibvirtStoragePool(uuid, path, StoragePoolType.ManagedNFS, this, null);
         storagePool.setSourceHost(host);
@@ -93,7 +93,7 @@ public class ManagedNfsStorageAdaptor implements StorageAdaptor {
      * creates a nfs storage pool using libvirt
      */
     @Override
-    public boolean connectPhysicalDisk(String volumeUuid, KVMStoragePool pool, Map<String, String> details) {
+    public boolean connectPhysicalDisk(String volumeUuid, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate) {
 
         StoragePool sp = null;
         Connect conn = null;

@@ -62,6 +62,7 @@ import org.apache.cloudstack.diagnostics.DiagnosticsService;
 import org.apache.cloudstack.hypervisor.xenserver.ExtraConfigurationUtility;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
+import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.security.ParserUtils;
@@ -221,6 +222,8 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
     private final static int USER_DEVICE_START_ID = 3;
 
     private final static String VM_NAME_ISO_SUFFIX = "-ISO";
+
+    private final static String VM_NAME_CONFIGDRIVE_ISO_SUFFIX = "-CONFIGDRIVE-ISO";
 
     private final static String VM_FILE_ISO_SUFFIX = ".iso";
     public final static int DEFAULTDOMRSSHPORT = 3922;
@@ -1020,12 +1023,13 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
     protected SR createIsoSRbyURI(final Connection conn, final URI uri, final String vmName, final boolean shared) {
         try {
             final Map<String, String> deviceConfig = new HashMap<String, String>();
+            final boolean isConfigDrive = uri.toString().endsWith(ConfigDrive.CONFIGDRIVEDIR);
             String path = uri.getPath();
             path = path.replace("//", "/");
             deviceConfig.put("location", uri.getHost() + ":" + path);
             final Host host = Host.getByUuid(conn, _host.getUuid());
             final SR sr = SR.create(conn, host, deviceConfig, new Long(0), uri.getHost() + path, "iso", "iso", "iso", shared, new HashMap<String, String>());
-            sr.setNameLabel(conn, vmName + "-ISO");
+            sr.setNameLabel(conn, vmName + (isConfigDrive ? VM_NAME_CONFIGDRIVE_ISO_SUFFIX: VM_NAME_ISO_SUFFIX));
             sr.setNameDescription(conn, deviceConfig.get("location"));
 
             sr.scan(conn);
@@ -2648,9 +2652,10 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         return scsiid;
     }
 
-    public SR getISOSRbyVmName(final Connection conn, final String vmName) {
+    public SR getISOSRbyVmName(final Connection conn, final String vmName, boolean isConfigDrive) {
         try {
-            final Set<SR> srs = SR.getByNameLabel(conn, vmName + "-ISO");
+            final Set<SR> srs = SR.getByNameLabel(conn, vmName +
+                    (isConfigDrive ? VM_NAME_CONFIGDRIVE_ISO_SUFFIX : VM_NAME_ISO_SUFFIX));
             if (srs.size() == 0) {
                 return null;
             } else if (srs.size() == 1) {
@@ -2697,9 +2702,20 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         } catch (final URISyntaxException e) {
             throw new CloudRuntimeException("isoURL is wrong: " + isoURL);
         }
-        isoSR = getISOSRbyVmName(conn, vmName);
+        isoSR = getISOSRbyVmName(conn, vmName, false);
         if (isoSR == null) {
             isoSR = createIsoSRbyURI(conn, uri, vmName, false);
+        } else {
+            try {
+                String description = isoSR.getNameDescription(conn);
+                if (description.endsWith(ConfigDrive.CONFIGDRIVEDIR)) {
+                    throw new CloudRuntimeException(String.format("VM %s already has %s ISO attached. Please " +
+                            "stop-start VM to allow attaching-detaching both ISOs", vmName, ConfigDrive.CONFIGDRIVEDIR));
+                }
+            } catch (XenAPIException | XmlRpcException e) {
+                throw new CloudRuntimeException(String.format("Unable to retrieve name description for the already " +
+                        "attached ISO on VM %s", vmName));
+            }
         }
 
         final String isoName = isoURL.substring(index + 1);
@@ -5667,7 +5683,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             s_logger.debug("Attaching config drive iso device for the VM " + vmName + " In host " + ipAddr);
             Set<VM> vms = VM.getByNameLabel(conn, vmName);
 
-            SR sr = getSRByNameLabel(conn, vmName + VM_NAME_ISO_SUFFIX);
+            SR sr = getSRByNameLabel(conn, vmName + VM_NAME_CONFIGDRIVE_ISO_SUFFIX);
             //Here you will find only two vdis with the <vmname>.iso.
             //one is from source host and second from dest host
             Set<VDI> vdis = VDI.getByNameLabel(conn, vmName + VM_FILE_ISO_SUFFIX);

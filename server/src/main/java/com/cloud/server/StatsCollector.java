@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.server;
 
+import static com.cloud.configuration.ConfigurationManagerImpl.DELETE_QUERY_BATCH_SIZE;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 import java.lang.management.ManagementFactory;
@@ -114,9 +115,6 @@ import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
-import com.cloud.server.StatsCollector.AbstractStatsCollector;
-import com.cloud.server.StatsCollector.AutoScaleMonitor;
-import com.cloud.server.StatsCollector.StorageCollector;
 import com.cloud.storage.ImageStoreDetailsUtil;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
@@ -1965,7 +1963,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         LOGGER.trace("Removing older VM stats records.");
         Date now = new Date();
         Date limit = DateUtils.addMinutes(now, -maxRetentionTime);
-        vmStatsDao.removeAllByTimestampLessThan(limit);
+        vmStatsDao.removeAllByTimestampLessThan(limit, DELETE_QUERY_BATCH_SIZE.value());
     }
 
     /**
@@ -1984,7 +1982,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         LOGGER.trace("Removing older Volume stats records.");
         Date now = new Date();
         Date limit = DateUtils.addMinutes(now, -maxRetentionTime);
-        volumeStatsDao.removeAllByTimestampLessThan(limit);
+        volumeStatsDao.removeAllByTimestampLessThan(limit, DELETE_QUERY_BATCH_SIZE.value());
     }
 
     /**

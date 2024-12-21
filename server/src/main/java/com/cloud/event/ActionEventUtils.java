@@ -22,6 +22,7 @@ import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
@@ -110,6 +111,8 @@ public class ActionEventUtils {
      */
     public static Long onScheduledActionEvent(Long userId, Long accountId, String type, String description, Long resourceId, String resourceType, boolean eventDisplayEnabled, long startEventId) {
         Ternary<Long, String, String> resourceDetails = getResourceDetails(resourceId, resourceType, type);
+        CallContext ctx = CallContext.current();
+        accountId = getOwnerAccountId(ctx, type, accountId);
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Scheduled, description, resourceDetails.second(), resourceDetails.third());
         Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Scheduled, eventDisplayEnabled, description, resourceDetails.first(), resourceDetails.third(), startEventId);
         return event.getId();
@@ -123,7 +126,7 @@ public class ActionEventUtils {
     public static void onStartedActionEventFromContext(String eventType, String eventDescription, Long resourceId, String resourceType, boolean eventDisplayEnabled) {
         CallContext ctx = CallContext.current();
         long userId = ctx.getCallingUserId();
-        long accountId = ctx.getProject() != null ? ctx.getProject().getProjectAccountId() : ctx.getCallingAccountId();    //This should be the entity owner id rather than the Calling User Account Id.
+        long accountId = getOwnerAccountId(ctx, eventType, ctx.getCallingAccountId());
         long startEventId = ctx.getStartEventId();
 
         if (!eventType.equals(""))
@@ -393,7 +396,11 @@ public class ActionEventUtils {
                 s_logger.trace("Caught exception while populating first class entities for event bus, moving on");
             }
         }
-
     }
 
+    public static long getOwnerAccountId(CallContext ctx, String eventType, long callingAccountId) {
+        List<String> mainProjectEvents = List.of(EventTypes.EVENT_PROJECT_CREATE, EventTypes.EVENT_PROJECT_UPDATE, EventTypes.EVENT_PROJECT_DELETE);
+        long accountId = ctx.getProject() != null && !mainProjectEvents.stream().anyMatch(eventType::equalsIgnoreCase) ? ctx.getProject().getProjectAccountId() : callingAccountId;    //This should be the entity owner id rather than the Calling User Account Id.
+        return accountId;
+    }
 }

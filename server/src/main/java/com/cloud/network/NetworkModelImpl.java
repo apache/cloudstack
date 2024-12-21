@@ -789,13 +789,19 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public NetworkVO getNetworkWithSGWithFreeIPs(Long zoneId) {
+    public NetworkVO getNetworkWithSGWithFreeIPs(Account account, Long zoneId) {
         List<NetworkVO> networks = _networksDao.listByZoneSecurityGroup(zoneId);
         if (networks == null || networks.isEmpty()) {
             return null;
         }
         NetworkVO ret_network = null;
         for (NetworkVO nw : networks) {
+            try {
+                checkAccountNetworkPermissions(account, nw);
+            } catch (PermissionDeniedException e) {
+                continue;
+            }
+
             List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(nw.getId());
             for (VlanVO vlan : vlans) {
                 if (_ipAddressDao.countFreeIpsInVlan(vlan.getId()) > 0) {
@@ -1612,6 +1618,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         }
 
         NetworkVO network = _networksDao.findById(networkId);
+        if (network == null) {
+            throw new CloudRuntimeException("Could not find network associated with public IP.");
+        }
+
         NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         if (offering.getGuestType() != GuestType.Isolated) {
             return true;
@@ -2413,7 +2423,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                 throw new InvalidParameterValueException("endIPv6 is not in ip6cidr indicated network!");
             }
         }
+    }
 
+    public void checkIp6CidrSizeEqualTo64(String ip6Cidr) {
         int cidrSize = NetUtils.getIp6CidrSize(ip6Cidr);
         // we only support cidr == 64
         if (cidrSize != 64) {

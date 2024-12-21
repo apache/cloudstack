@@ -43,7 +43,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     private static final Map<String, KVMStoragePool> MapStorageUuidToStoragePool = new HashMap<>();
 
     @Override
-    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType, Map<String, String> details) {
+    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, StoragePoolType storagePoolType, Map<String, String> details, boolean isPrimaryStorage) {
         IscsiAdmStoragePool storagePool = new IscsiAdmStoragePool(uuid, host, port, storagePoolType, this);
 
         MapStorageUuidToStoragePool.put(uuid, storagePool);
@@ -79,7 +79,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public boolean connectPhysicalDisk(String volumeUuid, KVMStoragePool pool, Map<String, String> details) {
+    public boolean connectPhysicalDisk(String volumeUuid, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate) {
         // ex. sudo iscsiadm -m node -T iqn.2012-03.com.test:volume1 -p 192.168.233.10:3260 -o new
         Script iScsiAdmCmd = new Script(true, "iscsiadm", 0, s_logger);
 

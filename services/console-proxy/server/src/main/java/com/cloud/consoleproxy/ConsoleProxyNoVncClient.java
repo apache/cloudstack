@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.consoleproxy;
 
+import com.cloud.utils.net.NetUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.eclipse.jetty.websocket.api.Session;
@@ -284,6 +285,7 @@ public class ConsoleProxyNoVncClient implements ConsoleProxyClient {
         try {
             if (StringUtils.isNotBlank(websocketUrl)) {
                 s_logger.info(String.format("Connect to VNC over websocket URL: %s", websocketUrl));
+                ConsoleProxy.ensureRoute(NetUtils.extractHost(websocketUrl));
                 client.connectToWebSocket(websocketUrl, session);
             } else if (tunnelUrl != null && !tunnelUrl.isEmpty() && tunnelSession != null
                     && !tunnelSession.isEmpty()) {

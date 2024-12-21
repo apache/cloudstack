@@ -581,6 +581,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         Domain domain = ApiDBUtils.findDomainById(kubernetesCluster.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
+        response.setDomainPath(domain.getPath());
         response.setKeypair(kubernetesCluster.getKeyPair());
         response.setState(kubernetesCluster.getState().toString());
         response.setCores(String.valueOf(kubernetesCluster.getCores()));
@@ -827,7 +828,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             if (network == null) {
                 throw new InvalidParameterValueException(String.format("%s parameter must be specified along with %s parameter", ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, ApiConstants.NETWORK_ID));
             }
-            if (Network.GuestType.Shared.equals(network.getGuestType())) {
+            if (!Network.GuestType.Shared.equals(network.getGuestType())) {
                 throw new InvalidParameterValueException(String.format("%s parameter must be specified along with %s type of network", ApiConstants.EXTERNAL_LOAD_BALANCER_IP_ADDRESS, Network.GuestType.Shared.toString()));
             }
         }
@@ -1625,8 +1626,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     private void updateNodeCount(KubernetesClusterVO kubernetesCluster) {
         List<KubernetesClusterVmMapVO> nodeList = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
         kubernetesCluster.setControlNodeCount(nodeList.stream().filter(KubernetesClusterVmMapVO::isControlNode).count());
-        kubernetesCluster.setNodeCount(nodeList.size());
-        kubernetesCluster.setNodeCount(nodeList.size());
+        kubernetesCluster.setNodeCount(nodeList.size() - kubernetesCluster.getControlNodeCount());
         kubernetesClusterDao.persist(kubernetesCluster);
     }
 
