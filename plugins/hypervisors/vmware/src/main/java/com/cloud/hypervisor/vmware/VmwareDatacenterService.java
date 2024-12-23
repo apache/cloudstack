@@ -23,6 +23,7 @@ import com.cloud.dc.VsphereStoragePolicy;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.storage.StoragePool;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
@@ -53,5 +54,5 @@ public interface VmwareDatacenterService extends PluggableService {
 
     List<StoragePool> listVsphereStoragePolicyCompatibleStoragePools(ListVsphereStoragePolicyCompatiblePoolsCmd cmd);
 
-    List<UnmanagedInstanceTO> listVMsInDatacenter(ListVmwareDcVmsCmd cmd);
+    Pair<String, List<UnmanagedInstanceTO>> listVMsInDatacenter(ListVmwareDcVmsCmd cmd);
 }

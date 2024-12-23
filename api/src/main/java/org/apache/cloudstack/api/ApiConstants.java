@@ -46,6 +46,7 @@ public class ApiConstants {
     public static final String BACKUP_OFFERING_NAME = "backupofferingname";
     public static final String BACKUP_OFFERING_ID = "backupofferingid";
     public static final String BASE64_IMAGE = "base64image";
+    public static final String BATCH_SIZE = "batchsize";
     public static final String BITS = "bits";
     public static final String BOOTABLE = "bootable";
     public static final String BIND_DN = "binddn";
@@ -1106,6 +1107,7 @@ public class ApiConstants {
     public static final String PARAMETER_DESCRIPTION_IS_TAG_A_RULE = "Whether the informed tag is a JS interpretable rule or not.";
 
     public static final String NFS_MOUNT_OPTIONS = "nfsmountopts";
+    public static final String MAX_NUMBER = "maxnumber";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
