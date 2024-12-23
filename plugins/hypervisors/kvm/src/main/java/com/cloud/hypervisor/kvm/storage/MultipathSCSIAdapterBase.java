@@ -182,7 +182,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     }
 
    @Override
-    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details) {
+    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate) {
         LOGGER.info("connectPhysicalDisk called for [" + volumePath + "]");
 
         if (StringUtils.isEmpty(volumePath)) {

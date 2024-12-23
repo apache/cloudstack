@@ -46,6 +46,7 @@ import com.linbit.linstor.api.Configuration;
 import com.linbit.linstor.api.DevelopersApi;
 import com.linbit.linstor.api.model.ApiCallRc;
 import com.linbit.linstor.api.model.ApiCallRcList;
+import com.linbit.linstor.api.model.Node;
 import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.Resource;
@@ -277,6 +278,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
      * @throws ApiException if any problem connecting to the Linstor controller
      */
     private void allow2PrimariesIfInUse(DevelopersApi api, String rscName) throws ApiException {
+        logger.debug("enabling allow-two-primaries");
         String inUseNode = LinstorUtil.isResourceInUse(api, rscName);
         if (inUseNode != null && !inUseNode.equalsIgnoreCase(localNodeName)) {
             // allow 2 primaries for live migration, should be removed by disconnect on the other end
@@ -292,7 +294,8 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
-    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details)
+    public boolean connectPhysicalDisk(
+            String volumePath, KVMStoragePool pool, Map<String, String> details, boolean isVMMigration)
     {
         logger.debug("Linstor: connectPhysicalDisk {}:{} -> {}", pool.getUuid(), volumePath, details);
         if (volumePath == null) {
@@ -315,12 +318,13 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
         }
 
-        try
-        {
-            allow2PrimariesIfInUse(api, rscName);
-        } catch (ApiException apiEx) {
-            logger.error(apiEx);
-            // do not fail here as adding allow-two-primaries property is only a problem while live migrating
+        if (isVMMigration) {
+            try {
+                allow2PrimariesIfInUse(api, rscName);
+            } catch (ApiException apiEx) {
+                logger.error(apiEx);
+                // do not fail here as adding allow-two-primaries property is only a problem while live migrating
+            }
         }
         return true;
     }
@@ -711,6 +715,21 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                     .sum() * 1024; // linstor uses Kib
             logger.debug("Linstor: getUsed() -> " + used);
             return used;
+        } catch (ApiException apiEx) {
+            logger.error(apiEx.getMessage());
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+    }
+
+    public boolean isNodeOnline(LinstorStoragePool pool, String nodeName) {
+        DevelopersApi linstorApi = getLinstorAPI(pool);
+        try {
+            List<Node> node = linstorApi.nodeList(Collections.singletonList(nodeName), Collections.emptyList(), null, null);
+            if (node == null || node.isEmpty()) {
+                return false;
+            }
+
+            return Node.ConnectionStatusEnum.ONLINE.equals(node.get(0).getConnectionStatus());
         } catch (ApiException apiEx) {
             logger.error(apiEx.getMessage());
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);

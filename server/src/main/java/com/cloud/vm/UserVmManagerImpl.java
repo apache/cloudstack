@@ -742,8 +742,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private class VmIpAddrFetchThread extends ManagedContextRunnable {
-
-
         long nicId;
         long vmId;
         String vmName;
@@ -769,7 +767,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             NicVO nic = _nicDao.findById(nicId);
             try {
-                logger.debug("Trying for vm [id: {}, uuid: {}, name: {}] nic {} ip retrieval ...", vmId, vmUuid, vmName, nic);
+                logger.debug("Trying IP retrieval [id: {}, uuid: {}, name: {}], nic {}", vmId, vmUuid, vmName, nic);
                 Answer answer = _agentMgr.send(hostId, cmd);
                 if (answer.getResult()) {
                     String vmIp = answer.getDetails();
@@ -779,12 +777,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         if (nic != null) {
                             nic.setIPv4Address(vmIp);
                             _nicDao.update(nicId, nic);
-                            logger.debug("Vm [id: {}, uuid: {}, name: {}] IP {} got retrieved successfully", vmId, vmUuid, vmName, vmIp);
+                            logger.debug("Vm [id: {}, uuid: {}, name: {}] - IP {} retrieved successfully", vmId, vmUuid, vmName, vmIp);
                             vmIdCountMap.remove(nicId);
                             decrementCount = false;
                             ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
                                     Domain.ROOT_DOMAIN, EventTypes.EVENT_NETWORK_EXTERNAL_DHCP_VM_IPFETCH,
-                                    String.format("VM [id: %d, uuid: %s, name: %s] nic %s ip address %s got fetched successfully",
+                                    String.format("VM [id: %d, uuid: %s, name: %s], nic %s, IP address %s got fetched successfully",
                                             vmId, vmUuid, vmName, nic, vmIp), vmId, ApiCommandResourceType.VirtualMachine.toString());
                         }
                     }
@@ -796,7 +794,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         _nicDao.update(nicId, nic);
                     }
                     if (answer.getDetails() != null) {
-                        logger.debug("Failed to get vm ip for Vm [id: {}, uuid: {}, name: {}] {}",
+                        logger.debug("Failed to get vm ip for Vm [id: {}, uuid: {}, name: {}], details: {}",
                                 vmId, vmUuid, vmName, answer.getDetails());
                     }
                 }
