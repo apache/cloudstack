@@ -425,3 +425,5 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_instance', 'delete_protection', 'boolean DEFAULT FALSE COMMENT "delete protection for vm" ');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'delete_protection', 'boolean DEFAULT FALSE COMMENT "delete protection for volumes" ');
+
+UPDATE `cloud`.`configuration` set name = "kvm.host.auto.enable.disable" where name = "enable.kvm.host.auto.enable.disable";
