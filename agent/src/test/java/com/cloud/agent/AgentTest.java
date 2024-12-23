@@ -123,7 +123,6 @@ public class AgentTest {
     @Test
     public void testAgentShutdownHookAdded() {
         Runtime.getRuntime().removeShutdownHook(agent.shutdownThread);
-        when(logger.isTraceEnabled()).thenReturn(true);
         agent.setupShutdownHookAndInitExecutors();
         verify(logger).trace("Adding shutdown hook");
     }
