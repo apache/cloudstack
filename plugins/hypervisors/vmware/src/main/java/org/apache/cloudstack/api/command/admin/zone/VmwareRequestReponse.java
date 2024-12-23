@@ -20,7 +20,7 @@ package org.apache.cloudstack.api.command.admin.zone;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.ListResponse;
 
-public class VmwarRequestReponse <T extends ResponseObject> extends ListResponse<T> {
+public class VmwareRequestReponse<T extends ResponseObject> extends ListResponse<T> {
     private transient String token;
 
     public String getToken() {

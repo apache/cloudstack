@@ -70,16 +70,13 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "The password for specified username.")
     private String password;
 
-    @Parameter(name = ApiConstants.PAGE_SIZE, type = CommandType.INTEGER, description = "The maximum number of results to return.")
-    private Integer pageSize;
+    @Parameter(name = ApiConstants.BATCH_SIZE, type = CommandType.INTEGER, description = "The maximum number of results to return.")
+    private Integer batchSize;
 
     @Parameter(name = ApiConstants.TOKEN, type = CommandType.STRING,
             description = "For listVmwareDcVms, if the maximum number of results (the `pagesize`) is exceeded, " +
                     " a token is returned. This token can be used in subsequent calls to retrieve more results")
     private String token;
-
-    @Parameter(name = ApiConstants.FORCED, type = CommandType.BOOLEAN, description = "force retrieving new results, ignoring any cached data.")
-    private Boolean forced;
 
     public String getVcenter() {
         return vcenter;
@@ -91,6 +88,10 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
 
     public String getPassword() {
         return password;
+    }
+
+    public Integer getBatchSize() {
+        return batchSize;
     }
 
     public String getToken() {
@@ -122,7 +123,7 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
             if (CollectionUtils.isEmpty(pagingList)) {
                 pagingList = baseResponseList;
             }
-            VmwarRequestReponse<BaseResponse> response = new VmwarRequestReponse<>();
+            VmwareRequestReponse<BaseResponse> response = new VmwareRequestReponse<>();
             response.setResponses(pagingList, baseResponseList.size());
             response.setResponseName(getCommandName());
             response.setToken(results.first());
@@ -147,10 +148,5 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
-    }
-
-    @Override
-    public String getCommandName() {
-        return "listvmwaredcvmsresponse";
     }
 }
