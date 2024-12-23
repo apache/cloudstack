@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.usage.dao;
 
-import com.cloud.network.vpc.Vpc;
 import com.cloud.usage.UsageVpcVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
@@ -64,11 +63,10 @@ public class UsageVpcDaoImpl extends GenericDaoBase<UsageVpcVO, Long> implements
             SearchCriteria<UsageVpcVO> sc = this.createSearchCriteria();
             sc.addAnd("vpcId", SearchCriteria.Op.EQ, vpcId);
             sc.addAnd("removed", SearchCriteria.Op.NULL);
-            UsageVpcVO vo = findOneBy(sc);
-            if (vo != null) {
-                vo.setRemoved(removed);
-                vo.setState(Vpc.State.Inactive.name());
-                update(vo.getId(), vo);
+            List<UsageVpcVO> usageVpcVOs = listBy(sc);
+            for (UsageVpcVO entry : usageVpcVOs) {
+                entry.setRemoved(removed);
+                update(entry.getId(), entry);
             }
         } catch (final Exception e) {
             txn.rollback();
