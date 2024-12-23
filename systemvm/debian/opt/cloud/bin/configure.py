@@ -1646,7 +1646,7 @@ def main(argv):
                                ("dhcp",                {"process_iptables": False, "executor": [CsDhcp("dhcpentry", config)]}),
                                ("load_balancer",       {"process_iptables": True,  "executor": []}),
                                ("monitor_service",     {"process_iptables": False, "executor": [CsMonitor("monitorservice", config)]}),
-                               ("static_routes",       {"process_iptables": False, "executor": [CsStaticRoutes("staticroutes", config)]})
+                               ("static_routes",       {"process_iptables": True, "executor": [CsStaticRoutes("staticroutes", config)]})
                                ])
 
     if not config.is_vpc():
