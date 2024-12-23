@@ -1042,8 +1042,8 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
             pstmt.setLong(1, powerHostId);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            logger.error(String.format("Unable to execute update power states SQL from VMs %s due to: %s",
-                    idList, e.getMessage()), e);
+            logger.error("Unable to execute update power states SQL from VMs {} due to: {}",
+                    idList, e.getMessage(), e);
             return instancePowerStates;
         }
         return notUpdated;

@@ -4964,30 +4964,39 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
+    /**
+     * Scans stalled VMs in transition states on an UP host and processes them accordingly.
+     *
+     * <p>This method is executed only when the {@code syncTransitioningVmPowerState} flag is enabled. It identifies
+     * VMs stuck in specific states (e.g., Starting, Stopping, Migrating) on a host that is UP, except for those
+     * in the Expunging state, which require special handling.</p>
+     *
+     * <p>The following conditions are checked during the scan:
+     * <ul>
+     *     <li>No pending {@code VmWork} job exists for the VM.</li>
+     *     <li>The VM is associated with the given {@code hostId}, and the host is UP.</li>
+     * </ul>
+     * </p>
+     *
+     * <p>When a host is UP, a state report for the VMs will typically be received. However, certain scenarios
+     * (e.g., out-of-band changes or behavior specific to hypervisors like XenServer or KVM) might result in
+     * missing reports, preventing the state-sync logic from running. To address this, the method scans VMs
+     * based on their last update timestamp. If a VM remains stalled without a status update while its host is UP,
+     * it is assumed to be powered off, which is generally a safe assumption.</p>
+     *
+     * @param hostId the ID of the host to scan for stalled VMs in transition states.
+     */
     private void scanStalledVMInTransitionStateOnUpHost(final long hostId) {
         if (!syncTransitioningVmPowerState) {
             return;
         }
-        // Check VM that is stuck in Starting, Stopping, Migrating states, we won't check
-        // VMs in expunging state (this need to be handled specially)
-        //
-        // checking condition
-        //      1) no pending VmWork job
-        //      2) on hostId host and host is UP
-        //
-        // When host is UP, sooner or later we will get a report from the host about the VM,
-        // however, if VM is missing from the host report (it may happen in out of band changes
-        // or from behaviour of XS/KVM by design), the VM may not get a chance to run the state-sync logic
-        //
-        // Therefore, we will scan those VMs on UP host based on last update timestamp, if the host is UP
-        // and a VM stalls for status update, we will consider them to be powered off
-        // (which is relatively safe to do so)
-        final long stallThresholdInMs = VmJobStateReportInterval.value() * 2;
-        final long cutTime = new Date(DateUtil.currentGMTTime().getTime() - stallThresholdInMs).getTime();
         if (!_hostDao.isHostUp(hostId)) {
             return;
         }
+        final long stallThresholdInMs = VmJobStateReportInterval.value() * 2;
+        final long cutTime = new Date(DateUtil.currentGMTTime().getTime() - stallThresholdInMs).getTime();
         final List<VMInstanceVO> hostTransitionVms = _vmDao.listByHostAndState(hostId, State.Starting, State.Stopping, State.Migrating);
+
         final List<VMInstanceVO> mostLikelyStoppedVMs = listStalledVMInTransitionStateOnUpHost(hostTransitionVms, cutTime);
         for (final VMInstanceVO vm : mostLikelyStoppedVMs) {
             handlePowerOffReportWithNoPendingJobsOnVM(vm);
@@ -5002,6 +5011,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
         }
     }
+
 
     private void scanStalledVMInTransitionStateOnDisconnectedHosts() {
         final Date cutTime = new Date(DateUtil.currentGMTTime().getTime() - VmOpWaitInterval.value() * 1000);

@@ -113,7 +113,7 @@ public abstract class NioConnection implements Callable<Boolean> {
         try {
             init();
         } catch (final ConnectException e) {
-            logger.warn("Unable to connect to remote: is there a server running on port" + _port, e);
+            logger.warn("Unable to connect to remote: is there a server running on port {}?", _port, e);
             throw new NioConnectionException(e.getMessage(), e);
         } catch (final IOException e) {
             logger.error("Unable to initialize the threads.", e);
@@ -214,8 +214,8 @@ public abstract class NioConnection implements Callable<Boolean> {
             return false;
         }
         // Reject new connection if the server is busy
-        logger.warn(String.format("%s Rejecting new connection. %d active connections currently",
-                SERVER_BUSY_MESSAGE, sslHandshakeMaxWorkers));
+        logger.warn("{} Rejecting new connection. {} active connections currently",
+                SERVER_BUSY_MESSAGE, sslHandshakeMaxWorkers);
         socketChannel.close();
         _selector.wakeup();
         return true;
@@ -252,9 +252,7 @@ public abstract class NioConnection implements Callable<Boolean> {
                     if (!Link.doHandshake(socketChannel, sslEngine, getSslHandshakeTimeout())) {
                         throw new IOException("SSL handshake timed out with " + socketAddress);
                     }
-                    if (logger.isTraceEnabled()) {
-                        logger.trace("SSL: Handshake done");
-                    }
+                    logger.trace("SSL: Handshake done");
                     final Link link = new Link(socketAddress, nioConnection);
                     link.setSSLEngine(sslEngine);
                     link.setKey(socketChannel.register(key.selector(), SelectionKey.OP_READ, link));
@@ -262,25 +260,21 @@ public abstract class NioConnection implements Callable<Boolean> {
                     registerLink(socketAddress, link);
                     _executor.submit(task);
                 } catch (final GeneralSecurityException | IOException e) {
-                    if (logger.isTraceEnabled()) {
-                        logger.trace(socket.getRemoteSocketAddress()+ "Connection closed due to failure: " + e.getMessage());
-                    }
+                    logger.trace("Connection closed with {} due to failure: {}", socket.getRemoteSocketAddress(), e.getMessage());
                     closeAutoCloseable(socket, "accepting socket");
                     closeAutoCloseable(socketChannel, "accepting socketChannel");
                 } finally {
                     int connections = activeAcceptConnections.decrementAndGet();
                     if (logger.isTraceEnabled()) {
-                        logger.trace(String.format("Accept task complete for %s - time taken: %d, " +
-                                        "active accept connections: %d",
-                                socketAddress, (System.currentTimeMillis() - startTime), connections));
+                        logger.trace("Accept task complete for {} - time taken: {}, " +
+                                "active accept connections: {}", () -> socketAddress,
+                                () -> (System.currentTimeMillis() - startTime), () -> connections);
                     }
                     _selector.wakeup();
                 }
             });
         } catch (final RejectedExecutionException e) {
-            if (logger.isTraceEnabled()) {
-                logger.trace("{} Accept Task rejected: {}", socket.getRemoteSocketAddress(), e.getMessage());
-            }
+            logger.trace("{} Accept Task rejected: {}", socket.getRemoteSocketAddress(), e.getMessage());
             closeAutoCloseable(socket, "Rejecting connection - accepting socket");
             closeAutoCloseable(socketChannel, "Rejecting connection - accepting socketChannel");
         } finally {
@@ -292,9 +286,7 @@ public abstract class NioConnection implements Callable<Boolean> {
         final Link link = (Link)key.attachment();
         closeConnection(key);
         if (link != null) {
-            if (logger.isTraceEnabled()) {
-                logger.warn("Will terminate connection due to: " + msg);
-            }
+            logger.warn("Will terminate connection due to: {}", msg);
             link.terminated();
             final Task task = _factory.create(Task.Type.DISCONNECT, link, null);
             unregisterLink(link.getSocketAddress());

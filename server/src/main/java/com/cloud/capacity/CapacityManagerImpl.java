@@ -419,14 +419,12 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         // Check host can support the Cpu Number and Speed.
         boolean isCpuNumGood = host.getCpus().intValue() >= cpuNum;
         boolean isCpuSpeedGood = host.getSpeed().intValue() >= cpuSpeed;
-        if (isCpuNumGood && isCpuSpeedGood) {
-            logger.debug("{} has cpu capability (cpu: {}, speed: {} ) to support requested CPU: {} and requested speed: {}",
-                    host, host.getCpus(), host.getSpeed(), cpuNum, cpuSpeed);
-            return true;
-        } else {logger.debug("{} doesn't have cpu capability (cpu: {}, speed: {} ) to support requested CPU: {} and requested speed: {}",
-                host, host.getCpus(), host.getSpeed(), cpuNum, cpuSpeed);
-            return false;
-        }
+        boolean hasCpuCapability = isCpuNumGood && isCpuSpeedGood;
+
+        logger.debug("{} {} cpu capability (cpu: {}, speed: {} ) to support requested CPU: {} and requested speed: {}",
+                host, hasCpuCapability ? "has" : "doesn't have" ,host.getCpus(), host.getSpeed(), cpuNum, cpuSpeed);
+
+        return hasCpuCapability;
     }
 
     @Override

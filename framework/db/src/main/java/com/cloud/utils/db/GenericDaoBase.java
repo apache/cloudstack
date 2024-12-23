@@ -1220,7 +1220,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             Method m = _entityBeanType.getMethod("getId");
             return m.invoke(entity);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {
-            logger.warn(String.format("Unable to get ID object for entity: %s", _entityBeanType.getSimpleName()));
+            logger.warn("Unable to get ID object for entity: {}", _entityBeanType.getSimpleName());
         }
         return null;
     }

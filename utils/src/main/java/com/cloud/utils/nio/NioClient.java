@@ -88,7 +88,7 @@ public class NioClient extends NioConnection {
             throw new IOException("Failed to initialise security", e);
         } catch (final IOException e) {
             closeChannel();
-            logger.error(String.format("IOException while connecting to %s", hostLog), e);
+            logger.error("IOException while connecting to {}", hostLog, e);
             throw e;
         }
         if (task != null) {

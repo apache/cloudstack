@@ -55,6 +55,7 @@ import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
+import com.cloud.host.HostInfo;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -486,8 +487,8 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
         HostVO existingHostInCluster = clusterExistingHostCache.get(clusterVO.getId());
         if (existingHostInCluster != null) {
-            String hostOsInCluster = existingHostInCluster.getDetail("Host.OS");
-            String hostOs = ssCmd.getHostDetails().get("Host.OS");
+            String hostOsInCluster = existingHostInCluster.getDetail(HostInfo.HOST_OS);
+            String hostOs = ssCmd.getHostDetails().get(HostInfo.HOST_OS);
             if (!isHostOsCompatibleWithOtherHost(hostOsInCluster, hostOs)) {
                 String msg = String.format("host: %s with hostOS, \"%s\"into a cluster, in which there are \"%s\" hosts added", firstCmd.getPrivateIpAddress(), hostOs, hostOsInCluster);
                 if (hostOs != null && hostOs.startsWith(hostOsInCluster)) {

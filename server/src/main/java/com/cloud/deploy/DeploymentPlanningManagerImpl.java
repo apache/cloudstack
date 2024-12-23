@@ -743,7 +743,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     protected void avoidDisabledHosts(DataCenter dc, ExcludeList avoids) {
 
         List<Long> disabledHostIds = _hostDao.listDisabledIdsByDataCenterId(dc.getId());
-        logger.debug("Adding hosts %s of datacenter [%s] to the avoid set, because these hosts are in the Disabled state.",
+        logger.debug("Adding hosts {} of datacenter [{}] to the avoid set, because these hosts are in the Disabled state.",
                 StringUtils.join(disabledHostIds), dc.getUuid());
         disabledHostIds.forEach(avoids::addHost);
     }

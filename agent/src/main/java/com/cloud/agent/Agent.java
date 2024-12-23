@@ -182,9 +182,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     protected void setupShutdownHookAndInitExecutors() {
-        if (logger.isTraceEnabled()) {
-            logger.trace("Adding shutdown hook");
-        }
+        logger.trace("Adding shutdown hook");
         Runtime.getRuntime().addShutdownHook(shutdownThread);
         selfTaskExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Agent-SelfTask"));
         outRequestHandler = new ThreadPoolExecutor(shell.getPingRetries(), 2 * shell.getPingRetries(), 10, TimeUnit.MINUTES,
@@ -193,12 +191,26 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                 new LinkedBlockingQueue<>(), new NamedThreadFactory("AgentRequest-Handler"));
     }
 
-    // for simulator use only
+    /**
+     * Constructor for the {@code Agent} class, intended for simulator use only.
+     *
+     * <p>This constructor initializes the agent with a provided {@link IAgentShell}.
+     * It sets up the necessary NIO client connection, establishes a shutdown hook,
+     * and initializes the thread executors.
+     *
+     * @param shell the {@link IAgentShell} instance that provides agent configuration and runtime information.
+     */
     public Agent(final IAgentShell shell) {
         this.shell = shell;
-        link = null;
-        connection = new NioClient(getAgentName(), this.shell.getNextHost(), this.shell.getPort(),
-                this.shell.getWorkers(), this.shell.getSslHandshakeTimeout(), this);
+        this.link = null;
+        this.connection = new NioClient(
+                getAgentName(),
+                this.shell.getNextHost(),
+                this.shell.getPort(),
+                this.shell.getWorkers(),
+                this.shell.getSslHandshakeTimeout(),
+                this
+        );
         setupShutdownHookAndInitExecutors();
     }
 
@@ -223,10 +235,19 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         connection = new NioClient(getAgentName(), host, this.shell.getPort(), this.shell.getWorkers(),
                 this.shell.getSslHandshakeTimeout(), this);
         setupShutdownHookAndInitExecutors();
-        logger.info("Agent [id = {}, type = {}, zone = {}, pod = {}, workers = {}, host = {}, " +
-                        "port = {}, local id = {}]",
-                (id != null ? String.valueOf(id) : "new"), getResourceName(), this.shell.getZone(),
-                this.shell.getPod(), this.shell.getWorkers(), host, this.shell.getPort(), localAgentId);
+        logger.info("{} with host = {}, local id = {}", this, host, localAgentId);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Agent [id = %s, type = %s, zone = %s, pod = %s, workers = %d, host = %s, port = %d]",
+                (id != null ? String.valueOf(id) : "new"),
+                getResourceName(),
+                this.shell.getZone(),
+                this.shell.getPod(),
+                this.shell.getWorkers(),
+                this.shell.getNextHost(),
+                this.shell.getPort());
     }
 
     public String getVersion() {
@@ -426,10 +447,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     public void scheduleWatch(final Link link, final Request request, final long delay, final long period) {
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("Adding a watch list");
-        }
+        logger.debug("Adding a watch list");
         final WatchTask task = new WatchTask(link, request, this);
         final ScheduledFuture<?> future = selfTaskExecutor.scheduleAtFixedRate(task, delay, period, TimeUnit.MILLISECONDS);
         watchList.add(future);
@@ -452,9 +470,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         for (final ScheduledFuture<?> task : watchList) {
             task.cancel(true);
         }
-        if (logger.isDebugEnabled()) {
-            logger.debug("Clearing watch list: " + watchList.size());
-        }
+        logger.debug("Clearing watch list: {}", () -> watchList.size());
         watchList.clear();
     }
 
@@ -472,7 +488,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     public void lockStartupTask(final Link link) {
-        logger.debug("Creating startup task for link: {}", getLinkLog(link));
+        logger.debug("Creating startup task for link: {}", () -> getLinkLog(link));
         StartupTask currentTask = startupTask.get();
         if (currentTask != null) {
             logger.warn("A Startup task is already locked or in progress, cannot create for link {}",
@@ -525,9 +541,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     protected String retrieveHostname() {
-        if (logger.isTraceEnabled()) {
-            logger.trace("Retrieving hostname with resource={}", serverResource.getClass().getSimpleName());
-        }
+        logger.trace("Retrieving hostname with resource={}", () -> serverResource.getClass().getSimpleName());
         final String result = Script.runSimpleBashScript(Script.getExecutableAbsolutePath("hostname"), 500);
         if (StringUtils.isNotBlank(result)) {
             return result;
@@ -596,7 +610,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
 
     protected void reconnect(final Link link) {
         if (!reconnectAllowed) {
-            logger.debug("Reconnect requested but it is not allowed {}", getLinkLog(link));
+            logger.debug("Reconnect requested but it is not allowed {}", () -> getLinkLog(link));
             return;
         }
         cancelStartupTask();
@@ -1128,9 +1142,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                 logger.info("The running startup command is now invalid. Attempting reconnect");
                 startupTask.set(null);
                 startupWait = DEFAULT_STARTUP_WAIT * 2;
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Executing reconnect from task - {}", getLinkLog(_link));
-                }
+                logger.debug("Executing reconnect from task - {}", () -> getLinkLog(_link));
                 reconnect(_link);
             }
         }
@@ -1183,7 +1195,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                     logger.error("Error parsing task", e);
                 }
             } else if (task.getType() == Task.Type.DISCONNECT) {
-                logger.debug("Executing disconnect task - {}", getLinkLog(task.getLink()));
+                logger.debug("Executing disconnect task - {}", () -> getLinkLog(task.getLink()));
                 reconnect(task.getLink());
             } else if (task.getType() == Task.Type.OTHER) {
                 processOtherTask(task);
@@ -1223,6 +1235,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                         agent.stop(ShutdownCommand.Requested, "Restarting due to new X509 certificates");
 
                         // Nullify references for GC
+                        agent.shell = null;
                         agent.watchList = null;
                         agent.shutdownThread = null;
                         agent.controlListeners = null;

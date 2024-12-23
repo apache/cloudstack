@@ -76,17 +76,18 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
         Set<Long> vmIds = instancePowerStates.keySet();
         Map<Long, VirtualMachine.PowerState> notUpdated = _instanceDao.updatePowerState(instancePowerStates, hostId,
                 updateTime);
-        if (notUpdated.size() <= vmIds.size()) {
-            for (Long vmId : vmIds) {
-                if (!notUpdated.isEmpty() && !notUpdated.containsKey(vmId)) {
-                    logger.debug("VM state report is updated. host: {}, vm id: {}}, power state: {}}",
-                            hostId, vmId, instancePowerStates.get(vmId));
-                    _messageBus.publish(null, VirtualMachineManager.Topics.VM_POWER_STATE,
-                            PublishScope.GLOBAL, vmId);
-                    continue;
-                }
-                logger.trace("VM power state does not change, skip DB writing. vm id: {}", vmId);
+        if (notUpdated.size() > vmIds.size()) {
+            return;
+        }
+        for (Long vmId : vmIds) {
+            if (!notUpdated.isEmpty() && !notUpdated.containsKey(vmId)) {
+                logger.debug("VM state report is updated. host: {}, vm id: {}}, power state: {}}",
+                        hostId, vmId, instancePowerStates.get(vmId));
+                _messageBus.publish(null, VirtualMachineManager.Topics.VM_POWER_STATE,
+                        PublishScope.GLOBAL, vmId);
+                continue;
             }
+            logger.trace("VM power state does not change, skip DB writing. vm id: {}", vmId);
         }
     }
 
@@ -121,22 +122,21 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
         for (VMInstanceVO instance : vmsThatAreMissingReport) {
             Date vmStateUpdateTime = instance.getPowerStateUpdateTime();
             if (vmStateUpdateTime == null) {
-                logger.warn("VM power state update time is null, falling back to update time for vm id: " + instance.getId());
+                logger.warn("VM power state update time is null, falling back to update time for vm id: {}",
+                        instance.getId());
                 vmStateUpdateTime = instance.getUpdateTime();
                 if (vmStateUpdateTime == null) {
-                    logger.warn("VM update time is null, falling back to creation time for vm id: " + instance.getId());
+                    logger.warn("VM update time is null, falling back to creation time for vm id: {}",
+                            instance.getId());
                     vmStateUpdateTime = instance.getCreated();
                 }
             }
-            if (logger.isDebugEnabled()) {
-                logger.debug(
-                        String.format("Detected missing VM. host: %d, vm id: %d(%s), power state: %s, last state update: %s"
-                                , hostId
-                                , instance.getId()
-                                , instance.getUuid()
-                                , VirtualMachine.PowerState.PowerReportMissing
-                                , DateUtil.getOutputString(vmStateUpdateTime)));
-            }
+            logger.debug("Detected missing VM. host: {}, vm id: {}({}), power state: {}, last state update: {}",
+                    hostId,
+                    instance.getId(),
+                    instance.getUuid(),
+                    VirtualMachine.PowerState.PowerReportMissing,
+                    DateUtil.getOutputString(vmStateUpdateTime));
             long milliSecondsSinceLastStateUpdate = currentTime.getTime() - vmStateUpdateTime.getTime();
             if (force || (milliSecondsSinceLastStateUpdate > milliSecondsGracefulPeriod)) {
                 logger.debug("vm id: {} - time since last state update({} ms) has passed graceful period",
@@ -156,9 +156,9 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
     private void processReport(long hostId, Map<Long, VirtualMachine.PowerState> translatedInfo, boolean force) {
         if (logger.isDebugEnabled()) {
             logger.debug("Process VM state report. Host: {}, number of records in report: {}. VMs: [{}]",
-                    hostId,
-                    translatedInfo.size(),
-                    translatedInfo.entrySet().stream().map(entry -> entry.getKey() + ":" + entry.getValue())
+                    () -> hostId,
+                    translatedInfo::size,
+                    () -> translatedInfo.entrySet().stream().map(entry -> entry.getKey() + ":" + entry.getValue())
                             .collect(Collectors.joining(", ")) + "]");
         }
         updateAndPublishVmPowerStates(hostId, translatedInfo, DateUtil.currentGMTTime());
