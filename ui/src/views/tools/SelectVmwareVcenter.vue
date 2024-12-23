@@ -217,6 +217,7 @@ export default {
       } else {
         params.existingvcenterid = this.selectedExistingVcenterId
       }
+      params.batchsize = 2
       api('listVmwareDcVms', params).then(json => {
         const obj = {
           params: params,

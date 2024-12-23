@@ -517,6 +517,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             if (mor.getType().equals("ComputeResource")) {
                 List<ManagedObjectReference> hosts = serviceContext.getVimClient().getDynamicProperty(mor, "host");
                 assert (CollectionUtils.isNullOrEmpty(hosts));
+                // For ESX host, we need to enable host firewall to allow VNC access
+                HostMO hostMo = new HostMO(serviceContext, hosts.get(0));
+
+                prepareHost(hostMo, privateTrafficLabel);
                 returnedHostList.add(hosts.get(0));
                 return returnedHostList;
             } else if (mor.getType().equals("ClusterComputeResource")) {
