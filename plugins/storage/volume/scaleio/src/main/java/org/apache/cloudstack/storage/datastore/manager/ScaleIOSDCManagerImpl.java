@@ -34,6 +34,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -60,15 +61,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
     private Logger logger = LogManager.getLogger(getClass());
 
-    static ConfigKey<Boolean> ConnectOnDemand = new ConfigKey<>("Storage",
-            Boolean.class,
-            "powerflex.connect.on.demand",
-            Boolean.FALSE.toString(),
-            "Connect PowerFlex client on Host when first Volume is mapped to SDC and disconnect when last Volume is unmapped from SDC," +
-                    " otherwise no action (that is connection remains in the same state whichever it is, connected or disconnected).",
-            Boolean.TRUE,
-            ConfigKey.Scope.Zone);
-
     @Inject
     AgentManager agentManager;
     @Inject
@@ -93,6 +85,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         try {
             int connectedClientsLimit = StorageManager.STORAGE_POOL_CONNECTED_CLIENTS_LIMIT.valueIn(storagePoolId);
             if (connectedClientsLimit <= 0) {
+                logger.debug(String.format("SDC connections limit (unlimited) on PowerFlex Storage with pool id: %d", storagePoolId));
                 return true;
             }
 
@@ -174,18 +167,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
                 throw new CloudRuntimeException(errorMsg);
             }
 
-            String mdms = null;
-            StoragePoolDetailVO mdmsDetail = storagePoolDetailsDao.findDetail(dataStore.getId(), ScaleIOGatewayClient.STORAGE_POOL_MDMS);
-            if (mdmsDetail != null) {
-                mdms = mdmsDetail.getValue();
-            }
-            if (StringUtils.isBlank(mdms)) {
-                List<String> mdmAddresses = getMdms(dataStore.getId());
-                mdms = StringUtils.join(mdmAddresses, ",");
-                StoragePoolDetailVO storagePoolDetailVO = new StoragePoolDetailVO(dataStore.getId(), ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdms, false);
-                storagePoolDetailsDao.persist(storagePoolDetailVO);
-            }
-
+            String mdms = getMdms(dataStore.getId());
             sdcId = prepareSDCOnHost(host, dataStore, systemId, mdms);
             StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(poolId, hostId);
 
@@ -204,7 +186,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
             }
 
             int waitTimeInSecs = 15; // Wait for 15 secs (usual tests with SDC service start took 10-15 secs)
-            if (hostSdcConnected(sdcId, dataStore, waitTimeInSecs)) {
+            if (isHostSdcConnected(sdcId, dataStore, waitTimeInSecs)) {
                 return sdcId;
             }
             return null;
@@ -273,7 +255,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
     }
 
     @Override
-    public boolean stopSDC(Host host, DataStore dataStore) {
+    public boolean unprepareSDC(Host host, DataStore dataStore) {
         if (Boolean.FALSE.equals(ConnectOnDemand.valueIn(host.getDataCenterId()))) {
             logger.debug(String.format("On-demand connect/disconnect config %s disabled in the zone %d, no need to unprepare SDC", ConnectOnDemand.key(), host.getDataCenterId()));
             return true;
@@ -307,22 +289,23 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
             String sdcId = getConnectedSdc(host, dataStore);
             if (StringUtils.isBlank(sdcId)) {
                 logger.debug("SDC not connected, no need to unprepare it");
+                StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(dataStore.getId(), host.getId());
+                if (storagePoolHost != null) {
+                    storagePoolHostDao.deleteStoragePoolHostDetails(host.getId(), dataStore.getId());
+                }
                 return true;
             }
 
-            String mdms = null;
-            StoragePoolDetailVO mdmsDetail = storagePoolDetailsDao.findDetail(dataStore.getId(), ScaleIOGatewayClient.STORAGE_POOL_MDMS);
-            if (mdmsDetail != null) {
-                mdms = mdmsDetail.getValue();
-            }
-            if (StringUtils.isBlank(mdms)) {
-                List<String> mdmAddresses = getMdms(dataStore.getId());
-                mdms = StringUtils.join(mdmAddresses, ",");
-                StoragePoolDetailVO storagePoolDetailVO = new StoragePoolDetailVO(dataStore.getId(), ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdms, false);
-                storagePoolDetailsDao.persist(storagePoolDetailVO);
+            String mdms = getMdms(dataStore.getId());;
+            boolean unprepareSDCStatus = unprepareSDCOnHost(host, dataStore, mdms);
+            if (unprepareSDCStatus) {
+                StoragePoolHostVO storagePoolHost = storagePoolHostDao.findByPoolHost(dataStore.getId(), host.getId());
+                if (storagePoolHost != null) {
+                    storagePoolHostDao.deleteStoragePoolHostDetails(host.getId(), dataStore.getId());
+                }
             }
 
-            return unprepareSDCOnHost(host, dataStore, mdms);
+            return unprepareSDCStatus;
         } finally {
             if (lock != null) {
                 lock.unlock();
@@ -354,7 +337,8 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         return true;
     }
 
-    private String getHostSdcId(String sdcGuid, DataStore dataStore ) {
+    @Override
+    public String getHostSdcId(String sdcGuid, DataStore dataStore) {
         try {
             logger.debug("Try to get host SDC Id for pool: {}, with SDC guid {}", dataStore, sdcGuid);
             ScaleIOGatewayClient client = getScaleIOClient(dataStore.getId());
@@ -365,7 +349,8 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         }
     }
 
-    private String getConnectedSdc(Host host, DataStore dataStore) {
+    @Override
+    public String getConnectedSdc(Host host, DataStore dataStore) {
         long poolId = dataStore.getId();
         long hostId = host.getId();
 
@@ -388,7 +373,8 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         return null;
     }
 
-    private boolean hostSdcConnected(String sdcId, DataStore dataStore, int waitTimeInSecs) {
+    @Override
+    public boolean isHostSdcConnected(String sdcId, DataStore dataStore, int waitTimeInSecs) {
         long poolId = dataStore.getId();
         logger.debug(String.format("Waiting (for %d secs) for the SDC %s of the pool %s to connect",
                 waitTimeInSecs, sdcId, dataStore));
@@ -406,10 +392,26 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
         return isHostSdcConnected(sdcId, poolId);
     }
 
-    private List<String> getMdms(long poolId) {
+    @Override
+    public String getMdms(long poolId) {
+        String mdms = null;
+        StoragePoolDetailVO mdmsDetail = storagePoolDetailsDao.findDetail(poolId, ScaleIOGatewayClient.STORAGE_POOL_MDMS);
+        if (mdmsDetail != null) {
+            mdms = mdmsDetail.getValue();
+        }
+        if (StringUtils.isNotBlank(mdms)) {
+            return mdms;
+        }
+
         try {
             final ScaleIOGatewayClient client = getScaleIOClient(poolId);
-            return client.getMdmAddresses();
+            List<String> mdmAddresses = client.getMdmAddresses();
+            if (CollectionUtils.isNotEmpty(mdmAddresses)) {
+                mdms = StringUtils.join(mdmAddresses, ",");
+                StoragePoolDetailVO storagePoolDetailVO = new StoragePoolDetailVO(poolId, ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdms, false);
+                storagePoolDetailsDao.persist(storagePoolDetailVO);
+            }
+            return mdms;
         } catch (Exception e) {
             logger.error("Failed to get MDMs", e);
             throw new CloudRuntimeException("Failed to fetch PowerFlex MDM details");

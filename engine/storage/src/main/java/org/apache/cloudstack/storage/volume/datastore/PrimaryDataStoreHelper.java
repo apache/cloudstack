@@ -29,13 +29,16 @@ import javax.inject.Inject;
 import com.cloud.dc.dao.ClusterDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -78,6 +81,8 @@ public class PrimaryDataStoreHelper {
     protected ClusterDao clusterDao;
     @Inject
     private AnnotationDao annotationDao;
+    @Inject
+    DataStoreProviderManager dataStoreProviderMgr;
 
     public DataStore createPrimaryDataStore(PrimaryDataStoreParameters params) {
         if(params == null)
@@ -144,7 +149,17 @@ public class PrimaryDataStoreHelper {
                 storageTags.add(tag);
             }
         }
-        dataStoreVO = dataStoreDao.persist(dataStoreVO, details, storageTags, params.isTagARule());
+
+        boolean displayDetails = true;
+        DataStoreProvider storeProvider = dataStoreProviderMgr.getDataStoreProvider(params.getProviderName());
+        if (storeProvider != null) {
+            DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+            if (storeDriver != null) {
+                displayDetails = storeDriver.canDisplayDetails();
+            }
+        }
+
+        dataStoreVO = dataStoreDao.persist(dataStoreVO, details, storageTags, params.isTagARule(), displayDetails);
         return dataStoreMgr.getDataStore(dataStoreVO.getId(), DataStoreRole.Primary);
     }
 

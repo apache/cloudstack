@@ -34,7 +34,6 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.storage.Storage;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -73,7 +72,7 @@ public class ScaleIOStorageAdaptorTest {
     public void testPrepareStorageClient_SDCServiceNotInstalled() {
         when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(4);
 
-        Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, new HashMap<>());
+        Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(poolUuid, new HashMap<>());
 
         Assert.assertFalse(result.first());
         Assert.assertNull(result.second());
@@ -86,7 +85,7 @@ public class ScaleIOStorageAdaptorTest {
         when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(1);
         when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl enable scini"))).thenReturn(1);
 
-        Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, new HashMap<>());
+        Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(poolUuid, new HashMap<>());
 
         Assert.assertFalse(result.first());
         Assert.assertNull(result.second());
@@ -100,7 +99,7 @@ public class ScaleIOStorageAdaptorTest {
         when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-active scini"))).thenReturn(1);
         when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl start scini"))).thenReturn(1);
 
-        Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, new HashMap<>());
+        Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(poolUuid, new HashMap<>());
 
         Assert.assertFalse(result.first());
         Assert.assertNull(result.second());
@@ -121,7 +120,7 @@ public class ScaleIOStorageAdaptorTest {
             String sdcId = "301b852c00000003";
             when(ScaleIOUtil.getSdcId(systemId)).thenReturn(sdcId);
 
-            Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, details);
+            Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(poolUuid, details);
 
             Assert.assertTrue(result.first());
             Assert.assertNotNull(result.second());
@@ -144,7 +143,8 @@ public class ScaleIOStorageAdaptorTest {
             when(ScaleIOUtil.getSdcId(systemId)).thenReturn(null);
             when(ScaleIOUtil.getSdcGuid()).thenReturn(sdcGuid);
 
-            Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, details);
+            Ternary<Boolean, Map<String, String>, String> result = scaleIOStorageAdaptor.prepareStorageClient(poolUuid, details);
+
             Assert.assertTrue(result.first());
             Assert.assertNotNull(result.second());
             Assert.assertEquals(sdcGuid, result.second().get(ScaleIOGatewayClient.SDC_GUID));
@@ -156,7 +156,7 @@ public class ScaleIOStorageAdaptorTest {
         Map<String, String> details = new HashMap<>();
         when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(4);
 
-        Pair<Boolean, String> result = scaleIOStorageAdaptor.unprepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, details);
+        Pair<Boolean, String> result = scaleIOStorageAdaptor.unprepareStorageClient(poolUuid, details);
 
         Assert.assertTrue(result.first());
         Assert.assertEquals("SDC service not installed on host, no need to unprepare the SDC client", result.second());
@@ -168,7 +168,7 @@ public class ScaleIOStorageAdaptorTest {
         when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl status scini"))).thenReturn(3);
         when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(1);
 
-        Pair<Boolean, String> result = scaleIOStorageAdaptor.unprepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, details);
+        Pair<Boolean, String> result = scaleIOStorageAdaptor.unprepareStorageClient(poolUuid, details);
 
         Assert.assertTrue(result.first());
         Assert.assertEquals("SDC service not enabled on host, no need to unprepare the SDC client", result.second());
@@ -182,7 +182,7 @@ public class ScaleIOStorageAdaptorTest {
         when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl is-enabled scini"))).thenReturn(0);
         when(Script.runSimpleBashScript(Mockito.eq("/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms|grep 1.1.1.1"))).thenReturn("MDM-ID 71fd458f0775010f SDC ID 4421a91a00000000 INSTALLATION ID 204930df2cbcaf8e IPs [0]-3.3.3.3 [1]-4.4.4.4");
 
-        Pair<Boolean, String> result = scaleIOStorageAdaptor.unprepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, details);
+        Pair<Boolean, String> result = scaleIOStorageAdaptor.unprepareStorageClient(poolUuid, details);
 
         Assert.assertTrue(result.first());
         Assert.assertEquals("MDM not added, no need to unprepare the SDC client", result.second());
@@ -197,7 +197,7 @@ public class ScaleIOStorageAdaptorTest {
         when(Script.runSimpleBashScriptForExitValue(Mockito.eq("systemctl restart scini"))).thenReturn(0);
         when(Script.runSimpleBashScript(Mockito.eq("/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms|grep 1.1.1.1"))).thenReturn("MDM-ID 71fd458f0775010f SDC ID 4421a91a00000000 INSTALLATION ID 204930df2cbcaf8e IPs [0]-1.1.1.1 [1]-2.2.2.2");
 
-        Pair<Boolean, String> result = scaleIOStorageAdaptor.unprepareStorageClient(Storage.StoragePoolType.PowerFlex, poolUuid, details);
+        Pair<Boolean, String> result = scaleIOStorageAdaptor.unprepareStorageClient(poolUuid, details);
 
         Assert.assertFalse(result.first());
         Assert.assertEquals("Failed to remove MDMs, unable to unprepare the SDC client", result.second());
