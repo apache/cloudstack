@@ -1976,7 +1976,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
 
     private boolean startNewVM(long vmId) {
         try {
-            CallContext.current().setEventDetails("Vm Id: " + vmId);
+            CallContext.current().setEventDetails("VM Id: " + vmId);
             userVmMgr.startVirtualMachine(vmId, null, new HashMap<>(), null);
         } catch (final ResourceUnavailableException ex) {
             logger.warn("Exception: ", ex);
