@@ -122,7 +122,6 @@ public class AlertManagerImplTest {
         List<Long> mockHostIds = List.of(1L, 2L, 3L);
         try (MockedStatic<Executors> ignored = Mockito.mockStatic(Executors.class)) {
             Mockito.when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(mockHostIds);
-            Mockito.when(hostDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(HostVO.class));
             ExecutorService executorService = Mockito.mock(ExecutorService.class);
             Mockito.when(executorService.submit(Mockito.any(Callable.class))).thenReturn(Mockito.mock(Future.class));
             Mockito.when(Executors.newFixedThreadPool(Mockito.anyInt())).thenReturn(executorService);
