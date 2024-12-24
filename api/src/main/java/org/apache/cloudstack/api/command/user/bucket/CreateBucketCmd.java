@@ -72,7 +72,7 @@ public class CreateBucketCmd extends BaseAsyncCreateCmd implements UserCmd {
             description = "Id of the Object Storage Pool where bucket is created")
     private long objectStoragePoolId;
 
-    @Parameter(name = ApiConstants.QUOTA, type = CommandType.INTEGER,description = "Bucket Quota in GB")
+    @Parameter(name = ApiConstants.QUOTA, type = CommandType.INTEGER, required = true, description = "Bucket Quota in GiB")
     private Integer quota;
 
     @Parameter(name = ApiConstants.ENCRYPTION, type = CommandType.BOOLEAN, description = "Enable bucket encryption")

@@ -19,6 +19,7 @@ package org.apache.cloudstack.backup;
 
 import java.util.List;
 
+import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
@@ -55,6 +56,86 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
             "backup.enable.attach.detach.of.volumes",
             "false",
             "Enable volume attach/detach operations for VMs that are assigned to Backup Offerings.", true);
+
+    ConfigKey<Integer> BackupHourlyMax = new ConfigKey<Integer>("Advanced", Integer.class,
+            "backup.max.hourly",
+            "8",
+            "Maximum recurring hourly backups to be retained for an instance. If the limit is reached, early backups from the start of the hour are deleted so that newer ones can be saved. This limit does not apply to manual backups. If set to 0, recurring hourly backups can not be scheduled.",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Integer> BackupDailyMax = new ConfigKey<Integer>("Advanced", Integer.class,
+            "backup.max.daily",
+            "8",
+            "Maximum recurring daily backups to be retained for an instance. If the limit is reached, backups from the start of the day are deleted so that newer ones can be saved. This limit does not apply to manual backups. If set to 0, recurring daily backups can not be scheduled.",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Integer> BackupWeeklyMax = new ConfigKey<Integer>("Advanced", Integer.class,
+            "backup.max.weekly",
+            "8",
+            "Maximum recurring weekly backups to be retained for an instance. If the limit is reached, backups from the beginning of the week are deleted so that newer ones can be saved. This limit does not apply to manual backups. If set to 0, recurring weekly backups can not be scheduled.",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Integer> BackupMonthlyMax = new ConfigKey<Integer>("Advanced", Integer.class,
+            "backup.max.monthly",
+            "8",
+            "Maximum recurring monthly backups to be retained for an instance. If the limit is reached, backups from the beginning of the month are deleted so that newer ones can be saved. This limit does not apply to manual backups. If set to 0, recurring monthly backups can not be scheduled.",
+            false,
+             ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Long> DefaultMaxAccountBackups = new ConfigKey<Long>("Account Defaults", Long.class,
+            "max.account.backups",
+            "20",
+            "The default maximum number of backups that can be created for an account",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Long> DefaultMaxAccountBackupStorage = new ConfigKey<Long>("Account Defaults", Long.class,
+            "max.account.backup.storage",
+            "400",
+            "The default maximum backup storage space (in GiB) that can be used for an account",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Long> DefaultMaxProjectBackups = new ConfigKey<Long>("Project Defaults", Long.class,
+            "max.project.backups",
+            "20",
+            "The default maximum number of backups that can be created for a project",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Long> DefaultMaxProjectBackupStorage = new ConfigKey<Long>("Project Defaults", Long.class,
+            "max.project.backup.storage",
+            "400",
+            "The default maximum backup storage space (in GiB) that can be used for a project",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Long> DefaultMaxDomainBackups = new ConfigKey<Long>("Domain Defaults", Long.class,
+            "max.domain.backups",
+            "40",
+            "The default maximum number of backups that can be created for a domain",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Long> DefaultMaxDomainBackupStorage = new ConfigKey<Long>("Domain Defaults", Long.class,
+            "max.domain.backup.storage",
+            "800",
+            "The default maximum backup storage space (in GiB) that can be used for a domain",
+            false,
+            ConfigKey.Scope.Global,
+            null);
 
     /**
      * List backup provider offerings
@@ -119,9 +200,10 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     /**
      * Creates backup of a VM
      * @param vmId Virtual Machine ID
+     * @param scheduleId Virtual Machine Backup Schedule ID
      * @return returns operation success
      */
-    boolean createBackup(final Long vmId);
+    boolean createBackup(final Long vmId, final Long scheduleId) throws ResourceAllocationException;
 
     /**
      * List existing backups for a VM
