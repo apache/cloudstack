@@ -25,18 +25,19 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.deploy.DeploymentPlanner.AllocationAlgorithm;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
-import com.cloud.agent.manager.allocator.HostAllocator;
-import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.dao.ClusterDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.gpu.GPU;
@@ -44,7 +45,6 @@ import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceManager;
@@ -56,10 +56,7 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.UserVmDetailVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -69,9 +66,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  * An allocator that tries to find a fit on a computing host.  This allocator does not care whether or not the host supports routing.
  */
 @Component
-public class FirstFitAllocator extends AdapterBase implements HostAllocator {
-    @Inject
-    protected HostDao _hostDao = null;
+public class FirstFitAllocator extends BaseAllocator {
     @Inject
     HostDetailsDao _hostDetailsDao = null;
     @Inject
@@ -85,316 +80,208 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     @Inject
     protected ResourceManager _resourceMgr;
     @Inject
-    ClusterDao _clusterDao;
-    @Inject
-    ClusterDetailsDao _clusterDetailsDao;
-    @Inject
     ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
-    @Inject
-    CapacityManager _capacityMgr;
     @Inject
     CapacityDao _capacityDao;
     @Inject
     UserVmDetailsDao _userVmDetailsDao;
 
     boolean _checkHvm = true;
-    protected String _allocationAlgorithm = "random";
+
+    protected AllocationAlgorithm allocationAlgorithm = AllocationAlgorithm.random;
 
 
     @Override
     public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo) {
-        return allocateTo(vmProfile, plan, type, avoid, returnUpTo, true);
-    }
-
-    @Override
-    public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo, boolean considerReservedCapacity) {
-
-        long dcId = plan.getDataCenterId();
-        Long podId = plan.getPodId();
-        Long clusterId = plan.getClusterId();
-        ServiceOffering offering = vmProfile.getServiceOffering();
-        VMTemplateVO template = (VMTemplateVO)vmProfile.getTemplate();
-        Account account = vmProfile.getOwner();
-
-        boolean isVMDeployedWithUefi = false;
-        UserVmDetailVO userVmDetailVO = _userVmDetailsDao.findDetail(vmProfile.getId(), "UEFI");
-        if(userVmDetailVO != null){
-            if ("secure".equalsIgnoreCase(userVmDetailVO.getValue()) || "legacy".equalsIgnoreCase(userVmDetailVO.getValue())) {
-                isVMDeployedWithUefi = true;
-            }
-        }
-        logger.info(" Guest VM is requested with Custom[UEFI] Boot Type "+ isVMDeployedWithUefi);
-
-
-        if (type == Host.Type.Storage) {
-            // FirstFitAllocator should be used for user VMs only since it won't care whether the host is capable of routing or not
-            return new ArrayList<>();
-        }
-
-        logger.debug("Looking for hosts in zone [{}], pod [{}], cluster [{}]", dcId, podId, clusterId);
-
-        String hostTagOnOffering = offering.getHostTag();
-        String hostTagOnTemplate = template.getTemplateTag();
-        String hostTagUefi = "UEFI";
-
-        boolean hasSvcOfferingTag = hostTagOnOffering != null ? true : false;
-        boolean hasTemplateTag = hostTagOnTemplate != null ? true : false;
-
-        List<HostVO> clusterHosts = new ArrayList<>();
-        List<HostVO> hostsMatchingUefiTag = new ArrayList<>();
-        if(isVMDeployedWithUefi){
-            hostsMatchingUefiTag = _hostDao.listByHostCapability(type, clusterId, podId, dcId, Host.HOST_UEFI_ENABLE);
-            if (logger.isDebugEnabled()) {
-                logger.debug("Hosts with tag '" + hostTagUefi + "' are:" + hostsMatchingUefiTag);
-            }
-        }
-
-
-        String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
-        if (haVmTag != null) {
-            clusterHosts = _hostDao.listByHostTag(type, clusterId, podId, dcId, haVmTag);
-        } else {
-            if (hostTagOnOffering == null && hostTagOnTemplate == null) {
-                clusterHosts = _resourceMgr.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId);
-            } else {
-                List<HostVO> hostsMatchingOfferingTag = new ArrayList<>();
-                List<HostVO> hostsMatchingTemplateTag = new ArrayList<>();
-                if (hasSvcOfferingTag) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Looking for hosts having tag specified on SvcOffering:" + hostTagOnOffering);
-                    }
-                    hostsMatchingOfferingTag = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnOffering);
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Hosts with tag '" + hostTagOnOffering + "' are:" + hostsMatchingOfferingTag);
-                    }
-                }
-                if (hasTemplateTag) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Looking for hosts having tag specified on Template:" + hostTagOnTemplate);
-                    }
-                    hostsMatchingTemplateTag = _hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate);
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Hosts with tag '" + hostTagOnTemplate + "' are:" + hostsMatchingTemplateTag);
-                    }
-                }
-
-                if (hasSvcOfferingTag && hasTemplateTag) {
-                    hostsMatchingOfferingTag.retainAll(hostsMatchingTemplateTag);
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Found " + hostsMatchingOfferingTag.size() + " Hosts satisfying both tags, host ids are:" + hostsMatchingOfferingTag);
-                    }
-
-                    clusterHosts = hostsMatchingOfferingTag;
-                } else {
-                    if (hasSvcOfferingTag) {
-                        clusterHosts = hostsMatchingOfferingTag;
-                    } else {
-                        clusterHosts = hostsMatchingTemplateTag;
-                    }
-                }
-            }
-        }
-
-        if (isVMDeployedWithUefi) {
-            clusterHosts.retainAll(hostsMatchingUefiTag);
-        }
-
-        clusterHosts.addAll(_hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(hostTagOnOffering));
-
-
-        if (clusterHosts.isEmpty()) {
-            logger.error("No suitable host found for vm [{}] with tags [{}].", vmProfile, hostTagOnOffering);
-            throw new CloudRuntimeException(String.format("No suitable host found for vm [%s].", vmProfile));
-        }
-        // add all hosts that we are not considering to the avoid list
-        List<HostVO> allhostsInCluster = _hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, null);
-        allhostsInCluster.removeAll(clusterHosts);
-
-        logger.debug(() -> String.format("Adding hosts [%s] to the avoid set because these hosts do not support HA.",
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(allhostsInCluster, "uuid", "name")));
-
-        for (HostVO host : allhostsInCluster) {
-            avoid.addHost(host.getId());
-        }
-
-        return allocateTo(plan, offering, template, avoid, clusterHosts, returnUpTo, considerReservedCapacity, account);
+        return allocateTo(vmProfile, plan, type, avoid, null, returnUpTo, true);
     }
 
     @Override
     public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
-        boolean considerReservedCapacity) {
+                                 boolean considerReservedCapacity) {
+        if (type == Host.Type.Storage) {
+            return null;
+        }
+
         long dcId = plan.getDataCenterId();
         Long podId = plan.getPodId();
         Long clusterId = plan.getClusterId();
         ServiceOffering offering = vmProfile.getServiceOffering();
-        VMTemplateVO template = (VMTemplateVO)vmProfile.getTemplate();
+        VMTemplateVO template = (VMTemplateVO) vmProfile.getTemplate();
         Account account = vmProfile.getOwner();
-        List<Host> suitableHosts = new ArrayList<>();
-        List<Host> hostsCopy = new ArrayList<>(hosts);
-
-        if (type == Host.Type.Storage) {
-            // FirstFitAllocator should be used for user VMs only since it won't care whether the host is capable of
-            // routing or not.
-            return suitableHosts;
-        }
 
         String hostTagOnOffering = offering.getHostTag();
         String hostTagOnTemplate = template.getTemplateTag();
-        boolean hasSvcOfferingTag = hostTagOnOffering != null ? true : false;
-        boolean hasTemplateTag = hostTagOnTemplate != null ? true : false;
+        String paramAsStringToLog = String.format("zone [%s], pod [%s], cluster [%s]", dcId, podId, clusterId);
 
-        String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
-        if (haVmTag != null) {
-            hostsCopy.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, haVmTag));
+        List<HostVO> suitableHosts = retrieveHosts(vmProfile, type, (List<HostVO>) hosts, clusterId, podId, dcId, hostTagOnOffering, hostTagOnTemplate);
+
+        if (suitableHosts.isEmpty()) {
+            logger.info("No suitable host found for VM [{}] in {}.", vmProfile, paramAsStringToLog);
+            return null;
+        }
+
+        if (CollectionUtils.isEmpty(hosts)) {
+            addHostsToAvoidSet(type, avoid, clusterId, podId, dcId, suitableHosts);
+        }
+
+        return allocateTo(plan, offering, template, avoid, suitableHosts, returnUpTo, considerReservedCapacity, account);
+    }
+
+    protected List<HostVO> retrieveHosts(VirtualMachineProfile vmProfile, Type type, List<HostVO> hostsToFilter, Long clusterId, Long podId, long dcId, String hostTagOnOffering,
+                                         String hostTagOnTemplate) {
+        String haVmTag = (String) vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
+        List<HostVO> clusterHosts;
+
+        if (CollectionUtils.isNotEmpty(hostsToFilter)) {
+            clusterHosts = new ArrayList<>(hostsToFilter);
         } else {
-            if (hostTagOnOffering == null && hostTagOnTemplate == null) {
-                hostsCopy.retainAll(_resourceMgr.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId));
-            } else {
-                if (hasSvcOfferingTag) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Looking for hosts having tag specified on SvcOffering:" + hostTagOnOffering);
-                    }
-                    hostsCopy.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnOffering));
-
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Hosts with tag '" + hostTagOnOffering + "' are:" + hostsCopy);
-                    }
-                }
-
-                if (hasTemplateTag) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Looking for hosts having tag specified on Template:" + hostTagOnTemplate);
-                    }
-
-                    hostsCopy.retainAll(_hostDao.listByHostTag(type, clusterId, podId, dcId, hostTagOnTemplate));
-
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Hosts with tag '" + hostTagOnTemplate + "' are:" + hostsCopy);
-                    }
-                }
-            }
+            clusterHosts = _resourceMgr.listAllUpAndEnabledHosts(type, clusterId, podId, dcId);
         }
 
-        hostsCopy.addAll(_hostDao.findHostsWithTagRuleThatMatchComputeOferringTags(hostTagOnOffering));
-
-        if (!hostsCopy.isEmpty()) {
-            suitableHosts = allocateTo(plan, offering, template, avoid, hostsCopy, returnUpTo, considerReservedCapacity, account);
+        if (haVmTag != null) {
+            clusterHosts.retainAll(hostDao.listByHostTag(type, clusterId, podId, dcId, haVmTag));
+        } else if (ObjectUtils.allNull(hostTagOnOffering, hostTagOnTemplate)) {
+            clusterHosts.retainAll(_resourceMgr.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId));
+        } else {
+            retainHostsMatchingServiceOfferingAndTemplateTags(clusterHosts, type, clusterId, podId, dcId, hostTagOnTemplate, hostTagOnOffering);
         }
+
+        filterHostsWithUefiEnabled(type, vmProfile, clusterId, podId, dcId, clusterHosts);
+
+        addHostsBasedOnTagRules(hostTagOnOffering, clusterHosts);
+
+        return clusterHosts;
+
+    }
+
+    /**
+     * Add all hosts to the avoid set that were not considered during the allocation
+     */
+    protected void addHostsToAvoidSet(Type type, ExcludeList avoid, Long clusterId, Long podId, long dcId, List<HostVO> suitableHosts) {
+        List<HostVO> allHostsInCluster = hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, null);
+
+        allHostsInCluster.removeAll(suitableHosts);
+
+        logger.debug("Adding hosts [{}] to the avoid set because these hosts were not considered for allocation.",
+                () -> ReflectionToStringBuilderUtils.reflectOnlySelectedFields(allHostsInCluster, "uuid", "name"));
+
+        for (HostVO host : allHostsInCluster) {
+            avoid.addHost(host.getId());
+        }
+    }
+
+    protected void filterHostsWithUefiEnabled(Type type, VirtualMachineProfile vmProfile, Long clusterId, Long podId, long dcId, List<HostVO> clusterHosts) {
+        UserVmDetailVO userVmDetailVO = _userVmDetailsDao.findDetail(vmProfile.getId(), "UEFI");
+
+        if (userVmDetailVO == null) {
+            return;
+        }
+
+        if (!StringUtils.equalsAnyIgnoreCase(userVmDetailVO.getValue(), ApiConstants.BootMode.SECURE.toString(), ApiConstants.BootMode.LEGACY.toString())) {
+            return;
+        }
+
+        logger.info("Guest VM is requested with Custom[UEFI] Boot Type enabled.");
+
+        List<HostVO> hostsMatchingUefiTag = hostDao.listByHostCapability(type, clusterId, podId, dcId, Host.HOST_UEFI_ENABLE);
+
+        logger.debug("Hosts with UEFI enabled are {}.", hostsMatchingUefiTag);
+        clusterHosts.retainAll(hostsMatchingUefiTag);
+    }
+
+    protected List<Host> allocateTo(DeploymentPlan plan, ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
+                                    boolean considerReservedCapacity, Account account) {
+
+        switch (allocationAlgorithm) {
+            case random:
+            case userconcentratedpod_random:
+                Collections.shuffle(hosts);
+                break;
+            case userdispersing:
+                hosts = reorderHostsByNumberOfVms(plan, hosts, account);
+                break;
+            case firstfitleastconsumed:
+                hosts = reorderHostsByCapacity(plan, hosts);
+                break;
+        }
+
+        logger.debug("FirstFitAllocator has {} hosts to check for allocation {}.", hosts.size(), hosts);
+        hosts = prioritizeHosts(template, offering, hosts);
+        logger.debug("Found {} hosts for allocation after prioritization: {}.", hosts.size(), hosts);
+
+        List<Host> suitableHosts = checkHostsCompatibilities(offering, avoid, hosts, returnUpTo, considerReservedCapacity);
+        logger.debug("Host Allocator returning {} suitable hosts.", suitableHosts.size());
 
         return suitableHosts;
     }
 
-    protected List<Host> allocateTo(DeploymentPlan plan, ServiceOffering offering, VMTemplateVO template, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo,
-        boolean considerReservedCapacity, Account account) {
-        if (_allocationAlgorithm.equals("random") || _allocationAlgorithm.equals("userconcentratedpod_random")) {
-            // Shuffle this so that we don't check the hosts in the same order.
-            Collections.shuffle(hosts);
-        } else if (_allocationAlgorithm.equals("userdispersing")) {
-            hosts = reorderHostsByNumberOfVms(plan, hosts, account);
-        }else if(_allocationAlgorithm.equals("firstfitleastconsumed")){
-            hosts = reorderHostsByCapacity(plan, hosts);
-        }
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("FirstFitAllocator has " + hosts.size() + " hosts to check for allocation: " + hosts);
-        }
-
-        // We will try to reorder the host lists such that we give priority to hosts that have
-        // the minimums to support a VM's requirements
-        hosts = prioritizeHosts(template, offering, hosts);
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("Found " + hosts.size() + " hosts for allocation after prioritization: " + hosts);
-        }
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("Looking for speed=" + (offering.getCpu() * offering.getSpeed()) + "Mhz, Ram=" + offering.getRamSize() + " MB");
-        }
-
-        long serviceOfferingId = offering.getId();
+    protected List<Host> checkHostsCompatibilities(ServiceOffering offering, ExcludeList avoid, List<? extends Host> hosts, int returnUpTo, boolean considerReservedCapacity) {
         List<Host> suitableHosts = new ArrayList<>();
-        ServiceOfferingDetailsVO offeringDetails = null;
+        logger.debug("Checking compatibility for the following hosts {}.", suitableHosts);
 
         for (Host host : hosts) {
             if (suitableHosts.size() == returnUpTo) {
                 break;
             }
+
             if (avoid.shouldAvoid(host)) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() + " is in avoid set, skipping this and trying other available hosts");
-                }
+                logger.debug("Host [{}] is in avoid set, skipping this and trying other available hosts.", () -> ReflectionToStringBuilderUtils.reflectOnlySelectedFields(host,
+                        "uuid", "name"));
                 continue;
             }
 
-            //find number of guest VMs occupying capacity on this host.
-            if (_capacityMgr.checkIfHostReachMaxGuestLimit(host)) {
-                logger.debug(() -> String.format("Adding host [%s] to the avoid set because this host already has the max number of running (user and/or system) VMs.",
-                        ReflectionToStringBuilderUtils.reflectOnlySelectedFields(host, "uuid", "name")));
+            if (capacityManager.checkIfHostReachMaxGuestLimit(host)) {
+                logger.debug("Adding host [{}] to the avoid set because this host already has the max number of running (user and/or system) VMs.",
+                        () ->  ReflectionToStringBuilderUtils.reflectOnlySelectedFields(host, "uuid", "name"));
                 avoid.addHost(host.getId());
                 continue;
             }
 
-            // Check if GPU device is required by offering and host has the availability
-            if ((offeringDetails   = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.vgpuType.toString())) != null) {
-                ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.pciDevice.toString());
-                if(!_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), offeringDetails.getValue())){
-                    logger.debug(String.format("Adding host [%s] to avoid set, because this host does not have required GPU devices available.",
-                            ReflectionToStringBuilderUtils.reflectOnlySelectedFields(host, "uuid", "name")));
-                    avoid.addHost(host.getId());
-                    continue;
-                }
+            if (offeringRequestedVGpuAndHostDoesNotHaveIt(offering, avoid, host)) {
+                continue;
             }
-            Pair<Boolean, Boolean> cpuCapabilityAndCapacity = _capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(host, offering, considerReservedCapacity);
-            if (cpuCapabilityAndCapacity.first() && cpuCapabilityAndCapacity.second()) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Found a suitable host, adding to list: " + host.getId());
-                }
+
+            if (hostHasCpuCapabilityAndCapacity(considerReservedCapacity,offering, host)) {
                 suitableHosts.add(host);
-            } else {
-                if (logger.isDebugEnabled()) {
-                    logger.debug("Not using host " + host.getId() + "; host has cpu capability? " + cpuCapabilityAndCapacity.first() + ", host has capacity?" + cpuCapabilityAndCapacity.second());
-                }
-                avoid.addHost(host.getId());
+                continue;
             }
+            avoid.addHost(host.getId());
         }
-
-        if (logger.isDebugEnabled()) {
-            logger.debug("Host Allocator returning " + suitableHosts.size() + " suitable hosts");
-        }
-
         return suitableHosts;
     }
 
-    // Reorder hosts in the decreasing order of free capacity.
+    protected boolean offeringRequestedVGpuAndHostDoesNotHaveIt(ServiceOffering offering, ExcludeList avoid, Host host) {
+        long serviceOfferingId = offering.getId();
+        ServiceOfferingDetailsVO requestedVGpuType = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.vgpuType.toString());
+
+        if (requestedVGpuType == null) {
+            return false;
+        }
+
+        ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(serviceOfferingId, GPU.Keys.pciDevice.toString());
+        if(!_resourceMgr.isGPUDeviceAvailable(host.getId(), groupName.getValue(), requestedVGpuType.getValue())){
+            logger.debug("Adding host [{}] to avoid set, because this host does not have required GPU devices available.",
+                    () -> ReflectionToStringBuilderUtils.reflectOnlySelectedFields(host, "uuid", "name"));
+            avoid.addHost(host.getId());
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Reorder hosts in the decreasing order of free capacity.
+     */
     private List<? extends Host> reorderHostsByCapacity(DeploymentPlan plan, List<? extends Host> hosts) {
         Long zoneId = plan.getDataCenterId();
         Long clusterId = plan.getClusterId();
-        //Get capacity by which we should reorder
         String capacityTypeToOrder = _configDao.getValue(Config.HostCapacityTypeToOrderClusters.key());
-        short capacityType = CapacityVO.CAPACITY_TYPE_CPU;
-        if("RAM".equalsIgnoreCase(capacityTypeToOrder)){
-            capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
-        }
+        short capacityType = "RAM".equalsIgnoreCase(capacityTypeToOrder) ? CapacityVO.CAPACITY_TYPE_MEMORY : CapacityVO.CAPACITY_TYPE_CPU;
+
         List<Long> hostIdsByFreeCapacity = _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
-        if (logger.isDebugEnabled()) {
-            logger.debug("List of hosts in descending order of free capacity in the cluster: "+ hostIdsByFreeCapacity);
-        }
+        logger.debug("List of hosts in descending order of free capacity in the cluster: {}.", hostIdsByFreeCapacity);
 
-        //now filter the given list of Hosts by this ordered list
-        Map<Long, Host> hostMap = new HashMap<>();
-        for (Host host : hosts) {
-            hostMap.put(host.getId(), host);
-        }
-        List<Long> matchingHostIds = new ArrayList<>(hostMap.keySet());
-
-        hostIdsByFreeCapacity.retainAll(matchingHostIds);
-
-        List<Host> reorderedHosts = new ArrayList<>();
-        for(Long id: hostIdsByFreeCapacity){
-            reorderedHosts.add(hostMap.get(id));
-        }
-
-        return reorderedHosts;
+        return filterHosts(hosts, hostIdsByFreeCapacity);
     }
 
     private List<? extends Host> reorderHostsByNumberOfVms(DeploymentPlan plan, List<? extends Host> hosts, Account account) {
@@ -406,115 +293,153 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         Long clusterId = plan.getClusterId();
 
         List<Long> hostIdsByVmCount = _vmInstanceDao.listHostIdsByVmCount(dcId, podId, clusterId, account.getAccountId());
-        if (logger.isDebugEnabled()) {
-            logger.debug("List of hosts in ascending order of number of VMs: " + hostIdsByVmCount);
-        }
+        logger.debug("List of hosts in ascending order of number of VMs: {}.", hostIdsByVmCount);
 
-        //now filter the given list of Hosts by this ordered list
+        return filterHosts(hosts, hostIdsByVmCount);
+    }
+
+    /**
+     * Filter the given list of Hosts considering the ordered list
+     */
+    private List<? extends Host> filterHosts(List<? extends Host> hosts, List<Long> orderedHostIdsList) {
         Map<Long, Host> hostMap = new HashMap<>();
+
         for (Host host : hosts) {
             hostMap.put(host.getId(), host);
         }
         List<Long> matchingHostIds = new ArrayList<>(hostMap.keySet());
-
-        hostIdsByVmCount.retainAll(matchingHostIds);
+        orderedHostIdsList.retainAll(matchingHostIds);
 
         List<Host> reorderedHosts = new ArrayList<>();
-        for (Long id : hostIdsByVmCount) {
+        for(Long id: orderedHostIdsList){
             reorderedHosts.add(hostMap.get(id));
         }
 
         return reorderedHosts;
     }
 
-    @Override
-    public boolean isVirtualMachineUpgradable(VirtualMachine vm, ServiceOffering offering) {
-        // currently we do no special checks to rule out a VM being upgradable to an offering, so
-        // return true
-        return true;
-    }
-
+    /**
+     * Reorder the host list giving priority to hosts that have the minimum to support the VM's requirements.
+     */
     protected List<? extends Host> prioritizeHosts(VMTemplateVO template, ServiceOffering offering, List<? extends Host> hosts) {
         if (template == null) {
             return hosts;
         }
 
-        // Determine the guest OS category of the template
-        String templateGuestOSCategory = getTemplateGuestOSCategory(template);
+        List<Host> hostsToCheck = filterHostWithNoHvmIfTemplateRequested(template, hosts);
 
         List<Host> prioritizedHosts = new ArrayList<>();
-        List<Host> noHvmHosts = new ArrayList<>();
-
-        // If a template requires HVM and a host doesn't support HVM, remove it from consideration
-        List<Host> hostsToCheck = new ArrayList<>();
-        if (template.isRequiresHvm()) {
-            for (Host host : hosts) {
-                if (hostSupportsHVM(host)) {
-                    hostsToCheck.add(host);
-                } else {
-                    noHvmHosts.add(host);
-                }
-            }
-        } else {
-            hostsToCheck.addAll(hosts);
-        }
-
-        if (logger.isDebugEnabled()) {
-            if (noHvmHosts.size() > 0) {
-                logger.debug("Not considering hosts: " + noHvmHosts + "  to deploy template: " + template + " as they are not HVM enabled");
-            }
-        }
-        // If a host is tagged with the same guest OS category as the template, move it to a high priority list
-        // If a host is tagged with a different guest OS category than the template, move it to a low priority list
         List<Host> highPriorityHosts = new ArrayList<>();
         List<Host> lowPriorityHosts = new ArrayList<>();
-        for (Host host : hostsToCheck) {
-            String hostGuestOSCategory = getHostGuestOSCategory(host);
-            if (hostGuestOSCategory == null) {
-                continue;
-            } else if (templateGuestOSCategory != null && templateGuestOSCategory.equals(hostGuestOSCategory)) {
-                highPriorityHosts.add(host);
-            } else {
-                lowPriorityHosts.add(host);
-            }
-        }
 
+        prioritizeHostsWithMatchingGuestOs(template, hostsToCheck, highPriorityHosts, lowPriorityHosts);
         hostsToCheck.removeAll(highPriorityHosts);
         hostsToCheck.removeAll(lowPriorityHosts);
 
-        // Prioritize the remaining hosts by HVM capability
-        for (Host host : hostsToCheck) {
-            if (!template.isRequiresHvm() && !hostSupportsHVM(host)) {
-                // Host and template both do not support hvm, put it as first consideration
-                prioritizedHosts.add(0, host);
-            } else {
-                // Template doesn't require hvm, but the machine supports it, make it last for consideration
-                prioritizedHosts.add(host);
-            }
-        }
-
-        // Merge the lists
+        prioritizeHostsByHvmCapability(template, hostsToCheck, prioritizedHosts);
         prioritizedHosts.addAll(0, highPriorityHosts);
         prioritizedHosts.addAll(lowPriorityHosts);
 
-        // if service offering is not GPU enabled then move all the GPU enabled hosts to the end of priority list.
-        if (_serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) == null) {
+        prioritizeHostsByGpuEnabled(offering, prioritizedHosts);
 
-            List<Host> gpuEnabledHosts = new ArrayList<>();
-            // Check for GPU enabled hosts.
-            for (Host host : prioritizedHosts) {
-                if (_resourceMgr.isHostGpuEnabled(host.getId())) {
-                    gpuEnabledHosts.add(host);
-                }
-            }
-            // Move GPU enabled hosts to the end of list
-            if(!gpuEnabledHosts.isEmpty()) {
-                prioritizedHosts.removeAll(gpuEnabledHosts);
-                prioritizedHosts.addAll(gpuEnabledHosts);
-            }
-        }
         return prioritizedHosts;
     }
+
+
+    /**
+     * If a template requires HVM and a host doesn't support HVM, remove it from consideration.
+     */
+    protected List<Host> filterHostWithNoHvmIfTemplateRequested(VMTemplateVO template, List<? extends Host> hosts) {
+        List<Host> hostsToCheck = new ArrayList<>();
+
+        if (!template.isRequiresHvm()) {
+            logger.debug("Template [{}] does not require HVM, therefore, the hosts {} will not be checked for HVM compatibility.", template, hostsToCheck);
+            hostsToCheck.addAll(hosts);
+            return hostsToCheck;
+        }
+
+        List<Host> noHvmHosts = new ArrayList<>();
+        logger.debug("Template [{}] requires HVM, therefore, the hosts %s will be checked for HVM compatibility.", template, hostsToCheck);
+
+        for (Host host : hosts) {
+            if (hostSupportsHVM(host)) {
+                hostsToCheck.add(host);
+            } else {
+                noHvmHosts.add(host);
+            }
+        }
+
+        if (!noHvmHosts.isEmpty()) {
+            logger.debug("Not considering hosts {} to deploy VM using template {} as they are not HVM enabled.", noHvmHosts, template);
+        }
+
+        return hostsToCheck;
+    }
+
+
+    /**
+     * If service offering did not request for vGPU, then move all host with GPU to the end of the host priority list.
+     */
+    protected void prioritizeHostsByGpuEnabled(ServiceOffering offering, List<Host> prioritizedHosts) {
+        boolean serviceOfferingRequestedVGpu = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) != null;
+
+        if (serviceOfferingRequestedVGpu) {
+            return;
+        }
+
+        List<Host> gpuEnabledHosts = new ArrayList<>();
+
+        for (Host host : prioritizedHosts) {
+            if (_resourceMgr.isHostGpuEnabled(host.getId())) {
+                gpuEnabledHosts.add(host);
+            }
+        }
+
+        if (!gpuEnabledHosts.isEmpty()) {
+            prioritizedHosts.removeAll(gpuEnabledHosts);
+            prioritizedHosts.addAll(gpuEnabledHosts);
+        }
+    }
+
+    /**
+     * Prioritize remaining host by HVM capability.
+     *
+     * <ul>
+     *     <li>If host and template both do not support HVM, put it at the start of the list.</li>
+     *     <li>If the template doesn't require HVM, but the machine supports it, append it to the list.</li>
+     * </ul>
+     */
+    protected void prioritizeHostsByHvmCapability(VMTemplateVO template, List<Host> hostsToCheck, List<Host> prioritizedHosts) {
+        for (Host host : hostsToCheck) {
+            if (!template.isRequiresHvm() && !hostSupportsHVM(host)) {
+                prioritizedHosts.add(0, host);
+            } else {
+                prioritizedHosts.add(host);
+            }
+        }
+    }
+
+
+    /**
+     * <ul>
+     *     <li>If a host is tagged with the same guest OS category as the template, move it to a high priority list.</li>
+     *     <li>If a host is tagged with a different guest OS category than the template, move it to a low priority list.</li>
+     * </ul>
+     */
+    protected void prioritizeHostsWithMatchingGuestOs(VMTemplateVO template, List<Host> hostsToCheck, List<Host> highPriorityHosts, List<Host> lowPriorityHosts) {
+        String templateGuestOSCategory = getTemplateGuestOSCategory(template);
+
+        for (Host host : hostsToCheck) {
+            String hostGuestOSCategory = getHostGuestOSCategory(host);
+
+            if (StringUtils.equals(templateGuestOSCategory, hostGuestOSCategory)) {
+                highPriorityHosts.add(host);
+            } else if (hostGuestOSCategory != null) {
+                lowPriorityHosts.add(host);
+            }
+        }
+    }
+
 
     protected boolean hostSupportsHVM(Host host) {
         if (!_checkHvm) {
@@ -579,22 +504,11 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
             String allocationAlgorithm = configs.get("vm.allocation.algorithm");
             if (allocationAlgorithm != null) {
-                _allocationAlgorithm = allocationAlgorithm;
+                this.allocationAlgorithm = EnumUtils.getEnum(AllocationAlgorithm.class, allocationAlgorithm);
             }
             String value = configs.get("xenserver.check.hvm");
-            _checkHvm = value == null ? true : Boolean.parseBoolean(value);
+            _checkHvm = value == null || Boolean.parseBoolean(value);
         }
         return true;
     }
-
-    @Override
-    public boolean start() {
-        return true;
-    }
-
-    @Override
-    public boolean stop() {
-        return true;
-    }
-
 }
