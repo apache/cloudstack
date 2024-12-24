@@ -16,15 +16,16 @@
 // under the License.
 package com.cloud.alert;
 
-import com.cloud.alert.dao.AlertDao;
-import com.cloud.capacity.Capacity;
-import com.cloud.capacity.CapacityManager;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+
+import javax.mail.MessagingException;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
@@ -37,14 +38,11 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import javax.mail.MessagingException;
-import java.io.UnsupportedEncodingException;
-import java.net.NetworkInterface;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import com.cloud.alert.dao.AlertDao;
+import com.cloud.capacity.CapacityManager;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AlertManagerImplTest {
