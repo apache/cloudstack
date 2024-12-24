@@ -79,6 +79,7 @@ public class NioClient extends NioConnection {
             _selector.close();
             throw new IOException("Failed to initialise security", e);
         } catch (final IOException e) {
+            _clientConnection.close();
             _selector.close();
             throw e;
         }
