@@ -16,19 +16,20 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
+import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
 
-import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
@@ -39,25 +40,36 @@ import com.cloud.utils.db.TransactionStatus;
 public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> implements QuotaCreditsDao {
 
     @Inject
-    QuotaBalanceDao _quotaBalanceDao;
+    DomainDao domainDao;
+    @Inject
+    QuotaBalanceDao quotaBalanceDao;
+
+    private SearchBuilder<QuotaCreditsVO> quotaCreditsVoSearch;
+
+    public QuotaCreditsDaoImpl() {
+        quotaCreditsVoSearch = createSearchBuilder();
+        quotaCreditsVoSearch.and("updatedOn", quotaCreditsVoSearch.entity().getUpdatedOn(), SearchCriteria.Op.BETWEEN);
+        quotaCreditsVoSearch.and("accountId", quotaCreditsVoSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        quotaCreditsVoSearch.and("domainId", quotaCreditsVoSearch.entity().getDomainId(), SearchCriteria.Op.IN);
+        quotaCreditsVoSearch.done();
+    }
 
     @Override
-    public List<QuotaCreditsVO> findCredits(final long accountId, final long domainId, final Date startDate, final Date endDate) {
-        return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaCreditsVO>>() {
-            @Override
-            public List<QuotaCreditsVO> doInTransaction(final TransactionStatus status) {
-                if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
-                    Filter filter = new Filter(QuotaCreditsVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
-                    QueryBuilder<QuotaCreditsVO> qb = QueryBuilder.create(QuotaCreditsVO.class);
-                    qb.and(qb.entity().getAccountId(), SearchCriteria.Op.EQ, accountId);
-                    qb.and(qb.entity().getDomainId(), SearchCriteria.Op.EQ, domainId);
-                    qb.and(qb.entity().getUpdatedOn(), SearchCriteria.Op.BETWEEN, startDate, endDate);
-                    return search(qb.create(), filter);
-                } else {
-                    return Collections.<QuotaCreditsVO> emptyList();
-                }
-            }
-        });
+    public List<QuotaCreditsVO> findCredits(Long accountId, Long domainId, Date startDate, Date endDate, boolean recursive) {
+        SearchCriteria<QuotaCreditsVO> sc = quotaCreditsVoSearch.create();
+        Filter filter = new Filter(QuotaCreditsVO.class, "updatedOn", true, 0L, Long.MAX_VALUE);
+
+        sc.setParametersIfNotNull("accountId", accountId);
+        if (domainId != null) {
+            List<Long> domainIds = recursive ? domainDao.getDomainAndChildrenIds(domainId) : List.of(domainId);
+            sc.setParameters("domainId", domainIds.toArray());
+        }
+
+        if (ObjectUtils.allNotNull(startDate, endDate)) {
+            sc.setParameters("updatedOn", startDate, endDate);
+        }
+
+        return Transaction.execute(TransactionLegacy.USAGE_DB, (TransactionCallback<List<QuotaCreditsVO>>) status -> search(sc, filter));
     }
 
     @Override
@@ -68,7 +80,7 @@ public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> im
                 persist(credits);
                 // make an entry in the balance table
                 QuotaBalanceVO bal = new QuotaBalanceVO(credits);
-                _quotaBalanceDao.persist(bal);
+                quotaBalanceDao.persist(bal);
                 return credits;
             }
         });
