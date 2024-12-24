@@ -1236,7 +1236,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return listBy(sc);
     }
 
-    private List<Long> listIdsBy(Host.Type type, Status status, ResourceState resourceState,
+    protected List<Long> listIdsBy(Host.Type type, Status status, ResourceState resourceState,
              HypervisorType hypervisorType, Long zoneId, Long podId, Long clusterId) {
         GenericSearchBuilder<HostVO, Long> sb = createSearchBuilder(Long.class);
         sb.selectFields(sb.entity().getId());
@@ -1708,6 +1708,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sb.and("id", sb.entity().getId(), Op.EQ);
         sb.selectFields(sb.entity().getStatus());
         SearchCriteria<Status> sc = sb.create();
+        sc.setParameters("id", hostId);
         List<Status> statuses = customSearch(sc, null);
         return CollectionUtils.isNotEmpty(statuses) && Status.Up.equals(statuses.get(0));
     }

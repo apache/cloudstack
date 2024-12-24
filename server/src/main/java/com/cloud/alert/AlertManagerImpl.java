@@ -259,8 +259,10 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         }
     }
 
+    /**
+     * Recalculates the capacities of hosts, including CPU and RAM.
+     */
     protected void recalculateHostCapacities() {
-        // Calculate CPU and RAM capacities
         List<Long> hostIds = hostDao.listIdsByType(Host.Type.Routing);
         if (hostIds.isEmpty()) {
             return;
