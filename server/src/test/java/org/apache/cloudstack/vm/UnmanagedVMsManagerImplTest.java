@@ -703,6 +703,8 @@ public class UnmanagedVMsManagerImplTest {
             when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(CheckConvertInstanceCommand.class))).thenReturn(checkConvertInstanceAnswer);
         }
 
+        when(volumeApiService.doesTargetStorageSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
+
         ConvertInstanceAnswer convertInstanceAnswer = mock(ConvertInstanceAnswer.class);
         ImportConvertedInstanceAnswer convertImportedInstanceAnswer = mock(ImportConvertedInstanceAnswer.class);
         when(convertInstanceAnswer.getResult()).thenReturn(vcenterParameter != VcenterParameter.CONVERT_FAILURE);
@@ -781,13 +783,11 @@ public class UnmanagedVMsManagerImplTest {
 
     @Test
     public void testImportVmFromVmwareToKvmExistingVcenterSetConvertHost() throws OperationTimedoutException, AgentUnavailableException {
-        when(volumeApiService.doesTargetStorageSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
         baseTestImportVmFromVmwareToKvm(VcenterParameter.EXISTING, true, false);
     }
 
     @Test
     public void testImportVmFromVmwareToKvmExistingVcenterSetConvertHostAndTemporaryStorage() throws OperationTimedoutException, AgentUnavailableException {
-        when(volumeApiService.doesTargetStorageSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
         baseTestImportVmFromVmwareToKvm(VcenterParameter.EXISTING, true, true);
     }
 
