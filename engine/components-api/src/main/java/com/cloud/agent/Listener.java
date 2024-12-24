@@ -43,6 +43,10 @@ public interface Listener {
      */
     boolean processAnswers(long agentId, long seq, Answer[] answers);
 
+    default boolean processAnswers(long agentId, String uuid, String name, long seq, Answer[] answers) {
+        return processAnswers(agentId, seq, answers);
+    }
+
     /**
      * This method is called by the AgentManager when an agent sent
      * a command to the server.  In order to process these commands,
@@ -91,6 +95,10 @@ public interface Listener {
      * @param state the current state of the agent.
      */
     boolean processDisconnect(long agentId, Status state);
+
+    default boolean processDisconnect(long agentId, String uuid, String name, Status state) {
+        return processDisconnect(agentId, state);
+    }
 
     /**
      * This method is called by AgentManager when a host is about to be removed from a cluster.

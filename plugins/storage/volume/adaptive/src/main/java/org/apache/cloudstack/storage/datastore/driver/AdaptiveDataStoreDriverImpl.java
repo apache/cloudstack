@@ -210,8 +210,8 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             AsyncCompletionCallback<CreateCmdResult> callback) {
         CreateCmdResult result = null;
         try {
-            logger.info("Volume creation starting for data store [" + dataStore.getName() +
-                    "] and data object [" + dataObject.getUuid() + "] of type [" + dataObject.getType() + "]");
+            logger.info("Volume creation starting for data store [{}] and data object [{}] of type [{}]",
+                    dataStore, dataObject, dataObject.getType());
 
             // quota size of the cloudbyte volume will be increased with the given
             // HypervisorSnapshotReserve
@@ -243,7 +243,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             if (DataObjectType.TEMPLATE.equals(dataObject.getType())) {
                 volume = api.getVolume(context, dataIn);
                 if (volume != null) {
-                    logger.info("Template volume already exists [" + dataObject.getUuid() + "]");
+                    logger.info("Template volume already exists [{}]", dataObject);
                 }
             }
 
@@ -261,7 +261,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
                         throw e;
                     }
                 }
-                logger.info("New volume created on remote storage for [" + dataObject.getUuid() + "]");
+                logger.info("New volume created on remote storage for [{}]", dataObject);
             }
 
             // set these from the discovered or created volume before proceeding
@@ -273,9 +273,9 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
 
             result = new CreateCmdResult(dataObject.getUuid(), new Answer(null));
             result.setSuccess(true);
-            logger.info("Volume creation complete for [" + dataObject.getUuid() + "]");
+            logger.info("Volume creation complete for [{}]", dataObject);
         } catch (Throwable e) {
-            logger.error("Volume creation  failed for dataObject [" + dataObject.getUuid() + "]: " + e.toString(), e);
+            logger.error("Volume creation  failed for dataObject [{}]: {}", dataObject, e.toString(), e);
             result = new CreateCmdResult(null, new Answer(null));
             result.setResult(e.toString());
             result.setSuccess(false);
@@ -318,7 +318,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             AsyncCompletionCallback<CopyCommandResult> callback) {
         CopyCommandResult result = null;
         try {
-            logger.info("Copying volume " + srcdata.getUuid() + " to " + destdata.getUuid() + "]");
+            logger.info("Copying volume {} to {}]", srcdata, destdata);
 
             if (!canCopy(srcdata, destdata)) {
                 throw new CloudRuntimeException(
@@ -330,7 +330,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
                 Map<String, String> details = _storagePoolDao.getDetails(storagePool.getId());
                 ProviderAdapter api = getAPI(storagePool, details);
 
-                logger.info("Copy volume " + srcdata.getUuid() + " to " + destdata.getUuid());
+                logger.info("Copy volume {} to {}", srcdata, destdata);
 
                 ProviderVolume outVolume;
                 ProviderAdapterContext context = newManagedVolumeContext(destdata);
@@ -347,14 +347,14 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
                 // if we copied from one volume to another, the target volume's disk offering or user input may be of a larger size
                 // we won't, however, shrink a volume if its smaller.
                 if (outVolume.getAllocatedSizeInBytes() < destdata.getSize()) {
-                    logger.info("Resizing volume " + destdata.getUuid() + " to requested target volume size of " + destdata.getSize());
+                    logger.info("Resizing volume {} to requested target volume size of {}", destdata, destdata.getSize());
                     api.resize(context, destIn, destdata.getSize());
                 }
 
                 // initial volume info does not have connection map yet.  That is added when grantAccess is called later.
                 String finalPath = generatePathInfo(outVolume, null);
                 persistVolumeData(storagePool, details, destdata, outVolume, null);
-                logger.info("Copy completed from [" + srcdata.getUuid() + "] to [" + destdata.getUuid() + "]");
+                logger.info("Copy completed from [{}] to [{}]", srcdata, destdata);
 
                 VolumeObjectTO voto = new VolumeObjectTO();
                 voto.setPath(finalPath);
@@ -381,9 +381,8 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
 
     @Override
     public boolean canCopy(DataObject srcData, DataObject destData) {
-        logger.debug("canCopy: Checking srcData [" + srcData.getUuid() + ":" + srcData.getType() + ":"
-                + srcData.getDataStore().getId() + " AND destData ["
-                + destData.getUuid() + ":" + destData.getType() + ":" + destData.getDataStore().getId() + "]");
+        logger.debug("canCopy: Checking srcData [{}:{}:{} AND destData [{}:{}:{}]",
+                srcData, srcData.getType(), srcData.getDataStore(), destData, destData.getType(), destData.getDataStore());
         try {
             if (!isSameProvider(srcData)) {
                 logger.debug("canCopy: No we can't -- the source provider is NOT the correct type for this driver!");
@@ -458,12 +457,14 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
 
                 ProviderAdapterContext context = newManagedVolumeContext(data);
                 ProviderAdapterDataObject dataIn = newManagedDataObject(data, poolVO);
-                if (logger.isDebugEnabled()) logger.debug("Calling provider API to resize volume " + data.getUuid() + " to " + resizeParameter.newSize);
+                if (logger.isDebugEnabled())
+                    logger.debug("Calling provider API to resize volume {} to {}", data, resizeParameter.newSize);
                 api.resize(context, dataIn, resizeParameter.newSize);
 
                 if (vol.isAttachedVM()) {
                     if (VirtualMachine.State.Running.equals(vol.getAttachedVM().getState())) {
-                        if (logger.isDebugEnabled()) logger.debug("Notify currently attached VM of volume resize for " + data.getUuid() + " to " + resizeParameter.newSize);
+                        if (logger.isDebugEnabled())
+                            logger.debug("Notify currently attached VM of volume resize for {} to {}", data, resizeParameter.newSize);
                         _volumeService.resizeVolumeOnHypervisor(vol.getId(), resizeParameter.newSize, vol.getAttachedVM().getHostId(), vol.getAttachedVM().getInstanceName());
                     }
                 }
@@ -484,7 +485,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
     }
 
     public boolean grantAccess(DataObject dataObject, Host host, DataStore dataStore) {
-        logger.debug("Granting host " + host.getName() + " access to volume " + dataObject.getUuid());
+        logger.debug("Granting host {} access to volume {}", host, dataObject);
 
         try {
             StoragePoolVO storagePool = _storagePoolDao.findById(dataObject.getDataStore().getId());
@@ -502,10 +503,10 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             persistVolumeOrTemplateData(storagePool, details, dataObject, vol, connIdMap);
 
 
-            logger.info("Granted host " + host.getName() + " access to volume " + dataObject.getUuid());
+            logger.info("Granted host {} access to volume {}", host, dataObject);
             return true;
         } catch (Throwable e) {
-            String msg = "Error granting host " + host.getName() + " access to volume " + dataObject.getUuid() + ":" + e.getMessage();
+            String msg = String.format("Error granting host %s access to volume %s: %s", host, dataObject, e.getMessage());
             logger.error(msg);
             throw new CloudRuntimeException(msg, e);
         }
@@ -517,7 +518,7 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             return;
         }
 
-        logger.debug("Revoking access for host " + host.getName() + " to volume " + dataObject.getUuid());
+        logger.debug("Revoking access for host {} to volume {}", host, dataObject);
 
         try {
             StoragePoolVO storagePool = _storagePoolDao.findById(dataObject.getDataStore().getId());
@@ -535,9 +536,9 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
             Map<String,String> connIdMap = api.getConnectionIdMap(dataIn);
             persistVolumeOrTemplateData(storagePool, details, dataObject, vol, connIdMap);
 
-            logger.info("Revoked access for host " + host.getName() + " to volume " + dataObject.getUuid());
+            logger.info("Revoked access for host {} to volume {}", host, dataObject);
         } catch (Throwable e) {
-            String msg = "Error revoking access for host " + host.getName() + " to volume " + dataObject.getUuid() + ":" + e.getMessage();
+            String msg = String.format("Error revoking access for host %s to volume %s: %s", host, dataObject, e.getMessage());
             logger.error(msg);
             throw new CloudRuntimeException(msg, e);
         }
@@ -546,8 +547,8 @@ public class AdaptiveDataStoreDriverImpl extends CloudStackPrimaryDataStoreDrive
     @Override
     public void handleQualityOfServiceForVolumeMigration(VolumeInfo volumeInfo,
             QualityOfServiceState qualityOfServiceState) {
-        logger.info("handleQualityOfServiceVolumeMigration: " + volumeInfo.getUuid() + " " +
-                volumeInfo.getPath() + ": " + qualityOfServiceState.toString());
+        logger.info("handleQualityOfServiceVolumeMigration: {} path: {}: {}",
+                volumeInfo, volumeInfo.getPath(), qualityOfServiceState.toString());
     }
 
     @Override

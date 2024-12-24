@@ -620,7 +620,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
-    public boolean isGPUDeviceAvailable(final long hostId, final String groupName, final String vgpuType) {
+    public boolean isGPUDeviceAvailable(final Host host, final String groupName, final String vgpuType) {
         // TODO Auto-generated method stub
         return false;
     }

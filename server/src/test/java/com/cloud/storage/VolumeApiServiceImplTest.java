@@ -1047,9 +1047,6 @@ public class VolumeApiServiceImplTest {
 
         volumeApiServiceImpl.cleanVolumesCache(volumeVoMock);
 
-        Mockito.verify(dataStoreMock1).getName();
-        Mockito.verify(dataStoreMock2).getName();
-
         Mockito.verify(volumeInfoMock1).delete();
         Mockito.verify(volumeInfoMock2).delete();
     }

@@ -492,7 +492,7 @@ public class ConfigurationManagerTest {
 
         when(configurationMgr._firewallDao.countRulesByIpId(anyLong())).thenReturn(0L);
 
-        when(configurationMgr._ipAddrMgr.disassociatePublicIpAddress(anyLong(), anyLong(), any(Account.class))).thenReturn(true);
+        when(configurationMgr._ipAddrMgr.disassociatePublicIpAddress(any(), anyLong(), any(Account.class))).thenReturn(true);
 
         when(configurationMgr._vlanDao.releaseFromLockTable(anyLong())).thenReturn(true);
 

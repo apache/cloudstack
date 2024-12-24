@@ -300,7 +300,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         if (answer != null && answer instanceof GetDomRVersionAnswer) {
             final GetDomRVersionAnswer versionAnswer = (GetDomRVersionAnswer)answer;
             if (answer == null || !answer.getResult()) {
-                logger.warn("Unable to get the template/scripts version of internal LB VM " + internalLbVm.getInstanceName() + " due to: " + versionAnswer.getDetails());
+                logger.warn(String.format("Unable to get the template/scripts version of internal LB VM %s due to: %s", internalLbVm, versionAnswer.getDetails()));
                 result = false;
             } else {
                 internalLbVm.setTemplateVersion(versionAnswer.getTemplateVersion());
@@ -606,11 +606,11 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         List<DomainRouterVO> internalLbVms = new ArrayList<DomainRouterVO>();
         final Network lock = _networkDao.acquireInLockTable(guestNetwork.getId(), NetworkOrchestrationService.NetworkLockTimeout.value());
         if (lock == null) {
-            throw new ConcurrentOperationException("Unable to lock network " + guestNetwork.getId());
+            throw new ConcurrentOperationException(String.format("Unable to lock network %s", guestNetwork));
         }
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Lock is acquired for network id " + lock.getId() + " as a part of internal lb startup in " + dest);
+            logger.debug(String.format("Lock is acquired for network %s as a part of internal lb startup in %s", lock, dest));
         }
 
         final long internalLbProviderId = getInternalLbProviderId(guestNetwork);
@@ -647,7 +647,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             if (lock != null) {
                 _networkDao.releaseFromLockTable(lock.getId());
                 if (logger.isDebugEnabled()) {
-                    logger.debug("Lock is released for network id " + lock.getId() + " as a part of internal lb vm startup in " + dest);
+                    logger.debug(String.format("Lock is released for network id %s as a part of internal lb vm startup in %s", lock, dest));
                 }
             }
         }
@@ -665,7 +665,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
 
         final VirtualRouterProvider internalLbProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), type);
         if (internalLbProvider == null) {
-            throw new CloudRuntimeException("Cannot find provider " + type.toString() + " as service provider " + provider.getId());
+            throw new CloudRuntimeException(String.format("Cannot find provider %s as service provider %s", type.toString(), provider));
         }
 
         return internalLbProvider.getId();
@@ -880,10 +880,10 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         if (lbVm.getState() == State.Running) {
             return sendLBRules(lbVm, rules, network.getId());
         } else if (lbVm.getState() == State.Stopped || lbVm.getState() == State.Stopping) {
-            logger.debug("Internal LB VM " + lbVm.getInstanceName() + " is in " + lbVm.getState() + ", so not sending apply lb rules commands to the backend");
+            logger.debug(String.format("Internal LB VM %s is in %s, so not sending apply lb rules commands to the backend", lbVm, lbVm.getState()));
             return true;
         } else {
-            logger.warn("Unable to apply lb rules, Internal LB VM is not in the right state " + lbVm.getState());
+            logger.warn(String.format("Unable to apply lb rules, Internal LB VM %s is not in the right state %s", lbVm, lbVm.getState()));
             throw new ResourceUnavailableException("Unable to apply lb rules; Internal LB VM is not in the right state", DataCenter.class, lbVm.getDataCenterId());
         }
     }

@@ -179,6 +179,16 @@ public class UnmanagedInstanceTO {
         this.vncPassword = vncPassword;
     }
 
+    @Override
+    public String toString() {
+        return "UnmanagedInstanceTO{" +
+                "name='" + name + '\'' +
+                ", internalCSName='" + internalCSName + '\'' +
+                ", hostName='" + hostName + '\'' +
+                ", clusterName='" + clusterName + '\'' +
+                '}';
+    }
+
     public static class Disk {
         private String diskId;
 

@@ -81,23 +81,26 @@ public class SecurityGroupListener implements Listener {
 
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
+        return processAnswers(agentId, null, null, seq, answers);
+    }
+
+    @Override
+    public boolean processAnswers(long agentId, String uuid, String name, long seq, Answer[] answers) {
         List<Long> affectedVms = new ArrayList<Long>();
 
         for (Answer ans : answers) {
             if (ans instanceof SecurityGroupRuleAnswer) {
                 SecurityGroupRuleAnswer ruleAnswer = (SecurityGroupRuleAnswer)ans;
                 if (ans.getResult()) {
-                    logger.debug("Successfully programmed rule " + ruleAnswer.toString() + " into host " + agentId);
+                    logger.debug("Successfully programmed rule {} into host [id: {}, uuid: {}, name: {}]", ruleAnswer.toString(), agentId, uuid, name);
                     _workDao.updateStep(ruleAnswer.getVmId(), ruleAnswer.getLogSequenceNumber(), Step.Done);
                     recordSuccess(ruleAnswer.getVmId());
                 } else {
                     _workDao.updateStep(ruleAnswer.getVmId(), ruleAnswer.getLogSequenceNumber(), Step.Error);
                     ;
-                    logger.debug("Failed to program rule " + ruleAnswer.toString() + " into host " + agentId + " due to " + ruleAnswer.getDetails() +
-                        " and updated  jobs");
+                    logger.debug("Failed to program rule {} into host [id: {}, uuid: {}, name: {}] due to {} and updated  jobs", ruleAnswer.toString(), agentId, uuid, name, ruleAnswer.getDetails());
                     if (ruleAnswer.getReason() == FailureReason.CANNOT_BRIDGE_FIREWALL) {
-                        logger.debug("Not retrying security group rules for vm " + ruleAnswer.getVmId() + " on failure since host " + agentId +
-                            " cannot do bridge firewalling");
+                        logger.debug("Not retrying security group rules for vm {} on failure since host [id: {}, uuid: {}, name: {}] cannot do bridge firewalling", ruleAnswer.getVmId(), agentId, uuid, name);
                     } else if (ruleAnswer.getReason() == FailureReason.PROGRAMMING_FAILED) {
                         if (checkShouldRetryOnFailure(ruleAnswer.getVmId())) {
                             logger.debug("Retrying security group rules on failure for vm " + ruleAnswer.getVmId());
@@ -172,7 +175,7 @@ public class SecurityGroupListener implements Listener {
                     logger.info("Scheduled network rules cleanup, interval=" + cleanupCmd.getInterval());
             } catch (AgentUnavailableException e) {
                 //usually hypervisors that do not understand sec group rules.
-                logger.debug("Unable to schedule network rules cleanup for host " + host.getId(), e);
+                logger.debug("Unable to schedule network rules cleanup for host {}", host, e);
             }
             if (_workTracker != null) {
                 _workTracker.processConnect(host.getId());

@@ -179,8 +179,8 @@ public class SharedFSServiceImpl extends ManagerBase implements SharedFSService,
         try {
             return sharedFSStateMachine.transitTo(sharedFS, event, null, sharedFSDao);
         } catch (NoTransitionException e) {
-            String message = String.format("State transit error for Shared FileSystem %s [%s] due to exception: %s.",
-                    sharedFS.getName(), sharedFS.getId(), e.getMessage());
+            String message = String.format("State transit error for Shared FileSystem %s due to exception: %s.",
+                    sharedFS, e.getMessage());
             logger.error(message, e);
             throw new CloudRuntimeException(message, e);
         }
@@ -706,7 +706,7 @@ public class SharedFSServiceImpl extends ManagerBase implements SharedFSService,
                             deleteSharedFS(sharedFS.getId());
                         } catch (Exception e) {
                             stateTransitTo(sharedFS, Event.OperationFailed);
-                            logger.error(String.format("Unable to expunge Shared FileSystem [%s] due to: [%s].", sharedFS.getUuid(), e.getMessage()));
+                            logger.error("Unable to expunge Shared FileSystem {} due to: [{}].", sharedFS, e.getMessage());
                         }
                     }
                 } finally {

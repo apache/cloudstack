@@ -158,7 +158,8 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
     public void execute() throws ServerApiException, ConcurrentOperationException {
         try {
             if (!kubernetesClusterService.scaleKubernetesCluster(this)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to scale Kubernetes cluster ID: %d", getId()));
+                KubernetesCluster cluster = kubernetesClusterService.findById(getId());
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to scale Kubernetes cluster %s with id %d", cluster, getId()));
             }
             final KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(getId());
             response.setResponseName(getCommandName());

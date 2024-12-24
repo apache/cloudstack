@@ -193,7 +193,12 @@ public class VlanVO implements Vlan {
     public String toString() {
         if (toString == null) {
             toString =
-                    new StringBuilder("Vlan[").append(vlanTag)
+                    new StringBuilder("Vlan[")
+                    .append(id)
+                    .append("|")
+                    .append(uuid)
+                    .append("|")
+                    .append(vlanTag)
                     .append("|")
                     .append(vlanGateway)
                     .append("|")

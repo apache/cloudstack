@@ -450,6 +450,9 @@ public class NicProfile implements InternalIdentity, Serializable {
 
     @Override
     public String toString() {
-        return String.format("NicProfile %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "vmId", "deviceId", "broadcastUri", "reservationId", "iPv4Address"));
+        return String.format("NicProfile %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "vmId", "deviceId",
+                        "broadcastUri", "reservationId", "iPv4Address"));
     }
 }

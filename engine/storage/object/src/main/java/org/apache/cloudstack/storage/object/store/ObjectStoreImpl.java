@@ -58,6 +58,14 @@ public class ObjectStoreImpl implements ObjectStoreEntity {
     }
 
     @Override
+    public String toString() {
+        return "ObjectStoreImpl{" +
+                "objectStoreVO=" + objectStoreVO +
+                ", provider=" + provider.getName() +
+                '}';
+    }
+
+    @Override
     public DataStoreDriver getDriver() {
         return this.driver;
     }

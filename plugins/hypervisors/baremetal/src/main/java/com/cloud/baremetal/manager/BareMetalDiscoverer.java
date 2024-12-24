@@ -258,7 +258,7 @@ public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, R
         List<VMInstanceVO> deadVms = _vmDao.listByLastHostId(host.getId());
         for (VMInstanceVO vm : deadVms) {
             if (vm.getState() == State.Running || vm.getHostId() != null) {
-                throw new CloudRuntimeException("VM " + vm.getId() + "is still running on host " + host.getId());
+                throw new CloudRuntimeException(String.format("VM %s is still running on host %s", vm, host));
             }
             _vmDao.remove(vm.getId());
         }

@@ -296,7 +296,7 @@ public class UserVO implements User, Identity, InternalIdentity {
 
     @Override
     public String toString() {
-        return String.format("User %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "username", "uuid"));
+        return String.format("User %s.", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "username"));
     }
 
     @Override
