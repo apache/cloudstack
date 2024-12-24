@@ -36,17 +36,17 @@ version="1.0">
             <div class="uppermenu_box"><!-- #BeginLibraryItem "/libraries/uppermenu.lbi" -->
 
 <div class="uppermenu">
-       <a href="libraries/learn_download.html">Downloads</a> | <a href="libraries/company_news.html">News</a> | <a href="#">Contact Us</a> 
+       <a href="libraries/learn_download.html">Downloads</a> | <a href="libraries/company_news.html">News</a> | <a href="#">Contact Us</a>
 </div><!-- #EndLibraryItem --></div>
         </div>
-        
+
         <div id="main_controller">
             <div id="inside_header">
 
                 <div class="header_top">
                     <a class="cloud_logo" href="index.html"></a>
                     <div class="mainemenu_panel">
-                        
+
                     </div>
                 </div>
                 <div class="insideheader_bot">
@@ -62,11 +62,11 @@ version="1.0">
                         <div class="insheader_buttonshadow"></div>
                     </div>
                 </div>
-            
+
             </div>
 
             <div id="main_content">
-             	
+
                 <div class="inside_apileftpanel">
                 	<div class="inside_contentpanel" style="width:930px;">
                     	<div class="api_titlebox">
@@ -77,12 +77,12 @@ version="1.0">
 				</xsl:for-each>
                             </div>
 
-                            
+
                             <div class="api_titlebox_right">
                             	<a class="api_backbutton" href="#"></a>
                             </div>
                         </div>
-                    	<div class="api_tablepanel">     
+                    	<div class="api_tablepanel">
                          	<h2>Request parameters</h2>
                         	<table class="apitable">
                             	<tr class="hed">
@@ -101,16 +101,16 @@ version="1.0">
 				</xsl:for-each>
                             </table>
                         </div>
-                         
-                         
-                         <div class="api_tablepanel">     
+
+
+                         <div class="api_tablepanel">
                          	<h2>Response Tags</h2>
                         	<table class="apitable">
                             	<tr class="hed">
                                 	<td style="width:200px;"><strong>Response Name</strong></td>
                                     <td style="width:500px;">Description</td>
                                 </tr>
-                                
+
 				<xsl:for-each select="command/command/response/arg">
                                 <tr>
 					<td style="width:200px;"><strong><xsl:value-of select="name"/></strong></td>
@@ -125,24 +125,24 @@ version="1.0">
 						<td style="width:200px;"><strong><xsl:value-of select="name"/></strong></td>
 		                            	<td style="width:500px;"><xsl:value-of select="description"/></td>
 						</tr>
-					</xsl:for-each>					
-					</xsl:for-each>					
+					</xsl:for-each>
+					</xsl:for-each>
                                 </tr>
 				</xsl:for-each>
-                                
-                         
-                                
-                              
-                            
+
+
+
+
+
                             </table>
 
                         </div>
-                        
-                        
-                </div> 
+
+
                 </div>
-                  
-     
+                </div>
+
+
             </div>
         </div><!-- #BeginLibraryItem "/libraries/footer.lbi" -->
 <div id="footer">
@@ -169,7 +169,7 @@ version="1.0">
 
                     <li> <a href="#"> Blog</a> </li>
                     <li> <a href="#"> Contacts</a> </li>
-                   
+
                 </ul>
                 <ul class="footer_linksbox">
                 	<li><strong> Site Info </strong> </li>
