@@ -143,6 +143,7 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
             diskofferingid=cls.sparse_disk_offering.id,
             mode=cls.zone.networktype
         )
+        cls._cleanup.append(cls.virtual_machine)
 
         hosts = Host.list(cls.apiclient, id=cls.virtual_machine.hostid)
         if len(hosts) != 1:
@@ -159,7 +160,6 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
 
         # Start VM after password reset
         cls.virtual_machine.start(cls.apiclient)
-        cls._cleanup.append(cls.virtual_machine)
 
 
     @classmethod
