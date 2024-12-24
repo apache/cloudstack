@@ -202,7 +202,7 @@ public class ManagementServerHostVO implements ManagementServerHost {
     public String toString() {
         return String.format("ManagementServer %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "uuid", "msid", "name", "type"));
+                        this, "id", "uuid", "msid", "name"));
     }
 
     @Override

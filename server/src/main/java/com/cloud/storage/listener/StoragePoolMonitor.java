@@ -185,7 +185,7 @@ public class StoragePoolMonitor implements Listener {
             }
 
             try {
-                _storageManager.disconnectHostFromSharedPool(host.getId(), pool.getId());
+                _storageManager.disconnectHostFromSharedPool(host, pool);
             } catch (Exception e) {
                 logger.error("Unable to disconnect host {} from storage pool {} due to {}", host, pool, e.toString());
                 disconnectResult = false;

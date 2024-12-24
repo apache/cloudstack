@@ -150,13 +150,11 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
         when(resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(Hypervisor.HypervisorType.KVM, 1L)).thenReturn(hostList);
 
         when(dataStoreMgr.getDataStore(anyLong(), eq(DataStoreRole.Primary))).thenReturn(store);
-        when(store.getId()).thenReturn(1L);
         when(store.isShared()).thenReturn(true);
         when(store.getStorageProviderName()).thenReturn(ScaleIOUtil.PROVIDER_NAME);
 
         when(dataStoreProviderMgr.getDataStoreProvider(ScaleIOUtil.PROVIDER_NAME)).thenReturn(dataStoreProvider);
         when(dataStoreProvider.getName()).thenReturn(ScaleIOUtil.PROVIDER_NAME);
-        when(hostListener.hostConnect(Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
         storageMgr.registerHostListener(ScaleIOUtil.PROVIDER_NAME, hostListener);
 
         when(dataStoreHelper.attachZone(Mockito.any(DataStore.class))).thenReturn(null);

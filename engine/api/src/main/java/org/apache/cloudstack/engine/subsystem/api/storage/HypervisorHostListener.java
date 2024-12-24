@@ -19,11 +19,21 @@
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import com.cloud.exception.StorageConflictException;
+import com.cloud.host.Host;
+import com.cloud.storage.StoragePool;
 
 public interface HypervisorHostListener {
     boolean hostAdded(long hostId);
 
+    default boolean hostConnect(Host host, StoragePool pool) throws StorageConflictException {
+        return hostConnect(host.getId(), pool.getId());
+    }
+
     boolean hostConnect(long hostId, long poolId) throws StorageConflictException;
+
+    default boolean hostDisconnected(Host host, StoragePool pool) throws StorageConflictException {
+        return hostDisconnected(host.getId(), pool.getId());
+    }
 
     boolean hostDisconnected(long hostId, long poolId);
 

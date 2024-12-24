@@ -367,7 +367,7 @@ public interface StorageManager extends StorageService {
 
     boolean connectHostToSharedPool(Host host, long poolId) throws StorageUnavailableException, StorageConflictException;
 
-    void disconnectHostFromSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
+    void disconnectHostFromSharedPool(Host host, StoragePool pool) throws StorageUnavailableException, StorageConflictException;
 
     void enableHost(long hostId) throws StorageUnavailableException, StorageConflictException;
 

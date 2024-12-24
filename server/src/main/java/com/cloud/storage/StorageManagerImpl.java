@@ -1548,18 +1548,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         DataStoreProvider provider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         HypervisorHostListener listener = hostListeners.get(provider.getName());
-        return listener.hostConnect(host.getId(), pool.getId());
+        return listener.hostConnect(host, pool);
     }
 
     @Override
-    public void disconnectHostFromSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException {
-        StoragePool pool = (StoragePool)_dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
+    public void disconnectHostFromSharedPool(Host host, StoragePool pool) throws StorageUnavailableException, StorageConflictException {
         assert (pool.isShared()) : "Now, did you actually read the name of this method?";
-        logger.debug("Removing pool {} from host {}", pool::toString, () -> _hostDao.findById(hostId));
+        logger.debug("Removing pool {} from host {}", pool, host);
 
         DataStoreProvider provider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
         HypervisorHostListener listener = hostListeners.get(provider.getName());
-        listener.hostDisconnected(hostId, pool.getId());
+        listener.hostDisconnected(host, pool);
     }
 
     @Override

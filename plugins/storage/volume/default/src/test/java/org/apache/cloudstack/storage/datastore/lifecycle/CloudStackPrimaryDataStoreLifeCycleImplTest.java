@@ -149,7 +149,6 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
         when(_dataStoreProviderMgr.getDataStoreProvider(anyString())).thenReturn(dataStoreProvider);
         when(dataStoreProvider.getName()).thenReturn("default");
 
-        when(hostListener.hostConnect(Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
         storageMgr.registerHostListener("default", hostListener);
 
 

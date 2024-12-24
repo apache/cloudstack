@@ -49,6 +49,18 @@ public class Event {
         setResourceUUID(resourceUUID);
     }
 
+    @Override
+    public String toString() {
+        return "Event{" +
+                "eventId=" + eventId +
+                ", eventUuid='" + eventUuid + '\'' +
+                ", eventType='" + eventType + '\'' +
+                ", resourceType='" + resourceType + '\'' +
+                ", resourceUUID='" + resourceUUID + '\'' +
+                ", description='" + description + '\'' +
+                '}';
+    }
+
     public Long getEventId() {
         return eventId;
     }

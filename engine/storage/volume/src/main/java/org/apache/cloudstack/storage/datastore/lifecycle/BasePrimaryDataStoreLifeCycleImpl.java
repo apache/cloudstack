@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.dao.DataCenterDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
@@ -54,6 +55,8 @@ public class BasePrimaryDataStoreLifeCycleImpl {
     PrimaryDataStoreHelper dataStoreHelper;
     @Inject
     protected HostDao hostDao;
+    @Inject
+    protected DataCenterDao zoneDao;
     @Inject
     protected StoragePoolHostDao storagePoolHostDao;
 
