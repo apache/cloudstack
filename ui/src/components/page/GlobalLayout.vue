@@ -17,11 +17,14 @@
 
 <template>
   <div>
-    <a-affix v-if="this.$store.getters.shutdownTriggered" >
+    <a-affix v-if="this.$store.getters.maintenanceInitiated" >
+      <a-alert :message="$t('message.maintenance.initiated')" type="error" banner :showIcon="false" class="maintenanceHeader" />
+    </a-affix>
+    <a-affix v-else-if="this.$store.getters.shutdownTriggered" >
       <a-alert :message="$t('message.shutdown.triggered')" type="error" banner :showIcon="false" class="shutdownHeader" />
     </a-affix>
     <a-layout class="layout" :class="[device]">
-      <a-affix style="z-index: 200" :offsetTop="this.$store.getters.shutdownTriggered ? 25 : 0">
+      <a-affix style="z-index: 200" :offsetTop="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 25 : 0">
         <template v-if="isSideMenu()">
           <a-drawer
             v-if="isMobile()"
@@ -84,7 +87,7 @@
         <!-- layout header -->
         <a-affix style="z-index: 100">
           <global-header
-            :style="this.$store.getters.shutdownTriggered ? 'margin-top: 25px;' : null"
+            :style="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 'margin-top: 25px;' : null"
             :mode="layoutMode"
             :menus="menus"
             :theme="navTheme"
@@ -257,8 +260,9 @@ export default {
       this.$store.commit('SET_COUNT_NOTIFY', 0)
     },
     checkShutdown () {
-      api('readyForShutdown', {}).then(json => {
+      api('readyForShutdown', { managementserverid: this.$store.getters.msId }).then(json => {
         this.$store.dispatch('SetShutdownTriggered', json.readyforshutdownresponse.readyforshutdown.shutdowntriggered || false)
+        this.$store.dispatch('SetMaintenanceInitiated', json.readyforshutdownresponse.readyforshutdown.maintenanceinitiated || false)
       })
     }
   }
@@ -305,6 +309,16 @@ export default {
   .ant-drawer-body {
     padding: 0;
   }
+}
+
+.maintenanceHeader {
+  font-weight: bold;
+  height: 25px;
+  text-align: center;
+  padding: 0px;
+  margin: 0px;
+  width: 100vw;
+  position: absolute;
 }
 
 .shutdownHeader {

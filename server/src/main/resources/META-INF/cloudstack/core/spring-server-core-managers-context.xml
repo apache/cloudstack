@@ -268,8 +268,8 @@
         <property name="name" value="ApiAsyncJobDispatcher" />
     </bean>
 
-    <bean id="shutdownManager" class="org.apache.cloudstack.shutdown.ShutdownManagerImpl" >
-        <property name="name" value="shutdownManager" />
+    <bean id="managementServerMaintenanceManager" class="org.apache.cloudstack.maintenance.ManagementServerMaintenanceManagerImpl" >
+        <property name="name" value="managementServerMaintenanceManager" />
     </bean>
 
     <bean id="statsCollector" class="com.cloud.server.StatsCollector" />
