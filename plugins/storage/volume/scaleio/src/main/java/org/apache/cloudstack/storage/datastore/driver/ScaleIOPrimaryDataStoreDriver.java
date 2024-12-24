@@ -256,7 +256,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
             if (client.listVolumesMappedToSdc(sdcId).isEmpty()) {
                 sdcManager = ComponentContext.inject(sdcManager);
-                sdcManager.stopSDC(host, dataStore);
+                sdcManager.unprepareSDC(host, dataStore);
             }
         } catch (Exception e) {
             logger.warn("Failed to revoke access due to: " + e.getMessage(), e);
@@ -282,7 +282,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             client.unmapVolumeFromSdc(ScaleIOUtil.getVolumePath(volumePath), sdcId);
             if (client.listVolumesMappedToSdc(sdcId).isEmpty()) {
                 sdcManager = ComponentContext.inject(sdcManager);
-                sdcManager.stopSDC(host, dataStore);
+                sdcManager.unprepareSDC(host, dataStore);
             }
         } catch (Exception e) {
             logger.warn("Failed to revoke access due to: " + e.getMessage(), e);
@@ -1537,5 +1537,10 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public boolean zoneWideVolumesAvailableWithoutClusterMotion() {
         return true;
+    }
+
+    @Override
+    public boolean canDisplayDetails() {
+        return false;
     }
 }
