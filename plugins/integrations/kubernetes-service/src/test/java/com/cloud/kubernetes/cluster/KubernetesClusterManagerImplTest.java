@@ -37,6 +37,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.BaseCmd;
@@ -117,7 +118,7 @@ public class KubernetesClusterManagerImplTest {
         long ipId = 1L;
         FirewallRule.Purpose purpose = FirewallRule.Purpose.Firewall;
         Network network = Mockito.mock(Network.class);
-        Mockito.when(firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose)).thenReturn(new ArrayList<>());
+        Mockito.when(firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(ipId, purpose, NetUtils.TCP_PROTO)).thenReturn(new ArrayList<>());
         kubernetesClusterManager.validateIsolatedNetworkIpRules(ipId, FirewallRule.Purpose.Firewall, network, 3);
     }
 
@@ -131,7 +132,7 @@ public class KubernetesClusterManagerImplTest {
         long ipId = 1L;
         FirewallRule.Purpose purpose = FirewallRule.Purpose.Firewall;
         Network network = Mockito.mock(Network.class);
-        Mockito.when(firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose)).thenReturn(List.of(createRule(80, 80), createRule(443, 443)));
+        Mockito.when(firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(ipId, purpose, NetUtils.TCP_PROTO)).thenReturn(List.of(createRule(80, 80), createRule(443, 443)));
         kubernetesClusterManager.validateIsolatedNetworkIpRules(ipId, FirewallRule.Purpose.Firewall, network, 3);
     }
 
@@ -140,7 +141,7 @@ public class KubernetesClusterManagerImplTest {
         long ipId = 1L;
         FirewallRule.Purpose purpose = FirewallRule.Purpose.Firewall;
         Network network = Mockito.mock(Network.class);
-        Mockito.when(firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose)).thenReturn(List.of(createRule(6440, 6445), createRule(443, 443)));
+        Mockito.when(firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(ipId, purpose, NetUtils.TCP_PROTO)).thenReturn(List.of(createRule(6440, 6445), createRule(443, 443)));
         kubernetesClusterManager.validateIsolatedNetworkIpRules(ipId, FirewallRule.Purpose.Firewall, network, 3);
     }
 
@@ -149,7 +150,7 @@ public class KubernetesClusterManagerImplTest {
         long ipId = 1L;
         FirewallRule.Purpose purpose = FirewallRule.Purpose.Firewall;
         Network network = Mockito.mock(Network.class);
-        Mockito.when(firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose)).thenReturn(List.of(createRule(2200, KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT), createRule(443, 443)));
+        Mockito.when(firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(ipId, purpose, NetUtils.TCP_PROTO)).thenReturn(List.of(createRule(2200, KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT), createRule(443, 443)));
         kubernetesClusterManager.validateIsolatedNetworkIpRules(ipId, FirewallRule.Purpose.Firewall, network, 3);
     }
 
@@ -158,7 +159,7 @@ public class KubernetesClusterManagerImplTest {
         long ipId = 1L;
         FirewallRule.Purpose purpose = FirewallRule.Purpose.Firewall;
         Network network = Mockito.mock(Network.class);
-        Mockito.when(firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose)).thenReturn(List.of(createRule(2220, 2221), createRule(2225, 2227), createRule(6440, 6442), createRule(6444, 6446)));
+        Mockito.when(firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(ipId, purpose, NetUtils.TCP_PROTO)).thenReturn(List.of(createRule(2220, 2221), createRule(2225, 2227), createRule(6440, 6442), createRule(6444, 6446)));
         kubernetesClusterManager.validateIsolatedNetworkIpRules(ipId, FirewallRule.Purpose.Firewall, network, 3);
     }
 
