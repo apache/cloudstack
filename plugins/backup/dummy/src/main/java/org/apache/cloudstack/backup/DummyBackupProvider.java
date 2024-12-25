@@ -138,4 +138,9 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     @Override
     public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
     }
+
+    @Override
+    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup) {
+        return true;
+    }
 }

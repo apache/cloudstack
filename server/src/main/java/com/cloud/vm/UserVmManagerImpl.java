@@ -74,6 +74,7 @@ import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.ExpungeVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
 import org.apache.cloudstack.api.command.user.vm.AddNicToVMCmd;
+import org.apache.cloudstack.api.command.user.vm.CreateVMFromBackupCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
@@ -96,6 +97,7 @@ import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
@@ -8723,6 +8725,172 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return true;
+    }
+
+    @Override
+    public UserVm allocateVMFromBackup(CreateVMFromBackupCmd cmd) throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException {
+        //Verify that all objects exist before passing them to the service
+        Account owner = _accountService.getActiveAccountById(cmd.getEntityOwnerId());
+        Long zoneId = cmd.getZoneId();
+        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
+        if (zone == null) {
+            throw new InvalidParameterValueException("Unable to find zone by id=" + zoneId);
+        }
+
+        BackupVO backup = backupDao.findById(cmd.getBackupId());
+        if (backup == null) {
+            throw new InvalidParameterValueException("Backup " + cmd.getBackupId() + " does not exist");
+        }
+        if (backup.getZoneId() != cmd.getZoneId()) {
+            throw new InvalidParameterValueException("Instance should be created in the same zone as the backup");
+        }
+        backupManager.validateBackupForZone(backup.getZoneId());
+
+        verifyDetails(cmd.getDetails());
+
+        Long serviceOfferingId = cmd.getServiceOfferingId();
+        Long overrideDiskOfferingId = cmd.getOverrideDiskOfferingId();
+
+        ServiceOffering serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
+        if (serviceOffering == null) {
+            throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
+        }
+
+        if (ServiceOffering.State.Inactive.equals(serviceOffering.getState())) {
+            throw new InvalidParameterValueException(String.format("Service offering is inactive: [%s].", serviceOffering.getUuid()));
+        }
+
+        if (serviceOffering.getDiskOfferingStrictness() && overrideDiskOfferingId != null) {
+            throw new InvalidParameterValueException(String.format("Cannot override disk offering id %d since provided service offering is strictly mapped to its disk offering", overrideDiskOfferingId));
+        }
+
+        if (!serviceOffering.isDynamic()) {
+            for(String detail: cmd.getDetails().keySet()) {
+                if(detail.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) || detail.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) || detail.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
+                    throw new InvalidParameterValueException("cpuNumber or cpuSpeed or memory should not be specified for static service offering");
+                }
+            }
+        }
+
+        Long templateId = cmd.getTemplateId();
+        VirtualMachineTemplate template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
+        // todo : check for dummy template
+        if (template == null) {
+            throw new InvalidParameterValueException("Unable to use template " + templateId);
+        }
+
+        if (template.isDeployAsIs()) {
+            throw new InvalidParameterValueException("Deploy as is template not supported");
+        }
+
+        Long diskOfferingId = cmd.getDiskOfferingId();
+        DiskOffering diskOffering = null;
+        if (diskOfferingId != null) {
+            diskOffering = _entityMgr.findById(DiskOffering.class, diskOfferingId);
+            if (diskOffering == null) {
+                throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingId);
+            }
+            if (diskOffering.isComputeOnly()) {
+                throw new InvalidParameterValueException(String.format("The disk offering id %d provided is directly mapped to a service offering, please provide an individual disk offering", diskOfferingId));
+            }
+        }
+
+        DiskOffering diskOfferingMappedInServiceOffering = _entityMgr.findById(DiskOffering.class, serviceOffering.getDiskOfferingId());
+        if (diskOfferingMappedInServiceOffering.isUseLocalStorage()) {
+            throw new InvalidParameterValueException("Local storage disk offering not supported for instance created from backup");
+        }
+        if (diskOffering != null && diskOffering.isUseLocalStorage()) {
+            throw new InvalidParameterValueException("Local storage disk offering not supported for instance created from backup");
+        }
+
+        List<Long> networkIds = cmd.getNetworkIds();
+        LinkedHashMap<Integer, Long> userVmNetworkMap = getVmOvfNetworkMapping(zone, owner, template, cmd.getVmNetworkMap());
+        if (MapUtils.isNotEmpty(userVmNetworkMap)) {
+            networkIds = new ArrayList<>(userVmNetworkMap.values());
+        }
+
+        if (cmd.getUserData() != null) {
+            throw new InvalidParameterValueException("User data not supported for instance created from backup");
+        }
+
+        String name = cmd.getName();
+        String displayName = cmd.getDisplayName();
+        Long size = cmd.getSize();
+        Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
+        List<String> sshKeyPairs = new ArrayList<String>();
+        String ipAddress = cmd.getIpAddress();
+        String ip6Address = cmd.getIp6Address();
+        String macAddress = cmd.getMacAddress();
+        IpAddresses addrs = new IpAddresses(ipAddress, ip6Address, macAddress);
+        Map<String, String> userVmOVFProperties = new HashMap<>();
+
+        UserVm vm = null;
+        if (zone.getNetworkType() == NetworkType.Basic) {
+            if (networkIds != null) {
+                throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
+            } else {
+                vm = createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(cmd, zone, template, owner), owner, name, displayName, diskOfferingId,
+                        size , null , cmd.getHypervisor(), cmd.getHttpMethod(), null, null, null, sshKeyPairs, cmd.getIpToNetworkMap(), addrs, null , null , cmd.getAffinityGroupIdList(),
+                        cmd.getDetails(), cmd.getCustomId(), cmd.getDhcpOptionsMap(),
+                        dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, false, overrideDiskOfferingId);
+            }
+        } else {
+            if (_networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds,
+                    cmd.getSecurityGroupIdList()))  {
+                vm = createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, getSecurityGroupIdList(cmd, zone, template, owner), owner, name,
+                        displayName, diskOfferingId, size, null, cmd.getHypervisor(), cmd.getHttpMethod(), null, null, null, sshKeyPairs, cmd.getIpToNetworkMap(), addrs, null, null,
+                        cmd.getAffinityGroupIdList(), cmd.getDetails(), cmd.getCustomId(), cmd.getDhcpOptionsMap(),
+                        dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, false, overrideDiskOfferingId, null);
+
+            } else {
+                if (cmd.getSecurityGroupIdList() != null && !cmd.getSecurityGroupIdList().isEmpty()) {
+                    throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
+                }
+                vm = createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, name, displayName, diskOfferingId, size, null,
+                        cmd.getHypervisor(), cmd.getHttpMethod(), null, null, null, sshKeyPairs, cmd.getIpToNetworkMap(), addrs, null, null, cmd.getAffinityGroupIdList(), cmd.getDetails(),
+                        cmd.getCustomId(), cmd.getDhcpOptionsMap(), dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, false, null, overrideDiskOfferingId);
+            }
+        }
+
+        return vm;
+    }
+
+    @Override
+    public UserVm restoreVMFromBackup(CreateVMFromBackupCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException, ResourceAllocationException {
+        long vmId = cmd.getEntityId();
+        Map<Long, DiskOffering> diskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
+        Map<VirtualMachineProfile.Param, Object> additonalParams = new HashMap<>();
+        UserVm vm;
+        try {
+            vm = startVirtualMachine(vmId, null, null, null, diskOfferingMap, additonalParams, null);
+        } catch (ResourceUnavailableException e) {
+            throw new CloudRuntimeException("Unable to start the instance " + e);
+        }
+        boolean status = false;
+        try {
+            VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
+            status = vmEntity.stop(Long.toString(CallContext.current().getCallingUserId()));
+            if (!status) {
+                // todo : error handling
+            }
+        } catch (ResourceUnavailableException e) {
+            throw new CloudRuntimeException("Unable to contact the agent to stop the instance before restore " + e);
+            // todo : error handling
+        } catch (CloudException e) {
+            throw new CloudRuntimeException("Unable to contact the agent to stop the instance before restore " + e);
+            // todo : error handling
+        }
+
+        backupManager.restoreBackupToVM(cmd.getBackupId(), vmId);
+
+        if (cmd.getStartVm()) {
+            try {
+                vm = startVirtualMachine(vmId, null, null, null, diskOfferingMap, additonalParams, null);
+             } catch (ResourceUnavailableException e) {
+                throw new CloudRuntimeException("Unable to start the instance " + e);
+            }
+        }
+        return vm;
     }
 
     /*

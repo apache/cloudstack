@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
@@ -134,6 +135,11 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     boolean restoreBackup(final Long backupId);
 
     /**
+     * Restore a backup to a new Instance
+     */
+    boolean restoreBackupToVM(Long backupId, Long vmId) throws ResourceUnavailableException;
+
+    /**
      * Restore a backed up volume and attach it to a VM
      */
     boolean restoreBackupVolumeAndAttachToVM(final String backedUpVolumeUuid, final Long backupId, final Long vmId) throws Exception;
@@ -145,6 +151,8 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * @return returns operation success
      */
     boolean deleteBackup(final Long backupId, final Boolean forced);
+
+    void validateBackupForZone(Long zoneId);
 
     BackupOffering updateBackupOffering(UpdateBackupOfferingCmd updateBackupOfferingCmd);
 }

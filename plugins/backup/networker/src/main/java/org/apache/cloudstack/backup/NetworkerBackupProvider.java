@@ -647,4 +647,9 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     @Override
     public boolean willDeleteBackupsOnOfferingRemoval() { return false; }
+
+    @Override
+    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup) {
+        return true;
+    }
 }

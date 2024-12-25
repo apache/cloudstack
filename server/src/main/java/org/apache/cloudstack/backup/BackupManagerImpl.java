@@ -29,6 +29,7 @@ import java.util.TimerTask;
 import java.util.stream.Collectors;
 
 import com.amazonaws.util.CollectionUtils;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VirtualMachineManager;
@@ -57,6 +58,7 @@ import org.apache.cloudstack.api.command.user.backup.UpdateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.AddBackupRepositoryCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.DeleteBackupRepositoryCmd;
 import org.apache.cloudstack.api.command.user.backup.repository.ListBackupRepositoriesCmd;
+import org.apache.cloudstack.api.command.user.vm.CreateVMFromBackupCmd;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
@@ -185,7 +187,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (zoneId == null || zoneId < 1) {
             throw new CloudRuntimeException("Invalid zone ID passed");
         }
-        validateForZone(zoneId);
+        validateBackupForZone(zoneId);
         final Account account = CallContext.current().getCallingAccount();
         if (!accountService.isRootAdmin(account.getId())) {
             throw new PermissionDeniedException("Parameter external can only be specified by a Root Admin, permission denied");
@@ -198,7 +200,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_IMPORT_OFFERING, eventDescription = "importing backup offering", async = true)
     public BackupOffering importBackupOffering(final ImportBackupOfferingCmd cmd) {
-        validateForZone(cmd.getZoneId());
+        validateBackupForZone(cmd.getZoneId());
         final BackupOffering existingOffering = backupOfferingDao.findByExternalId(cmd.getExternalId(), cmd.getZoneId());
         if (existingOffering != null) {
             throw new CloudRuntimeException("A backup offering with external ID " + cmd.getExternalId() + " already exists");
@@ -273,7 +275,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Backup offering is assigned to VMs, remove the assignment(s) in order to remove the offering.");
         }
 
-        validateForZone(offering.getZoneId());
+        validateBackupForZone(offering.getZoneId());
         return backupOfferingDao.remove(offering.getId());
     }
 
@@ -294,7 +296,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("VM is not in running or stopped state");
         }
 
-        validateForZone(vm.getDataCenterId());
+        validateBackupForZone(vm.getDataCenterId());
 
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
@@ -360,7 +362,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException(String.format("Can't find any VM with ID: [%s].", vmId));
         }
 
-        validateForZone(vm.getDataCenterId());
+        validateBackupForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
         final BackupOfferingVO offering = backupOfferingDao.findById(vm.getBackupOfferingId());
@@ -422,7 +424,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         final VMInstanceVO vm = findVmById(vmId);
-        validateForZone(vm.getDataCenterId());
+        validateBackupForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
         if (vm.getBackupOfferingId() == null) {
@@ -462,7 +464,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Override
     public List<BackupSchedule> listBackupSchedule(final Long vmId) {
         final VMInstanceVO vm = findVmById(vmId);
-        validateForZone(vm.getDataCenterId());
+        validateBackupForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
         return backupScheduleDao.listByVM(vmId).stream().map(BackupSchedule.class::cast).collect(Collectors.toList());
@@ -472,7 +474,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_SCHEDULE_DELETE, eventDescription = "deleting VM backup schedule")
     public boolean deleteBackupSchedule(final Long vmId) {
         final VMInstanceVO vm = findVmById(vmId);
-        validateForZone(vm.getDataCenterId());
+        validateBackupForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
         final BackupSchedule schedule = backupScheduleDao.findByVM(vmId);
@@ -486,7 +488,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_CREATE, eventDescription = "creating VM backup", async = true)
     public boolean createBackup(final Long vmId) {
         final VMInstanceVO vm = findVmById(vmId);
-        validateForZone(vm.getDataCenterId());
+        validateBackupForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
         if (vm.getBackupOfferingId() == null) {
@@ -611,7 +613,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (backup == null) {
             throw new CloudRuntimeException("Backup " + backupId + " does not exist");
         }
-        validateForZone(backup.getZoneId());
+        validateBackupForZone(backup.getZoneId());
 
         final VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
         if (vm == null) {
@@ -750,6 +752,79 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_RESTORE_TO_NEW_VM, eventDescription = "Resoring backup to new vm", async = true)
+    public boolean restoreBackupToVM(final Long backupId, final Long vmId) throws ResourceUnavailableException {
+        final BackupVO backup = backupDao.findById(backupId);
+        if (backup == null) {
+            throw new CloudRuntimeException("Backup " + backupId + " does not exist");
+        }
+        validateBackupForZone(backup.getZoneId());
+
+        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
+        if (vm == null) {
+            throw new CloudRuntimeException("VM ID " + backup.getVmId() + " couldn't be found on existing or removed VMs");
+        }
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+
+        if (vm.getRemoved() != null) {
+            throw new CloudRuntimeException("VM is removed from CloudStack");
+        }
+        if (vm.getRemoved() != null) {
+            throw new CloudRuntimeException("VM should be in the stopped state");
+        }
+        if (!vm.getState().equals(VirtualMachine.State.Stopped)) {
+            throw new CloudRuntimeException("Existing VM should be stopped before being restored from backup");
+        }
+
+        List<Backup.VolumeInfo> backupVolumes = backup.getBackedUpVolumes();
+        if (backupVolumes == null) {
+            throw new CloudRuntimeException("Backed-up volumes not found");
+        }
+
+        List<VolumeVO> vmVolumes = volumeDao.findByInstance(vmId);
+        if (vmVolumes.size() != backupVolumes.size()) {
+            throw new CloudRuntimeException("Unable to restore VM with the current backup as the backup has different number of disks as the VM");
+        }
+
+        BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
+        if (offering == null) {
+            String errorMessage = "Failed to find backup offering of the VM backup.";
+            throw new CloudRuntimeException("Failed to find backup offering of the VM backup.");
+        }
+
+        String backupDetailsInMessage = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "uuid", "externalId", "newVMId", "type", "status", "date");
+        try {
+            updateVmState(vm, VirtualMachine.Event.RestoringRequested, VirtualMachine.State.Restoring);
+            updateVolumeState(vm, Volume.Event.RestoreRequested, Volume.State.Restoring);
+            ActionEventUtils.onStartedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventTypes.EVENT_VM_BACKUP_RESTORE,
+                    String.format("Restoring VM %s from backup %s", vm.getUuid(), backup.getUuid()),
+                    vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),
+                    true, 0);
+
+            final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
+            if (!backupProvider.restoreBackupToVM(vm, backup)) {
+                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_BACKUP_RESTORE,
+                        String.format("Failed to restore VM %s from backup %s", vm.getInstanceName(), backup.getUuid()),
+                        vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),0);
+                throw new CloudRuntimeException("Error restoring VM from backup with uuid " + backup.getUuid());
+            }
+            // The restore process is executed by a backup provider outside of ACS, I am using the catch-all (Exception) to
+            // ensure that no provider-side exception is missed. Therefore, we have a proper handling of exceptions, and rollbacks if needed.
+        } catch (Exception e) {
+            logger.error(String.format("Failed to restore backup [%s] due to: [%s].", backupDetailsInMessage, e.getMessage()), e);
+            updateVolumeState(vm, Volume.Event.RestoreFailed, Volume.State.Ready);
+            updateVmState(vm, VirtualMachine.Event.RestoringFailed, VirtualMachine.State.Stopped);
+            throw new CloudRuntimeException(String.format("Error restoring VM from backup [%s].", backupDetailsInMessage));
+        }
+        updateVolumeState(vm, Volume.Event.RestoreSucceeded, Volume.State.Ready);
+        updateVmState(vm, VirtualMachine.Event.RestoringSuccess, VirtualMachine.State.Stopped);
+
+        return importRestoredVM(vm.getDataCenterId(), vm.getDomainId(), vm.getAccountId(), vm.getUserId(),
+                vm.getInstanceName(), vm.getHypervisorType(), backup);
+
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_RESTORE, eventDescription = "restoring VM from backup", async = true)
     public boolean restoreBackupVolumeAndAttachToVM(final String backedUpVolumeUuid, final Long backupId, final Long vmId) throws Exception {
         if (StringUtils.isEmpty(backedUpVolumeUuid)) {
@@ -759,7 +834,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (backup == null) {
             throw new CloudRuntimeException("Provided backup not found");
         }
-        validateForZone(backup.getZoneId());
+        validateBackupForZone(backup.getZoneId());
 
         final VMInstanceVO vm = findVmById(vmId);
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
@@ -850,7 +925,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm == null) {
             throw new CloudRuntimeException("VM " + vmId + " does not exist");
         }
-        validateForZone(vm.getDataCenterId());
+        validateBackupForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
         final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
         if (offering == null) {
@@ -933,7 +1008,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return !(BackupFrameworkEnabled.value() && BackupFrameworkEnabled.valueIn(zoneId));
     }
 
-    private void validateForZone(final Long zoneId) {
+    @Override
+    public void validateBackupForZone(final Long zoneId) {
         if (zoneId == null || isDisabled(zoneId)) {
             throw new CloudRuntimeException("Backup and Recovery feature is disabled for the zone");
         }
@@ -991,6 +1067,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(AddBackupRepositoryCmd.class);
         cmdList.add(DeleteBackupRepositoryCmd.class);
         cmdList.add(ListBackupRepositoriesCmd.class);
+        cmdList.add(CreateVMFromBackupCmd.class);
         return cmdList;
     }
 

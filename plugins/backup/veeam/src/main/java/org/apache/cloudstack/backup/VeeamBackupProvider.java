@@ -398,6 +398,11 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
+    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup) {
+        return true;
+    }
+
+    @Override
     public String getConfigComponentName() {
         return BackupService.class.getSimpleName();
     }

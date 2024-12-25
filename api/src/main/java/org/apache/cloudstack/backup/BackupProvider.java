@@ -85,6 +85,8 @@ public interface BackupProvider {
      */
     boolean deleteBackup(Backup backup, boolean forced);
 
+    boolean restoreBackupToVM(VirtualMachine vm, Backup backup);
+
     /**
      * Restore VM from backup
      */
