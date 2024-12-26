@@ -196,8 +196,9 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
                         dcId);
             }
             implemented.setBroadcastUri(Networks.BroadcastDomainType.Netris.toUri(vnet));
+            Long networkId = implemented.getId() > 0 ? implemented.getId() : network.getId();
             ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VXLAN_ASSIGN,
-                    "Assigned Zone vNet: " + vnet + " Network Id: " + implemented.getId(), implemented.getId(), ApiCommandResourceType.Network.toString(), 0);
+                    "Assigned Zone vNet: " + vnet + " Network Id: " + networkId, networkId, ApiCommandResourceType.Network.toString(), 0);
         } else {
             implemented.setBroadcastUri(network.getBroadcastUri());
         }

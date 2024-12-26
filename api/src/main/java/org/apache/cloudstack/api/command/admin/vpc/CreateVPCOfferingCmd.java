@@ -60,6 +60,7 @@ import static com.cloud.network.Network.Service.SourceNat;
 import static com.cloud.network.Network.Service.PortForwarding;
 import static com.cloud.network.Network.Service.NetworkACL;
 import static com.cloud.network.Network.Service.UserData;
+import static com.cloud.network.Network.Service.Gateway;
 
 @APICommand(name = "createVPCOffering", description = "Creates VPC offering", responseObject = VpcOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -190,6 +191,9 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
                         SourceNat.getName(),
                         PortForwarding.getName()));
             }
+            if (NetworkOffering.NetworkMode.ROUTED.name().equalsIgnoreCase(getNetworkMode())) {
+                supportedServices.add(Gateway.getName());
+            }
             if (getNsxSupportsLbService()) {
                 supportedServices.add(Lb.getName());
             }
@@ -239,8 +243,10 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     }
 
     private void getServiceProviderMapForExternalProvider(Map<String, List<String>> serviceProviderMap, String provider) {
-        List<String> unsupportedServices = List.of("Vpn", "BaremetalPxeService", "SecurityGroup", "Connectivity",
-                "Gateway", "Firewall");
+        List<String> unsupportedServices = Arrays.asList("Vpn", "BaremetalPxeService", "SecurityGroup", "Connectivity", "Firewall");
+        if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode())) {
+            unsupportedServices.add("Gateway");
+        }
         List<String> routerSupported = List.of("Dhcp", "Dns", "UserData");
         List<String> allServices = Network.Service.listAllServices().stream().map(Network.Service::getName).collect(Collectors.toList());
         for (String service : allServices) {
@@ -249,7 +255,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
             if (routerSupported.contains(service))
                 serviceProviderMap.put(service, List.of(VirtualRouterProvider.Type.VPCVirtualRouter.name()));
             else if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode()) ||
-                    Stream.of(NetworkACL.getName()).anyMatch(s -> s.equalsIgnoreCase(service))) {
+                    Stream.of(NetworkACL.getName(), Gateway.getName()).anyMatch(s -> s.equalsIgnoreCase(service))) {
                 serviceProviderMap.put(service, List.of(provider));
             }
         }

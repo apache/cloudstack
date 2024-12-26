@@ -171,6 +171,7 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
         Map<Network.Capability, String> sourceNatCapabilities = new HashMap<>();
         sourceNatCapabilities.put(Network.Capability.RedundantRouter, "true");
         sourceNatCapabilities.put(Network.Capability.SupportedSourceNatTypes, "peraccount");
+        capabilities.put(Network.Service.Gateway, null);
         capabilities.put(Network.Service.SourceNat, sourceNatCapabilities);
         return capabilities;
     }

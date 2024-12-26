@@ -572,6 +572,13 @@ export default {
         services = services.filter(service => {
           return !['SourceNat', 'StaticNat', 'Lb', 'PortForwarding', 'Vpn'].includes(service.name)
         })
+        if (['NSX', 'Netris'].includes(this.provider)) {
+          services.push({
+            name: 'Gateway',
+            enabled: true,
+            provider: [{ name: this.provider }]
+          })
+        }
       }
       for (var i in services) {
         services[i].description = services[i].name
