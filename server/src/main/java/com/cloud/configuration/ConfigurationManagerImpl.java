@@ -6832,6 +6832,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     } else {
                         serviceProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VirtualRouter));
                     }
+                } else {
+                    Set<Provider> providers = serviceProviderMap.get(Service.NetworkACL);
+                    serviceProviderMap.put(Service.Gateway, Sets.newHashSet(providers.iterator().next()));
                 }
             }
         }

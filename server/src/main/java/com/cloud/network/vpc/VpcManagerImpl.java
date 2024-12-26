@@ -617,7 +617,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         return createVpcOffering(vpcOfferingName, displayText, supportedServices,
-                serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId, forNsx, networkMode,
+                serviceProviderList, serviceCapabilityList, internetProtocol, serviceOfferingId, provider, networkMode,
                 domainIds, zoneIds, (enable ? State.Enabled : State.Disabled), routingMode, specifyAsNumber);
     }
 
@@ -625,7 +625,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @ActionEvent(eventType = EventTypes.EVENT_VPC_OFFERING_CREATE, eventDescription = "creating vpc offering", create = true)
     public VpcOffering createVpcOffering(final String name, final String displayText, final List<String> supportedServices, final Map<String, List<String>> serviceProviders,
                                          final Map serviceCapabilityList, final NetUtils.InternetProtocol internetProtocol, final Long serviceOfferingId,
-                                         final Boolean forNsx, final NetworkOffering.NetworkMode networkMode, List<Long> domainIds, List<Long> zoneIds, State state,
+                                         final String externalProvider, final NetworkOffering.NetworkMode networkMode, List<Long> domainIds, List<Long> zoneIds, State state,
                                          NetworkOffering.RoutingMode routingMode, boolean specifyAsNumber) {
 
         if (!Ipv6Service.Ipv6OfferingCreationEnabled.value() && !(internetProtocol == null || NetUtils.InternetProtocol.IPv4.equals(internetProtocol))) {
@@ -709,7 +709,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         Service redundantRouterService = Service.SourceNat;
         if (CollectionUtils.isNotEmpty(sourceNatServiceProviders)) {
             svcProviderMap.put(Service.Gateway, sourceNatServiceProviders);
-        } else if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode)) {
+        } else if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode) && org.apache.commons.lang3.StringUtils.isBlank(externalProvider)) {
+            // For Routed mode, add the Gateway service except for external providers such as NSX, Netris to not override the svcProviderMap mapping
             svcProviderMap.put(Service.Gateway, Sets.newHashSet(Provider.VPCVirtualRouter));
             redundantRouterService = Service.Gateway;
         }
@@ -3561,7 +3562,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 || vpcOffSvcProvidersMap.get(Service.SourceNat).contains(Provider.Nsx)
                 || vpcOffSvcProvidersMap.get(Service.SourceNat).contains(Provider.Netris)))
                 || (Objects.nonNull(vpcOffSvcProvidersMap.get(Network.Service.Gateway))
-                && vpcOffSvcProvidersMap.get(Service.Gateway).contains(Network.Provider.VPCVirtualRouter));
+                    && (vpcOffSvcProvidersMap.get(Service.Gateway).contains(Network.Provider.VPCVirtualRouter)
+                    || vpcOffSvcProvidersMap.get(Service.Gateway).contains(Provider.Nsx)
+                    || vpcOffSvcProvidersMap.get(Service.Gateway).contains(Network.Provider.Netris)));
     }
 
      @Override

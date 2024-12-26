@@ -394,8 +394,7 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     private void getServiceProviderMapForExternalProvider(Map<String, List<String>> serviceProviderMap, String provider) {
         String routerProvider = Boolean.TRUE.equals(getForVpc()) ? VirtualRouterProvider.Type.VPCVirtualRouter.name() :
                 VirtualRouterProvider.Type.VirtualRouter.name();
-        List<String> unsupportedServices = new ArrayList<>(List.of("Vpn", "SecurityGroup", "Connectivity",
-                "Gateway", "BaremetalPxeService"));
+        List<String> unsupportedServices = new ArrayList<>(List.of("Vpn", "Gateway", "SecurityGroup", "Connectivity", "BaremetalPxeService"));
         List<String> routerSupported = List.of("Dhcp", "Dns", "UserData");
         List<String> allServices = Service.listAllServices().stream().map(Service::getName).collect(Collectors.toList());
         if (routerProvider.equals(VirtualRouterProvider.Type.VPCVirtualRouter.name())) {

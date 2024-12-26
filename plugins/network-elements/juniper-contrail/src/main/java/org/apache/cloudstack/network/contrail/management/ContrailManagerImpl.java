@@ -293,7 +293,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
             }
             serviceProviderMap.put(svc, providerSet);
         }
-        vpcOffer = _vpcProvSvc.createVpcOffering(juniperVPCOfferingName, juniperVPCOfferingDisplayText, services, serviceProviderMap, null, null, null, false, null, null, null, VpcOffering.State.Enabled, null, false);
+        vpcOffer = _vpcProvSvc.createVpcOffering(juniperVPCOfferingName, juniperVPCOfferingDisplayText, services, serviceProviderMap, null, null, null, null, null, null, null, VpcOffering.State.Enabled, null, false);
         long id = vpcOffer.getId();
         _vpcOffDao.update(id, (VpcOfferingVO)vpcOffer);
         return _vpcOffDao.findById(id);

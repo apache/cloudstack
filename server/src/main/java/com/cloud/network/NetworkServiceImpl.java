@@ -32,6 +32,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -5090,11 +5091,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
             // validate Services
             boolean addGatewayService = false;
+            boolean isRoutedMode = enabledServices.stream().noneMatch(svc -> svc.equalsIgnoreCase(Service.SourceNat.getName()));
             for (String serviceName : enabledServices) {
                 Network.Service service = Network.Service.getService(serviceName);
                 if (service == null || service == Service.Gateway) {
                     throw new InvalidParameterValueException("Invalid Network Service specified=" + serviceName);
-                } else if (service == Service.SourceNat) {
+                } else if (service == Service.SourceNat ||
+                        (isRoutedMode && Arrays.asList(Provider.Nsx.getName().toLowerCase(Locale.ROOT),
+                        Provider.Netris.getName().toLowerCase(Locale.ROOT)).contains(providerName.toLowerCase(Locale.ROOT)))) {
                     addGatewayService = true;
                 }
 
