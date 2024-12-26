@@ -543,7 +543,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         // Set capabilities for vpn
         final Map<Capability, String> vpnCapabilities = new HashMap<Capability, String>();
         vpnCapabilities.put(Capability.SupportedVpnProtocols, "pptp,l2tp,ipsec");
-        vpnCapabilities.put(Capability.VpnTypes, "removeaccessvpn");
+        vpnCapabilities.put(Capability.VpnTypes, "remoteaccessvpn");
         capabilities.put(Service.Vpn, vpnCapabilities);
 
         final Map<Capability, String> dnsCapabilities = new HashMap<Capability, String>();

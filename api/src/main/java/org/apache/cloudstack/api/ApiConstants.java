@@ -35,6 +35,7 @@ public class ApiConstants {
     public static final String ALLOW_USER_FORCE_STOP_VM = "allowuserforcestopvm";
     public static final String ANNOTATION = "annotation";
     public static final String API_KEY = "apikey";
+    public static final String API_KEY_ACCESS = "apikeyaccess";
     public static final String ARCHIVED = "archived";
     public static final String ARCH = "arch";
     public static final String AS_NUMBER = "asnumber";
@@ -243,6 +244,7 @@ public class ApiConstants {
     public static final String ICMP_TYPE = "icmptype";
     public static final String ID = "id";
     public static final String IDS = "ids";
+    public static final String IMPORT_INSTANCE_HOST_ID = "importinstancehostid";
     public static final String INDEX = "index";
     public static final String INSTANCES_DISKS_STATS_RETENTION_ENABLED = "instancesdisksstatsretentionenabled";
     public static final String INSTANCES_DISKS_STATS_RETENTION_TIME = "instancesdisksstatsretentiontime";
@@ -381,6 +383,14 @@ public class ApiConstants {
     public static final String PATH = "path";
     public static final String PAYLOAD = "payload";
     public static final String PAYLOAD_URL = "payloadurl";
+    public static final String PEERS = "peers";
+    public static final String PEER_ID = "peerid";
+    public static final String PEER_NAME = "peername";
+    public static final String PEER_MSID = "peermsid";
+    public static final String PEER_RUNID = "peerrunid";
+    public static final String PEER_SERVICE_IP = "peerserviceip";
+    public static final String PEER_SERVICE_PORT = "peerserviceport";
+    public static final String PEER_STATE = "peerstate";
     public static final String POD_ID = "podid";
     public static final String POD_NAME = "podname";
     public static final String POD_IDS = "podids";
@@ -455,6 +465,7 @@ public class ApiConstants {
     public static final String SNAPSHOT_POLICY_ID = "snapshotpolicyid";
     public static final String SNAPSHOT_TYPE = "snapshottype";
     public static final String SNAPSHOT_QUIESCEVM = "quiescevm";
+    public static final String SOURCE_CIDR_LIST = "sourcecidrlist";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String SSL_VERIFICATION = "sslverification";
     public static final String START_ASN = "startasn";
@@ -986,6 +997,7 @@ public class ApiConstants {
     public static final String ACL_NAME = "aclname";
     public static final String NUMBER = "number";
     public static final String IS_DYNAMICALLY_SCALABLE = "isdynamicallyscalable";
+    public static final String ROUTED_MODE_ENABLED = "routedmodeenabled";
     public static final String ROUTING = "isrouting";
     public static final String ROUTING_MODE = "routingmode";
     public static final String MAX_CONNECTIONS = "maxconnections";
@@ -1237,5 +1249,31 @@ public class ApiConstants {
 
     public enum DomainDetails {
         all, resource, min;
+    }
+
+    public enum ApiKeyAccess {
+        DISABLED(false),
+        ENABLED(true),
+        INHERIT(null);
+
+        Boolean apiKeyAccess;
+
+        ApiKeyAccess(Boolean keyAccess) {
+            apiKeyAccess = keyAccess;
+        }
+
+        public Boolean toBoolean() {
+            return apiKeyAccess;
+        }
+
+        public static ApiKeyAccess fromBoolean(Boolean value) {
+            if (value == null) {
+                return INHERIT;
+            } else if (value) {
+                return ENABLED;
+            } else {
+                return DISABLED;
+            }
+        }
     }
 }

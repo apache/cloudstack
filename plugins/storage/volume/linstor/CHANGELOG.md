@@ -5,12 +5,30 @@ All notable changes to Linstor CloudStack plugin will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2024-12-13]
+
+### Fixed
+
+- Linstor heartbeat check now also ask linstor-controller if there is no connection between nodes
+
+## [2024-12-11]
+
+### Fixed
+
+- Only set allow-two-primaries if a live migration is performed
+
 ## [2024-10-28]
 
 ### Fixed
 
 - Disable discard="unmap" for ide devices and qemu < 7.0
   https://bugzilla.redhat.com/show_bug.cgi?id=2029980
+
+## [2024-10-14]
+
+### Added
+
+- Support for ISO direct download to primary storage
 
 ## [2024-10-04]
 
