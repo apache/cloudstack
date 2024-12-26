@@ -489,7 +489,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     }
 
     private void initDistributedLock() {
-        s_logger.info("Setting up distributed lock table if not created.");
+        LOGGER.info("Setting up distributed lock table if not created.");
         TransactionLegacy txn = TransactionLegacy.open("initDistributedLock");
         txn.start();
         String errorMessage = "Unable to get the database connections";
@@ -513,7 +513,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             }
             txn.commit();
         } catch (CloudRuntimeException | SQLException e) {
-            s_logger.error(e.getMessage());
+            LOGGER.error(e.getMessage());
             errorMessage = String.format("%s due to %s.", errorMessage, e.getMessage());
             throw new CloudRuntimeException(errorMessage, e);
         } finally {
