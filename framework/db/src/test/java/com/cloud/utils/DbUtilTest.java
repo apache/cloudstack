@@ -150,7 +150,7 @@ public class DbUtilTest {
     @Test
     public void getGlobalLock() throws SQLException {
         Mockito.when(dataSource.getConnection()).thenReturn(connection);
-        Mockito.when(connection.prepareStatement(Matchers.anyString())).thenReturn(preparedStatement);
+        Mockito.when(connection.prepareStatement(Mockito.anyString())).thenReturn(preparedStatement);
         Mockito.when(preparedStatement.executeUpdate()).thenReturn(1);
 
         Assert.assertTrue(DbUtil.getGlobalLock("TEST", 600));
@@ -163,13 +163,13 @@ public class DbUtilTest {
     public void getGlobalLockTimeout() throws SQLException {
         Mockito.when(dataSource.getConnection()).thenReturn(connection);
 
-        Mockito.when(connection.prepareStatement(Matchers.anyString())).thenReturn(preparedStatement);
+        Mockito.when(connection.prepareStatement(Mockito.anyString())).thenReturn(preparedStatement);
         Mockito.when(preparedStatement.executeUpdate()).thenReturn(0);
 
         final int tries = 2;
         Assert.assertFalse(DbUtil.getGlobalLock("TEST", tries));
 
-        Mockito.verify(connection, Mockito.times(tries)).prepareStatement(Matchers.anyString());
+        Mockito.verify(connection, Mockito.times(tries)).prepareStatement(Mockito.anyString());
         Mockito.verify(preparedStatement, Mockito.times(tries)).close();
         Mockito.verify(connection).close();
 
@@ -235,7 +235,7 @@ public class DbUtilTest {
 
     @Test
     public void releaseGlobalLock() throws SQLException {
-        Mockito.when(connection.prepareStatement(Matchers.anyString())).thenReturn(preparedStatement);
+        Mockito.when(connection.prepareStatement(Mockito.anyString())).thenReturn(preparedStatement);
         Mockito.when(preparedStatement.executeUpdate()).thenReturn(1);
 
         connectionMap.put("testLock", connection);
