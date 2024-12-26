@@ -51,7 +51,7 @@ public interface ScaleIOSDCManager {
      * Prepares the SDC on the host (adds the MDM IPs to SDC, starts scini service if required).
      * @param host the host
      * @param dataStore the datastore
-     * @return SDC Id of the host if SDC is successfully prepared-ed on the hostgetSdcIdByGuid
+     * @return SDC Id of the host if SDC is successfully prepared-ed on the host
      */
     String prepareSDC(Host host, DataStore dataStore);
 
