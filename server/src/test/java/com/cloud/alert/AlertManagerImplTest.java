@@ -41,7 +41,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 
 @RunWith(MockitoJUnitRunner.class)
