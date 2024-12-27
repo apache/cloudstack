@@ -15,7 +15,6 @@
 #specific language governing permissions and limitations
 #under the License.
 
-
 #Cloud AutoDeploy
 
 Scripts here are used to refresh the builds of the management server with those
