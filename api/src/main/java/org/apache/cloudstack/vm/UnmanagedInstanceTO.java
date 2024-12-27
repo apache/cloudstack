@@ -19,8 +19,6 @@ package org.apache.cloudstack.vm;
 
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-
 import java.util.List;
 
 public class UnmanagedInstanceTO {
