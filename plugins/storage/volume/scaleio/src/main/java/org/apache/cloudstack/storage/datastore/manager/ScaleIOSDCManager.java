@@ -27,8 +27,8 @@ public interface ScaleIOSDCManager {
             Boolean.class,
             "powerflex.connect.on.demand",
             Boolean.FALSE.toString(),
-            "Connect PowerFlex client on Host when first Volume is mapped to SDC and disconnect when last Volume is unmapped from SDC," +
-                    " otherwise no action (that is connection remains in the same state whichever it is, connected or disconnected).",
+            "When true, connects PowerFlex client on Host when first Volume is mapped to SDC & client connections configured 'storage.pool.connected.clients.limit' are within the limit and disconnects when last Volume is unmapped from SDC; " +
+                    "and When false, connects PowerFlex client on Host when host connects to storage pool & client connections configured 'storage.pool.connected.clients.limit' are within the limit and disconnects when host disconnects from storage pool & no volumes mapped to SDC.",
             Boolean.TRUE,
             ConfigKey.Scope.Zone);
 
@@ -62,6 +62,14 @@ public interface ScaleIOSDCManager {
      * @return true if SDC is successfully unprepared-ed on the host
      */
     boolean unprepareSDC(Host host, DataStore dataStore);
+
+    /**
+     * Checks if the SDC can be unprepared on the host (don't remove MDM IPs from SDC if any volumes mapped to SDC).
+     * @param host the host
+     * @param dataStore the datastore
+     * @return true if SDC can be unprepared on the host
+     */
+    boolean canUnprepareSDC(Host host, DataStore dataStore);
 
     /**
      * Returns the SDC Id of the host for the pool.

@@ -206,10 +206,12 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         }
         Map<String,String> details = new HashMap<>();
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
-        details.put(ScaleIOSDCManager.ConnectOnDemand.key(), String.valueOf(ScaleIOSDCManager.ConnectOnDemand.valueIn(host.getDataCenterId())));
         _sdcManager = ComponentContext.inject(_sdcManager);
-        String mdms = _sdcManager.getMdms(poolId);
-        details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdms);
+        if (_sdcManager.canUnprepareSDC(host, dataStore)) {
+            details.put(ScaleIOSDCManager.ConnectOnDemand.key(), String.valueOf(ScaleIOSDCManager.ConnectOnDemand.valueIn(host.getDataCenterId())));
+            String mdms = _sdcManager.getMdms(poolId);
+            details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdms);
+        }
 
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(false, storagePool, storagePool.getPath(), details);
         ModifyStoragePoolAnswer answer  = sendModifyStoragePoolCommand(cmd, storagePool, hostId);

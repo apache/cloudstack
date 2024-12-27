@@ -297,8 +297,8 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
             StoragePoolDetailVO mdmsDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_MDMS);
             if (mdmsDetail != null) {
                 details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdmsDetail.getValue());
+                details.put(ScaleIOSDCManager.ConnectOnDemand.key(), "false");
             }
-            details.put(ScaleIOSDCManager.ConnectOnDemand.key(), "false");
         }
 
         storagePoolAutomation.maintain(store, details);

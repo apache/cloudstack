@@ -1481,6 +1481,31 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return sdcManager.areSDCConnectionsWithinLimit(pool.getId());
     }
 
+    @Override
+    public boolean canDisconnectHostFromStoragePool(Host host, StoragePool pool) {
+        if (host == null || pool == null) {
+            return false;
+        }
+
+        StoragePoolHostVO poolHostVO = storagePoolHostDao.findByPoolHost(pool.getId(), host.getId());
+        if (poolHostVO == null) {
+            return false;
+        }
+
+        final String sdcId = poolHostVO.getLocalPath();
+        if (StringUtils.isBlank(sdcId)) {
+            return false;
+        }
+
+        try {
+            final ScaleIOGatewayClient client = getScaleIOClient(pool.getId());
+            return client.listVolumesMappedToSdc(sdcId).isEmpty();
+        } catch (Exception e) {
+            logger.warn("Unable to check whether the host: " + host.getId() + " can be disconnected from storage pool: " + pool.getId() + ", due to " + e.getMessage(), e);
+            return false;
+        }
+    }
+
     private void alertHostSdcDisconnection(Host host) {
         if (host == null) {
             return;
