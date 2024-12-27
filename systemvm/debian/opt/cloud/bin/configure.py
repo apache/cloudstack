@@ -1241,7 +1241,7 @@ class CsRemoteAccessVpn(CsDataBag):
                             break
                 else:
                     self.configure_l2tpIpsec(public_ip, self.dbag[public_ip])
-                    self.remoteaccessvpn_iptables(self.dbag['public_interface'], public_ip, self.dbag[public_ip])
+                    self.remoteaccessvpn_iptables(self.dbag[public_ip]['public_interface'], public_ip, self.dbag[public_ip])
 
                 CsHelper.execute("ipsec update")
                 CsHelper.execute("systemctl start xl2tpd")
