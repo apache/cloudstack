@@ -309,9 +309,9 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
                 message += "Image stores have been attempted to be balanced";
                 success = true;
             } else {
-                message = String.format("Files not completely migrated from %s. Datastore (source): %s " +
+                message = String.format("Files not completely migrated from %s. Source datastore " +
                         "has equal or more free space than destination. If you want to continue using the Image Store, " +
-                        "please change the read-only status using 'update imagestore' command", srcDatastore, srcDatastore);
+                        "please change the read-only status using 'update imagestore' command", srcDatastore);
                 success = false;
             }
         } else {

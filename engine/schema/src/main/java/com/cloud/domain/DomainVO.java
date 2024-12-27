@@ -209,7 +209,7 @@ public class DomainVO implements Domain {
     public String toString() {
         return String.format("Domain %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name", "uuid", "path"));
+                        this, "id", "uuid", "name", "path"));
     }
 
     @Override

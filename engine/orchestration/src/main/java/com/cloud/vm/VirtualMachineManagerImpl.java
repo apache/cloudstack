@@ -5800,7 +5800,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             hostId = vm.getHostId();
         }
         Long clusterId = null;
-        if(hostId == null) {
+        if (hostId == null) {
             if (vm.getLastHostId() == null) {
                 return findClusterAndHostIdForVmFromVolumes(vm.getId());
             }

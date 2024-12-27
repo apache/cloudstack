@@ -95,7 +95,7 @@ public class AutoScalePolicyVO implements AutoScalePolicy, InternalIdentity {
     public String toString() {
         return String.format("AutoScalePolicy %s.",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name", "uuid"));
+                        this, "id", "uuid", "name"));
     }
 
     @Override

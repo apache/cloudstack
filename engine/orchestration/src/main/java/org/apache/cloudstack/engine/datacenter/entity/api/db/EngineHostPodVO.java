@@ -252,6 +252,6 @@ public class EngineHostPodVO implements EnginePod, Identity {
     public String toString() {
         return String.format("EngineHostPod %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name", "uuid"));
+                        this, "id", "uuid", "name"));
     }
 }

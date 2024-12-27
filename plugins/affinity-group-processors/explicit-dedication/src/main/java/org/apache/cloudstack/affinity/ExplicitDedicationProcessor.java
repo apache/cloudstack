@@ -95,7 +95,7 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
             for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
                 if (vmGroupMapping != null) {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("Processing affinity group " + vmGroupMapping.getAffinityGroupId() + "of type 'ExplicitDedication' for VM: " + vm);
+                        logger.debug("Processing affinity group {} of type 'ExplicitDedication' for VM: {}", _affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId()), vm);
                     }
 
                     long affinityGroupId = vmGroupMapping.getAffinityGroupId();

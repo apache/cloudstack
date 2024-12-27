@@ -174,7 +174,7 @@ public class DedicatedResourceVO implements DedicatedResources {
 
     @Override
     public String toString() {
-        return String.format("DedicatedResourceVO %s",
+        return String.format("DedicatedResource %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
                         this, "id", "uuid"));
     }

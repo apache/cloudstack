@@ -165,8 +165,8 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() {
         VMSnapshot vmSnapshot = _vmSnapshotService.getVMSnapshotById(getVMSnapshotId());
-        logger.info("CreateSnapshotFromVMSnapshotCmd with vm snapshot {} with id {} and snapshot [id: {}, uuid: {}] starts: {}", vmSnapshot, getVMSnapshotId(), getEntityId(), getEntityUuid(), System.currentTimeMillis());
-        CallContext.current().setEventDetails("Vm Snapshot Id: "+ vmSnapshot.getUuid());
+        logger.info("CreateSnapshotFromVMSnapshotCmd with vm snapshot {} with id {} and snapshot [id: {}, uuid: {}]", vmSnapshot, getVMSnapshotId(), getEntityId(), getEntityUuid());
+        CallContext.current().setEventDetails("Vm Snapshot Id: " + vmSnapshot.getUuid());
         Snapshot snapshot = null;
         try {
             snapshot = _snapshotService.backupSnapshotFromVmSnapshot(getEntityId(), getVmId(), getVolumeId(), getVMSnapshotId());

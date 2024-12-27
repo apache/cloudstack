@@ -27,6 +27,7 @@ import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.template.VirtualMachineTemplate;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class TemplateObjectTO extends DownloadableObjectTO implements DataTO {
     private String path;
@@ -264,6 +265,8 @@ public class TemplateObjectTO extends DownloadableObjectTO implements DataTO {
 
     @Override
     public String toString() {
-        return String.format("TemplateTO[id=%d|uuid=%s|origUrl=%s|name%s]", id, uuid, origUrl, name);
+        return String.format("TemplateTO %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "origUrl"));
     }
 }

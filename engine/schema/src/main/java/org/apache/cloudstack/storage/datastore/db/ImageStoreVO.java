@@ -221,6 +221,6 @@ public class ImageStoreVO implements ImageStore {
     public String toString() {
         return String.format("ImageStore %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name", "uuid"));
+                        this, "id", "uuid", "name"));
     }
 }

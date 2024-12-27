@@ -233,7 +233,7 @@ public class LoadBalanceRuleHandler {
         guestNetwork = _networkDao.acquireInLockTable(guestNetworkId);
 
         if (guestNetwork == null) {
-            throw new ConcurrentOperationException(String.format("Unable to acquire network lock: %s", guestNetwork));
+            throw new ConcurrentOperationException(String.format("Unable to acquire lock for the network: %s", guestNetwork));
         }
 
         try {

@@ -529,6 +529,6 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
     public String toString() {
         return String.format("EngineDataCenter %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name", "uuid"));
+                        this, "id", "uuid", "name"));
     }
 }

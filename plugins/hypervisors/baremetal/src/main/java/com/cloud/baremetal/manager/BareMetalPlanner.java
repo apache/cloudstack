@@ -76,12 +76,12 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
 
         if (vm.getLastHostId() != null && haVmTag == null) {
-            HostVO h = _hostDao.findById(vm.getLastHostId());
-            DataCenter dc = _dcDao.findById(h.getDataCenterId());
-            Pod pod = _podDao.findById(h.getPodId());
-            Cluster c = _clusterDao.findById(h.getClusterId());
-            logger.debug(String.format("Start baremetal vm %s on last stayed host %s", vm, h));
-            return new DeployDestination(dc, pod, c, h);
+            HostVO host = _hostDao.findById(vm.getLastHostId());
+            DataCenter dc = _dcDao.findById(host.getDataCenterId());
+            Pod pod = _podDao.findById(host.getPodId());
+            Cluster cluster = _clusterDao.findById(host.getClusterId());
+            logger.debug("Start baremetal vm {} on last stayed host {}", vm, host);
+            return new DeployDestination(dc, pod, cluster, host);
         }
 
         if (haVmTag != null) {
@@ -128,18 +128,18 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
                     cluster.getDataCenterId());
                 return null;
             }
-            for (HostVO h : hosts) {
-                long cluster_id = h.getClusterId();
+            for (HostVO host : hosts) {
+                long cluster_id = host.getClusterId();
                 ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, "cpuOvercommitRatio");
                 ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, "memoryOvercommitRatio");
                 Float cpuOvercommitRatio = Float.parseFloat(cluster_detail_cpu.getValue());
                 Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
 
-                if (_capacityMgr.checkIfHostHasCapacity(h, cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
-                    logger.debug(String.format("Find host %s has enough capacity", h));
-                    DataCenter dc = _dcDao.findById(h.getDataCenterId());
-                    Pod pod = _podDao.findById(h.getPodId());
-                    return new DeployDestination(dc, pod, cluster, h);
+                if (_capacityMgr.checkIfHostHasCapacity(host, cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
+                    logger.debug(String.format("Find host %s has enough capacity", host));
+                    DataCenter dc = _dcDao.findById(host.getDataCenterId());
+                    Pod pod = _podDao.findById(host.getPodId());
+                    return new DeployDestination(dc, pod, cluster, host);
                 }
             }
         }

@@ -24,6 +24,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreState
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class DiagnosticsDataObject implements DataObject {
     private DataTO dataTO;
@@ -36,10 +37,9 @@ public class DiagnosticsDataObject implements DataObject {
 
     @Override
     public String toString() {
-        return "DiagnosticsDataObject{" +
-                "dataTO=" + dataTO +
-                ", dataStore=" + getDataStore() +
-                '}';
+        return String.format("DiagnosticsDataObject %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "dataTO", "dataStore"));
     }
 
     @Override

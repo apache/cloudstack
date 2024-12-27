@@ -603,7 +603,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
 
         _accountMgr.checkAccess(caller.getCallingAccount(), null, true, loadBalancer);
         if (loadBalancer.getState() == FirewallRule.State.Revoke) {
-            throw new InvalidParameterValueException(String.format("Failed:  LB rule: %s is in deleting state: ", loadBalancer));
+            throw new InvalidParameterValueException(String.format("Failed: LB rule: %s is in deleting state: ", loadBalancer));
         }
 
         /* Generic validations */

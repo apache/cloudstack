@@ -371,7 +371,7 @@ public class StoragePoolVO implements StoragePool {
 
     @Override
     public String toString() {
-        return String.format("StoragePool %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "name", "uuid", "poolType"));
+        return String.format("StoragePool %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "name", "poolType"));
     }
 
     @Override

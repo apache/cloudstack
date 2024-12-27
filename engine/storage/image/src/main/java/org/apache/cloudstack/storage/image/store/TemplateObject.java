@@ -26,6 +26,7 @@ import javax.inject.Inject;
 import com.cloud.cpu.CPU;
 import com.cloud.storage.StorageManager;
 import com.cloud.user.UserData;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -600,9 +601,8 @@ public class TemplateObject implements TemplateInfo {
 
     @Override
     public String toString() {
-        return "TemplateObject{" +
-                "templateVO=" + getImage() +
-                ", dataStore=" + getDataStore() +
-                '}';
+        return String.format("TemplateObject %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "imageVO", "dataStore"));
     }
 }

@@ -149,7 +149,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                         "Setting CPU quota percentage as: {}",
                         host, hostMaxSpeed, vm, maxSpeed, percent.doubleValue());
             } catch (NumberFormatException e) {
-                logger.error("Error calculating VM: {} quota percentage, it wll not be set. Error: {}", vm, e.getMessage(), e);
+                logger.error("Error calculating VM: {} quota percentage, it will not be set. Error: {}", vm, e.getMessage(), e);
             }
         }
     }

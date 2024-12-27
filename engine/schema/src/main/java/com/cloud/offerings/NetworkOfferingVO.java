@@ -473,7 +473,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Override
     public String toString() {
         return String.format("NetworkOffering %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                this, "id", "name", "uuid", "trafficType"));
+                this, "id", "uuid", "name", "trafficType"));
     }
 
     @Override

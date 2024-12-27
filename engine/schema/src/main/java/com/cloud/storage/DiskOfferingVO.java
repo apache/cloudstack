@@ -594,6 +594,6 @@ public class DiskOfferingVO implements DiskOffering {
     public String toString() {
         return String.format("DiskOffering %s.",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name", "uuid"));
+                        this, "id", "uuid", "name"));
     }
 }

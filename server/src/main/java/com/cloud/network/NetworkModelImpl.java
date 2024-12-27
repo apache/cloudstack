@@ -1328,7 +1328,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             }
         } catch (Exception ex) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Failed to retrive the default label for management " +
+                logger.debug("Failed to retrieve the default label for management " +
                         "traffic: zone: {} hypervisor: {} due to: {}",
                         () -> _dcDao.findById(zoneId), hypervisorType::toString, ex::getMessage);
             }
@@ -1358,7 +1358,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             }
         } catch (Exception ex) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Failed to retrive the default label for storage " +
+                logger.debug("Failed to retrieve the default label for storage " +
                         "traffic: zone: {} hypervisor: {} due to: {}",
                         () -> _dcDao.findById(zoneId), hypervisorType::toString, ex::getMessage);
             }

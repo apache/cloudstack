@@ -1773,7 +1773,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     stateTransitTo(volume, Volume.Event.DestroyRequested);
                     stateTransitTo(volume, Volume.Event.OperationSucceeded);
                 } catch (NoTransitionException e) {
-                    logger.debug("Failed to destroy volume{}", volume, e);
+                    logger.debug("Failed to destroy volume {}", volume, e);
                     return null;
                 }
                 _resourceLimitMgr.decrementVolumeResourceCount(volume.getAccountId(), volume.isDisplay(),

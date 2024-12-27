@@ -127,9 +127,9 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
 
     @Override
     public String toString() {
-        return String.format("AutoScaleVMProfileVO %s.",
+        return String.format("AutoScaleVMProfile %s.",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "templateId", "uuid"));
+                        this, "id", "uuid", "templateId"));
     }
 
     @Override

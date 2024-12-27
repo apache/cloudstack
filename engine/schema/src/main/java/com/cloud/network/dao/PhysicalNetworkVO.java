@@ -252,8 +252,8 @@ public class PhysicalNetworkVO implements PhysicalNetwork {
 
     @Override
     public String toString() {
-        return String.format("PhysicalNetwork %s.",
+        return String.format("PhysicalNetwork %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name", "uuid"));
+                        this, "id", "uuid", "name"));
     }
 }

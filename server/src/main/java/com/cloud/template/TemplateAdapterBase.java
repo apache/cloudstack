@@ -236,7 +236,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 }
                 Account caller = CallContext.current().getCallingAccount();
                 if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
-                    throw new PermissionDeniedException(String.format("Cannot perform this operation, Zone is currently disabled: %s", zone));
+                    throw new PermissionDeniedException(String.format("Cannot perform this operation, Zone %s is currently disabled", zone));
                 }
             }
         }

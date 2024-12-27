@@ -129,7 +129,7 @@ public class StorPoolHostListener implements HypervisorHostListener {
             StorPoolUtil.spLog("Storage pool [%s] is not connected to the host [%s]", poolVO, host);
             deleteVolumeWhenHostCannotConnectPool(conn, volumeOnPool);
             removePoolOnHost(poolHost, isPoolConnectedToTheHost);
-            throw new CloudRuntimeException(String.format("Unable to get an answer to the modify storage pool command%s", pool));
+            throw new CloudRuntimeException(String.format("Unable to get an answer to the modify storage pool command for pool %s", pool));
         }
 
         if (!answer.getResult()) {

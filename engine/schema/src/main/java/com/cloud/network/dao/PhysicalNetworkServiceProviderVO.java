@@ -114,7 +114,7 @@ public class PhysicalNetworkServiceProviderVO implements PhysicalNetworkServiceP
     @Override
     public String toString() {
         return String.format("PhysicalNetworkServiceProvider %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                this, "id", "name", "uuid", "providerName"));
+                this, "id", "uuid", "name", "providerName"));
     }
 
     @Override

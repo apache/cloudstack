@@ -132,8 +132,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     ServerResource _resource;
     Link _link;
     Long _id;
-    String uuid;
-    String name;
+    String _uuid;
+    String _name;
 
     Timer _timer = new Timer("Agent Timer");
     Timer certTimer;
@@ -184,10 +184,10 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         resource.setAgentControl(this);
 
         final String value = _shell.getPersistentProperty(getResourceName(), "id");
-        uuid = _shell.getPersistentProperty(getResourceName(), "uuid");
-        name = _shell.getPersistentProperty(getResourceName(), "name");
+        _uuid = _shell.getPersistentProperty(getResourceName(), "uuid");
+        _name = _shell.getPersistentProperty(getResourceName(), "name");
         _id = value != null ? Long.parseLong(value) : null;
-        logger.info("Initialising agent [id: {}, uuid: {}, name: {}]", ObjectUtils.defaultIfNull(_id, ""), uuid, name);
+        logger.info("Initialising agent [id: {}, uuid: {}, name: {}]", ObjectUtils.defaultIfNull(_id, ""), _uuid, _name);
 
         final Map<String, Object> params = new HashMap<>();
 
@@ -217,7 +217,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                         "agentRequest-Handler"));
 
         logger.info("Agent [id = {}, uuid: {}, name: {}] : type = {} : zone = {} : pod = {} : workers = {} : host = {} : port = {}",
-                ObjectUtils.defaultIfNull(_id, "new"), uuid, name, getResourceName(),
+                ObjectUtils.defaultIfNull(_id, "new"), _uuid, _name, getResourceName(),
                 _shell.getZone(), _shell.getPod(), _shell.getWorkers(), host, _shell.getPort());
     }
 
@@ -382,28 +382,25 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     public void setId(final Long id) {
-        logger.debug("Set agent id {}", id);
         _id = id;
         _shell.setPersistentProperty(getResourceName(), "id", Long.toString(id));
     }
 
     public String getUuid() {
-        return uuid;
+        return _uuid;
     }
 
     public void setUuid(String uuid) {
-        logger.debug("Set agent uuid {}", uuid);
-        this.uuid = uuid;
+        this._uuid = uuid;
         _shell.setPersistentProperty(getResourceName(), "uuid", uuid);
     }
 
     public String getName() {
-        return name;
+        return _name;
     }
 
     public void setName(String name) {
-        logger.debug("Set agent name {}", name);
-        this.name = name;
+        this._name = name;
         _shell.setPersistentProperty(getResourceName(), "name", name);
     }
 

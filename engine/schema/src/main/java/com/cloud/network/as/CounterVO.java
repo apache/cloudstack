@@ -82,7 +82,7 @@ public class CounterVO implements Counter, Identity, InternalIdentity {
     public String toString() {
         return String.format("Counter %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name", "uuid"));
+                        this, "id", "uuid", "name"));
     }
 
     @Override

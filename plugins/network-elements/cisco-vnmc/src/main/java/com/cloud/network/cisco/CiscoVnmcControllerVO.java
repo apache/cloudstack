@@ -66,9 +66,9 @@ public class CiscoVnmcControllerVO implements CiscoVnmcController {
 
     @Override
     public String toString() {
-        return String.format("CiscoVnmcController %s.",
+        return String.format("CiscoVnmcController %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name", "uuid"));
+                        this, "id", "uuid", "name"));
     }
 
     @Override

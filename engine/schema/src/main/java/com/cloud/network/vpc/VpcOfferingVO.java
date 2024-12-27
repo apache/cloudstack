@@ -183,7 +183,7 @@ public class VpcOfferingVO implements VpcOffering {
     public String toString() {
         return String.format("VPCOffering %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name", "uuid"));
+                        this, "id", "uuid", "name"));
     }
 
     public void setName(String name) {

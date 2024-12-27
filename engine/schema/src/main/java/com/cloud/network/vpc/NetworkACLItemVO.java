@@ -171,7 +171,7 @@ public class NetworkACLItemVO implements NetworkACLItem, Cloneable {
     public String toString() {
         return String.format("NetworkACLItem %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "uuid", "state"));
+                        this, "id", "uuid", "aclId", "state"));
     }
 
     @Override

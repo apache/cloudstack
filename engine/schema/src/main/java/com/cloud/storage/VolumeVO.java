@@ -516,8 +516,7 @@ public class VolumeVO implements Volume {
     public String toString() {
         return String.format("Volume %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name",
-                        "uuid", "volumeType", "instanceId"));
+                        this, "id", "uuid", "name", "volumeType", "instanceId"));
     }
 
     @Override

@@ -95,7 +95,7 @@ public class BigSwitchBcfDeviceVO implements InternalIdentity {
     public String toString() {
         return String.format("BigSwitchBcfDevice %s.",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name", "uuid"));
+                        this, "id", "uuid", "name"));
     }
 
     @Override

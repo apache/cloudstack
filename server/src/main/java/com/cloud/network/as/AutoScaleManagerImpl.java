@@ -671,7 +671,7 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
         }
 
         vmProfile = checkValidityAndPersist(vmProfile, false);
-        logger.info("Updated Auto Scale Vm Profile:{}", vmProfile);
+        logger.info("Updated Auto Scale Vm Profile: {}", vmProfile);
 
         return vmProfile;
     }

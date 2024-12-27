@@ -276,9 +276,9 @@ public class BrocadeVcsElement extends AdapterBase implements NetworkElement, Re
         final PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(physicalNetwork.getId(),
                 networkDevice.getNetworkServiceProvder());
         if (ntwkSvcProvider == null) {
-            throw new CloudRuntimeException(String.format("Network Service Provider: %s is not enabled in the physical network: %sto add this device", networkDevice.getNetworkServiceProvder(), physicalNetwork));
+            throw new CloudRuntimeException(String.format("Network Service Provider: %s is not enabled in the physical network: %s to add this device", networkDevice.getNetworkServiceProvder(), physicalNetwork));
         } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
-            throw new CloudRuntimeException(String.format("Network Service Provider: %s is in shutdown state in the physical network: %sto add this device", ntwkSvcProvider.getProviderName(), physicalNetwork));
+            throw new CloudRuntimeException(String.format("Network Service Provider: %s is in shutdown state in the physical network: %s to add this device", ntwkSvcProvider.getProviderName(), physicalNetwork));
         }
 
         Map<String, String> params = new HashMap<String, String>();

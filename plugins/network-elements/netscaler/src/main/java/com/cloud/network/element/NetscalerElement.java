@@ -334,7 +334,7 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
                 }
             }
             netscalerControlCenter = _hostDao.findById(lbDeviceVO.getId());
-            logger.debug(String.format("Allocated Netscaler Control Center device:%s for the network: %s", lbDeviceVO, guestConfig));
+            logger.debug("Allocated Netscaler Control Center device: {} for the network: {}", lbDeviceVO, guestConfig);
         } else {
             // find the load balancer device allocated for the network
 

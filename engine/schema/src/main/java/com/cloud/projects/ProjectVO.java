@@ -119,7 +119,7 @@ public class ProjectVO implements Project, Identity, InternalIdentity {
     public String toString() {
         return String.format("Project %s.",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                this, "id", "name", "uuid", "domainId"));
+                this, "id", "uuid", "name", "domainId"));
     }
 
     @Override

@@ -294,6 +294,6 @@ public class SolidFireHostListener implements HypervisorHostListener {
 
         assert (answer instanceof ModifyStoragePoolAnswer) : String.format("ModifyStoragePoolAnswer expected ; Pool = %s Host = %s", storagePool, host);
 
-        logger.info("Connection established between storage pool {} and host + {}", storagePool, host);
+        logger.info("Connection established between storage pool {} and host {}", storagePool, host);
     }
 }

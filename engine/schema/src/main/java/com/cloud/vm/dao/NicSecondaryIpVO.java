@@ -92,7 +92,7 @@ public class NicSecondaryIpVO implements NicSecondaryIp {
     public String toString() {
         return String.format("NicSecondaryIp %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name", "uuid", "vmId",
+                        this, "id", "uuid", "name", "vmId",
                         "nicId", "ip4Address", "ip6Address", "networkId"));
     }
 

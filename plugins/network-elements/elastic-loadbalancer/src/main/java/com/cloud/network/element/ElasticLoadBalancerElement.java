@@ -72,7 +72,7 @@ public class ElasticLoadBalancerElement extends AdapterBase implements LoadBalan
 
     private boolean canHandle(Network network, List<LoadBalancingRule> rules) {
         if (network.getGuestType() != Network.GuestType.Shared || network.getTrafficType() != TrafficType.Guest) {
-            logger.debug(String.format("Not handling network %s with type  %s and traffic type %s", network, network.getGuestType(), network.getTrafficType()));
+            logger.debug("Not handling network {} with type {} and traffic type {}", network, network.getGuestType(), network.getTrafficType());
             return false;
         }
 

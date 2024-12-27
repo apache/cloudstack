@@ -700,7 +700,7 @@ public class EngineHostVO implements EngineHost, Identity {
     public String toString() {
         return String.format("EngineHost %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name", "uuid", "type"));
+                        this, "id", "uuid", "name", "type"));
     }
 
     public void setHypervisorType(HypervisorType hypervisorType) {

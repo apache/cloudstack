@@ -126,7 +126,8 @@ public class RoleVO implements Role {
 
     @Override
     public String toString() {
-        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "name", "uuid", "roleType");
+        return String.format("Role %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "name", "roleType"));
     }
 
     public boolean isPublicRole() {

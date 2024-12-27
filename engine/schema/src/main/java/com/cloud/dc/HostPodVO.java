@@ -203,6 +203,6 @@ public class HostPodVO implements Pod {
     public String toString() {
         return String.format("HostPod %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name", "uuid"));
+                        this, "id", "uuid", "name"));
     }
 }

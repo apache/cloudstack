@@ -136,7 +136,7 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
                 try {
                     snapObj.processEvent(Snapshot.Event.OperationNotPerformed);
                 } catch (NoTransitionException e) {
-                    logger.debug("Failed to change state: {}: {}", snapshot, e.toString());
+                    logger.debug("Failed to change state of the snapshot {}, due to {}", snapshot, e);
                     throw new CloudRuntimeException(e.toString());
                 }
                 return snapshotDataFactory.getSnapshot(snapObj.getId(), store);

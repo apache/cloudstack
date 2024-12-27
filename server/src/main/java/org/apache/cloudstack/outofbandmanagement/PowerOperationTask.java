@@ -42,7 +42,7 @@ public class PowerOperationTask implements Runnable {
 
     @Override
     public String toString() {
-        return String.format("[OOBM Task] Power operation:%s on Host:%d(%s)", powerOperation, host.getId(), host.getName());
+        return String.format("[OOBM Task] Power operation: %s on Host: %s", powerOperation, host);
     }
 
     @Override

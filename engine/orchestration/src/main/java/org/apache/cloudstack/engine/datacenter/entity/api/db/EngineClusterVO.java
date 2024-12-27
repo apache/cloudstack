@@ -270,6 +270,6 @@ public class EngineClusterVO implements EngineCluster, Identity {
     public String toString() {
         return String.format("EngineCluster %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name", "uuid"));
+                        this, "id", "uuid", "name"));
     }
 }

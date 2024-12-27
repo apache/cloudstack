@@ -461,7 +461,7 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     @Override
     public String toString() {
         if (toString == null) {
-            toString = String.format("VM %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "instanceName", "uuid", "type"));
+            toString = String.format("VM %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "instanceName", "type"));
         }
         return toString;
     }

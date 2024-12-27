@@ -167,10 +167,9 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         for (ResourceTag resourceTag : tagsToDelete) {
             Account owner = _accountMgr.getAccount(resourceTag.getAccountId());
             if(logger.isDebugEnabled()) {
-                logger.debug("Resource Tag Id: {}", resourceTag.getResourceId());
-                logger.debug("Resource Tag Uuid: {}", resourceTag.getResourceUuid());
-                logger.debug("Resource Tag Type: {}", resourceTag.getResourceType());
-                logger.debug("Resource Tag Account: {}", owner);
+                logger.debug("Resource Tag Id: {}, Resource Tag Uuid: {}, Resource Tag Type: {}, " +
+                        "Resource Tag Account: {}", resourceTag.getResourceId(),
+                        resourceTag.getResourceUuid(), resourceTag.getResourceType(), owner);
             }
             if (caller.getAccountId() != resourceTag.getAccountId()) {
                 if(logger.isDebugEnabled()) {

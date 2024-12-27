@@ -1471,7 +1471,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     }
 
                                     if (vmDiskStat_lock == null) {
-                                        logger.warn("unable to find vm disk stats from host for account: {} with vm: {} and volume:{}", vm.getAccountId(), vm, volume);
+                                        logger.warn("unable to find vm disk stats from host for account: {} with vm: {} and volume: {}", vm.getAccountId(), vm, volume);
                                         continue;
                                     }
 

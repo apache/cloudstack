@@ -130,7 +130,7 @@ public class ProjectInvitationVO implements ProjectInvitation {
     public String toString() {
         return String.format("ProjectInvitation %s.",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "projectId", "uuid", "forAccountId"));
+                        this, "id", "uuid", "projectId", "forAccountId"));
     }
 
     @Override

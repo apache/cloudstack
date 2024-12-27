@@ -947,9 +947,8 @@ public class VolumeObject implements VolumeInfo {
 
     @Override
     public String toString() {
-        return "VolumeObject{" +
-                "volumeVO=" + getVolume() +
-                ", dataStore=" + getDataStore() +
-                '}';
+        return String.format("VolumeObject %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "volumeVO", "dataStore"));
     }
 }

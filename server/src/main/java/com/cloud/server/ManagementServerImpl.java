@@ -5047,19 +5047,19 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
-                for (final HostVO h : hosts) {
+                for (final HostVO host : hosts) {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("Changing password for host {}", h);
+                        logger.debug("Changing password for host {}", host);
                     }
                     // update password for this host
-                    final DetailVO nv = _detailsDao.findDetail(h.getId(), ApiConstants.USERNAME);
+                    final DetailVO nv = _detailsDao.findDetail(host.getId(), ApiConstants.USERNAME);
                     if (nv == null) {
-                        final DetailVO nvu = new DetailVO(h.getId(), ApiConstants.USERNAME, userNameWithoutSpaces);
+                        final DetailVO nvu = new DetailVO(host.getId(), ApiConstants.USERNAME, userNameWithoutSpaces);
                         _detailsDao.persist(nvu);
-                        final DetailVO nvp = new DetailVO(h.getId(), ApiConstants.PASSWORD, DBEncryptionUtil.encrypt(command.getPassword()));
+                        final DetailVO nvp = new DetailVO(host.getId(), ApiConstants.PASSWORD, DBEncryptionUtil.encrypt(command.getPassword()));
                         _detailsDao.persist(nvp);
                     } else if (nv.getValue().equals(userNameWithoutSpaces)) {
-                        final DetailVO nvp = _detailsDao.findDetail(h.getId(), ApiConstants.PASSWORD);
+                        final DetailVO nvp = _detailsDao.findDetail(host.getId(), ApiConstants.PASSWORD);
                         nvp.setValue(DBEncryptionUtil.encrypt(command.getPassword()));
                         _detailsDao.persist(nvp);
                     } else {

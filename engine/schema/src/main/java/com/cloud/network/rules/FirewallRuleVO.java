@@ -261,7 +261,7 @@ public class FirewallRuleVO implements FirewallRule {
     public String toString() {
         return String.format("FirewallRule %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "uuid", "purpose", "state"));
+                        this, "id", "uuid", "networkId", "purpose", "state"));
     }
 
     @Override

@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import com.cloud.agent.api.CleanupPersistentNetworkResourceCommand;
 import org.apache.cloudstack.agent.lb.SetupMSListCommand;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -149,11 +150,9 @@ public abstract class AgentAttache {
 
     @Override
     public String toString() {
-        return "AgentAttache{" +
-                "id=" + _id +
-                ", uuid='" + _uuid + '\'' +
-                ", name='" + _name + '\'' +
-                '}';
+        return String.format("AgentAttache %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "_id", "_uuid", "_name"));
     }
 
     public synchronized long getNextSequence() {

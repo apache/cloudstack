@@ -269,7 +269,7 @@ public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMMa
 
         ServiceOfferingVO vpxOffering = _serviceOfferingDao.findById(svcOffId); //using 2GB and 2CPU  offering
         if(vpxOffering.getRamSize() < 2048 && vpxOffering.getCpu() <2 ) {
-            throw new InvalidParameterValueException(String.format("Specified Service Offering :%s NS Vpx cannot be deployed. Min 2GB Ram and 2 CPU are required", vpxOffering));
+            throw new InvalidParameterValueException(String.format("Specified Service Offering: %s NS Vpx cannot be deployed. Min 2GB Ram and 2 CPU are required", vpxOffering));
         }
 
         long userId = CallContext.current().getCallingUserId();

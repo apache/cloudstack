@@ -247,7 +247,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         DomainRouterVO elbVm = findElbVmForLb(rules.get(0));
 
         if (elbVm == null) {
-            logger.warn(String.format("Unable to apply lb rules, ELB vm  doesn't exist in the network %s", network));
+            logger.warn("Unable to apply lb rules, ELB vm doesn't exist in the network {}", network);
             throw new ResourceUnavailableException("Unable to apply lb rules", DataCenter.class, network.getDataCenterId());
         }
 

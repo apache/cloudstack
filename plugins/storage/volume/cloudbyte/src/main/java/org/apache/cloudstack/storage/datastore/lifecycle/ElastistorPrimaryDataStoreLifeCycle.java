@@ -365,8 +365,8 @@ public class ElastistorPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLif
 
         if (!dataStoreVO.isManaged()) {
             boolean success = false;
-            for (HostVO h : allHosts) {
-                success = createStoragePool(h, primarystore);
+            for (HostVO host : allHosts) {
+                success = createStoragePool(host, primarystore);
                 if (success) {
                     break;
                 }
