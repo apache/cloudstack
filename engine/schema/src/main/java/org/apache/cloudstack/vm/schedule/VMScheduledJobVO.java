@@ -78,7 +78,7 @@ public class VMScheduledJobVO implements VMScheduledJob {
     public String toString() {
         return String.format("VMScheduledJob %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "uuid", "action", "vmScheduleId", "vmId"));
+                        this, "id", "uuid", "action", "vmScheduleId", "vmId", "asyncJobId"));
     }
 
     @Override

@@ -21,6 +21,7 @@ package org.apache.cloudstack.framework.events;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.Expose;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class Event {
 
@@ -51,14 +52,9 @@ public class Event {
 
     @Override
     public String toString() {
-        return "Event{" +
-                "eventId=" + eventId +
-                ", eventUuid='" + eventUuid + '\'' +
-                ", eventType='" + eventType + '\'' +
-                ", resourceType='" + resourceType + '\'' +
-                ", resourceUUID='" + resourceUUID + '\'' +
-                ", description='" + description + '\'' +
-                '}';
+        return String.format("Event %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "eventId", "eventUuid", "eventType", "resourceType", "resourceUUID", "description"));
     }
 
     public Long getEventId() {

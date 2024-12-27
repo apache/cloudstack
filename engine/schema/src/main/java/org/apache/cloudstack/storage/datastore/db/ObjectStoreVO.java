@@ -146,6 +146,6 @@ public class ObjectStoreVO implements ObjectStore {
     public String toString() {
         return String.format("ObjectStore %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name", "uuid", "providerName"));
+                        this, "id", "uuid", "name", "providerName"));
     }
 }

@@ -125,7 +125,7 @@ public class SharedFSVO implements SharedFS {
     public String toString() {
         return String.format("SharedFS %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, "id", "name", "uuid"));
+                        this, "id", "uuid", "name"));
     }
 
     @Override
