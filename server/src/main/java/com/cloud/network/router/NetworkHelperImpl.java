@@ -780,7 +780,8 @@ public class NetworkHelperImpl implements NetworkHelper {
             logger.debug("Adding nic for Virtual Router in Guest network " + guestNetwork);
             String defaultNetworkStartIp = null, defaultNetworkStartIpv6 = null;
             final Nic placeholder = _networkModel.getPlaceholderNicForRouter(guestNetwork, routerDeploymentDefinition.getPodId());
-            if (!routerDeploymentDefinition.isPublicNetwork() || !vpcManager.isSrcNatIpRequiredForVpcVr(routerDeploymentDefinition.getVpc().getVpcOfferingId())) {
+            if (!routerDeploymentDefinition.isPublicNetwork()
+                    || !_networkModel.isAnyServiceSupportedInNetwork(guestNetwork.getId(), Network.Provider.VPCVirtualRouter, Network.Service.SourceNat, Network.Service.Gateway)) {
                 if (guestNetwork.getCidr() != null) {
                     if (placeholder != null && placeholder.getIPv4Address() != null) {
                         logger.debug("Requesting ipv4 address " + placeholder.getIPv4Address() + " stored in placeholder nic for the network "
