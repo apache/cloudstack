@@ -296,6 +296,11 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
                 return true;
             }
 
+            if (!canUnprepareSDC(host, dataStore)) {
+                logger.debug("Cannot unprepare SDC, there might be some volumes mapped to the SDC that belongs to the storage pools of PowerFlex storage cluster");
+                return false;
+            }
+
             String mdms = getMdms(dataStore.getId());;
             boolean unprepareSDCStatus = unprepareSDCOnHost(host, dataStore, mdms);
             if (unprepareSDCStatus) {
@@ -335,6 +340,31 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public boolean canUnprepareSDC(Host host, DataStore dataStore) {
+        if (host == null || dataStore == null) {
+            return false;
+        }
+
+        StoragePoolHostVO poolHostVO = storagePoolHostDao.findByPoolHost(dataStore.getId(), host.getId());
+        if (poolHostVO == null) {
+            return false;
+        }
+
+        final String sdcId = poolHostVO.getLocalPath();
+        if (StringUtils.isBlank(sdcId)) {
+            return false;
+        }
+
+        try {
+            final ScaleIOGatewayClient client = getScaleIOClient(dataStore.getId());
+            return client.listVolumesMappedToSdc(sdcId).isEmpty();
+        } catch (Exception e) {
+            logger.warn("Unable to check whether the SDC of the pool: " + dataStore.getId() + " can be unprepared on the host: " + host.getId() + ", due to " + e.getMessage(), e);
+            return false;
+        }
     }
 
     @Override

@@ -167,7 +167,7 @@ public class StoragePoolAutomationImpl implements StoragePoolAutomation {
             // remove heartbeat
             for (HostVO host : hosts) {
                 ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(false, storagePool);
-                if (MapUtils.isNotEmpty(details)) {
+                if (MapUtils.isNotEmpty(details) && storageManager.canDisconnectHostFromStoragePool(host, storagePool)) {
                     cmd.setDetails(details);
                 }
                 final Answer answer = agentMgr.easySend(host.getId(), cmd);

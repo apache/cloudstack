@@ -19,6 +19,7 @@ package org.apache.cloudstack.storage.datastore.util;
 
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -91,6 +92,9 @@ public class ScaleIOUtil {
     private static final String DRV_CFG_FILE = "/etc/emc/scaleio/drv_cfg.txt";
 
     public static void addMdms(List<String> mdmAddresses) {
+        if (CollectionUtils.isEmpty(mdmAddresses)) {
+            return;
+        }
         // Sample Cmd - /opt/emc/scaleio/sdc/bin/drv_cfg --add_mdm --ip x.x.x.x,x.x.x.x --file /etc/emc/scaleio/drv_cfg.txt
         String addMdmsCmd = ScaleIOUtil.SDC_HOME_PATH + "/bin/" + ScaleIOUtil.ADD_MDMS_CMD;
         addMdmsCmd += " --ip " + String.join(",", mdmAddresses);
@@ -102,14 +106,23 @@ public class ScaleIOUtil {
     }
 
     public static void removeMdms(List<String> mdmAddresses) {
+        if (CollectionUtils.isEmpty(mdmAddresses)) {
+            return;
+        }
         // (i) Remove MDMs from config file (ii) Restart scini
         //  Sample Cmd - sed -i '/x.x.x.x\,/d' /etc/emc/scaleio/drv_cfg.txt
+        boolean restartSDC = false;
         String removeMdmsCmdFormat = "sed -i '/%s\\,/d' %s";
         for (String mdmAddress : mdmAddresses) {
+            if (mdmAdded(mdmAddress)) {
+                restartSDC = true;
+            }
             String removeMdmsCmd = String.format(removeMdmsCmdFormat, mdmAddress, DRV_CFG_FILE);
             Script.runSimpleBashScript(removeMdmsCmd);
         }
-        restartSDCService();
+        if (restartSDC) {
+            restartSDCService();
+        }
     }
 
     public static boolean mdmAdded(String mdmAddress) {
