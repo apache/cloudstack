@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectAnswer;
@@ -997,11 +997,11 @@ public class VmwareStorageProcessor implements StorageProcessor {
                                                           long wait, String nfsVersion) throws Exception {
         String volumeFolder;
         String volumeName;
-        String sufix = ".ova";
+        String suffix = ".ova";
         int index = srcVolumePath.lastIndexOf(File.separator);
-        if (srcVolumePath.endsWith(sufix)) {
+        if (srcVolumePath.endsWith(suffix)) {
             volumeFolder = srcVolumePath.substring(0, index);
-            volumeName = srcVolumePath.substring(index + 1).replace(sufix, "");
+            volumeName = srcVolumePath.substring(index + 1).replace(suffix, "");
         } else {
             volumeFolder = srcVolumePath;
             volumeName = srcVolumePath.substring(index + 1);
@@ -3775,7 +3775,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     @Override
-    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplainceCommand cmd) {
+    public Answer checkDataStoreStoragePolicyCompliance(CheckDataStoreStoragePolicyComplianceCommand cmd) {
         String primaryStorageNameLabel = cmd.getStoragePool().getUuid();
         String storagePolicyId = cmd.getStoragePolicyId();
         VmwareContext context = hostService.getServiceContext(cmd);
@@ -3789,16 +3789,16 @@ public class VmwareStorageProcessor implements StorageProcessor {
             }
 
             DatastoreMO primaryDsMo = new DatastoreMO(hyperHost.getContext(), morPrimaryDs);
-            boolean isDatastoreStoragePolicyComplaint = primaryDsMo.isDatastoreStoragePolicyComplaint(storagePolicyId);
+            boolean isDatastoreStoragePolicyCompliant = primaryDsMo.isDatastoreStoragePolicyCompliant(storagePolicyId);
 
-            String failedMessage = String.format("DataStore %s is not complaince with storage policy id %s", primaryStorageNameLabel, storagePolicyId);
-            if (!isDatastoreStoragePolicyComplaint)
-                return new Answer(cmd, isDatastoreStoragePolicyComplaint, failedMessage);
+            String failedMessage = String.format("DataStore %s is not compliant with storage policy id %s", primaryStorageNameLabel, storagePolicyId);
+            if (!isDatastoreStoragePolicyCompliant)
+                return new Answer(cmd, isDatastoreStoragePolicyCompliant, failedMessage);
             else
-                return new Answer(cmd, isDatastoreStoragePolicyComplaint, null);
+                return new Answer(cmd, isDatastoreStoragePolicyCompliant, null);
         } catch (Throwable e) {
             hostService.createLogMessageException(e, cmd);
-            String details = String.format("Exception while checking if datastore [%s] is storage policy [%s] complaince due to: [%s]", primaryStorageNameLabel, storagePolicyId, VmwareHelper.getExceptionMessage(e));
+            String details = String.format("Exception while checking if datastore [%s] is storage policy [%s] compliant due to: [%s]", primaryStorageNameLabel, storagePolicyId, VmwareHelper.getExceptionMessage(e));
             return new Answer(cmd, false, details);
         }
     }

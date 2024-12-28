@@ -575,7 +575,7 @@ class TestBaseImageUpdate(cloudstackTestCase):
                         )
         sleep_seconds = (self.services["recurring_snapshot"]["schedule"]) * 3600 + 600
         sleep_minutes = sleep_seconds/60
-        self.debug("Sleeping for %s minutes till the volume is snapshoted" %sleep_minutes)
+        self.debug("Sleeping for %s minutes till the volume is snapshotted" %sleep_minutes)
         time.sleep(sleep_seconds)
 
         retriesCount = self.services["retriesCount"]

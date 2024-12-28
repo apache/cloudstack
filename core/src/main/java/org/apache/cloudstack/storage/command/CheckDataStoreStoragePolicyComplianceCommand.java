@@ -21,12 +21,12 @@ package org.apache.cloudstack.storage.command;
 
 import com.cloud.agent.api.to.StorageFilerTO;
 
-public class CheckDataStoreStoragePolicyComplainceCommand extends StorageSubSystemCommand {
+public class CheckDataStoreStoragePolicyComplianceCommand extends StorageSubSystemCommand {
 
     String storagePolicyId;
     private StorageFilerTO storagePool;
 
-    public CheckDataStoreStoragePolicyComplainceCommand(String storagePolicyId, StorageFilerTO storagePool) {
+    public CheckDataStoreStoragePolicyComplianceCommand(String storagePolicyId, StorageFilerTO storagePool) {
         super();
 
         this.storagePolicyId = storagePolicyId;

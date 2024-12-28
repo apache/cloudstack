@@ -115,7 +115,7 @@ import org.apache.cloudstack.secstorage.HeuristicVO;
 import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
 import org.apache.cloudstack.secstorage.heuristics.Heuristic;
 import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
-import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
+import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplianceCommand;
 import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.SyncVolumePathAnswer;
 import org.apache.cloudstack.storage.command.SyncVolumePathCommand;
@@ -3212,7 +3212,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
         try {
             StorageFilerTO storageFilerTO = new StorageFilerTO(pool);
-            CheckDataStoreStoragePolicyComplainceCommand cmd = new CheckDataStoreStoragePolicyComplainceCommand(storagePolicyVO.getPolicyId(), storageFilerTO);
+            CheckDataStoreStoragePolicyComplianceCommand cmd = new CheckDataStoreStoragePolicyComplianceCommand(storagePolicyVO.getPolicyId(), storageFilerTO);
             long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(hostIds.get(0), cmd);
             return _agentMgr.send(targetHostId, cmd);
         } catch (AgentUnavailableException e) {

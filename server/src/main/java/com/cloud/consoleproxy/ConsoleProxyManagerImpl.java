@@ -156,7 +156,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 
 /**
- * Class to manage console proxys. <br><br>
+ * Class to manage console proxies. <br><br>
  * Possible console proxy state transition cases:<br>
  * - Stopped -> Starting -> Running <br>
  * - HA -> Stopped -> Starting -> Running <br>
@@ -570,7 +570,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         if (!allowToLaunchNew(dataCenterId)) {
             String configKey = Config.ConsoleProxyLaunchMax.key();
-            logger.warn(String.format("The number of launched console proxys on zone [%s] has reached the limit [%s]. Limit set in [%s].", dataCenterId, configurationDao.getValue(configKey), configKey));
+            logger.warn(String.format("The number of launched console proxies on zone [%s] has reached the limit [%s]. Limit set in [%s].", dataCenterId, configurationDao.getValue(configKey), configKey));
             return null;
         }
 

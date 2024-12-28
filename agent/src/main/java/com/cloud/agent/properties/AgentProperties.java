@@ -117,7 +117,7 @@ public class AgentProperties{
 
     /**
      * Local storage path.<br>
-     * This property allows multiple values to be entered in a single String. The differente values must be separated by commas.<br>
+     * This property allows multiple values to be entered in a single String. The different values must be separated by commas.<br>
      * Data type: String.<br>
      * Default value: <code>/var/lib/libvirt/images/</code>
      */
@@ -134,7 +134,7 @@ public class AgentProperties{
 
     /**
      * MANDATORY: The UUID for the local storage pool.<br>
-     * This property allows multiple values to be entered in a single String. The differente values must be separated by commas.<br>
+     * This property allows multiple values to be entered in a single String. The different values must be separated by commas.<br>
      * Data type: String.<br>
      * Default value: <code>null</code>
      */
