@@ -54,7 +54,7 @@ repos:
           ^systemvm/agent/certs/realhostip\.key$
       - id: end-of-file-fixer
         exclude: \.vhd$
-      #- id: fix-byte-order-marker
+      - id: fix-byte-order-marker
       - id: forbid-submodules
       - id: mixed-line-ending
         exclude: \.(cs|xml)$
