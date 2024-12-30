@@ -42,7 +42,7 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = "listVmwareDcVms", responseObject = UnmanagedInstanceResponse.class,
+@APICommand(name = "listVmwareDcVms", responseObject = VmwareRequestReponse.class,
         description = "Lists the VMs in a VMware Datacenter",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVmwareDcVmsCmd extends BaseCmd {
