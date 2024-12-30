@@ -17,8 +17,11 @@
 
 package org.apache.cloudstack.backup;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.Gson;
+
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
@@ -28,6 +31,7 @@ import java.util.List;
 import java.util.UUID;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -89,6 +93,16 @@ public class BackupVO implements Backup {
 
     @Column(name = "backed_volumes", length = 65535)
     protected String backedUpVolumes;
+
+    @Column(name = "hypervisor_type")
+    @Convert(converter = HypervisorTypeConverter.class)
+    protected Hypervisor.HypervisorType hypervisorType;
+
+    @Column(name = "service_offering_id")
+    protected long serviceOfferingId;
+
+    @Column(name = "vm_template_id", updatable = true, nullable = true, length = 17)
+    protected Long templateId = new Long(-1);
 
     public BackupVO() {
         this.uuid = UUID.randomUUID().toString();
@@ -222,10 +236,40 @@ public class BackupVO implements Backup {
         this.backedUpVolumes = backedUpVolumes;
     }
 
+    @Override
+    public Hypervisor.HypervisorType getHypervisorType() {
+        return hypervisorType;
+    }
+
+    public void setHypervisorType(Hypervisor.HypervisorType hypervisorType) {
+        this.hypervisorType = hypervisorType;
+    }
+
+    @Override
+    public long getServiceOfferingId() {
+        return serviceOfferingId;
+    }
+
+    public void setServiceOfferingId(long serviceOfferingId) {
+        this.serviceOfferingId = serviceOfferingId;
+    }
+
+    @Override
+    public long getTemplateId() {
+        if (templateId == null) {
+            return -1;
+        } else {
+            return templateId;
+        }
+    }
+
+    public void setTemplateId(Long templateId) {
+        this.templateId = templateId;
+    }
+
     public Date getRemoved() {
         return removed;
     }
-
     public void setRemoved(Date removed) {
         this.removed = removed;
     }

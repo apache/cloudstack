@@ -267,6 +267,9 @@ public class NetworkerClient {
             backup.setAccountId(vm.getAccountId());
             backup.setDomainId(vm.getDomainId());
             backup.setZoneId(vm.getDataCenterId());
+            backup.setHypervisorType(vm.getHypervisorType());
+            backup.setServiceOfferingId(vm.getServiceOfferingId());
+            backup.setTemplateId(vm.getTemplateId());
             return backup;
         } catch (final IOException e) {
             LOG.error("Failed to register backup from EMC Networker due to:", e);

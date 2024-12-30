@@ -205,6 +205,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         backup.setAccountId(vm.getAccountId());
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
+        backup.setHypervisorType(vm.getHypervisorType());
+        backup.setServiceOfferingId(vm.getServiceOfferingId());
+        backup.setTemplateId(vm.getTemplateId());
         return backupDao.persist(backup);
     }
 

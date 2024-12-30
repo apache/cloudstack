@@ -378,6 +378,9 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                         backup.setAccountId(vm.getAccountId());
                         backup.setDomainId(vm.getDomainId());
                         backup.setZoneId(vm.getDataCenterId());
+                        backup.setHypervisorType(vm.getHypervisorType());
+                        backup.setServiceOfferingId(vm.getServiceOfferingId());
+                        backup.setTemplateId(vm.getTemplateId());
 
                         logger.debug(String.format("Creating a new entry in backups: [uuid: %s, vm_id: %s, external_id: %s, type: %s, date: %s, backup_offering_id: %s, account_id: %s, "
                                         + "domain_id: %s, zone_id: %s].", backup.getUuid(), backup.getVmId(), backup.getExternalId(), backup.getType(), backup.getDate(),

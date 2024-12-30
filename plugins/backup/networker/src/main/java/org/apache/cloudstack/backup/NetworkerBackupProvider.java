@@ -627,6 +627,9 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
                         strayBackup.setAccountId(vm.getAccountId());
                         strayBackup.setDomainId(vm.getDomainId());
                         strayBackup.setZoneId(vm.getDataCenterId());
+                        strayBackup.setHypervisorType(vm.getHypervisorType());
+                        strayBackup.setServiceOfferingId(vm.getServiceOfferingId());
+                        strayBackup.setTemplateId(vm.getTemplateId());
                         LOG.debug(String.format("Creating a new entry in backups: [uuid: %s, vm_id: %s, external_id: %s, type: %s, date: %s, backup_offering_id: %s, account_id: %s, "
                                         + "domain_id: %s, zone_id: %s].", strayBackup.getUuid(), strayBackup.getVmId(), strayBackup.getExternalId(),
                                 strayBackup.getType(), strayBackup.getDate(), strayBackup.getBackupOfferingId(), strayBackup.getAccountId(),

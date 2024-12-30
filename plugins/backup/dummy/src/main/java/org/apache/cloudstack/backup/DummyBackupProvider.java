@@ -127,6 +127,9 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
         backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+        backup.setHypervisorType(vm.getHypervisorType());
+        backup.setServiceOfferingId(vm.getServiceOfferingId());
+        backup.setTemplateId(vm.getTemplateId());
         return backupDao.persist(backup) != null;
     }
 

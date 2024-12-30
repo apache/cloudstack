@@ -24,3 +24,10 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.console_session', 'console_endpoint_
 
 -- Add client_address column to cloud.console_session table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.console_session', 'client_address', 'VARCHAR(45)');
+
+-- Add columns to backup for restoring backups of expunged VMs
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'hypervisor_type', 'CHAR(32)');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'service_offering_id', 'BIGINT UNSIGNED NOT NULL COMMENT \'service offering id\'');
+ALTER TABLE `cloud`.`backups` ADD CONSTRAINT `fk_service_offering_id` FOREIGN KEY (`service_offering_id`) REFERENCES `cloud`.`service_offering`(`id`);
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'vm_template_id', 'BIGINT UNSIGNED');
+ALTER TABLE `cloud`.`backups` ADD CONSTRAINT `fk_vm_template_id` FOREIGN KEY (`vm_template_id`) REFERENCES `cloud`.`vm_template`(`id`);
