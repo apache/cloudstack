@@ -1100,7 +1100,7 @@ class CsSite2SiteVpn(CsDataBag):
             file.addeq(" dpddelay=30")
             file.addeq(" dpdtimeout=120")
             file.addeq(" dpdaction=restart")
-        if splitconnections and peerlistarr.count > 1:
+        if splitconnections and len(peerlistarr) > 1:
             logging.debug('Splitting connections for rightsubnets %s' % peerlistarr)
             for peeridx in range(1, len(peerlistarr)):
                 logging.debug('Adding split connection -%d for subnet %s' % (peeridx + 1, peerlistarr[peeridx]))
