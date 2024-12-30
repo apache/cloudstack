@@ -153,6 +153,9 @@ public class DatacenterMO extends BaseMO {
     public Pair<String, List<UnmanagedInstanceTO>> getVmsOnDatacenter(Integer maxObjects, String token) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         List<UnmanagedInstanceTO> vms = new ArrayList<>();
         Pair<String, List<ObjectContent>> objectContents = getVmPropertiesOnDatacenterVmFolder(new String[] {"name"}, maxObjects, token);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("returning token %s for future retrievals, currently %d objects retrieved.", objectContents.first(), objectContents.second().size()));
+        }
         Pair<String, List<UnmanagedInstanceTO>> retval = new Pair<>(objectContents.first(), vms);
         List<ObjectContent> ocs = objectContents.second();
         if (ocs != null) {
@@ -302,8 +305,14 @@ public class DatacenterMO extends BaseMO {
      */
     public Pair<String, List<ObjectContent>> getVmPropertiesOnDatacenterVmFolder(String[] propertyPaths, Integer maxObjects, String tokenForPriorQuery) throws  InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
         if(StringUtils.isNotBlank(tokenForPriorQuery)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("running repeat query with token \'%s\'", tokenForPriorQuery));
+            }
             return retrieveNextSetOfPropertiesOnDatacenterVmFolder(tokenForPriorQuery);
         } else {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("running query for %d propertypaths and max %d objects", propertyPaths.length, maxObjects));
+            }
             return retrieveNextSetOfPropertiesOnDatacenterVmFolder(propertyPaths, maxObjects);
         }
     }
