@@ -28,7 +28,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -45,7 +45,7 @@ import java.util.List;
 @APICommand(name = "listVmwareDcVms", responseObject = UnmanagedInstanceResponse.class,
         description = "Lists the VMs in a VMware Datacenter",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListVmwareDcVmsCmd extends BaseListCmd {
+public class ListVmwareDcVmsCmd extends BaseCmd {
 
     @Inject
     public VmwareDatacenterService _vmwareDatacenterService;
@@ -74,8 +74,9 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
     private Integer batchSize;
 
     @Parameter(name = ApiConstants.TOKEN, type = CommandType.STRING,
-            description = "For listVmwareDcVms, if the maximum number of results (the `pagesize`) is exceeded, " +
-                    " a token is returned. This token can be used in subsequent calls to retrieve more results")
+            description = "For listVmwareDcVms, if the maximum number of results (the `batchsize`) is exceeded, " +
+                    " a token is returned. This token can be used in subsequent calls to retrieve more results." +
+                    " As long as a token is returned, more results can be retrieved.")
     private String token;
 
     public String getVcenter() {
@@ -119,12 +120,8 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
                     baseResponseList.add(resp);
                 }
             }
-            List<BaseResponse> pagingList = com.cloud.utils.StringUtils.applyPagination(baseResponseList, this.getStartIndex(), this.getPageSizeVal());
-            if (CollectionUtils.isEmpty(pagingList)) {
-                pagingList = baseResponseList;
-            }
             VmwareRequestReponse<BaseResponse> response = new VmwareRequestReponse<>();
-            response.setResponses(pagingList, baseResponseList.size());
+            response.setResponses(baseResponseList, baseResponseList.size());
             response.setResponseName(getCommandName());
             response.setToken(results.first());
             setResponseObject(response);
