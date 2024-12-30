@@ -1567,11 +1567,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         String datacenterName = cmd.getDatacenterName();
         String username = cmd.getUsername();
         String password = cmd.getPassword();
-        Integer maxObjects = cmd.getPageSize();
+        Integer maxObjects = cmd.getBatchSize();
         String token = cmd.getToken();
 
         Long existingVcenterId = cmd.getExistingVcenterId();
-        String keyword = cmd.getKeyword();
 
         if ((existingVcenterId == null && StringUtils.isBlank(vcenter)) ||
                 (existingVcenterId != null && StringUtils.isNotBlank(vcenter))) {

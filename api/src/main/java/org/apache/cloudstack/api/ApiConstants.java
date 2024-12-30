@@ -1107,7 +1107,6 @@ public class ApiConstants {
     public static final String PARAMETER_DESCRIPTION_IS_TAG_A_RULE = "Whether the informed tag is a JS interpretable rule or not.";
 
     public static final String NFS_MOUNT_OPTIONS = "nfsmountopts";
-    public static final String MAX_NUMBER = "maxnumber";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
