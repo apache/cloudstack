@@ -59,7 +59,7 @@ repos:
       - id: mixed-line-ending
         exclude: \.(cs|xml)$
       - id: trailing-whitespace
-        files: \.(bat|css|gitignore|header|in|install|java|md|properties|py|rb|sh|sql|txt|vue|xml|xsl|yaml|yml)$
+        files: \.(cs|bat|css|gitignore|header|in|install|java|md|properties|py|rb|sh|sql|txt|vue|xml|xsl|yaml|yml)$
         args: [--markdown-linebreak-ext=md]
         exclude: ^services/console-proxy/rdpconsole/src/test/doc/freerdp-debug-log\.txt$
   - repo: https://github.com/codespell-project/codespell
