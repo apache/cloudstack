@@ -17,11 +17,16 @@
 
 package org.apache.cloudstack.api.command.admin.zone;
 
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.ListResponse;
 
 public class VmwareRequestReponse<T extends ResponseObject> extends ListResponse<T> {
-    private transient String token;
+    @SerializedName(ApiConstants.TOKEN)
+    @Param(description = "The VMware API token to use for retrieving further responses with")
+    private String token;
 
     public String getToken() {
         return token;
