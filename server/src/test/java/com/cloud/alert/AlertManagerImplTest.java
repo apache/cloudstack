@@ -18,14 +18,11 @@ package com.cloud.alert;
 
 import java.io.UnsupportedEncodingException;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import javax.mail.MessagingException;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
@@ -33,15 +30,17 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.alert.dao.AlertDao;
+import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.host.Host;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.storage.StorageManager;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AlertManagerImplTest {
@@ -64,6 +63,9 @@ public class AlertManagerImplTest {
 
     @Mock
     CapacityManager capacityManager;
+
+    @Mock
+    StorageManager storageManager;
 
     @Mock
     Logger loggerMock;
@@ -119,27 +121,30 @@ public class AlertManagerImplTest {
     @Test
     public void testRecalculateHostCapacities() {
         List<Long> mockHostIds = List.of(1L, 2L, 3L);
-        try (MockedStatic<Executors> ignored = Mockito.mockStatic(Executors.class)) {
-            Mockito.when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(mockHostIds);
-            ExecutorService executorService = Mockito.mock(ExecutorService.class);
-            Mockito.when(executorService.submit(Mockito.any(Callable.class))).thenReturn(Mockito.mock(Future.class));
-            Mockito.when(Executors.newFixedThreadPool(Mockito.anyInt())).thenReturn(executorService);
-            alertManagerImplMock.recalculateHostCapacities();
-            Mockito.verify(executorService, Mockito.times(1)).shutdown();
-        }
+        Mockito.when(hostDao.listIdsByType(Host.Type.Routing)).thenReturn(mockHostIds);
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(hostDao.findById(Mockito.anyLong())).thenReturn(host);
+        Mockito.doNothing().when(capacityManager).updateCapacityForHost(host);
+        alertManagerImplMock.recalculateHostCapacities();
+        Mockito.verify(hostDao, Mockito.times(3)).findById(Mockito.anyLong());
+        Mockito.verify(capacityManager, Mockito.times(3)).updateCapacityForHost(host);
     }
 
     @Test
     public void testRecalculateStorageCapacities() {
         List<Long> mockPoolIds = List.of(101L, 102L, 103L);
-        try (MockedStatic<Executors> ignored = Mockito.mockStatic(Executors.class)) {
-            Mockito.when(primaryDataStoreDao.listAllIds()).thenReturn(mockPoolIds);
-            ExecutorService executorService = Mockito.mock(ExecutorService.class);
-            Mockito.when(executorService.submit(Mockito.any(Callable.class))).thenReturn(Mockito.mock(Future.class));
-            Mockito.when(Executors.newFixedThreadPool(Mockito.anyInt())).thenReturn(executorService);
-            alertManagerImplMock.recalculateStorageCapacities();
-            Mockito.verify(executorService, Mockito.times(1)).shutdown();
-        }
+        Mockito.when(primaryDataStoreDao.listAllIds()).thenReturn(mockPoolIds);
+        StoragePoolVO sharedPool = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(sharedPool.isShared()).thenReturn(true);
+        Mockito.when(primaryDataStoreDao.findById(mockPoolIds.get(0))).thenReturn(sharedPool);
+        Mockito.when(primaryDataStoreDao.findById(mockPoolIds.get(1))).thenReturn(sharedPool);
+        StoragePoolVO nonSharedPool = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(nonSharedPool.isShared()).thenReturn(false);
+        Mockito.when(primaryDataStoreDao.findById(mockPoolIds.get(2))).thenReturn(nonSharedPool);
+        Mockito.when(capacityManager.getAllocatedPoolCapacity(sharedPool, null)).thenReturn(10L);
+        Mockito.when(capacityManager.getAllocatedPoolCapacity(nonSharedPool, null)).thenReturn(20L);
+        alertManagerImplMock.recalculateStorageCapacities();
+        Mockito.verify(storageManager, Mockito.times(2)).createCapacityEntry(sharedPool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, 10L);
+        Mockito.verify(storageManager, Mockito.times(1)).createCapacityEntry(nonSharedPool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, 20L);
     }
-
 }
