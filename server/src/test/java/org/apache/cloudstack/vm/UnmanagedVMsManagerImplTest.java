@@ -277,6 +277,7 @@ public class UnmanagedVMsManagerImplTest {
         List<UnmanagedInstanceTO.Disk> instanceDisks = new ArrayList<>();
         UnmanagedInstanceTO.Disk instanceDisk = new UnmanagedInstanceTO.Disk();
         instanceDisk.setDiskId("1000-1");
+        instanceDisk.setPosition(0);
         instanceDisk.setLabel("DiskLabel");
         instanceDisk.setController("scsi");
         instanceDisk.setImagePath("[b6ccf44a1fa13e29b3667b4954fa10ee] TestInstance/ROOT-1.vmdk");
