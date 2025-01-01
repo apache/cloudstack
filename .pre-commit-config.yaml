@@ -34,7 +34,7 @@ repos:
       - id: check-merge-conflict
       - id: check-symlinks
       - id: check-vcs-permalinks
-      #- id: check-yaml
+      - id: check-yaml
       - id: destroyed-symlinks
       - id: detect-aws-credentials
         args: [--allow-missing-credentials]
@@ -59,7 +59,7 @@ repos:
       - id: mixed-line-ending
         exclude: \.(cs|xml)$
       - id: trailing-whitespace
-        files: \.(header|in|java|md|properties|py|rb|sh|sql|txt|vue|xml|yaml|yml)$
+        files: \.(cs|bat|css|gitignore|header|in|install|java|md|properties|py|rb|sh|sql|txt|vue|xml|xsl|yaml|yml)$
         args: [--markdown-linebreak-ext=md]
         exclude: ^services/console-proxy/rdpconsole/src/test/doc/freerdp-debug-log\.txt$
   - repo: https://github.com/codespell-project/codespell
@@ -87,7 +87,7 @@ repos:
         ^setup/bindir/cloud-setup-encryption\.in$|
         ^venv/.*$
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.40.0
+    rev: v0.43.0
     hooks:
       - id: markdownlint
         name: run markdownlint

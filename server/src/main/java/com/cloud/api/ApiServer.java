@@ -188,6 +188,7 @@ import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.reflect.TypeToken;
 
+import static com.cloud.user.AccountManagerImpl.apiKeyAccess;
 import static org.apache.cloudstack.user.UserPasswordResetManager.UserPasswordResetEnabled;
 
 @Component
@@ -896,6 +897,34 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
     }
 
+    protected boolean verifyApiKeyAccessAllowed(User user, Account account) {
+        Boolean apiKeyAccessEnabled = user.getApiKeyAccess();
+        if (apiKeyAccessEnabled != null) {
+            if (Boolean.TRUE.equals(apiKeyAccessEnabled)) {
+                return true;
+            } else {
+                logger.info("Api-Key access is disabled for the User " + user.toString());
+                return false;
+            }
+        }
+        apiKeyAccessEnabled = account.getApiKeyAccess();
+        if (apiKeyAccessEnabled != null) {
+            if (Boolean.TRUE.equals(apiKeyAccessEnabled)) {
+                return true;
+            } else {
+                logger.info("Api-Key access is disabled for the Account " + account.toString());
+                return false;
+            }
+        }
+        apiKeyAccessEnabled = apiKeyAccess.valueIn(account.getDomainId());
+        if (Boolean.TRUE.equals(apiKeyAccessEnabled)) {
+                return true;
+        } else {
+            logger.info("Api-Key access is disabled by the Domain level setting api.key.access");
+        }
+        return false;
+    }
+
     @Override
     public boolean verifyRequest(final Map<String, Object[]> requestParameters, final Long userId, InetAddress remoteAddress) throws ServerApiException {
         try {
@@ -1009,6 +1038,10 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             if (user.getState() != Account.State.ENABLED || !account.getState().equals(Account.State.ENABLED)) {
                 logger.info("disabled or locked user accessing the api, userid = " + user.getId() + "; name = " + user.getUsername() + "; state: " + user.getState() +
                         "; accountState: " + account.getState());
+                return false;
+            }
+
+            if (!verifyApiKeyAccessAllowed(user, account)) {
                 return false;
             }
 
