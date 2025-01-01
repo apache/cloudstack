@@ -551,6 +551,7 @@ public class ApiConstants {
     public static final String IS_DEDICATED = "isdedicated";
     public static final String TAKEN = "taken";
     public static final String VM_AVAILABLE = "vmavailable";
+    public static final String VM_DETAILS = "vmdetails";
     public static final String VM_LIMIT = "vmlimit";
     public static final String VM_TOTAL = "vmtotal";
     public static final String VM_TYPE = "vmtype";

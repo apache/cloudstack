@@ -17,11 +17,16 @@
 
 package org.apache.cloudstack.backup.networker;
 
+import com.cloud.offering.ServiceOffering;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.TrustAllManager;
 import com.cloud.vm.VirtualMachine;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.backup.BackupOffering;
@@ -45,6 +50,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import javax.inject.Inject;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
@@ -60,6 +66,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.apache.cloudstack.backup.NetworkerBackupProvider.BACKUP_IDENTIFIER;
@@ -70,6 +77,9 @@ public class NetworkerClient {
     private final String apiName;
     private final String apiPassword;
     private final HttpClient httpClient;
+
+    @Inject
+    private EntityManager entityManager;
 
     public NetworkerClient(final String url, final String username, final String password, final boolean validateCertificate, final int timeout) throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
 
@@ -267,9 +277,15 @@ public class NetworkerClient {
             backup.setAccountId(vm.getAccountId());
             backup.setDomainId(vm.getDomainId());
             backup.setZoneId(vm.getDataCenterId());
-            backup.setHypervisorType(vm.getHypervisorType());
-            backup.setServiceOfferingId(vm.getServiceOfferingId());
-            backup.setTemplateId(vm.getTemplateId());
+
+            HashMap<String, String> details = new HashMap<>();
+            details.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
+            ServiceOffering serviceOffering =  entityManager.findById(ServiceOffering.class, vm.getServiceOfferingId());
+            details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
+            VirtualMachineTemplate template =  entityManager.findById(VirtualMachineTemplate.class, vm.getTemplateId());
+            details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+            backup.setDetails(details);
+
             return backup;
         } catch (final IOException e) {
             LOG.error("Failed to register backup from EMC Networker due to:", e);

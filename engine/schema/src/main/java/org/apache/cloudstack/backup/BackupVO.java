@@ -17,21 +17,20 @@
 
 package org.apache.cloudstack.backup;
 
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.Gson;
 
-import org.apache.cloudstack.util.HypervisorTypeConverter;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.persistence.Column;
-import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -41,6 +40,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 
 @Entity
 @Table(name = "backups")
@@ -94,15 +94,8 @@ public class BackupVO implements Backup {
     @Column(name = "backed_volumes", length = 65535)
     protected String backedUpVolumes;
 
-    @Column(name = "hypervisor_type")
-    @Convert(converter = HypervisorTypeConverter.class)
-    protected Hypervisor.HypervisorType hypervisorType;
-
-    @Column(name = "service_offering_id")
-    protected long serviceOfferingId;
-
-    @Column(name = "vm_template_id", updatable = true, nullable = true, length = 17)
-    protected Long templateId = new Long(-1);
+    @Transient
+    Map<String, String> details;
 
     public BackupVO() {
         this.uuid = UUID.randomUUID().toString();
@@ -237,40 +230,29 @@ public class BackupVO implements Backup {
     }
 
     @Override
-    public Hypervisor.HypervisorType getHypervisorType() {
-        return hypervisorType;
+    public Map<String, String> getDetails() {
+        return details;
     }
 
-    public void setHypervisorType(Hypervisor.HypervisorType hypervisorType) {
-        this.hypervisorType = hypervisorType;
+    public void setDetail(String name, String value) {
+        assert (details != null) : "Did you forget to load the details?";
+        this.details.put(name, value);
     }
 
-    @Override
-    public long getServiceOfferingId() {
-        return serviceOfferingId;
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 
-    public void setServiceOfferingId(long serviceOfferingId) {
-        this.serviceOfferingId = serviceOfferingId;
-    }
-
-    @Override
-    public long getTemplateId() {
-        if (templateId == null) {
-            return -1;
-        } else {
-            return templateId;
-        }
-    }
-
-    public void setTemplateId(Long templateId) {
-        this.templateId = templateId;
-    }
 
     public Date getRemoved() {
         return removed;
     }
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Backup is %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "external_id", "date"));
     }
 }

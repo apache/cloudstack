@@ -109,6 +109,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     private AgentManager agentMgr;
     @Inject
     private VirtualMachineManager virtualMachineManager;
+    @Inject
+    private EntityManager entityManager;
 
     protected VeeamClient getClient(final Long zoneId) {
         try {
@@ -378,9 +380,14 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                         backup.setAccountId(vm.getAccountId());
                         backup.setDomainId(vm.getDomainId());
                         backup.setZoneId(vm.getDataCenterId());
-                        backup.setHypervisorType(vm.getHypervisorType());
-                        backup.setServiceOfferingId(vm.getServiceOfferingId());
-                        backup.setTemplateId(vm.getTemplateId());
+
+                        HashMap<String, String> details = new HashMap<>();
+                        details.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
+                        ServiceOffering serviceOffering =  entityManager.findById(ServiceOffering.class, vm.getServiceOfferingId());
+                        details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
+                        VirtualMachineTemplate template =  entityManager.findById(VirtualMachineTemplate.class, vm.getTemplateId());
+                        details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+                        backup.setDetails(details);
 
                         logger.debug(String.format("Creating a new entry in backups: [uuid: %s, vm_id: %s, external_id: %s, type: %s, date: %s, backup_offering_id: %s, account_id: %s, "
                                         + "domain_id: %s, zone_id: %s].", backup.getUuid(), backup.getVmId(), backup.getExternalId(), backup.getType(), backup.getDate(),

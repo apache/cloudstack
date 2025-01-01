@@ -25,17 +25,22 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
@@ -92,6 +97,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Inject
     private AgentManager agentManager;
+
+    @Inject
+    private EntityManager entityManager;
 
     protected Host getLastVMHypervisorHost(VirtualMachine vm) {
         Long hostId = vm.getLastHostId();
@@ -205,9 +213,15 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         backup.setAccountId(vm.getAccountId());
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
-        backup.setHypervisorType(vm.getHypervisorType());
-        backup.setServiceOfferingId(vm.getServiceOfferingId());
-        backup.setTemplateId(vm.getTemplateId());
+
+        HashMap<String, String> details = new HashMap<>();
+        details.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
+        ServiceOffering serviceOffering =  entityManager.findById(ServiceOffering.class, vm.getServiceOfferingId());
+        details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
+        VirtualMachineTemplate template =  entityManager.findById(VirtualMachineTemplate.class, vm.getTemplateId());
+        details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+        backup.setDetails(details);
+
         return backupDao.persist(backup);
     }
 

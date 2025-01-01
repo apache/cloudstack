@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.vm;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -38,7 +39,9 @@ import com.cloud.vm.VirtualMachine;
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true,
-        since = "4.21.0")
+        since = "4.21.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+
 public class CreateVMFromBackupCmd extends DeployVMCmd implements UserCmd {
 
     @Inject

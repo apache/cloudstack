@@ -19,13 +19,13 @@ package org.apache.cloudstack.backup;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.commons.lang3.StringUtils;
 
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Volume;
 
 public interface Backup extends ControlledEntity, InternalIdentity, Identity {
@@ -145,7 +145,5 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
     Long getProtectedSize();
     List<VolumeInfo> getBackedUpVolumes();
     long getZoneId();
-    Hypervisor.HypervisorType getHypervisorType();
-    long getServiceOfferingId();
-    long getTemplateId();
+    Map<String, String> getDetails();
 }
