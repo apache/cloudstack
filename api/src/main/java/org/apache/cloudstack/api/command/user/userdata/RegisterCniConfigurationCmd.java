@@ -24,7 +24,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @APICommand(name = "registerCniConfiguration",
         description = "Register a CNI Configuration to be used with CKS cluster",
@@ -34,7 +35,7 @@ import org.apache.log4j.Logger;
         responseHasSensitiveInfo = false,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RegisterCniConfigurationCmd extends BaseRegisterUserDataCmd {
-    public static final Logger s_logger = Logger.getLogger(RegisterCniConfigurationCmd.class.getName());
+    public static final Logger logger = LogManager.getLogger(RegisterCniConfigurationCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

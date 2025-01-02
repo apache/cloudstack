@@ -47,16 +47,14 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.ASNumberVO;
+import com.cloud.bgp.BGPService;
 import com.cloud.dc.DedicatedResourceVO;
-import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterRemoveWorker;
-import com.cloud.network.NetworkServiceImpl;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.kubernetes.cluster.actionworkers.KubernetesClusterAddWorker;
@@ -324,7 +322,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
     @Inject
-    private ASNumberDao asNumberDao;
+    private BGPService bgpService;
 
     private void logMessage(final Level logLevel, final String message, final Exception e) {
         if (logLevel == Level.WARN) {
@@ -1085,9 +1083,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 network = networkService.createGuestNetwork(networkOffering.getId(), clusterName + "-network",
                         owner.getAccountName() + "-network", owner, physicalNetwork, zone.getId(),
                         ControlledEntity.ACLType.Account);
-                ASNumberVO asNumberVO = NetworkServiceImpl.checkAndSelectASNumber(asNumber, zone, networkOffering, asNumberDao);
-                if (Objects.nonNull(asNumber)) {
-                    NetworkServiceImpl.allocateASNumber(asNumberVO, network, asNumberDao);
+                if (!networkOffering.isForVpc() && NetworkOffering.RoutingMode.Dynamic == networkOffering.getRoutingMode()) {
+                    bgpService.allocateASNumber(zone.getId(), asNumber, network.getId(), null);
                 }
             } catch (ConcurrentOperationException | InsufficientCapacityException | ResourceAllocationException e) {
                 logAndThrow(Level.ERROR, String.format("Unable to create network for the Kubernetes cluster: %s", clusterName));

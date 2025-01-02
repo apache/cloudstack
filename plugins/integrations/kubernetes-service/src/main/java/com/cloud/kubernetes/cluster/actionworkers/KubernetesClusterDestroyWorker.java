@@ -23,8 +23,8 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.bgp.BGPService;
 import com.cloud.dc.ASNumberVO;
-import com.cloud.dc.BGPService;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.ASNumberDao;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -156,8 +156,8 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         DataCenter zone = dataCenterDao.findById(zoneId);
         ASNumberVO asNumber = asNumberDao.findByZoneAndNetworkId(zone.getId(), networkId);
         if (asNumber != null) {
-            LOGGER.debug(String.format("Releasing AS number %s from network %s", asNumber.getAsNumber(), networkId));
-            bgpService.releaseASNumber(zone.getId(), asNumber.getAsNumber());
+            logger.debug(String.format("Releasing AS number %s from network %s", asNumber.getAsNumber(), networkId));
+            bgpService.releaseASNumber(zone.getId(), asNumber.getAsNumber(), true);
         }
     }
 

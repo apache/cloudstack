@@ -22,10 +22,11 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.UserData;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 
 @APICommand(name = "deleteCniConfiguration", description = "Deletes a CNI Configuration", responseObject = SuccessResponse.class, entityType = {UserData.class},
@@ -33,7 +34,7 @@ import com.cloud.user.UserData;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteCniConfigurationCmd extends DeleteUserDataCmd {
 
-    public static final Logger s_logger = Logger.getLogger(DeleteUserDataCmd.class.getName());
+    public static final Logger logger = LogManager.getLogger(DeleteUserDataCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

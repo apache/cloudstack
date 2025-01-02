@@ -23,7 +23,8 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,7 @@ import java.util.List;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.20",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListCniConfigurationCmd extends ListUserDataCmd {
-    public static final Logger s_logger = Logger.getLogger(ListCniConfigurationCmd.class.getName());
+    public static final Logger logger = LogManager.getLogger(ListCniConfigurationCmd.class.getName());
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

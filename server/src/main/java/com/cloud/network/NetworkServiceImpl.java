@@ -41,7 +41,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.bgp.BGPService;
-import com.cloud.dc.ASNumberVO;
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.VlanDetailsDao;
@@ -1730,9 +1729,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             routedIpv4Manager.validateBgpPeers(owner, zone.getId(), bgpPeerIds);
         }
 
-        // Check AS number if provided
-        ASNumberVO asNumberVO = checkAndSelectASNumber(asNumber, zone, ntwkOff, asNumberDao);
-
         if (ipv4) {
             // For non-root admins check cidr limit - if it's allowed by global config value
             if (!_accountMgr.isRootAdmin(caller.getId()) && cidr != null) {
@@ -1843,10 +1839,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             routedIpv4Manager.persistBgpPeersForGuestNetwork(network.getId(), bgpPeerIds);
         }
 
-        if (asNumberVO != null) {
-            bgpService.allocateASNumber(zone.getId(), asNumberVO.getAsNumber(), network.getId(), network.getVpcId());
-        }
-
         // if the network offering has persistent set to true, implement the network
         if (ntwkOff.isPersistent()) {
             return implementedNetworkInCreation(caller, zone, network);
@@ -1856,26 +1848,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
     private boolean isNonVpcNetworkSupportingDynamicRouting(NetworkOffering networkOffering) {
         return !networkOffering.isForVpc() && NetworkOffering.RoutingMode.Dynamic == networkOffering.getRoutingMode();
-    }
-
-    public static ASNumberVO checkAndSelectASNumber(Long asNumber, DataCenter zone, NetworkOffering networkOffering, ASNumberDao asNumberDao) {
-        if (NetworkOffering.RoutingMode.Dynamic != networkOffering.getRoutingMode()) {
-            return null;
-        }
-        return BooleanUtils.toBoolean(networkOffering.isSpecifyAsNumber()) ?
-                validateASNumber(asNumber, asNumberDao) :
-                asNumberDao.findOneByAllocationStateAndZone(zone.getId(), false);
-    }
-
-    protected static ASNumberVO validateASNumber(Long asNumber, ASNumberDao asNumberDao) {
-        if (asNumber == null) {
-            return null;
-        }
-        ASNumberVO asNumberVO = asNumberDao.findByAsNumber(asNumber);
-        if (asNumberVO == null || asNumberVO.isAllocated()) {
-            throw new InvalidParameterValueException(String.format("The AS Number %s is already allocated, please select a free AS Number", asNumber));
-        }
-        return asNumberVO;
     }
 
     private void validateNetworkCreationSupported(long zoneId, String zoneName, GuestType guestType) {
