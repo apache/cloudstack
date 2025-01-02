@@ -24,6 +24,7 @@ import java.util.List;
 
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.utils.StringUtils;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -363,6 +364,9 @@ public class DatacenterMO extends BaseMO {
     }
 
     private static Pair<String, List<ObjectContent>> createReturnObjectPair(RetrieveResult result) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("vmware result : " + ReflectionToStringBuilderUtils.reflectCollection(result));
+        }
         String tokenForRetrievingNewResults = result.getToken();
         List<ObjectContent> listOfObjects = result.getObjects();
         return new Pair<>(tokenForRetrievingNewResults, listOfObjects);
