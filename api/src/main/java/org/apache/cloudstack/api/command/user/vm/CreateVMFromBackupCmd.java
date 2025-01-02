@@ -68,6 +68,7 @@ public class CreateVMFromBackupCmd extends DeployVMCmd implements UserCmd {
                 setEntityUuid(vm.getUuid());
             }
         } catch (Exception e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create vm due to exception: " + e.getMessage());
         }
     }
 
