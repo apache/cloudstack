@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.vm;
 
+import static com.cloud.hypervisor.Hypervisor.HypervisorType.Functionality;
 import static com.cloud.storage.Volume.IOPS_LIMIT;
 import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
@@ -679,23 +680,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
             "On destroy, force-stop takes this value ", true);
 
-    public static final List<HypervisorType> VM_STORAGE_MIGRATION_SUPPORTING_HYPERVISORS = new ArrayList<>(Arrays.asList(
-            HypervisorType.KVM,
-            HypervisorType.VMware,
-            HypervisorType.XenServer,
-            HypervisorType.Simulator
-    ));
-
-    protected static final List<HypervisorType> ROOT_DISK_SIZE_OVERRIDE_SUPPORTING_HYPERVISORS = Arrays.asList(
-            HypervisorType.KVM,
-            HypervisorType.XenServer,
-            HypervisorType.VMware,
-            HypervisorType.Simulator,
-            HypervisorType.Custom
-    );
-
-    private static final List<HypervisorType> HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS = Arrays.asList(HypervisorType.KVM, HypervisorType.VMware);
-
     @Override
     public UserVmVO getVirtualMachine(long vmId) {
         return _vmDao.findById(vmId);
@@ -758,8 +742,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private class VmIpAddrFetchThread extends ManagedContextRunnable {
-
-
         long nicId;
         long vmId;
         String vmName;
@@ -782,7 +764,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             boolean decrementCount = true;
 
             try {
-                logger.debug("Trying for vm "+ vmId +" nic Id "+nicId +" ip retrieval ...");
+                logger.debug("Trying IP retrieval for VM {} ({}), nic Id {}", vmName, vmId, nicId);
                 Answer answer = _agentMgr.send(hostId, cmd);
                 NicVO nic = _nicDao.findById(nicId);
                 if (answer.getResult()) {
@@ -793,12 +775,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         if (nic != null) {
                             nic.setIPv4Address(vmIp);
                             _nicDao.update(nicId, nic);
-                            logger.debug("Vm "+ vmId +" IP "+vmIp +" got retrieved successfully");
+                            logger.debug("VM {} ({}) - IP {} retrieved successfully", vmName, vmId, vmIp);
                             vmIdCountMap.remove(nicId);
                             decrementCount = false;
                             ActionEventUtils.onActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM,
                                     Domain.ROOT_DOMAIN, EventTypes.EVENT_NETWORK_EXTERNAL_DHCP_VM_IPFETCH,
-                                    "VM " + vmId + " nic id " + nicId + " ip address " + vmIp + " got fetched successfully", vmId, ApiCommandResourceType.VirtualMachine.toString());
+                                    "VM " + vmId + ", nic id " + nicId + ", IP address " + vmIp + " fetched successfully", vmId, ApiCommandResourceType.VirtualMachine.toString());
                         }
                     }
                 } else {
@@ -809,7 +791,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         _nicDao.update(nicId, nic);
                     }
                     if (answer.getDetails() != null) {
-                        logger.debug("Failed to get vm ip for Vm "+ vmId + answer.getDetails());
+                        logger.debug("Failed to get vm ip for Vm {} ({}), details: {}", vmName, vmId, answer.getDetails());
                     }
                 }
             } catch (OperationTimedoutException e) {
@@ -820,7 +802,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (decrementCount) {
                     VmAndCountDetails vmAndCount = vmIdCountMap.get(nicId);
                     vmAndCount.decrementCount();
-                    logger.debug("Ip is not retrieved for VM " + vmId +" nic "+nicId + " ... decremented count to "+vmAndCount.getRetrievalCount());
+                    logger.debug("Ip is not retrieved for VM {} ({}) nic {} ... decremented count to {}", vmName, vmId, nicId, vmAndCount.getRetrievalCount());
                     vmIdCountMap.put(nicId, vmAndCount);
                 }
             }
@@ -3126,11 +3108,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Network defaultNetwork = null;
             try {
                 DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
-
                 if (zone.getNetworkType() == NetworkType.Basic) {
                     // Get default guest network in Basic zone
                     defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
-                } else if (_networkModel.checkSecurityGroupSupportForNetwork(zone, Collections.emptyList(), securityGroupIdList)) {
+                } else if (_networkModel.checkSecurityGroupSupportForNetwork(_accountMgr.getActiveAccountById(vm.getAccountId()), zone, Collections.emptyList(), securityGroupIdList)) {
                     NicVO defaultNic = _nicDao.findDefaultNicForVM(vm.getId());
                     if (defaultNic != null) {
                         defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
@@ -3759,7 +3740,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // If no network is specified, find system security group enabled network
         if (networkIdList == null || networkIdList.isEmpty()) {
-            Network networkWithSecurityGroup = _networkModel.getNetworkWithSGWithFreeIPs(zone.getId());
+            Network networkWithSecurityGroup = _networkModel.getNetworkWithSGWithFreeIPs(owner, zone.getId());
             if (networkWithSecurityGroup == null) {
                 throw new InvalidParameterValueException("No network with security enabled is found in zone id=" + zone.getUuid());
             }
@@ -4564,7 +4545,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws InvalidParameterValueException if the hypervisor does not support rootdisksize override
      */
     protected void verifyIfHypervisorSupportsRootdiskSizeOverride(HypervisorType hypervisorType) {
-        if (!ROOT_DISK_SIZE_OVERRIDE_SUPPORTING_HYPERVISORS.contains(hypervisorType)) {
+        if (!hypervisorType.isFunctionalitySupported(Functionality.RootDiskSizeOverride)) {
             throw new InvalidParameterValueException("Hypervisor " + hypervisorType + " does not support rootdisksize override");
         }
     }
@@ -6205,7 +6186,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, dynamicScalingEnabled, overrideDiskOfferingId);
             }
         } else {
-            if (_networkModel.checkSecurityGroupSupportForNetwork(zone, networkIds,
+            if (_networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds,
                     cmd.getSecurityGroupIdList()))  {
                 vm = createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, getSecurityGroupIdList(cmd, zone, template, owner), owner, name,
                         displayName, diskOfferingId, size, group, cmd.getHypervisor(), cmd.getHttpMethod(), userData, userDataId, userDataDetails, sshKeyPairNames, cmd.getIpToNetworkMap(), addrs, displayVm, keyboard,
@@ -6607,9 +6588,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         HypervisorType hypervisorType = vm.getHypervisorType();
-        if (vm.getType() != VirtualMachine.Type.User && !HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS.contains(hypervisorType)) {
-            throw new InvalidParameterValueException(String.format("Unable to migrate storage of non-user VMs for hypervisor [%s]. Operation only supported for the following"
-                    + " hypervisors: [%s].", hypervisorType, HYPERVISORS_THAT_CAN_DO_STORAGE_MIGRATION_ON_NON_USER_VMS));
+        List<HypervisorType> supportedHypervisorsForNonUserVMStorageMigration = HypervisorType.getListOfHypervisorsSupportingFunctionality(Functionality.VmStorageMigration)
+                .stream().filter(hypervisor -> !hypervisor.equals(HypervisorType.XenServer)).collect(Collectors.toList());
+        if (vm.getType() != VirtualMachine.Type.User && !supportedHypervisorsForNonUserVMStorageMigration.contains(hypervisorType)) {
+            throw new InvalidParameterValueException(String.format(
+                    "Unable to migrate storage of non-user VMs for hypervisor [%s]. Operation only supported for the following hypervisors: [%s].",
+                    hypervisorType, supportedHypervisorsForNonUserVMStorageMigration));
         }
 
         List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
@@ -7319,8 +7303,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
         }
 
-        if (!VM_STORAGE_MIGRATION_SUPPORTING_HYPERVISORS.contains(vm.getHypervisorType())) {
-            throw new InvalidParameterValueException(String.format("Unsupported hypervisor: %s for VM migration, we support XenServer/VMware/KVM only", vm.getHypervisorType()));
+        if (!vm.getHypervisorType().isFunctionalitySupported(Functionality.VmStorageMigration)) {
+            throw new InvalidParameterValueException(
+                    String.format("Unsupported hypervisor: %s for VM migration, we support [%s] only",
+                            vm.getHypervisorType(),
+                            HypervisorType.getListOfHypervisorsSupportingFunctionality(Functionality.VmStorageMigration)));
         }
 
         if (_vmSnapshotDao.findByVm(vmId).size() > 0) {
@@ -7629,7 +7616,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Set<NetworkVO> applicableNetworks = new LinkedHashSet<>();
             Map<Long, String> requestedIPv4ForNics = new HashMap<>();
             Map<Long, String> requestedIPv6ForNics = new HashMap<>();
-            if (_networkModel.checkSecurityGroupSupportForNetwork(zone, networkIdList, securityGroupIdList))  { // advanced zone with security groups
+            if (_networkModel.checkSecurityGroupSupportForNetwork(newAccount, zone, networkIdList, securityGroupIdList))  { // advanced zone with security groups
                 // cleanup the old security groups
                 _securityGroupMgr.removeInstanceFromGroups(cmd.getVmId());
                 // if networkIdList is null and the first network of vm is shared network, then keep it if possible
@@ -8859,7 +8846,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private Network getNetworkForOvfNetworkMapping(DataCenter zone, Account owner) throws InsufficientCapacityException, ResourceAllocationException {
         Network network = null;
         if (zone.isSecurityGroupEnabled() || _networkModel.isSecurityGroupSupportedForZone(zone.getId())) {
-            network = _networkModel.getNetworkWithSGWithFreeIPs(zone.getId());
+            network = _networkModel.getNetworkWithSGWithFreeIPs(owner, zone.getId());
             if (network == null) {
                 throw new InvalidParameterValueException("No network with security enabled is found in zone ID: " + zone.getUuid());
             }

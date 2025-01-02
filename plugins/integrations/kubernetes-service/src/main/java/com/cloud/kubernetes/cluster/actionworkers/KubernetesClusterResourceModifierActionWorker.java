@@ -406,7 +406,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         if (StringUtils.isNotBlank(kubernetesCluster.getKeyPair())) {
             keypairs.add(kubernetesCluster.getKeyPair());
         }
-        if (kubernetesCluster.getSecurityGroupId() != null && networkModel.checkSecurityGroupSupportForNetwork(zone, networkIds, List.of(kubernetesCluster.getSecurityGroupId()))) {
+        if (kubernetesCluster.getSecurityGroupId() != null && networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds, List.of(kubernetesCluster.getSecurityGroupId()))) {
             List<Long> securityGroupIds = new ArrayList<>();
             securityGroupIds.add(kubernetesCluster.getSecurityGroupId());
             nodeVm = userVmService.createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, clusterTemplate, networkIds, securityGroupIds, owner,
@@ -461,7 +461,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                             sourcePort, sourcePort,
                             vmIp,
                             destPort, destPort,
-                            "tcp", networkId, accountId, domainId, vmId);
+                            "tcp", networkId, accountId, domainId, vmId, null);
             newRule.setDisplay(true);
             newRule.setState(FirewallRule.State.Add);
             newRule = portForwardingRulesDao.persist(newRule);

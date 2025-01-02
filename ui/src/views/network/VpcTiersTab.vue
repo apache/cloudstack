@@ -591,7 +591,7 @@ export default {
       }).then(async json => {
         var lbNetworks = json.listnetworksresponse.network || []
         if (lbNetworks.length > 0) {
-          this.publicLBExists = true
+          this.publicLBExists = false
           for (var idx = 0; idx < lbNetworks.length; idx++) {
             const lbNetworkOffering = await this.getNetworkOffering(lbNetworks[idx].networkofferingid)
             const index = lbNetworkOffering.service.map(svc => { return svc.name }).indexOf('Lb')
@@ -618,16 +618,23 @@ export default {
       api('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
         var filteredOfferings = []
-        if (this.publicLBExists) {
-          for (var index in this.networkOfferings) {
-            const offering = this.networkOfferings[index]
-            const idx = offering.service.map(svc => { return svc.name }).indexOf('Lb')
-            if (idx === -1 || this.lbProviderMap.publicLb.vpc.indexOf(offering.service.map(svc => { return svc.provider[0].name })[idx]) === -1) {
+        const vpcLbServiceIndex = this.resource.service.map(svc => { return svc.name }).indexOf('Lb')
+        for (var index in this.networkOfferings) {
+          const offering = this.networkOfferings[index]
+          const idx = offering.service.map(svc => { return svc.name }).indexOf('Lb')
+          if (this.publicLBExists && (idx === -1 || this.lbProviderMap.publicLb.vpc.indexOf(offering.service.map(svc => { return svc.provider[0].name })[idx]) === -1)) {
+            filteredOfferings.push(offering)
+          } else if (!this.publicLBExists && vpcLbServiceIndex > -1) {
+            const vpcLbServiceProvider = vpcLbServiceIndex === -1 ? undefined : this.resource.service[vpcLbServiceIndex].provider[0].name
+            const offeringLbServiceProvider = idx === -1 ? undefined : offering.service[idx].provider[0].name
+            if (vpcLbServiceProvider && (!offeringLbServiceProvider || (offeringLbServiceProvider && vpcLbServiceProvider === offeringLbServiceProvider))) {
               filteredOfferings.push(offering)
             }
+          } else {
+            filteredOfferings.push(offering)
           }
-          this.networkOfferings = filteredOfferings
         }
+        this.networkOfferings = filteredOfferings
         if (this.isNsxEnabled) {
           this.networkOfferings = this.networkOfferings.filter(offering => offering.networkmode === (this.isOfferingNatMode ? 'NATTED' : 'ROUTED'))
         }

@@ -389,6 +389,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     ConfigDepot configDepot;
     @Inject
     ConfigurationDao configurationDao;
+    @Inject
+    private ImageStoreDetailsUtil imageStoreDetailsUtil;
 
     protected List<StoragePoolDiscoverer> _discoverers;
 
@@ -3099,7 +3101,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         } else {
             final StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
             final long allocatedSizeWithTemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
-            return checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize);
+            return checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, true);
         }
     }
 
@@ -3162,6 +3164,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     protected boolean checkPoolforSpace(StoragePool pool, long allocatedSizeWithTemplate, long totalAskingSize) {
+        return checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, false);
+    }
+
+    protected boolean checkPoolforSpace(StoragePool pool, long allocatedSizeWithTemplate, long totalAskingSize, boolean forVolumeResize) {
         // allocated space includes templates
         StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
 
@@ -3194,10 +3200,22 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (usedPercentage > storageAllocatedThreshold) {
             if (logger.isDebugEnabled()) {
                 logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for storage allocation since its allocated percentage: " + usedPercentage
-                        + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: " + storageAllocatedThreshold + ", skipping this pool");
+                        + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: " + storageAllocatedThreshold);
+            }
+            if (!forVolumeResize) {
+                return false;
+            }
+            if (!AllowVolumeReSizeBeyondAllocation.valueIn(pool.getDataCenterId())) {
+                logger.debug(String.format("Skipping the pool %s as %s is false", pool, AllowVolumeReSizeBeyondAllocation.key()));
+                return false;
             }
 
-            return false;
+            double storageAllocatedThresholdForResize = CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.valueIn(pool.getDataCenterId());
+            if (usedPercentage > storageAllocatedThresholdForResize) {
+                logger.debug(String.format("Skipping the pool %s since its allocated percentage: %s has crossed the allocated %s: %s",
+                        pool, usedPercentage, CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.key(), storageAllocatedThresholdForResize));
+                return false;
+            }
         }
 
         if (totalOverProvCapacity < (allocatedSizeWithTemplate + totalAskingSize)) {
@@ -3488,6 +3506,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                 throw new CloudRuntimeException("Failed to create temporary file path to mount the store");
                             }
                             Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
+                            String nfsVersion = imageStoreDetailsUtil.getNfsVersion(store.getId());
                             for (HypervisorType hypervisorType : hypSet) {
                                 try {
                                     if (HypervisorType.Simulator == hypervisorType) {
@@ -3504,7 +3523,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                         templateVO = _templateStoreDao.findByTemplate(templateId, DataStoreRole.Image);
                                         if (templateVO != null) {
                                             try {
-                                                if (SystemVmTemplateRegistration.validateIfSeeded(url, templateVO.getInstallPath())) {
+                                                if (SystemVmTemplateRegistration.validateIfSeeded(
+                                                        url, templateVO.getInstallPath(), nfsVersion)) {
                                                     continue;
                                                 }
                                             } catch (Exception e) {
@@ -3512,7 +3532,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                             }
                                         }
                                     }
-                                    SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath);
+                                    SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath, nfsVersion);
                                     if (templateVO != null && vmTemplateVO != null) {
                                         systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, vmTemplateVO, templateVO, filePath);
                                     } else {
@@ -4046,7 +4066,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 MountDisabledStoragePool,
                 VmwareCreateCloneFull,
                 VmwareAllowParallelExecution,
-                DataStoreDownloadFollowRedirects
+                DataStoreDownloadFollowRedirects,
+                AllowVolumeReSizeBeyondAllocation
         };
     }
 

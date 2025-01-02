@@ -47,6 +47,7 @@ import com.cloud.agent.api.CleanupNetworkRulesCmd;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.HandleConfigDriveIsoCommand;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
@@ -122,11 +123,10 @@ public abstract class AgentAttache {
 
     public final static String[] s_commandsAllowedInMaintenanceMode = new String[] { MaintainCommand.class.toString(), MigrateCommand.class.toString(),
         StopCommand.class.toString(), CheckVirtualMachineCommand.class.toString(), PingTestCommand.class.toString(), CheckHealthCommand.class.toString(),
-        ReadyCommand.class.toString(), ShutdownCommand.class.toString(), SetupCommand.class.toString(),
-        CleanupNetworkRulesCmd.class.toString(), CheckNetworkCommand.class.toString(), PvlanSetupCommand.class.toString(), CheckOnHostCommand.class.toString(),
-        ModifyTargetsCommand.class.toString(), ModifySshKeysCommand.class.toString(),
-        CreateStoragePoolCommand.class.toString(), DeleteStoragePoolCommand.class.toString(), ModifyStoragePoolCommand.class.toString(),
-        SetupMSListCommand.class.toString(), RollingMaintenanceCommand.class.toString(), CleanupPersistentNetworkResourceCommand.class.toString()};
+        ReadyCommand.class.toString(), ShutdownCommand.class.toString(), SetupCommand.class.toString(), CleanupNetworkRulesCmd.class.toString(),
+        CheckNetworkCommand.class.toString(), PvlanSetupCommand.class.toString(), CheckOnHostCommand.class.toString(), ModifyTargetsCommand.class.toString(),
+        ModifySshKeysCommand.class.toString(), CreateStoragePoolCommand.class.toString(), DeleteStoragePoolCommand.class.toString(), ModifyStoragePoolCommand.class.toString(),
+        SetupMSListCommand.class.toString(), RollingMaintenanceCommand.class.toString(), CleanupPersistentNetworkResourceCommand.class.toString(), HandleConfigDriveIsoCommand.class.toString()};
     protected final static String[] s_commandsNotAllowedInConnectingMode = new String[] { StartCommand.class.toString(), CreateCommand.class.toString() };
     static {
         Arrays.sort(s_commandsAllowedInMaintenanceMode);

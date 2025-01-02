@@ -26,7 +26,7 @@
     :rowSelection="explicitlyAllowRowSelection || enableGroupAction() || $route.name === 'event' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange, columnWidth: 30} : null"
     :rowClassName="getRowClassName"
     @resizeColumn="handleResizeColumn"
-    style="overflow-y: auto"
+    :style="{ 'overflow-y': this.$route.name === 'usage' ? 'hidden' : 'auto' }"
   >
     <template #customFilterDropdown>
       <div style="padding: 8px" class="filter-dropdown">
@@ -44,7 +44,7 @@
           <span v-if="record.icon && record.icon.base64image">
             <resource-icon :image="record.icon.base64image" size="2x"/>
           </span>
-          <os-logo v-else :osId="record.ostypeid" :osName="record.osdisplayname" size="2x" />
+          <os-logo v-else :osId="record.ostypeid" :osName="record.osdisplayname" size="xl" />
         </span>
         <span style="min-width: 120px" >
           <QuickView
@@ -58,12 +58,12 @@
           </span>
           <span v-if="$showIcon() && !['vm', 'vnfapp'].includes($route.path.split('/')[1])" style="margin-right: 5px">
             <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="2x"/>
-            <os-logo v-else-if="record.ostypename" :osName="record.ostypename" size="2x" />
+            <os-logo v-else-if="record.ostypename" :osName="record.ostypename" size="xl" />
             <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 16px;" :icon="$route.meta.icon"/>
             <render-icon v-else style="font-size: 16px;" :svgIcon="$route.meta.icon" />
           </span>
           <span v-else :style="{ 'margin-right': record.ostypename ? '5px' : '0' }">
-            <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" />
+            <os-logo v-if="record.ostypename" :osName="record.ostypename" size="xl" />
           </span>
 
           <span v-if="record.hasannotations">
@@ -239,6 +239,12 @@
       </template>
       <template v-if="column.key === 'agentstate'">
         <status :text="text ? text : ''" displayText />
+      </template>
+      <template v-if="column.key === 'cpunumber'">
+        <span>{{ record.serviceofferingdetails?.mincpunumber && record.serviceofferingdetails?.maxcpunumber ? `${record.serviceofferingdetails.mincpunumber} - ${record.serviceofferingdetails.maxcpunumber}` : record.cpunumber }}</span>
+      </template>
+      <template v-if="column.key === 'memory'">
+        <span>{{ record.serviceofferingdetails?.minmemory && record.serviceofferingdetails?.maxmemory ? `${record.serviceofferingdetails.minmemory} - ${record.serviceofferingdetails.maxmemory}` : record.memory }}</span>
       </template>
       <template v-if="column.key === 'quotastate'">
         <status :text="text ? text : ''" displayText />

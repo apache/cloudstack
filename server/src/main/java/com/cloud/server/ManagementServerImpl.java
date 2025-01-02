@@ -68,11 +68,6 @@ import org.apache.cloudstack.api.command.admin.affinitygroup.UpdateVMAffinityGro
 import org.apache.cloudstack.api.command.admin.alert.GenerateAlertCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.DeleteCounterCmd;
-import org.apache.cloudstack.api.command.admin.bgp.CreateASNRangeCmd;
-import org.apache.cloudstack.api.command.admin.bgp.DeleteASNRangeCmd;
-import org.apache.cloudstack.api.command.admin.bgp.ListASNRangesCmd;
-import org.apache.cloudstack.api.command.user.bgp.ListASNumbersCmd;
-import org.apache.cloudstack.api.command.admin.bgp.ReleaseASNumberCmd;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.ListClustersCmd;
@@ -4017,12 +4012,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(RemoveSecondaryStorageSelectorCmd.class);
         cmdList.add(ListAffectedVmsForStorageScopeChangeCmd.class);
 
-        cmdList.add(CreateASNRangeCmd.class);
-        cmdList.add(ListASNRangesCmd.class);
-        cmdList.add(DeleteASNRangeCmd.class);
-        cmdList.add(ListASNumbersCmd.class);
-        cmdList.add(ReleaseASNumberCmd.class);
-
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);
         cmdList.add(DisableOutOfBandManagementForHostCmd.class);
@@ -4859,7 +4848,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
         final SearchCriteria<UserDataVO> sc = sb.create();
         _accountMgr.buildACLSearchCriteria(sc, domainId, isRecursive, permittedAccounts, listProjectResourcesCriteria);
 
@@ -4872,7 +4861,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (keyword != null) {
-            sc.setParameters("name",  "%" + keyword + "%");
+            sc.setParameters("keyword",  "%" + keyword + "%");
         }
 
         final Pair<List<UserDataVO>, Integer> result = userDataDao.searchAndCount(sc, searchFilter);

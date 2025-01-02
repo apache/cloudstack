@@ -43,13 +43,14 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.bgp.BGPService;
+import com.cloud.dc.ASNumberVO;
+import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.Vlan;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.element.NsxProviderVO;
-import com.cloud.configuration.ConfigurationManagerImpl;
-import com.cloud.dc.ASNumberVO;
-import com.cloud.bgp.BGPService;
-import com.cloud.dc.dao.ASNumberDao;
+import com.cloud.resourcelimit.CheckedReservation;
 import com.google.common.collect.Sets;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
@@ -70,11 +71,14 @@ import org.apache.cloudstack.api.command.user.vpc.RestartVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -193,7 +197,7 @@ import com.cloud.vm.dao.NicDao;
 
 import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
 
-public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService {
+public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService, Configurable {
 
     public static final String SERVICE = "service";
     public static final String CAPABILITYTYPE = "capabilitytype";
@@ -249,6 +253,8 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     VlanDao _vlanDao = null;
     @Inject
     ResourceLimitService _resourceLimitMgr;
+    @Inject
+    ReservationDao reservationDao;
     @Inject
     VpcServiceMapDao _vpcSrvcDao;
     @Inject
@@ -495,6 +501,18 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 throw new InvalidParameterValueException("Invalid mode passed. Valid values: " + Arrays.toString(NetworkOffering.NetworkMode.values()));
             }
             networkMode = NetworkOffering.NetworkMode.valueOf(networkModeStr);
+        }
+        if (NetworkOffering.NetworkMode.ROUTED.equals(networkMode)) {
+            if (!RoutedIpv4Manager.RoutedNetworkVpcEnabled.value()) {
+                throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for Routed VPCs", RoutedIpv4Manager.RoutedNetworkVpcEnabled.key()));
+            }
+            if (zoneIds != null) {
+                for (Long zoneId: zoneIds) {
+                    if (!RoutedIpv4Manager.RoutedNetworkVpcEnabled.valueIn(zoneId)) {
+                        throw new InvalidParameterValueException(String.format("Configuration %s needs to be enabled for Routed VPCs in zone (ID: %s)", RoutedIpv4Manager.RoutedNetworkVpcEnabled.key(), zoneId));
+                    }
+                }
+            }
         }
         boolean specifyAsNumber = cmd.getSpecifyAsNumber();
         String routingModeString = cmd.getRoutingMode();
@@ -1157,12 +1175,17 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw ex;
         }
 
+        if (NetworkOffering.NetworkMode.ROUTED.equals(vpcOff.getNetworkMode())
+                && !routedIpv4Manager.RoutedNetworkVpcEnabled.valueIn(zoneId)) {
+            throw new InvalidParameterValueException("Routed VPC is not enabled in this zone");
+        }
+
         if (NetworkOffering.RoutingMode.Dynamic.equals(vpcOff.getRoutingMode()) && vpcOff.isSpecifyAsNumber() && asNumber == null) {
             throw new InvalidParameterValueException("AS number is required for the VPC but not passed.");
         }
 
         // Validate VPC cidr/cidrsize
-        validateVpcCidrSize(caller, owner.getAccountId(), vpcOff, cidr, cidrSize);
+        validateVpcCidrSize(caller, owner.getAccountId(), vpcOff, cidr, cidrSize, zoneId);
 
         // Validate BGP peers
         if (CollectionUtils.isNotEmpty(bgpPeerIds)) {
@@ -1247,7 +1270,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return newVpc;
     }
 
-    private void validateVpcCidrSize(Account caller, long accountId, VpcOffering vpcOffering, String cidr, Integer cidrSize) {
+    private void validateVpcCidrSize(Account caller, long accountId, VpcOffering vpcOffering, String cidr, Integer cidrSize, long zoneId) {
         if (ObjectUtils.allNull(cidr, cidrSize)) {
             throw new InvalidParameterValueException("VPC cidr or cidr size must be specified");
         }
@@ -3111,6 +3134,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
     }
 
+    @Override
+    public String getConfigComponentName() {
+        return VpcManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[]{
+                VpcTierNamePrepend,
+                VpcTierNamePrependDelimiter
+        };
+    }
+
     protected class VpcCleanupTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
@@ -3175,9 +3211,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         logger.debug("Associating ip " + ipToAssoc + " to vpc " + vpc);
 
         final boolean isSourceNatFinal = isSrcNatIpRequired(vpc.getVpcOfferingId()) && getExistingSourceNatInVpc(vpc.getAccountId(), vpcId, false) == null;
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(final TransactionStatus status) {
+        try (CheckedReservation publicIpReservation = new CheckedReservation(owner, ResourceType.public_ip, 1l, reservationDao, _resourceLimitMgr)) {
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(final TransactionStatus status) {
                 final IPAddressVO ip = _ipAddressDao.findById(ipId);
                 // update ip address with networkId
                 ip.setVpcId(vpcId);
@@ -3187,8 +3224,12 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
                 // mark ip as allocated
                 _ipAddrMgr.markPublicIpAsAllocated(ip);
-            }
-        });
+                }
+            });
+        } catch (Exception e) {
+            logger.error("Failed to associate ip " + ipToAssoc + " to vpc " + vpc, e);
+            throw new CloudRuntimeException("Failed to associate ip " + ipToAssoc + " to vpc " + vpc, e);
+        }
 
         logger.debug("Successfully assigned ip " + ipToAssoc + " to vpc " + vpc);
         CallContext.current().putContextParameter(IpAddress.class, ipToAssoc.getUuid());
