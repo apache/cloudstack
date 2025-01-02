@@ -359,7 +359,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             script.add("-v");
 
         Date restoreJobStart = new Date();
-        LOG.debug(String.format("Starting Restore for VM ID %s and  %s at %s", vm, SSID, restoreJobStart));
+        LOG.debug(String.format("Starting Restore for VM %s and %s at %s", vm, SSID, restoreJobStart));
 
         if ( executeRestoreCommand(hostVO, credentials.first(), credentials.second(), script.toString()) ) {
             Date restoreJobEnd = new Date();

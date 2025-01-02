@@ -1269,7 +1269,7 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager, C
                 });
             }
         } else {
-            throw new InvalidParameterValueException(String.format("Unable to find invitation for account name=%s to the project id=%s", accountName, project));
+            throw new InvalidParameterValueException(String.format("Unable to find invitation for account name=%s to the project=%s", accountName, project));
         }
 
         return result;

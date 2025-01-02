@@ -767,7 +767,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
             NicVO nic = _nicDao.findById(nicId);
             try {
-                logger.debug("Trying IP retrieval [id: {}, uuid: {}, name: {}], nic {}", vmId, vmUuid, vmName, nic);
+                logger.debug("Trying IP retrieval for VM [id: {}, uuid: {}, name: {}], nic {}", vmId, vmUuid, vmName, nic);
                 Answer answer = _agentMgr.send(hostId, cmd);
                 if (answer.getResult()) {
                     String vmIp = answer.getDetails();

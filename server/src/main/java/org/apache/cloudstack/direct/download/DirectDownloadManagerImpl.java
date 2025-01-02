@@ -288,7 +288,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         VMTemplateStoragePoolVO sPoolRef = vmTemplatePoolDao.findByPoolTemplate(poolId, templateId, null);
         if (sPoolRef == null) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Not found (template:{} pool: {}) in template_spool_ref, persisting it", template, pool);
+                logger.debug("Not found (template: {} pool: {}) in template_spool_ref, persisting it", template, pool);
             }
             DirectDownloadAnswer ans = (DirectDownloadAnswer) answer;
             sPoolRef = new VMTemplateStoragePoolVO(poolId, templateId, null);

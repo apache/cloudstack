@@ -965,7 +965,7 @@ public class RoutedIpv4ManagerImpl extends ComponentLifecycleBase implements Rou
             logger.error("Cannot apply routing firewall rule: {} as purpose {} is not {}", rule, rule.getPurpose(), FirewallRule.Purpose.Firewall);
             return false;
         }
-        logger.debug("Applying routing firewall rules for rule with ID: {}", rule);
+        logger.debug("Applying routing firewall rules for rule: {}", rule);
         List<FirewallRuleVO> rules = new ArrayList<>();
         rules.addAll(firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), rule.getPurpose(), FirewallRule.TrafficType.Egress));
         rules.addAll(firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), rule.getPurpose(), FirewallRule.TrafficType.Ingress));

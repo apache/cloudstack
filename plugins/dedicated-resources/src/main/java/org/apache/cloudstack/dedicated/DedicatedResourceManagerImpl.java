@@ -302,7 +302,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                 if (dedicatedZoneOfPod.getAccountId() != null || (accountId == null && !domainIdInChildreanList) ||
                     (accountId != null && !(dedicatedZoneOfPod.getDomainId().equals(domainId) || domainIdInChildreanList))) {
                     DataCenterVO zone = _zoneDao.findById(pod.getDataCenterId());
-                    logger.error(String.format("Cannot dedicate Pod. Its zone%s is already dedicated", zone));
+                    logger.error(String.format("Cannot dedicate Pod. Its zone %s is already dedicated", zone));
                     throw new CloudRuntimeException("Pod's Zone " + zone.getName() + " is already dedicated");
                 }
             }

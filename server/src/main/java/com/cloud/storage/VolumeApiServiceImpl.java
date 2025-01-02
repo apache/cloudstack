@@ -922,7 +922,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // Check if zone is disabled
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(caller.getId())) {
-            throw new PermissionDeniedException(String.format("Cannot perform this operation, Zone is currently disabled: %s", zone));
+            throw new PermissionDeniedException(String.format("Cannot perform this operation, Zone: %s is currently disabled", zone));
         }
 
         // If local storage is disabled then creation of volume with local disk
@@ -3808,7 +3808,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         if (volume.getState() != Volume.State.Ready) {
-            throw new InvalidParameterValueException(String.format("VolumeId: %s is not in %s state but %s. Cannot take snapshot.", volume.getVolume(), Volume.State.Ready, volume.getState()));
+            throw new InvalidParameterValueException(String.format("Volume: %s is not in %s state but %s. Cannot take snapshot.", volume.getVolume(), Volume.State.Ready, volume.getState()));
         }
 
         boolean isSnapshotOnStorPoolOnly = volume.getStoragePoolType() == StoragePoolType.StorPool && BooleanUtils.toBoolean(_configDao.getValue("sp.bypass.secondary.storage"));

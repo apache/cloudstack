@@ -287,7 +287,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
             // apply the gslb rule on to the back end gslb service providers on zones participating in gslb
             if (!applyGlobalLoadBalancerRuleConfig(gslbRuleId, false)) {
-                logger.warn("Failed to add load balancer rules {} to global load balancer rule id {}", newLbRuleIds, gslbRule);
+                logger.warn("Failed to add load balancer rules {} to global load balancer rule {}", newLbRuleIds, gslbRule);
                 CloudRuntimeException ex = new CloudRuntimeException("Failed to add load balancer rules to GSLB rule ");
                 throw ex;
             }
@@ -390,7 +390,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
 
             // apply the gslb rule on to the back end gslb service providers
             if (!applyGlobalLoadBalancerRuleConfig(gslbRuleId, false)) {
-                logger.warn("Failed to remove load balancer rules {} from global load balancer rule id {}", lbRuleIdsToremove, gslbRule);
+                logger.warn("Failed to remove load balancer rules {} from global load balancer rule {}", lbRuleIdsToremove, gslbRule);
                 CloudRuntimeException ex = new CloudRuntimeException("Failed to remove load balancer rule ids from GSLB rule ");
                 throw ex;
             }
@@ -545,7 +545,7 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
         _gslbRuleDao.update(gslbRule.getId(), gslbRule);
 
         try {
-            logger.debug("Updating global load balancer with id {}", gslbRule);
+            logger.debug("Updating global load balancer {}", gslbRule);
 
             // apply the gslb rule on to the back end gslb service providers on zones participating in gslb
             applyGlobalLoadBalancerRuleConfig(gslbRuleId, false);

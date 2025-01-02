@@ -214,7 +214,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         network.setNetworkACLId(acl.getId());
         //Update Network ACL
         if (_networkDao.update(network.getId(), network)) {
-            logger.debug("Updated network: {} with Network ACL Id: {}, Applying ACL items", network, acl);
+            logger.debug("Updated network: {} with Network ACL: {}, Applying ACL items", network, acl);
             //Apply ACL to network
             final Boolean result = applyACLToNetwork(network.getId());
             if (result) {

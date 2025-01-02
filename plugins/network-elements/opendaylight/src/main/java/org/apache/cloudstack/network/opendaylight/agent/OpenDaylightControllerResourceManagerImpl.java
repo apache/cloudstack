@@ -106,10 +106,10 @@ public class OpenDaylightControllerResourceManagerImpl implements OpenDaylightCo
         final PhysicalNetworkServiceProviderVO ntwkSvcProvider = physicalNetworkServiceProviderDao.findByServiceProvider(physicalNetwork.getId(),
                 networkDevice.getNetworkServiceProvder());
         if (ntwkSvcProvider == null) {
-            throw new CloudRuntimeException(String.format("Network Service Provider: %s is not enabled in the physical network: %sto add this device",
+            throw new CloudRuntimeException(String.format("Network Service Provider: %s is not enabled in the physical network: %s to add this device",
                     networkDevice.getNetworkServiceProvder(), physicalNetwork));
         } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
-            throw new CloudRuntimeException(String.format("Network Service Provider: %s is in shutdown state in the physical network: %sto add this device",
+            throw new CloudRuntimeException(String.format("Network Service Provider: %s is in shutdown state in the physical network: %s to add this device",
                     ntwkSvcProvider.getProviderName(), physicalNetwork));
         }
 

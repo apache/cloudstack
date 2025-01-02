@@ -72,11 +72,11 @@ public abstract class AbstractInvestigatorImpl extends AdapterBase implements In
         List<HostVO> hosts = sc.list();
 
         List<HostVO> hostList = new ArrayList<>(hosts.size());
-        for (HostVO h : hosts) {
-            if (excludeHostId != null && h.getId() == excludeHostId) {
+        for (HostVO host : hosts) {
+            if (excludeHostId != null && host.getId() == excludeHostId) {
                 continue;
             }
-            hostList.add(h);
+            hostList.add(host);
         }
 
         return hostList;

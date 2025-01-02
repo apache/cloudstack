@@ -268,17 +268,17 @@ public class VnfTemplateManagerImpl extends ManagerBase implements VnfTemplateMa
                     continue;
                 }
                 if (!networkModel.areServicesSupportedInNetwork(network.getId(), Network.Service.StaticNat)) {
-                    logger.info("Network ID: {} does not support static nat, " +
+                    logger.info("Network: {} does not support static nat, " +
                             "skipping this network configuration for VNF appliance", network);
                     continue;
                 }
                 if (network.getVpcId() != null) {
-                    logger.info("Network ID: {} is a VPC tier, " +
+                    logger.info("Network: {} is a VPC tier, " +
                             "skipping this network configuration for VNF appliance", network);
                     continue;
                 }
                 if (!networkModel.areServicesSupportedInNetwork(network.getId(), Network.Service.Firewall)) {
-                    logger.info("Network ID: {} does not support firewall, " +
+                    logger.info("Network: {} does not support firewall, " +
                             "skipping this network configuration for VNF appliance", network);
                     continue;
                 }

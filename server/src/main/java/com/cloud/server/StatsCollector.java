@@ -1251,7 +1251,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                             metrics.clear();
                         }
                     } catch (Exception e) {
-                        logger.debug("Failed to get VM stats for host with ID: {}", host);
+                        logger.debug("Failed to get VM stats for host: {}", host);
                         continue;
                     }
                 }

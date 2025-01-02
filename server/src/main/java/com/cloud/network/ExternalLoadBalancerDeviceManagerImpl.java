@@ -244,9 +244,9 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
 
         ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
         if (ntwkSvcProvider == null) {
-            throw new CloudRuntimeException(String.format("Network Service Provider: %s is not enabled in the physical network: %sto add this device", ntwkDevice.getNetworkServiceProvder(), pNetwork));
+            throw new CloudRuntimeException(String.format("Network Service Provider: %s is not enabled in the physical network: %s to add this device", ntwkDevice.getNetworkServiceProvder(), pNetwork));
         } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
-            throw new CloudRuntimeException(String.format("Network Service Provider: %s is in shutdown state in the physical network: %sto add this device", ntwkSvcProvider.getProviderName(), pNetwork));
+            throw new CloudRuntimeException(String.format("Network Service Provider: %s is in shutdown state in the physical network: %s to add this device", ntwkSvcProvider.getProviderName(), pNetwork));
         }
 
         if (gslbProvider) {

@@ -191,7 +191,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new PermissionDeniedException("Parameter external can only be specified by a Root Admin, permission denied");
         }
         final BackupProvider backupProvider = getBackupProvider(zoneId);
-        logger.debug("Listing external backup offerings for the backup provider configured for zone ID {}", dataCenterDao.findById(zoneId));
+        logger.debug("Listing external backup offerings for the backup provider configured for zone {}", dataCenterDao.findById(zoneId));
         return backupProvider.listBackupOfferings(zoneId);
     }
 

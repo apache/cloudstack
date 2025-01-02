@@ -101,7 +101,7 @@ public class StopKubernetesClusterCmd extends BaseAsyncCmd {
         try {
             if (!kubernetesClusterService.stopKubernetesCluster(this)) {
                 KubernetesCluster cluster = kubernetesClusterService.findById(getId());
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to start Kubernetes cluster %s with id %d", cluster, getId()));
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to stop Kubernetes cluster %s with id %d", cluster, getId()));
             }
             final SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);

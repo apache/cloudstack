@@ -527,7 +527,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
             return false;
         }
         if (!State.Revoke.equals(vpnUser.getState())) {
-            logger.error("VPN user with ownerId: {} and username: {} is not in revoked state, current state: {}", vpnOwner, userName, vpnUser.getState());
+            logger.error("VPN user with owner: {} and username: {} is not in revoked state, current state: {}", vpnOwner, userName, vpnUser.getState());
             return false;
         }
         return _vpnUsersDao.remove(vpnUser.getId());
