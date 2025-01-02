@@ -576,17 +576,17 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     monitor.second().processConnect(host, cmd[i], forRebalance);
                 } catch (final ConnectionException ce) {
                     if (ce.isSetupError()) {
-                        s_logger.warn("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage());
+                        s_logger.warn("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + ce.getMessage());
                         handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true, true);
                         throw ce;
                     } else {
-                        s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId + " due to " + e.getMessage());
+                        s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId + " due to " + ce.getMessage());
                         handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested, true, true);
                         return attache;
                     }
-                } catch (final HypervisorVersionChangedException e) {
+                } catch (final HypervisorVersionChangedException hvce) {
                     handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested, true, true);
-                    throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
+                    throw new CloudRuntimeException("Unable to connect " + attache.getId(), hvce);
                 } catch (final Exception e) {
                     s_logger.error("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage(), e);
                     handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true, true);
