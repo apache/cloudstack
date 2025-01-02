@@ -129,7 +129,7 @@ namespace HypervResource
     /// <remarks>
     /// <para>
     /// POST takes dynamic to allow it to receive JSON without concern for what is the underlying object.
-    /// E.g. http://stackoverflow.com/questions/14071715/passing-dynamic-json-object-to-web-api-newtonsoft-example 
+    /// E.g. http://stackoverflow.com/questions/14071715/passing-dynamic-json-object-to-web-api-newtonsoft-example
     /// and http://stackoverflow.com/questions/3142495/deserialize-json-into-c-sharp-dynamic-object
     /// Use ActionName attribute to allow multiple POST URLs, one for each supported command
     /// E.g. http://stackoverflow.com/a/12703423/939250
@@ -141,7 +141,7 @@ namespace HypervResource
     /// Exceptions handled on command by command basis rather than globally to allow details of the command
     /// to be reflected in the response.  Default error handling is in the catch for Exception, but
     /// other exception types may be caught where the feedback would be different.
-    /// NB: global alternatives discussed at 
+    /// NB: global alternatives discussed at
     /// http://weblogs.asp.net/fredriknormen/archive/2012/06/11/asp-net-web-api-exception-handling.aspx
     /// </para>
     /// </remarks>
@@ -174,7 +174,7 @@ namespace HypervResource
         }
 
         /// <summary>
-        /// NOP - placeholder for future setup, e.g. delete existing VMs or Network ports 
+        /// NOP - placeholder for future setup, e.g. delete existing VMs or Network ports
         /// POST api/HypervResource/SetupCommand
         /// </summary>
         /// <param name="cmd"></param>
@@ -486,7 +486,7 @@ namespace HypervResource
             }
         }
 
-        
+
         private static JArray ReturnCloudStackTypedJArray(object ansContent, string ansType)
         {
             JObject ansObj = Utils.CreateCloudStackObject(ansType, ansContent);
@@ -705,7 +705,7 @@ namespace HypervResource
         /// +-System.UnauthorizedAccessException
         /// +-System.IO.IOException
         ///   +-System.IO.PathTooLongException
-        ///   
+        ///
         /// Exceptions related to HTTP URIs
         /// System.SystemException
         /// +-System.InvalidOperationException

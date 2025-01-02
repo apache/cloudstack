@@ -121,7 +121,6 @@ export default {
   },
   created () {
     this.initForm()
-    this.form.name = this.resource.name
   },
   computed: {
     canUpdateNFSMountOpts () {
@@ -136,7 +135,14 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({ })
+      this.form = reactive({
+        name: this.resource.name,
+        tags: this.resource.tags,
+        isTagARule: this.resource.istagarule,
+        capacityBytes: this.resource.disksizetotal,
+        capacityIOPS: this.resource.capacityiops,
+        nfsMountOpts: this.resource.nfsmountopts
+      })
       this.rules = reactive({ })
     },
     isAdmin () {

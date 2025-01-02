@@ -258,9 +258,6 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     }
 
     public void saveSourceCidrs(FirewallRuleVO firewallRule, List<String> cidrList) {
-        if (cidrList == null) {
-            return;
-        }
         _firewallRulesCidrsDao.persist(firewallRule.getId(), cidrList);
     }
 

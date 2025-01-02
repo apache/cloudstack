@@ -1384,7 +1384,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
-    void validateNetworkCidrSize(Account caller, Integer cidrSize, String cidr, NetworkOffering networkOffering, long accountId) {
+    void validateNetworkCidrSize(Account caller, Integer cidrSize, String cidr, NetworkOffering networkOffering, long accountId, long zoneId) {
         if (!GuestType.Isolated.equals(networkOffering.getGuestType())) {
             if (cidrSize != null) {
                 throw new InvalidParameterValueException("network cidr size is only applicable on Isolated networks");
@@ -1405,11 +1405,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (cidrSize == null) {
                 throw new InvalidParameterValueException("network cidr or cidr size is required for Isolated networks with ROUTED mode");
             }
-            Integer maxCidrSize = routedIpv4Manager.RoutedNetworkIPv4MaxCidrSize.valueIn(accountId);
+            Integer maxCidrSize = RoutedIpv4Manager.RoutedNetworkIPv4MaxCidrSize.valueIn(accountId);
             if (cidrSize > maxCidrSize) {
                 throw new InvalidParameterValueException("network cidr size cannot be bigger than maximum cidr size " + maxCidrSize);
             }
-            Integer minCidrSize = routedIpv4Manager.RoutedNetworkIPv4MinCidrSize.valueIn(accountId);
+            Integer minCidrSize = RoutedIpv4Manager.RoutedNetworkIPv4MinCidrSize.valueIn(accountId);
             if (cidrSize < minCidrSize) {
                 throw new InvalidParameterValueException("network cidr size cannot be smaller than minimum cidr size " + minCidrSize);
             }
@@ -1474,6 +1474,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         if (!NetUtils.isValidIp6(routerIPv6)) {
             throw new CloudRuntimeException("Router IPv6 address provided is of incorrect format");
         }
+    }
+
+    private String getVpcPrependedNetworkName(String networkName, Vpc vpc) {
+        final String delimiter = VpcManager.VpcTierNamePrependDelimiter.value();
+        return vpc.getName() + delimiter + networkName;
     }
 
     @Override
@@ -1651,11 +1656,16 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
 
+        if (NetworkOffering.NetworkMode.ROUTED.equals(ntwkOff.getNetworkMode())
+                && !routedIpv4Manager.isRoutedNetworkVpcEnabled(zone.getId())) {
+            throw new InvalidParameterValueException("Routed network is not enabled in this zone");
+        }
+
         if (isNonVpcNetworkSupportingDynamicRouting(ntwkOff) && ntwkOff.isSpecifyAsNumber() && asNumber == null) {
             throw new InvalidParameterValueException("AS number is required for the network but not passed.");
         }
 
-        validateNetworkCidrSize(caller, networkCidrSize, cidr, ntwkOff, owner.getAccountId());
+        validateNetworkCidrSize(caller, networkCidrSize, cidr, ntwkOff, owner.getAccountId(), zone.getId());
 
         validateSharedNetworkRouterIPs(gateway, startIP, endIP, netmask, routerIPv4, routerIPv6, startIPv6, endIPv6, ip6Cidr, ntwkOff);
 
@@ -1787,6 +1797,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         checkNetworkDns(ipv6, ntwkOff, vpcId, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
+
+        if (vpcId != null && VpcManager.VpcTierNamePrepend.value()) {
+            Vpc vpc = _vpcDao.findById(vpcId);
+            if (vpc != null) {
+                name = getVpcPrependedNetworkName(name, vpc);
+            }
+        }
 
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zone.getId(),
                 domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, secondaryVlanId, privateVlanType, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,

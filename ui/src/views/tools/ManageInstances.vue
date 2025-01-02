@@ -840,7 +840,8 @@ export default {
           options: {
             zoneid: _.get(this.zone, 'id'),
             podid: this.podId,
-            hypervisor: this.destinationHypervisor
+            hypervisor: this.destinationHypervisor,
+            allocationstate: 'Enabled'
           },
           field: 'clusterid'
         },
