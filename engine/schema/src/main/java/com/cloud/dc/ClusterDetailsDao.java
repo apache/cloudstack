@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.dc;
 
+import java.util.Collection;
 import java.util.Map;
 
 import com.cloud.utils.db.GenericDao;
@@ -28,6 +29,8 @@ public interface ClusterDetailsDao extends GenericDao<ClusterDetailsVO, Long> {
     void persist(long clusterId, String name, String value);
 
     ClusterDetailsVO findDetail(long clusterId, String name);
+
+    Map<String, String> findDetails(long clusterId, Collection<String> names);
 
     void deleteDetails(long clusterId);
 

@@ -1752,7 +1752,7 @@ export default {
         if (filter === 'all') {
           delete query.resourcestate
           delete query.state
-        } else if (['up', 'down', 'alert'].includes(filter)) {
+        } else if (['up', 'down', 'disconnected', 'alert'].includes(filter)) {
           delete query.resourcestate
           query.state = filter
         } else {
