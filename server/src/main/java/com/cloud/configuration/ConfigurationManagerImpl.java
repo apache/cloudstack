@@ -45,6 +45,17 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.VlanDetailsVO;
+import com.cloud.dc.dao.VlanDetailsDao;
+import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NsxProviderVO;
+import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.host.HostTagVO;
+import com.cloud.storage.StoragePoolTagVO;
+import com.cloud.storage.VolumeApiServiceImpl;
+import com.cloud.vm.VMInstanceVO;
+import com.googlecode.ipv6.IPv6Address;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -163,7 +174,6 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
 import com.cloud.dc.dao.ClusterDao;
@@ -177,7 +187,6 @@ import com.cloud.dc.dao.DomainVlanMapDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
-import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentClusterPlanner;
@@ -196,12 +205,10 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.gpu.GPU;
-import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
@@ -224,13 +231,11 @@ import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.dao.UserIpv6AddressDao;
-import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.offering.DiskOffering;
@@ -258,9 +263,7 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
@@ -280,7 +283,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
@@ -305,7 +307,6 @@ import com.google.common.base.Enums;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
-import com.googlecode.ipv6.IPv6Address;
 import com.googlecode.ipv6.IPv6Network;
 
 import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
@@ -4386,8 +4387,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         annotationDao.removeByEntityType(AnnotationService.EntityType.DISK_OFFERING.name(), offering.getUuid());
-        offering.setState(DiskOffering.State.Inactive);
-        if (_diskOfferingDao.update(offering.getId(), offering)) {
+        List<VolumeVO> volumesUsingOffering = _volumeDao.findByDiskOfferingId(diskOfferingId);
+        if (!volumesUsingOffering.isEmpty()) {
+            throw new InvalidParameterValueException(String.format("Unable to delete disk offering: %s [%s] because there are volumes using it", offering.getUuid(), offering.getName()));
+        }
+        if (_diskOfferingDao.remove(offering.getId())) {
             CallContext.current().setEventDetails("Disk offering id=" + diskOfferingId);
             return true;
         } else {
@@ -4459,15 +4463,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException(String.format("Unable to delete service offering: %s by user: %s because it is not root-admin or domain-admin", offering.getUuid(), user.getUuid()));
         }
 
+        List<VMInstanceVO> vmsUsingOffering = _vmInstanceDao.listByOfferingId(offeringId);
+        if (!vmsUsingOffering.isEmpty()) {
+            throw new CloudRuntimeException(String.format("Unable to delete service offering %s as it is in use", offering.getUuid()));
+        }
         annotationDao.removeByEntityType(AnnotationService.EntityType.SERVICE_OFFERING.name(), offering.getUuid());
         if (diskOffering.isComputeOnly()) {
-            diskOffering.setState(DiskOffering.State.Inactive);
-            if (!_diskOfferingDao.update(diskOffering.getId(), diskOffering)) {
+            if (!_diskOfferingDao.remove(diskOffering.getId())) {
                 throw new CloudRuntimeException(String.format("Unable to delete disk offering %s mapped to the service offering %s", diskOffering.getUuid(), offering.getUuid()));
             }
         }
-        offering.setState(ServiceOffering.State.Inactive);
-        if (_serviceOfferingDao.update(offeringId, offering)) {
+        if (_serviceOfferingDao.remove(offeringId)) {
             CallContext.current().setEventDetails("Service offering id=" + offeringId);
             return true;
         } else {
