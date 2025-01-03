@@ -16,14 +16,21 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.utils.cryptsetup.KeyFile;
@@ -33,9 +40,10 @@ import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.libvirt.Secret;
@@ -68,14 +76,6 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
 
 public class LibvirtStorageAdaptor implements StorageAdaptor {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -521,6 +521,54 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return this.getStoragePool(uuid, false);
     }
 
+    protected void updateLocalPoolIops(LibvirtStoragePool pool) {
+        if (!StoragePoolType.Filesystem.equals(pool.getType()) || StringUtils.isBlank(pool.getLocalPath())) {
+            return;
+        }
+        logger.trace("Updating used IOPS for pool: {}", pool.getName());
+
+        // Run script to get data
+        List<String[]> commands = new ArrayList<>();
+        commands.add(new String[]{
+                Script.getExecutableAbsolutePath("bash"),
+                "-c",
+                String.format(
+                        "%s %s | %s 'NR==2 {print $1}'",
+                        Script.getExecutableAbsolutePath("df"),
+                        pool.getLocalPath(),
+                        Script.getExecutableAbsolutePath("awk")
+                )
+        });
+        String result = Script.executePipedCommands(commands, 1000).second();
+        if (StringUtils.isBlank(result)) {
+            return;
+        }
+        result = result.trim();
+        commands.add(new String[]{
+                Script.getExecutableAbsolutePath("bash"),
+                "-c",
+                String.format(
+                        "%s -z %s 1 2 | %s 'NR==7 {print $2}'",
+                        Script.getExecutableAbsolutePath("iostat"),
+                        result,
+                        Script.getExecutableAbsolutePath("awk")
+                )
+        });
+        result = Script.executePipedCommands(commands, 10000).second();
+        logger.trace("Pool used IOPS result: {}", result);
+        if (StringUtils.isBlank(result)) {
+            return;
+        }
+        try {
+            double doubleValue = Double.parseDouble(result);
+            pool.setUsedIops((long) doubleValue);
+            logger.debug("Updated used IOPS: {} for pool: {}", pool.getUsedIops(), pool.getName());
+        } catch (NumberFormatException e) {
+            logger.warn(String.format("Unable to parse retrieved used IOPS: %s for pool: %s", result,
+                    pool.getName()));
+        }
+    }
+
     @Override
     public KVMStoragePool getStoragePool(String uuid, boolean refreshInfo) {
         logger.info("Trying to fetch storage pool " + uuid + " from libvirt");
@@ -591,6 +639,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
             }
             pool.setCapacity(storage.getInfo().capacity);
             pool.setUsed(storage.getInfo().allocation);
+            updateLocalPoolIops(pool);
             pool.setAvailable(storage.getInfo().available);
 
             logger.debug("Successfully refreshed pool " + uuid +
