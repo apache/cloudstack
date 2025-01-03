@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import java.util.List;
+
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -27,6 +29,7 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.backup.BackupManager;
 
@@ -54,8 +57,49 @@ public class CreateVMFromBackupCmd extends DeployVMCmd implements UserCmd {
             description = "backup ID to create the VM from")
     private Long backupId;
 
+    @Parameter(name = ApiConstants.DISK_OFFERING_IDS,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = DiskOfferingResponse.class,
+            description = "list of disk offering ids to be used by the data volumes of the vm.")
+    private List<Long> diskOfferingIds;
+
+    @Parameter(name = ApiConstants.DISK_SIZES,
+            type = CommandType.LIST,
+            collectionType = CommandType.LONG,
+            description = "list of volume sizes to be used by the data volumes of the vm for custom disk offering.")
+    private List<Long> diskSizes;
+
+    @Parameter(name = ApiConstants.MIN_IOPS,
+            type = CommandType.LIST,
+            collectionType = CommandType.LONG,
+            description = "list of minIops to be used by the data volumes of the vm for custom disk offering.")
+    private List<Long> minIops;
+
+    @Parameter(name = ApiConstants.MAX_IOPS,
+            type = CommandType.LIST,
+            collectionType = CommandType.LONG,
+            description = "list of maxIops to be used by the data volumes of the vm for custom disk offering.")
+    private List<Long> maxIops;
+
     public Long getBackupId() {
         return backupId;
+    }
+
+    public List<Long> getDiskOfferingIds() {
+        return diskOfferingIds;
+    }
+
+    public List<Long> getDiskSizes() {
+        return diskSizes;
+    }
+
+    public List<Long> getMinIops() {
+        return minIops;
+    }
+
+    public List<Long> getMaxIops() {
+        return maxIops;
     }
 
     @Override
@@ -78,6 +122,7 @@ public class CreateVMFromBackupCmd extends DeployVMCmd implements UserCmd {
         try {
             vm = _userVmService.restoreVMFromBackup(this);
         } catch (Exception e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create vm due to exception: " + e.getMessage());
         }
         if (vm != null) {
             UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", vm).get(0);

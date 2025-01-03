@@ -125,6 +125,9 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     @Inject
     private EntityManager entityManager;
 
+    @Inject
+    BackupManager backupManager;
+
     private static String getUrlDomain(String url) throws URISyntaxException {
         URI uri;
         try {
@@ -521,6 +524,8 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         BackupVO backup = getClient(vm.getDataCenterId()).registerBackupForVm(vm, backupJobStart, saveTime);
         if (backup != null) {
             backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+            Map<String, String> details = backupManager.getBackupDiskOfferingDetails(vm.getId());
+            backup.addDetails(details);
             backupDao.persist(backup);
             return true;
         } else {

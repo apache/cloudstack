@@ -21,16 +21,28 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.amazonaws.util.CollectionUtils;
+import com.cloud.api.query.dao.UserVmJoinDao;
+import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.DiskOfferingInfo;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeApiService;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VirtualMachineManager;
 import javax.inject.Inject;
@@ -166,6 +178,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private VolumeApiService volumeApiService;
     @Inject
     private VolumeOrchestrationService volumeOrchestrationService;
+    @Inject
+    private EntityManager entityManager;
+    @Inject
+    private UserVmJoinDao userVmJoinDao;
 
     private AsyncJobDispatcher asyncJobDispatcher;
     private Timer backupTimer;
@@ -277,6 +293,50 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         validateBackupForZone(offering.getZoneId());
         return backupOfferingDao.remove(offering.getId());
+    }
+
+    @Override
+    public Map<String, String> getBackupVmDetails(VirtualMachine vm) {
+        HashMap<String, String> details = new HashMap<>();
+        details.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
+        ServiceOffering serviceOffering =  entityManager.findById(ServiceOffering.class, vm.getServiceOfferingId());
+        details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
+        VirtualMachineTemplate template =  entityManager.findById(VirtualMachineTemplate.class, vm.getTemplateId());
+        details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+        List<UserVmJoinVO> userVmJoinVOs = userVmJoinDao.searchByIds(vm.getId());
+        if (userVmJoinVOs != null && !userVmJoinVOs.isEmpty()) {
+            Set<String> networkIds = new HashSet<>();
+            for (UserVmJoinVO userVmJoinVO : userVmJoinVOs) {
+                networkIds.add(userVmJoinVO.getNetworkUuid());
+            }
+            details.put(ApiConstants.NETWORK_IDS, String.join(",", networkIds));
+        }
+        return details;
+    }
+
+    @Override
+    public Map<String, String> getBackupDiskOfferingDetails(Long vmId) {
+        List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
+        List<String> diskOfferingIds = new ArrayList<>();
+        List<Long> diskSizes = new ArrayList<>();
+        List<Long> minIops = new ArrayList<>();
+        List<Long> maxIops = new ArrayList<>();
+        Map<String, String> details = new HashMap<>();
+        for (Volume vol : volumes) {
+            if (vol.getVolumeType() != Volume.Type.DATADISK) {
+                continue;
+            }
+            DiskOffering diskOffering = diskOfferingDao.findById(vol.getDiskOfferingId());
+            diskOfferingIds.add(diskOffering.getUuid());
+            diskSizes.add(vol.getSize());
+            minIops.add(vol.getMinIops());
+            maxIops.add(vol.getMaxIops());
+        }
+        details.put(ApiConstants.DISK_OFFERING_IDS, String.join(",", diskOfferingIds));
+        details.put(ApiConstants.DISK_SIZES, String.join(",", diskSizes.stream().map(String::valueOf).collect(Collectors.toList())));
+        details.put(ApiConstants.MIN_IOPS, String.join(",", minIops.stream().map(String::valueOf).collect(Collectors.toList())));
+        details.put(ApiConstants.MAX_IOPS, String.join(",", maxIops.stream().map(String::valueOf).collect(Collectors.toList())));
+        return details;
     }
 
     public static String createVolumeInfoFromVolumes(List<VolumeVO> vmVolumes) {
@@ -749,6 +809,50 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             }
         }
         return null;
+    }
+
+    @Override
+    public boolean createDataVolumesForRestore(Long backupId, Long vmId, List<Long> diskOfferingIds, List<Long> diskSizes, List<Long> minIopsList, List<Long> maxIopsList) throws ResourceAllocationException {
+        final BackupVO backup = backupDao.findById(backupId);
+        if (backup == null) {
+            throw new CloudRuntimeException("Backup " + backupId + " does not exist");
+        }
+
+        backupDao.loadDetails(backup);
+        List<DiskOfferingVO> diskOfferings;
+        if (diskOfferingIds != null) {
+            diskOfferings = diskOfferingIds.stream().map(id -> diskOfferingDao.findById(id)).collect(Collectors.toList());
+        } else {
+            diskOfferings = Stream.of(backup.getDetail(ApiConstants.DISK_OFFERING_IDS).split(","))
+                    .map(uuid -> diskOfferingDao.findByUuid(uuid))
+                    .collect(Collectors.toList());
+            diskSizes = Stream.of(backup.getDetail(ApiConstants.DISK_SIZES).split(","))
+                    .map(Long::valueOf)
+                    .collect(Collectors.toList());
+            minIopsList = Stream.of(backup.getDetail(ApiConstants.MIN_IOPS).split(","))
+                    .map(s -> "null".equals(s) ? null : Long.valueOf(s))
+                    .collect(Collectors.toList());
+            maxIopsList = Stream.of(backup.getDetail(ApiConstants.MAX_IOPS).split(","))
+                    .map(s -> "null".equals(s) ? null : Long.valueOf(s))
+                    .collect(Collectors.toList());
+        }
+
+        List<DiskOfferingInfo> diskOfferingInfos = new ArrayList<>();
+        Long totalSize = 0L;
+        int index = 0;
+        for (DiskOfferingVO diskOffering : diskOfferings) {
+            if (diskOffering == null || diskOffering.getRemoved() != null || diskOffering.isComputeOnly()) {
+                throw new InvalidParameterValueException("Please specify a valid disk offering.");
+            }
+            Long size = diskOffering.isCustomized() ? diskSizes.get(index) : diskOffering.getDiskSize();
+            Long minIops = (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) ?
+                    minIopsList.get(index) : diskOffering.getMinIops();
+            Long maxIops = (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) ?
+                    maxIopsList.get(index) : diskOffering.getMaxIops();
+            diskOfferingInfos.add(new DiskOfferingInfo(diskOffering, size, minIops, maxIops));
+            totalSize += size;
+        }
+        return volumeApiService.createAndAttachVolumes(vmId, diskOfferingInfos, totalSize, backup.getZoneId(), backup.getAccountId());
     }
 
     @Override

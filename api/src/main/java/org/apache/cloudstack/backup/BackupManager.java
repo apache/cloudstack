@@ -18,6 +18,7 @@
 package org.apache.cloudstack.backup;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
@@ -27,10 +28,12 @@ import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.vm.VirtualMachine;
 
 /**
  * Backup and Recover Manager Interface
@@ -155,4 +158,10 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     void validateBackupForZone(Long zoneId);
 
     BackupOffering updateBackupOffering(UpdateBackupOfferingCmd updateBackupOfferingCmd);
+
+    boolean createDataVolumesForRestore(Long backupId, Long vmId, List<Long> diskOfferingIds, List<Long> diskSizes, List<Long> minIops, List<Long> maxIops) throws ResourceAllocationException;
+
+    Map<String, String> getBackupVmDetails(VirtualMachine vm);
+
+    Map<String, String> getBackupDiskOfferingDetails(Long vmId);
 }

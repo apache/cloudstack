@@ -24,16 +24,12 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.dao.VolumeDao;
 
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.dao.BackupDao;
 
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -46,7 +42,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     @Inject
     private VolumeDao volumeDao;
     @Inject
-    private EntityManager entityManager;
+    private BackupManagerImpl backupManager;
 
     @Override
     public String getName() {
@@ -134,14 +130,10 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
         backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
-
-        HashMap<String, String> details = new HashMap<>();
-        details.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
-        ServiceOffering serviceOffering =  entityManager.findById(ServiceOffering.class, vm.getServiceOfferingId());
-        details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
-        VirtualMachineTemplate template =  entityManager.findById(VirtualMachineTemplate.class, vm.getTemplateId());
-        details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+        Map<String, String> details = backupManager.getBackupVmDetails(vm);
         backup.setDetails(details);
+        Map<String, String> diskOfferingDetails = backupManager.getBackupDiskOfferingDetails(vm.getId());
+        backup.addDetails(diskOfferingDetails);
 
         return backupDao.persist(backup) != null;
     }

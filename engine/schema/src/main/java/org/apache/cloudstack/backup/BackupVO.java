@@ -239,10 +239,17 @@ public class BackupVO implements Backup {
         this.details.put(name, value);
     }
 
+    public String getDetail(String name) {
+        return this.details.get(name);
+    }
+
     public void setDetails(Map<String, String> details) {
         this.details = details;
     }
 
+    public void addDetails(Map<String, String> details) {
+        this.details.putAll(details);
+    }
 
     public Date getRemoved() {
         return removed;

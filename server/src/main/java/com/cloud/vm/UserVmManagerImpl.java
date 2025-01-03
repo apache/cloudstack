@@ -8866,6 +8866,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } catch (ResourceUnavailableException e) {
             throw new CloudRuntimeException("Unable to start the instance " + e);
         }
+
+        try {
+            backupManager.createDataVolumesForRestore(cmd.getBackupId(), vmId, cmd.getDiskOfferingIds(), cmd.getDiskSizes(), cmd.getMinIops(), cmd.getMaxIops());
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Unable to create data volumes " + e);
+        }
+
         boolean status = false;
         try {
             VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());

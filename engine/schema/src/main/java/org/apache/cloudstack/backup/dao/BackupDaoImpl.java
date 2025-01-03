@@ -153,6 +153,17 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     }
 
     @Override
+    public boolean update(Long id, BackupVO backup) {
+        return Transaction.execute((TransactionCallback<Boolean>) status -> {
+            boolean result = super.update(id, backup);
+            if (result == true) {
+                saveDetails(backup);
+            }
+            return result;
+        });
+    }
+
+    @Override
     public List<Backup> syncBackups(Long zoneId, Long vmId, List<Backup> externalBackups) {
         for (Backup backup : externalBackups) {
             BackupVO backupVO = getBackupVO(backup);
@@ -226,6 +237,11 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
             vmDetails.put(ApiConstants.HYPERVISOR, details.get(ApiConstants.HYPERVISOR));
             vmDetails.put(ApiConstants.TEMPLATE_ID, details.get(ApiConstants.TEMPLATE_ID));
             vmDetails.put(ApiConstants.SERVICE_OFFERING_ID, details.get(ApiConstants.SERVICE_OFFERING_ID));
+            vmDetails.put(ApiConstants.NETWORK_IDS, details.get(ApiConstants.NETWORK_IDS));
+            vmDetails.put(ApiConstants.DISK_OFFERING_IDS, details.get(ApiConstants.DISK_OFFERING_IDS));
+            vmDetails.put(ApiConstants.DISK_SIZES, details.get(ApiConstants.DISK_SIZES));
+            vmDetails.put(ApiConstants.MIN_IOPS, details.get(ApiConstants.MIN_IOPS));
+            vmDetails.put(ApiConstants.MAX_IOPS, details.get(ApiConstants.MAX_IOPS));
             response.setVmDetails(vmDetails);
         }
 
