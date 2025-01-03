@@ -38,6 +38,7 @@ import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "host_pod_ref")
@@ -245,5 +246,12 @@ public class EngineHostPodVO implements EnginePod, Identity {
 
     public State getState() {
         return state;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("EngineHostPod %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name"));
     }
 }

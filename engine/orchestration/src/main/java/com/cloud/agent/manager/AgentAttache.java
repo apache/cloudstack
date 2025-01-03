@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import com.cloud.agent.api.CleanupPersistentNetworkResourceCommand;
 import org.apache.cloudstack.agent.lb.SetupMSListCommand;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -111,6 +112,7 @@ public abstract class AgentAttache {
     protected static String LOG_SEQ_FORMATTED_STRING;
 
     protected final long _id;
+    protected String _uuid;
     protected String _name = null;
     protected final ConcurrentHashMap<Long, Listener> _waitForList;
     protected final LinkedList<Request> _requests;
@@ -133,8 +135,9 @@ public abstract class AgentAttache {
         Arrays.sort(s_commandsNotAllowedInConnectingMode);
     }
 
-    protected AgentAttache(final AgentManagerImpl agentMgr, final long id, final String name, final boolean maintenance) {
+    protected AgentAttache(final AgentManagerImpl agentMgr, final long id, final String uuid, final String name, final boolean maintenance) {
         _id = id;
+        _uuid = uuid;
         _name = name;
         _waitForList = new ConcurrentHashMap<Long, Listener>();
         _currentSequence = null;
@@ -143,6 +146,13 @@ public abstract class AgentAttache {
         _agentMgr = agentMgr;
         _nextSequence = new Long(s_rand.nextInt(Short.MAX_VALUE)).longValue() << 48;
         LOG_SEQ_FORMATTED_STRING = String.format("Seq %d-{}: {}", _id);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("AgentAttache %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "_id", "_uuid", "_name"));
     }
 
     public synchronized long getNextSequence() {
@@ -206,7 +216,7 @@ public abstract class AgentAttache {
         logger.debug(LOG_SEQ_FORMATTED_STRING, seq, "Cancelling.");
         final Listener listener = _waitForList.remove(seq);
         if (listener != null) {
-            listener.processDisconnect(_id, Status.Disconnected);
+            listener.processDisconnect(_id, _uuid, _name, Status.Disconnected);
         }
         int index = findRequest(seq);
         if (index >= 0) {
@@ -241,6 +251,10 @@ public abstract class AgentAttache {
 
     public long getId() {
         return _id;
+    }
+
+    public String getUuid() {
+        return _uuid;
     }
 
     public String getName() {
@@ -316,7 +330,7 @@ public abstract class AgentAttache {
                 it.remove();
                 final Listener monitor = entry.getValue();
                 logger.debug(LOG_SEQ_FORMATTED_STRING, entry.getKey(), "Sending disconnect to " + monitor.getClass());
-                monitor.processDisconnect(_id, state);
+                monitor.processDisconnect(_id,  _uuid, _name, state);
             }
         }
     }

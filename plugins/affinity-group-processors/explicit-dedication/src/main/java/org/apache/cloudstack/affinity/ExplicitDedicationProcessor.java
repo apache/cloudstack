@@ -95,7 +95,7 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
             for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
                 if (vmGroupMapping != null) {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("Processing affinity group " + vmGroupMapping.getAffinityGroupId() + "of type 'ExplicitDedication' for VM Id: " + vm.getId());
+                        logger.debug("Processing affinity group {} of type 'ExplicitDedication' for VM: {}", _affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId()), vm);
                     }
 
                     long affinityGroupId = vmGroupMapping.getAffinityGroupId();
@@ -304,7 +304,7 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
                     DedicatedResourceVO dPod = _dedicatedDao.findByPodId(pod.getId());
                     if (dPod != null && !dedicatedResources.contains(dPod)) {
                         if (logger.isDebugEnabled()) {
-                            logger.debug(String.format("Avoiding POD %s [%s] because it is not dedicated.", pod.getName(), pod.getUuid()));
+                            logger.debug(String.format("Avoiding POD %s because it is not dedicated.", pod));
                         }
                         avoidList.addPod(pod.getId());
                     } else {
@@ -345,7 +345,7 @@ public class ExplicitDedicationProcessor extends AffinityProcessorBase implement
         for (HostPodVO pod : pods) {
             if (podsInIncludeList != null && !podsInIncludeList.contains(pod.getId())) {
                 if (logger.isDebugEnabled()) {
-                    logger.debug(String.format("Avoiding POD %s [%s], as it is not in include list.", pod.getName(), pod.getUuid()));
+                    logger.debug(String.format("Avoiding POD %s, as it is not in include list.", pod));
                 }
                 avoidList.addPod(pod.getId());
             }

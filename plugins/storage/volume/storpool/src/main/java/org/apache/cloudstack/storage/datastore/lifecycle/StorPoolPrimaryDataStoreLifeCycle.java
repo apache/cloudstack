@@ -211,7 +211,7 @@ public class StorPoolPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeC
         List<HostVO> kvmHosts = resourceMgr.listAllUpAndEnabledHostsInOneZoneByHypervisor(HypervisorType.KVM, scope.getScopeId());
         for (HostVO host : kvmHosts) {
             try {
-                storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
+                storageMgr.connectHostToSharedPool(host, dataStore.getId());
             } catch (Exception e) {
                 logger.warn(String.format("Unable to establish a connection between host %s and pool %s due to %s", host, dataStore, e));
             }

@@ -53,6 +53,7 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.db.StateMachine;
 import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "host")
@@ -697,7 +698,9 @@ public class EngineHostVO implements EngineHost, Identity {
 
     @Override
     public String toString() {
-        return new StringBuilder("Host[").append("-").append(id).append("-").append(type).append("]").toString();
+        return String.format("EngineHost %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "type"));
     }
 
     public void setHypervisorType(HypervisorType hypervisorType) {

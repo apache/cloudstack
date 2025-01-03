@@ -137,19 +137,19 @@ public class BGPServiceImpl implements BGPService {
 
         try {
             return Transaction.execute((TransactionCallback<ASNumberRange>) status -> {
-                LOGGER.debug(String.format("Persisting AS Number Range %s-%s for the zone %s", startASNumber, endASNumber, zone.getName()));
+                LOGGER.debug("Persisting AS Number Range {}-{} for the zone {}", startASNumber, endASNumber, zone);
                 ASNumberRangeVO asNumberRangeVO = new ASNumberRangeVO(zoneId, startASNumber, endASNumber);
                 asNumberRangeDao.persist(asNumberRangeVO);
 
                 for (long asn = startASNumber; asn <= endASNumber; asn++) {
-                    LOGGER.debug(String.format("Persisting AS Number %s for zone %s", asn, zone.getName()));
+                    LOGGER.debug("Persisting AS Number {} for zone {}", asn, zone);
                     ASNumberVO asNumber = new ASNumberVO(asn, asNumberRangeVO.getId(), zoneId);
                     asNumberDao.persist(asNumber);
                 }
                 return asNumberRangeVO;
             });
         } catch (Exception e) {
-            String err = String.format("Error creating AS Number range %s-%s for zone %s: %s", startASNumber, endASNumber, zone.getName(), e.getMessage());
+            String err = String.format("Error creating AS Number range %s-%s for zone %s: %s", startASNumber, endASNumber, zone, e.getMessage());
             LOGGER.error(err, e);
             throw new CloudRuntimeException(err);
         }
@@ -207,8 +207,8 @@ public class BGPServiceImpl implements BGPService {
                 throw new InvalidParameterException(String.format("Failed to find network with ID: %s", networkId));
             }
             if (network.getVpcId() != null) {
-                LOGGER.debug(String.format("The network %s is a VPC tier, searching for the AS number on the VPC with ID %s",
-                        network.getName(), network.getVpcId()));
+                LOGGER.debug("The network {} is a VPC tier, searching for the AS number on the VPC {}",
+                        network::toString, () -> vpcDao.findById(network.getVpcId()));
                 networkSearchId = null;
                 vpcSerchId = network.getVpcId();
             }
@@ -226,15 +226,17 @@ public class BGPServiceImpl implements BGPService {
                 asNumberDao.findOneByAllocationStateAndZone(zoneId, false);
         if (asNumberVO == null || asNumberVO.getDataCenterId() != zoneId) {
             if (asNumber != null) {
-                LOGGER.error(String.format("Cannot find AS number %s in zone with ID %s", asNumber, zoneId));
+                LOGGER.error("Cannot find AS number {} in zone {} with id {}", asNumber, dataCenterDao.findById(zoneId), zoneId);
                 return false;
             }
             throw new CloudRuntimeException(String.format("Cannot allocate AS number in zone with ID %s", zoneId));
         }
         long accountId, domainId;
         String netName;
+        VpcVO vpc = null;
+        NetworkVO network = null;
         if (Objects.nonNull(vpcId)) {
-            VpcVO vpc = vpcDao.findById(vpcId);
+            vpc = vpcDao.findById(vpcId);
             if (vpc == null) {
                 LOGGER.error(String.format("Cannot find VPC with ID %s", vpcId));
                 return false;
@@ -243,7 +245,7 @@ public class BGPServiceImpl implements BGPService {
             domainId = vpc.getDomainId();
             netName = vpc.getName();
         } else {
-            NetworkVO network = networkDao.findById(networkId);
+            network = networkDao.findById(networkId);
             if (network == null) {
                 LOGGER.error(String.format("Cannot find network with ID %s", networkId));
                 return false;
@@ -253,8 +255,9 @@ public class BGPServiceImpl implements BGPService {
             netName = network.getName();
         }
 
-        LOGGER.debug(String.format("Allocating the AS Number %s to %s %s on zone %s", asNumber,
-                (Objects.nonNull(vpcId) ? "VPC" : "network"), netName, zoneId));
+        LOGGER.debug("Allocating the AS Number {} to {} on zone {}", asNumber::toString,
+                (Objects.nonNull(vpcId) ? "VPC " + vpc : "network " + network)::toString,
+                () -> dataCenterDao.findById(zoneId));
         asNumberVO.setAllocated(true);
         asNumberVO.setAllocatedTime(new Date());
         if (Objects.nonNull(vpcId)) {
@@ -291,11 +294,12 @@ public class BGPServiceImpl implements BGPService {
     @ActionEvent(eventType = EventTypes.EVENT_AS_NUMBER_RELEASE, eventDescription = "Releasing AS Number")
     public Pair<Boolean, String> releaseASNumber(long zoneId, long asNumber, boolean isDestroyNetworkOperation) {
         ASNumberVO asNumberVO = asNumberDao.findByAsNumber(asNumber);
+        DataCenterVO zone = dataCenterDao.findById(zoneId);
         if (asNumberVO == null) {
-            return logAndReturnErrorMessage(String.format("Cannot find AS Number %s on zone %s", asNumber, zoneId));
+            return logAndReturnErrorMessage(String.format("Cannot find AS Number %s on zone %s", asNumber, zone));
         }
         if (!asNumberVO.isAllocated()) {
-            LOGGER.debug(String.format("The AS Number %s is not allocated to any network on zone %s, ignoring release", asNumber, zoneId));
+            LOGGER.debug("The AS Number {} is not allocated to any network on zone {}, ignoring release", asNumber, zone);
             return new Pair<>(true, "");
         }
         Long networkId = asNumberVO.getNetworkId();
@@ -306,7 +310,7 @@ public class BGPServiceImpl implements BGPService {
                 return checksResult;
             }
         }
-        LOGGER.debug(String.format("Releasing AS Number %s on zone %s from previous allocation", asNumber, zoneId));
+        LOGGER.debug("Releasing AS Number {} on zone {} from previous allocation", asNumber, zone);
         asNumberVO.setAllocated(false);
         asNumberVO.setAllocatedTime(null);
         asNumberVO.setDomainId(null);
@@ -361,6 +365,7 @@ public class BGPServiceImpl implements BGPService {
         long startASNumber = asRange.getStartASNumber();
         long endASNumber = asRange.getEndASNumber();
         long zoneId = asRange.getDataCenterId();
+        DataCenterVO zone = dataCenterDao.findById(zoneId);
         List<ASNumberVO> allocatedAsNumbers = asNumberDao.listAllocatedByASRange(asRange.getId());
         if (Objects.nonNull(allocatedAsNumbers) && !allocatedAsNumbers.isEmpty()) {
             throw new CloudRuntimeException(String.format("There are %s AS numbers in use from the range %s-%s, cannot remove the range",
@@ -374,13 +379,12 @@ public class BGPServiceImpl implements BGPService {
                     LOGGER.debug(String.format("Removed %s AS numbers from the range %s-%s", removedASNumbers,
                             startASNumber, endASNumber));
                     asNumberRangeDao.remove(id);
-                    LOGGER.debug(String.format("Removing the AS Number Range %s-%s for the zone %s", startASNumber,
-                            endASNumber, zoneId));
+                    LOGGER.debug("Removing the AS Number Range {}-{} for the zone {}", startASNumber, endASNumber, zone);
                 }
             });
         } catch (Exception e) {
             String err = String.format("Error removing AS Number range %s-%s for zone %s: %s",
-                    startASNumber, endASNumber, zoneId, e.getMessage());
+                    startASNumber, endASNumber, zone, e.getMessage());
             LOGGER.error(err, e);
             throw new CloudRuntimeException(err);
         }

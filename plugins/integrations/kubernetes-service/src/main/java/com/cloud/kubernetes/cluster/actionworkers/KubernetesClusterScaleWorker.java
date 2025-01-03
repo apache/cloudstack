@@ -164,9 +164,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
      */
     private void scaleKubernetesClusterNetworkRules(final List<Long> clusterVMIds) throws ManagementServerException {
         if (manager.isDirectAccess(network)) {
-            if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Network : %s for Kubernetes cluster : %s is not an isolated network or ROUTED network, therefore, no need for network rules", network.getName(), kubernetesCluster.getName()));
-            }
+            if (logger.isDebugEnabled())
+                logger.debug("Network: {} for Kubernetes cluster: {} is not an isolated network " +
+                        "or ROUTED network, therefore, no need for network rules", network, kubernetesCluster);
             return;
         }
         if (network.getVpcId() != null) {
@@ -206,7 +206,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                         pkFile, null, String.format("sudo /opt/bin/kubectl drain %s --ignore-daemonsets --delete-local-data", hostName),
                         10000, 10000, 60000);
                 if (!result.first()) {
-                    logger.warn(String.format("Draining node: %s on VM : %s in Kubernetes cluster : %s unsuccessful", hostName, userVm.getDisplayName(), kubernetesCluster.getName()));
+                    logger.warn("Draining node: {} on VM: {} in Kubernetes cluster: {} unsuccessful", hostName, userVm, kubernetesCluster);
                 } else {
                     result = SshHelper.sshExecute(ipAddress, port, getControlNodeLoginUser(),
                             pkFile, null, String.format("sudo /opt/bin/kubectl delete node %s", hostName),
@@ -214,18 +214,18 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                     if (result.first()) {
                         return true;
                     } else {
-                        logger.warn(String.format("Deleting node: %s on VM : %s in Kubernetes cluster : %s unsuccessful", hostName, userVm.getDisplayName(), kubernetesCluster.getName()));
+                        logger.warn("Deleting node: {} on VM: {} in Kubernetes cluster: {} unsuccessful", hostName, userVm, kubernetesCluster);
                     }
                 }
                 break;
             } catch (Exception e) {
-                String msg = String.format("Failed to remove Kubernetes cluster : %s node: %s on VM : %s", kubernetesCluster.getName(), hostName, userVm.getDisplayName());
+                String msg = String.format("Failed to remove Kubernetes cluster: %s node: %s on VM: %s", kubernetesCluster, hostName, userVm);
                 logger.warn(msg, e);
             }
             try {
                 Thread.sleep(waitDuration);
             } catch (InterruptedException ie) {
-                logger.error(String.format("Error while waiting for Kubernetes cluster : %s node: %s on VM : %s removal", kubernetesCluster.getName(), hostName, userVm.getDisplayName()), ie);
+                logger.error("Error while waiting for Kubernetes cluster: {} node: {} on VM: {} removal", kubernetesCluster, hostName, userVm, ie);
             }
             retryCounter++;
         }
@@ -316,9 +316,11 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     private void removeNodesFromCluster(List<KubernetesClusterVmMapVO> vmMaps) throws CloudRuntimeException {
         for (KubernetesClusterVmMapVO vmMapVO : vmMaps) {
             UserVmVO userVM = userVmDao.findById(vmMapVO.getVmId());
-            logger.info(String.format("Removing vm : %s from cluster %s", userVM.getDisplayName(), kubernetesCluster.getName()));
+            logger.info("Removing vm {} from cluster {}", userVM, kubernetesCluster);
             if (!removeKubernetesClusterNode(publicIpAddress, sshPort, userVM, 3, 30000)) {
-                logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, failed to remove Kubernetes node: %s running on VM : %s", kubernetesCluster.getName(), userVM.getHostName(), userVM.getDisplayName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes" +
+                        " cluster %s, failed to remove Kubernetes node: %s running on VM : %s",
+                        kubernetesCluster, userVM.getHostName(), userVM), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
             CallContext vmContext = CallContext.register(CallContext.current(),
                     ApiCommandResourceType.VirtualMachine);
@@ -327,17 +329,18 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
                 UserVm vm = userVmService.destroyVm(userVM.getId(), true);
                 if (!userVmManager.expunge(userVM)) {
                     logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to expunge VM '%s'."
-                        , kubernetesCluster.getName(), vm.getDisplayName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                            , kubernetesCluster, vm), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
                 }
             } catch (ResourceUnavailableException e) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, unable to remove VM ID: %s",
-                    kubernetesCluster.getName() , userVM.getDisplayName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
+                        kubernetesCluster, userVM), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
             } finally {
                 CallContext.unregister();
             }
             kubernetesClusterVmMapDao.expunge(vmMapVO.getId());
             if (System.currentTimeMillis() > scaleTimeoutTime) {
-                logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster %s failed, scaling action timed out", kubernetesCluster.getName()),kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                logTransitStateAndThrow(Level.WARN, String.format("Scaling Kubernetes cluster %s failed, scaling action timed out",
+                        kubernetesCluster), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
         }
 
@@ -346,7 +349,9 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             List<Long> clusterVMIds = getKubernetesClusterVMMaps().stream().map(KubernetesClusterVmMapVO::getVmId).collect(Collectors.toList());
             scaleKubernetesClusterNetworkRules(clusterVMIds);
         } catch (ManagementServerException e) {
-            logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes cluster : %s, unable to update network rules", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
+            logTransitStateAndThrow(Level.ERROR, String.format("Scaling failed for Kubernetes " +
+                    "cluster %s, unable to update network rules", kubernetesCluster),
+                    kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed, e);
         }
     }
 
@@ -437,13 +442,13 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
     public boolean scaleCluster() throws CloudRuntimeException {
         init();
         if (logger.isInfoEnabled()) {
-            logger.info(String.format("Scaling Kubernetes cluster : %s", kubernetesCluster.getName()));
+            logger.info("Scaling Kubernetes cluster {}", kubernetesCluster);
         }
         scaleTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterScaleTimeout.value() * 1000;
         final long originalClusterSize = kubernetesCluster.getNodeCount();
         final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
         if (existingServiceOffering == null) {
-            logAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster : %s failed, service offering for the Kubernetes cluster not found!", kubernetesCluster.getName()));
+            logAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster %s failed, service offering for the Kubernetes cluster not found!", kubernetesCluster));
         }
         final boolean autoscalingChanged = isAutoscalingChanged();
         final boolean serviceOfferingScalingNeeded = serviceOffering != null && serviceOffering.getId() != existingServiceOffering.getId();

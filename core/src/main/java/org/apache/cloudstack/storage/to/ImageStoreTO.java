@@ -23,6 +23,7 @@ import org.apache.cloudstack.storage.image.datastore.ImageStoreInfo;
 
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.storage.DataStoreRole;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class ImageStoreTO implements DataStoreTO {
     private String type;
@@ -78,15 +79,9 @@ public class ImageStoreTO implements DataStoreTO {
 
     @Override
     public String toString() {
-        return new StringBuilder("ImageStoreTO[type=").append(type)
-            .append("|provider=")
-            .append(providerName)
-            .append("|role=")
-            .append(role)
-            .append("|uri=")
-            .append(uri)
-            .append("]")
-            .toString();
+        return String.format("ImageStoreTO %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "uuid", "type", "providerName", "role", "uri"));
     }
 
     @Override

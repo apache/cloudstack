@@ -218,13 +218,11 @@ public class HighAvailabilityManagerImplTest {
         List<VMInstanceVO> vms = new ArrayList<VMInstanceVO>();
         VMInstanceVO vm1 = Mockito.mock(VMInstanceVO.class);
         Mockito.lenient().when(vm1.getHostId()).thenReturn(1l);
-        //Mockito.when(vm1.getInstanceName()).thenReturn("i-2-3-VM");
         Mockito.when(vm1.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.when(vm1.isHaEnabled()).thenReturn(true);
         vms.add(vm1);
         VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm2.getHostId()).thenReturn(1l);
-        //Mockito.when(vm2.getInstanceName()).thenReturn("r-2-VM");
         Mockito.when(vm2.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
         Mockito.when(vm2.isHaEnabled()).thenReturn(true);
         Mockito.when(vm2.getDataCenterId()).thenReturn(1L);

@@ -636,7 +636,6 @@ public class UnmanagedVMsManagerImplTest {
         when(convertHost.getStatus()).thenReturn(Status.Up);
         when(convertHost.getResourceState()).thenReturn(ResourceState.Enabled);
         when(convertHost.getId()).thenReturn(convertHostId);
-        when(convertHost.getName()).thenReturn("KVM-Convert-Host");
         when(convertHost.getType()).thenReturn(Host.Type.Routing);
         when(convertHost.getDataCenterId()).thenReturn(zoneId);
         when(convertHost.getClusterId()).thenReturn(clusterId);

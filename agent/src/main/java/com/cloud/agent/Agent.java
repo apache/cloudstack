@@ -132,6 +132,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     ServerResource _resource;
     Link _link;
     Long _id;
+    String _uuid;
+    String _name;
 
     Timer _timer = new Timer("Agent Timer");
     Timer certTimer;
@@ -182,8 +184,10 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         resource.setAgentControl(this);
 
         final String value = _shell.getPersistentProperty(getResourceName(), "id");
+        _uuid = _shell.getPersistentProperty(getResourceName(), "uuid");
+        _name = _shell.getPersistentProperty(getResourceName(), "name");
         _id = value != null ? Long.parseLong(value) : null;
-        logger.info("id is {}", ObjectUtils.defaultIfNull(_id, ""));
+        logger.info("Initialising agent [id: {}, uuid: {}, name: {}]", ObjectUtils.defaultIfNull(_id, ""), _uuid, _name);
 
         final Map<String, Object> params = new HashMap<>();
 
@@ -212,8 +216,9 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                 new ThreadPoolExecutor(_shell.getWorkers(), 5 * _shell.getWorkers(), 1, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(
                         "agentRequest-Handler"));
 
-        logger.info("Agent [id = {} : type = {} : zone = {} : pod = {} : workers = {} : host = {} : port = {}", ObjectUtils.defaultIfNull(_id, "new"), getResourceName(),
-                 _shell.getZone(), _shell.getPod(), _shell.getWorkers(), host, _shell.getPort());
+        logger.info("Agent [id = {}, uuid: {}, name: {}] : type = {} : zone = {} : pod = {} : workers = {} : host = {} : port = {}",
+                ObjectUtils.defaultIfNull(_id, "new"), _uuid, _name, getResourceName(),
+                _shell.getZone(), _shell.getPod(), _shell.getWorkers(), host, _shell.getPort());
     }
 
     public String getVersion() {
@@ -377,9 +382,26 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     public void setId(final Long id) {
-        logger.debug("Set agent id {}", id);
         _id = id;
         _shell.setPersistentProperty(getResourceName(), "id", Long.toString(id));
+    }
+
+    public String getUuid() {
+        return _uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this._uuid = uuid;
+        _shell.setPersistentProperty(getResourceName(), "uuid", uuid);
+    }
+
+    public String getName() {
+        return _name;
+    }
+
+    public void setName(String name) {
+        this._name = name;
+        _shell.setPersistentProperty(getResourceName(), "name", name);
     }
 
     private synchronized void scheduleServicesRestartTask() {
@@ -594,9 +616,12 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             return;
         }
 
-        logger.info("Process agent startup answer, agent id = {}", startup.getHostId());
+        logger.info("Process agent startup answer, agent [id: {}, uuid: {}, name: {}] connected to the server",
+                startup.getHostId(), startup.getHostUuid(), startup.getHostName());
 
         setId(startup.getHostId());
+        setUuid(startup.getHostUuid());
+        setName(startup.getHostName());
         _pingInterval = (long)startup.getPingInterval() * 1000; // change to ms.
 
         setLastPingResponseTime();
@@ -604,7 +629,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
 
         _ugentTaskPool.setKeepAliveTime(2 * _pingInterval, TimeUnit.MILLISECONDS);
 
-        logger.info("Startup Response Received: agent id = {}", getId());
+        logger.info("Startup Response Received: agent [id: {}, uuid: {}, name: {}]",
+                startup.getHostId(), startup.getHostUuid(), startup.getHostName());
     }
 
     protected void processRequest(final Request request, final Link link) {
@@ -860,15 +886,17 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             NumbersUtil.enableHumanReadableSizes = humanReadable;
         }
 
-        logger.info("Processing agent ready command, agent id = {}", ready.getHostId());
+        logger.info("Processing agent ready command, agent id = {}, uuid = {}, name = {}", ready.getHostId(), ready.getHostUuid(), ready.getHostName());
         if (ready.getHostId() != null) {
             setId(ready.getHostId());
+            setUuid(ready.getHostUuid());
+            setName(ready.getHostName());
         }
 
         verifyAgentArch(ready.getArch());
         processManagementServerList(ready.getMsHostList(), ready.getLbAlgorithm(), ready.getLbCheckInterval());
 
-        logger.info("Ready command is processed for agent id = {}", getId());
+        logger.info("Ready command is processed for agent [id: {}, uuid: {}, name: {}]", getId(), getUuid(), getName());
     }
 
     private void verifyAgentArch(String arch) {

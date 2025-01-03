@@ -20,6 +20,8 @@ import java.util.List;
 
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.IpAddress;
+import com.cloud.network.Network;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.firewall.FirewallService;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
@@ -53,7 +55,7 @@ public interface FirewallManager extends FirewallService {
 
     public void revokeRule(FirewallRuleVO rule, Account caller, long userId, boolean needUsageEvent);
 
-    boolean revokeFirewallRulesForIp(long ipId, long userId, Account caller) throws ResourceUnavailableException;
+    boolean revokeFirewallRulesForIp(IpAddress ip, long userId, Account caller) throws ResourceUnavailableException;
 
 //    /**
 //     * Revokes a firewall rule
@@ -75,7 +77,7 @@ public interface FirewallManager extends FirewallService {
     FirewallRule createRuleForAllCidrs(long ipAddrId, Account caller, Integer startPort, Integer endPort, String protocol, Integer icmpCode, Integer icmpType,
         Long relatedRuleId, long networkId) throws NetworkRuleConflictException;
 
-    boolean revokeAllFirewallRulesForNetwork(long networkId, long userId, Account caller) throws ResourceUnavailableException;
+    boolean revokeAllFirewallRulesForNetwork(Network network, long userId, Account caller) throws ResourceUnavailableException;
 
     boolean revokeFirewallRulesForVm(long vmId);
 

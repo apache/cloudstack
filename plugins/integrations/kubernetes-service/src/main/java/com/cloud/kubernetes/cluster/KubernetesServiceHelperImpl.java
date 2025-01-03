@@ -92,8 +92,8 @@ public class KubernetesServiceHelperImpl extends AdapterBase implements Kubernet
         if (vmMapVO == null) {
             return;
         }
-        logger.error(String.format("VM ID: %s is a part of Kubernetes cluster ID: %d", userVm.getId(), vmMapVO.getClusterId()));
         KubernetesCluster kubernetesCluster = kubernetesClusterDao.findById(vmMapVO.getClusterId());
+        logger.error("VM {} is a part of Kubernetes cluster {} with ID: {}", userVm, kubernetesCluster, vmMapVO.getClusterId());
         String msg = "Instance is a part of a Kubernetes cluster";
         if (kubernetesCluster != null) {
             if (KubernetesCluster.ClusterType.ExternalManaged.equals(kubernetesCluster.getClusterType())) {
