@@ -100,6 +100,22 @@ write_files:
         export PATH=$PATH:/opt/bin
       fi
 
+      if [ -f "${BINARIES_DIR}/scripts/control-node-add/setup-kube-system" ]; then
+        # This setup script will copy any necessary files out of the iso, and possibly overwrite /opt/bin/deploy-kube-system for the second stage
+        if /bin/bash ${BINARIES_DIR}/scripts/control-node-add/setup-kube-system ${BINARIES_DIR} "{{ k8s_control_node.join_ip }}" "{{ k8s_control_node.cluster.token }}" "{{ k8s_control_node.cluster.ha.certificate.key }}" "{{registry.url}}" "{{registry.url.endpoint}}" "{{registry.username}}" "{{registry.password}}" "{{registry.token}}"; then
+          rc=0
+          echo "Success running setup-kube-system on a control plane node add from ISO."
+        else
+          rc=$?
+          echo "Failed running setup-kube-system on a control plane node add from ISO."
+        fi
+        umount "${ISO_MOUNT_DIR}" && rmdir "${ISO_MOUNT_DIR}"
+        if [ "$EJECT_ISO_FROM_OS" = true ] && [ "$iso_drive_path" != "" ]; then
+          eject "${iso_drive_path}"
+        fi
+        exit $rc
+      fi
+
       if [ -d "$BINARIES_DIR" ]; then
         ### Binaries available offline ###
         echo "Installing binaries from ${BINARIES_DIR}"
