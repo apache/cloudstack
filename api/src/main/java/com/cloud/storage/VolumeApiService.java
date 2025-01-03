@@ -22,6 +22,7 @@ import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
@@ -105,6 +106,8 @@ public interface VolumeApiService {
     Volume changeDiskOfferingForVolumeInternal(Long volumeId, Long newDiskOfferingId, Long newSize, Long newMinIops, Long newMaxIops, boolean autoMigrateVolume, boolean shrinkOk) throws ResourceAllocationException;
 
     Volume attachVolumeToVM(AttachVolumeCmd command);
+
+    boolean createAndAttachVolumes(Long vmId, List<DiskOfferingInfo> diskOfferings, Long totalSize, Long zoneId, Long ownerId) throws ResourceAllocationException;
 
     Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForSharedFS);
 

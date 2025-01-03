@@ -606,6 +606,7 @@ public class EventTypes {
     public static final String EVENT_VM_BACKUP_OFFERING_REMOVE = "BACKUP.OFFERING.REMOVE";
     public static final String EVENT_VM_BACKUP_CREATE = "BACKUP.CREATE";
     public static final String EVENT_VM_BACKUP_RESTORE = "BACKUP.RESTORE";
+    public static final String EVENT_VM_BACKUP_RESTORE_TO_NEW_VM = "BACKUP.RESTORE.TO.NEW.VM";
     public static final String EVENT_VM_BACKUP_DELETE = "BACKUP.DELETE";
     public static final String EVENT_VM_BACKUP_RESTORE_VOLUME_TO_VM = "BACKUP.RESTORE.VOLUME.TO.VM";
     public static final String EVENT_VM_BACKUP_SCHEDULE_CONFIGURE = "BACKUP.SCHEDULE.CONFIGURE";

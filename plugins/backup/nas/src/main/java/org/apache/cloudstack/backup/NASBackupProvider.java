@@ -36,6 +36,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
@@ -92,6 +93,9 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
 
     @Inject
     private AgentManager agentManager;
+
+    @Inject
+    BackupManager backupManager;
 
     protected Host getLastVMHypervisorHost(VirtualMachine vm) {
         Long hostId = vm.getLastHostId();
@@ -179,6 +183,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backupVO.setSize(answer.getSize());
             backupVO.setStatus(Backup.Status.BackedUp);
             backupVO.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+            Map<String, String> details = backupManager.getBackupDiskOfferingDetails(vm.getId());
+            backupVO.addDetails(details);
             return backupDao.update(backupVO.getId(), backupVO);
         } else {
             backupVO.setStatus(Backup.Status.Failed);
@@ -205,13 +211,26 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         backup.setAccountId(vm.getAccountId());
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
+        Map<String, String> details = backupManager.getBackupVmDetails(vm);
+        backup.setDetails(details);
+
         return backupDao.persist(backup);
     }
 
     @Override
+    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup) {
+        return restoreVMBackup(vm, backup);
+    }
+
+    @Override
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
+        return restoreVMBackup(vm, backup);
+    }
+
+    private boolean restoreVMBackup(VirtualMachine vm, Backup backup) {
         List<Backup.VolumeInfo> backedVolumes = backup.getBackedUpVolumes();
-        List<VolumeVO> volumes = backedVolumes.stream().map(volume -> volumeDao.findByUuid(volume.getUuid())).collect(Collectors.toList());
+        List<String> backedVolumesUUIDs = backedVolumes.stream().map(volume -> volume.getUuid()).collect(Collectors.toList());
+        List<VolumeVO> restoreVolumes = volumeDao.findByInstance(vm.getId());
 
         LOG.debug("Restoring vm {} from backup {} on the NAS Backup Provider", vm.getUuid(), backup.getUuid());
         BackupRepository backupRepository = getBackupRepository(vm, backup);
@@ -222,7 +241,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setBackupRepoType(backupRepository.getType());
         restoreCommand.setBackupRepoAddress(backupRepository.getAddress());
         restoreCommand.setVmName(vm.getName());
-        restoreCommand.setVolumePaths(getVolumePaths(volumes));
+        restoreCommand.setBackupVolumesUUIDs(backedVolumesUUIDs);
+        restoreCommand.setRestoreVolumePaths(getVolumePaths(restoreVolumes));
         restoreCommand.setVmExists(vm.getRemoved() == null);
         restoreCommand.setVmState(vm.getState());
 
@@ -287,7 +307,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setBackupRepoType(backupRepository.getType());
         restoreCommand.setBackupRepoAddress(backupRepository.getAddress());
         restoreCommand.setVmName(vmNameAndState.first());
-        restoreCommand.setVolumePaths(Collections.singletonList(String.format("%s/%s", dataStore.getLocalPath(), volumeUUID)));
+        restoreCommand.setRestoreVolumePaths(Collections.singletonList(String.format("%s/%s", dataStore.getLocalPath(), volumeUUID)));
         restoreCommand.setDiskType(volume.getVolumeType().name().toLowerCase(Locale.ROOT));
         restoreCommand.setVmExists(null);
         restoreCommand.setVmState(vmNameAndState.second());

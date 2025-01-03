@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.storage.dao.VolumeDao;
+
 import org.apache.cloudstack.backup.dao.BackupDao;
 
 import com.cloud.utils.Pair;
@@ -40,6 +41,8 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     private BackupDao backupDao;
     @Inject
     private VolumeDao volumeDao;
+    @Inject
+    private BackupManagerImpl backupManager;
 
     @Override
     public String getName() {
@@ -127,6 +130,11 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
         backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+        Map<String, String> details = backupManager.getBackupVmDetails(vm);
+        backup.setDetails(details);
+        Map<String, String> diskOfferingDetails = backupManager.getBackupDiskOfferingDetails(vm.getId());
+        backup.addDetails(diskOfferingDetails);
+
         return backupDao.persist(backup) != null;
     }
 
@@ -137,5 +145,10 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Override
     public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
+    }
+
+    @Override
+    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup) {
+        return true;
     }
 }

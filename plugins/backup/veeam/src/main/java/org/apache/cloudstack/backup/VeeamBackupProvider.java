@@ -109,6 +109,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     private AgentManager agentMgr;
     @Inject
     private VirtualMachineManager virtualMachineManager;
+    @Inject
+    private BackupManager backupManager;
 
     protected VeeamClient getClient(final Long zoneId) {
         try {
@@ -378,6 +380,11 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                         backup.setAccountId(vm.getAccountId());
                         backup.setDomainId(vm.getDomainId());
                         backup.setZoneId(vm.getDataCenterId());
+                        backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+                        Map<String, String> details = backupManager.getBackupVmDetails(vm);
+                        backup.setDetails(details);
+                        Map<String, String> details = backupManager.getBackupDiskOfferingDetails(vm.getId());
+                        backup.addDetails(details);
 
                         logger.debug(String.format("Creating a new entry in backups: [uuid: %s, vm_id: %s, external_id: %s, type: %s, date: %s, backup_offering_id: %s, account_id: %s, "
                                         + "domain_id: %s, zone_id: %s].", backup.getUuid(), backup.getVmId(), backup.getExternalId(), backup.getType(), backup.getDate(),
@@ -395,6 +402,11 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                 }
             }
         });
+    }
+
+    @Override
+    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup) {
+        return true;
     }
 
     @Override

@@ -19,12 +19,15 @@ package org.apache.cloudstack.backup;
 
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.Gson;
+
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -37,6 +40,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 
 @Entity
 @Table(name = "backups")
@@ -89,6 +93,9 @@ public class BackupVO implements Backup {
 
     @Column(name = "backed_volumes", length = 65535)
     protected String backedUpVolumes;
+
+    @Transient
+    Map<String, String> details;
 
     public BackupVO() {
         this.uuid = UUID.randomUUID().toString();
@@ -222,11 +229,37 @@ public class BackupVO implements Backup {
         this.backedUpVolumes = backedUpVolumes;
     }
 
+    @Override
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    public void setDetail(String name, String value) {
+        assert (details != null) : "Did you forget to load the details?";
+        this.details.put(name, value);
+    }
+
+    public String getDetail(String name) {
+        return this.details.get(name);
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
+    }
+
+    public void addDetails(Map<String, String> details) {
+        this.details.putAll(details);
+    }
+
     public Date getRemoved() {
         return removed;
     }
-
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Backup is %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "external_id", "date"));
     }
 }

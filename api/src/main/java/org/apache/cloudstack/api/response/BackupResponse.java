@@ -26,6 +26,7 @@ import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.Date;
+import java.util.Map;
 
 @EntityReference(value = Backup.class)
 public class BackupResponse extends BaseResponse {
@@ -101,6 +102,10 @@ public class BackupResponse extends BaseResponse {
     @SerializedName(ApiConstants.ZONE)
     @Param(description = "zone name")
     private String zone;
+
+    @SerializedName(ApiConstants.VM_DETAILS)
+    @Param(description = "Lists the vm specific details for the backup")
+    private Map<String, String> vmDetails;
 
     public String getId() {
         return id;
@@ -244,5 +249,13 @@ public class BackupResponse extends BaseResponse {
 
     public void setZone(String zone) {
         this.zone = zone;
+    }
+
+    public Map<String, String> getVmDetails() {
+        return vmDetails;
+    }
+
+    public void setVmDetails(Map<String, String> vmDetails) {
+        this.vmDetails = vmDetails;
     }
 }
