@@ -70,7 +70,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.ObjectUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -1895,33 +1895,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         _hostDao.update(host.getId(), host);
     }
 
-    private void updateHostGuestOSCategory(Long hostId, Long guestOSCategoryId) {
-        // Verify that the guest OS Category exists
-        if (!(guestOSCategoryId > 0) || _guestOSCategoryDao.findById(guestOSCategoryId) == null) {
-            throw new InvalidParameterValueException("Please specify a valid guest OS category.");
-        }
-
-        final GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(guestOSCategoryId);
-        final DetailVO guestOSDetail = _hostDetailsDao.findDetail(hostId, "guest.os.category.id");
-
-        if (guestOSCategory != null && !GuestOSCategoryVO.CATEGORY_NONE.equalsIgnoreCase(guestOSCategory.getName())) {
-            // Create/Update an entry for guest.os.category.id
-            if (guestOSDetail != null) {
-                guestOSDetail.setValue(String.valueOf(guestOSCategory.getId()));
-                _hostDetailsDao.update(guestOSDetail.getId(), guestOSDetail);
-            } else {
-                final Map<String, String> detail = new HashMap<String, String>();
-                detail.put("guest.os.category.id", String.valueOf(guestOSCategory.getId()));
-                _hostDetailsDao.persist(hostId, detail);
-            }
-        } else {
-            // Delete any existing entry for guest.os.category.id
-            if (guestOSDetail != null) {
-                _hostDetailsDao.remove(guestOSDetail.getId());
-            }
-        }
-    }
-
     private void updateHostTags(HostVO host, Long hostId, List<String> hostTags, Boolean isTagARule) {
         List<VMInstanceVO> activeVMs =  _vmDao.listByHostId(hostId);
         logger.warn(String.format("The following active VMs [%s] are using the host [%s]. " +
@@ -1935,12 +1908,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
-        return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(),
-                cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), cmd.getIsTagARule(), cmd.getAnnotation(), false);
+        return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(), cmd.getGuestOsRule(), cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), cmd.getIsTagARule(),
+                cmd.getAnnotation(), false);
     }
 
-    private Host updateHost(Long hostId, String name, Long guestOSCategoryId, String allocationState,
-                            String url, List<String> hostTags, Boolean isTagARule, String annotation, boolean isUpdateFromHostHealthCheck) throws NoTransitionException {
+    private Host updateHost(Long hostId, String name, Long guestOSCategoryId, String guestOsRule, String allocationState, String url, List<String> hostTags, Boolean isTagARule,
+                            String annotation, boolean isUpdateFromHostHealthCheck) throws NoTransitionException {
         // Verify that the host exists
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
@@ -1956,9 +1929,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             updateHostName(host, name);
         }
 
-        if (guestOSCategoryId != null) {
-            updateHostGuestOSCategory(hostId, guestOSCategoryId);
-        }
+        updateGuestOsRelatedFields(hostId, guestOSCategoryId, guestOsRule);
 
         if (hostTags != null) {
             updateHostTags(host, hostId, hostTags, isTagARule);
@@ -1979,6 +1950,76 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 isUpdateFromHostHealthCheck, isUpdateHostAllocation, annotation);
 
         return updatedHost;
+    }
+
+    /**
+     * Updates the guest OS details related to the host ({@code guest.os.rule} and {@code guest.os.category.id}); only one can be set at a time for a given host.
+     */
+    private void updateGuestOsRelatedFields(Long hostId, Long cmdOsCategoryId, String cmdGuestOsRule) {
+        if (ObjectUtils.allNotNull(cmdOsCategoryId, cmdGuestOsRule)) {
+            throw new InvalidParameterValueException("Informing both guest OS category and guest OS rule is invalid; please, inform only one of them.");
+        }
+
+        if (cmdOsCategoryId != null) {
+            updateHostCategoryOs(hostId, cmdOsCategoryId);
+        } else if (cmdGuestOsRule != null) {
+            updateHostGuestOsRule(hostId, cmdGuestOsRule);
+        }
+    }
+
+    /**
+     * Associates/removes a guest OS rule to a host and removes any guest OS category associated with it.
+     */
+    private void updateHostGuestOsRule(Long hostId, String cmdGuestOsRule) {
+        final DetailVO hostGuestOsRule = _hostDetailsDao.findDetail(hostId, Host.GUEST_OS_RULE);
+
+        if (StringUtils.isNotBlank(cmdGuestOsRule)) {
+            createOrUpdateHostDetails(hostGuestOsRule, cmdGuestOsRule, Host.GUEST_OS_RULE, hostId);
+        } else if (hostGuestOsRule != null) {
+            _hostDetailsDao.remove(hostGuestOsRule.getId());
+        }
+        removeHostDetails(hostId, Host.GUEST_OS_CATEGORY_ID);
+    }
+
+    /**
+     * Removes a host details if it exists.
+     */
+    private void removeHostDetails(Long hostId, String detailString) {
+        DetailVO detailVO = _hostDetailsDao.findDetail(hostId, detailString);
+
+        if (detailVO != null) {
+            _hostDetailsDao.remove(detailVO.getId());
+        }
+    }
+
+    private void createOrUpdateHostDetails(DetailVO hostDetail, String detailValue, String detailName, Long hostId) {
+        if (hostDetail != null) {
+            hostDetail.setValue(detailValue);
+            _hostDetailsDao.update(hostDetail.getId(), hostDetail);
+        } else {
+            Map<String, String> detail = new HashMap<>();
+            detail.put(detailName, detailValue);
+            _hostDetailsDao.persist(hostId, detail);
+        }
+    }
+
+    /**
+     * Associates/removes a valid guest OS category to a host and removes any guest OS rules associated with it.
+     */
+    private void updateHostCategoryOs(Long hostId, Long cmdOsCategoryId) {
+        if (cmdOsCategoryId <= 0 || _guestOSCategoryDao.findById(cmdOsCategoryId) == null) {
+            throw new InvalidParameterValueException("Please specify a valid guest OS category.");
+        }
+
+        GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(cmdOsCategoryId);
+        DetailVO guestOSDetail = _hostDetailsDao.findDetail(hostId, Host.GUEST_OS_CATEGORY_ID);
+
+        if (guestOSCategory != null && !GuestOSCategoryVO.CATEGORY_NONE.equalsIgnoreCase(guestOSCategory.getName())) {
+            createOrUpdateHostDetails(guestOSDetail, String.valueOf(guestOSCategory.getId()), Host.GUEST_OS_CATEGORY_ID, hostId);
+        } else if (guestOSDetail != null) {
+            _hostDetailsDao.remove(guestOSDetail.getId());
+        }
+        removeHostDetails(hostId, Host.GUEST_OS_RULE);
     }
 
     private void sendAlertAndAnnotationForAutoEnableDisableKVMHostFeature(HostVO host, String allocationState,
@@ -2020,7 +2061,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host autoUpdateHostAllocationState(Long hostId, ResourceState.Event resourceEvent) throws NoTransitionException {
-        return updateHost(hostId, null, null, resourceEvent.toString(), null, null, null, null, true);
+        return updateHost(hostId, null, null, null, resourceEvent.toString(), null, null, null, null, true);
     }
 
     @Override
@@ -2717,7 +2758,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // If the server's private IP is the same as is public IP, this host has
         // a host-only private network. Don't check for conflicts with the
         // private IP address table.
-        if (!ObjectUtils.equals(serverPrivateIP, serverPublicIP)) {
+        if (!StringUtils.equals(serverPrivateIP, serverPublicIP)) {
             if (!_privateIPAddressDao.mark(dc.getId(), pod.getId(), serverPrivateIP)) {
                 // If the server's private IP address is already in the
                 // database, return false
@@ -3347,7 +3388,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             return null;
         } else {
             _hostDao.loadDetails(host);
-            final DetailVO detail = _hostDetailsDao.findDetail(hostId, "guest.os.category.id");
+            final DetailVO detail = _hostDetailsDao.findDetail(hostId, Host.GUEST_OS_CATEGORY_ID);
             if (detail == null) {
                 return null;
             } else {
