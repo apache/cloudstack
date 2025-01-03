@@ -105,7 +105,7 @@ public class StopInternalLBVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException {
-        CallContext.current().setEventDetails("Internal lb vm Id: " + getId());
+        CallContext.current().setEventDetails("Internal lb VM Id: " + getId());
         VirtualRouter result = null;
         VirtualRouter vm = _routerService.findRouter(getId());
         if (vm == null || vm.getRole() != Role.INTERNAL_LB_VM) {
