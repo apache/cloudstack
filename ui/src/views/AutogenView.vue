@@ -106,6 +106,16 @@
               @change-filter="changeFilter"/>
           </a-col>
         </a-row>
+        <a-row
+          v-if="!dataView"
+          style="min-height: 36px; padding-top: 12px;"
+        >
+          <search-filter
+            :filters="getActiveFilters()"
+            :apiName="apiName"
+            @close="removeFilter(filter)"
+            />
+        </a-row>
       </a-card>
     </a-affix>
 
@@ -469,6 +479,7 @@ import ListView from '@/components/view/ListView'
 import ResourceView from '@/components/view/ResourceView'
 import ActionButton from '@/components/view/ActionButton'
 import SearchView from '@/components/view/SearchView'
+import SearchFilter from '@/components/view/SearchFilter'
 import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import BulkActionProgress from '@/components/view/BulkActionProgress'
@@ -482,6 +493,7 @@ export default {
     ListView,
     ActionButton,
     SearchView,
+    SearchFilter,
     BulkActionProgress,
     TooltipLabel,
     OsLogo,
@@ -1117,6 +1129,40 @@ export default {
     cancelAction () {
       eventBus.emit('action-closing', { action: this.currentAction })
       this.closeAction()
+    },
+    getActiveFilters () {
+      const queryParams = Object.assign({}, this.$route.query)
+      const activeFilters = []
+      for (const filter in queryParams) {
+        if (!filter.startsWith('tags[')) {
+          activeFilters.push({
+            key: filter,
+            value: queryParams[filter],
+            isTag: false
+          })
+        } else if (filter.endsWith('].key')) {
+          const tagIdx = filter.split('[')[1].split(']')[0]
+          const tagKey = queryParams[`tags[${tagIdx}].key`]
+          const tagValue = queryParams[`tags[${tagIdx}].value`]
+          activeFilters.push({
+            key: tagKey,
+            value: tagValue,
+            isTag: true,
+            tagIdx: tagIdx
+          })
+        }
+      }
+      return activeFilters
+    },
+    removeFilter (filter) {
+      const queryParams = Object.assign({}, this.$route.query)
+      if (filter.isTag) {
+        delete queryParams[`tags[${filter.tagIdx}].key`]
+        delete queryParams[`tags[${filter.tagIdx}].value`]
+      } else {
+        delete queryParams[filter.key]
+      }
+      this.onSearch(queryParams)
     },
     onRowSelectionChange (selection) {
       this.selectedRowKeys = selection
