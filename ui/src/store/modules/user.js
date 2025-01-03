@@ -424,7 +424,7 @@ const user = {
           const ldapEnable = (response.ldapconfigurationresponse.count > 0)
           commit('SET_LDAP', ldapEnable)
         }).catch(error => {
-          reject(error)
+          console.error(error)
         })
 
         api('cloudianIsEnabled').then(response => {
