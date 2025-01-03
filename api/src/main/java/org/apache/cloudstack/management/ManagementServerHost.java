@@ -22,7 +22,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface ManagementServerHost extends InternalIdentity, Identity, ControlledEntity {
     enum State {
-        Up, Down, PreparingToShutDown, ReadyToShutDown, ShuttingDown
+        Up, Down, PreparingForMaintenance, Maintenance, PreparingForShutDown, ReadyToShutDown, ShuttingDown
     }
 
     long getMsid();

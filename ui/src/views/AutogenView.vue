@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    <a-affix :offsetTop="this.$store.getters.shutdownTriggered ? 103 : 78">
+    <a-affix :offsetTop="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 103 : 78">
       <a-card class="breadcrumb-card" style="z-index: 10">
         <a-row>
           <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px; margin-top: 10px">
@@ -402,7 +402,7 @@
       </a-modal>
     </div>
 
-    <div :style="this.$store.getters.shutdownTriggered ? 'margin-top: 24px; margin-bottom: 12px' : null">
+    <div :style="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 'margin-top: 24px; margin-bottom: 12px' : null">
       <div v-if="dataView">
         <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
         <resource-view
