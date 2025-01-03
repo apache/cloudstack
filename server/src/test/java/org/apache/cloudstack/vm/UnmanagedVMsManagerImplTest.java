@@ -279,6 +279,7 @@ public class UnmanagedVMsManagerImplTest {
         List<UnmanagedInstanceTO.Disk> instanceDisks = new ArrayList<>();
         UnmanagedInstanceTO.Disk instanceDisk = new UnmanagedInstanceTO.Disk();
         instanceDisk.setDiskId("1000-1");
+        instanceDisk.setPosition(0);
         instanceDisk.setLabel("DiskLabel");
         instanceDisk.setController("scsi");
         instanceDisk.setImagePath("[b6ccf44a1fa13e29b3667b4954fa10ee] TestInstance/ROOT-1.vmdk");
@@ -424,6 +425,7 @@ public class UnmanagedVMsManagerImplTest {
         ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
         when(importUnmanageInstanceCmd.getName()).thenReturn("TestInstance");
         when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
+        when(volumeApiService.doesTargetStorageSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
         try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
             unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
         }
@@ -702,6 +704,8 @@ public class UnmanagedVMsManagerImplTest {
         if (VcenterParameter.AGENT_UNAVAILABLE != vcenterParameter) {
             when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(CheckConvertInstanceCommand.class))).thenReturn(checkConvertInstanceAnswer);
         }
+
+        when(volumeApiService.doesTargetStorageSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
 
         ConvertInstanceAnswer convertInstanceAnswer = mock(ConvertInstanceAnswer.class);
         ImportConvertedInstanceAnswer convertImportedInstanceAnswer = mock(ImportConvertedInstanceAnswer.class);
