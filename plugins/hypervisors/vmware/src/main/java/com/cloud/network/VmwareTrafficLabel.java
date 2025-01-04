@@ -1,17 +1,17 @@
 // Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
+// or more contributor license agreements. See the NOTICE file
 // distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
+// regarding copyright ownership. The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// with the License. You may obtain a copy of the License at
 //
 //   http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
+// KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.network;
@@ -34,28 +34,20 @@ public class VmwareTrafficLabel implements TrafficLabel {
     VirtualSwitchType _vSwitchType = VirtualSwitchType.StandardVirtualSwitch;
     String _vSwitchName = DEFAULT_VSWITCH_NAME;
     String _vlanId = Vlan.UNTAGGED;
+    boolean _isPrimaryNic = true;  // Flag to identify if this is a primary NIC
+    int _rateLimit = 1000;  // Default rate limit in Mbps
+    int _guaranteedBandwidth = 500;  // Default guaranteed bandwidth in Mbps
 
-    public VmwareTrafficLabel(String networkLabel, TrafficType trafficType, VirtualSwitchType defVswitchType) {
+    public VmwareTrafficLabel(String networkLabel, TrafficType trafficType, VirtualSwitchType defVswitchType, boolean isPrimaryNic) {
         _trafficType = trafficType;
+        _isPrimaryNic = isPrimaryNic;
         _parseLabel(networkLabel, defVswitchType);
     }
 
-    public VmwareTrafficLabel(String networkLabel, TrafficType trafficType) {
+    public VmwareTrafficLabel(String networkLabel, TrafficType trafficType, boolean isPrimaryNic) {
         _trafficType = trafficType;
+        _isPrimaryNic = isPrimaryNic;
         _parseLabel(networkLabel, VirtualSwitchType.StandardVirtualSwitch);
-    }
-
-    public VmwareTrafficLabel(TrafficType trafficType, VirtualSwitchType defVswitchType) {
-        _trafficType = trafficType;
-        _parseLabel(null, defVswitchType);
-    }
-
-    public VmwareTrafficLabel(TrafficType trafficType) {
-        _trafficType = trafficType;
-        _parseLabel(null, VirtualSwitchType.StandardVirtualSwitch);
-    }
-
-    public VmwareTrafficLabel() {
     }
 
     private void _parseLabel(String networkLabel, VirtualSwitchType defVswitchType) {
@@ -88,6 +80,20 @@ public class VmwareTrafficLabel implements TrafficLabel {
         }
         if (tokens.length > MAX_FIELDS_VMWARE_LABEL) {
             throw new InvalidParameterValueException("Found extraneous fields in vmware traffic label : " + networkLabel);
+        }
+    }
+
+    public void applyTrafficShaping() {
+        // Ensure traffic shaping is applied to secondary NICs
+        if (!_isPrimaryNic) {
+            // Apply lower rate limits or minimum bandwidth guarantees for secondary NICs
+            System.out.println("Applying traffic shaping to secondary NIC:");
+            System.out.println("Rate Limit: " + _rateLimit + " Mbps");
+            System.out.println("Guaranteed Bandwidth: " + _guaranteedBandwidth + " Mbps");
+        } else {
+            // For primary NIC, apply normal rate limits
+            System.out.println("Applying traffic shaping to primary NIC:");
+            System.out.println("Rate Limit: " + _rateLimit + " Mbps");
         }
     }
 

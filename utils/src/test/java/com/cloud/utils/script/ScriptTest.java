@@ -20,13 +20,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
-
 import com.cloud.utils.Pair;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -39,7 +37,7 @@ public class ScriptTest {
         commands.add(new String[]{"echo", keyword});
         Pair<Integer, String> result = Script.executePipedCommands(commands, 0);
         Assert.assertNotNull("Result should not be null", result);
-        Assert.assertEquals(0, result.first().intValue());
+        Assert.assertEquals(0, result.first().intValue()); // Expecting 0 for success
         String output = result.second().trim();
         Assert.assertTrue(StringUtils.isNotEmpty(output));
         Assert.assertEquals(keyword, output);
@@ -54,7 +52,7 @@ public class ScriptTest {
         );
         Pair<Integer, String> result = Script.executePipedCommands(commands, 0);
         Assert.assertNotNull("Result should not be null", result);
-        Assert.assertEquals(0, result.first().intValue());
+        Assert.assertEquals(0, result.first().intValue()); // Expecting 0 for success
         String output = result.second().trim();
         Assert.assertTrue(StringUtils.isNotEmpty(output));
         Assert.assertEquals(keyword, output);
@@ -63,19 +61,19 @@ public class ScriptTest {
     @Test
     public void testExecutePipedCommandsTimeout() {
         List<String[]> commands = new ArrayList<>();
-        commands.add(new String[]{"sh", "-c", "sleep 10"});
-        Pair<Integer, String> result = Script.executePipedCommands(commands, TimeUnit.SECONDS.toMillis(1));
+        commands.add(new String[]{"sh", "-c", "sleep 10"});  // Simulate a long-running command
+        Pair<Integer, String> result = Script.executePipedCommands(commands, TimeUnit.SECONDS.toMillis(1));  // Set a timeout of 1 second
         Assert.assertNotNull("Result should not be null", result);
-        Assert.assertEquals(-1, result.first().intValue());
-        Assert.assertEquals(Script.ERR_TIMEOUT, result.second());
+        Assert.assertEquals(-1, result.first().intValue());  // Expecting -1 for timeout
+        Assert.assertEquals(Script.ERR_TIMEOUT, result.second()); // Ensure the correct timeout error message
     }
 
     @Test
     public void testGetExecutableAbsolutePath() {
         if (System.getProperty("os.name").startsWith("Windows")) {
-            return;
+            return;  // Skip on Windows, as 'ls' command isn't available on Windows by default
         }
         String result = Script.getExecutableAbsolutePath("ls");
-        Assert.assertTrue(List.of("/usr/bin/ls", "/bin/ls").contains(result));
+        Assert.assertTrue(List.of("/usr/bin/ls", "/bin/ls").contains(result)); // Check that the ls command exists in the expected locations
     }
 }
