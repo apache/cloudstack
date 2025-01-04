@@ -55,6 +55,7 @@ public class TemplateProfile {
     TemplateType templateType;
     Boolean directDownload;
     Boolean deployAsIs;
+    Boolean forCks;
     Long size;
 
     public TemplateProfile(Long templateId, Long userId, String name, String displayText, CPU.CPUArch arch, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
@@ -340,6 +341,14 @@ public class TemplateProfile {
 
     public boolean isDeployAsIs() {
         return this.deployAsIs;
+    }
+
+    public Boolean isForCks() {
+        return forCks;
+    }
+
+    public void setForCks(Boolean forCks) {
+        this.forCks = forCks;
     }
 
     public CPU.CPUArch getArch() {
