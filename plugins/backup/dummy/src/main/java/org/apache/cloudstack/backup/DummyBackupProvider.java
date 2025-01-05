@@ -148,7 +148,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup) {
+    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
         return true;
     }
 }

@@ -50,6 +50,7 @@ import com.cloud.dc.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMap;
 import com.cloud.dc.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
@@ -111,6 +112,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     private VirtualMachineManager virtualMachineManager;
     @Inject
     private BackupManager backupManager;
+    @Inject
+    private VolumeDao volumeDao;
 
     protected VeeamClient getClient(final Long zoneId) {
         try {
@@ -296,7 +299,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
         final Long zoneId = backup.getZoneId();
         final String restorePointId = backup.getExternalId();
-        return getClient(zoneId).restoreVMToDifferentLocation(restorePointId, hostIp, dataStoreUuid);
+        return getClient(zoneId).restoreVMToDifferentLocation(restorePointId, null, hostIp, dataStoreUuid);
     }
 
     @Override
@@ -383,7 +386,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                         backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
                         Map<String, String> details = backupManager.getBackupVmDetails(vm);
                         backup.setDetails(details);
-                        Map<String, String> details = backupManager.getBackupDiskOfferingDetails(vm.getId());
+                        details = backupManager.getBackupDiskOfferingDetails(vm.getId());
                         backup.addDetails(details);
 
                         logger.debug(String.format("Creating a new entry in backups: [uuid: %s, vm_id: %s, external_id: %s, type: %s, date: %s, backup_offering_id: %s, account_id: %s, "
@@ -405,8 +408,11 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup) {
-        return true;
+    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
+        final Long zoneId = backup.getZoneId();
+        final String restorePointId = backup.getExternalId();
+        final String restoreLocation = vm.getInstanceName();
+        return getClient(zoneId).restoreVMToDifferentLocation(restorePointId, restoreLocation, hostIp, dataStoreUuid).first();
     }
 
     @Override

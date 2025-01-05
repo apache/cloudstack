@@ -905,8 +905,15 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                     vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),
                     true, 0);
 
+            String host = null;
+            String dataStore = null;
+            if (!"nas".equals(offering.getProvider())) {
+                Pair<HostVO, StoragePoolVO> restoreInfo = getRestoreVolumeHostAndDatastore(vm);
+                host = restoreInfo.first().getPrivateIpAddress();
+                dataStore = restoreInfo.second().getUuid();
+            }
             final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
-            if (!backupProvider.restoreBackupToVM(vm, backup)) {
+            if (!backupProvider.restoreBackupToVM(vm, backup, host, dataStore)) {
                 ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_BACKUP_RESTORE,
                         String.format("Failed to restore VM %s from backup %s", vm.getInstanceName(), backup.getUuid()),
                         vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),0);

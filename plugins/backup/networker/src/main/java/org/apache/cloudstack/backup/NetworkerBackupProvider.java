@@ -524,7 +524,9 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         BackupVO backup = getClient(vm.getDataCenterId()).registerBackupForVm(vm, backupJobStart, saveTime);
         if (backup != null) {
             backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
-            Map<String, String> details = backupManager.getBackupDiskOfferingDetails(vm.getId());
+            Map<String, String> details = backupManager.getBackupVmDetails(vm);
+            backup.setDetails(details);
+            details = backupManager.getBackupDiskOfferingDetails(vm.getId());
             backup.addDetails(details);
             backupDao.persist(backup);
             return true;
@@ -671,7 +673,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     public boolean willDeleteBackupsOnOfferingRemoval() { return false; }
 
     @Override
-    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup) {
+    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
         return true;
     }
 }
