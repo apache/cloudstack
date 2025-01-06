@@ -16,7 +16,20 @@
 // under the License.
 
 <template>
-  <div v-if="openModal">
+  <div v-if="!configure">
+            <div class="card-footer">
+              <a-button @click="closeAction">
+                {{ $t('label.cancel') }}
+              </a-button>
+              <a-button @click="setConfigure">
+                {{ $t('label.configure.instance') }}
+              </a-button>
+              <a-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit">
+                {{ $t('label.ok') }}
+              </a-button>
+            </div>
+  </div>
+  <div v-else>
     <DeployVMFromBackup
       :preFillContent="dataPreFill"
       @close-action="closeModal"/>
@@ -34,7 +47,7 @@ export default {
   },
   data () {
     return {
-      openModal: true,
+      configure: false,
       dataPreFill: {}
     }
   },
@@ -45,13 +58,27 @@ export default {
     }
   },
   created () {
+    this.dataPreFill.backupid = this.resource.id
     this.dataPreFill.computeofferingid = this.resource.vmdetails.serviceofferingid
     this.dataPreFill.templateid = this.resource.vmdetails.templateid
-    this.dataPreFill.backupid = this.resource.id
+    this.dataPreFill.networkids = (this.resource.vmdetails.networkids || '').split(',').map(item => item.trim())
+    this.diskofferingids = (this.resource.vmdetails.diskofferingids || '').split(',').map(item => item.trim())
+    console.log(this.diskofferingids)
+    const volumes = JSON.parse(this.resource.volumes).slice(1)
+    const result = volumes.map((volume, index) => ({
+      id: index,
+      name: volume.uuid,
+      size: volume.size / (1024 * 1024 * 1024), // Convert size from bytes to GB
+      diskofferingid: this.diskofferingids[index]
+    }))
+    console.log(result)
+    this.dataPreFill.diskofferingids = result
   },
   methods: {
+    setConfigure () {
+      this.configure = true
+    },
     closeModal () {
-      this.openModal = false
       this.$emit('close-action')
     }
   }
@@ -60,11 +87,20 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+  .card-footer {
+    text-align: right;
+    margin-top: 2rem;
+
+    button + button {
+      margin-left: 8px;
+    }
+  }
+
 .form {
   width: 80vw;
 
-  @media (min-width: 500px) {
-    min-width: 400px;
+  @media (min-width: 1000px) {
+    min-width: 1000px;
     width: 100%;
   }
 }

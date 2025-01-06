@@ -44,7 +44,7 @@
                 <template #description>
                   <div style="margin-top: 15px">
                     <span>{{ $t('message.select.a.zone') }}</span><br/>
-                    <a-form-item :label="$t('label.zoneid')" name="zoneid" ref="zoneid">
+                    <a-form-item :label="$t('label.zoneid')" name="zoneid" ref="zoneid" :readonly="true">
                       <div v-if="zones.length <= 8">
                         <a-row type="flex" :gutter="[16, 18]" justify="start">
                           <div v-for="(zoneItem, idx) in zones" :key="idx">
@@ -142,98 +142,33 @@
                 </template>
               </a-step>
               <a-step
-                :title="$t('label.templateiso')"
+                :title="$t('label.template')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
-                  <div v-if="zoneSelected" style="margin-top: 15px">
-                    <a-card
-                      :tabList="tabList"
-                      :activeTabKey="tabKey"
-                      @tabChange="key => onTabChange(key, 'tabKey')">
-                      <div v-if="tabKey === 'templateid'">
-                        {{ $t('message.template.desc') }}
-                        <div v-if="isZoneSelectedMultiArch" style="width: 100%; margin-top: 5px">
-                          {{ $t('message.template.arch') }}
-                          <a-select
-                            style="width: 100%"
-                            v-model:value="selectedArchitecture"
-                            :defaultValue="architectureTypes.opts[0].id"
-                            @change="arch => changeArchitecture(arch, true)">
-                            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
-                              {{ opt.name || opt.description }}
-                            </a-select-option>
-                          </a-select>
-                        </div>
-                        <template-iso-selection
-                          input-decorator="templateid"
-                          :items="options.templates"
-                          :selected="tabKey"
-                          :loading="loading.templates"
-                          :preFillContent="dataPreFill"
-                          :key="templateKey"
-                          @handle-search-filter="($event) => fetchAllTemplates($event)"
-                          @update-template-iso="updateFieldValue" />
-                         <div>
-                          {{ $t('label.override.rootdisk.size') }}
-                          <a-switch
-                            v-model:checked="form.rootdisksizeitem"
-                            :disabled="rootDiskSizeFixed > 0 || template.deployasis || showOverrideDiskOfferingOption"
-                            @change="val => { showRootDiskSizeChanger = val }"
-                            style="margin-left: 10px;"/>
-                          <div v-if="template.deployasis">  {{ $t('message.deployasis') }} </div>
-                        </div>
-                        <disk-size-selection
-                          v-if="showRootDiskSizeChanger"
-                          input-decorator="rootdisksize"
-                          :preFillContent="dataPreFill"
-                          :isCustomized="true"
-                          :minDiskSize="dataPreFill.minrootdisksize"
-                          @update-disk-size="updateFieldValue"
-                          style="margin-top: 10px;"/>
-                      </div>
-                      <div v-else>
-                        {{ $t('message.iso.desc') }}
-                        <div v-if="isZoneSelectedMultiArch" style="width: 100%; margin-top: 5px">
-                          {{ $t('message.iso.arch') }}
-                          <a-select
-                            style="width: 100%"
-                            v-model:value="selectedArchitecture"
-                            :defaultValue="architectureTypes.opts[0].id"
-                            @change="arch => changeArchitecture(arch, false)">
-                            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
-                              {{ opt.name || opt.description }}
-                            </a-select-option>
-                          </a-select>
-                        </div>
-                        <template-iso-selection
-                          input-decorator="isoid"
-                          :items="options.isos"
-                          :selected="tabKey"
-                          :loading="loading.isos"
-                          :preFillContent="dataPreFill"
-                          @handle-search-filter="($event) => fetchAllIsos($event)"
-                          @update-template-iso="updateFieldValue" />
-                        <a-form-item :label="$t('label.hypervisor')">
-                          <a-select
-                            v-model:value="form.hypervisor"
-                            :preFillContent="dataPreFill"
-                            :options="hypervisorSelectOptions"
-                            @change="value => hypervisor = value"
-                            showSearch
-                            optionFilterProp="label"
-                            :filterOption="filterOption" />
-                        </a-form-item>
-                      </div>
-                    </a-card>
-                    <a-form-item class="form-item-hidden">
-                      <a-input v-model:value="form.templateid" />
-                    </a-form-item>
-                    <a-form-item class="form-item-hidden">
-                      <a-input v-model:value="form.isoid" />
-                    </a-form-item>
-                    <a-form-item class="form-item-hidden">
-                      <a-input v-model:value="form.rootdisksize" />
-                    </a-form-item>
+                  <div style="margin-top: 15px">
+                    <a-select
+                      style="width: 100%"
+                      :options="templateSelectOptions"
+                      v-model:value="form.templateid"
+                      showSearch
+                      optionFilterProp="label"
+                      :filterOption="filterOption"
+                      :loading="loading.templates"
+                      :placeholder="Entertemplateid">
+                      <a-select-option v-for="temp in templateSelectOptions" :key="temp.value" :label="temp.label">
+                        <span>
+                          <resource-icon v-if="temp.icon" :image="temp.icon" size="1x" style="margin-right: 5px"/>
+                          <os-logo v-else-if="temp.value !== null" :osId="temp.ostypeid" :osName="temp.ostypename" size="lg" style="margin-left: -1px" />
+                          {{ temp.label }}
+                        </span>
+                          <template v-if="temp.icon">
+                            <span>Icon exists</span>
+                          </template>
+                          <template v-else>
+                            <span>No icon</span>
+                          </template>
+                      </a-select-option>
+                    </a-select>
                   </div>
                 </template>
               </a-step>
@@ -326,7 +261,7 @@
                         v-if="!template.deployasis && template.childtemplates && template.childtemplates.length > 0" >
                         <template #description>
                           <div v-if="zoneSelected">
-                            <multi-disk-selection
+                            <volume-disk-offering-map
                               :items="template.childtemplates"
                               :diskOfferings="options.diskOfferings"
                               :zoneId="zoneId"
@@ -376,13 +311,14 @@
               <a-step
                 :title="$t('label.data.disk')"
                 :status="zoneSelected ? 'process' : 'wait'"
-                v-if="!template.deployasis && template.childtemplates && template.childtemplates.length > 0" >
+                v-if="true" >
                 <template #description>
                   <div v-if="zoneSelected">
-                    <multi-disk-selection
-                      :items="template.childtemplates"
+                    <volume-disk-offering-map
+                      :items="dataPreFill.diskofferingids"
                       :diskOfferings="options.diskOfferings"
                       :zoneId="zoneId"
+                      :customOfferingsAllowed="true"
                       @select-multi-disk-offering="updateMultiDiskOffering($event)" />
                   </div>
                 </template>
@@ -873,11 +809,12 @@ import eventBus from '@/config/eventBus'
 import OwnershipSelection from '@views/compute/wizard/OwnershipSelection'
 import InfoCard from '@/components/view/InfoCard'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import OsLogo from '@/components/widgets/OsLogo'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import DiskOfferingSelection from '@views/compute/wizard/DiskOfferingSelection'
 import DiskSizeSelection from '@views/compute/wizard/DiskSizeSelection'
-import MultiDiskSelection from '@views/compute/wizard/MultiDiskSelection'
+import VolumeDiskOfferingMap from '@views/compute/wizard/VolumeDiskOfferingMap'
 import TemplateIsoSelection from '@views/compute/wizard/TemplateIsoSelection'
 import AffinityGroupSelection from '@views/compute/wizard/AffinityGroupSelection'
 import NetworkSelection from '@views/compute/wizard/NetworkSelection'
@@ -899,13 +836,14 @@ export default {
     AffinityGroupSelection,
     TemplateIsoSelection,
     DiskSizeSelection,
-    MultiDiskSelection,
+    VolumeDiskOfferingMap,
     DiskOfferingSelection,
     InfoCard,
     ComputeOfferingSelection,
     ComputeSelection,
     SecurityGroupSelection,
     ResourceIcon,
+    OsLogo,
     TooltipLabel,
     InstanceNicsNetworkSelectListView
   },
@@ -953,6 +891,7 @@ export default {
       },
       options: {
         templates: {},
+        templates2: [],
         isos: {},
         hypervisors: [],
         serviceOfferings: [],
@@ -997,6 +936,7 @@ export default {
       },
       instanceConfig: {},
       template: {},
+      templates: [],
       defaultBootType: '',
       defaultBootMode: '',
       templateConfigurations: [],
@@ -1094,6 +1034,17 @@ export default {
   computed: {
     rootDiskSize () {
       return this.showRootDiskSizeChanger && this.rootDiskSizeFixed > 0
+    },
+    templateSelectOptions () {
+      return this.options.templates2.map((template) => {
+        return {
+          label: template.name,
+          value: template.id,
+          icon: template?.icon?.base64image || '',
+          ostypeid: template.ostypeid,
+          ostypename: template.ostypename
+        }
+      })
     },
     isNormalAndDomainUser () {
       return ['DomainAdmin', 'User'].includes(this.$store.getters.userInfo.roletype)
@@ -1265,6 +1216,16 @@ export default {
             type: 'Routing'
           },
           field: 'hostid'
+        },
+        templates2: {
+          list: 'listTemplates',
+          isLoad: true,
+          options: {
+            templatefilter: 'all',
+            hypervisor: this.hypervisor,
+            showicon: true
+          },
+          field: 'templateid'
         },
         dynamicScalingVmConfig: {
           list: 'listConfigurations',
