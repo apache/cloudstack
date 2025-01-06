@@ -29,6 +29,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.utils.DateUtil;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "backup_schedule")
@@ -66,6 +67,12 @@ public class BackupScheduleVO implements BackupSchedule {
         this.schedule = schedule;
         this.timezone = timezone;
         this.scheduledTimestamp = scheduledTimestamp;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("BackupSchedule %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "vmId", "schedule", "scheduleType"));
     }
 
     @Override

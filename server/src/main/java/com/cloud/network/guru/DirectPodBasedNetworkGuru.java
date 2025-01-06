@@ -226,16 +226,16 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                  */
                 if (vlan.getIp6Cidr() != null) {
                     if (nic.getIPv6Address() == null) {
-                        logger.debug("Found IPv6 CIDR " + vlan.getIp6Cidr() + " for VLAN " + vlan.getId());
+                        logger.debug("Found IPv6 CIDR {} for VLAN {}", vlan.getIp6Cidr(), vlan);
                         nic.setIPv6Cidr(vlan.getIp6Cidr());
                         nic.setIPv6Gateway(vlan.getIp6Gateway());
 
                         IPv6Address ipv6addr = NetUtils.EUI64Address(vlan.getIp6Cidr(), nic.getMacAddress());
-                        logger.info("Calculated IPv6 address " + ipv6addr + " using EUI-64 for NIC " + nic.getUuid());
+                        logger.info("Calculated IPv6 address {} using EUI-64 for NIC {}", ipv6addr, nic);
                         nic.setIPv6Address(ipv6addr.toString());
                     }
                 } else {
-                    logger.debug("No IPv6 CIDR configured for VLAN " + vlan.getId());
+                    logger.debug("No IPv6 CIDR configured for VLAN {}", vlan);
                 }
             }
         });

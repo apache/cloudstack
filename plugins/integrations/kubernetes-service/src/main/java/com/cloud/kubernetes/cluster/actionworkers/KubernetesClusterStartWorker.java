@@ -232,7 +232,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                     requestedIps, addrs, null, null, null, customParameterMap, null, null, null, null, true, UserVmManager.CKS_NODE, null);
         }
         if (logger.isInfoEnabled()) {
-            logger.info(String.format("Created control VM ID: %s, %s in the Kubernetes cluster : %s", controlVm.getUuid(), hostName, kubernetesCluster.getName()));
+            logger.info("Created control VM: {}, {} in the Kubernetes cluster: {}", controlVm, hostName, kubernetesCluster);
         }
         return controlVm;
     }
@@ -310,7 +310,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
 
         if (logger.isInfoEnabled()) {
-            logger.info(String.format("Created control VM ID : %s, %s in the Kubernetes cluster : %s", additionalControlVm.getUuid(), hostName, kubernetesCluster.getName()));
+            logger.info("Created control VM: {}, {} in the Kubernetes cluster: {}", additionalControlVm, hostName, kubernetesCluster);
         }
         return additionalControlVm;
     }
@@ -329,7 +329,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             throw new ManagementServerException(String.format("Failed to provision control VM for Kubernetes cluster : %s" , kubernetesCluster.getName()));
         }
         if (logger.isInfoEnabled()) {
-            logger.info(String.format("Provisioned the control VM : %s in to the Kubernetes cluster : %s", k8sControlVM.getDisplayName(), kubernetesCluster.getName()));
+            logger.info("Provisioned the control VM: {} in to the Kubernetes cluster: {}", k8sControlVM, kubernetesCluster);
         }
         return k8sControlVM;
     }
@@ -352,7 +352,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 }
                 additionalControlVms.add(vm);
                 if (logger.isInfoEnabled()) {
-                    logger.info(String.format("Provisioned additional control VM : %s in to the Kubernetes cluster : %s", vm.getDisplayName(), kubernetesCluster.getName()));
+                    logger.info("Provisioned additional control VM: {} in to the Kubernetes cluster: {}", vm, kubernetesCluster);
                 }
             }
         }
@@ -371,10 +371,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         try {
             networkMgr.startNetwork(network.getId(), destination, context);
             if (logger.isInfoEnabled()) {
-                logger.info(String.format("Network : %s is started for the  Kubernetes cluster : %s", network.getName(), kubernetesCluster.getName()));
+                logger.info("Network: {} is started for the Kubernetes cluster: {}", network, kubernetesCluster);
             }
         } catch (ConcurrentOperationException | ResourceUnavailableException |InsufficientCapacityException e) {
-            String msg = String.format("Failed to start Kubernetes cluster : %s as unable to start associated network : %s" , kubernetesCluster.getName(), network.getName());
+            String msg = String.format("Failed to start Kubernetes cluster: %s as unable to start associated network: %s" , kubernetesCluster, network);
             logger.error(msg, e);
             stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed);
             throw new ManagementServerException(msg, e);
@@ -385,7 +385,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     protected void setupKubernetesClusterNetworkRules(Network network, List<UserVm> clusterVMs) throws ManagementServerException {
         if (manager.isDirectAccess(network)) {
             if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Network : %s for Kubernetes cluster : %s is not an isolated network or ROUTED network, therefore, no need for network rules", network.getName(), kubernetesCluster.getName()));
+                logger.debug("Network: {} for Kubernetes cluster: {} is not an isolated network or ROUTED network, therefore, no need for network rules", network, kubernetesCluster);
             }
             return;
         }
@@ -416,7 +416,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 resizeNodeVolume(vm);
                 startKubernetesVM(vm);
             } catch (ManagementServerException ex) {
-                logger.warn(String.format("Failed to start VM : %s in Kubernetes cluster : %s due to ", vm.getDisplayName(), kubernetesCluster.getName()) + ex);
+                logger.warn("Failed to start VM: {} in Kubernetes cluster: {} due to {}", vm, kubernetesCluster, ex);
                 // don't bail out here. proceed further to stop the reset of the VM's
             }
         }
@@ -471,7 +471,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     public boolean startKubernetesClusterOnCreate() {
         init();
         if (logger.isInfoEnabled()) {
-            logger.info(String.format("Starting Kubernetes cluster : %s", kubernetesCluster.getName()));
+            logger.info("Starting Kubernetes cluster: {}", kubernetesCluster);
         }
         final long startTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterStartTimeout.value() * 1000;
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StartRequested);
@@ -530,7 +530,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             logTransitStateAndThrow(Level.ERROR, String.format("Provisioning node VM failed in the Kubernetes cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }
         if (logger.isInfoEnabled()) {
-            logger.info(String.format("Kubernetes cluster : %s VMs successfully provisioned", kubernetesCluster.getName()));
+            logger.info("Kubernetes cluster: {} VMs successfully provisioned", kubernetesCluster);
         }
         try {
             setupKubernetesClusterNetworkRules(network, clusterVMs);
@@ -577,7 +577,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     public boolean startStoppedKubernetesCluster() throws CloudRuntimeException {
         init();
         if (logger.isInfoEnabled()) {
-            logger.info(String.format("Starting Kubernetes cluster : %s", kubernetesCluster.getName()));
+            logger.info("Starting Kubernetes cluster: {}", kubernetesCluster);
         }
         final long startTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterStartTimeout.value() * 1000;
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.StartRequested);
@@ -604,7 +604,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         }
         stateTransitTo(kubernetesCluster.getId(), KubernetesCluster.Event.OperationSucceeded);
         if (logger.isInfoEnabled()) {
-            logger.info(String.format("Kubernetes cluster : %s successfully started", kubernetesCluster.getName()));
+            logger.info("Kubernetes cluster: {} successfully started", kubernetesCluster);
         }
         return true;
     }
