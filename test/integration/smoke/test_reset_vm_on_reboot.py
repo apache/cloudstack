@@ -52,19 +52,21 @@ class TestResetVmOnReboot(cloudstackTestCase):
         # Set Zones and disk offerings ??
         cls.services["small"]["zoneid"] = zone.id
         cls.services["small"]["template"] = template.id
-
+        cls._cleanup = []
         # Create account, service offerings, vm.
         cls.account = Account.create(
             cls.apiclient,
             cls.services["account"],
             domainid=domain.id
         )
+        cls._cleanup.append(cls.account)
 
         cls.small_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["small"],
             isvolatile="true"
         )
+        cls._cleanup.append(cls.small_offering)
 
         #create a virtual machine
         cls.virtual_machine = VirtualMachine.create(
@@ -75,16 +77,11 @@ class TestResetVmOnReboot(cloudstackTestCase):
             serviceofferingid=cls.small_offering.id,
             mode=cls.services["mode"]
         )
-        cls._cleanup = [
-            cls.small_offering,
-            cls.account
-        ]
+        cls._cleanup.append(cls.virtual_machine)
 
     @classmethod
     def tearDownClass(cls):
-        cls.apiclient = super(TestResetVmOnReboot, cls).getClsTestClient().getApiClient()
-        cleanup_resources(cls.apiclient, cls._cleanup)
-        return
+        super(TestResetVmOnReboot, cls).tearDownClass()
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()

@@ -629,6 +629,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         virtualMachine = VirtualMachine.create(self.apiclient, self.services["virtual_machine"], zoneid=self.zone.id,
                                                             accountid=self.account.name, domainid=self.account.domainid,
                                                             serviceofferingid=self.cks_service_offering.id)
+        self.cleanup.append(virtualMachine)
         self.debug("Adding VM %s to unmanaged Kubernetes cluster with ID: %s" % (virtualMachine.id, cluster.id))
         self.addVirtualMachinesToKubernetesCluster(cluster.id, [virtualMachine.id])
         cluster = self.listKubernetesCluster(cluster.id)
