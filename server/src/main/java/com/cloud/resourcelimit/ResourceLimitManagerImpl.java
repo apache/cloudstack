@@ -42,6 +42,7 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ResourceLimitAndCountResponse;
 import org.apache.cloudstack.api.response.TaggedResourceLimitAndCountResponse;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -171,6 +172,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     @Inject
     protected SnapshotDao _snapshotDao;
     @Inject
+    protected BackupDao backupDao;
+    @Inject
     private SnapshotDataStoreDao _snapshotDataStoreDao;
     @Inject
     private TemplateDataStoreDao _vmTemplateStoreDao;
@@ -288,6 +291,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             projectResourceLimitMap.put(Resource.ResourceType.cpu.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectCpus.key())));
             projectResourceLimitMap.put(Resource.ResourceType.memory.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectMemory.key())));
             projectResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectPrimaryStorage.key())));
+            projectResourceLimitMap.put(Resource.ResourceType.backup.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectBackups.key())));
             projectResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), MaxProjectSecondaryStorage.value());
 
             accountResourceLimitMap.put(Resource.ResourceType.public_ip.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPublicIPs.key())));
@@ -300,6 +304,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             accountResourceLimitMap.put(Resource.ResourceType.cpu.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountCpus.key())));
             accountResourceLimitMap.put(Resource.ResourceType.memory.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountMemory.key())));
             accountResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPrimaryStorage.key())));
+            accountResourceLimitMap.put(Resource.ResourceType.backup.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountBackups.key())));
             accountResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), MaxAccountSecondaryStorage.value());
             accountResourceLimitMap.put(Resource.ResourceType.project.name(), DefaultMaxAccountProjects.value());
 
@@ -314,6 +319,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             domainResourceLimitMap.put(Resource.ResourceType.memory.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainMemory.key())));
             domainResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainPrimaryStorage.key())));
             domainResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainSecondaryStorage.key())));
+            domainResourceLimitMap.put(Resource.ResourceType.backup.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainBackups.key())));
             domainResourceLimitMap.put(Resource.ResourceType.project.name(), DefaultMaxDomainProjects.value());
         } catch (NumberFormatException e) {
             logger.error("NumberFormatException during configuration", e);
@@ -1238,6 +1244,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             newCount = calculateVolumeCountForAccount(accountId, tag);
         } else if (type == Resource.ResourceType.snapshot) {
             newCount = _snapshotDao.countSnapshotsForAccount(accountId);
+        } else if (type == Resource.ResourceType.backup) {
+            newCount = backupDao.countBackupsForAccount(accountId);
         } else if (type == Resource.ResourceType.public_ip) {
             newCount = calculatePublicIpForAccount(accountId);
         } else if (type == Resource.ResourceType.template) {
