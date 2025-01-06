@@ -24,3 +24,10 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.console_session', 'console_endpoint_
 
 -- Add client_address column to cloud.console_session table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.console_session', 'client_address', 'VARCHAR(45)');
+
+-- Allow default roles to use quotaCreditsList
+INSERT INTO cloud.role_permissions (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'quotaCreditsList', permission, sort_order
+FROM cloud.role_permissions rp
+WHERE rule = 'quotaStatement'
+AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaCreditsList');
