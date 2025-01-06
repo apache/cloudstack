@@ -51,6 +51,7 @@ public class QemuImg {
     public static final String ENCRYPT_KEY_SECRET = "encrypt.key-secret";
     public static final String TARGET_ZERO_FLAG = "--target-is-zero";
     public static final long QEMU_2_10 = 2010000;
+    public static final long QEMU_5_10 = 5010000;
 
     /* The qemu-img binary. We expect this to be in $PATH */
     public String _qemuImgPath = "qemu-img";
@@ -107,6 +108,10 @@ public class QemuImg {
                     throw new NotImplementedException(String.format("type %s not defined as member-value of PreallocationType", provisioningType));
             }
         }
+    }
+
+    public enum BitmapOperation {
+        Add, Remove, Clear, Enable, Disable, Merge
     }
 
     /**
@@ -381,6 +386,37 @@ public class QemuImg {
      */
     public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
                         final Map<String, String> options, final List<QemuObject> qemuObjects, final QemuImageOptions srcImageOpts, final String snapshotName, final boolean forceSourceFormat) throws QemuImgException {
+        convert(srcFile, destFile, options, qemuObjects, srcImageOpts, snapshotName, forceSourceFormat, false);
+    }
+
+    /**
+     * Converts an image from source to destination.
+     *
+     * This method is a facade for 'qemu-img convert' and converts a disk image or snapshot into a disk image with the specified filename and format.
+     *
+     * @param srcFile
+     *            The source file.
+     * @param destFile
+     *            The destination file.
+     * @param options
+     *            Options for the conversion. Takes a Map<String, String> with key value
+     *            pairs which are passed on to qemu-img without validation.
+     * @param qemuObjects
+     *            Pass qemu Objects to create - see objects in the qemu main page.
+     * @param srcImageOpts
+     *            pass qemu --image-opts to convert.
+     * @param snapshotName
+     *            If it is provided, conversion uses it as parameter.
+     * @param forceSourceFormat
+     *            If true, specifies the source format in the conversion command.
+     * @param keepBitmaps
+     *            If true, copies the bitmaps to the destination image.
+     * @return void
+     */
+    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
+                        final Map<String, String> options, final List<QemuObject> qemuObjects, final QemuImageOptions srcImageOpts, final String snapshotName, final boolean forceSourceFormat,
+                        boolean keepBitmaps) throws QemuImgException {
+
         Script script = new Script(_qemuImgPath, timeout);
         if (StringUtils.isNotBlank(snapshotName)) {
             String qemuPath = Script.runSimpleBashScript(getQemuImgPathScript);
@@ -428,6 +464,10 @@ public class QemuImg {
                 script.add(srcFile.getFormat().toString());
             }
             script.add(srcFile.getFileName());
+        }
+
+        if (this.version >= QEMU_5_10 && keepBitmaps) {
+            script.add("--bitmaps");
         }
 
         script.add(destFile.getFileName());
@@ -858,5 +898,40 @@ public class QemuImg {
         }
 
         return result;
+    }
+
+
+    /**
+     * Perform one or more modifications of the persistent bitmap in {@code srcFile}
+     * <br>
+     * This method is a facade for 'qemu-img bitmap'.
+     * <br>
+     * Currently only the {@link BitmapOperation#Remove} is implemented
+     *
+     * @param bitmapOperation
+     *         The operation to be performed
+     * @param srcfile
+     *         The src file where the operation will be performed
+     * @param bitmapName
+     *         The name of the bitmap
+     */
+    public void bitmap(BitmapOperation bitmapOperation, QemuImgFile srcfile, String bitmapName) throws QemuImgException {
+        if (bitmapOperation != BitmapOperation.Remove) {
+            throw new QemuImgException("Operation not implemented.");
+        }
+        removeBitmap(srcfile, bitmapName);
+    }
+
+    private void removeBitmap(QemuImgFile srcFile, String bitmapName) throws QemuImgException {
+        final Script script = new Script(_qemuImgPath);
+        script.add("bitmap");
+        script.add("--remove");
+        script.add(srcFile.getFileName());
+        script.add(bitmapName);
+
+        String result = script.execute();
+        if (result != null) {
+            throw new QemuImgException(String.format("Exception while removing bitmap [%s] from file [%s]. Result is [%s].", srcFile.getFileName(), bitmapName, result));
+        }
     }
 }
