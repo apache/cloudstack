@@ -24,7 +24,8 @@ export default {
   icon: 'idcard-outlined',
   docHelp: 'adminguide/accounts.html#roles',
   permission: ['listRoles', 'listRolePermissions'],
-  columns: ['name', 'type', 'description'],
+  searchFilters: ['name', 'type'],
+  columns: ['name', 'type', 'description', 'state'],
   details: ['name', 'id', 'type', 'description', 'ispublic'],
   tabs: [{
     name: 'details',
@@ -54,6 +55,38 @@ export default {
       listView: true,
       popup: true,
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/ImportRole.vue')))
+    },
+    {
+      api: 'enableRole',
+      icon: 'play-circle-outlined',
+      label: 'label.action.enable.role',
+      message: 'message.enable.role',
+      dataView: true,
+      show: (record, store) => {
+        return record.state === 'disabled'
+      },
+      mapping: {
+        id: {
+          value: (record) => { return record.id }
+        }
+      },
+      popup: true
+    },
+    {
+      api: 'disableRole',
+      icon: 'pause-circle-outlined',
+      label: 'label.action.disable.role',
+      message: 'message.disable.role',
+      dataView: true,
+      show: (record, store) => {
+        return record.state === 'enabled'
+      },
+      mapping: {
+        id: {
+          value: (record) => { return record.id }
+        }
+      },
+      popup: true
     },
     {
       api: 'updateRole',

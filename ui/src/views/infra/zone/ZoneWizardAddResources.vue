@@ -193,6 +193,13 @@ export default {
           required: true
         },
         {
+          title: 'label.arch',
+          key: 'arch',
+          required: false,
+          select: true,
+          options: this.architectureTypes
+        },
+        {
           title: 'label.vcenter.host',
           key: 'vCenterHost',
           placeHolder: 'message.error.vcenter.host',
@@ -531,6 +538,15 @@ export default {
           }
         },
         {
+          title: 'label.nfsmountopts',
+          key: 'primaryStorageNFSMountOptions',
+          required: false,
+          display: {
+            primaryStorageProtocol: 'nfs',
+            hypervisor: ['KVM', 'Simulator']
+          }
+        },
+        {
           title: 'label.resourcegroup',
           key: 'primaryStorageLinstorResourceGroup',
           placeHolder: 'message.error.linstor.resourcegroup',
@@ -837,6 +853,13 @@ export default {
       primaryStorageScopes: [],
       primaryStorageProtocols: [],
       primaryStorageProviders: [],
+      architectureTypes: [{
+        id: 'x86_64',
+        description: 'AMD 64 bits (x86_64)'
+      }, {
+        id: 'aarch64',
+        description: 'ARM 64 bits (aarch64)'
+      }],
       storageProviders: [],
       currentStep: null,
       options: ['primaryStorageScope', 'primaryStorageProtocol', 'provider', 'primaryStorageProvider']

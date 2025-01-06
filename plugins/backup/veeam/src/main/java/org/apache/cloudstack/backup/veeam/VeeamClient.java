@@ -346,7 +346,7 @@ public class VeeamClient {
                         String type = pair.second();
                         String path = url.replace(apiURI.toString(), "");
                         if (type.equals("RestoreSession")) {
-                            return checkIfRestoreSessionFinished(type, path);
+                            checkIfRestoreSessionFinished(type, path);
                         }
                     }
                     return true;
@@ -362,17 +362,29 @@ public class VeeamClient {
         return false;
     }
 
-    protected boolean checkIfRestoreSessionFinished(String type, String path) throws IOException {
-        for (int j = 0; j < this.restoreTimeout; j++) {
+
+    /**
+     * Checks the status of the restore session. Checked states are "Success" and "Failure".<br/>
+     * There is also a timeout defined in the global configuration, backup.plugin.veeam.restore.timeout,<br/>
+     * that is used to wait for the restore to complete before throwing a {@link CloudRuntimeException}.
+     */
+    protected void checkIfRestoreSessionFinished(String type, String path) throws IOException {
+        for (int j = 0; j < restoreTimeout; j++) {
             HttpResponse relatedResponse = get(path);
             RestoreSession session = parseRestoreSessionResponse(relatedResponse);
             if (session.getResult().equals("Success")) {
-                return true;
+                return;
             }
+
             if (session.getResult().equalsIgnoreCase("Failed")) {
                 String sessionUid = session.getUid();
+                logger.error(String.format("Failed to restore backup [%s] of VM [%s] due to [%s].",
+                        sessionUid, session.getVmDisplayName(),
+                        getRestoreVmErrorDescription(StringUtils.substringAfterLast(sessionUid, ":"))));
                 throw new CloudRuntimeException(String.format("Restore job [%s] failed.", sessionUid));
             }
+            logger.debug(String.format("Waiting %s seconds, out of a total of %s seconds, for the restore backup process to finish.", j, restoreTimeout));
+
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException ignored) {
@@ -929,6 +941,29 @@ public class VeeamClient {
             throw new CloudRuntimeException("Failed to restore VM to location " + restoreLocation);
         }
         return new Pair<>(result.first(), restoreLocation);
+    }
+
+    /**
+     * Tries to retrieve the error's description of the Veeam restore task that resulted in an error.
+     * @param uid Session uid in Veeam of the restore process;
+     * @return the description found in Veeam about the cause of error in the restore process.
+     */
+    protected String getRestoreVmErrorDescription(String uid) {
+        logger.debug(String.format("Trying to find the cause of error in the restore process [%s].", uid));
+        List<String> cmds = Arrays.asList(
+                String.format("$restoreUid = '%s'", uid),
+                "$restore = Get-VBRRestoreSession -Id $restoreUid",
+                "if ($restore) {",
+                    "Write-Output $restore.Description",
+                "} else {",
+                    "Write-Output 'Cannot find restore session with provided uid $restoreUid'",
+                "}"
+        );
+        Pair<Boolean, String> result = executePowerShellCommands(cmds);
+        if (result != null && result.first()) {
+            return result.second();
+        }
+        return String.format("Failed to get the description of the failed restore session [%s]. Please contact an administrator.", uid);
     }
 
     private boolean isLegacyServer() {

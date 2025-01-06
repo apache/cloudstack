@@ -3,7 +3,7 @@ Contributing to Apache CloudStack (ACS)
 
 Summary
 -------
-This document covers how to contribute to the ACS project. ACS uses GitHub PRs to manage code contributions. 
+This document covers how to contribute to the ACS project. ACS uses GitHub PRs to manage code contributions.
 These instructions assume you have a GitHub.com account, so if you don't have one you will have to create one. Your proposed code changes will be published to your own fork of the ACS project and you will submit a Pull Request for your changes to be added.
 
 _Lets get started!!!_
@@ -11,17 +11,17 @@ _Lets get started!!!_
 Bug fixes
 ---------
 
-It's very important that we can easily track bug fix commits, so their hashes should remain the same in all branches. 
-Therefore, a pull request (PR) that fixes a bug, should be sent against a release branch. 
-This can be either the "current release" or the "previous release", depending on which ones are maintained. 
+It's very important that we can easily track bug fix commits, so their hashes should remain the same in all branches.
+Therefore, a pull request (PR) that fixes a bug, should be sent against a release branch.
+This can be either the "current release" or the "previous release", depending on which ones are maintained.
 Since the goal is a stable main, bug fixes should be "merged forward" to the next branch in order: "previous release" -> "current release" -> main (in other words: old to new)
 
 Developing new features
 -----------------------
 
-Development should be done in a feature branch, branched off of main. 
-Send a PR(steps below) to get it into main (2x LGTM applies). 
-PR will only be merged when main is open, will be held otherwise until main is open again. 
+Development should be done in a feature branch, branched off of main.
+Send a PR(steps below) to get it into main (2x LGTM applies).
+PR will only be merged when main is open, will be held otherwise until main is open again.
 No back porting / cherry-picking features to existing branches!
 
 PendingReleaseNotes file
@@ -33,7 +33,7 @@ When adding information to the PendingReleaseNotes file make sure that you write
 
 Updating the PendingReleaseNotes file is preferably a part of the original Pull Request, but that is up to the developers' discretion.
 
-Fork the code 
+Fork the code
 -------------
 
 In your browser, navigate to: [https://github.com/apache/cloudstack](https://github.com/apache/cloudstack)
@@ -51,10 +51,8 @@ $ git fetch upstream
 $ git rebase upstream/main
 ```
 
-
 Making changes
 --------------
-
 
 It is important that you create a new branch to make changes on and that you do not change the `main` branch (other than to rebase in changes from `upstream/main`).  In this example I will assume you will be making your changes to a branch called `feature_x`.  This `feature_x` branch will be created on your local repository and will be pushed to your forked repository on GitHub.  Once this branch is on your fork you will create a Pull Request for the changes to be added to the ACS project.
 
@@ -69,7 +67,6 @@ $ git commit -a -m "descriptive commit message for your changes"
 ```
 
 > The `-b` specifies that you want to create a new branch called `feature_x`.  You only specify `-b` the first time you checkout because you are creating a new branch.  Once the `feature_x` branch exists, you can later switch to it with only `git checkout feature_x`.
-
 
 Rebase `feature_x` to include updates from `upstream/main`
 ------------------------------------------------------------
@@ -92,7 +89,6 @@ $ git rebase main
 
 > Now your `feature_x` branch is up-to-date with all the code in `upstream/main`.
 
-
 Make a GitHub Pull Request to contribute your changes
 -----------------------------------------------------
 
@@ -107,7 +103,7 @@ $ git push origin main
 $ git push origin feature_x
 ```
 
-Now that the `feature_x` branch has been pushed to your GitHub repository, you can initiate the pull request.  
+Now that the `feature_x` branch has been pushed to your GitHub repository, you can initiate the pull request.
 
 To initiate the pull request, do the following:
 
@@ -117,7 +113,6 @@ To initiate the pull request, do the following:
 4. Enter a detailed description of the work you have done and then click '**Send pull request**'
 
 If you are requested to make modifications to your proposed changes, make the changes locally on your `feature_x` branch, re-push the `feature_x` branch to your fork.  The existing pull request should automatically pick up the change and update accordingly.
-
 
 Cleaning up after a successful pull request
 -------------------------------------------
@@ -136,4 +131,4 @@ $ git push origin :feature_x
 
 Release Principles
 ------------------
-Detailed information about ACS release principles is available at https://cwiki.apache.org/confluence/display/CLOUDSTACK/Release+principles+for+Apache+CloudStack+4.6+and+up 
+Detailed information about ACS release principles is available at https://cwiki.apache.org/confluence/display/CLOUDSTACK/Release+principles+for+Apache+CloudStack+4.6+and+up

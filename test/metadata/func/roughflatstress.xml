@@ -17,7 +17,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 <flatnetworkstress>
-	
+
 	<command>
 	<name>createAccount</name>
 	<testcase>    [Create the Account and a User for the account]</testcase>
@@ -66,7 +66,7 @@ under the License.
 		</item>
 	</returnvalue>
 	</command>
-	
+
 	<command>
 	<name>listUsers</name>
 	<testcase>    [List the User of the account]</testcase>
@@ -99,7 +99,7 @@ under the License.
 		</item>
 	</returnvalue>
 	</command>
-			
+
 	<command>
 		<name>registerUserKeys</name>
 		<testcase>Registering the First User</testcase>
@@ -120,7 +120,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createSecurityGroup</name>
 		<usercommand>true</usercommand>
@@ -149,7 +149,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>authorizeSecurityGroupIngress</name>
 		<usercommand>true</usercommand>
@@ -185,7 +185,7 @@ under the License.
 			</item>
 -->		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listSecurityGroups</name>
 		<usercommand>true</usercommand>
@@ -211,7 +211,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -244,7 +244,7 @@ under the License.
 			<item getparam="true">
 				<name>domainid</name>
 				<param>globaldomainid</param>
-			</item>	
+			</item>
 -->			</parameters>
 			<returnvalue>
 				<item setparam="true">
@@ -254,10 +254,10 @@ under the License.
 				<item setparam="true">
 					<name>ipaddress</name>
 					<param>getvmip1</param>
-				</item>		
+				</item>
 			</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -268,8 +268,8 @@ under the License.
 				<value>120</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -285,7 +285,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -296,8 +296,8 @@ under the License.
 				<value>60</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>revokeSecurityGroupIngress</name>
 		<usercommand>true</usercommand>
@@ -309,7 +309,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-<!-- 		
+<!--
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -326,10 +326,10 @@ under the License.
 			</item>
 		</parameters>
 	</command>
--->	
+-->
 
 <!-- SECOND GROUP -->
-	
+
 	<command>
 		<name>createSecurityGroup</name>
 		<usercommand>true</usercommand>
@@ -358,7 +358,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>authorizeSecurityGroupIngress</name>
 		<usercommand>true</usercommand>
@@ -375,7 +375,7 @@ under the License.
 			<item getparam="true">
 				<name>usersecuritygrouplist[0].group</name>
 				<param>getsecuritygroupname1</param>
-			</item>			
+			</item>
 			<item>
 				<name>endport</name>
 				<value>22</value>
@@ -398,8 +398,8 @@ under the License.
 			</item>
 -->		</parameters>
 	</command>
-	
-		
+
+
 	<command>
 		<name>authorizeSecurityGroupIngress</name>
 		<usercommand>true</usercommand>
@@ -435,7 +435,7 @@ under the License.
 			</item>
 -->		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listSecurityGroups</name>
 		<usercommand>true</usercommand>
@@ -461,7 +461,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -494,7 +494,7 @@ under the License.
 			<item getparam="true">
 				<name>domainid</name>
 				<param>globaldomainid</param>
-			</item>	
+			</item>
 -->			</parameters>
 			<returnvalue>
 				<item setparam="true">
@@ -504,10 +504,10 @@ under the License.
 				<item setparam="true">
 					<name>ipaddress</name>
 					<param>getvmip2</param>
-				</item>		
+				</item>
 			</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -518,8 +518,8 @@ under the License.
 				<value>120</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -535,7 +535,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -546,8 +546,8 @@ under the License.
 				<value>60</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>revokeSecurityGroupIngress</name>
 		<usercommand>true</usercommand>
@@ -559,7 +559,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>listSecurityGroups</name>
 		<usercommand>true</usercommand>
@@ -585,7 +585,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>revokeSecurityGroupIngress</name>
 		<usercommand>true</usercommand>
@@ -597,8 +597,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-<!-- 		
+
+<!--
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -615,7 +615,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
--->	
+-->
 	<command>
 		<name>destroyVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -627,7 +627,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -651,7 +651,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -663,9 +663,9 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-		
-	
-<!--  Delete user as a part of cleanup -->	
+
+
+<!--  Delete user as a part of cleanup -->
 	<command>
 		<name>deleteUser</name>
 		<testcase>Deleting the user</testcase>
@@ -675,8 +675,8 @@ under the License.
 				<param>getuserid1</param>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 	<name>deleteAccount</name>
 	<testcase> Delete Account </testcase>
@@ -686,6 +686,6 @@ under the License.
 		<param>getaccountid</param>
 	</item>
 	</parameters>
-	
-</command>	
+
+</command>
 </flatnetworkstress>

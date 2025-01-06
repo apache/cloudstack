@@ -205,8 +205,13 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 hostResponse.setHostTags(hostTags);
                 hostResponse.setIsTagARule(host.getIsTagARule());
                 hostResponse.setHaHost(containsHostHATag(hostTags));
+                hostResponse.setExplicitHostTags(host.getExplicitTag());
+                hostResponse.setImplicitHostTags(host.getImplicitTag());
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
+                if (host.getArch() != null) {
+                    hostResponse.setArch(host.getArch().getType());
+                }
 
                 float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * cpuOverprovisioningFactor;
                 hostResponse.setCpuAllocatedValue(cpu);
@@ -236,16 +241,16 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             Map<String, String> hostDetails = hostDetailsDao.findDetails(host.getId());
             if (hostDetails != null) {
                 if (hostDetails.containsKey(Host.HOST_UEFI_ENABLE)) {
-                    hostResponse.setUefiCapabilty(Boolean.parseBoolean((String) hostDetails.get(Host.HOST_UEFI_ENABLE)));
+                    hostResponse.setUefiCapability(Boolean.parseBoolean((String) hostDetails.get(Host.HOST_UEFI_ENABLE)));
                 } else {
-                    hostResponse.setUefiCapabilty(new Boolean(false));
+                    hostResponse.setUefiCapability(new Boolean(false));
                 }
             }
             if (details.contains(HostDetails.all) && (host.getHypervisorType() == Hypervisor.HypervisorType.KVM ||
                     host.getHypervisorType() == Hypervisor.HypervisorType.Custom)) {
                 //only kvm has the requirement to return host details
                 try {
-                    hostResponse.setDetails(hostDetails);
+                    hostResponse.setDetails(hostDetails, host.getHypervisorType());
                 } catch (Exception e) {
                     logger.debug("failed to get host details", e);
                 }
@@ -349,6 +354,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 String hostTags = host.getTag();
                 hostResponse.setHostTags(hostTags);
                 hostResponse.setHaHost(containsHostHATag(hostTags));
+                hostResponse.setImplicitHostTags(host.getImplicitTag());
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
 

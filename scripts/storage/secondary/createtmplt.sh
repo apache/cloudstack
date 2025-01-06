@@ -6,16 +6,16 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
- 
+
 
 # $Id: createtmplt.sh 9132 2010-06-04 20:17:43Z manuel $ $HeadURL: svn://svn.lab.vmops.com/repos/vmdev/java/scripts/storage/secondary/createtmplt.sh $
 # createtmplt.sh -- install a template
@@ -41,7 +41,7 @@ fi
 untar() {
   local ft=$(file $1| awk -F" " '{print $2}')
   case $ft in
-  USTAR) 
+  USTAR)
      printf "tar archives not supported\n"  >&2
      return 1
           ;;
@@ -87,12 +87,12 @@ uncompress() {
 	;;
   esac
 
-  if [ $? -gt 0 ] 
+  if [ $? -gt 0 ]
   then
     printf "Failed to uncompress file (filetype=$ft), exiting "
-    return 1 
+    return 1
   fi
- 
+
   rm -f $1
   printf $tmpfile
 
@@ -167,7 +167,7 @@ do
 done
 
 isCifs() {
-   #TO:DO incase of multiple zone where cifs and nfs exists, 
+   #TO:DO incase of multiple zone where cifs and nfs exists,
    #then check if the template file is from cifs using df -P filename
    #Currently only cifs is supported in hyperv zone.
    mount | grep "type cifs" > /dev/null
@@ -182,7 +182,7 @@ fi
 
 mkdir -p $tmpltfs
 
-if [ ! -f $tmpltimg ] 
+if [ ! -f $tmpltimg ]
 then
   printf "root disk file $tmpltimg doesn't exist\n"
   exit 3

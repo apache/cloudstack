@@ -17,14 +17,30 @@
 
 package org.apache.cloudstack.quota.activationrule.presetvariables;
 
+import java.util.List;
+
 public class PresetVariables {
 
+    @PresetVariableDefinition(description = "Account owner of the resource.")
     private Account account;
+
+    @PresetVariableDefinition(description = "Domain owner of the resource.")
     private Domain domain;
+
+    @PresetVariableDefinition(description = "Project owner of the resource. This field will not exist if the resource belongs to an account.")
     private GenericPresetVariable project;
+
+    @PresetVariableDefinition(description = "Type of the record used. Examples for this are: VirtualMachine, DomainRouter, SourceNat, KVM.")
     private String resourceType;
+
+    @PresetVariableDefinition(description = "Data related to the resource being processed.")
     private Value value;
+
+    @PresetVariableDefinition(description = "Zone where the resource is.")
     private GenericPresetVariable zone;
+
+    @PresetVariableDefinition(description = "A list containing the tariffs ordered by the field 'position'.")
+    private List<Tariff> lastTariffs;
 
     public Account getAccount() {
         return account;
@@ -72,5 +88,13 @@ public class PresetVariables {
 
     public void setZone(GenericPresetVariable zone) {
         this.zone = zone;
+    }
+
+    public List<Tariff> getLastTariffs() {
+        return lastTariffs;
+    }
+
+    public void setLastTariffs(List<Tariff> lastTariffs) {
+        this.lastTariffs = lastTariffs;
     }
 }

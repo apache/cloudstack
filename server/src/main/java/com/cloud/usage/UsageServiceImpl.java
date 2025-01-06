@@ -31,7 +31,6 @@ import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
-import org.apache.cloudstack.api.response.UsageTypeResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.usage.Usage;
@@ -206,14 +205,10 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         if (startDate.after(endDate)) {
             throw new InvalidParameterValueException("Incorrect Date Range. Start date: " + startDate + " is after end date:" + endDate);
         }
-        TimeZone usageTZ = getUsageTimezone();
-        Date adjustedStartDate = computeAdjustedTime(startDate, usageTZ);
-        Date adjustedEndDate = computeAdjustedTime(endDate, usageTZ);
 
         logger.debug("Getting usage records for account ID [{}], domain ID [{}] between [{}] and [{}] using page size [{}] and start index [{}].",
-                accountId, domainId, DateUtil.displayDateInTimezone(_usageTimezone, adjustedStartDate),
-                DateUtil.displayDateInTimezone(_usageTimezone, adjustedEndDate), cmd.getPageSizeVal(),
-                cmd.getStartIndex());
+                accountId, domainId, DateUtil.displayDateInTimezone(_usageTimezone, startDate), DateUtil.displayDateInTimezone(_usageTimezone, endDate),
+                cmd.getPageSizeVal(), cmd.getStartIndex());
 
         Filter usageFilter = new Filter(UsageVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
@@ -338,9 +333,9 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         // Filter out hidden usages
         sc.addAnd("isHidden", SearchCriteria.Op.EQ, false);
 
-        if ((adjustedStartDate != null) && (adjustedEndDate != null) && adjustedStartDate.before(adjustedEndDate)) {
-            sc.addAnd("startDate", SearchCriteria.Op.BETWEEN, adjustedStartDate, adjustedEndDate);
-            sc.addAnd("endDate", SearchCriteria.Op.BETWEEN, adjustedStartDate, adjustedEndDate);
+        if ((startDate != null) && (endDate != null) && startDate.before(endDate)) {
+            sc.addAnd("startDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
+            sc.addAnd("endDate", SearchCriteria.Op.BETWEEN, startDate, endDate);
         } else {
             return new Pair<List<? extends Usage>, Integer>(new ArrayList<Usage>(), new Integer(0)); // return an empty list if we fail to validate the dates
         }
@@ -489,34 +484,4 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
         }
         return true;
     }
-
-    private Date computeAdjustedTime(Date initialDate, TimeZone targetTZ) {
-        Calendar cal = Calendar.getInstance();
-        cal.setTime(initialDate);
-        TimeZone localTZ = cal.getTimeZone();
-        int timezoneOffset = cal.get(Calendar.ZONE_OFFSET);
-        if (localTZ.inDaylightTime(initialDate)) {
-            timezoneOffset += (60 * 60 * 1000);
-        }
-        cal.add(Calendar.MILLISECOND, timezoneOffset);
-
-        Date newTime = cal.getTime();
-
-        Calendar calTS = Calendar.getInstance(targetTZ);
-        calTS.setTime(newTime);
-        timezoneOffset = calTS.get(Calendar.ZONE_OFFSET);
-        if (targetTZ.inDaylightTime(initialDate)) {
-            timezoneOffset += (60 * 60 * 1000);
-        }
-
-        calTS.add(Calendar.MILLISECOND, -1 * timezoneOffset);
-
-        return calTS.getTime();
-    }
-
-    @Override
-    public List<UsageTypeResponse> listUsageTypes() {
-        return UsageTypes.listUsageTypes();
-    }
-
 }

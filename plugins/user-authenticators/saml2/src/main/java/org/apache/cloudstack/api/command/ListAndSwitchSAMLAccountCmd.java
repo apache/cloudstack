@@ -47,6 +47,7 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.saml.SAML2AuthManager;
 import org.apache.cloudstack.saml.SAMLUtils;
 
+import com.cloud.api.ApiServer;
 import com.cloud.api.response.ApiResponseSerializer;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
@@ -58,6 +59,8 @@ import com.cloud.user.UserAccountVO;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.HttpUtils;
+
+import org.apache.commons.lang3.EnumUtils;
 
 @APICommand(name = "listAndSwitchSamlAccount", description = "Lists and switches to other SAML accounts owned by the SAML user", responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthenticator {
@@ -102,7 +105,9 @@ public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthentic
                     params, responseType));
         }
 
-        if (!HttpUtils.validateSessionKey(session, params, req.getCookies(), ApiConstants.SESSIONKEY)) {
+        HttpUtils.ApiSessionKeyCheckOption sessionKeyCheckOption = EnumUtils.getEnumIgnoreCase(HttpUtils.ApiSessionKeyCheckOption.class,
+                ApiServer.ApiSessionKeyCheckLocations.value(), HttpUtils.ApiSessionKeyCheckOption.CookieAndParameter);
+        if (!HttpUtils.validateSessionKey(session, params, req.getCookies(), ApiConstants.SESSIONKEY, sessionKeyCheckOption)) {
             throw new ServerApiException(ApiErrorCode.UNAUTHORIZED, _apiServer.getSerializedApiError(ApiErrorCode.UNAUTHORIZED.getHttpCode(),
                     "Unauthorized session, please re-login",
                     params, responseType));

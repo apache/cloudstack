@@ -16,11 +16,16 @@
 //under the License.
 package org.apache.cloudstack.api.response;
 
+import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
+import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
@@ -30,26 +35,39 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
+import org.apache.cloudstack.api.command.QuotaPresetVariablesListCmd;
 import org.apache.cloudstack.api.command.QuotaStatementCmd;
 import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
 import org.apache.cloudstack.api.command.QuotaTariffListCmd;
 import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
+import org.apache.cloudstack.api.command.QuotaValidateActivationRuleCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.discovery.ApiDiscoveryService;
+import org.apache.cloudstack.jsinterpreter.JsInterpreterHelper;
 import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.QuotaManagerImpl;
 import org.apache.cloudstack.quota.QuotaService;
 import org.apache.cloudstack.quota.QuotaStatement;
+import org.apache.cloudstack.quota.activationrule.presetvariables.ComputingResources;
+import org.apache.cloudstack.quota.activationrule.presetvariables.GenericPresetVariable;
+import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariableDefinition;
+import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariables;
+import org.apache.cloudstack.quota.activationrule.presetvariables.Value;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
@@ -66,7 +84,11 @@ import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.reflect.FieldUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.springframework.stereotype.Component;
@@ -118,9 +140,16 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     private QuotaManager _quotaManager;
     @Inject
     private QuotaEmailConfigurationDao quotaEmailConfigurationDao;
+    @Inject
+    private JsInterpreterHelper jsInterpreterHelper;
+    @Inject
+    private ApiDiscoveryService apiDiscoveryService;
+
+    private final Class<?>[] assignableClasses = {GenericPresetVariable.class, ComputingResources.class};
+
 
     @Override
-    public QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO tariff) {
+    public QuotaTariffResponse createQuotaTariffResponse(QuotaTariffVO tariff, boolean returnActivationRule) {
         final QuotaTariffResponse response = new QuotaTariffResponse();
         response.setUsageType(tariff.getUsageType());
         response.setUsageName(tariff.getUsageName());
@@ -130,12 +159,15 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         response.setEffectiveOn(tariff.getEffectiveOn());
         response.setUsageTypeDescription(tariff.getUsageTypeDescription());
         response.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
-        response.setActivationRule(tariff.getActivationRule());
         response.setName(tariff.getName());
         response.setEndDate(tariff.getEndDate());
         response.setDescription(tariff.getDescription());
-        response.setUuid(tariff.getUuid());
+        response.setId(tariff.getUuid());
         response.setRemoved(tariff.getRemoved());
+        response.setPosition(tariff.getPosition());
+        if (returnActivationRule) {
+            response.setActivationRule(tariff.getActivationRule());
+        }
         return response;
     }
 
@@ -209,6 +241,11 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         } else {
             return new QuotaSummaryResponse();
         }
+    }
+
+    public boolean isUserAllowedToSeeActivationRules(User user) {
+        List<ApiDiscoveryResponse> apiList = (List<ApiDiscoveryResponse>) apiDiscoveryService.listApis(user, null).getResponses();
+        return apiList.stream().anyMatch(response -> StringUtils.equalsAny(response.getName(), "quotaTariffCreate", "quotaTariffUpdate"));
     }
 
     @Override
@@ -376,18 +413,21 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public Pair<List<QuotaTariffVO>, Integer> listQuotaTariffPlans(final QuotaTariffListCmd cmd) {
-        Date startDate = _quotaService.computeAdjustedTime(cmd.getEffectiveDate());
-        Date endDate = _quotaService.computeAdjustedTime(cmd.getEndDate());
+        Date startDate = cmd.getEffectiveDate();
+        Date endDate = cmd.getEndDate();
         Integer usageType = cmd.getUsageType();
         String name = cmd.getName();
         boolean listAll = cmd.isListAll();
         Long startIndex = cmd.getStartIndex();
         Long pageSize = cmd.getPageSizeVal();
+        String uuid = cmd.getId();
+        boolean listOnlyRemoved = cmd.isListOnlyRemoved();
+        String keyword = cmd.getKeyword();
 
-        logger.debug(String.format("Listing quota tariffs for parameters [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "effectiveDate",
-                "endDate", "listAll", "name", "page", "pageSize", "usageType")));
+        logger.debug("Listing quota tariffs for parameters [{}].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "effectiveDate",
+                "endDate", "listAll", "name", "page", "pageSize", "usageType", "uuid", "listOnlyRemoved", "keyword"));
 
-        return _quotaTariffDao.listQuotaTariffs(startDate, endDate, usageType, name, null, listAll, startIndex, pageSize);
+        return _quotaTariffDao.listQuotaTariffs(startDate, endDate, usageType, name, uuid, listAll, listOnlyRemoved, startIndex, pageSize, keyword);
     }
 
     @Override
@@ -395,10 +435,11 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     public QuotaTariffVO updateQuotaTariffPlan(QuotaTariffUpdateCmd cmd) {
         String name = cmd.getName();
         Double value = cmd.getValue();
-        Date endDate = _quotaService.computeAdjustedTime(cmd.getEndDate());
+        Date endDate = cmd.getEndDate();
         String description = cmd.getDescription();
         String activationRule = cmd.getActivationRule();
-        Date now = _quotaService.computeAdjustedTime(new Date());
+        Date now = new Date();
+        Integer position = cmd.getPosition();
 
         warnQuotaTariffUpdateDeprecatedFields(cmd);
 
@@ -413,7 +454,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         currentQuotaTariff.setRemoved(now);
 
         QuotaTariffVO newQuotaTariff = persistNewQuotaTariff(currentQuotaTariff, name, 0, currentQuotaTariffStartDate, cmd.getEntityOwnerId(), endDate, value, description,
-                activationRule);
+                activationRule, position);
         _quotaTariffDao.updateQuotaTariff(currentQuotaTariff);
 
         CallContext.current().setEventResourceId(newQuotaTariff.getId());
@@ -434,7 +475,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     protected QuotaTariffVO persistNewQuotaTariff(QuotaTariffVO currentQuotaTariff, String name, int usageType, Date startDate, Long entityOwnerId, Date endDate, Double value,
-            String description, String activationRule) {
+            String description, String activationRule, Integer position) {
 
         QuotaTariffVO newQuotaTariff = getNewQuotaTariffObject(currentQuotaTariff, name, usageType);
 
@@ -446,6 +487,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         validateValueOnCreatingNewQuotaTariff(newQuotaTariff, value);
         validateStringsOnCreatingNewQuotaTariff(newQuotaTariff::setDescription, description);
         validateStringsOnCreatingNewQuotaTariff(newQuotaTariff::setActivationRule, activationRule);
+        validatePositionOnCreatingNewQuotaTariff(newQuotaTariff, position);
 
         _quotaTariffDao.addQuotaTariff(newQuotaTariff);
         return newQuotaTariff;
@@ -465,6 +507,13 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         newQuotaTariff.setName(name);
         return newQuotaTariff;
     }
+
+    protected void validatePositionOnCreatingNewQuotaTariff(QuotaTariffVO newQuotaTariff, Integer position) {
+        if (position != null) {
+            newQuotaTariff.setPosition(position);
+        }
+    }
+
 
     protected void validateStringsOnCreatingNewQuotaTariff(Consumer<String> method, String value){
         if (value != null) {
@@ -488,7 +537,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
                     endDate, startDate));
         }
 
-        Date now = _quotaService.computeAdjustedTime(new Date());
+        Date now = new Date();
         if (endDate.compareTo(now) < 0) {
             throw new InvalidParameterValueException(String.format("The quota tariff's end date [%s] cannot be less than now [%s].",
                     endDate, now));
@@ -499,7 +548,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy, Boolean enforce) {
-        Date despositedOn = _quotaService.computeAdjustedTime(new Date());
+        Date despositedOn = new Date();
         QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, despositedOn);
 
         if (qb != null) {
@@ -643,11 +692,12 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         int usageType = cmd.getUsageType();
         Date startDate = cmd.getStartDate();
         Date now = new Date();
-        startDate = _quotaService.computeAdjustedTime(startDate == null ? now : startDate);
-        Date endDate = _quotaService.computeAdjustedTime(cmd.getEndDate());
+        startDate = startDate == null ? now : startDate;
+        Date endDate = cmd.getEndDate();
         Double value = cmd.getValue();
         String description = cmd.getDescription();
         String activationRule = cmd.getActivationRule();
+        Integer position = ObjectUtils.defaultIfNull(cmd.getPosition(), 1);
 
         QuotaTariffVO currentQuotaTariff = _quotaTariffDao.findByName(name);
 
@@ -660,7 +710,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
                     "Please, inform a date in the future or do not pass the parameter to use the current date and time.", startDate));
         }
 
-        QuotaTariffVO newQuotaTariff = persistNewQuotaTariff(null, name, usageType, startDate, cmd.getEntityOwnerId(), endDate, value, description, activationRule);
+        QuotaTariffVO newQuotaTariff = persistNewQuotaTariff(null, name, usageType, startDate, cmd.getEntityOwnerId(), endDate, value, description, activationRule, position);
 
         CallContext.current().setEventResourceId(newQuotaTariff.getId());
 
@@ -675,11 +725,122 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Quota tariff with the provided UUID does not exist.");
         }
 
-        quotaTariff.setRemoved(_quotaService.computeAdjustedTime(new Date()));
-
+        quotaTariff.setRemoved(new Date());
         CallContext.current().setEventResourceId(quotaTariff.getId());
-
         return _quotaTariffDao.updateQuotaTariff(quotaTariff);
+    }
+
+    @Override
+    public List<QuotaPresetVariablesItemResponse> listQuotaPresetVariables(QuotaPresetVariablesListCmd cmd) {
+        List<QuotaPresetVariablesItemResponse> response;
+        List<Pair<String, String>> variables = new ArrayList<>();
+
+        QuotaTypes quotaType = cmd.getQuotaType();
+        addAllPresetVariables(PresetVariables.class, quotaType, variables, null);
+        response = createQuotaPresetVariablesResponse(variables);
+
+        return response;
+    }
+
+    /**
+     * Adds all preset variables for the given quota type. It recursively finds all presets variables for the given {@link Class} and puts it in a {@link List}. Each item in the
+     * list is a {@link Pair} that consists of the variable name and its description.
+     *
+     * @param clazz used to find the non-transient fields. If it is equal to the {@link Value} class, then it only gets the declared fields, otherwise, it gets all fields,
+     *              including its parent's fields.
+     * @param quotaType used to check if the field supports the quota resource type. It uses the annotation method {@link PresetVariableDefinition#supportedTypes()} for this
+     *                  verification.
+     * @param variables the {@link List} which contains the {@link Pair} of the preset variable and its description.
+     * @param recursiveVariableName {@link String} used for recursively building the preset variable string.
+     */
+    public void addAllPresetVariables(Class<?> clazz, QuotaTypes quotaType, List<Pair<String, String>> variables, String recursiveVariableName) {
+        Field[] allFields = Value.class.equals(clazz) ? clazz.getDeclaredFields() : FieldUtils.getAllFields(clazz);
+        List<Field> fieldsNonTransients = Arrays.stream(allFields).filter(field -> !Modifier.isTransient(field.getModifiers())).collect(Collectors.toList());
+        for (Field field : fieldsNonTransients) {
+            PresetVariableDefinition presetVariableDefinitionAnnotation = field.getAnnotation(PresetVariableDefinition.class);
+            Class<?> fieldClass = getClassOfField(field);
+            String presetVariableName = field.getName();
+
+            if (presetVariableDefinitionAnnotation == null) {
+                continue;
+            }
+
+            if (StringUtils.isNotEmpty(recursiveVariableName)) {
+                presetVariableName = String.format("%s.%s", recursiveVariableName, field.getName());
+            }
+            filterSupportedTypes(variables, quotaType, presetVariableDefinitionAnnotation, fieldClass, presetVariableName);
+        }
+    }
+
+    /**
+     * Returns the class of the {@link Field} depending on its type. This method is required for retrieving the Class of Generic Types, i.e. {@link List}.
+     */
+    protected Class<?> getClassOfField(Field field){
+        if (field.getGenericType() instanceof ParameterizedType) {
+            ParameterizedType genericType = (ParameterizedType) field.getGenericType();
+            return (Class<?>) genericType.getActualTypeArguments()[0];
+        }
+
+        return field.getType();
+    }
+
+    /**
+     * Checks if the {@link PresetVariableDefinition} supports the given {@link QuotaTypes}. If it supports it, it adds the preset variable to the {@link List} recursively
+     * if it is from the one of the classes in the {@link QuotaResponseBuilderImpl#assignableClasses} array or directly if not.
+     *
+     * @param variables {@link List} of the {@link Pair} of the preset variable and its description.
+     * @param quotaType the given {@link QuotaTypes} to filter.
+     * @param presetVariableDefinitionAnnotation used to check if the quotaType is supported.
+     * @param fieldClass class of the field used to verify if it is from the {@link GenericPresetVariable} or {@link ComputingResources} classes. If it is, then it calls
+     *                   {@link QuotaResponseBuilderImpl#addAllPresetVariables(Class, QuotaTypes, List, String)} to add the preset variable. Otherwise, the {@link Pair} is
+     *                   added directly to the variables {@link List}.
+     * @param presetVariableName {@link String} that contains the recursive created preset variable name.
+     */
+    public void filterSupportedTypes(List<Pair<String, String>> variables, QuotaTypes quotaType, PresetVariableDefinition presetVariableDefinitionAnnotation, Class<?> fieldClass,
+                                     String presetVariableName) {
+        if (quotaType != null && Arrays.stream(presetVariableDefinitionAnnotation.supportedTypes()).noneMatch(supportedType ->
+                supportedType == quotaType.getQuotaType() || supportedType == 0)) {
+            return;
+        }
+
+        String presetVariableDescription = presetVariableDefinitionAnnotation.description();
+
+        Pair<String, String> pair = new Pair<>(presetVariableName, presetVariableDescription);
+        variables.add(pair);
+
+        if (isRecursivePresetVariable(fieldClass)) {
+            addAllPresetVariables(fieldClass, quotaType, variables, presetVariableName);
+        }
+    }
+
+    /**
+     * Returns true if the {@link Class} of the {@link Field} is from one of the classes in the array {@link QuotaResponseBuilderImpl#assignableClasses}, i.e., it is a recursive
+     * {@link PresetVariables}, returns false otherwise.
+     */
+    private boolean isRecursivePresetVariable(Class<?> fieldClass) {
+        for (Class<?> clazz : assignableClasses) {
+            if (clazz.isAssignableFrom(fieldClass)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public List<QuotaPresetVariablesItemResponse> createQuotaPresetVariablesResponse(List<Pair<String, String>> variables) {
+        final List<QuotaPresetVariablesItemResponse> responses = new ArrayList<>();
+
+        for (Pair<String, String> variable : variables) {
+            responses.add(createPresetVariablesItemResponse(variable));
+        }
+
+        return responses;
+    }
+
+    public QuotaPresetVariablesItemResponse createPresetVariablesItemResponse(Pair<String, String> variable) {
+        QuotaPresetVariablesItemResponse response = new QuotaPresetVariablesItemResponse();
+        response.setVariable(variable.first());
+        response.setDescription(variable.second());
+        return response;
     }
 
     @Override
@@ -775,5 +936,83 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         quotaConfigureEmailResponse.setMinBalance(quotaAccountVO.getQuotaMinBalance().doubleValue());
 
         return quotaConfigureEmailResponse;
+    }
+
+    @Override
+    public QuotaValidateActivationRuleResponse validateActivationRule(QuotaValidateActivationRuleCmd cmd) {
+        String message;
+        String activationRule = cmd.getActivationRule();
+        QuotaTypes quotaType = cmd.getQuotaType();
+        String quotaName = quotaType.getQuotaName();
+        List<Pair<String, String>> usageTypeVariablesAndDescriptions = new ArrayList<>();
+
+        addAllPresetVariables(PresetVariables.class, quotaType, usageTypeVariablesAndDescriptions, null);
+        List<String> usageTypeVariables = usageTypeVariablesAndDescriptions.stream().map(Pair::first).collect(Collectors.toList());
+
+        try (JsInterpreter jsInterpreter = new JsInterpreter(QuotaConfig.QuotaActivationRuleTimeout.value())) {
+            Map<String, String> newVariables = injectUsageTypeVariables(jsInterpreter, usageTypeVariables);
+            String scriptToExecute = jsInterpreterHelper.replaceScriptVariables(activationRule, newVariables);
+            jsInterpreter.executeScript(String.format("new Function(\"%s\")", scriptToExecute.replaceAll("\n", "")));
+        } catch (IOException | CloudRuntimeException e) {
+            logger.error("Unable to execute activation rule due to: [{}].", e.getMessage(), e);
+            message = "Error while executing activation rule. Check if there are no syntax errors and all variables are compatible with the given usage type.";
+            return createValidateActivationRuleResponse(activationRule, quotaName, false, message);
+        }
+
+        Set<String> scriptVariables = jsInterpreterHelper.getScriptVariables(activationRule);
+        if (isScriptVariablesValid(scriptVariables, usageTypeVariables)) {
+            message = "The script has no syntax errors and all variables are compatible with the given usage type.";
+            return createValidateActivationRuleResponse(activationRule, quotaName, true, message);
+        }
+
+        message = "Found variables that are not compatible with the given usage type.";
+        return createValidateActivationRuleResponse(activationRule, quotaName, false, message);
+    }
+
+    /**
+     * Checks whether script variables are compatible with the usage type. First, we remove all script variables that correspond to the script's usage type variables.
+     * Then, returns true if none of the remaining script variables match any usage types variables, and false otherwise.
+     *
+     * @param scriptVariables Script variables.
+     * @param scriptUsageTypeVariables Script usage type variables.
+     * @return True if the script variables are valid, false otherwise.
+     */
+    protected boolean isScriptVariablesValid(Set<String> scriptVariables, List<String> scriptUsageTypeVariables) {
+        List<Pair<String, String>> allUsageTypeVariablesAndDescriptions = new ArrayList<>();
+        addAllPresetVariables(PresetVariables.class, null, allUsageTypeVariablesAndDescriptions, null);
+        List<String> allUsageTypesVariables = allUsageTypeVariablesAndDescriptions.stream().map(Pair::first).collect(Collectors.toList());
+
+        List<String> matchVariables = scriptVariables.stream().filter(scriptUsageTypeVariables::contains).collect(Collectors.toList());
+        matchVariables.forEach(scriptVariables::remove);
+
+        return scriptVariables.stream().noneMatch(allUsageTypesVariables::contains);
+    }
+
+    /**
+     *  Injects variables into JavaScript interpreter. It's necessary to remove all dots from the given variables, as the interpreter
+     *  does not interpret the variables as attributes of objects.
+     *
+     * @param jsInterpreter the {@link JsInterpreter} which the variables will be injected.
+     * @param variables the {@link List} with variables to format and inject the formatted variables into interpreter.
+     * @return A {@link Map} which has the key as the given variable and the value as the given variable formatted (without dots).
+     */
+    protected Map<String, String> injectUsageTypeVariables(JsInterpreter jsInterpreter, List<String> variables) {
+        Map<String, String> formattedVariables = new HashMap<>();
+        for (String variable : variables) {
+            String formattedVariable = variable.replace(".", "");
+            formattedVariables.put(variable, formattedVariable);
+            jsInterpreter.injectVariable(formattedVariable, "false");
+        }
+
+        return formattedVariables;
+    }
+
+    public QuotaValidateActivationRuleResponse createValidateActivationRuleResponse(String activationRule, String quotaType, Boolean isValid, String message) {
+        QuotaValidateActivationRuleResponse response = new QuotaValidateActivationRuleResponse();
+        response.setActivationRule(activationRule);
+        response.setQuotaType(quotaType);
+        response.setValid(isValid);
+        response.setMessage(message);
+        return response;
     }
 }

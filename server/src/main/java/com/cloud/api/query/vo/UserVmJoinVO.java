@@ -35,6 +35,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.ResourceState;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Volume;
@@ -201,6 +202,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "template_display_text", length = 4096)
     private String templateDisplayText;
 
+    @Column(name = "template_format")
+    private Storage.ImageFormat templateFormat;
+
     @Column(name = "password_enabled")
     private boolean passwordEnabled;
 
@@ -361,6 +365,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "user_data", updatable = true, nullable = true, length = 2048)
     private String userData;
 
+    @Column(name = "user_vm_type")
+    private String userVmType;
+
     @Column(name = "project_id")
     private long projectId;
 
@@ -428,6 +435,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     @Column(name = "dynamically_scalable")
     private boolean isDynamicallyScalable;
+
+    @Column(name = "delete_protection")
+    protected Boolean deleteProtection;
 
 
     public UserVmJoinVO() {
@@ -647,6 +657,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return templateDisplayText;
     }
 
+    public Storage.ImageFormat getTemplateFormat() {
+        return templateFormat;
+    }
+
     public boolean isPasswordEnabled() {
         return passwordEnabled;
     }
@@ -811,6 +825,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return userData;
     }
 
+    public String getUserVmType() {
+        return userVmType;
+    }
+
     public long getGuestOsId() {
         return guestOsId;
     }
@@ -931,6 +949,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return isDynamicallyScalable;
     }
 
+    public Boolean getDeleteProtection() {
+        return deleteProtection;
+    }
 
     @Override
     public Class<?> getEntityType() {

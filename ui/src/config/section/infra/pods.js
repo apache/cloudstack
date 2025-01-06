@@ -24,6 +24,7 @@ export default {
   icon: 'appstore-outlined',
   docHelp: 'conceptsandterminology/concepts.html#about-pods',
   permission: ['listPods'],
+  searchFilters: ['name', 'zoneid'],
   columns: ['name', 'allocationstate', 'gateway', 'netmask', 'zonename'],
   details: ['name', 'id', 'allocationstate', 'netmask', 'gateway', 'zonename'],
   related: [{

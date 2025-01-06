@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
+import java.security.cert.CertificateParsingException;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -47,4 +48,6 @@ public interface CAService {
      * @return returns char[] passphrase
      */
     char[] getKeyStorePassphrase();
+
+    boolean isManagementCertificate(java.security.cert.Certificate certificate) throws CertificateParsingException;
 }

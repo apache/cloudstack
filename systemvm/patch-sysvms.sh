@@ -84,7 +84,7 @@ restart_services() {
             break
           fi
         fi
-      done	
+      done
       if [ $patchfailed == 1 ]; then
         return
       fi

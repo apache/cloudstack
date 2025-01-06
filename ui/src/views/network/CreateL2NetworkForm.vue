@@ -73,48 +73,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item v-if="isAdminOrDomainAdmin()" name="domainid" ref="domainid">
-            <template #label>
-              <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
-            </template>
-            <a-select
-              v-model:value="form.domainid"
-              showSearch
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }"
-              :loading="domainLoading"
-              :placeholder="apiParams.domainid.description"
-              @change="val => { handleDomainChange(domains[val]) }">
-              <a-select-option v-for="(opt, optIndex) in this.domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
-                <span>
-                  <resource-icon v-if="opt && opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <block-outlined v-else-if="optIndex !== 0" style="margin-right: 5px" />
-                  {{ opt.path || opt.name || opt.description }}
-                </span>
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-          <a-form-item v-if="accountVisible" name="account" ref="account">
-            <template #label>
-              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
-            </template>
-            <a-select
-             v-model:value="form.account"
-              showSearch
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }"
-              :loading="accountLoading"
-              :placeholder="apiParams.account.description"
-              @change="val => { handleAccountChange(accounts[val]) }">
-              <a-select-option v-for="(opt, optIndex) in accounts" :key="optIndex">
-                {{ opt.name || opt.description }}
-              </a-select-option>
-            </a-select>
-          </a-form-item>
+          <ownership-selection v-if="isAdminOrDomainAdmin()" @fetch-owner="fetchOwnerOptions"/>
           <a-form-item name="networkofferingid" ref="networkofferingid">
             <template #label>
               <tooltip-label :title="$t('label.networkofferingid')" :tooltip="apiParams.networkofferingid.description"/>
@@ -217,11 +176,13 @@ import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
 
 export default {
   name: 'CreateL2NetworkForm',
   mixins: [mixinForm],
   components: {
+    OwnershipSelection,
     TooltipLabel,
     ResourceIcon
   },
@@ -242,13 +203,8 @@ export default {
   data () {
     return {
       actionLoading: false,
-      domains: [],
-      domainLoading: false,
-      selectedDomain: {},
+      owner: {},
       accountVisible: isAdminOrDomainAdmin(),
-      accounts: [],
-      accountLoading: false,
-      selectedAccount: {},
       zones: [],
       zoneLoading: false,
       selectedZone: {},
@@ -271,12 +227,6 @@ export default {
     this.apiParams = this.$getApiParams('createNetwork')
   },
   created () {
-    this.domains = [
-      {
-        id: '-1',
-        name: ' '
-      }
-    ]
     this.initForm()
     this.fetchData()
   },
@@ -294,7 +244,6 @@ export default {
       })
     },
     fetchData () {
-      this.fetchDomainData()
       this.fetchZoneData()
     },
     isAdminOrDomainAdmin () {
@@ -339,31 +288,30 @@ export default {
       this.isNsxEnabled = zone?.isnsxenabled || false
       this.updateVPCCheckAndFetchNetworkOfferingData()
     },
-    fetchDomainData () {
-      const params = {}
-      params.listAll = true
-      params.showicon = true
-      params.details = 'min'
-      this.domainLoading = true
-      api('listDomains', params).then(json => {
-        const listDomains = json.listdomainsresponse.domain
-        this.domains = this.domains.concat(listDomains)
-      }).finally(() => {
-        this.domainLoading = false
-        this.form.domainid = 0
-        this.handleDomainChange(this.domains[0])
-      })
-    },
-    handleDomainChange (domain) {
-      this.selectedDomain = domain
-      this.accountVisible = domain.id !== '-1'
+    fetchOwnerOptions (OwnerOptions) {
+      this.owner = {
+        projectid: null,
+        domainid: this.$store.getters.userInfo.domainid,
+        account: this.$store.getters.userInfo.account
+      }
+      if (OwnerOptions.selectedAccountType === 'Account') {
+        if (!OwnerOptions.selectedAccount) {
+          return
+        }
+        this.owner.account = OwnerOptions.selectedAccount
+        this.owner.domainid = OwnerOptions.selectedDomain
+        this.owner.projectid = null
+      } else if (OwnerOptions.selectedAccountType === 'Project') {
+        if (!OwnerOptions.selectedProject) {
+          return
+        }
+        this.owner.account = null
+        this.owner.domainid = null
+        this.owner.projectid = OwnerOptions.selectedProject
+      }
       if (isAdminOrDomainAdmin()) {
         this.updateVPCCheckAndFetchNetworkOfferingData()
-        this.fetchAccounts()
       }
-    },
-    handleAccountChange (account) {
-      this.selectedAccount = account
     },
     updateVPCCheckAndFetchNetworkOfferingData () {
       if (this.vpc !== null) { // from VPC section
@@ -393,8 +341,8 @@ export default {
         guestiptype: 'L2',
         state: 'Enabled'
       }
-      if (isAdminOrDomainAdmin() && this.selectedDomain.id !== '-1') { // domain is visible only for admins
-        params.domainid = this.selectedDomain.id
+      if (isAdminOrDomainAdmin() && this.owner.domainid !== '-1') { // domain is visible only for admins
+        params.domainid = this.owner.domainid
       }
       if (!isAdmin()) { // normal user is not aware of the VLANs in the system, so normal user is not allowed to create network with network offerings whose specifyvlan = true
         params.specifyvlan = false
@@ -417,31 +365,6 @@ export default {
     handleNetworkOfferingChange (networkOffering) {
       this.selectedNetworkOffering = networkOffering
     },
-    fetchAccounts () {
-      this.accountLoading = true
-      var params = {}
-      if (isAdminOrDomainAdmin() && this.selectedDomain.id !== '-1') { // domain is visible only for admins
-        params.domainid = this.selectedDomain.id
-      }
-      this.accounts = [
-        {
-          id: '-1',
-          name: ' '
-        }
-      ]
-      this.selectedAccount = {}
-      api('listAccounts', params).then(json => {
-        const listAccounts = json.listaccountsresponse.account || []
-        this.accounts = this.accounts.concat(listAccounts)
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.accountLoading = false
-        if (this.arrayHasItems(this.accounts)) {
-          this.form.account = null
-        }
-      })
-    },
     handleSubmit (e) {
       if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
@@ -460,12 +383,15 @@ export default {
         if (this.isValidValueForKey(values, 'bypassvlanoverlapcheck')) {
           params.bypassvlanoverlapcheck = values.bypassvlanoverlapcheck
         }
-        if ('domainid' in values && values.domainid > 0) {
-          params.domainid = this.selectedDomain.id
-          if (this.isValidTextValueForKey(values, 'account') && this.selectedAccount.id !== '-1') {
-            params.account = this.selectedAccount.name
-          }
+
+        if (this.owner.account) {
+          params.account = this.owner.account
+          params.domainid = this.owner.domainid
+        } else if (this.owner.projectid) {
+          params.domainid = this.owner.domainid
+          params.projectid = this.owner.projectid
         }
+
         if (this.isValidValueForKey(values, 'isolatedpvlantype') && values.isolatedpvlantype !== 'none') {
           params.isolatedpvlantype = values.isolatedpvlantype
           if (this.isValidValueForKey(values, 'isolatedpvlan')) {

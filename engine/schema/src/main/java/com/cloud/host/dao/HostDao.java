@@ -141,6 +141,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> listByHostCapability(Host.Type type, Long clusterId, Long podId, long dcId, String hostCapabilty);
 
+    List<HostVO> listByClusterHypervisorTypeAndHostCapability(Long clusterId, HypervisorType hypervisorType, String hostCapabilty);
+
     List<HostVO> listByClusterAndHypervisorType(long clusterId, HypervisorType hypervisorType);
 
     HostVO findByName(String name);
@@ -167,4 +169,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<HostVO> findHostsWithTagRuleThatMatchComputeOferringTags(String computeOfferingTags);
 
     List<Long> findClustersThatMatchHostTagRule(String computeOfferingTags);
+
+    List<Long> listSsvmHostsWithPendingMigrateJobsOrderedByJobCount();
 }

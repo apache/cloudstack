@@ -18,8 +18,18 @@ package com.cloud.network.nsx;
 
 import com.cloud.network.IpAddress;
 import com.cloud.network.vpc.Vpc;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface NsxService {
+
+    ConfigKey<Integer> NSX_API_FAILURE_RETRIES = new ConfigKey<>("Advanced", Integer.class,
+            "nsx.api.failure.retries", "30",
+            "Number of retries for NSX API operations in case of failures",
+            true, ConfigKey.Scope.Zone);
+    ConfigKey<Integer> NSX_API_FAILURE_INTERVAL = new ConfigKey<>("Advanced", Integer.class,
+            "nsx.api.failure.interval", "60",
+            "Waiting time (in seconds) before retrying an NSX API operation in case of failure",
+            true, ConfigKey.Scope.Zone);
 
     boolean createVpcNetwork(Long zoneId, long accountId, long domainId, Long vpcId, String vpcName, boolean sourceNatEnabled);
     boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address);

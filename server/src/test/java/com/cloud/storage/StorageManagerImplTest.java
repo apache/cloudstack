@@ -16,18 +16,40 @@
 // under the License.
 package com.cloud.storage;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
+import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.exception.ConnectionException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.host.Host;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.AccountManagerImpl;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.MapUtils;
 import org.junit.Assert;
@@ -39,27 +61,18 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.stubbing.Answer;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
-import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.capacity.CapacityManager;
-import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.VsphereStoragePolicyVO;
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.ConnectionException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.Host;
 import com.cloud.hypervisor.HypervisorGuruManager;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.utils.Pair;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StorageManagerImplTest {
@@ -87,10 +100,29 @@ public class StorageManagerImplTest {
     ConfigurationDao configurationDao;
     @Mock
     DataCenterDao dataCenterDao;
+    @Mock
+    AccountManagerImpl accountMgr;
+    @Mock
+    StoragePoolDetailsDao storagePoolDetailsDao;
+
+    @Mock
+    ClusterDao clusterDao;
 
     @Spy
     @InjectMocks
     private StorageManagerImpl storageManagerImpl;
+
+    @Mock
+    private StoragePoolVO storagePoolVOMock;
+
+    @Mock
+    private VolumeVO volume1VOMock;
+
+    @Mock
+    private VolumeVO volume2VOMock;
+
+    @Mock
+    private VMInstanceVO vmInstanceVOMock;
 
     @Test
     public void createLocalStoragePoolName() {
@@ -497,4 +529,310 @@ public class StorageManagerImplTest {
                 .update(StorageManager.DataStoreDownloadFollowRedirects.key(),StorageManager.DataStoreDownloadFollowRedirects.defaultValue());
     }
 
+    @Test
+    public void getStoragePoolNonDestroyedVolumesLogTestNonDestroyedVolumesReturnLog() {
+        Mockito.doReturn(1L).when(storagePoolVOMock).getId();
+        Mockito.doReturn(1L).when(volume1VOMock).getInstanceId();
+        Mockito.doReturn("786633d1-a942-4374-9d56-322dd4b0d202").when(volume1VOMock).getUuid();
+        Mockito.doReturn(1L).when(volume2VOMock).getInstanceId();
+        Mockito.doReturn("ffb46333-e983-4c21-b5f0-51c5877a3805").when(volume2VOMock).getUuid();
+        Mockito.doReturn("58760044-928f-4c4e-9fef-d0e48423595e").when(vmInstanceVOMock).getUuid();
+
+        Mockito.when(_volumeDao.findByPoolId(storagePoolVOMock.getId(), null)).thenReturn(List.of(volume1VOMock, volume2VOMock));
+        Mockito.doReturn(vmInstanceVOMock).when(vmInstanceDao).findById(Mockito.anyLong());
+
+        String log = storageManagerImpl.getStoragePoolNonDestroyedVolumesLog(storagePoolVOMock.getId());
+        String expected = String.format("[Volume [%s] (attached to VM [%s]), Volume [%s] (attached to VM [%s])]", volume1VOMock.getUuid(), vmInstanceVOMock.getUuid(), volume2VOMock.getUuid(), vmInstanceVOMock.getUuid());
+
+        Assert.assertEquals(expected, log);
+    }
+
+    private ChangeStoragePoolScopeCmd mockChangeStoragePooolScopeCmd(String newScope) {
+        ChangeStoragePoolScopeCmd cmd = new ChangeStoragePoolScopeCmd();
+        ReflectionTestUtils.setField(cmd, "id", 1L);
+        ReflectionTestUtils.setField(cmd, "clusterId", 1L);
+        ReflectionTestUtils.setField(cmd, "scope", newScope);
+        return cmd;
+    }
+
+    private StoragePoolVO mockStoragePoolVOForChangeStoragePoolScope(ScopeType currentScope, StoragePoolStatus status) {
+        StoragePoolVO primaryStorage = new StoragePoolVO();
+        primaryStorage.setId(1L);
+        primaryStorage.setDataCenterId(1L);
+        primaryStorage.setClusterId(1L);
+        primaryStorage.setStatus(StoragePoolStatus.Disabled);
+        primaryStorage.setScope(currentScope);
+        primaryStorage.setStatus(status);
+        return primaryStorage;
+    }
+
+    private void prepareTestChangeStoragePoolScope(ScopeType currentScope, StoragePoolStatus status) {
+        final DataCenterVO zone = new DataCenterVO(1L, null, null, null, null, null, null, null, null, null, DataCenter.NetworkType.Advanced, null, null);
+        StoragePoolVO primaryStorage = mockStoragePoolVOForChangeStoragePoolScope(currentScope, status);
+
+        Mockito.when(accountMgr.isRootAdmin(Mockito.any())).thenReturn(true);
+        Mockito.when(dataCenterDao.findById(1L)).thenReturn(zone);
+        Mockito.when(storagePoolDao.findById(1L)).thenReturn(primaryStorage);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testChangeStoragePoolScopeNotDisabledException() {
+        prepareTestChangeStoragePoolScope(ScopeType.CLUSTER, StoragePoolStatus.Initialized);
+
+        ChangeStoragePoolScopeCmd cmd = mockChangeStoragePooolScopeCmd("ZONE");
+        storageManagerImpl.changeStoragePoolScope(cmd);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testChangeStoragePoolScopeToZoneHypervisorNotSupported() {
+        prepareTestChangeStoragePoolScope(ScopeType.CLUSTER, StoragePoolStatus.Disabled);
+
+        final ClusterVO cluster = new ClusterVO();
+        cluster.setHypervisorType(String.valueOf(HypervisorType.XenServer));
+        Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
+
+        ChangeStoragePoolScopeCmd cmd = mockChangeStoragePooolScopeCmd("ZONE");
+        storageManagerImpl.changeStoragePoolScope(cmd);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testChangeStoragePoolScopeToClusterVolumesPresentException() {
+        prepareTestChangeStoragePoolScope(ScopeType.ZONE, StoragePoolStatus.Disabled);
+
+        final ClusterVO cluster = new ClusterVO();
+        Mockito.when(clusterDao.findById(1L)).thenReturn(cluster);
+
+        VMInstanceVO instance = Mockito.mock(VMInstanceVO.class);
+        Pair<List<VMInstanceVO>, Integer> vms = new Pair<>(List.of(instance), 1);
+        Mockito.when(vmInstanceDao.listByVmsNotInClusterUsingPool(1L, 1L)).thenReturn(vms);
+
+        ChangeStoragePoolScopeCmd cmd = mockChangeStoragePooolScopeCmd("CLUSTER");
+        storageManagerImpl.changeStoragePoolScope(cmd);
+    }
+
+    @Test
+    public void testCheckNFSMountOptionsForCreateNoNFSMountOptions() {
+        Map<String, String> details = new HashMap<>();
+        try {
+            storageManagerImpl.checkNFSMountOptionsForCreate(details, HypervisorType.XenServer, "");
+        } catch (Exception e) {
+            Assert.fail();
+        }
+    }
+
+    @Test
+    public void testCheckNFSMountOptionsForCreateNotKVM() {
+        Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.NFS_MOUNT_OPTIONS, "vers=4.1");
+        InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> storageManagerImpl.checkNFSMountOptionsForCreate(details, HypervisorType.XenServer, ""));
+        Assert.assertEquals(exception.getMessage(), "NFS options can not be set for the hypervisor type " + HypervisorType.XenServer);
+    }
+
+    @Test
+    public void testCheckNFSMountOptionsForCreateNotNFS() {
+        Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.NFS_MOUNT_OPTIONS, "vers=4.1");
+        InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> storageManagerImpl.checkNFSMountOptionsForCreate(details, HypervisorType.KVM, ""));
+        Assert.assertEquals(exception.getMessage(), "NFS options can only be set on pool type " + Storage.StoragePoolType.NetworkFilesystem);
+    }
+
+    @Test
+    public void testCheckNFSMountOptionsForUpdateNoNFSMountOptions() {
+        Map<String, String> details = new HashMap<>();
+        StoragePoolVO pool = new StoragePoolVO();
+        Long accountId = 1L;
+        try {
+            storageManagerImpl.checkNFSMountOptionsForUpdate(details, pool, accountId);
+        } catch (Exception e) {
+            Assert.fail();
+        }
+    }
+
+    @Test
+    public void testCheckNFSMountOptionsForUpdateNotRootAdmin() {
+        Map<String, String> details = new HashMap<>();
+        StoragePoolVO pool = new StoragePoolVO();
+        Long accountId = 1L;
+        details.put(ApiConstants.NFS_MOUNT_OPTIONS, "vers=4.1");
+        Mockito.when(accountMgr.isRootAdmin(accountId)).thenReturn(false);
+        PermissionDeniedException exception = Assert.assertThrows(PermissionDeniedException.class,
+                () -> storageManagerImpl.checkNFSMountOptionsForUpdate(details, pool, accountId));
+        Assert.assertEquals(exception.getMessage(), "Only root admin can modify nfs options");
+    }
+
+    @Test
+    public void testCheckNFSMountOptionsForUpdateNotKVM() {
+        Map<String, String> details = new HashMap<>();
+        StoragePoolVO pool = new StoragePoolVO();
+        Long accountId = 1L;
+        details.put(ApiConstants.NFS_MOUNT_OPTIONS, "vers=4.1");
+        Mockito.when(accountMgr.isRootAdmin(accountId)).thenReturn(true);
+        pool.setHypervisor(HypervisorType.XenServer);
+        InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> storageManagerImpl.checkNFSMountOptionsForUpdate(details, pool, accountId));
+        Assert.assertEquals(exception.getMessage(), "NFS options can only be set for the hypervisor type " + HypervisorType.KVM);
+    }
+
+    @Test
+    public void testCheckNFSMountOptionsForUpdateNotNFS() {
+        Map<String, String> details = new HashMap<>();
+        StoragePoolVO pool = new StoragePoolVO();
+        Long accountId = 1L;
+        details.put(ApiConstants.NFS_MOUNT_OPTIONS, "vers=4.1");
+        Mockito.when(accountMgr.isRootAdmin(accountId)).thenReturn(true);
+        pool.setHypervisor(HypervisorType.KVM);
+        pool.setPoolType(Storage.StoragePoolType.FiberChannel);
+        InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> storageManagerImpl.checkNFSMountOptionsForUpdate(details, pool, accountId));
+        Assert.assertEquals(exception.getMessage(), "NFS options can only be set on pool type " + Storage.StoragePoolType.NetworkFilesystem);
+    }
+
+    @Test
+    public void testCheckNFSMountOptionsForUpdateNotMaintenance() {
+        Map<String, String> details = new HashMap<>();
+        StoragePoolVO pool = new StoragePoolVO();
+        Long accountId = 1L;
+        details.put(ApiConstants.NFS_MOUNT_OPTIONS, "vers=4.1");
+        Mockito.when(accountMgr.isRootAdmin(accountId)).thenReturn(true);
+        pool.setHypervisor(HypervisorType.KVM);
+        pool.setPoolType(Storage.StoragePoolType.NetworkFilesystem);
+        pool.setStatus(StoragePoolStatus.Up);
+        InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+                () -> storageManagerImpl.checkNFSMountOptionsForUpdate(details, pool, accountId));
+        Assert.assertEquals(exception.getMessage(), "The storage pool should be in maintenance mode to edit nfs options");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testDuplicateNFSMountOptions() {
+        String nfsMountOpts = "vers=4.1, nconnect=4,vers=4.2";
+        Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.NFS_MOUNT_OPTIONS, nfsMountOpts);
+        storageManagerImpl.checkNFSMountOptionsForCreate(details, HypervisorType.KVM, "nfs");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testInvalidNFSMountOptions() {
+        String nfsMountOpts = "vers=4.1=2,";
+        Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.NFS_MOUNT_OPTIONS, nfsMountOpts);
+        StoragePoolVO pool = new StoragePoolVO();
+        pool.setHypervisor(HypervisorType.KVM);
+        pool.setPoolType(Storage.StoragePoolType.NetworkFilesystem);
+        pool.setStatus(StoragePoolStatus.Maintenance);
+        Long accountId = 1L;
+        Mockito.when(accountMgr.isRootAdmin(accountId)).thenReturn(true);
+        storageManagerImpl.checkNFSMountOptionsForUpdate(details, pool, accountId);
+    }
+
+    @Test
+    public void testGetStoragePoolMountOptionsNotNFS() {
+        StoragePoolVO pool = new StoragePoolVO();
+
+        pool.setPoolType(Storage.StoragePoolType.FiberChannel);
+        Pair<Map<String, String>, Boolean> details = storageManagerImpl.getStoragePoolNFSMountOpts(pool, null);
+        Assert.assertEquals(details.second(), false);
+        Assert.assertEquals(details.first(), null);
+    }
+
+    @Test
+    public void testGetStoragePoolMountOptions() {
+        Long poolId = 1L;
+        String key = "nfsmountopts";
+        String value = "vers=4.1,nconnect=2";
+        StoragePoolDetailVO nfsMountOpts = new StoragePoolDetailVO(poolId, key, value, true);
+        StoragePoolVO pool = new StoragePoolVO();
+        pool.setId(poolId);
+        pool.setPoolType(Storage.StoragePoolType.NetworkFilesystem);
+        Mockito.when(storagePoolDetailsDao.findDetail(poolId, ApiConstants.NFS_MOUNT_OPTIONS)).thenReturn(nfsMountOpts);
+
+        Pair<Map<String, String>, Boolean> details = storageManagerImpl.getStoragePoolNFSMountOpts(pool, null);
+        Assert.assertEquals(details.second(), true);
+        Assert.assertEquals(details.first().get(key), value);
+    }
+
+    @Test
+    public void testGetStoragePoolMountFailureReason() {
+        String error = "Mount failed on kvm host. An incorrect mount option was specified.\nIncorrect mount option.";
+        String failureReason = storageManagerImpl.getStoragePoolMountFailureReason(error);
+        Assert.assertEquals(failureReason, "An incorrect mount option was specified");
+    }
+
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
+        Field f = ConfigKey.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(configKey, o);
+    }
+
+    private Long testCheckPoolforSpaceForResizeSetup(StoragePoolVO pool, Long allocatedSizeWithTemplate) {
+        Long poolId = 10L;
+        Long zoneId = 2L;
+
+        Long capacityBytes = (long) (allocatedSizeWithTemplate / Double.valueOf(CapacityManager.StorageAllocatedCapacityDisableThreshold.defaultValue())
+                        / Double.valueOf(CapacityManager.StorageOverprovisioningFactor.defaultValue()));
+        Long maxAllocatedSizeForResize = (long) (capacityBytes * Double.valueOf(CapacityManager.StorageOverprovisioningFactor.defaultValue())
+                * Double.valueOf(CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.defaultValue()));
+
+        System.out.println("maxAllocatedSizeForResize = " + maxAllocatedSizeForResize);
+        System.out.println("allocatedSizeWithTemplate = " + allocatedSizeWithTemplate);
+
+        Mockito.when(pool.getId()).thenReturn(poolId);
+        Mockito.when(pool.getCapacityBytes()).thenReturn(capacityBytes);
+        Mockito.when(pool.getDataCenterId()).thenReturn(zoneId);
+        Mockito.when(storagePoolDao.findById(poolId)).thenReturn(pool);
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+
+        return maxAllocatedSizeForResize - allocatedSizeWithTemplate;
+    }
+
+    @Test
+    public void testCheckPoolforSpaceForResize1() {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+
+        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
+        Long totalAskingSize = maxAskingSize / 2;
+
+        boolean result = storageManagerImpl.checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, false);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testCheckPoolforSpaceForResize2() {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+
+        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
+        Long totalAskingSize = maxAskingSize / 2;
+
+        boolean result = storageManagerImpl.checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, true);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testCheckPoolforSpaceForResize3() throws NoSuchFieldException, IllegalAccessException {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+
+        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
+        Long totalAskingSize = maxAskingSize + 1;
+        overrideDefaultConfigValue(StorageManagerImpl.AllowVolumeReSizeBeyondAllocation, "_defaultValue", "true");
+
+        boolean result = storageManagerImpl.checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, true);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testCheckPoolforSpaceForResize4() throws NoSuchFieldException, IllegalAccessException {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+
+        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
+        Long totalAskingSize = maxAskingSize / 2;
+        overrideDefaultConfigValue(StorageManagerImpl.AllowVolumeReSizeBeyondAllocation, "_defaultValue", "true");
+
+        boolean result = storageManagerImpl.checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, true);
+        Assert.assertTrue(result);
+    }
 }

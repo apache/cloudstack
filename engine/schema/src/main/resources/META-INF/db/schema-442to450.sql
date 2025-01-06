@@ -671,7 +671,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
         resource_tags.resource_id tag_resource_id,
         resource_tags.resource_uuid tag_resource_uuid,
         resource_tags.resource_type tag_resource_type,
-        resource_tags.customer tag_customer,        
+        resource_tags.customer tag_customer,
         async_job.id job_id,
         async_job.uuid job_uuid,
         async_job.job_status job_status,
@@ -752,7 +752,7 @@ CREATE VIEW `cloud`.`user_vm_view` AS
             left join
         `cloud`.`user_vm_details` `custom_speed`  ON (((`custom_speed`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_speed`.`name` = 'CpuSpeed')))
            left join
-        `cloud`.`user_vm_details` `custom_ram_size`  ON (((`custom_ram_size`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_ram_size`.`name` = 'memory')));        
+        `cloud`.`user_vm_details` `custom_ram_size`  ON (((`custom_ram_size`.`vm_id` = `cloud`.`vm_instance`.`id`) and (`custom_ram_size`.`name` = 'memory')));
 
 
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (231, UUID(), 1, 'CentOS 5 (32-bit)', utc_timestamp());
