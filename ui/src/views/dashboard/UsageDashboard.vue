@@ -203,7 +203,7 @@
             status="active"
             :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
             :format="p => entity[usageType + 'limit'] !== '-1' && entity[usageType + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
-            stroke-color="#52c41a"
+            :stroke-color="getStrokeColor(entity[usageType + 'available'])"
             size="small"
             />
             <br/>
@@ -239,7 +239,7 @@
             status="active"
             :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
             :format="p => entity[usageType + 'limit'] !== '-1' && entity[usageType + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
-            stroke-color="#52c41a"
+            :stroke-color="getStrokeColor(entity[usageType + 'available'])"
             size="small"
             />
             <br/>
@@ -275,7 +275,7 @@
             status="active"
             :percent="parseFloat(getPercentUsed(entity[usageType + 'total'], entity[usageType + 'limit']))"
             :format="p => entity[usageType + 'limit'] !== '-1' && entity[usageType + 'limit'] !== 'Unlimited' ? p.toFixed(0) + '%' : ''"
-            stroke-color="#52c41a"
+            :stroke-color="getStrokeColor(entity[usageType + 'available'])"
             size="small"
             />
             <br/>
@@ -441,6 +441,9 @@ export default {
     }
   },
   methods: {
+    getStrokeColor (available) {
+      return available <= 0 ? '#ff4d4f' : '#52c41a'
+    },
     fetchData () {
       if (store.getters.project.id) {
         this.listProject()
