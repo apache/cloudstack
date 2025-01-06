@@ -102,6 +102,7 @@ import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.security.CertificateHelper;
 
 import sun.security.x509.X509CertImpl;
@@ -469,8 +470,16 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     @Override
     public Pair<DirectDownloadCertificate, List<HostCertificateStatus>> uploadCertificateToHosts(
             String certificateCer, String alias, String hypervisor, Long zoneId, Long hostId) {
-        if (alias != null && (alias.equalsIgnoreCase("cloud") || alias.startsWith("cloudca"))) {
+        if (StringUtils.isBlank(alias)) {
+            throw new CloudRuntimeException("Certificate name not provided, please provide a valid name");
+        }
+
+        if (alias.equalsIgnoreCase("cloud") || alias.startsWith("cloudca")) {
             throw new CloudRuntimeException("Please provide a different alias name for the certificate");
+        }
+
+        if (!NetUtils.verifyDomainNameLabel(alias, false)) {
+            throw new CloudRuntimeException("The provided certificate name is invalid, please provide a valid name");
         }
 
         List<HostVO> hosts;
