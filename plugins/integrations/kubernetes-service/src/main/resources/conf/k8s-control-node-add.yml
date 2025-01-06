@@ -21,7 +21,7 @@ users:
   - name: cloud
     sudo: ALL=(ALL) NOPASSWD:ALL
     shell: /bin/bash
-    ssh_authorized_keys: |
+    ssh_authorized_keys:
       {{ k8s.ssh.pub.key }}
 
 write_files:
