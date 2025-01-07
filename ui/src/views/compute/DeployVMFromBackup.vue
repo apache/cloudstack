@@ -16,10 +16,15 @@
 // under the License.
 
 <template>
-  <div>
+  <div class="form">
     <a-row :gutter="12">
       <a-col :md="24" :lg="17">
-        <a-card :bordered="true" :title="$t('label.newinstance')">
+        <a-alert>
+          <template #message>
+            <div v-html="$t('message.create.instance.from.backup.prefill')"></div>
+          </template>
+        </a-alert>
+        <a-card :bordered="true" :title="$t('label.configure.instance')">
           <a-form
             v-ctrl-enter="handleSubmit"
             :ref="formRef"
@@ -2844,6 +2849,15 @@ export default {
 </script>
 
 <style lang="less" scoped>
+  .form {
+    width: 80vw;
+
+    @media (min-width: 500px) {
+      min-width: 400px;
+      width: 100%;
+    }
+  }
+
   .card-footer {
     text-align: right;
     margin-top: 2rem;

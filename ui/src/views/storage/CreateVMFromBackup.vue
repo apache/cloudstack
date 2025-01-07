@@ -16,27 +16,40 @@
 // under the License.
 
 <template>
-  <div v-if="!configure">
-            <div class="card-footer">
-              <a-button @click="closeAction">
-                {{ $t('label.cancel') }}
-              </a-button>
-              <a-button @click="setConfigure">
-                {{ $t('label.configure.instance') }}
-              </a-button>
-              <a-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit">
-                {{ $t('label.ok') }}
-              </a-button>
-            </div>
+  <div class="form">
+    <div v-if="!configure">
+      <div style="margin-bottom: 10px">
+        <a-alert type="warning">
+          <template #message>
+            <div v-html="$t('message.action.create.instance.from.backup')"></div>
+          </template>
+        </a-alert>
+      </div>
+      <div class="card-footer">
+        <a-button @click="closeAction">
+          {{ $t('label.cancel') }}
+        </a-button>
+        <a-button @click="setConfigure">
+          {{ $t('label.configure.instance') }}
+        </a-button>
+        <a-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit">
+          {{ $t('label.ok') }}
+        </a-button>
+      </div>
   </div>
-  <div v-else>
-    <DeployVMFromBackup
-      :preFillContent="dataPreFill"
-      @close-action="closeModal"/>
+    <div v-else class="form">
+      <DeployVMFromBackup
+        :preFillContent="dataPreFill"
+        @close-action="closeModal"/>
+    </div>
   </div>
 </template>
 
 <script>
+
+import { api, h } from '@/api'
+import { Button } from 'ant-design-vue'
+import eventBus from '@/config/eventBus'
 
 import DeployVMFromBackup from '@/views/compute/DeployVMFromBackup'
 
@@ -78,7 +91,69 @@ export default {
     setConfigure () {
       this.configure = true
     },
+    closeAction () {
+      this.$emit('close-action')
+    },
     closeModal () {
+      this.$emit('close-action')
+    },
+    handleSubmit (e) {
+      console.log('wizard submit')
+      e.preventDefault()
+      const args = {}
+      args.zoneid = this.resource.zoneid
+      args.backupid = this.resource.id
+
+      const title = this.$t('label.launch.vm')
+      const description = ''
+      const password = this.$t('label.password')
+
+      api('createVMFromBackup', args, 'GET', null).then(response => {
+        const jobId = response.deployvirtualmachineresponse.jobid
+        if (jobId) {
+          this.$pollJob({
+            jobId,
+            title,
+            description,
+            successMethod: result => {
+              const vm = result.jobresult.virtualmachine
+              const name = vm.displayname || vm.name || vm.id
+              if (vm.password) {
+                this.$notification.success({
+                  message: password + ` ${this.$t('label.for')} ` + name,
+                  description: vm.password,
+                  btn: () => h(
+                    Button,
+                    {
+                      type: 'primary',
+                      size: 'small',
+                      onClick: () => this.copyToClipboard(vm.password)
+                    },
+                    () => [this.$t('label.copy.password')]
+                  ),
+                  duration: 0
+                })
+              }
+              eventBus.emit('vm-refresh-data')
+            },
+            loadingMessage: `${title} ${this.$t('label.in.progress')}`,
+            catchMessage: this.$t('error.fetching.async.job.result'),
+            action: {
+              isFetchData: false
+            }
+          })
+        }
+        // Sending a refresh in case it hasn't picked up the new VM
+        new Promise(resolve => setTimeout(resolve, 3000)).then(() => {
+          eventBus.emit('vm-refresh-data')
+        })
+      }).catch(error => {
+        this.$notifyError(error)
+        this.loading.deploy = false
+      }).finally(() => {
+        this.form.stayonpage = false
+        this.loading.deploy = false
+      })
       this.$emit('close-action')
     }
   }
@@ -99,8 +174,8 @@ export default {
 .form {
   width: 80vw;
 
-  @media (min-width: 1000px) {
-    min-width: 1000px;
+  @media (min-width: 500px) {
+    min-width: 400px;
     width: 100%;
   }
 }

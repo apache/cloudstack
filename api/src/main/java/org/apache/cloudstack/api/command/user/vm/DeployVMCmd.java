@@ -91,11 +91,11 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     private Long zoneId;
 
     @ACL
-    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, required = true, description = "the ID of the service offering for the virtual machine")
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "the ID of the service offering for the virtual machine")
     private Long serviceOfferingId;
 
     @ACL
-    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, required = true, description = "the ID of the template for the virtual machine")
+    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "the ID of the template for the virtual machine")
     private Long templateId;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "host name for the virtual machine", validations = {ApiArgValidator.RFCComplianceDomainName})

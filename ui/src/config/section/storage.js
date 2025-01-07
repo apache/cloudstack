@@ -434,17 +434,6 @@ export default {
       details: ['virtualmachinename', 'id', 'type', 'externalid', 'size', 'virtualsize', 'volumes', 'backupofferingname', 'zone', 'account', 'domain', 'created'],
       actions: [
         {
-          api: 'createVMFromBackup',
-          icon: 'plus-outlined',
-          docHelp: 'adminguide/virtual_machines.html#restoring-vm-backups',
-          label: 'label.create.instance.from.backup',
-          message: 'message.backup.restore',
-          dataView: true,
-          popup: true,
-          show: (record) => { return record.state !== 'Destroyed' },
-          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateVMFromBackup.vue')))
-        },
-        {
           api: 'restoreBackup',
           icon: 'sync-outlined',
           docHelp: 'adminguide/virtual_machines.html#restoring-vm-backups',
@@ -462,6 +451,17 @@ export default {
           show: (record) => { return record.state !== 'Destroyed' },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RestoreAttachBackupVolume.vue')))
+        },
+        {
+          api: 'createVMFromBackup',
+          icon: 'caret-right-outlined',
+          docHelp: 'adminguide/virtual_machines.html#restoring-vm-backups',
+          label: 'label.create.instance.from.backup',
+          message: 'message.backup.restore',
+          dataView: true,
+          popup: true,
+          show: (record) => { return record.state !== 'Destroyed' },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateVMFromBackup.vue')))
         },
         {
           api: 'removeVirtualMachineFromBackupOffering',
