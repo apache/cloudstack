@@ -40,8 +40,8 @@ write_files:
       sysctl net.ipv4.conf.default.arp_ignore=0
       sysctl net.ipv4.conf.all.arp_announce=0
       sysctl net.ipv4.conf.all.arp_ignore=0
-      sysctl net.ipv4.conf.eth0.arp_announce=0
-      sysctl net.ipv4.conf.eth0.arp_ignore=0
+      sysctl net.ipv4.conf.eth0.arp_announce=0 || sysctl net.ipv4.conf.ens35.arp_announce=0 || true
+      sysctl net.ipv4.conf.eth0.arp_ignore=0 || sysctl net.ipv4.conf.ens35.arp_ignore=0 || true
       sed -i "s/net.ipv4.conf.default.arp_announce =.*$/net.ipv4.conf.default.arp_announce = 0/" /etc/sysctl.conf
       sed -i "s/net.ipv4.conf.default.arp_ignore =.*$/net.ipv4.conf.default.arp_ignore = 0/" /etc/sysctl.conf
       sed -i "s/net.ipv4.conf.all.arp_announce =.*$/net.ipv4.conf.all.arp_announce = 0/" /etc/sysctl.conf
