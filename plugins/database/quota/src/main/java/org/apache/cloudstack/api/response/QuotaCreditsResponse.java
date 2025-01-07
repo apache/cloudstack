@@ -35,7 +35,7 @@ public class QuotaCreditsResponse extends BaseResponse {
     private String creditorUserId;
 
     @SerializedName("creditorusername")
-    @Param(description = "ID of the creditor user.")
+    @Param(description = "Username of the creditor user.")
     private String creditorUsername;
 
     @SerializedName("creditedon")
