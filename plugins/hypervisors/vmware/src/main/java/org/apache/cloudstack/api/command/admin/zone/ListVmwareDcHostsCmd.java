@@ -21,10 +21,15 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
+import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import com.vmware.vim25.InvalidPropertyFaultMsg;
+import com.vmware.vim25.RuntimeFaultFaultMsg;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -32,20 +37,20 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.VmwareDatacenterResponse;
-import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = "listVmwareDcVms", responseObject = VmwareRequestReponse.class,
+@APICommand(name = "listVmwareDcHosts", responseObject = VmwareRequestReponse.class,
         description = "Lists the VMs in a VMware Datacenter",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListVmwareDcVmsCmd extends BaseCmd  implements ListVmwareDcItems {
+public class ListVmwareDcHostsCmd extends BaseCmd implements ListVmwareDcItems {
 
     @Inject
     public VmwareDatacenterService _vmwareDatacenterService;
@@ -111,25 +116,32 @@ public class ListVmwareDcVmsCmd extends BaseCmd  implements ListVmwareDcItems {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         checkParameters();
         try {
-            Pair<String, List<UnmanagedInstanceTO>> results = _vmwareDatacenterService.listVMsInDatacenter(this);
-            List<UnmanagedInstanceTO> vms = results.second();
+            List<HostMO> hosts = _vmwareDatacenterService.listHostsInDatacenter(this);
             List<BaseResponse> baseResponseList = new ArrayList<>();
-            if (CollectionUtils.isNotEmpty(vms)) {
-                for (UnmanagedInstanceTO vmwareVm : vms) {
-                    UnmanagedInstanceResponse resp = _responseGenerator.createUnmanagedInstanceResponse(vmwareVm, null, null);
+            if (CollectionUtils.isNotEmpty(hosts)) {
+                for (HostMO vmwareHost : hosts) {
+                    HostResponse resp = createHostResponse(vmwareHost);
                     baseResponseList.add(resp);
                 }
             }
             VmwareRequestReponse<BaseResponse> response = new VmwareRequestReponse<>();
             response.setResponses(baseResponseList, baseResponseList.size());
             response.setResponseName(getCommandName());
-            response.setToken(results.first());
             setResponseObject(response);
-        } catch (CloudRuntimeException e) {
+        } catch (CloudRuntimeException | InvalidPropertyFaultMsg | RuntimeFaultFaultMsg | InvocationTargetException |
+                 NoSuchMethodException | IllegalAccessException e) {
             String errorMsg = String.format("Error retrieving VMs from VMware VC: %s", e.getMessage());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMsg);
         }
     }
+
+    private HostResponse createHostResponse(HostMO hostInstance) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+        HostResponse response = new HostResponse();
+        response.setHypervisor(Hypervisor.HypervisorType.VMware.toString());
+        response.setName(hostInstance.getHostName());
+        return response;
+    }
+
 
     private void checkParameters() {
         if ((existingVcenterId == null && vcenter == null) || (existingVcenterId != null && vcenter != null)) {

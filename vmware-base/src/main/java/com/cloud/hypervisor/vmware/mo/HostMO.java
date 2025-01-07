@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -58,6 +59,7 @@ import com.vmware.vim25.HostRuntimeInfo;
 import com.vmware.vim25.HostSystemConnectionState;
 import com.vmware.vim25.HostVirtualNic;
 import com.vmware.vim25.HostVirtualSwitch;
+import com.vmware.vim25.InvalidPropertyFaultMsg;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.NasDatastoreInfo;
 import com.vmware.vim25.ObjectContent;
@@ -65,6 +67,7 @@ import com.vmware.vim25.ObjectSpec;
 import com.vmware.vim25.OptionValue;
 import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
+import com.vmware.vim25.RuntimeFaultFaultMsg;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualNicManagerNetConfig;
@@ -535,7 +538,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         return null;
     }
 
-    public String getHostName() throws Exception {
+    public String getHostName() throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         return (String)_context.getVimClient().getDynamicProperty(_mor, "name");
     }
 

@@ -48,6 +48,8 @@ import javax.persistence.EntityExistsException;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcVmsCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcHostsCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcItems;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePolicyCompatiblePoolsCmd;
@@ -179,6 +181,7 @@ import com.vmware.vim25.InvalidLocaleFaultMsg;
 import com.vmware.vim25.InvalidLoginFaultMsg;
 import com.vmware.vim25.RuntimeFaultFaultMsg;
 import com.vmware.vim25.InvalidPropertyFaultMsg;
+import org.jetbrains.annotations.NotNull;
 
 public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener, VmwareDatacenterService, Configurable {
     private static final Logger s_logger = Logger.getLogger(VmwareManagerImpl.class);
@@ -1093,6 +1096,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         cmdList.add(ListVsphereStoragePoliciesCmd.class);
         cmdList.add(ListVsphereStoragePolicyCompatiblePoolsCmd.class);
         cmdList.add(ListVmwareDcVmsCmd.class);
+        cmdList.add(ListVmwareDcHostsCmd.class);
         return cmdList;
     }
 
@@ -1562,14 +1566,78 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
+    public List<HostMO> listHostsInDatacenter(ListVmwareDcHostsCmd cmd) {
+        Integer maxObjects = cmd.getBatchSize();
+        String token = cmd.getToken();
+
+        VcenterData vmwaredc = getVcenterData(cmd);
+
+        try {
+            VmwareContext context = getVmwareContext(vmwaredc);
+            DatacenterMO dcMo = getDatacenterMO(context, vmwaredc);
+            return dcMo.getAllHostsOnDatacenter();
+        } catch (RuntimeFaultFaultMsg | URISyntaxException | VmwareClientException | InvalidLocaleFaultMsg |
+                 InvalidLoginFaultMsg | InvalidPropertyFaultMsg e) {
+            String errorMsg = String.format("Error retrieving stopped VMs from the VMware VC %s datacenter %s: %s",
+                    vmwaredc.vcenter, vmwaredc.datacenterName, e.getMessage());
+            s_logger.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg);
+        }
+
+    }
+
+    @Override
     public Pair<String, List<UnmanagedInstanceTO>> listVMsInDatacenter(ListVmwareDcVmsCmd cmd) {
+        Integer maxObjects = cmd.getBatchSize();
+        String token = cmd.getToken();
+
+        VcenterData vmwaredc = getVcenterData(cmd);
+
+        try {
+            VmwareContext context = getVmwareContext(vmwaredc);
+
+            DatacenterMO dcMo = getDatacenterMO(context, vmwaredc);
+            return dcMo.getVmsOnDatacenter(maxObjects, token);
+        } catch (InvalidParameterValueException | VmwareClientException | InvalidLocaleFaultMsg | InvalidLoginFaultMsg |
+                 RuntimeFaultFaultMsg | URISyntaxException | InvalidPropertyFaultMsg | InvocationTargetException |
+                 NoSuchMethodException | IllegalAccessException e) {
+            String errorMsg = String.format("Error retrieving stopped VMs from the VMware VC %s datacenter %s: %s",
+                    vmwaredc.vcenter, vmwaredc.datacenterName, e.getMessage());
+            s_logger.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg);
+        }
+    }
+
+    @NotNull
+    private static DatacenterMO getDatacenterMO(VmwareContext context, VcenterData vmwaredc) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
+        DatacenterMO dcMo = new DatacenterMO(context, vmwaredc.datacenterName);
+        ManagedObjectReference dcMor = dcMo.getMor();
+        if (dcMor == null) {
+            String msg = String.format("Unable to find VMware datacenter %s in vCenter %s",
+                    vmwaredc.datacenterName, vmwaredc.vcenter);
+            s_logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+        return dcMo;
+    }
+
+    @NotNull
+    private static VmwareContext getVmwareContext(VcenterData vmwaredc) throws RuntimeFaultFaultMsg, URISyntaxException, VmwareClientException, InvalidLocaleFaultMsg, InvalidLoginFaultMsg {
+        s_logger.debug(String.format("Connecting to the VMware datacenter %s at vCenter %s to retrieve VMs",
+                vmwaredc.datacenterName, vmwaredc.vcenter));
+        String serviceUrl = String.format("https://%s/sdk/vimService", vmwaredc.vcenter);
+        VmwareClient vimClient = new VmwareClient(vmwaredc.vcenter);
+        vimClient.connect(serviceUrl, vmwaredc.username, vmwaredc.password);
+        VmwareContext context = new VmwareContext(vimClient, vmwaredc.vcenter);
+        return context;
+    }
+
+    @NotNull
+    private VcenterData getVcenterData(ListVmwareDcItems cmd) {
         String vcenter = cmd.getVcenter();
         String datacenterName = cmd.getDatacenterName();
         String username = cmd.getUsername();
         String password = cmd.getPassword();
-        Integer maxObjects = cmd.getBatchSize();
-        String token = cmd.getToken();
-
         Long existingVcenterId = cmd.getExistingVcenterId();
 
         if ((existingVcenterId == null && StringUtils.isBlank(vcenter)) ||
@@ -1591,31 +1659,21 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             username = vmwareDc.getUser();
             password = vmwareDc.getPassword();
         }
+        VcenterData vmwaredc = new VcenterData(vcenter, datacenterName, username, password);
+        return vmwaredc;
+    }
 
-        s_logger.debug(String.format("Connecting to the VMware datacenter %s at vCenter %s to retrieve VMs",
-                datacenterName, vcenter));
-        String serviceUrl = String.format("https://%s/sdk/vimService", vcenter);
-        VmwareClient vimClient = new VmwareClient(vcenter);
-        try {
-            vimClient.connect(serviceUrl, username, password);
-            VmwareContext context = new VmwareContext(vimClient, vcenter);
+    private static class VcenterData {
+        public final String vcenter;
+        public final String datacenterName;
+        public final String username;
+        public final String password;
 
-            DatacenterMO dcMo = new DatacenterMO(context, datacenterName);
-            ManagedObjectReference dcMor = dcMo.getMor();
-            if (dcMor == null) {
-                String msg = String.format("Unable to find VMware datacenter %s in vCenter %s",
-                        datacenterName, vcenter);
-                s_logger.error(msg);
-                throw new InvalidParameterValueException(msg);
-            }
-            return dcMo.getVmsOnDatacenter(maxObjects, token);
-        } catch (InvalidParameterValueException | VmwareClientException | InvalidLocaleFaultMsg | InvalidLoginFaultMsg |
-                 RuntimeFaultFaultMsg | URISyntaxException | InvalidPropertyFaultMsg | InvocationTargetException |
-                 NoSuchMethodException | IllegalAccessException e) {
-            String errorMsg = String.format("Error retrieving stopped VMs from the VMware VC %s datacenter %s: %s",
-                    vcenter, datacenterName, e.getMessage());
-            s_logger.error(errorMsg, e);
-            throw new CloudRuntimeException(errorMsg);
+        public VcenterData(String vcenter, String datacenterName, String username, String password) {
+            this.vcenter = vcenter;
+            this.datacenterName = datacenterName;
+            this.username = username;
+            this.password = password;
         }
     }
 
@@ -1671,7 +1729,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     /**
-     * This task is to clean-up templates from primary storage that are otherwise not cleaned by the {@link com.cloud.storage.StorageManagerImpl.StorageGarbageCollector}.
+     * This task is to clean-up templates from primary storage that are otherwise not cleaned by the {@see com.cloud.storage.StorageManagerImpl.StorageGarbageCollector}.
      * it is called at regular intervals when storage.template.cleanup.enabled == true
      * It collect all templates that
      * - are deleted from cloudstack

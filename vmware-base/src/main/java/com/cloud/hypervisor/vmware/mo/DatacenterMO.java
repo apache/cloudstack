@@ -180,7 +180,7 @@ public class DatacenterMO extends BaseMO {
         return retval;
     }
 
-    public List<HostMO> getAllHostsOnDatacenter() throws Exception {
+    public List<HostMO> getAllHostsOnDatacenter() throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
         List<HostMO> hosts = new ArrayList<>();
 
         List<ObjectContent> ocs = getHostPropertiesOnDatacenterHostFolder(new String[] {"name"});
@@ -224,7 +224,7 @@ public class DatacenterMO extends BaseMO {
         return _context.getVimClient().getDynamicProperty(_mor, "vmFolder");
     }
 
-    public List<ObjectContent> getHostPropertiesOnDatacenterHostFolder(String[] propertyPaths) throws Exception {
+    public List<ObjectContent> getHostPropertiesOnDatacenterHostFolder(String[] propertyPaths) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
         PropertySpec pSpec = new PropertySpec();
         pSpec.setType("HostSystem");
         pSpec.getPathSet().addAll(Arrays.asList(propertyPaths));
