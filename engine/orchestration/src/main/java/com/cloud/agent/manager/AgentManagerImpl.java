@@ -458,13 +458,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     private void initializeCommandTimeouts() {
         String commandWaits = GranularWaitTimeForCommands.value().trim();
         if (StringUtils.isNotEmpty(commandWaits)) {
-            try {
-                _commandTimeouts = getCommandTimeoutsMap(commandWaits);
-                logger.info(String.format("Timeouts for management server internal commands successfully initialized from global setting commands.timeout: %s", _commandTimeouts));
-            } catch (Exception e) {
-                logger.error("Error initializing command timeouts map: " + e.getMessage());
-                _commandTimeouts = new HashMap<>();
-            }
+            _commandTimeouts = getCommandTimeoutsMap(commandWaits);
+            logger.info(String.format("Timeouts for management server internal commands successfully initialized from global setting commands.timeout: %s", _commandTimeouts));
         }
     }
 
@@ -475,11 +470,15 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         for (String commandPair : commandPairs) {
             String[] parts = commandPair.trim().split("=");
             if (parts.length == 2) {
-                String commandName = parts[0].trim();
-                int commandTimeout = Integer.parseInt(parts[1].trim());
-                commandTimeouts.put(commandName, commandTimeout);
+                try {
+                    String commandName = parts[0].trim();
+                    int commandTimeout = Integer.parseInt(parts[1].trim());
+                    commandTimeouts.put(commandName, commandTimeout);
+                } catch (NumberFormatException e) {
+                    logger.error(String.format("Initialising the timeouts using commands.timeout: %s for management server internal commands failed with error %s", commandPair, e.getMessage()));
+                }
             } else {
-                logger.warn(String.format("Invalid format in commands.timeout global setting: %s", commandPair));
+                logger.error(String.format("Error initialising the timeouts for management server internal commands. Invalid format in commands.timeout: %s", commandPair));
             }
         }
         return commandTimeouts;
