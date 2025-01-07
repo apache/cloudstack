@@ -48,56 +48,6 @@
               <a-step :title="$t('label.select.deployment.infrastructure')" status="process">
                 <template #description>
                   <div style="margin-top: 15px">
-                    <span>{{ $t('message.select.a.zone') }}</span><br/>
-                    <a-form-item :label="$t('label.zoneid')" name="zoneid" ref="zoneid" :readonly="true">
-                      <div v-if="zones.length <= 8">
-                        <a-row type="flex" :gutter="[16, 18]" justify="start">
-                          <div v-for="(zoneItem, idx) in zones" :key="idx">
-                            <a-radio-group
-                              :key="idx"
-                              :size="large"
-                              v-model:value="form.zoneid"
-                              @change="onSelectZoneId(zoneItem.id)">
-                              <a-col :span="6">
-                                <a-radio-button
-                                  :value="zoneItem.id"
-                                  style="border-width: 2px"
-                                  class="zone-radio-button">
-                                  <span>
-                                    <resource-icon
-                                      v-if="zoneItem && zoneItem.icon && zoneItem.icon.base64image"
-                                      :image="zoneItem.icon.base64image"
-                                      size="2x" />
-                                    <global-outlined size="2x" v-else />
-                                    {{ zoneItem.name }}
-                                    </span>
-                                </a-radio-button>
-                              </a-col>
-                            </a-radio-group>
-                          </div>
-                        </a-row>
-                      </div>
-                      <a-select
-                        v-else
-                        v-model:value="form.zoneid"
-                        showSearch
-                        optionFilterProp="label"
-                        :filterOption="(input, option) => {
-                          return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                        }"
-                        @change="onSelectZoneId"
-                        :loading="loading.zones"
-                        v-focus="true"
-                      >
-                        <a-select-option v-for="zone1 in zones" :key="zone1.id" :label="zone1.name">
-                          <span>
-                            <resource-icon v-if="zone1.icon && zone1.icon.base64image" :image="zone1.icon.base64image" size="2x" style="margin-right: 5px"/>
-                            <global-outlined v-else style="margin-right: 5px" />
-                            {{ zone1.name }}
-                          </span>
-                        </a-select-option>
-                      </a-select>
-                    </a-form-item>
                     <a-form-item
                       v-if="!isNormalAndDomainUser"
                       :label="$t('label.podid')"
@@ -166,12 +116,6 @@
                           <os-logo v-else-if="temp.value !== null" :osId="temp.ostypeid" :osName="temp.ostypename" size="lg" style="margin-left: -1px" />
                           {{ temp.label }}
                         </span>
-                          <template v-if="temp.icon">
-                            <span>Icon exists</span>
-                          </template>
-                          <template v-else>
-                            <span>No icon</span>
-                          </template>
                       </a-select-option>
                     </a-select>
                   </div>
@@ -251,7 +195,7 @@
                         <a-input v-model:value="form.memory"/>
                       </a-form-item>
                     </span>
-                    <span v-if="tabKey!=='isoid'">
+                    <span>
                       {{ $t('label.override.root.diskoffering') }}
                       <a-switch
                         v-model:checked="showOverrideDiskOfferingOption"
@@ -260,7 +204,7 @@
                         @change="val => { updateOverrideRootDiskShowParam(val) }"
                         style="margin-left: 10px;"/>
                     </span>
-                    <span v-if="tabKey!=='isoid' && serviceOffering && !serviceOffering.diskofferingstrictness">
+                    <span v-if="serviceOffering && !serviceOffering.diskofferingstrictness">
                       <a-step
                         :status="zoneSelected ? 'process' : 'wait'"
                         v-if="!template.deployasis && template.childtemplates && template.childtemplates.length > 0" >
@@ -287,7 +231,6 @@
                               :value="overrideDiskOffering ? overrideDiskOffering.id : ''"
                               :loading="loading.diskOfferings"
                               :preFillContent="dataPreFill"
-                              :isIsoSelected="tabKey==='isoid'"
                               :isRootDiskOffering="true"
                               @on-selected-root-disk-size="onSelectRootDiskSize"
                               @select-disk-offering-item="($event) => updateOverrideDiskOffering($event)"
@@ -315,8 +258,7 @@
               </a-step>
               <a-step
                 :title="$t('label.data.disk')"
-                :status="zoneSelected ? 'process' : 'wait'"
-                v-if="true" >
+                :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div v-if="zoneSelected">
                     <volume-disk-offering-map
@@ -325,39 +267,6 @@
                       :zoneId="zoneId"
                       :customOfferingsAllowed="true"
                       @select-multi-disk-offering="updateMultiDiskOffering($event)" />
-                  </div>
-                </template>
-              </a-step>
-              <a-step
-                v-else
-                :title="tabKey === 'templateid' ? $t('label.data.disk') : $t('label.disk.size')"
-                :status="zoneSelected ? 'process' : 'wait'">
-                <template #description>
-                  <div v-if="zoneSelected">
-                    <disk-offering-selection
-                      :items="options.diskOfferings"
-                      :row-count="rowCount.diskOfferings"
-                      :zoneId="zoneId"
-                      :value="diskOffering ? diskOffering.id : ''"
-                      :loading="loading.diskOfferings"
-                      :preFillContent="dataPreFill"
-                      :isIsoSelected="tabKey==='isoid'"
-                      @on-selected-disk-size="onSelectDiskSize"
-                      @select-disk-offering-item="($event) => updateDiskOffering($event)"
-                      @handle-search-filter="($event) => handleSearchFilter('diskOfferings', $event)"
-                    ></disk-offering-selection>
-                    <disk-size-selection
-                      v-if="diskOffering && (diskOffering.iscustomized || diskOffering.iscustomizediops)"
-                      input-decorator="size"
-                      :preFillContent="dataPreFill"
-                      :diskSelected="diskSelected"
-                      :isCustomized="diskOffering.iscustomized"
-                      @handler-error="handlerError"
-                      @update-disk-size="updateFieldValue"
-                      @update-iops-value="updateIOPSValue"/>
-                    <a-form-item class="form-item-hidden">
-                      <a-input v-model:value="form.size"/>
-                    </a-form-item>
                   </div>
                 </template>
               </a-step>
@@ -527,7 +436,7 @@
                     </div>
                     <a-form-item
                       :label="$t('label.bootintosetup')"
-                      v-if="zoneSelected && ((tabKey === 'isoid' && hypervisor === 'VMware') || (tabKey === 'templateid' && template && template.hypervisor === 'VMware'))"
+                      v-if="zoneSelected && (template && template.hypervisor === 'VMware')"
                       name="bootintosetup"
                       ref="bootintosetup">
                       <a-switch v-model:checked="form.bootintosetup" />
@@ -571,31 +480,6 @@
                             </a-input-group>
                           </div>
                         </div>
-                        <div v-if="this.iso && this.iso.userdataid">
-                          <a-text type="primary">
-                              Userdata "{{ $t(this.iso.userdataname) }}" is linked with ISO "{{ $t(this.iso.name) }}" with override policy "{{ $t(this.iso.userdatapolicy) }}"
-                          </a-text><br/><br/>
-                          <div v-if="templateUserDataParams.length > 0 && !doUserdataOverride">
-                            <a-text type="primary" v-if="this.iso && this.iso.userdataid && templateUserDataParams.length > 0">
-                                Enter the values for the variables in userdata
-                            </a-text>
-                            <a-input-group>
-                              <a-table
-                                size="small"
-                                style="overflow-y: auto"
-                                :columns="userDataParamCols"
-                                :dataSource="templateUserDataParams"
-                                :pagination="false"
-                                :rowKey="record => record.key">
-                                <template #bodyCell="{ column, record }">
-                                  <template v-if="column.key === 'value'">
-                                    <a-input v-model:value="templateUserDataValues[record.key]" />
-                                  </template>
-                                </template>
-                              </a-table>
-                            </a-input-group>
-                          </div>
-                        </div><br/><br/>
                         <div v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' || userdataDefaultOverridePolicy === 'APPEND' || !userdataDefaultOverridePolicy">
                           <span v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE'" >
                             {{ $t('label.userdata.do.override') }}
@@ -820,7 +704,6 @@ import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import DiskOfferingSelection from '@views/compute/wizard/DiskOfferingSelection'
 import DiskSizeSelection from '@views/compute/wizard/DiskSizeSelection'
 import VolumeDiskOfferingMap from '@views/compute/wizard/VolumeDiskOfferingMap'
-import TemplateIsoSelection from '@views/compute/wizard/TemplateIsoSelection'
 import AffinityGroupSelection from '@views/compute/wizard/AffinityGroupSelection'
 import NetworkSelection from '@views/compute/wizard/NetworkSelection'
 import NetworkConfiguration from '@views/compute/wizard/NetworkConfiguration'
@@ -839,7 +722,6 @@ export default {
     NetworkConfiguration,
     NetworkSelection,
     AffinityGroupSelection,
-    TemplateIsoSelection,
     DiskSizeSelection,
     VolumeDiskOfferingMap,
     DiskOfferingSelection,
@@ -897,7 +779,6 @@ export default {
       options: {
         templates: {},
         templates2: [],
-        isos: {},
         hypervisors: [],
         serviceOfferings: [],
         diskOfferings: [],
@@ -920,7 +801,6 @@ export default {
       loading: {
         deploy: false,
         templates: false,
-        isos: false,
         hypervisors: false,
         serviceOfferings: false,
         diskOfferings: false,
@@ -949,7 +829,6 @@ export default {
       templateLicenses: [],
       templateProperties: {},
       selectedTemplateConfiguration: {},
-      iso: {},
       hypervisor: '',
       serviceOffering: {},
       diskOffering: {},
@@ -1002,7 +881,6 @@ export default {
       defaultnetworkid: '',
       networkConfig: [],
       dataNetworkCreated: [],
-      tabKey: 'templateid',
       userdataTabKey: 'userdataregistered',
       dataPreFill: {},
       showDetails: false,
@@ -1320,31 +1198,6 @@ export default {
     networkId () {
       return this.$route.query.networkid || null
     },
-    tabList () {
-      let tabList = []
-      if (this.templateId) {
-        tabList = [{
-          key: 'templateid',
-          tab: this.$t('label.templates')
-        }]
-      } else if (this.isoId) {
-        tabList = [{
-          key: 'isoid',
-          tab: this.$t('label.isos')
-        }]
-      } else {
-        tabList = [{
-          key: 'templateid',
-          tab: this.$t('label.templates')
-        },
-        {
-          key: 'isoid',
-          tab: this.$t('label.isos')
-        }]
-      }
-
-      return tabList
-    },
     userdataTabList () {
       let tabList = []
       tabList = [{
@@ -1411,15 +1264,6 @@ export default {
           }
         }
 
-        this.iso = ''
-        for (const key in this.options.isos) {
-          var iso = _.find(_.get(this.options.isos[key], 'iso', []), (option) => option.id === instanceConfig.isoid)
-          if (iso) {
-            this.iso = iso
-            break
-          }
-        }
-
         if (instanceConfig.hypervisor) {
           var hypervisorItem = _.find(this.options.hypervisors, (option) => option.name === instanceConfig.hypervisor)
           this.hypervisor = hypervisorItem ? hypervisorItem.name : null
@@ -1434,9 +1278,7 @@ export default {
           this.overrideDiskOffering = null
         }
 
-        if (iso && this.serviceOffering?.diskofferingid) {
-          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === this.serviceOffering.diskofferingid)
-        } else if (!iso && this.diskSelected) {
+        if (this.diskSelected) {
           this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
         }
 
@@ -1486,17 +1328,6 @@ export default {
           this.vm.templatename = this.template.displaytext
           this.vm.ostypeid = this.template.ostypeid
           this.vm.ostypename = this.template.ostypename
-        }
-
-        if (this.iso) {
-          this.vm.isoid = this.iso.id
-          this.vm.templateid = this.iso.id
-          this.vm.templatename = this.iso.displaytext
-          this.vm.ostypeid = this.iso.ostypeid
-          this.vm.ostypename = this.iso.ostypename
-          if (this.hypervisor) {
-            this.vm.hypervisor = this.hypervisor
-          }
         }
 
         if (this.serviceOffering) {
@@ -1558,7 +1389,6 @@ export default {
   provide () {
     return {
       vmFetchTemplates: this.fetchAllTemplates,
-      vmFetchIsos: this.fetchAllIsos,
       vmFetchNetworks: this.fetchNetwork
     }
   },
@@ -1645,11 +1475,6 @@ export default {
           params.listall = true
           params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
           params.id = this.templateId
-        } else if (this.isoId) {
-          params.listall = true
-          params.isofilter = this.isNormalAndDomainUser ? 'executable' : 'all'
-          params.id = this.isoId
-          apiName = 'listIsos'
         } else if (this.networkId) {
           params.listall = true
           params.id = this.networkId
@@ -1792,7 +1617,6 @@ export default {
     },
     updateFieldValue (name, value) {
       if (name === 'templateid') {
-        this.tabKey = 'templateid'
         this.form.templateid = value
         this.form.isoid = null
         this.resetFromTemplateConfiguration()
@@ -1829,18 +1653,6 @@ export default {
             this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
           }
         }
-      } else if (name === 'isoid') {
-        this.templateConfigurations = []
-        this.selectedTemplateConfiguration = {}
-        this.templateNics = []
-        this.templateLicenses = []
-        this.templateProperties = {}
-        this.tabKey = 'isoid'
-        this.resetFromTemplateConfiguration()
-        this.form.isoid = value
-        this.form.templateid = null
-        this.updateTemplateLinkedUserData(this.iso.userdataid)
-        this.userdataDefaultOverridePolicy = this.iso.userdatapolicy
       } else if (['cpuspeed', 'cpunumber', 'memory'].includes(name)) {
         this.vm[name] = value
         this.form[name] = value
@@ -1947,11 +1759,7 @@ export default {
     },
     changeArchitecture (arch, isTemplate) {
       this.selectedArchitecture = arch
-      if (isTemplate) {
-        this.fetchAllTemplates()
-      } else {
-        this.fetchAllIsos()
-      }
+      this.fetchAllTemplates()
     },
     closeAction () {
       this.$emit('close-action')
@@ -2029,12 +1837,8 @@ export default {
           deployVmData.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
         // step 2: select template/iso
-        if (this.tabKey === 'templateid') {
-          deployVmData.templateid = values.templateid
-          values.hypervisor = null
-        } else {
-          deployVmData.templateid = values.isoid
-        }
+        deployVmData.templateid = values.templateid
+        values.hypervisor = null
 
         if (this.showRootDiskSizeChanger && values.rootdisksize && values.rootdisksize > 0) {
           deployVmData.rootdisksize = values.rootdisksize
@@ -2417,30 +2221,6 @@ export default {
         })
       })
     },
-    fetchIsos (isoFilter, params) {
-      const args = Object.assign({}, params)
-      if (args.keyword || args.category !== isoFilter) {
-        args.page = 1
-        args.pageSize = args.pageSize || 10
-      }
-      args.zoneid = _.get(this.zone, 'id')
-      if (this.isZoneSelectedMultiArch) {
-        args.arch = this.selectedArchitecture
-      }
-      args.isoFilter = isoFilter
-      args.bootable = true
-      args.showicon = 'true'
-      args.id = this.isoId
-
-      return new Promise((resolve, reject) => {
-        api('listIsos', args).then((response) => {
-          resolve(response)
-        }).catch((reason) => {
-          // ToDo: Handle errors
-          reject(reason)
-        })
-      })
-    },
     fetchAllTemplates (params) {
       const promises = []
       const templates = {}
@@ -2459,26 +2239,6 @@ export default {
         console.log(reason)
       }).finally(() => {
         this.loading.templates = false
-      })
-    },
-    fetchAllIsos (params) {
-      const promises = []
-      const isos = {}
-      this.loading.isos = true
-      this.isoFilter.forEach((filter) => {
-        isos[filter] = { count: 0, iso: [] }
-        promises.push(this.fetchIsos(filter, params))
-      })
-      this.options.isos = isos
-      Promise.all(promises).then((response) => {
-        response.forEach((resItem, idx) => {
-          isos[this.isoFilter[idx]] = _.isEmpty(resItem.listisosresponse) ? { count: 0, iso: [] } : resItem.listisosresponse
-          this.options.isos = { ...isos }
-        })
-      }).catch((reason) => {
-        console.log(reason)
-      }).finally(() => {
-        this.loading.isos = false
       })
     },
     filterOption (input, option) {
@@ -2501,11 +2261,7 @@ export default {
       this.form.podid = undefined
       this.form.hostid = undefined
       this.form.templateid = undefined
-      this.form.isoid = undefined
-      this.tabKey = 'templateid'
-      if (this.isoId) {
-        this.tabKey = 'isoid'
-      }
+
       _.each(this.params, (param, name) => {
         if (this.networkId && name === 'networks') {
           param.options = {
@@ -2516,11 +2272,7 @@ export default {
           this.fetchOptions(param, name, ['zones'])
         }
       })
-      if (this.tabKey === 'templateid') {
-        this.fetchAllTemplates()
-      } else {
-        this.fetchAllIsos()
-      }
+      this.fetchAllTemplates()
       this.updateTemplateKey()
       this.formModel = toRaw(this.form)
     },
@@ -2553,9 +2305,6 @@ export default {
     },
     onTabChange (key, type) {
       this[type] = key
-      if (key === 'isoid') {
-        this.fetchAllIsos()
-      }
     },
     onUserdataTabChange (key, type) {
       this[type] = key
