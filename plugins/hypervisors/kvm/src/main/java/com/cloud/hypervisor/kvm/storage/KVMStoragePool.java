@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -122,4 +123,10 @@ public interface KVMStoragePool {
 
     default void customizeLibvirtDiskDef(LibvirtVMDef.DiskDef disk) {
     }
+
+
+    default String getLocalPathFor(String relativePath) {
+        return String.format("%s%s%s", getLocalPath(), File.separator, relativePath);
+    }
+
 }

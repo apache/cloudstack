@@ -35,11 +35,16 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectManager;
+import com.cloud.vm.snapshot.VMSnapshot;
+import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
+import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
@@ -157,8 +162,6 @@ import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.offering.DiskOffering;
 import com.cloud.org.Cluster;
 import com.cloud.org.Grouping;
-import com.cloud.projects.Project;
-import com.cloud.projects.ProjectManager;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
@@ -357,6 +360,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private StatsCollector statsCollector;
     @Inject
     HostPodDao podDao;
+
+    @Inject
+    private VMSnapshotDetailsDao vmSnapshotDetailsDao;
+
+    protected static final String KVM_FILE_BASED_STORAGE_SNAPSHOT = "kvmFileBasedStorageSnapshot";
 
     protected Gson _gson;
 
@@ -1398,6 +1406,29 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 shrinkOk);
     }
 
+    protected void validateNoVmSnapshots(VolumeVO volume) {
+        if (volume.getInstanceId() != null) {
+            if (vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(volume.getInstanceId())) {
+                throw new InvalidParameterValueException("The volume is attached to a VM with memory&disk VM snapshots; therefore, it cannot be resized.");
+            }
+        }
+    }
+
+    protected boolean vmHasVmSnapshotsExceptKvmDiskOnlySnapshots(long instanceId) {
+        for (VMSnapshotVO vmSnapshotVO : _vmSnapshotDao.findByVm(instanceId)) {
+            if (VMSnapshot.Type.DiskAndMemory.equals(vmSnapshotVO.getType())) {
+                return true;
+            }
+            List<VMSnapshotDetailsVO> vmSnapshotDetails = vmSnapshotDetailsDao.listDetails(vmSnapshotVO.getId());
+            if (vmSnapshotDetails.stream().
+                    noneMatch(vmSnapshotDetailsVO -> vmSnapshotDetailsVO.getName().equals(KVM_FILE_BASED_STORAGE_SNAPSHOT))) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /**
      * A volume should not be resized if it covers ALL the following scenarios: <br>
      * 1 - Root volume <br>
@@ -2374,12 +2405,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // if the caller is looking to change the size of the volume
         if (newSize != null && currentSize != newSize) {
-            if (volume.getInstanceId() != null) {
-                // Check that VM to which this volume is attached does not have VM snapshots
-                if (_vmSnapshotDao.findByVm(volume.getInstanceId()).size() > 0) {
-                    throw new InvalidParameterValueException("A volume that is attached to a VM with any VM snapshots cannot be resized.");
-                }
-            }
+            validateNoVmSnapshots(volume);
 
             if (!validateVolumeSizeInBytes(newSize)) {
                 throw new InvalidParameterValueException("Requested size out of range");

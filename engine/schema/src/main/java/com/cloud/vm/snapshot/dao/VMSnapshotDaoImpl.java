@@ -81,6 +81,14 @@ public class VMSnapshotDaoImpl extends GenericDaoBase<VMSnapshotVO, Long> implem
     }
 
     @Override
+    public List<VMSnapshotVO> findByVmAndByType(Long vmId, VMSnapshot.Type type) {
+        SearchCriteria<VMSnapshotVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vm_id", vmId);
+        sc.setParameters("vm_snapshot_type", type);
+        return listBy(sc, null);
+    }
+
+    @Override
     public List<VMSnapshotVO> listExpungingSnapshot() {
         SearchCriteria<VMSnapshotVO> sc = ExpungingSnapshotSearch.create();
         sc.setParameters("state", State.Expunging);
