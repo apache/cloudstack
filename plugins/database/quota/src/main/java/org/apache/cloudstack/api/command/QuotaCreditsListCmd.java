@@ -37,7 +37,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-@APICommand(name = "quotaCreditsList", responseObject = QuotaCreditsResponse.class, description = "Lists quota credits of an account.", since = "4.20.0",
+@APICommand(name = "quotaCreditsList", responseObject = QuotaCreditsResponse.class, description = "Lists quota credits of an account.", since = "4.21.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaCreditsListCmd extends BaseCmd {
 
