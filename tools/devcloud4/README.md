@@ -71,14 +71,10 @@ The included VagrantFile will give you:
 
     #### For Advanced Networking you will need:
 
-
-
     ##### vboxnet1
     - IPv4 IP address of 192.168.23.1
     - Subnet of 255.255.255.0
     - DHCP server disabled
-
-
 
     ##### vboxnet2
     - IPv4 IP address of 192.168.24.1
