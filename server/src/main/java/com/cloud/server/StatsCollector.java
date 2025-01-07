@@ -1723,11 +1723,14 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     try {
                         Answer answer = _storageManager.sendToPool(pool, command);
                         if (answer != null && answer.getResult()) {
-                            storagePoolStats.put(pool.getId(), (StorageStats)answer);
+                            StorageStats stats = (StorageStats)answer;
+                            storagePoolStats.put(pool.getId(), stats);
 
                             boolean poolNeedsUpdating = false;
-                            long capacityBytes = ((StorageStats)answer).getCapacityBytes();
-                            long usedBytes = ((StorageStats)answer).getByteUsed();
+                            long capacityBytes = stats.getCapacityBytes();
+                            long usedBytes = stats.getByteUsed();
+                            Long capacityIops = stats.getCapacityIops();
+                            Long usedIops = stats.getUsedIops();
                             // Seems like we have dynamically updated the pool size since the prev. size and the current do not match
                             if ((_storagePoolStats.get(poolId) != null && _storagePoolStats.get(poolId).getCapacityBytes() != capacityBytes)
                                     || pool.getCapacityBytes() != capacityBytes) {
@@ -1744,6 +1747,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                 pool.setUsedBytes(usedBytes);
                                 poolNeedsUpdating = true;
                             }
+                            poolNeedsUpdating = isPoolNeedsIopsStatsUpdate(pool, capacityIops, usedIops) || poolNeedsUpdating;
                             if (poolNeedsUpdating) {
                                 pool.setUpdateTime(new Date());
                                 _storagePoolDao.update(pool.getId(), pool);
@@ -1773,6 +1777,24 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             // if in _storageStats and not in storageStats it gets discarded
             _storageStats = storageStats;
         }
+    }
+
+    protected boolean isPoolNeedsIopsStatsUpdate(StoragePoolVO pool, Long capacityIops, Long usedIops) {
+        boolean poolNeedsUpdating = false;
+        long poolId = pool.getId();
+        if (capacityIops != null && ((_storagePoolStats.get(poolId) != null &&
+                !capacityIops.equals(_storagePoolStats.get(poolId).getCapacityIops())) ||
+                !capacityIops.equals(pool.getCapacityIops()))) {
+            pool.setCapacityIops(capacityIops);
+            poolNeedsUpdating = true;
+        }
+        if (usedIops != null && ((_storagePoolStats.get(poolId) != null &&
+                !usedIops.equals(_storagePoolStats.get(poolId).getUsedIops())) ||
+                !usedIops.equals(pool.getUsedIops()))) {
+            pool.setUsedIops(usedIops);
+            poolNeedsUpdating = true;
+        }
+        return poolNeedsUpdating;
     }
 
     class AutoScaleMonitor extends ManagedContextRunnable {
