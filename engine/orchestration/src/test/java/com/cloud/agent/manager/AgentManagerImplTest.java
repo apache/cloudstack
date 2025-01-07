@@ -83,4 +83,24 @@ public class AgentManagerImplTest {
         }
         Mockito.verify(mgr, Mockito.times(1)).handleDisconnectWithoutInvestigation(Mockito.any(attache.getClass()), Mockito.eq(Status.Event.AgentDisconnected), Mockito.eq(true), Mockito.eq(true));
     }
+
+    @Test
+    public void testGetTimeoutWithPositiveTimeout() {
+        Commands commands = Mockito.mock(Commands.class);
+        int timeout = 30;
+        int result = mgr.getTimeout(commands, timeout);
+
+        Assert.assertEquals(30, result);
+    }
+
+    @Test
+    public void testGetTimeoutWithGranularTimeout() {
+        Commands commands = Mockito.mock(Commands.class);
+        Mockito.doReturn(50).when(mgr).getTimeoutFromGranularWaitTime(commands);
+
+        int timeout = 0;
+        int result = mgr.getTimeout(commands, timeout);
+
+        Assert.assertEquals(50, result);
+    }
 }
