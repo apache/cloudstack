@@ -256,7 +256,9 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 }
             }
         } catch (Exception ex) {
-            logger.debug("Unable to destroy volume" + data.getId(), ex);
+            logger.debug(String.format(
+                    "Unable to destroy volume [id: %d, uuid: %s]",
+                    data.getId(), data.getUuid()), ex);
             result.setResult(ex.toString());
         }
         callback.complete(result);
@@ -264,7 +266,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
 
     @Override
     public void copyAsync(DataObject srcdata, DataObject destData, AsyncCompletionCallback<CopyCommandResult> callback) {
-        logger.debug(String.format("Copying volume %s(%s) to %s(%s)", srcdata.getId(), srcdata.getType(), destData.getId(), destData.getType()));
+        logger.debug("Copying volume [{}] to [{}]", srcdata, destData);
         boolean encryptionRequired = anyVolumeRequiresEncryption(srcdata, destData);
         DataStore store = destData.getDataStore();
         if (store.getRole() == DataStoreRole.Primary) {
@@ -381,7 +383,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             callback.complete(result);
             return;
         } catch (Exception e) {
-            logger.debug("Failed to take snapshot: " + snapshot.getId(), e);
+            logger.debug("Failed to take snapshot: {}", snapshot, e);
             result = new CreateCmdResult(null, null);
             result.setResult(e.toString());
         }
@@ -416,7 +418,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 }
             }
         } catch (Exception ex) {
-            logger.debug("Unable to revert snapshot " + snapshot.getId(), ex);
+            logger.debug("Unable to revert snapshot {}", snapshot, ex);
             result.setResult(ex.toString());
         }
         callback.complete(result);
@@ -476,7 +478,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             if (storagePoolVO != null) {
                 volumeVO.setPoolId(storagePoolVO.getId());
             } else {
-                logger.warn(String.format("Unable to find datastore %s while updating the new datastore of the volume %d", datastoreUUID, vol.getId()));
+                logger.warn("Unable to find datastore {} while updating the new datastore of the volume {}", datastoreUUID, vol);
             }
         }
 

@@ -2137,6 +2137,7 @@
 "label.srx.firewall": "Juniper SRX firewall",
 "label.ssh.key.pairs": "SSH key pairs",
 "label.uefi.supported": "UEFI supported",
+"label.usediops": "IOPS used",
 "label.userdataid": "Userdata ID",
 "label.userdataname": "Userdata name",
 "label.userdatadetails": "Userdata details",
