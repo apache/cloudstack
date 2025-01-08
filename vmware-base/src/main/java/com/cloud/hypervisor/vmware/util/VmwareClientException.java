@@ -19,6 +19,10 @@ package com.cloud.hypervisor.vmware.util;
 import com.cloud.exception.CloudException;
 
 public class VmwareClientException extends CloudException {
+    public VmwareClientException(String message, Throwable cause) {
+        super(message, cause);
+    }
+
     public VmwareClientException(String msg) {
         super(msg);
     }

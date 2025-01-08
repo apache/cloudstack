@@ -22,9 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.utils.StringUtils;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -81,7 +79,7 @@ public class DatacenterMO extends BaseMO {
             s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
         }
         String instanceNameCustomField = "value[" + key + "]";
-        List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name", instanceNameCustomField});
+        List<ObjectContent> ocs = getVmProperties(new String[] {"name", instanceNameCustomField});
         return HypervisorHostHelper.findVmFromObjectContent(_context, ocs.toArray(new ObjectContent[0]), vmName, instanceNameCustomField);
     }
 
@@ -92,7 +90,7 @@ public class DatacenterMO extends BaseMO {
 
         List<VirtualMachineMO> list = new ArrayList<>();
 
-        List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name", String.format("value[%d]", key)});
+        List<ObjectContent> ocs = getVmProperties(new String[] {"name", String.format("value[%d]", key)});
         if (CollectionUtils.isNotEmpty(ocs)) {
             for (ObjectContent oc : ocs) {
                 List<DynamicProperty> props = oc.getPropSet();
@@ -125,7 +123,7 @@ public class DatacenterMO extends BaseMO {
             s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
         }
 
-        List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name", String.format("value[%d]", key)});
+        List<ObjectContent> ocs = getVmProperties(new String[] {"name", String.format("value[%d]", key)});
         if (CollectionUtils.isNotEmpty(ocs)) {
             for (ObjectContent oc : ocs) {
                 List<DynamicProperty> props = oc.getPropSet();
@@ -151,31 +149,15 @@ public class DatacenterMO extends BaseMO {
         return null;
     }
 
-    public Pair<String, List<UnmanagedInstanceTO>> getVmsOnDatacenter(Integer maxObjects, String token) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+    public Pair<String, List<UnmanagedInstanceTO>> getVms(Integer maxObjects, String token) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         List<UnmanagedInstanceTO> vms = new ArrayList<>();
-        Pair<String, List<ObjectContent>> objectContents = getVmPropertiesOnDatacenterVmFolder(new String[] {"name"}, maxObjects, token);
+        Pair<String, List<ObjectContent>> objectContents = getVmProperties(new String[] {"name"}, maxObjects, token);
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("returning token %s for future retrievals, currently %d objects retrieved.", objectContents.first(), objectContents.second().size()));
         }
         Pair<String, List<UnmanagedInstanceTO>> retval = new Pair<>(objectContents.first(), vms);
-        List<ObjectContent> ocs = objectContents.second();
-        if (ocs != null) {
-            for (ObjectContent oc : ocs) {
-                ManagedObjectReference vmMor = oc.getObj();
-                if (vmMor != null) {
-                    VirtualMachineMO vmMo = new VirtualMachineMO(_context, vmMor);
-                    try {
-                        if (!vmMo.isTemplate()) {
-                            HostMO hostMO = vmMo.getRunningHost();
-                            UnmanagedInstanceTO unmanagedInstance = VmwareHelper.getUnmanagedInstance(hostMO, vmMo);
-                            vms.add(unmanagedInstance);
-                        }
-                    } catch (Exception e) {
-                        s_logger.debug(String.format("Unexpected error checking unmanaged instance %s, excluding it: %s", vmMo.getVmName(), e.getMessage()), e);
-                    }
-                }
-            }
-        }
+
+        objectContentToUnmanagedInstanceTO(objectContents, vms);
 
         return retval;
     }
@@ -207,7 +189,7 @@ public class DatacenterMO extends BaseMO {
         return null;
     }
 
-    public ManagedObjectReference findHost(String name) throws Exception {
+    public ManagedObjectReference findHost(String name) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
         List<ObjectContent> ocs = getHostPropertiesOnDatacenterHostFolder(new String[] {"name"});
 
         if (ocs != null) {
@@ -291,8 +273,8 @@ public class DatacenterMO extends BaseMO {
 
     }
 
-    public List<ObjectContent> getVmPropertiesOnDatacenterVmFolder(String[] propertyPaths) throws  InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
-        return getVmPropertiesOnDatacenterVmFolder(propertyPaths, null, null).second();
+    public List<ObjectContent> getVmProperties(String[] propertyPaths) throws  InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
+        return getVmProperties(propertyPaths, null, null).second();
     }
 
     /**
@@ -304,26 +286,21 @@ public class DatacenterMO extends BaseMO {
      * @throws InvalidPropertyFaultMsg property does not exist as thrown by Vmware.
      * @throws RuntimeFaultFaultMsg generic vmware runtime exception
      */
-    public Pair<String, List<ObjectContent>> getVmPropertiesOnDatacenterVmFolder(String[] propertyPaths, Integer maxObjects, String tokenForPriorQuery) throws  InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
+    public Pair<String, List<ObjectContent>> getVmProperties(String[] propertyPaths, Integer maxObjects, String tokenForPriorQuery) throws  InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
         if(StringUtils.isNotBlank(tokenForPriorQuery)) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(String.format("running repeat query with token \'%s\'", tokenForPriorQuery));
             }
-            return retrieveNextSetOfPropertiesOnDatacenterVmFolder(tokenForPriorQuery);
+            return retrieveNextSetOfProperties(tokenForPriorQuery);
         } else {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug(String.format("running query for %d propertypaths and max %d objects", propertyPaths.length, maxObjects));
             }
-            return retrieveNextSetOfPropertiesOnDatacenterVmFolder(propertyPaths, maxObjects);
+            return retrieveNextSetOfProperties(propertyPaths, maxObjects);
         }
     }
 
-    private Pair<String, List<ObjectContent>> retrieveNextSetOfPropertiesOnDatacenterVmFolder(String tokenForPriorQuery) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
-        RetrieveResult result = _context.getService().continueRetrievePropertiesEx(_context.getPropertyCollector(), tokenForPriorQuery);
-        return createReturnObjectPair(result);
-    }
-
-    private Pair<String, List<ObjectContent>> retrieveNextSetOfPropertiesOnDatacenterVmFolder(String[] propertyPaths, Integer maxObjects) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
+    private Pair<String, List<ObjectContent>> retrieveNextSetOfProperties(String[] propertyPaths, Integer maxObjects) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
         PropertySpec pSpec = new PropertySpec();
         pSpec.setType("VirtualMachine");
         pSpec.getPathSet().addAll(Arrays.asList(propertyPaths));
@@ -361,15 +338,6 @@ public class DatacenterMO extends BaseMO {
 
         RetrieveResult result = _context.getService().retrievePropertiesEx(_context.getPropertyCollector(), pfSpecArr, ro);
         return createReturnObjectPair(result);
-    }
-
-    private static Pair<String, List<ObjectContent>> createReturnObjectPair(RetrieveResult result) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("vmware result : " + ReflectionToStringBuilderUtils.reflectCollection(result));
-        }
-        String tokenForRetrievingNewResults = result.getToken();
-        List<ObjectContent> listOfObjects = result.getObjects();
-        return new Pair<>(tokenForRetrievingNewResults, listOfObjects);
     }
 
     public static Pair<DatacenterMO, String> getOwnerDatacenter(VmwareContext context, ManagedObjectReference morEntity) throws Exception {

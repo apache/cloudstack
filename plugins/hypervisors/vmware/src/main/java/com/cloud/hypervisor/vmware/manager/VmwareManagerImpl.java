@@ -173,7 +173,7 @@ import com.cloud.utils.script.Script;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
-// TODO move these items upstream
+// TODO move these items upstream?
 import com.vmware.pbm.PbmProfile;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.ManagedObjectReference;
@@ -1590,6 +1590,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     public Pair<String, List<UnmanagedInstanceTO>> listVMsInDatacenter(ListVmwareDcVmsCmd cmd) {
         Integer maxObjects = cmd.getBatchSize();
         String token = cmd.getToken();
+        String host = cmd.getHost();
 
         VcenterData vmwaredc = getVcenterData(cmd);
 
@@ -1597,7 +1598,17 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             VmwareContext context = getVmwareContext(vmwaredc);
 
             DatacenterMO dcMo = getDatacenterMO(context, vmwaredc);
-            return dcMo.getVmsOnDatacenter(maxObjects, token);
+
+            if (com.cloud.utils.StringUtils.isNotBlank(host)) {
+                ManagedObjectReference hostMor = dcMo.findHost(host);
+                if (hostMor == null) {
+                    throw new VmwareClientException(String.format("no host '%s' found.",host));
+                }
+                HostMO hostMo = new HostMO(context, hostMor);
+                return hostMo.getVms(maxObjects, token);
+            } else {
+                return dcMo.getVms(maxObjects, token);
+            }
         } catch (InvalidParameterValueException | VmwareClientException | InvalidLocaleFaultMsg | InvalidLoginFaultMsg |
                  RuntimeFaultFaultMsg | URISyntaxException | InvalidPropertyFaultMsg | InvocationTargetException |
                  NoSuchMethodException | IllegalAccessException e) {
