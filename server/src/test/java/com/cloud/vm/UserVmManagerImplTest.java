@@ -657,7 +657,7 @@ public class UserVmManagerImplTest {
     private void configureValidateOrReplaceMacAddressTest(int times, String macAddress, String expectedMacAddress) throws InsufficientAddressCapacityException {
         Mockito.when(networkModel.getNextAvailableMacAddressInNetwork(Mockito.anyLong())).thenReturn(expectedMacAddress);
 
-        String returnedMacAddress = userVmManagerImpl.validateOrReplaceMacAddress(macAddress, _networkMock);
+        String returnedMacAddress = userVmManagerImpl.validateOrReplaceMacAddress(macAddress, networkMock);
 
         Mockito.verify(networkModel, Mockito.times(times)).getNextAvailableMacAddressInNetwork(Mockito.anyLong());
         assertEquals(expectedMacAddress, returnedMacAddress);
@@ -2054,7 +2054,7 @@ public class UserVmManagerImplTest {
         userVmManagerImpl.addSecurityGroupsToVm(accountMock, userVmVoMock, virtualMachineTemplateMock, securityGroupIdList, null);
 
         Mockito.verify(userVmManagerImpl).addDefaultSecurityGroupToSecurityGroupIdList(accountMock, securityGroupIdList);
-        Mockito.verify(securityGroupManagerMock).addInstanceToGroups(Mockito.anyLong(), Mockito.any());
+        Mockito.verify(securityGroupManagerMock).addInstanceToGroups(Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -2729,7 +2729,7 @@ public class UserVmManagerImplTest {
                     _dcMock, networkIdList, securityGroupIdList);
         });
 
-        Mockito.verify(securityGroupManagerMock).removeInstanceFromGroups(Mockito.anyLong());
+        Mockito.verify(securityGroupManagerMock).removeInstanceFromGroups(Mockito.any());
         Assert.assertEquals(expectedMessage, assertThrows.getMessage());
     }
 
@@ -2749,7 +2749,7 @@ public class UserVmManagerImplTest {
         userVmManagerImpl.updateAdvancedTypeNetworkForVm(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock, _dcMock,
                 networkIdList, securityGroupIdList);
 
-        Mockito.verify(securityGroupManagerMock).removeInstanceFromGroups(Mockito.anyLong());
+        Mockito.verify(securityGroupManagerMock).removeInstanceFromGroups(Mockito.any());
         Mockito.verify(userVmManagerImpl).allocateNetworksForVm(Mockito.any(), Mockito.any());
         Mockito.verify(userVmManagerImpl).addSecurityGroupsToVm(accountMock, userVmVoMock, virtualMachineTemplateMock, securityGroupIdList, networkMock);
     }
