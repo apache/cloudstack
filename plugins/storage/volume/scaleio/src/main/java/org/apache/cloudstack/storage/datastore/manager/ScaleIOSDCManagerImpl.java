@@ -297,7 +297,8 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
             }
 
             if (!canUnprepareSDC(host, dataStore)) {
-                logger.debug("Cannot unprepare SDC, there might be some volumes mapped to the SDC that belongs to the storage pools of PowerFlex storage cluster");
+                logger.debug("Cannot unprepare SDC, there might be other connected pools of same PowerFlex storage cluster," +
+                        "or some volumes mapped to the SDC that belongs to any of the storage pools of the PowerFlex storage cluster");
                 return false;
             }
 
@@ -355,6 +356,12 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
 
         final String sdcId = poolHostVO.getLocalPath();
         if (StringUtils.isBlank(sdcId)) {
+            return false;
+        }
+
+        List<StoragePoolHostVO> poolHostVOsBySdc = storagePoolHostDao.findByLocalPath(sdcId);
+        if (CollectionUtils.isNotEmpty(poolHostVOsBySdc) && poolHostVOsBySdc.size() > 1) {
+            LOGGER.debug(String.format("There are other connected pools with the same SDC of the host %s, shouldn't unprepare SDC", host));
             return false;
         }
 
