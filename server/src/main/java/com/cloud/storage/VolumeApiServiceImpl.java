@@ -1609,7 +1609,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      *      <li> if the volume is still attached to a VM we throw an {@link InvalidParameterValueException};
      *      <li> if volume state is in {@link Volume.State#UploadOp}, we check the {@link VolumeDataStoreVO}. Then, if the {@link VolumeDataStoreVO} for the given volume has download status of {@link VMTemplateStorageResourceAssoc.Status#DOWNLOAD_IN_PROGRESS}, an exception is throw;
      *      <li> if the volume state is in {@link Volume.State#NotUploaded} or if the state is {@link Volume.State#UploadInProgress}, an {@link InvalidParameterValueException} is thrown;
-     *      <li> we also check if the user has access to the given volume using {@link AccountManager#checkAccess(Account, org.apache.cloudstack.acl.SecurityChecker.AccessType, boolean, String)}.
+     *      <li> we also check if the user has access to the given volume using {@see AccountManager#checkAccess(Account, org.apache.cloudstack.acl.SecurityChecker.AccessType, boolean, String)}.
      *  </ul>
      *
      *  After all validations we return the volume object.
@@ -3470,7 +3470,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         List<State> suitableVmStatesForMigration = List.of(State.Stopped, State.Running, State.Shutdown);
 
         if (!suitableVmStatesForMigration.contains(vm.getState())) {
-            s_logger.debug(String.format(
+            logger.debug(String.format(
                     "Unable to migrate volume: [%s] Id: [%s] because the VM: [%s] Id: [%s] is in state [%s], which is not supported for migration.",
                     vol.getName(), vol.getId(), vm.getInstanceName(), vm.getUuid(), vm.getState()
             ));
@@ -3533,7 +3533,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      * <ul>
      *  <li>We check if the given volume is of ROOT type. We cannot change the disk offering of a ROOT volume. Therefore, we thrown an {@link InvalidParameterValueException};
      *  <li>We the disk is being migrated to shared storage and the new disk offering is for local storage (or vice versa), we throw an {@link InvalidParameterValueException}. Bear in mind that we are validating only the new disk offering. If none is provided we can override the current disk offering. This means, placing a volume with shared disk offering in local storage and vice versa;
-     *  <li>We then proceed checking the target storage pool supports the new disk offering {@link #doesTargetStorageSupportNewDiskOffering(StoragePool, DiskOfferingVO)}.
+     *  <li>We then proceed checking the target storage pool supports the new disk offering {@see #doesTargetStorageSupportNewDiskOffering(StoragePool, DiskOfferingVO)}.
      * </ul>
      *
      * If all of the above validations pass, we check if the size of the new disk offering is different from the volume. If it is, we log a warning message.
