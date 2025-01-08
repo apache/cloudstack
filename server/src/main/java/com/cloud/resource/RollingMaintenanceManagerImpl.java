@@ -643,7 +643,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
                 ClusterDetailsVO clusterDetailsRamOvercommmt = clusterDetailsDao.findDetail(cluster.getId(), "memoryOvercommitRatio");
                 Float cpuOvercommitRatio = Float.parseFloat(clusterDetailsCpuOvercommit.getValue());
                 Float memoryOvercommitRatio = Float.parseFloat(clusterDetailsRamOvercommmt.getValue());
-                boolean hostHasCapacity = capacityManager.checkIfHostHasCapacity(hostInCluster.getId(), cpuRequested, ramRequested, false,
+                boolean hostHasCapacity = capacityManager.checkIfHostHasCapacity(hostInCluster, cpuRequested, ramRequested, false,
                         cpuOvercommitRatio, memoryOvercommitRatio, false);
                 if (!maxGuestLimit && hostHasCPUCapacity && hostHasCapacity) {
                     canMigrateVm = true;

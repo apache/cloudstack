@@ -575,7 +575,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     @Override
     public String toString() {
-        return String.format("Template %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uniqueName", "format"));
+        return String.format("Template %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "uniqueName", "format"));
     }
 
     public void setRemoved(Date removed) {

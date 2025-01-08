@@ -67,20 +67,20 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Override
     public boolean assignVMToBackupOffering(VirtualMachine vm, BackupOffering backupOffering) {
-        logger.debug("Creating VM backup for VM " + vm.getInstanceName() + " from backup offering " + backupOffering.getName());
+        logger.debug("Creating VM backup for VM {} from backup offering {}", vm, backupOffering);
         ((VMInstanceVO) vm).setBackupExternalId("dummy-external-backup-id");
         return true;
     }
 
     @Override
     public boolean restoreVMFromBackup(VirtualMachine vm, Backup backup) {
-        logger.debug("Restoring vm " + vm.getUuid() + "from backup " + backup.getUuid() + " on the Dummy Backup Provider");
+        logger.debug("Restoring vm {} from backup {} on the Dummy Backup Provider", vm, backup);
         return true;
     }
 
     @Override
     public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
-        logger.debug("Restoring volume " + volumeUuid + "from backup " + backup.getUuid() + " on the Dummy Backup Provider");
+        logger.debug("Restoring volume {} from backup {} on the Dummy Backup Provider", volumeUuid, backup);
         throw new CloudRuntimeException("Dummy plugin does not support this feature");
     }
 
@@ -101,7 +101,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Override
     public boolean removeVMFromBackupOffering(VirtualMachine vm) {
-        logger.debug("Removing VM ID " + vm.getUuid() + " from backup offering by the Dummy Backup Provider");
+        logger.debug(String.format("Removing VM %s from backup offering by the Dummy Backup Provider", vm));
         return true;
     }
 
@@ -112,7 +112,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Override
     public boolean takeBackup(VirtualMachine vm) {
-        logger.debug("Starting backup for VM ID " + vm.getUuid() + " on Dummy provider");
+        logger.debug(String.format("Starting backup for VM %s on Dummy provider", vm));
 
         BackupVO backup = new BackupVO();
         backup.setVmId(vm.getId());

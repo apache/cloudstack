@@ -190,7 +190,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             //List records for all the accounts if the caller account is of type admin.
             //If account_id or account_name is explicitly mentioned, list records for the specified account only even if the caller is of type admin
             ignoreAccountId = _accountService.isRootAdmin(caller.getId());
-            logger.debug("Account details not available. Using userContext accountId: " + accountId);
+            logger.debug("Account details not available. Using userContext account: {}", caller);
         }
 
         // Check if a domain admin is allowed to access the requested domain id
