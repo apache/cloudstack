@@ -16,32 +16,18 @@
 // under the License.
 package com.cloud.storage;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
-import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.exception.ConnectionException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.host.Host;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.user.AccountManagerImpl;
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.command.CheckDataStoreStoragePolicyComplainceCommand;
@@ -63,14 +49,31 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.VsphereStoragePolicyVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VsphereStoragePolicyDao;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.ConnectionException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.Host;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.AccountManagerImpl;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StorageManagerImplTest {
@@ -755,5 +758,141 @@ public class StorageManagerImplTest {
         String error = "Mount failed on kvm host. An incorrect mount option was specified.\nIncorrect mount option.";
         String failureReason = storageManagerImpl.getStoragePoolMountFailureReason(error);
         Assert.assertEquals(failureReason, "An incorrect mount option was specified");
+    }
+
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
+        Field f = ConfigKey.class.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(configKey, o);
+    }
+
+    private Long testCheckPoolforSpaceForResizeSetup(StoragePoolVO pool, Long allocatedSizeWithTemplate) {
+        Long poolId = 10L;
+        Long zoneId = 2L;
+
+        Long capacityBytes = (long) (allocatedSizeWithTemplate / Double.valueOf(CapacityManager.StorageAllocatedCapacityDisableThreshold.defaultValue())
+                        / Double.valueOf(CapacityManager.StorageOverprovisioningFactor.defaultValue()));
+        Long maxAllocatedSizeForResize = (long) (capacityBytes * Double.valueOf(CapacityManager.StorageOverprovisioningFactor.defaultValue())
+                * Double.valueOf(CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.defaultValue()));
+
+        System.out.println("maxAllocatedSizeForResize = " + maxAllocatedSizeForResize);
+        System.out.println("allocatedSizeWithTemplate = " + allocatedSizeWithTemplate);
+
+        Mockito.when(pool.getId()).thenReturn(poolId);
+        Mockito.when(pool.getCapacityBytes()).thenReturn(capacityBytes);
+        Mockito.when(pool.getDataCenterId()).thenReturn(zoneId);
+        Mockito.when(storagePoolDao.findById(poolId)).thenReturn(pool);
+        Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
+
+        return maxAllocatedSizeForResize - allocatedSizeWithTemplate;
+    }
+
+    @Test
+    public void testCheckPoolforSpaceForResize1() {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+
+        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
+        Long totalAskingSize = maxAskingSize / 2;
+
+        boolean result = storageManagerImpl.checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, false);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testCheckPoolforSpaceForResize2() {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+
+        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
+        Long totalAskingSize = maxAskingSize / 2;
+
+        boolean result = storageManagerImpl.checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, true);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testCheckPoolforSpaceForResize3() throws NoSuchFieldException, IllegalAccessException {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+
+        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
+        Long totalAskingSize = maxAskingSize + 1;
+        overrideDefaultConfigValue(StorageManagerImpl.AllowVolumeReSizeBeyondAllocation, "_defaultValue", "true");
+
+        boolean result = storageManagerImpl.checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, true);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testCheckPoolforSpaceForResize4() throws NoSuchFieldException, IllegalAccessException {
+        StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
+        Long allocatedSizeWithTemplate = 100L * 1024 * 1024 * 1024;
+
+        Long maxAskingSize = testCheckPoolforSpaceForResizeSetup(pool, allocatedSizeWithTemplate);
+        Long totalAskingSize = maxAskingSize / 2;
+        overrideDefaultConfigValue(StorageManagerImpl.AllowVolumeReSizeBeyondAllocation, "_defaultValue", "true");
+
+        boolean result = storageManagerImpl.checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, true);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testGetStoragePoolIopsStats_ReturnsDriverResultWhenNotNull() {
+        StoragePool pool = Mockito.mock(StoragePool.class);
+        PrimaryDataStoreDriver primaryStoreDriver = Mockito.mock(PrimaryDataStoreDriver.class);
+        Pair<Long, Long> expectedResult = new Pair<>(1000L, 500L);
+        Mockito.when(primaryStoreDriver.getStorageIopsStats(pool)).thenReturn(expectedResult);
+
+        Pair<Long, Long> result = storageManagerImpl.getStoragePoolIopsStats(primaryStoreDriver, pool);
+
+        Assert.assertSame("Should return the result from primaryStoreDriver.getStorageIopsStats", expectedResult, result);
+        Mockito.verify(primaryStoreDriver, Mockito.never()).getUsedIops(Mockito.any());
+        Mockito.verify(pool, Mockito.never()).getCapacityIops();
+    }
+
+    @Test
+    public void testGetStoragePoolIopsStats_UsedIopsPositive() {
+        StoragePool pool = Mockito.mock(StoragePool.class);
+        PrimaryDataStoreDriver primaryStoreDriver = Mockito.mock(PrimaryDataStoreDriver.class);
+        Mockito.when(primaryStoreDriver.getStorageIopsStats(pool)).thenReturn(null);
+        Mockito.when(primaryStoreDriver.getUsedIops(pool)).thenReturn(500L);
+        Mockito.when(pool.getCapacityIops()).thenReturn(1000L);
+
+        Pair<Long, Long> result = storageManagerImpl.getStoragePoolIopsStats(primaryStoreDriver, pool);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals("Capacity IOPS should match pool's capacity IOPS", 1000L, result.first().longValue());
+        Assert.assertEquals("Used IOPS should match the positive value returned", 500L, result.second().longValue());
+    }
+
+    @Test
+    public void testGetStoragePoolIopsStats_UsedIopsZero() {
+        StoragePool pool = Mockito.mock(StoragePool.class);
+        PrimaryDataStoreDriver primaryStoreDriver = Mockito.mock(PrimaryDataStoreDriver.class);
+        Mockito.when(primaryStoreDriver.getStorageIopsStats(pool)).thenReturn(null);
+        Mockito.when(primaryStoreDriver.getUsedIops(pool)).thenReturn(0L);
+        Mockito.when(pool.getCapacityIops()).thenReturn(1000L);
+
+        Pair<Long, Long> result = storageManagerImpl.getStoragePoolIopsStats(primaryStoreDriver, pool);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals("Capacity IOPS should match pool's capacity IOPS", 1000L, result.first().longValue());
+        Assert.assertNull("Used IOPS should be null when usedIops <= 0", result.second());
+    }
+
+    @Test
+    public void testGetStoragePoolIopsStats_UsedIopsNegative() {
+        StoragePool pool = Mockito.mock(StoragePool.class);
+        PrimaryDataStoreDriver primaryStoreDriver = Mockito.mock(PrimaryDataStoreDriver.class);
+        Mockito.when(primaryStoreDriver.getStorageIopsStats(pool)).thenReturn(null);
+        Mockito.when(primaryStoreDriver.getUsedIops(pool)).thenReturn(-100L);
+        Mockito.when(pool.getCapacityIops()).thenReturn(1000L);
+
+        Pair<Long, Long> result = storageManagerImpl.getStoragePoolIopsStats(primaryStoreDriver, pool);
+
+        Assert.assertNotNull(result);
+        Assert.assertEquals("Capacity IOPS should match pool's capacity IOPS", 1000L, result.first().longValue());
+        Assert.assertNull("Used IOPS should be null when usedIops <= 0", result.second());
     }
 }

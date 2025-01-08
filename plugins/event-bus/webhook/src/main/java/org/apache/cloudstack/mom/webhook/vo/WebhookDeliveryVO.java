@@ -130,7 +130,7 @@ public class WebhookDeliveryVO implements WebhookDelivery {
 
     @Override
     public String toString() {
-        return String.format("WebhookDelivery [%s]", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+        return String.format("WebhookDelivery %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
                 this, "id", "uuid", "webhookId", "startTime", "success"));
     }
 

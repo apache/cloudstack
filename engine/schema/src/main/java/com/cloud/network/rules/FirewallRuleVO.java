@@ -36,6 +36,7 @@ import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.NetUtils;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "firewall_rules")
@@ -258,7 +259,9 @@ public class FirewallRuleVO implements FirewallRule {
 
     @Override
     public String toString() {
-        return new StringBuilder("Rule[").append(id).append("-").append(purpose).append("-").append(state).append("]").toString();
+        return String.format("FirewallRule %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "networkId", "purpose", "state"));
     }
 
     @Override

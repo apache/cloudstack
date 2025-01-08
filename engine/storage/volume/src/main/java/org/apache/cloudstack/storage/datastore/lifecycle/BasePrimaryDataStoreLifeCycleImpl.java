@@ -22,6 +22,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.dao.DataCenterDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
@@ -55,6 +56,8 @@ public class BasePrimaryDataStoreLifeCycleImpl {
     @Inject
     protected HostDao hostDao;
     @Inject
+    protected DataCenterDao zoneDao;
+    @Inject
     protected StoragePoolHostDao storagePoolHostDao;
 
     private List<HostVO> getPoolHostsList(ClusterScope clusterScope, HypervisorType hypervisorType) {
@@ -76,7 +79,7 @@ public class BasePrimaryDataStoreLifeCycleImpl {
         if (hosts != null) {
             for (HostVO host : hosts) {
                 try {
-                    storageMgr.connectHostToSharedPool(host.getId(), store.getId());
+                    storageMgr.connectHostToSharedPool(host, store.getId());
                 } catch (Exception e) {
                     logger.warn("Unable to establish a connection between " + host + " and " + store, e);
                 }

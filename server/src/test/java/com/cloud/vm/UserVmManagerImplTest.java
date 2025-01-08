@@ -657,7 +657,7 @@ public class UserVmManagerImplTest {
     private void configureValidateOrReplaceMacAddressTest(int times, String macAddress, String expectedMacAddress) throws InsufficientAddressCapacityException {
         Mockito.when(networkModel.getNextAvailableMacAddressInNetwork(Mockito.anyLong())).thenReturn(expectedMacAddress);
 
-        String returnedMacAddress = userVmManagerImpl.validateOrReplaceMacAddress(macAddress, 1l);
+        String returnedMacAddress = userVmManagerImpl.validateOrReplaceMacAddress(macAddress, _networkMock);
 
         Mockito.verify(networkModel, Mockito.times(times)).getNextAvailableMacAddressInNetwork(Mockito.anyLong());
         assertEquals(expectedMacAddress, returnedMacAddress);
@@ -746,7 +746,7 @@ public class UserVmManagerImplTest {
         int expectedExceptionCounter = hypervisorTypeArray.length - 5;
 
         for(int i = 0; i < hypervisorTypeArray.length; i++) {
-            if (UserVmManagerImpl.ROOT_DISK_SIZE_OVERRIDE_SUPPORTING_HYPERVISORS.contains(hypervisorTypeArray[i])) {
+            if (hypervisorTypeArray[i].isFunctionalitySupported(Hypervisor.HypervisorType.Functionality.RootDiskSizeOverride)) {
                 userVmManagerImpl.verifyIfHypervisorSupportsRootdiskSizeOverride(hypervisorTypeArray[i]);
             } else {
                 try {
@@ -821,7 +821,6 @@ public class UserVmManagerImplTest {
         Mockito.when(newRootDiskOffering.getId()).thenReturn(diskOfferingId);
         Mockito.when(newRootDiskOffering.getMinIops()).thenReturn(offeringMinIops);
         Mockito.when(newRootDiskOffering.getMaxIops()).thenReturn(offeringMaxIops);
-        Mockito.when(newRootDiskOffering.getName()).thenReturn("OfferingName");
         return newRootDiskOffering;
     }
 
