@@ -17,7 +17,7 @@
 # under the License.
 
 function install_packages() {
-    apt-get install -y rsyslog logrotate cron net-tools ifupdown cloud-guest-utils conntrack apt-transport-https ca-certificates curl \
+    apt-get install -y qemu-guest-agent rsyslog logrotate cron net-tools ifupdown cloud-guest-utils conntrack apt-transport-https ca-certificates curl \
      gnupg gnupg-agent software-properties-common gnupg lsb-release
     apt-get install -y python3-json-pointer python3-jsonschema cloud-init resolvconf
 
