@@ -993,7 +993,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         handleDisconnectWithoutInvestigation(attache, event, true, true);
         host = _hostDao.findById(hostId); // Maybe the host magically reappeared?
         if (host != null && host.getStatus() == Status.Down) {
-            _haMgr.scheduleRestartForVmsOnHost(host, true);
+            _haMgr.scheduleRestartForVmsOnHost(host, true, HighAvailabilityManager.ReasonType.HostDown);
         }
         return true;
     }

@@ -31,12 +31,13 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> implements HighAvailabilityDao {
 
-    private final SearchBuilder<HaWorkVO> TBASearch;
+    protected SearchBuilder<HaWorkVO> TBASearch;
     private final SearchBuilder<HaWorkVO> PreviousInstanceSearch;
     private final SearchBuilder<HaWorkVO> UntakenMigrationSearch;
     private final SearchBuilder<HaWorkVO> CleanupSearch;
@@ -269,5 +270,16 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
         SearchCriteria<HaWorkVO> sc = sb.create();
         sc.setParameters("vmIds", vmIds.toArray());
         return batchExpunge(sc, batchSize);
+    }
+
+    @Override
+    public void markPendingWorksAsInvestigating() {
+        final SearchCriteria<HaWorkVO> sc = TBASearch.create();
+        sc.setParameters("time", System.currentTimeMillis() >> 10);
+        sc.setParameters("step", Step.Done, Step.Cancelled);
+        HaWorkVO haWorkVO = createForUpdate();
+        haWorkVO.setStep(Step.Investigating);
+        UpdateBuilder updateBuilder = getUpdateBuilder(haWorkVO);
+        update(updateBuilder, sc, null);
     }
 }
