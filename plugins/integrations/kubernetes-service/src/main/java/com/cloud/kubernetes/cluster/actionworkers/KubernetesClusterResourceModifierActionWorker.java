@@ -259,13 +259,35 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         throw new InsufficientServerCapacityException(msg, DataCenter.class, zone.getId());
     }
 
-    protected DeployDestination plan(Long domainId, Long accountId, Hypervisor.HypervisorType hypervisorType) throws InsufficientServerCapacityException {
-        ServiceOffering offering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
+    /**
+     * Plan Kubernetes Cluster Deployment
+     * @return a map of DeployDestination per node type
+     */
+    protected Map<String, DeployDestination> planKubernetesCluster(Long domainId, Long accountId, Hypervisor.HypervisorType hypervisorType) throws InsufficientServerCapacityException {
+        Map<String, DeployDestination> destinationMap = new HashMap<>();
         DataCenter zone = dataCenterDao.findById(kubernetesCluster.getZoneId());
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("Checking deployment destination for Kubernetes cluster : %s in zone : %s", kubernetesCluster.getName(), zone.getName()));
         }
-        return plan(kubernetesCluster.getTotalNodeCount(), zone, offering, domainId, accountId, hypervisorType);
+        long controlNodeCount = kubernetesCluster.getControlNodeCount();
+        long clusterSize = kubernetesCluster.getNodeCount();
+        long etcdNodes = kubernetesCluster.getEtcdNodeCount();
+        Map<String, Long> nodeTypeCount = Map.of(WORKER.name(), clusterSize,
+                CONTROL.name(), controlNodeCount, ETCD.name(), etcdNodes);
+
+        for (KubernetesClusterNodeType nodeType : CLUSTER_NODES_TYPES_LIST) {
+            Long nodes = nodeTypeCount.getOrDefault(nodeType.name(), kubernetesCluster.getServiceOfferingId());
+            if (nodes == null || nodes == 0) {
+                continue;
+            }
+            ServiceOffering nodeOffering = getServiceOfferingForNodeTypeOnCluster(nodeType, kubernetesCluster);
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Checking deployment destination for %s nodes on Kubernetes cluster : %s in zone : %s", nodeType.name(), kubernetesCluster.getName(), zone.getName()));
+            }
+            DeployDestination planForNodeType = plan(nodes, zone, nodeOffering, domainId, accountId, hypervisorType);
+            destinationMap.put(nodeType.name(), planForNodeType);
+        }
+        return destinationMap;
     }
 
     protected void resizeNodeVolume(final UserVm vm) throws ManagementServerException {
@@ -288,7 +310,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         }
     }
 
-    protected void startKubernetesVM(final UserVm vm, final Long domainId, final Long accountId) throws ManagementServerException {
+    protected void startKubernetesVM(final UserVm vm, final Long domainId, final Long accountId, KubernetesClusterNodeType nodeType) throws ManagementServerException {
         CallContext vmContext = null;
         if (!ApiCommandResourceType.VirtualMachine.equals(CallContext.current().getEventResourceType())); {
             vmContext = CallContext.register(CallContext.current(), ApiCommandResourceType.VirtualMachine);
@@ -298,7 +320,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         if (Objects.nonNull(domainId) && !listDedicatedHostsInDomain(domainId).isEmpty()) {
             DeployDestination dest = null;
             try {
-                dest = plan(domainId, accountId, vm.getHypervisorType());
+                Map<String, DeployDestination> destinationMap = planKubernetesCluster(domainId, accountId, vm.getHypervisorType());
+                dest = destinationMap.get(nodeType.name());
             } catch (InsufficientCapacityException e) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Provisioning the cluster failed due to insufficient capacity in the Kubernetes cluster: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
             }
@@ -341,7 +364,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
                 if (kubernetesCluster.getNodeRootDiskSize() > 0) {
                     resizeNodeVolume(vm);
                 }
-                startKubernetesVM(vm, domainId, accountId);
+                startKubernetesVM(vm, domainId, accountId, WORKER);
                 vm = userVmDao.findById(vm.getId());
                 if (vm == null) {
                     throw new ManagementServerException(String.format("Failed to provision worker VM for Kubernetes cluster : %s", kubernetesCluster.getName()));

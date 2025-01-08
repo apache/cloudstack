@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.user.UserDataVO;
@@ -85,6 +86,7 @@ import org.apache.logging.log4j.Level;
 
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.ETCD;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.WORKER;
 
 public class KubernetesClusterStartWorker extends KubernetesClusterResourceModifierActionWorker {
 
@@ -515,7 +517,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         if (kubernetesCluster.getNodeRootDiskSize() > 0) {
             resizeNodeVolume(k8sControlVM);
         }
-        startKubernetesVM(k8sControlVM, domainId, accountId);
+        startKubernetesVM(k8sControlVM, domainId, accountId, CONTROL);
         k8sControlVM = userVmDao.findById(k8sControlVM.getId());
         if (k8sControlVM == null) {
             throw new ManagementServerException(String.format("Failed to provision control VM for Kubernetes cluster : %s" , kubernetesCluster.getName()));
@@ -538,7 +540,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
                 if (kubernetesCluster.getNodeRootDiskSize() > 0) {
                     resizeNodeVolume(vm);
                 }
-                startKubernetesVM(vm, domainId, accountId);
+                startKubernetesVM(vm, domainId, accountId, CONTROL);
                 vm = userVmDao.findById(vm.getId());
                 if (vm == null) {
                     throw new ManagementServerException(String.format("Failed to provision additional control VM for Kubernetes cluster : %s" , kubernetesCluster.getName()));
@@ -560,7 +562,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         for (int i = 0; i < kubernetesCluster.getEtcdNodeCount(); i++) {
             UserVm vm = createEtcdNode(etcdNodeGuestIps, etcdHostnames, i, domainId, accountId);
             addKubernetesClusterVm(kubernetesCluster.getId(), vm.getId(), false, false, true, true);
-            startKubernetesVM(vm, domainId, accountId);
+            startKubernetesVM(vm, domainId, accountId, ETCD);
             vm = userVmDao.findById(vm.getId());
             if (vm == null) {
                 throw new ManagementServerException(String.format("Failed to provision additional control VM for Kubernetes cluster : %s" , kubernetesCluster.getName()));
@@ -669,7 +671,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             }
             try {
                 resizeNodeVolume(vm);
-                startKubernetesVM(vm, domainId, accountId);
+                KubernetesClusterVmMapVO map = kubernetesClusterVmMapDao.findByVmId(vm.getId());
+                KubernetesServiceHelper.KubernetesClusterNodeType nodeType = getNodeTypeFromClusterVMMapRecord(map);
+                startKubernetesVM(vm, domainId, accountId, nodeType);
             } catch (ManagementServerException ex) {
                 logger.warn(String.format("Failed to start VM : %s in Kubernetes cluster : %s due to ", vm.getDisplayName(), kubernetesCluster.getName()) + ex);
                 // don't bail out here. proceed further to stop the reset of the VM's
@@ -680,6 +684,16 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
             if (vm == null || !vm.getState().equals(VirtualMachine.State.Running)) {
                 logTransitStateAndThrow(Level.ERROR, String.format("Failed to start all VMs in Kubernetes cluster : %s", kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
             }
+        }
+    }
+
+    private KubernetesServiceHelper.KubernetesClusterNodeType getNodeTypeFromClusterVMMapRecord(KubernetesClusterVmMapVO map) {
+        if (map.isControlNode()) {
+            return CONTROL;
+        } else if (map.isEtcdNode()) {
+            return ETCD;
+        } else {
+            return WORKER;
         }
     }
 
@@ -733,7 +747,8 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
         DeployDestination dest = null;
         try {
             VMTemplateVO clusterTemplate = templateDao.findById(kubernetesCluster.getTemplateId());
-            dest = plan(domainId, accountId, clusterTemplate.getHypervisorType());
+            Map<String, DeployDestination> destinationMap = planKubernetesCluster(domainId, accountId, clusterTemplate.getHypervisorType());
+            dest = destinationMap.get(WORKER.name());
         } catch (InsufficientCapacityException e) {
             logTransitStateAndThrow(Level.ERROR, String.format("Provisioning the cluster failed due to insufficient capacity in the Kubernetes cluster: %s", kubernetesCluster.getUuid()), kubernetesCluster.getId(), KubernetesCluster.Event.CreateFailed, e);
         }

@@ -370,7 +370,7 @@ public class KubernetesClusterManagerImplTest {
 
     @Test
     public void testIsAnyNodeOfferingEmptyNullMap() {
-        Assert.assertFalse(kubernetesClusterManager.isAnyNodeOfferingEmpty(null));
+        Assert.assertTrue(kubernetesClusterManager.isAnyNodeOfferingEmpty(null));
     }
 
     @Test

@@ -1037,7 +1037,8 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         Long serviceOfferingId = map.getOrDefault(key, defaultServiceOfferingId);
         ServiceOffering serviceOffering = serviceOfferingId != null ? serviceOfferingDao.findById(serviceOfferingId) : null;
         if (serviceOffering == null) {
-            throw new InvalidParameterValueException("No service offering found with ID: " + serviceOfferingId);
+            throw new InvalidParameterValueException("When serviceofferingid is not specified, " +
+                    "service offerings for each node type must be specified in the nodeofferings parameter.");
         }
         try {
             validateServiceOffering(serviceOffering, clusterKubernetesVersion);
@@ -1294,7 +1295,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     protected boolean isAnyNodeOfferingEmpty(Map<String, Long> map) {
         if (MapUtils.isEmpty(map)) {
-            return false;
+            return true;
         }
         return map.values().stream().anyMatch(Objects::isNull);
     }
@@ -1479,13 +1480,12 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final KubernetesClusterVO cluster = Transaction.execute(new TransactionCallback<KubernetesClusterVO>() {
             @Override
             public KubernetesClusterVO doInTransaction(TransactionStatus status) {
-                final ServiceOffering defaultServiceOffering = serviceOfferingDao.findById(defaultServiceOfferingId);
                 Pair<Long, Long> capacityPair = calculateClusterCapacity(serviceOfferingNodeTypeMap, nodeTypeCount, defaultServiceOfferingId);
                 final long cores = capacityPair.first();
                 final long memory = capacityPair.second();
 
                 KubernetesClusterVO newCluster = new KubernetesClusterVO(cmd.getName(), cmd.getDisplayName(), zone.getId(), clusterKubernetesVersion.getId(),
-                        defaultServiceOffering.getId(), Objects.nonNull(finalTemplate) ? finalTemplate.getId() : null,
+                        defaultServiceOfferingId, Objects.nonNull(finalTemplate) ? finalTemplate.getId() : null,
                         defaultNetwork.getId(), owner.getDomainId(), owner.getAccountId(), controlNodeCount, clusterSize,
                         KubernetesCluster.State.Created, cmd.getSSHKeyPairName(), cores, memory,
                         cmd.getNodeRootDiskSize(), "", KubernetesCluster.ClusterType.CloudManaged);

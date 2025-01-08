@@ -128,6 +128,10 @@ import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.ETCD;
+import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.WORKER;
+
 
 public class KubernetesClusterActionWorker {
 
@@ -143,6 +147,8 @@ public class KubernetesClusterActionWorker {
     public static final String CKS_SECURITY_GROUP_DESCRIPTION = "Security group for CKS nodes";
 
     protected Logger logger = LogManager.getLogger(getClass());
+
+    protected final static List<KubernetesClusterNodeType> CLUSTER_NODES_TYPES_LIST = Arrays.asList(WORKER, CONTROL, ETCD);
 
     protected StateMachine2<KubernetesCluster.State, KubernetesCluster.Event, KubernetesCluster> _stateMachine = KubernetesCluster.State.getStateMachine();
 
