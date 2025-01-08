@@ -3268,6 +3268,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         VMInstanceVO vm = null;
         if (instanceId != null) {
             vm = _vmInstanceDao.findById(instanceId);
+            checkVmStateForMigration(vm, vol);
         }
 
         // Check that Vm to which this volume is attached does not have VM Snapshots
@@ -3463,6 +3464,22 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         return orchestrateMigrateVolume(vol, destPool, liveMigrateVolume, newDiskOffering);
+    }
+
+    private void checkVmStateForMigration(VMInstanceVO vm, VolumeVO vol) {
+        List<State> suitableVmStatesForMigration = List.of(State.Stopped, State.Running, State.Shutdown);
+
+        if (!suitableVmStatesForMigration.contains(vm.getState())) {
+            s_logger.debug(String.format(
+                    "Unable to migrate volume: [%s] Id: [%s] because the VM: [%s] Id: [%s] is in state [%s], which is not supported for migration.",
+                    vol.getName(), vol.getId(), vm.getInstanceName(), vm.getUuid(), vm.getState()
+            ));
+
+            throw new CloudRuntimeException(String.format(
+                    "Volume migration is not allowed when the VM is in the %s state. Supported states are: %s.",
+                    vm.getState(), suitableVmStatesForMigration
+            ));
+        }
     }
 
     private boolean isSourceOrDestNotOnStorPool(StoragePoolVO storagePoolVO, StoragePoolVO destinationStoragePoolVo) {
