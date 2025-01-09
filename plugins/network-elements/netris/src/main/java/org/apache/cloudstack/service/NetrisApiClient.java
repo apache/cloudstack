@@ -28,6 +28,7 @@ import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.ReleaseNatIpCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
 
 import java.util.List;
@@ -78,4 +79,5 @@ public interface NetrisApiClient {
     boolean deleteNatRule(DeleteNetrisNatRuleCommand cmd);
     boolean addOrUpdateStaticRoute(AddOrUpdateNetrisStaticRouteCommand cmd);
     boolean deleteStaticRoute(DeleteNetrisStaticRouteCommand cmd);
+    boolean releaseNatIp(ReleaseNatIpCommand cmd);
 }

@@ -321,6 +321,11 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
     }
 
     @Override
+    public boolean releaseIp(IpAddress ipAddress) {
+        return netrisService.releaseNatIp(ipAddress.getDataCenterId(), ipAddress.getAddress().addr());
+    }
+
+    @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
         return canHandle(network, Network.Service.Connectivity);
     }

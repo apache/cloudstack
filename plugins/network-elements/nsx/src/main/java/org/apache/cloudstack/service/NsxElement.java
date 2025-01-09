@@ -285,6 +285,11 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     }
 
     @Override
+    public boolean releaseIp(IpAddress ipAddress) {
+        return true;
+    }
+
+    @Override
     public boolean shutdown(Network network, ReservationContext context, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException {
         return canHandle(network, Network.Service.Connectivity);
     }

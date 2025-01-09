@@ -40,4 +40,6 @@ public interface VpcOfferingServiceMapDao extends GenericDao<VpcOfferingServiceM
 
     boolean isProviderForVpcOffering(Network.Provider provider, long vpcOfferingId);
 
+    List<VpcOfferingServiceMapVO> listProvidersForServiceForVpcOffering(long vpcOfferingId, Service service);
+
 }

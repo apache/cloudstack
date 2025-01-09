@@ -69,6 +69,11 @@ public class MockVpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOffering
     }
 
     @Override
+    public List<VpcOfferingServiceMapVO> listProvidersForServiceForVpcOffering(long vpcOfferingId, Service service) {
+        return List.of();
+    }
+
+    @Override
     public VpcOfferingServiceMapVO persist(VpcOfferingServiceMapVO vo) {
         return vo;
     }
