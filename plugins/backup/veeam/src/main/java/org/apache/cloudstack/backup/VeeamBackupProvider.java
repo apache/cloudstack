@@ -164,7 +164,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         final String clonedJobName = getGuestBackupName(vm.getInstanceName(), vm.getUuid());
 
         if (!client.cloneVeeamJob(parentJob, clonedJobName)) {
-            logger.error("Failed to clone pre-defined Veeam job (backup offering) for backup offering ID: " + backupOffering.getExternalId() + " but will check the list of jobs again if it was eventually succeeded.");
+            logger.error("Failed to clone pre-defined Veeam job (backup offering) for backup offering [id: {}, name: {}] but will check the list of jobs again if it was eventually succeeded.", backupOffering.getExternalId(), backupOffering.getName());
         }
 
         for (final BackupOffering job : client.listJobs()) {
@@ -173,7 +173,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                 if (BooleanUtils.isTrue(clonedJob.getScheduleConfigured()) && !clonedJob.getScheduleEnabled()) {
                     client.toggleJobSchedule(clonedJob.getId());
                 }
-                logger.debug("Veeam job (backup offering) for backup offering ID: " + backupOffering.getExternalId() + " found, now trying to assign the VM to the job.");
+                logger.debug("Veeam job (backup offering) for backup offering [id: {}, name: {}] found, now trying to assign the VM to the job.", backupOffering.getExternalId(), backupOffering.getName());
                 final VmwareDatacenter vmwareDC = findVmwareDatacenterForVM(vm);
                 if (client.addVMToVeeamJob(job.getExternalId(), vm.getInstanceName(), vmwareDC.getVcenterHost())) {
                     ((VMInstanceVO) vm).setBackupExternalId(job.getExternalId());
@@ -221,7 +221,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     public boolean deleteBackup(Backup backup, boolean forced) {
         VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
         if (vm == null) {
-            throw new CloudRuntimeException(String.format("Could not find any VM associated with the Backup [uuid: %s, externalId: %s].", backup.getUuid(), backup.getExternalId()));
+            throw new CloudRuntimeException(String.format("Could not find any VM associated with the Backup [uuid: %s, name: %s, externalId: %s].", backup.getUuid(), backup.getName(), backup.getExternalId()));
         }
         if (!forced) {
             logger.debug(String.format("Veeam backup provider does not have a safe way to remove a single restore point, which results in all backup chain being removed. "
@@ -307,8 +307,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
             }
 
             Metric metric = backendMetrics.get(vm.getUuid());
-            logger.debug(String.format("Metrics for VM [uuid: %s, name: %s] is [backup size: %s, data size: %s].", vm.getUuid(),
-                    vm.getInstanceName(), metric.getBackupSize(), metric.getDataSize()));
+            logger.debug("Metrics for VM [{}] is [backup size: {}, data size: {}].", vm,
+                    metric.getBackupSize(), metric.getDataSize());
             metrics.put(vm, metric);
         }
         return metrics;

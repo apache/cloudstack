@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 
@@ -99,6 +100,8 @@ public interface VpcManager {
      * @param networkId
      */
     void unassignIPFromVpcNetwork(long ipId, long networkId);
+
+    void unassignIPFromVpcNetwork(final IPAddressVO ip, final Network network);
 
     /**
      * Creates guest network in the VPC

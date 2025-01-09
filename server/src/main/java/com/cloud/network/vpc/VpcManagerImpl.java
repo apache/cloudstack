@@ -987,8 +987,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         // (the offering can be disabled though)
         final int vpcCount = vpcDao.getVpcCountByOfferingId(offId);
         if (vpcCount > 0) {
-            throw new InvalidParameterValueException("Can't delete vpc offering " + offId + " as its used by " + vpcCount + " vpcs. "
-                    + "To make the network offering unavailable, disable it");
+            throw new InvalidParameterValueException(String.format("Can't delete vpc offering %s as its used by %d vpcs. To make the network offering unavailable, disable it", offering, vpcCount));
         }
 
         if (_vpcOffDao.remove(offId)) {
@@ -1120,8 +1119,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 vpcOfferingDetailsDao.persist(detailVO);
             }
         }
-        logger.debug("Updated VPC offeirng id=" + vpcOffId);
-        return _vpcOffDao.findById(vpcOffId);
+        VpcOfferingVO updatedVpcOffering = _vpcOffDao.findById(vpcOffId);
+        logger.debug("Updated VPC offering {}", updatedVpcOffering);
+        return updatedVpcOffering;
     }
 
     @Override
@@ -1362,7 +1362,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 logger.debug(String.format("Reserving a source NAT IP for NSX VPC %s", vpc.getName()));
                 sourceNatIP = reserveSourceNatIpForNsxVpc(account, zone);
             }
-            IpAddress ip = _ipAddrMgr.allocateIp(account, false, CallContext.current().getCallingAccount(), CallContext.current().getCallingUserId(), zone, null, sourceNatIP);
+            IpAddress ip = _ipAddrMgr.allocateIp(account, false, CallContext.current().getCallingAccount(), CallContext.current().getCallingUser(), zone, null, sourceNatIP);
             this.associateIPToVpc(ip.getId(), vpc.getId());
         } catch (ResourceAllocationException | ResourceUnavailableException | InsufficientAddressCapacityException e){
             throw new CloudRuntimeException("new source NAT address cannot be acquired", e);
@@ -1497,7 +1497,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         // cleanup vpc resources
-        if (!cleanupVpcResources(vpc.getId(), caller, callerUserId)) {
+        if (!cleanupVpcResources(vpc, caller, callerUserId)) {
             logger.warn("Failed to cleanup resources for vpc " + vpc);
             return false;
         }
@@ -1559,7 +1559,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         boolean restartRequired = checkAndUpdateRouterSourceNatIp(vpcToUpdate, sourceNatIp);
 
         if (vpcDao.update(vpcId, vpc) || restartRequired) { // Note that the update may fail because nothing has changed, other than the sourcenat ip
-            logger.debug("Updated VPC id=" + vpcId);
+            logger.debug("Updated VPC {}", vpc);
             if (restartRequired) {
                 if (logger.isDebugEnabled()) {
                     logger.debug(String.format("restarting vpc %s/%s, due to changing sourcenat in Update VPC call", vpc.getName(), vpc.getUuid()));
@@ -2190,19 +2190,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return vpcs;
     }
 
-    public boolean cleanupVpcResources(final long vpcId, final Account caller, final long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
-        logger.debug("Cleaning up resources for vpc id=" + vpcId);
+    public boolean cleanupVpcResources(final Vpc vpc, final Account caller, final long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
+        logger.debug("Cleaning up resources for vpc {}", vpc);
         boolean success = true;
 
         // 1) Remove VPN connections and VPN gateway
         logger.debug("Cleaning up existed site to site VPN connections");
-        _s2sVpnMgr.cleanupVpnConnectionByVpc(vpcId);
+        _s2sVpnMgr.cleanupVpnConnectionByVpc(vpc.getId());
         logger.debug("Cleaning up existed site to site VPN gateways");
-        _s2sVpnMgr.cleanupVpnGatewayByVpc(vpcId);
+        _s2sVpnMgr.cleanupVpnGatewayByVpc(vpc.getId());
 
         // 2) release all ip addresses
-        final List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedVpc(vpcId, null);
-        logger.debug("Releasing ips for vpc id=" + vpcId + " as a part of vpc cleanup");
+        final List<IPAddressVO> ipsToRelease = _ipAddressDao.listByAssociatedVpc(vpc.getId(), null);
+        logger.debug("Releasing ips for vpc {} as a part of vpc cleanup", vpc);
         for (final IPAddressVO ipToRelease : ipsToRelease) {
             if (ipToRelease.isPortable()) {
                 // portable IP address are associated with owner, until
@@ -2213,38 +2213,38 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 _ipAddressDao.update(ipToRelease.getId(), ipToRelease);
                 logger.debug("Portable IP address " + ipToRelease + " is no longer associated with any VPC");
             } else {
-                success = success && _ipAddrMgr.disassociatePublicIpAddress(ipToRelease.getId(), callerUserId, caller);
+                success = success && _ipAddrMgr.disassociatePublicIpAddress(ipToRelease, callerUserId, caller);
                 if (!success) {
-                    logger.warn("Failed to cleanup ip " + ipToRelease + " as a part of vpc id=" + vpcId + " cleanup");
+                    logger.warn("Failed to cleanup ip {} as a part of vpc {} cleanup", ipToRelease, vpc);
                 }
             }
         }
 
         if (success) {
-            logger.debug("Released ip addresses for vpc id=" + vpcId + " as a part of cleanup vpc process");
+            logger.debug("Released ip addresses for vpc {} as a part of cleanup vpc process", vpc);
         } else {
-            logger.warn("Failed to release ip addresses for vpc id=" + vpcId + " as a part of cleanup vpc process");
+            logger.warn("Failed to release ip addresses for vpc {} as a part of cleanup vpc process", vpc);
             // although it failed, proceed to the next cleanup step as it
             // doesn't depend on the public ip release
         }
 
         // 3) Delete all static route rules
-        if (!revokeStaticRoutesForVpc(vpcId, caller)) {
-            logger.warn("Failed to revoke static routes for vpc " + vpcId + " as a part of cleanup vpc process");
+        if (!revokeStaticRoutesForVpc(vpc, caller)) {
+            logger.warn("Failed to revoke static routes for vpc {} as a part of cleanup vpc process", vpc);
             return false;
         }
 
         // 4) Delete private gateways
-        final List<PrivateGateway> gateways = getVpcPrivateGateways(vpcId);
+        final List<PrivateGateway> gateways = getVpcPrivateGateways(vpc.getId());
         if (gateways != null) {
             for (final PrivateGateway gateway : gateways) {
                 if (gateway != null) {
-                    logger.debug("Deleting private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+                    logger.debug("Deleting private gateway {} as a part of vpc {} resources cleanup", gateway, vpc);
                     if (!deleteVpcPrivateGateway(gateway.getId())) {
                         success = false;
-                        logger.debug("Failed to delete private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+                        logger.debug("Failed to delete private gateway {} as a part of vpc {} resources cleanup", gateway, vpc);
                     } else {
-                        logger.debug("Deleted private gateway " + gateway + " as a part of vpc " + vpcId + " resources cleanup");
+                        logger.debug("Deleted private gateway {} as a part of vpc {} resources cleanup", gateway, vpc);
                     }
                 }
             }
@@ -2255,7 +2255,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         searchBuilder.and("vpcId", searchBuilder.entity().getVpcId(), Op.IN);
         final SearchCriteria<NetworkACLVO> searchCriteria = searchBuilder.create();
-        searchCriteria.setParameters("vpcId", vpcId);
+        searchCriteria.setParameters("vpcId", vpc.getId());
 
         final Filter filter = new Filter(NetworkACLVO.class, "id", false, null, null);
         final Pair<List<NetworkACLVO>, Integer> aclsCountPair =  _networkAclDao.searchAndCount(searchCriteria, filter);
@@ -2265,15 +2265,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             _networkAclMgr.deleteNetworkACL(networkAcl);
         }
 
-        routedIpv4Manager.releaseBgpPeersForVpc(vpcId);
-        routedIpv4Manager.releaseIpv4SubnetForVpc(vpcId);
+        routedIpv4Manager.releaseBgpPeersForVpc(vpc.getId());
+        routedIpv4Manager.releaseIpv4SubnetForVpc(vpc.getId());
 
-        VpcVO vpc = vpcDao.findById(vpcId);
         annotationDao.removeByEntityType(AnnotationService.EntityType.VPC.name(), vpc.getUuid());
 
         ASNumberVO asNumber = asNumberDao.findByZoneAndVpcId(vpc.getZoneId(), vpc.getId());
         if (asNumber != null) {
-            logger.debug(String.format("Releasing AS number %s from VPC %s", asNumber.getAsNumber(), vpc.getName()));
+            logger.debug("Releasing AS number {} from VPC {}", asNumber.getAsNumber(), vpc);
             bgpService.releaseASNumber(vpc.getZoneId(), asNumber.getAsNumber(), true);
         }
 
@@ -2462,7 +2461,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 // try to create it
             }
             if (privateNtwk == null) {
-                logger.info("creating new network for vpc " + vpc + " using broadcast uri: " + broadcastUri + " and associated network id: " + associatedNetworkId);
+                logger.info("creating new network for vpc {} using broadcast uri: {} and associated network: {}", vpc, broadcastUri, _ntwkDao.findById(associatedNetworkId));
                 final String networkName = "vpc-" + vpc.getName() + "-privateNetwork";
                 privateNtwk = _ntwkSvc.createPrivateNetwork(networkName, networkName, physicalNetworkIdFinal, broadcastUri, ipAddress, null, gateway, netmask,
                         gatewayOwnerId, vpcId, isSourceNat, networkOfferingId, bypassVlanOverlapCheck, associatedNetworkId);
@@ -2482,7 +2481,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 final Long nextMac = mac + 1;
                 dc.setMacAddress(nextMac);
 
-                logger.info("creating private ip address for vpc (" + ipAddress + ", " + privateNtwk.getId() + ", " + nextMac + ", " + vpcId + ", " + isSourceNat + ")");
+                logger.info("creating private ip address for vpc ({}, {}, {}, {}, {})", ipAddress, privateNtwk, nextMac, vpcId, isSourceNat);
                 privateIp = new PrivateIpVO(ipAddress, privateNtwk.getId(), nextMac, vpcId, isSourceNat);
                 _privateIpDao.persist(privateIp);
 
@@ -2673,7 +2672,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         final VpcGatewayVO gatewayVO = _vpcGatewayDao.acquireInLockTable(gatewayId);
         if (gatewayVO == null || gatewayVO.getType() != VpcGateway.Type.Private) {
-            throw new ConcurrentOperationException("Unable to lock gateway " + gatewayId);
+            throw new ConcurrentOperationException(String.format("Unable to lock gateway %s", gatewayToBeDeleted));
         }
 
         final Account caller = CallContext.current().getCallingAccount();
@@ -2747,6 +2746,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     protected boolean deletePrivateGatewayFromTheDB(final PrivateGateway gateway) {
         // check if there are ips allocted in the network
         final long networkId = gateway.getNetworkId();
+        NetworkVO network = _ntwkDao.findById(networkId);
 
         vpcTxCallable.setGateway(gateway);
 
@@ -2761,12 +2761,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 final Account owner = _accountMgr.getAccount(Account.ACCOUNT_ID_SYSTEM);
                 final ReservationContext context = new ReservationContextImpl(null, null, callerUser, owner);
                 _ntwkMgr.destroyNetwork(networkId, context, false);
-                logger.debug("Deleted private network id=" + networkId);
+                logger.debug("Deleted private network {}", network);
             }
-        } catch (final InterruptedException e) {
-            logger.error("deletePrivateGatewayFromTheDB failed to delete network id " + networkId + "due to => ", e);
-        } catch (final ExecutionException e) {
-            logger.error("deletePrivateGatewayFromTheDB failed to delete network id " + networkId + "due to => ", e);
+        } catch (final InterruptedException | ExecutionException e) {
+            logger.error("deletePrivateGatewayFromTheDB failed to delete network {} due to => ", network, e);
         }
 
         return true;
@@ -2924,10 +2922,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     @DB
-    protected boolean revokeStaticRoutesForVpc(final long vpcId, final Account caller) throws ResourceUnavailableException {
+    protected boolean revokeStaticRoutesForVpc(final Vpc vpc, final Account caller) throws ResourceUnavailableException {
         // get all static routes for the vpc
-        final List<StaticRouteVO> routes = _staticRouteDao.listByVpcId(vpcId);
-        logger.debug("Found " + routes.size() + " to revoke for the vpc " + vpcId);
+        final List<StaticRouteVO> routes = _staticRouteDao.listByVpcId(vpc.getId());
+        logger.debug("Found {} to revoke for the vpc {}", routes.size(), vpc);
         if (!routes.isEmpty()) {
             // mark all of them as revoke
             Transaction.execute(new TransactionCallbackNoReturn() {
@@ -2938,7 +2936,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     }
                 }
             });
-            return applyStaticRoutesForVpc(vpcId);
+            return applyStaticRoutesForVpc(vpc.getId());
         }
 
         return true;
@@ -3238,7 +3236,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
     @Override
     public void unassignIPFromVpcNetwork(final long ipId, final long networkId) {
-        final IPAddressVO ip = _ipAddressDao.findById(ipId);
+        IPAddressVO ip = _ipAddressDao.findById(ipId);
+        Network network = _ntwkModel.getNetwork(networkId);
+        unassignIPFromVpcNetwork(ip, network);
+    }
+
+    @Override
+    public void unassignIPFromVpcNetwork(final IPAddressVO ip, final Network network) {
         if (isIpAllocatedToVpc(ip)) {
             return;
         }
@@ -3247,23 +3251,23 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             return;
         }
 
-        logger.debug("Releasing VPC ip address " + ip + " from vpc network id=" + networkId);
+        logger.debug("Releasing VPC ip address {} from vpc network {}", ip, network);
 
         final long vpcId = ip.getVpcId();
         boolean success = false;
         try {
             // unassign ip from the VPC router
-            success = _ipAddrMgr.applyIpAssociations(_ntwkModel.getNetwork(networkId), true);
+            success = _ipAddrMgr.applyIpAssociations(network, true);
         } catch (final ResourceUnavailableException ex) {
-            throw new CloudRuntimeException("Failed to apply ip associations for network id=" + networkId + " as a part of unassigning ip " + ipId + " from vpc", ex);
+            throw new CloudRuntimeException("Failed to apply ip associations for network id=" + network + " as a part of unassigning ip " + ip + " from vpc", ex);
         }
 
         if (success) {
             ip.setAssociatedWithNetworkId(null);
-            _ipAddressDao.update(ipId, ip);
-            logger.debug("IP address " + ip + " is no longer associated with the network inside vpc id=" + vpcId);
+            _ipAddressDao.update(ip.getId(), ip);
+            logger.debug("IP address {} is no longer associated with the network inside vpc {}", ip, vpcDao.findById(vpcId));
         } else {
-            throw new CloudRuntimeException("Failed to apply ip associations for network id=" + networkId + " as a part of unassigning ip " + ipId + " from vpc");
+            throw new CloudRuntimeException(String.format("Failed to apply ip associations for network %s as a part of unassigning ip %s from vpc", network, ip));
         }
         logger.debug("Successfully released VPC ip address " + ip + " back to VPC pool ");
     }
@@ -3468,7 +3472,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // Re-program VPC VR or add a new backup router for redundant VPC
         if (!startVpc(vpc, dest, context)) {
-            logger.debug("Failed to re-program VPC router or deploy a new backup router for VPC" + vpc);
+            logger.debug("Failed to re-program VPC router or deploy a new backup router for VPC{}", vpc);
             return false;
         }
 
