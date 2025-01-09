@@ -135,7 +135,25 @@ class TestKubernetesCluster(cloudstackTestCase):
                                                                   cls.apiclient,
                                                                   cks_offering_data
                                                                  )
+                cks_offering_data["name"] = 'CKS-Worker-Offering-' + random_gen()
+                cls.cks_worker_nodes_offering = ServiceOffering.create(
+                    cls.apiclient,
+                    cks_offering_data
+                )
+                cks_offering_data["name"] = 'CKS-Control-Offering-' + random_gen()
+                cls.cks_control_nodes_offering = ServiceOffering.create(
+                    cls.apiclient,
+                    cks_offering_data
+                )
+                cks_offering_data["name"] = 'CKS-Etcd-Offering-' + random_gen()
+                cls.cks_etcd_nodes_offering = ServiceOffering.create(
+                    cls.apiclient,
+                    cks_offering_data
+                )
                 cls._cleanup.append(cls.cks_service_offering)
+                cls._cleanup.append(cls.cks_worker_nodes_offering)
+                cls._cleanup.append(cls.cks_control_nodes_offering)
+                cls._cleanup.append(cls.cks_etcd_nodes_offering)
                 cls.domain = get_domain(cls.apiclient)
                 cls.account = Account.create(
                     cls.apiclient,
@@ -644,6 +662,30 @@ class TestKubernetesCluster(cloudstackTestCase):
         self.deleteKubernetesClusterAndVerify(cluster.id)
         return
 
+    @attr(tags=["advanced", "smoke", "nicolocal"], required_hardware="true")
+    def test_12_test_deploy_cluster_different_offerings_per_node_type(self):
+        """Test creating a CKS cluster with different offerings per node type
+
+        # Validate the following:
+        """
+        cluster = self.getValidKubernetesCluster(worker_offering=self.cks_worker_nodes_offering,
+                                                 control_offering=self.cks_control_nodes_offering)
+        self.assertEqual(
+            cluster.workerofferingid,
+            self.cks_worker_nodes_offering.id,
+            "Check Worker Nodes Offering {}, {}".format(cluster.workerofferingid, self.cks_worker_nodes_offering.id)
+        )
+        self.assertEqual(
+            cluster.controlofferingid,
+            self.cks_control_nodes_offering.id,
+            "Check Control Nodes Offering {}, {}".format(cluster.workerofferingid, self.cks_worker_nodes_offering.id)
+        )
+        self.assertEqual(
+            cluster.etcdnodes,
+            0,
+            "No Etcd Nodes expected but got {}".format(cluster.etcdnodes)
+        )
+
     def addVirtualMachinesToKubernetesCluster(self, cluster_id, vm_list):
         cmd = addVirtualMachinesToKubernetesCluster.addVirtualMachinesToKubernetesClusterCmd()
         cmd.id = cluster_id
@@ -658,8 +700,8 @@ class TestKubernetesCluster(cloudstackTestCase):
 
         return self.apiclient.removeVirtualMachinesFromKubernetesCluster(cmd)
 
-
-    def createKubernetesCluster(self, name, version_id, size=1, control_nodes=1, cluster_type='CloudManaged'):
+    def createKubernetesCluster(self, name, version_id, size=1, control_nodes=1, etcd_nodes=0, cluster_type='CloudManaged',
+                                workers_offering=None, control_offering=None, etcd_offering=None):
         createKubernetesClusterCmd = createKubernetesCluster.createKubernetesClusterCmd()
         createKubernetesClusterCmd.name = name
         createKubernetesClusterCmd.description = name + "-description"
@@ -672,6 +714,22 @@ class TestKubernetesCluster(cloudstackTestCase):
         createKubernetesClusterCmd.account = self.account.name
         createKubernetesClusterCmd.domainid = self.domain.id
         createKubernetesClusterCmd.clustertype = cluster_type
+        if workers_offering:
+            createKubernetesClusterCmd.nodeofferings.append({
+                "node": "WORKER",
+                "offering": workers_offering.id
+            })
+        if control_offering:
+            createKubernetesClusterCmd.nodeofferings.append({
+                "node": "CONTROL",
+                "offering": control_offering.id
+            })
+        if etcd_nodes > 0 and etcd_offering:
+            createKubernetesClusterCmd.etcdnodes = etcd_nodes
+            createKubernetesClusterCmd.nodeofferings.append({
+                "node": "ETCD",
+                "offering": etcd_offering.id
+            })
         if self.default_network:
             createKubernetesClusterCmd.networkid = self.default_network.id
         clusterResponse = self.apiclient.createKubernetesCluster(createKubernetesClusterCmd)
@@ -735,7 +793,8 @@ class TestKubernetesCluster(cloudstackTestCase):
             retries = retries - 1
         return False
 
-    def getValidKubernetesCluster(self, size=1, control_nodes=1, version={}):
+    def getValidKubernetesCluster(self, size=1, control_nodes=1, version={}, etcd_nodes=0,
+                                  worker_offering=None, control_offering=None, etcd_offering=None):
         cluster = k8s_cluster
 
         # Does a cluster already exist ?
@@ -743,7 +802,9 @@ class TestKubernetesCluster(cloudstackTestCase):
             if not version:
                 version = self.kubernetes_version_v2
             self.debug("No existing cluster available, k8s_cluster: %s" % cluster)
-            return self.createNewKubernetesCluster(version, size, control_nodes)
+            return self.createNewKubernetesCluster(version, size, control_nodes, etcd_nodes=etcd_nodes,
+                                                   worker_offering=worker_offering, control_offering=control_offering,
+                                                   etcd_offering=etcd_offering)
 
         # Is the existing cluster what is needed ?
         valid = cluster.size == size and cluster.controlnodes == control_nodes
@@ -759,7 +820,9 @@ class TestKubernetesCluster(cloudstackTestCase):
             if cluster == None:
                 # Looks like the cluster disappeared !
                 self.debug("Existing cluster, k8s_cluster ID: %s not returned by list API" % cluster_id)
-                return self.createNewKubernetesCluster(version, size, control_nodes)
+                return self.createNewKubernetesCluster(version, size, control_nodes, etcd_nodes=etcd_nodes,
+                                                       worker_offering=worker_offering, control_offering=control_offering,
+                                                       etcd_offering=etcd_offering)
 
         if valid:
             try:
@@ -775,13 +838,18 @@ class TestKubernetesCluster(cloudstackTestCase):
             self.deleteKubernetesClusterAndVerify(cluster.id, False, True)
 
         self.debug("No valid cluster, need to deploy a new one")
-        return self.createNewKubernetesCluster(version, size, control_nodes)
+        return self.createNewKubernetesCluster(version, size, control_nodes, etcd_nodes=etcd_nodes,
+                                               worker_offering=worker_offering, control_offering=control_offering,
+                                               etcd_offering=etcd_offering)
 
-    def createNewKubernetesCluster(self, version, size, control_nodes) :
+    def createNewKubernetesCluster(self, version, size, control_nodes, etcd_nodes=0,
+                                   worker_offering=None, control_offering=None, etcd_offering=None):
         name = 'testcluster-' + random_gen()
         self.debug("Creating for Kubernetes cluster with name %s" % name)
         try:
-            cluster = self.createKubernetesCluster(name, version.id, size, control_nodes)
+            cluster = self.createKubernetesCluster(name, version.id, size, control_nodes, etcd_nodes=etcd_nodes,
+                                                   workers_offering=worker_offering, control_offering=control_offering,
+                                                   etcd_offering=etcd_offering)
             self.verifyKubernetesCluster(cluster, name, version.id, size, control_nodes)
         except Exception as ex:
             cluster = self.listKubernetesCluster(cluster_name = name)
