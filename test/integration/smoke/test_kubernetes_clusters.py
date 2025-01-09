@@ -662,7 +662,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         self.deleteKubernetesClusterAndVerify(cluster.id)
         return
 
-    @attr(tags=["advanced", "smoke", "nicolocal"], required_hardware="true")
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
     def test_12_test_deploy_cluster_different_offerings_per_node_type(self):
         """Test creating a CKS cluster with different offerings per node type
 
