@@ -264,9 +264,4 @@ public class BackupVO implements Backup {
     public void setRemoved(Date removed) {
         this.removed = removed;
     }
-
-    @Override
-    public String toString() {
-        return String.format("Backup is %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "external_id", "date"));
-    }
 }
