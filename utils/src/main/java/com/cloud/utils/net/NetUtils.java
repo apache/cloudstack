@@ -574,7 +574,7 @@ public class NetUtils {
 
         final String[] cidrPair = cidr.split("\\/");
         if (cidrPair.length != 2) {
-            return false;
+            return isValidIp4(cidr); // we consider an ip4v address as a valid /32 cidr
         }
         final String cidrAddress = cidrPair[0];
         final String cidrSize = cidrPair[1];
