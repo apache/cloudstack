@@ -272,14 +272,30 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
         return batchExpunge(sc, batchSize);
     }
 
+    protected void updatePendingWorkToInvestigating(SearchCriteria<HaWorkVO> sc) {
+        HaWorkVO haWorkVO = createForUpdate();
+        haWorkVO.setStep(Step.Investigating);
+        UpdateBuilder updateBuilder = getUpdateBuilder(haWorkVO);
+        update(updateBuilder, sc, null);
+    }
+
     @Override
     public void markPendingWorksAsInvestigating() {
         final SearchCriteria<HaWorkVO> sc = TBASearch.create();
         sc.setParameters("time", System.currentTimeMillis() >> 10);
         sc.setParameters("step", Step.Done, Step.Cancelled);
-        HaWorkVO haWorkVO = createForUpdate();
-        haWorkVO.setStep(Step.Investigating);
-        UpdateBuilder updateBuilder = getUpdateBuilder(haWorkVO);
-        update(updateBuilder, sc, null);
+        updatePendingWorkToInvestigating(sc);
+    }
+
+    @Override
+    public void markServerPendingWorksAsInvestigating(long managementServerId) {
+        SearchBuilder<HaWorkVO> sb = createSearchBuilder();
+        sb.and("server", sb.entity().getServerId(), Op.EQ);
+        sb.and("step", sb.entity().getStep(), Op.NIN);
+        sb.done();
+        SearchCriteria<HaWorkVO> sc = sb.create();
+        sc.setParameters("server", managementServerId);
+        sc.setParameters("step", Step.Done, Step.Cancelled);
+        updatePendingWorkToInvestigating(sc);
     }
 }

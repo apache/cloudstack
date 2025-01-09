@@ -1122,6 +1122,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
         _executor.shutdown();
 
+        _haDao.markServerPendingWorksAsInvestigating(_msServer.getId());
+
         return true;
     }
 
