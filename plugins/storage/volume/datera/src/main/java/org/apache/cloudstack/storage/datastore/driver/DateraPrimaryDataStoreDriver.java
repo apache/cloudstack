@@ -388,7 +388,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
 
         } catch (DateraObject.DateraError | UnsupportedEncodingException | InterruptedException dateraError) {
-            String errMesg = "Error revoking access for Volume : " + dataObject.getId();
+            String errMesg = String.format("Error revoking access for Volume : %s", dataObject);
             logger.warn(errMesg, dateraError);
             throw new CloudRuntimeException(errMesg);
         } finally {
@@ -588,7 +588,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                             usedSpaceBytes += DateraUtil.gibToBytes(appInstance.getSize());
                         }
                     } catch (DateraObject.DateraError dateraError) {
-                        String errMesg = "Error getting used bytes for storage pool : " + storagePool.getId();
+                        String errMesg = String.format("Error getting used bytes for storage pool : %s", storagePool);
                         logger.warn(errMesg, dateraError);
                         throw new CloudRuntimeException(errMesg);
                     }
@@ -723,7 +723,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             storagePoolDao.update(storagePoolId, storagePool);
 
         } catch (UnsupportedEncodingException | DateraObject.DateraError e) {
-            String errMesg = "Error deleting app instance for Volume : " + volumeInfo.getId();
+            String errMesg = String.format("Error deleting app instance for Volume: %s", volumeInfo);
             logger.warn(errMesg, e);
             throw new CloudRuntimeException(errMesg);
         }
@@ -826,8 +826,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         String iqnPath = DateraUtil.generateIqnPath(iqn);
 
         VolumeVO volumeVo = _volumeDao.findById(volumeInfo.getId());
-        logger.debug("volume ID : " + volumeInfo.getId());
-        logger.debug("volume uuid : " + volumeInfo.getUuid());
+        logger.debug(String.format("volume: %s", volumeInfo));
 
         volumeVo.set_iScsiName(iqnPath);
         volumeVo.setFolder(appInstance.getName());
@@ -970,7 +969,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         if (baseAppInstanceName == null) {
             throw new CloudRuntimeException(
-                    "Unable to find a base volume to clone " + volumeInfo.getId() + " type " + dataType);
+                    "Unable to find a base volume to clone " + volumeInfo.getUuid() + " type " + dataType);
         }
 
         // Clone the app Instance
@@ -995,7 +994,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
         if (appInstance == null) {
             throw new CloudRuntimeException("Unable to create an app instance from snapshot or template "
-                    + volumeInfo.getId() + " type " + dataType);
+                    + volumeInfo.getUuid() + " type " + dataType);
         }
         logger.debug("Datera - Cloned " + baseAppInstanceName + " to " + clonedAppInstanceName);
 
@@ -1114,7 +1113,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     templateIops, replicaCount, volumePlacement, ipPool);
 
             if (appInstance == null) {
-                throw new CloudRuntimeException("Unable to create Template volume " + templateInfo.getId());
+                throw new CloudRuntimeException(String.format("Unable to create Template volume %s", templateInfo.getUuid()));
             }
 
             iqn = appInstance.getIqn();
@@ -1306,9 +1305,8 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                 DateraObject.VolumeSnapshot volumeSnapshot = DateraUtil.takeVolumeSnapshot(conn, baseAppInstanceName);
                 if (volumeSnapshot == null) {
-                    logger.error("Unable to take native snapshot appInstance name:" + baseAppInstanceName
-                            + " volume ID " + volumeInfo.getId());
-                    throw new CloudRuntimeException("Unable to take native snapshot for volume " + volumeInfo.getId());
+                    logger.error(String.format("Unable to take native snapshot appInstance name: %s volume: %s", baseAppInstanceName, volumeInfo));
+                    throw new CloudRuntimeException("Unable to take native snapshot for volume " + volumeInfo.getUuid());
                 }
 
                 String snapshotName = baseAppInstanceName + ":" + volumeSnapshot.getTimestamp();
@@ -1358,7 +1356,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             result.setResult(null);
         } catch (Exception ex) {
-            logger.debug("Failed to take CloudStack snapshot: " + snapshotInfo.getId(), ex);
+            logger.debug(String.format("Failed to take CloudStack snapshot: %s", snapshotInfo), ex);
 
             result = new CreateCmdResult(null, new CreateObjectAnswer(ex.toString()));
 
@@ -1494,7 +1492,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             storagePoolDao.update(storagePoolId, storagePool);
         } catch (Exception ex) {
-            logger.debug("Error in 'deleteSnapshot(SnapshotInfo, long)'. CloudStack snapshot ID: " + csSnapshotId,
+            logger.debug(String.format("Error in 'deleteSnapshot(SnapshotInfo, long)'. CloudStack snapshot: %s", snapshotInfo),
                     ex);
             throw ex;
         }
@@ -1531,7 +1529,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             storagePoolDao.update(storagePoolId, storagePool);
         } catch (Exception ex) {
-            logger.debug("Failed to delete template volume. CloudStack template ID: " + templateInfo.getId(), ex);
+            logger.debug(String.format("Failed to delete template volume. CloudStack template: %s", templateInfo), ex);
 
             throw ex;
         }
@@ -1553,8 +1551,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         long storagePoolId = volumeVO.getPoolId();
         long csSnapshotId = snapshotInfo.getId();
-        logger.info("Datera - restoreVolumeSnapshot from snapshotId " + String.valueOf(csSnapshotId) + " to volume"
-                + volumeVO.getName());
+        logger.info(String.format("Datera - restoreVolumeSnapshot from snapshot %s to volume %s", snapshotInfo, volumeVO));
 
         DateraObject.AppInstance appInstance;
 
@@ -1595,7 +1592,7 @@ public class DateraPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             callback.complete(commandResult);
 
         } catch (Exception ex) {
-            logger.debug("Error in 'revertSnapshot()'. CloudStack snapshot ID: " + csSnapshotId, ex);
+            logger.debug(String.format("Error in 'revertSnapshot()'. CloudStack snapshot: %s", snapshotInfo), ex);
             throw new CloudRuntimeException(ex.getMessage());
         }
 

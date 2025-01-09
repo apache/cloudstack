@@ -25,6 +25,7 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.host.Host;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -341,14 +342,14 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     @Override
     public boolean prepareMigration(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) {
         if (_networkModel.getUserDataUpdateProvider(network).getProvider().equals(Provider.ConfigDrive)) {
-            logger.trace(String.format("[prepareMigration] for vm: %s", vm.getInstanceName()));
+            logger.trace(String.format("[prepareMigration] for vm: %s", vm));
             try {
                 if (isConfigDriveIsoOnHostCache(vm.getId())) {
                     vm.setConfigDriveLocation(Location.HOST);
-                    configureConfigDriveData(vm, nic, dest);
-
-                    // Create the config drive on dest host cache
-                    createConfigDriveIsoOnHostCache(nic, vm, dest.getHost().getId());
+                    if (configureConfigDriveData(vm, nic, dest)) {
+                        // Create the config drive on dest host cache
+                        createConfigDriveIsoOnHostCache(nic, vm, dest.getHost());
+                    }
                 } else {
                     vm.setConfigDriveLocation(getConfigDriveLocation(vm.getId()));
                     boolean result = addPasswordAndUserdata(network, nic, vm, dest, context);
@@ -380,7 +381,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     @Override
     public void commitMigration(NicProfile nic, Network network, VirtualMachineProfile vm, ReservationContext src, ReservationContext dst) {
         try {
-            if (isConfigDriveIsoOnHostCache(vm.getId())) {
+            if (isLastConfigDriveIsoOnHostCache(vm.getId())) {
                 vm.setConfigDriveLocation(Location.HOST);
                 // Delete the config drive on src host cache
                 deleteConfigDriveIsoOnHostCache(vm.getVirtualMachine(), vm.getHostId());
@@ -537,26 +538,37 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         return false;
     }
 
-    private boolean createConfigDriveIsoOnHostCache(NicProfile nic, VirtualMachineProfile profile, Long hostId) throws ResourceUnavailableException {
-        if (hostId == null) {
+    private boolean isLastConfigDriveIsoOnHostCache(long vmId) {
+        final UserVmDetailVO vmDetailLastConfigDriveLocation = _userVmDetailsDao.findDetail(vmId, VmDetailConstants.LAST_CONFIG_DRIVE_LOCATION);
+        if (vmDetailLastConfigDriveLocation == null) {
+            return isConfigDriveIsoOnHostCache(vmId);
+        }
+        if (Location.HOST.toString().equalsIgnoreCase(vmDetailLastConfigDriveLocation.getValue())) {
+            return true;
+        }
+        return false;
+    }
+
+    private boolean createConfigDriveIsoOnHostCache(NicProfile nic, VirtualMachineProfile profile, Host host) throws ResourceUnavailableException {
+        if (host == null) {
             throw new ResourceUnavailableException("Config drive iso creation failed, dest host not available",
                     ConfigDriveNetworkElement.class, 0L);
         }
 
-        logger.debug("Creating config drive ISO for vm: " + profile.getInstanceName() + " on host: " + hostId);
+        logger.debug("Creating config drive ISO for vm: {} on host: {}", profile, host);
 
         Map<String, String> customUserdataParamMap = getVMCustomUserdataParamMap(profile.getId());
 
         final String isoFileName = ConfigDrive.configIsoFileName(profile.getInstanceName());
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
-        List<NicProfile> nicProfiles = _networkOrchestrationService.getNicProfiles(nic.getVirtualMachineId(), profile.getHypervisorType());
+        List<NicProfile> nicProfiles = _networkOrchestrationService.getNicProfiles(profile.getVirtualMachine().getId(), profile.getHypervisorType());
         final Map<Long, List<Service>> supportedServices = getSupportedServicesByElementForNetwork(nicProfiles);
         final String isoData = ConfigDriveBuilder.buildConfigDrive(nicProfiles, profile.getVmData(), isoFileName, profile.getConfigDriveLabel(), customUserdataParamMap, supportedServices);
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, isoData, null, false, true, true);
 
-        final HandleConfigDriveIsoAnswer answer = (HandleConfigDriveIsoAnswer) agentManager.easySend(hostId, configDriveIsoCommand);
+        final HandleConfigDriveIsoAnswer answer = (HandleConfigDriveIsoAnswer) agentManager.easySend(host.getId(), configDriveIsoCommand);
         if (answer == null) {
-            throw new CloudRuntimeException("Unable to get an answer to handle config drive creation for vm: " + profile.getInstanceName() + " on host: " + hostId);
+            throw new CloudRuntimeException(String.format("Unable to get an answer to handle config drive creation for vm: %s on host: %s", profile, host));
         }
 
         if (!answer.getResult()) {
@@ -565,7 +577,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         }
 
         profile.setConfigDriveLocation(answer.getConfigDriveLocation());
-        _userVmDetailsDao.addDetail(profile.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION, answer.getConfigDriveLocation().toString(), false);
+        updateConfigDriveLocationInVMDetails(profile.getId(), answer.getConfigDriveLocation());
         addConfigDriveDisk(profile, null);
         return true;
     }
@@ -576,26 +588,26 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                     ConfigDriveNetworkElement.class, 0L);
         }
 
-        logger.debug("Deleting config drive ISO for vm: " + vm.getInstanceName() + " on host: " + hostId);
         final String isoPath = ConfigDrive.createConfigDrivePath(vm.getInstanceName());
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, null, null, false, true, false);
         HostVO hostVO = _hostDao.findById(hostId);
+        logger.debug("Deleting config drive ISO for vm: {} on host: {}({})", vm, hostId, hostVO);
         if (hostVO == null) {
             logger.warn(String.format("Host %s appears to be unavailable, skipping deletion of config-drive ISO on host cache", hostId));
             return false;
         }
         if (!Arrays.asList(Status.Up, Status.Connecting).contains(hostVO.getStatus())) {
-            logger.warn(String.format("Host status %s is not Up or Connecting, skipping deletion of config-drive ISO on host cache", hostId));
+            logger.warn("Host status {} is not Up or Connecting, skipping deletion of config-drive ISO on host cache", hostVO);
             return false;
         }
 
         final HandleConfigDriveIsoAnswer answer = (HandleConfigDriveIsoAnswer) agentManager.easySend(hostId, configDriveIsoCommand);
         if (answer == null) {
-            throw new CloudRuntimeException("Unable to get an answer to handle config drive deletion for vm: " + vm.getInstanceName() + " on host: " + hostId);
+            throw new CloudRuntimeException(String.format("Unable to get an answer to handle config drive deletion for vm: %s on host: %s", vm, hostVO));
         }
 
         if (!answer.getResult()) {
-            logger.error("Failed to remove config drive for instance: " + vm.getInstanceName());
+            logger.error("Failed to remove config drive for instance: {}", vm);
             return false;
         }
         return true;
@@ -630,7 +642,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                     ConfigDriveNetworkElement.class, 0L);
         }
 
-        logger.debug("Creating config drive ISO for vm: " + profile.getInstanceName());
+        logger.debug("Creating config drive ISO for vm: {}", profile);
 
         Map<String, String> customUserdataParamMap = getVMCustomUserdataParamMap(profile.getId());
 
@@ -650,9 +662,21 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                     answer.getDetails()), ConfigDriveNetworkElement.class, 0L);
         }
         profile.setConfigDriveLocation(answer.getConfigDriveLocation());
-        _userVmDetailsDao.addDetail(profile.getId(), VmDetailConstants.CONFIG_DRIVE_LOCATION, answer.getConfigDriveLocation().toString(), false);
+        updateConfigDriveLocationInVMDetails(profile.getId(), answer.getConfigDriveLocation());
         addConfigDriveDisk(profile, dataStore);
         return true;
+    }
+
+    private void updateConfigDriveLocationInVMDetails(long vmId, NetworkElement.Location configDriveLocation) {
+        final UserVmDetailVO vmDetailConfigDriveLocation = _userVmDetailsDao.findDetail(vmId, VmDetailConstants.CONFIG_DRIVE_LOCATION);
+        if (vmDetailConfigDriveLocation != null) {
+            if (!configDriveLocation.toString().equalsIgnoreCase(vmDetailConfigDriveLocation.getValue())) {
+                _userVmDetailsDao.addDetail(vmId, VmDetailConstants.LAST_CONFIG_DRIVE_LOCATION, vmDetailConfigDriveLocation.getValue(), false);
+            } else {
+                _userVmDetailsDao.removeDetail(vmId, VmDetailConstants.LAST_CONFIG_DRIVE_LOCATION);
+            }
+        }
+        _userVmDetailsDao.addDetail(vmId, VmDetailConstants.CONFIG_DRIVE_LOCATION, configDriveLocation.toString(), false);
     }
 
     private Map<String, String> getVMCustomUserdataParamMap(long vmId) {
@@ -698,7 +722,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         Long hostId  = (vm.getHostId() != null) ? vm.getHostId() : vm.getLastHostId();
         Location location = getConfigDriveLocation(vm.getId());
         if (hostId == null) {
-            logger.info(String.format("The VM was never booted; no config-drive ISO created for VM %s", vm.getName()));
+            logger.info("The VM was never booted; no config-drive ISO created for VM {}", vm);
             return true;
         }
         if (location == Location.HOST) {
@@ -726,14 +750,14 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                     ConfigDriveNetworkElement.class, 0L);
         }
 
-        logger.debug("Deleting config drive ISO for vm: " + vm.getInstanceName());
+        logger.debug("Deleting config drive ISO for vm: {}", vm);
 
         final String isoPath = ConfigDrive.createConfigDrivePath(vm.getInstanceName());
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, null, dataStore.getTO(), false, false, false);
 
         final HandleConfigDriveIsoAnswer answer = (HandleConfigDriveIsoAnswer) agentManager.easySend(agentId, configDriveIsoCommand);
         if (!answer.getResult()) {
-            logger.error("Failed to remove config drive for instance: " + vm.getInstanceName());
+            logger.error("Failed to remove config drive for instance: {}", vm);
             return false;
         }
         return true;
@@ -769,7 +793,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     private boolean configureConfigDriveData(final VirtualMachineProfile profile, final NicProfile nic, final DeployDestination dest) {
         final UserVmVO vm = _userVmDao.findById(profile.getId());
-        if (vm.getType() != VirtualMachine.Type.User) {
+        if (vm == null || vm.getType() != VirtualMachine.Type.User) {
             return false;
         }
         final Nic defaultNic = _networkModel.getDefaultNic(vm.getId());

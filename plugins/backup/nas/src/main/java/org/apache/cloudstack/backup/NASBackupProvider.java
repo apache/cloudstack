@@ -111,7 +111,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             // Try to find any Up host in the same cluster
             for (final Host hostInCluster : hostDao.findHypervisorHostInCluster(host.getClusterId())) {
                 if (hostInCluster.getStatus() == Status.Up) {
-                    LOG.debug("Found Host " + hostInCluster.getName());
+                    LOG.debug("Found Host {}", hostInCluster);
                     return hostInCluster;
                 }
             }
@@ -119,7 +119,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         // Try to find any Host in the zone
         for (final HostVO hostInZone : hostDao.listByDataCenterIdAndHypervisorType(host.getDataCenterId(), Hypervisor.HypervisorType.KVM)) {
             if (hostInZone.getStatus() == Status.Up) {
-                LOG.debug("Found Host " + hostInZone.getName());
+                LOG.debug("Found Host {}", hostInZone);
                 return hostInZone;
             }
         }
@@ -232,7 +232,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         List<String> backedVolumesUUIDs = backedVolumes.stream().map(volume -> volume.getUuid()).collect(Collectors.toList());
         List<VolumeVO> restoreVolumes = volumeDao.findByInstance(vm.getId());
 
-        LOG.debug("Restoring vm {} from backup {} on the NAS Backup Provider", vm.getUuid(), backup.getUuid());
+        LOG.debug("Restoring vm {} from backup {} on the NAS Backup Provider", vm, backup);
         BackupRepository backupRepository = getBackupRepository(vm, backup);
 
         final Host host = getLastVMHypervisorHost(vm);
@@ -283,7 +283,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         Optional<Backup.VolumeInfo> matchingVolume = getBackedUpVolumeInfo(backupSourceVm.getBackupVolumeList(), volumeUuid);
         Long backedUpVolumeSize = matchingVolume.isPresent() ? matchingVolume.get().getSize() : 0L;
 
-        LOG.debug("Restoring vm volume" + volumeUuid + "from backup " + backup.getUuid() + " on the NAS Backup Provider");
+        LOG.debug("Restoring vm volume {} from backup {} on the NAS Backup Provider", volume, backup);
         BackupRepository backupRepository = getBackupRepository(backupSourceVm, backup);
 
         VolumeVO restoredVolume = new VolumeVO(Volume.Type.DATADISK, null, backup.getZoneId(),
@@ -397,8 +397,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 vmBackupProtectedSize += backup.getProtectedSize();
             }
             Backup.Metric vmBackupMetric = new Backup.Metric(vmBackupSize,vmBackupProtectedSize);
-            LOG.debug(String.format("Metrics for VM [uuid: %s, name: %s] is [backup size: %s, data size: %s].", vm.getUuid(),
-                    vm.getInstanceName(), vmBackupMetric.getBackupSize(), vmBackupMetric.getDataSize()));
+            LOG.debug("Metrics for VM {} is [backup size: {}, data size: {}].", vm, vmBackupMetric.getBackupSize(), vmBackupMetric.getDataSize());
             metrics.put(vm, vmBackupMetric);
         }
         return metrics;

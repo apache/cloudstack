@@ -102,6 +102,12 @@ public class BackupVO implements Backup {
     }
 
     @Override
+    public String toString() {
+        return String.format("Backup %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "vmId", "backupType", "externalId"));
+    }
+
+    @Override
     public long getId() {
         return id;
     }

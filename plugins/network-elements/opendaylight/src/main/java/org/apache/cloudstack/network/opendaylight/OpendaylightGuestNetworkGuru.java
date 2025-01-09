@@ -107,10 +107,10 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
 
         List<OpenDaylightControllerVO> devices = openDaylightControllerMappingDao.listByPhysicalNetwork(physnet.getId());
         if (devices.isEmpty()) {
-            logger.error("No Controller on physical network " + physnet.getName());
+            logger.error("No Controller on physical network {}", physnet);
             return null;
         }
-        logger.debug("Controller " + devices.get(0).getUuid() + " found on physical network " + physnet.getId());
+        logger.debug("Controller {} found on physical network {}", devices.get(0).getUuid(), physnet);
         logger.debug("Physical isolation type is ODL, asking GuestNetworkGuru to design this network");
 
         NetworkVO networkObject = (NetworkVO)super.design(offering, plan, userSpecified, name, vpcId, owner);
@@ -194,7 +194,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
         AddHypervisorCommand addCmd = new AddHypervisorCommand(dest.getHost().getUuid(), dest.getHost().getPrivateIpAddress());
         AddHypervisorAnswer addAnswer = (AddHypervisorAnswer)agentManager.easySend(controller.getHostId(), addCmd);
         if (addAnswer == null || !addAnswer.getResult()) {
-            logger.error("Failed to add " + dest.getHost().getName() + " as a node to the controller");
+            logger.error(String.format("Failed to add %s as a node to the controller", dest.getHost()));
             throw new InsufficientVirtualNetworkCapacityException("Failed to add destination hypervisor to the OpenDaylight Controller", dest.getPod().getId());
         }
 
@@ -241,7 +241,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
     public void shutdown(NetworkProfile profile, NetworkOffering offering) {
         NetworkVO networkObject = networkDao.findById(profile.getId());
         if (networkObject.getBroadcastDomainType() != BroadcastDomainType.OpenDaylight || networkObject.getBroadcastUri() == null) {
-            logger.warn("BroadcastUri is empty or incorrect for guestnetwork " + networkObject.getDisplayText());
+            logger.warn(String.format("BroadcastUri is empty or incorrect for guest network %s", networkObject));
             return;
         }
 

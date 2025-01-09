@@ -21,6 +21,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.dao.HostPodDao;
 import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
@@ -38,7 +39,6 @@ import com.cloud.server.ManagementServer;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
@@ -51,6 +51,8 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
 
     @Inject
     protected HostDao _hostDao;
+    @Inject
+    protected HostPodDao podDao;
     @Inject
     protected UserVmDao _userVmDao;
     protected String _consoleProxyUrlDomain;
@@ -140,17 +142,11 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     }
 
     @Override
-    public ConsoleProxyInfo assignProxy(long dataCenterId, long userVmId) {
-        UserVmVO userVm = _userVmDao.findById(userVmId);
-        if (userVm == null) {
-            logger.warn("User VM " + userVmId + " no longer exists, return a null proxy for user vm:" + userVmId);
-            return null;
-        }
-
+    public ConsoleProxyInfo assignProxy(long dataCenterId, VMInstanceVO userVm) {
         HostVO host = findHost(userVm);
         if (host != null) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Assign embedded console proxy running at " + host.getName() + " to user vm " + userVmId + " with public IP " + host.getPublicIpAddress());
+                logger.debug("Assign embedded console proxy running at {} to user vm {} with public IP {}", host, userVm, host.getPublicIpAddress());
             }
 
             // only private IP, public IP, host id have meaningful values, rest
@@ -172,7 +168,7 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
 
             return new ConsoleProxyInfo(_sslEnabled, publicIp, _consoleProxyPort, urlPort, _consoleProxyUrlDomain);
         } else {
-            logger.warn("Host that VM is running is no longer available, console access to VM " + userVmId + " will be temporarily unavailable.");
+            logger.warn("Host that VM is running is no longer available, console access to VM {} will be temporarily unavailable.", userVm);
         }
         return null;
     }

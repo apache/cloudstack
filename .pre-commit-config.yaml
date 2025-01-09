@@ -54,12 +54,12 @@ repos:
           ^systemvm/agent/certs/realhostip\.key$
       - id: end-of-file-fixer
         exclude: \.vhd$
-      #- id: fix-byte-order-marker
+      - id: fix-byte-order-marker
       - id: forbid-submodules
       - id: mixed-line-ending
-        exclude: \.(cs|xml)$
+        exclude: \.cs$
       - id: trailing-whitespace
-        files: \.(header|in|java|md|properties|py|rb|sh|sql|txt|vue|xml|yaml|yml)$
+        files: \.(bat|cfg|cs|css|gitignore|header|in|install|java|md|properties|py|rb|sh|sql|txt|vue|xml|xsl|yaml|yml)$
         args: [--markdown-linebreak-ext=md]
         exclude: ^services/console-proxy/rdpconsole/src/test/doc/freerdp-debug-log\.txt$
   - repo: https://github.com/codespell-project/codespell
@@ -87,7 +87,7 @@ repos:
         ^setup/bindir/cloud-setup-encryption\.in$|
         ^venv/.*$
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.40.0
+    rev: v0.43.0
     hooks:
       - id: markdownlint
         name: run markdownlint

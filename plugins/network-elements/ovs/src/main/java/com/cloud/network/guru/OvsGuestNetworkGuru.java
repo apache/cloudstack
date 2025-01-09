@@ -187,13 +187,12 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
         NetworkVO networkObject = _networkDao.findById(profile.getId());
         if (networkObject.getBroadcastDomainType() != BroadcastDomainType.Vswitch
             || networkObject.getBroadcastUri() == null) {
-            logger.warn("BroadcastUri is empty or incorrect for guestnetwork "
-                + networkObject.getDisplayText());
+            logger.warn(String.format("BroadcastUri is empty or incorrect for guest network %s", networkObject));
             return;
         }
 
         if (profile.getBroadcastDomainType() == BroadcastDomainType.Vswitch ) {
-            logger.debug("Releasing vnet for the network id=" + profile.getId());
+            logger.debug(String.format("Releasing vnet for the network %s", profile));
             _dcDao.releaseVnet(BroadcastDomainType.getValue(profile.getBroadcastUri()), profile.getDataCenterId(), profile.getPhysicalNetworkId(),
                     profile.getAccountId(), profile.getReservationId());
         }
