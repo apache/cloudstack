@@ -632,7 +632,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
             Integer cpu = cpuSpeedAndRamSize.first();
             Integer speed = cpuSpeedAndRamSize.second();
             Integer ramSize = cpuSpeedAndRamSize.third();
-            if (ObjectUtils.anyNull(cpu, speed,ramSize)) {
+            if (ObjectUtils.anyNull(cpu, speed, ramSize)) {
                 s_logger.warn(String.format("Cannot fetch compute resources for the VM %s, skipping it from the capacity check", runningVM));
                 continue;
             }
