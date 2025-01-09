@@ -47,7 +47,8 @@
 
 <script>
 
-import { api, h } from '@/api'
+import { h } from 'vue'
+import { api } from '@/api'
 import { Button } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
 

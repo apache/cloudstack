@@ -8862,6 +8862,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        List<DiskOfferingInfo> dataDiskOfferingsInfo = cmd.getDataDiskOfferingsInfo();
+        if (dataDiskOfferingsInfo != null && diskOfferingId != null) {
+            new InvalidParameterValueException("Cannot specify both disk offering id and data disk offering details");
+        }
+        if (dataDiskOfferingsInfo == null && diskOfferingId == null) {
+            dataDiskOfferingsInfo = backupManager.getDataDiskOfferingListFromBackup(backup);
+        }
+
         DiskOffering diskOfferingMappedInServiceOffering = _entityMgr.findById(DiskOffering.class, serviceOffering.getDiskOfferingId());
         if (diskOfferingMappedInServiceOffering.isUseLocalStorage()) {
             throw new InvalidParameterValueException("Local storage disk offering not supported for instance created from backup");
@@ -8913,7 +8921,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new InvalidParameterValueException("Can't specify network Ids in Basic zone");
             } else {
                 vm = createBasicSecurityGroupVirtualMachine(zone, serviceOffering, template, getSecurityGroupIdList(cmd, zone, template, owner), owner, name, displayName, diskOfferingId,
-                        size , null, null , cmd.getHypervisor(), cmd.getHttpMethod(), null, null, null, sshKeyPairs, ipToNetworkMap, addrs, null , null , cmd.getAffinityGroupIdList(),
+                        size , dataDiskOfferingsInfo, null , cmd.getHypervisor(), cmd.getHttpMethod(), null, null, null, sshKeyPairs, ipToNetworkMap, addrs, null , null , cmd.getAffinityGroupIdList(),
                         cmd.getDetails(), cmd.getCustomId(), cmd.getDhcpOptionsMap(),
                         dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, false, overrideDiskOfferingId);
             }
@@ -8921,7 +8929,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (_networkModel.checkSecurityGroupSupportForNetwork(owner, zone, networkIds,
                     cmd.getSecurityGroupIdList()))  {
                 vm = createAdvancedSecurityGroupVirtualMachine(zone, serviceOffering, template, networkIds, getSecurityGroupIdList(cmd, zone, template, owner), owner, name,
-                        displayName, diskOfferingId, size, null, null, cmd.getHypervisor(), cmd.getHttpMethod(), null, null, null, sshKeyPairs, ipToNetworkMap, addrs, null, null,
+                        displayName, diskOfferingId, size, dataDiskOfferingsInfo, null, cmd.getHypervisor(), cmd.getHttpMethod(), null, null, null, sshKeyPairs, ipToNetworkMap, addrs, null, null,
                         cmd.getAffinityGroupIdList(), cmd.getDetails(), cmd.getCustomId(), cmd.getDhcpOptionsMap(),
                         dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, false, overrideDiskOfferingId, null);
 
@@ -8929,7 +8937,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (cmd.getSecurityGroupIdList() != null && !cmd.getSecurityGroupIdList().isEmpty()) {
                     throw new InvalidParameterValueException("Can't create vm with security groups; security group feature is not enabled per zone");
                 }
-                vm = createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, name, displayName, diskOfferingId, size, null, null,
+                vm = createAdvancedVirtualMachine(zone, serviceOffering, template, networkIds, owner, name, displayName, diskOfferingId, size, dataDiskOfferingsInfo, null,
                         cmd.getHypervisor(), cmd.getHttpMethod(), null, null, null, sshKeyPairs, ipToNetworkMap, addrs, null, null, cmd.getAffinityGroupIdList(), cmd.getDetails(),
                         cmd.getCustomId(), cmd.getDhcpOptionsMap(), dataDiskTemplateToDiskOfferingMap, userVmOVFProperties, false, null, overrideDiskOfferingId);
             }
@@ -8943,18 +8951,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long vmId = cmd.getEntityId();
         Map<Long, DiskOffering> diskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
         Map<VirtualMachineProfile.Param, Object> additonalParams = new HashMap<>();
-        UserVm vm;
-        try {
-            vm = startVirtualMachine(vmId, null, null, null, diskOfferingMap, additonalParams, null);
-        } catch (ResourceUnavailableException e) {
-            throw new CloudRuntimeException("Unable to start the instance " + e);
-        }
-
-        try {
-            backupManager.createDataVolumesForRestore(cmd.getBackupId(), vmId, cmd.getDataDiskOfferingsInfo());
-        } catch (Exception e) {
-            throw new CloudRuntimeException("Unable to create data volumes " + e);
-        }
+        UserVm vm = startVirtualMachine(vmId, null, null, null, diskOfferingMap, additonalParams, null);
 
         boolean status = false;
         try {
@@ -8974,11 +8971,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         backupManager.restoreBackupToVM(cmd.getBackupId(), vmId);
 
         if (cmd.getStartVm()) {
-            try {
-                vm = startVirtualMachine(vmId, null, null, null, diskOfferingMap, additonalParams, null);
-             } catch (ResourceUnavailableException e) {
-                throw new CloudRuntimeException("Unable to start the instance " + e);
-            }
+            vm = startVirtualMachine(vmId, null, null, null, diskOfferingMap, additonalParams, null);
         }
         return vm;
     }

@@ -28,27 +28,12 @@
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'name'">
           <span>{{ record.displaytext || record.name }}</span>
-          <div v-if="record.meta">
-            <div v-for="meta in record.meta" :key="meta.key">
-              <a-tag v-if="(isKVMUnmanage && meta.key !== 'datastore') || !isKVMUnmanage" style="margin-top: 5px" :key="meta.key">{{ meta.key + ': ' + meta.value }}</a-tag>
-            </div>
-          </div>
         </template>
         <template v-if="column.key === 'offering'">
           <span
             style="width: 50%"
             v-if="validOfferings[record.id] && validOfferings[record.id].length > 0">
-            <check-box-select-pair
-              v-if="selectedCustomDiskOffering!=null"
-              layout="vertical"
-              :resourceKey="record.id"
-              :selectOptions="validOfferings[record.id]"
-              :checkBoxLabel="autoSelectLabel"
-              :defaultCheckBoxValue="true"
-              :reversed="true"
-              @handle-checkselectpair-change="updateOfferingCheckPairSelect" />
             <a-select
-              v-else
               @change="updateOfferingSelect($event, record.id)"
               :defaultValue="validOfferings[record.id][0].id"
               showSearch
@@ -68,7 +53,7 @@
         <template v-if="column.key === 'size'">
           <span
             style="width: 50%"
-            v-if="this.custom[this.values[record.id]]">
+            v-if="custom[record.id]">
             <a-input-number
               :min="1"
               :max="1000"
@@ -84,12 +69,10 @@
 
 <script>
 import { api } from '@/api'
-import CheckBoxSelectPair from '@/components/CheckBoxSelectPair'
 
 export default {
-  name: 'MultiDiskSelection',
+  name: 'VolumeDiskOfferingMap',
   components: {
-    CheckBoxSelectPair
   },
   props: {
     items: {
@@ -99,26 +82,6 @@ export default {
     zoneId: {
       type: String,
       default: () => ''
-    },
-    selectionEnabled: {
-      type: Boolean,
-      default: true
-    },
-    customOfferingsAllowed: {
-      type: Boolean,
-      default: false
-    },
-    autoSelectCustomOffering: {
-      type: Boolean,
-      default: false
-    },
-    autoSelectLabel: {
-      type: String,
-      default: ''
-    },
-    isKVMUnmanage: {
-      type: Boolean,
-      default: false
     }
   },
   data () {
@@ -141,11 +104,13 @@ export default {
         }
       ],
       loading: false,
-      selectedRowKeys: [],
       diskOfferings: [],
       validOfferings: {},
       selectedCustomDiskOffering: null,
-      values: {}
+      values: {
+        offering: '',
+        size: ''
+      }
     }
   },
   computed: {
@@ -155,6 +120,9 @@ export default {
         disk.name = `${item.name} (${item.size} GB)`
         return disk
       })
+    },
+    isOfferingCustom () {
+      return 'true'
     }
   },
   watch: {
@@ -162,7 +130,6 @@ export default {
       deep: true,
       handler (newItem, oldItem) {
         if (newItem === oldItem) return
-        this.selectedRowKeys = []
         this.fetchDiskOfferings()
       }
     },
@@ -182,10 +149,6 @@ export default {
         listall: true
       }).then(response => {
         this.diskOfferings = response.listdiskofferingsresponse.diskoffering || []
-        if (!this.customOfferingsAllowed) {
-          this.diskOfferings = this.diskOfferings.filter(x => !x.iscustomized)
-        }
-        console.log('custom1')
         this.orderDiskOfferings()
       }).finally(() => {
         this.loading = false
@@ -194,53 +157,40 @@ export default {
     orderDiskOfferings () {
       this.loading = true
       this.validOfferings = {}
-      if (this.customOfferingsAllowed && this.autoSelectCustomOffering) {
-        this.selectedCustomDiskOffering = this.diskOfferings.filter(x => x.iscustomized)?.[0]
-      }
       for (const item of this.items) {
-        this.validOfferings[item.id] = this.diskOfferings.filter(x => x.disksize >= item.size || (this.customOfferingsAllowed && x.iscustomized))
+        this.validOfferings[item.id] = this.diskOfferings.filter(x => x.disksize >= item.size || (x.iscustomized))
       }
       this.diskOfferings.map(x => {
         this.custom[x.id] = x.iscustomized
       })
-      console.log('custom')
-      console.log(this.custom)
       this.setDefaultValues()
       this.loading = false
     },
     setDefaultValues () {
       this.values = {}
       for (const item of this.items) {
-        this.values[item.id] = this.selectedCustomDiskOffering?.id || this.validOfferings[item.id]?.[0]?.id || ''
+        this.values[item.id] = {
+          offering: this.validOfferings[item.id]?.[0]?.id || '',
+          size: this.validOfferings[item.id]?.[0]?.disksize || ''
+        }
       }
       this.sendValues()
     },
-    updateOfferingCheckPairSelect (diskId, checked, value) {
-      if (this.selectedCustomDiskOffering) {
-        this.values[diskId] = checked ? this.selectedCustomDiskOffering.id : value
-        this.sendValues()
-      }
+    updateCustomDiskSize (value, diskId) {
+      this.values[diskId].size = value
+      this.sendValues()
     },
     updateOfferingSelect (value, diskId) {
-      this.values[diskId] = value
-      console.log('diskoff')
-      console.log(diskId)
-      console.log(value)
-      console.log(this.values)
+      this.values[diskId].offering = value
+      this.custom[diskId] = this.diskOfferings.find(x => x.id === value)?.iscustomized
       this.sendValues()
     },
     sendValues () {
       const data = {}
-      if (this.selectionEnabled) {
-        this.selectedRowKeys.map(x => {
-          data[x] = this.values[x]
-        })
-      } else {
-        for (var x in this.values) {
-          data[x] = this.values[x]
-        }
+      for (var x in this.values) {
+        data[x] = this.values[x]
       }
-      this.$emit('select-multi-disk-offering', data)
+      this.$emit('select-volumes-disk-offering', data)
     }
   }
 }

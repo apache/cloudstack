@@ -34,7 +34,6 @@ import java.util.stream.Stream;
 import com.amazonaws.util.CollectionUtils;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
@@ -44,6 +43,7 @@ import com.cloud.storage.VolumeApiService;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.UserVmService;
 import com.cloud.vm.VirtualMachineManager;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -182,6 +182,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private EntityManager entityManager;
     @Inject
     private UserVmJoinDao userVmJoinDao;
+    @Inject
+    public UserVmService userVmService;
 
     private AsyncJobDispatcher asyncJobDispatcher;
     private Timer backupTimer;
@@ -812,47 +814,38 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public boolean createDataVolumesForRestore(Long backupId, Long vmId, List<Long> diskOfferingIds, List<Long> diskSizes, List<Long> minIopsList, List<Long> maxIopsList) throws ResourceAllocationException {
-        final BackupVO backup = backupDao.findById(backupId);
-        if (backup == null) {
-            throw new CloudRuntimeException("Backup " + backupId + " does not exist");
-        }
-
-        backupDao.loadDetails(backup);
+    public List<DiskOfferingInfo> getDataDiskOfferingListFromBackup(Backup backup) {
+        List<DiskOfferingInfo> diskOfferingInfoList = new ArrayList<>();
         List<DiskOfferingVO> diskOfferings;
-        if (diskOfferingIds != null) {
-            diskOfferings = diskOfferingIds.stream().map(id -> diskOfferingDao.findById(id)).collect(Collectors.toList());
-        } else {
-            diskOfferings = Stream.of(backup.getDetail(ApiConstants.DISK_OFFERING_IDS).split(","))
-                    .map(uuid -> diskOfferingDao.findByUuid(uuid))
-                    .collect(Collectors.toList());
-            diskSizes = Stream.of(backup.getDetail(ApiConstants.DISK_SIZES).split(","))
-                    .map(Long::valueOf)
-                    .collect(Collectors.toList());
-            minIopsList = Stream.of(backup.getDetail(ApiConstants.MIN_IOPS).split(","))
-                    .map(s -> "null".equals(s) ? null : Long.valueOf(s))
-                    .collect(Collectors.toList());
-            maxIopsList = Stream.of(backup.getDetail(ApiConstants.MAX_IOPS).split(","))
-                    .map(s -> "null".equals(s) ? null : Long.valueOf(s))
-                    .collect(Collectors.toList());
-        }
+        List<Long> diskSizes;
+        List<Long> minIopsList;
+        List<Long> maxIopsList;
 
-        List<DiskOfferingInfo> diskOfferingInfos = new ArrayList<>();
-        Long totalSize = 0L;
+        diskOfferings = Stream.of(backup.getDetail(ApiConstants.DISK_OFFERING_IDS).split(","))
+                .map(uuid -> diskOfferingDao.findByUuid(uuid))
+                .collect(Collectors.toList());
+        diskSizes = Stream.of(backup.getDetail(ApiConstants.DISK_SIZES).split(","))
+                .map(Long::valueOf)
+                .collect(Collectors.toList());
+        minIopsList = Stream.of(backup.getDetail(ApiConstants.MIN_IOPS).split(","))
+                .map(s -> "null".equals(s) ? null : Long.valueOf(s))
+                .collect(Collectors.toList());
+        maxIopsList = Stream.of(backup.getDetail(ApiConstants.MAX_IOPS).split(","))
+                .map(s -> "null".equals(s) ? null : Long.valueOf(s))
+                .collect(Collectors.toList());
+
         int index = 0;
         for (DiskOfferingVO diskOffering : diskOfferings) {
-            if (diskOffering == null || diskOffering.getRemoved() != null || diskOffering.isComputeOnly()) {
-                throw new InvalidParameterValueException("Please specify a valid disk offering.");
-            }
             Long size = diskOffering.isCustomized() ? diskSizes.get(index) : diskOffering.getDiskSize();
+            size = size / (1024 * 1024 * 1024);
             Long minIops = (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) ?
-                    minIopsList.get(index) : diskOffering.getMinIops();
+                    minIopsList.get(index) : null;
             Long maxIops = (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) ?
-                    maxIopsList.get(index) : diskOffering.getMaxIops();
-            diskOfferingInfos.add(new DiskOfferingInfo(diskOffering, size, minIops, maxIops));
-            totalSize += size;
+                    maxIopsList.get(index) : null;
+            diskOfferingInfoList.add(new DiskOfferingInfo(diskOffering, size, minIops, maxIops));
         }
-        return volumeApiService.createAndAttachVolumes(vmId, diskOfferingInfos, totalSize, backup.getZoneId(), backup.getAccountId());
+
+        return diskOfferingInfoList;
     }
 
     @Override

@@ -128,7 +128,6 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.configuration.Resource;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.DataCenter;
@@ -154,7 +153,6 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorCapabilitiesVO;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.offering.DiskOffering;
-import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
@@ -2541,36 +2539,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
         newVol = sendAttachVolumeCommand(vm, newVol, deviceId);
         return newVol;
-    }
-
-    @Override
-    public boolean createAndAttachVolumes(Long vmId, List<DiskOfferingInfo> diskOfferings, Long totalSize, Long zoneId, Long ownerId) throws ResourceAllocationException {
-        Account caller = CallContext.current().getCallingAccount();
-        Account owner = _accountMgr.getAccount(ownerId);
-        List<Long> volumesId = new ArrayList<>();
-        boolean error = false;
-
-        _resourceLimitMgr.checkResourceLimit(owner, Resource.ResourceType.volume, diskOfferings.size());
-        _resourceLimitMgr.checkResourceLimit(owner, Resource.ResourceType.primary_storage, totalSize);
-
-        for (DiskOfferingInfo diskOfferingInfo : diskOfferings) {
-            DiskOffering diskOffering = diskOfferingInfo.getDiskOffering();
-            VolumeVO volume = commitVolume(null, caller, owner, true, zoneId, diskOffering.getId(),
-                    diskOffering.getProvisioningType(), diskOfferingInfo.getSize(), diskOfferingInfo.getMinIops(),
-                    diskOfferingInfo.getMaxIops(), null, getRandomVolumeName(), _uuidMgr.generateUuid(Volume.class, null), new HashMap<>());
-            if (volume == null) {
-                error = true;
-                break;
-            }
-            volumesId.add(volume.getId());
-            attachVolumeToVM(vmId, volume.getId(), null, false);
-        }
-        if (error) {
-            for (Long volumeId : volumesId) {
-                destroyVolume(volumeId, caller, true, true);
-            }
-        }
-        return !error;
     }
 
     public Volume attachVolumeToVM(Long vmId, Long volumeId, Long deviceId, Boolean allowAttachForSharedFS) {

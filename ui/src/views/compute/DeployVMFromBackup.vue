@@ -108,8 +108,7 @@
                       showSearch
                       optionFilterProp="label"
                       :filterOption="filterOption"
-                      :loading="loading.templates"
-                      :placeholder="Entertemplateid">
+                      :loading="loading.templates">
                       <a-select-option v-for="temp in templateSelectOptions" :key="temp.value" :label="temp.label">
                         <span>
                           <resource-icon v-if="temp.icon" :image="temp.icon" size="1x" style="margin-right: 5px"/>
@@ -258,15 +257,28 @@
               </a-step>
               <a-step
                 :title="$t('label.data.disk')"
+                :status="zoneSelected ? 'process' : 'wait'"
+                v-if="!template.deployasis && template.childtemplates && template.childtemplates.length > 0" >
+                <template #description>
+                  <div v-if="zoneSelected">
+                    <multi-disk-selection
+                      :items="template.childtemplates"
+                      :diskOfferings="options.diskOfferings"
+                      :zoneId="zoneId"
+                      @select-multi-disk-offering="updateMultiDiskOffering($event)" />
+                  </div>
+                </template>
+              </a-step>
+              <a-step
+                v-else
+                :title="$t('label.data.disk')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div v-if="zoneSelected">
                     <volume-disk-offering-map
                       :items="dataPreFill.diskofferingids"
-                      :diskOfferings="options.diskOfferings"
                       :zoneId="zoneId"
-                      :customOfferingsAllowed="true"
-                      @select-multi-disk-offering="updateMultiDiskOffering($event)" />
+                      @select-volumes-disk-offering="updateVolumesDiskOffering($event)" />
                   </div>
                 </template>
               </a-step>
@@ -831,7 +843,6 @@ export default {
       selectedTemplateConfiguration: {},
       hypervisor: '',
       serviceOffering: {},
-      diskOffering: {},
       affinityGroups: [],
       networks: [],
       networksAdd: [],
@@ -871,12 +882,6 @@ export default {
         'selfexecutable',
         'sharedexecutable'
       ],
-      isoFilter: [
-        'featured',
-        'community',
-        'selfexecutable',
-        'sharedexecutable'
-      ],
       initDataConfig: {},
       defaultnetworkid: '',
       networkConfig: [],
@@ -890,7 +895,6 @@ export default {
       rootDiskSizeFixed: 0,
       hasError: false,
       error: false,
-      diskSelected: {},
       rootDiskSelected: {},
       diskIOpsMin: 0,
       diskIOpsMax: 0,
@@ -937,32 +941,20 @@ export default {
     },
     diskSize () {
       const customRootDiskSize = _.get(this.instanceConfig, 'rootdisksize', null)
-      const customDataDiskSize = _.get(this.instanceConfig, 'size', null)
       let computeOfferingDiskSize = _.get(this.serviceOffering, 'rootdisksize', null)
       computeOfferingDiskSize = computeOfferingDiskSize > 0 ? computeOfferingDiskSize : null
-      const diskOfferingDiskSize = _.get(this.diskOffering, 'disksize', null)
       const overrideDiskOfferingDiskSize = _.get(this.overrideDiskOffering, 'disksize', null)
 
-      let rootDiskSize
-      let dataDiskSize
-      if (this.vm.isoid != null) {
-        rootDiskSize = this.diskOffering?.iscustomized ? customDataDiskSize : diskOfferingDiskSize
-      } else {
-        rootDiskSize = this.overrideDiskOffering?.iscustomized ? customRootDiskSize : overrideDiskOfferingDiskSize || computeOfferingDiskSize || this.dataPreFill.minrootdisksize
-        dataDiskSize = this.diskOffering?.iscustomized ? customDataDiskSize : diskOfferingDiskSize
-      }
+      const rootDiskSize = this.overrideDiskOffering?.iscustomized ? customRootDiskSize : overrideDiskOfferingDiskSize || computeOfferingDiskSize || this.dataPreFill.minrootdisksize
 
       const size = []
       if (rootDiskSize) {
         size.push(`${rootDiskSize} GB (Root)`)
       }
-      if (dataDiskSize) {
-        size.push(`${dataDiskSize} GB (Data)`)
-      }
       return size.join(' | ')
     },
     rootDiskOffering () {
-      const rootDiskOffering = this.vm.isoid != null ? this.diskOffering : this.overrideDiskOffering
+      const rootDiskOffering = this.overrideDiskOffering
 
       const id = _.get(rootDiskOffering, 'id', null)
       const displayText = _.get(rootDiskOffering, 'displaytext', null)
@@ -970,19 +962,6 @@ export default {
       return {
         id: id,
         displayText: `${displayText} (Root)`
-      }
-    },
-    dataDiskOffering () {
-      if (this.vm.isoid != null) {
-        return null
-      }
-
-      const id = _.get(this.diskOffering, 'id', null)
-      const displayText = _.get(this.diskOffering, 'displaytext', null)
-
-      return {
-        id: id,
-        displayText: `${displayText} (Data)`
       }
     },
     affinityGroupIds () {
@@ -1192,9 +1171,6 @@ export default {
     templateId () {
       return this.$route.query.templateid || null
     },
-    isoId () {
-      return this.$route.query.isoid || null
-    },
     networkId () {
       return this.$route.query.networkid || null
     },
@@ -1234,9 +1210,6 @@ export default {
     },
     dynamicScalingVmConfigValue () {
       return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
-    },
-    isCustomizedDiskIOPS () {
-      return this.diskSelected?.iscustomizediops || false
     },
     isCustomizedIOPS () {
       return this.rootDiskSelected?.iscustomizediops || this.serviceOffering?.iscustomizediops || false
@@ -1278,15 +1251,10 @@ export default {
           this.overrideDiskOffering = null
         }
 
-        if (this.diskSelected) {
-          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
-        }
-
         this.zone = _.find(this.options.zones, (option) => option.id === this.instanceConfig.zoneid)
         this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
         this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id)))
 
-        this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
         this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === instanceConfig.keypair)
 
         if (this.zone) {
@@ -1344,20 +1312,12 @@ export default {
           }
         }
 
-        if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
-          this.vm.diskofferingid = ''
-          this.vm.diskofferingname = ''
-          this.vm.diskofferingsize = ''
-        } else if (this.diskOffering) {
-          this.vm.diskofferingid = this.diskOffering.id
-          this.vm.diskofferingname = this.diskOffering.displaytext
-          this.vm.diskofferingsize = this.diskOffering.disksize
-        }
+        this.vm.diskofferingid = ''
+        this.vm.diskofferingname = ''
+        this.vm.diskofferingsize = ''
 
         this.vm.rootdiskofferingid = this.rootDiskOffering?.id
         this.vm.rootdiskofferingdisplaytext = this.rootDiskOffering?.displayText
-        this.vm.datadiskofferingid = this.dataDiskOffering?.id
-        this.vm.datadiskofferingdisplaytext = this.dataDiskOffering?.displayText
 
         if (this.affinityGroups) {
           this.vm.affinitygroup = this.affinityGroups
@@ -1666,13 +1626,6 @@ export default {
         this.updateTemplateConfigurationOfferingDetails(id)
       }, 500)
     },
-    updateDiskOffering (id) {
-      if (id === '0') {
-        this.form.diskofferingid = undefined
-        return
-      }
-      this.form.diskofferingid = id
-    },
     updateOverrideDiskOffering (id) {
       if (id === '0') {
         this.form.overridediskofferingid = undefined
@@ -1682,6 +1635,10 @@ export default {
     },
     updateMultiDiskOffering (value) {
       this.form.multidiskoffering = value
+    },
+    updateVolumesDiskOffering (value) {
+      console.log('11   ' + JSON.stringify(value, null, 2))
+      this.form.volumesdiskoffering = value
     },
     updateAffinityGroups (ids) {
       this.form.affinitygroupids = ids
@@ -1776,34 +1733,10 @@ export default {
       if (this.loading.deploy) return
       this.formRef.value.validate().then(async () => {
         const values = toRaw(this.form)
-        if (!values.templateid && !values.isoid) {
-          console.log('error 1')
-          this.$notification.error({
-            message: this.$t('message.request.failed'),
-            description: this.$t('message.template.iso')
-          })
-          return
-        } else if (values.isoid && (!values.diskofferingid || values.diskofferingid === '0')) {
-          console.log('error 2')
-          this.$notification.error({
-            message: this.$t('message.request.failed'),
-            description: this.$t('message.step.3.continue')
-          })
-          return
-        }
         if (!values.computeofferingid) {
-          console.log('error 3')
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('message.step.2.continue')
-          })
-          return
-        }
-        if (this.error) {
-          console.log('error 4')
-          this.$notification.error({
-            message: this.$t('message.request.failed'),
-            description: this.$t('error.form.message')
           })
           return
         }
@@ -1836,7 +1769,7 @@ export default {
         if (isUserdataAllowed && values.userdata && values.userdata.length > 0) {
           deployVmData.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
-        // step 2: select template/iso
+        // step 2: select template
         deployVmData.templateid = values.templateid
         values.hypervisor = null
 
@@ -1868,7 +1801,7 @@ export default {
         if (this.selectedTemplateConfiguration) {
           deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
         }
-        if (!this.serviceOffering.diskofferingstrictness && values.overridediskofferingid && !values.isoid) {
+        if (!this.serviceOffering.diskofferingstrictness && values.overridediskofferingid) {
           deployVmData.overridediskofferingid = values.overridediskofferingid
           if (values.rootdisksize && values.rootdisksize > 0) {
             deployVmData.rootdisksize = values.rootdisksize
@@ -1890,16 +1823,19 @@ export default {
               i++
             })
           }
-        } else {
-          deployVmData.diskofferingid = values.diskofferingid
-          if (values.size) {
-            deployVmData.size = values.size
-          }
         }
-        if (this.isCustomizedDiskIOPS) {
-          deployVmData['details[0].minIopsDo'] = this.diskIOpsMin
-          deployVmData['details[0].maxIopsDo'] = this.diskIOpsMax
+
+        if (values.volumesdiskoffering) {
+          let i = 0
+          Object.entries(values.volumesdiskoffering).forEach(([disk, { offering, size }]) => {
+            const offeringKey = `datadisksdetails[${i}].diskofferingid`
+            const sizeKey = `datadisksdetails[${i}].size`
+            deployVmData[offeringKey] = offering
+            deployVmData[sizeKey] = size
+            i++
+          })
         }
+
         // step 5: select an affinity group
         deployVmData.affinitygroupids = (values.affinitygroupids || []).join(',')
         // step 6: select network
@@ -1928,7 +1864,6 @@ export default {
                 }
               }
             } else {
-              console.log('error 5')
               this.$notification.error({
                 message: this.$t('message.request.failed'),
                 description: this.$t('message.step.4.continue')
@@ -2554,9 +2489,6 @@ export default {
     },
     handlerError (error) {
       this.error = error
-    },
-    onSelectDiskSize (rowSelected) {
-      this.diskSelected = rowSelected
     },
     onSelectRootDiskSize (rowSelected) {
       this.rootDiskSelected = rowSelected

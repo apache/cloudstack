@@ -239,6 +239,7 @@ public class BackupVO implements Backup {
         this.details.put(name, value);
     }
 
+    @Override
     public String getDetail(String name) {
         return this.details.get(name);
     }

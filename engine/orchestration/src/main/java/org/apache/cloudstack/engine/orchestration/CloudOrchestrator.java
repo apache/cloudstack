@@ -242,7 +242,7 @@ public class CloudOrchestrator implements OrchestrationService {
 
                 dataDiskOfferings.add(dataDiskOfferingInfo);
             }
-        } else {
+        } else if (dataDiskOfferingsInfo != null){
             dataDiskOfferings.addAll(dataDiskOfferingsInfo);
         }
 

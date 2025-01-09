@@ -146,4 +146,5 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
     List<VolumeInfo> getBackedUpVolumes();
     long getZoneId();
     Map<String, String> getDetails();
+    String getDetail(String name);
 }

@@ -28,8 +28,8 @@ import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
@@ -159,7 +159,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     BackupOffering updateBackupOffering(UpdateBackupOfferingCmd updateBackupOfferingCmd);
 
-    boolean createDataVolumesForRestore(Long backupId, Long vmId, List<Long> diskOfferingIds, List<Long> diskSizes, List<Long> minIops, List<Long> maxIops) throws ResourceAllocationException;
+    List<DiskOfferingInfo> getDataDiskOfferingListFromBackup(Backup backup);
 
     Map<String, String> getBackupVmDetails(VirtualMachine vm);
 
