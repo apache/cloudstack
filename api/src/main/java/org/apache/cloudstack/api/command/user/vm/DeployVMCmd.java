@@ -70,6 +70,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.net.Dhcp;
@@ -146,6 +147,13 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             description = "Optional field to resize root disk on deploy. Value is in GB. Only applies to template-based deployments. Analogous to details[0].rootdisksize, which takes precedence over this parameter if both are provided",
             since = "4.4")
     private Long rootdisksize;
+
+    @Parameter(name = ApiConstants.DATADISKS_DETAILS,
+            type = CommandType.MAP,
+            since = "4.21.0",
+            description = "Disk offering details for creating multiple data volumes. Mutually exclusibe with diskOfferingId." +
+                    " Example: datadisksdetails[0].diskofferingid=1&datadisksdetails[0].size=10&datadisksdetails[0].miniops=100&datadisksdetails[0].maxiops=200")
+    private Map dataDisksDetails;
 
     @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "an optional group for the virtual machine")
     private String group;
@@ -277,6 +285,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.NIC_PACKED_VIRTQUEUES_ENABLED, type = CommandType.BOOLEAN, since = "4.18",
             description = "Enable packed virtqueues or not.")
     private Boolean nicPackedVirtQueues;
+
+    private List<DiskOfferingInfo> dataDiskOfferingsInfo;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -508,6 +518,58 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             sshKeyPairs.add(sshKeyPairName);
         }
         return sshKeyPairs;
+    }
+
+    public List<DiskOfferingInfo> getDataDiskOfferingsInfo() {
+        if (this.dataDiskOfferingsInfo != null) {
+            return this.dataDiskOfferingsInfo;
+        }
+        if (dataDisksDetails == null || dataDisksDetails.isEmpty()) {
+            return null;
+        }
+        List<DiskOfferingInfo> diskOfferingInfoList = new ArrayList<>();
+        Collection dataDisksCollection = dataDisksDetails.values();
+        Iterator iter = dataDisksCollection.iterator();
+        while (iter.hasNext()) {
+            HashMap<String, String> dataDisk = (HashMap<String, String>)iter.next();
+            String diskOfferingUuid = dataDisk.get(ApiConstants.DISK_OFFERING_ID);
+            if (diskOfferingUuid == null) {
+                throw new InvalidParameterValueException("Disk offering id is required for data disk");
+            }
+            DiskOffering diskOffering = _entityMgr.findByUuid(DiskOffering.class, diskOfferingUuid);
+            if (diskOffering == null) {
+                throw new InvalidParameterValueException("Unable to find disk offering " + diskOfferingUuid);
+            }
+            if (diskOffering.isComputeOnly()) {
+                throw new InvalidParameterValueException(String.format("The disk offering id %d provided is directly mapped to a service offering, please provide an individual disk offering", diskOffering.getUuid()));
+            }
+
+            Long size = null;
+            Long minIops = null;
+            Long maxIops = null;
+            if (diskOffering.isCustomized()) {
+                if (dataDisk.get(ApiConstants.SIZE) == null) {
+                    throw new InvalidParameterValueException("Size is required for custom disk offering");
+                }
+                size = Long.parseLong(dataDisk.get(ApiConstants.SIZE));
+            } else {
+                size = diskOffering.getDiskSize() / (1024 * 1024 * 1024);
+            }
+            if (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) {
+                if (dataDisk.get(ApiConstants.MIN_IOPS) == null) {
+                    throw new InvalidParameterValueException("Min IOPS is required for custom disk offering");
+                }
+                if (dataDisk.get(ApiConstants.MAX_IOPS) == null) {
+                    throw new InvalidParameterValueException("Max IOPS is required for custom disk offering");
+                }
+                minIops = Long.parseLong(dataDisk.get(ApiConstants.MIN_IOPS));
+                maxIops = Long.parseLong(dataDisk.get(ApiConstants.MAX_IOPS));
+            }
+            DiskOfferingInfo diskOfferingInfo = new DiskOfferingInfo(diskOffering, size, minIops, maxIops);
+            diskOfferingInfoList.add(diskOfferingInfo);
+        }
+        this.dataDiskOfferingsInfo = diskOfferingInfoList;
+        return dataDiskOfferingsInfo;
     }
 
     public Long getHostId() {
