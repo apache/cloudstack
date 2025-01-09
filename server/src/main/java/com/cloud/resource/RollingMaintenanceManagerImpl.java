@@ -687,20 +687,26 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
         Integer cpu = serviceOffering.getCpu();
         Integer speed = serviceOffering.getSpeed();
         Integer ramSize = serviceOffering.getRamSize();
-        if (serviceOffering.isDynamic()) {
-            List<UserVmDetailVO> vmDetails = userVmDetailsDao.listDetails(runningVM.getId());
-            if (CollectionUtils.isNotEmpty(vmDetails)) {
-                for (UserVmDetailVO vmDetail : vmDetails) {
-                    if (vmDetail.getName() != null && vmDetail.getValue() != null) {
-                        if (cpu == null && VmDetailConstants.CPU_NUMBER.equals(vmDetail.getName())) {
-                            cpu = Integer.valueOf(vmDetail.getValue());
-                        } else if (speed == null && VmDetailConstants.CPU_SPEED.equals(vmDetail.getName())) {
-                            speed = Integer.valueOf(vmDetail.getValue());
-                        } else if (ramSize == null && VmDetailConstants.MEMORY.equals(vmDetail.getName())) {
-                            ramSize = Integer.valueOf(vmDetail.getValue());
-                        }
-                    }
-                }
+        if (!serviceOffering.isDynamic()) {
+            return new Ternary<>(cpu, speed, ramSize);
+        }
+
+        List<UserVmDetailVO> vmDetails = userVmDetailsDao.listDetails(runningVM.getId());
+        if (CollectionUtils.isEmpty(vmDetails)) {
+            return new Ternary<>(cpu, speed, ramSize);
+        }
+
+        for (UserVmDetailVO vmDetail : vmDetails) {
+            if (StringUtils.isBlank(vmDetail.getName()) || StringUtils.isBlank(vmDetail.getValue())) {
+                continue;
+            }
+
+            if (cpu == null && VmDetailConstants.CPU_NUMBER.equals(vmDetail.getName())) {
+                cpu = Integer.valueOf(vmDetail.getValue());
+            } else if (speed == null && VmDetailConstants.CPU_SPEED.equals(vmDetail.getName())) {
+                speed = Integer.valueOf(vmDetail.getValue());
+            } else if (ramSize == null && VmDetailConstants.MEMORY.equals(vmDetail.getName())) {
+                ramSize = Integer.valueOf(vmDetail.getValue());
             }
         }
 
