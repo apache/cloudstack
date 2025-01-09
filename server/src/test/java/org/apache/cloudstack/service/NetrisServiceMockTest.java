@@ -86,4 +86,9 @@ public class NetrisServiceMockTest implements NetrisService {
     public boolean deleteStaticRoute(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String prefix, String nextHop, Long routeId) {
         return true;
     }
+
+    @Override
+    public boolean releaseNatIp(long zoneId, String publicIp) {
+        return true;
+    }
 }

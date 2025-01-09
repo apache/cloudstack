@@ -38,6 +38,7 @@ import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.NetrisAnswer;
 import org.apache.cloudstack.StartupNetrisCommand;
+import org.apache.cloudstack.agent.api.ReleaseNatIpCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
 import org.apache.cloudstack.service.NetrisApiClient;
 import org.apache.cloudstack.service.NetrisApiClientImpl;
@@ -109,6 +110,8 @@ public class NetrisResource implements ServerResource {
             return executeRequest((DeleteNetrisStaticRouteCommand) cmd);
         } else if (cmd instanceof AddOrUpdateNetrisStaticRouteCommand) {
             return executeRequest((AddOrUpdateNetrisStaticRouteCommand) cmd);
+        } else if (cmd instanceof ReleaseNatIpCommand) {
+          return executeRequest((ReleaseNatIpCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -315,6 +318,14 @@ public class NetrisResource implements ServerResource {
         boolean result = netrisApiClient.deleteStaticRoute(cmd);
         if (!result) {
             return new NetrisAnswer(cmd, false, String.format("Failed to add static route for VPC: %s, prefix: %s, nextHop: %s ", cmd.getName(), cmd.getPrefix(), cmd.getNextHop()));
+        }
+        return new NetrisAnswer(cmd, true, "OK");
+    }
+
+    private Answer executeRequest(ReleaseNatIpCommand cmd) {
+        boolean result = netrisApiClient.releaseNatIp(cmd);
+        if (!result) {
+            return new NetrisAnswer(cmd, false, String.format("Failed to release NAT IP: %s", cmd.getNatIp()));
         }
         return new NetrisAnswer(cmd, true, "OK");
     }

@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.IpAddress;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 
@@ -205,6 +206,11 @@ StaticNatServiceProvider, IpDeployer {
 
         final HostVO host = _hostDao.findById(vm.getVirtualMachine().getHostId());
         _ovsTunnelMgr.checkAndRemoveHostFromTunnelNetwork(network, host);
+        return true;
+    }
+
+    @Override
+    public boolean releaseIp(IpAddress ipAddress) {
         return true;
     }
 

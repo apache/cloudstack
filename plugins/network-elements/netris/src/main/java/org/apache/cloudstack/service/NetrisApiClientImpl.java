@@ -88,6 +88,7 @@ import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.ReleaseNatIpCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
 import org.apache.cloudstack.resource.NetrisResourceObjectUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -439,6 +440,31 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             logAndThrowException("Error deleting Netris static route", e);
         }
         return false;
+    }
+
+    @Override
+    public boolean releaseNatIp(ReleaseNatIpCommand cmd) {
+        String natIp = cmd.getNatIp() + "/32";
+        try {
+            VPCListing systemVpc = getSystemVpc();
+            IpamApi ipamApi = apiClient.getApiStubForMethod(IpamApi.class);
+            FilterByVpc vpcFilter = new FilterByVpc();
+            vpcFilter.add(systemVpc.getId());
+            SubnetResBody subnetResponse = ipamApi.apiV2IpamSubnetsGet(vpcFilter);
+            if (subnetResponse == null || !subnetResponse.isIsSuccess()) {
+                String reason = subnetResponse == null ? "Empty response" : "Operation failed on Netris";
+                logger.debug("Failed to retrieve Netris Public NAT IPs due to {}", reason);
+                throw new CloudRuntimeException(reason);
+            }
+            List<IpTreeSubnet> natIps = subnetResponse.getData().stream().filter(ip -> ip.getPrefix().equals(natIp)).collect(Collectors.toList());
+            if (!natIps.isEmpty()) {
+                ipamApi.apiV2IpamTypeIdDelete("subnet", natIps.get(0).getId().intValue());
+            }
+
+        } catch (ApiException e) {
+            logAndThrowException("Failed to release Netris IP", e);
+        }
+        return true;
     }
 
     private Pair<Boolean, RoutesGetBody> staticRouteExists(Integer netrisVpcId, String prefix, String nextHop, String description) {

@@ -43,6 +43,10 @@ import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.vo.PublicIpQuarantineVO;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.network.vpc.VpcOffering;
+import com.cloud.network.vpc.VpcOfferingServiceMapVO;
+import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -274,6 +278,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     ReservationDao reservationDao;
     @Inject
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
+    @Inject
+    VpcOfferingServiceMapDao vpcOfferingServiceMapDao;
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
@@ -805,6 +811,30 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 logger.debug("Released a public ip id=" + addrId);
             } else if (publicIpQuarantine != null) {
                 removePublicIpAddressFromQuarantine(publicIpQuarantine.getId(), "Public IP address removed from quarantine as there was an error while disassociating it.");
+            }
+            Network network = _networksDao.findById(ipToBeDisassociated.getAssociatedWithNetworkId());
+            Vpc vpc = _vpcDao.findById(ip.getVpcId());
+            if (ObjectUtils.allNull(network, vpc)) {
+                return success;
+            }
+            List<String> providers;
+            if (Objects.nonNull(network)) {
+                NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+                providers = _ntwkOfferingSrvcDao.listProvidersForServiceForNetworkOffering(offering.getId(), Service.NetworkACL);
+            } else {
+                VpcOffering offering = vpcOfferingDao.findById(vpc.getVpcOfferingId());
+                List<VpcOfferingServiceMapVO> servicesMap = vpcOfferingServiceMapDao.listProvidersForServiceForVpcOffering(offering.getId(), Service.NetworkACL);
+                providers = servicesMap.stream().map(VpcOfferingServiceMapVO::getProvider).collect(Collectors.toList());
+            }
+
+            if (providers.isEmpty()) {
+                throw new InvalidParameterValueException("Unable to find the provider for this network");
+            }
+
+            String provider = providers.get(0);
+            NetworkElement element = _networkModel.getElementImplementingProvider(provider);
+            if (element != null) {
+                element.releaseIp(ipToBeDisassociated);
             }
         } finally {
             _ipAddressDao.releaseFromLockTable(addrId);

@@ -52,6 +52,7 @@ import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.NetrisAnswer;
 import org.apache.cloudstack.agent.api.NetrisCommand;
+import org.apache.cloudstack.agent.api.ReleaseNatIpCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -350,6 +351,13 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
     @Override
     public boolean deleteStaticRoute(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String prefix, String nextHop, Long routeId) {
         DeleteNetrisStaticRouteCommand cmd = new DeleteNetrisStaticRouteCommand(zoneId, accountId, domainId, networkResourceName, networkResourceId, isForVpc, prefix, nextHop, routeId);
+        NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
+        return answer.getResult();
+    }
+
+    @Override
+    public boolean releaseNatIp(long zoneId, String publicIp) {
+        ReleaseNatIpCommand cmd = new ReleaseNatIpCommand(zoneId, null, null, null, null, false, publicIp);
         NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
         return answer.getResult();
     }
