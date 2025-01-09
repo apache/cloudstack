@@ -597,6 +597,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             backupDao.persist(backup);
             return backup;
         }
+        LOG.debug ("Backup is in progress, skipping addition for this run");
         return null;
     }
 

@@ -1412,20 +1412,22 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         private Backup checkAndUpdateIfBackupEntryExistsForRestorePoint(Backup.RestorePoint restorePoint, List<Backup> backupsInDb, VirtualMachine vm, Backup.Metric metric) {
-            for (final Backup backup : backupsInDb) {
-                if (restorePoint.getId().equals(backup.getExternalId())) {
+            for (final Backup backupInDb : backupsInDb) {
+                logger.debug(String.format("Checking if Backup %s with external ID %s for VM %s is valid", backupsInDb, backupInDb.getName(), vm));
+                if (restorePoint.getId().equals(backupInDb.getExternalId())) {
+                    logger.debug(String.format("Found Backup %s in both Database and Networker", backupInDb));
                     if (metric != null) {
-                        logger.debug(String.format("Update backup with [uuid: %s, external id: %s] from [size: %s, protected size: %s] to [size: %s, protected size: %s].",
-                                backup.getUuid(), backup.getExternalId(), backup.getSize(), backup.getProtectedSize(), metric.getBackupSize(), metric.getDataSize()));
+                        logger.debug(String.format("Update backup [%s] from [size: %s, protected size: %s] to [size: %s, protected size: %s].",
+                                backupInDb, backupInDb.getSize(), backupInDb.getProtectedSize(), metric.getBackupSize(), metric.getDataSize()));
 
-                        resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
-                        ((BackupVO) backup).setSize(metric.getBackupSize());
-                        ((BackupVO) backup).setProtectedSize(metric.getDataSize());
-                        resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
+                        resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backupInDb.getSize());
+                        ((BackupVO) backupInDb).setSize(metric.getBackupSize());
+                        ((BackupVO) backupInDb).setProtectedSize(metric.getDataSize());
+                        resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backupInDb.getSize());
 
-                        backupDao.update(backup.getId(), ((BackupVO) backup));
+                        backupDao.update(backupInDb.getId(), ((BackupVO) backupInDb));
                     }
-                    return backup;
+                    return backupInDb;
                 }
             }
             return null;
@@ -1436,7 +1438,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
                     final List<Backup> backupsInDb = backupDao.listByVmId(null, vm.getId());
-
                     List<Backup.RestorePoint> restorePoints = backupProvider.listRestorePoints(vm);
                     if (restorePoints == null) {
                         return;
@@ -1453,16 +1454,19 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                         }
 
                         Backup backup = backupProvider.createNewBackupEntryForRestorePoint(restorePoint, vm, metric);
-                        resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
-                        resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
+                        if (backup != null) {
+                            logger.warn("Added backup found in provider [" + backup + "]");
+                            resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
+                            resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
 
-                        logger.debug(String.format("Creating a new entry in backups: [uuid: %s, vm_id: %s, external_id: %s, type: %s, date: %s, backup_offering_id: %s, account_id: %s, "
-                                        + "domain_id: %s, zone_id: %s].", backup.getUuid(), backup.getVmId(), backup.getExternalId(), backup.getType(), backup.getDate(),
-                                backup.getBackupOfferingId(), backup.getAccountId(), backup.getDomainId(), backup.getZoneId()));
+                            logger.debug(String.format("Creating a new entry in backups: [id: %s, uuid: %s, vm_id: %s, external_id: %s, type: %s, date: %s, backup_offering_id: %s, account_id: %s, "
+                                            + "domain_id: %s, zone_id: %s].", backup.getId(), backup.getUuid(), backup.getVmId(), backup.getExternalId(), backup.getType(), backup.getDate(),
+                                    backup.getBackupOfferingId(), backup.getAccountId(), backup.getDomainId(), backup.getZoneId()));
 
-                        ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_BACKUP_CREATE,
-                                String.format("Created backup %s for VM ID: %s", backup.getUuid(), vm.getUuid()),
-                                vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),0);
+                            ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_BACKUP_CREATE,
+                                    String.format("Created backup %s for VM ID: %s", backup.getUuid(), vm.getUuid()),
+                                    vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),0);
+                        }
                     }
                     for (final Long backupIdToRemove : removeList) {
                         logger.warn(String.format("Removing backup with ID: [%s].", backupIdToRemove));
