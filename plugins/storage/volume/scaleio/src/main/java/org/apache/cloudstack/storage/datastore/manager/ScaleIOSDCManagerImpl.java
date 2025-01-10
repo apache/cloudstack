@@ -361,7 +361,7 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
 
         List<StoragePoolHostVO> poolHostVOsBySdc = storagePoolHostDao.findByLocalPath(sdcId);
         if (CollectionUtils.isNotEmpty(poolHostVOsBySdc) && poolHostVOsBySdc.size() > 1) {
-            LOGGER.debug(String.format("There are other connected pools with the same SDC of the host %s, shouldn't unprepare SDC", host));
+            logger.debug(String.format("There are other connected pools with the same SDC of the host %s, shouldn't unprepare SDC", host));
             return false;
         }
 
