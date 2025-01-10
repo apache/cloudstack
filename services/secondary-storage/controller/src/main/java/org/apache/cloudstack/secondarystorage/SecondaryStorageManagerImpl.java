@@ -402,7 +402,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
         String[] cidrs = _allowedInternalSites.split(",");
         for (String cidr : cidrs) {
-            if (NetUtils.isValidIp4Cidr(cidr)) {
+            if (NetUtils.isValidIp4Cidr(cidr) && !cidr.startsWith("0.0.0.0")) {
                 if (! NetUtils.getCleanIp4Cidr(cidr).equals(cidr)) {
                     s_logger.warn(String.format("Invalid CIDR %s in %s", cidr, SecStorageAllowedInternalDownloadSites.key()));
                 }
@@ -411,8 +411,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 String newCidr = cidr + "/32";
                 s_logger.warn(String.format("Ip address is not a valid CIDR; %s using %s/32", cidr, newCidr));
                 allowedCidrs.add(newCidr);
-            } else if (!cidr.startsWith("0.0.0.0")) {
-                allowedCidrs.add(NetUtils.getCleanIp4Cidr(cidr));
             }
         }
         return allowedCidrs;
