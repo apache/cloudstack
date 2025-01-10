@@ -32,8 +32,6 @@ import java.util.regex.Matcher;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -312,7 +310,7 @@ public class ParamProcessWorker implements DispatchWorker {
         doAccessChecks(cmd, entitiesToAccess);
     }
 
-    private void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
+    protected void doAccessChecks(BaseCmd cmd, Map<Object, AccessType> entitiesToAccess) {
         Account caller = CallContext.current().getCallingAccount();
         List<Long> entityOwners = cmd.getEntityOwnerIds();
         Account[] owners = null;
@@ -334,18 +332,34 @@ public class ParamProcessWorker implements DispatchWorker {
             _accountMgr.checkAccess(caller, null, false, owners);
         }
 
-        if (!entitiesToAccess.isEmpty()) {
-            // check that caller can access the owner account.
-            _accountMgr.checkAccess(caller, null, false, owners);
-            for (Map.Entry<Object,AccessType>entry : entitiesToAccess.entrySet()) {
-                Object entity = entry.getKey();
-                if (entity instanceof ControlledEntity) {
-                    _accountMgr.checkAccess(caller, entry.getValue(), true, (ControlledEntity) entity);
-                } else if (entity instanceof InfrastructureEntity) {
-                    // FIXME: Move this code in adapter, remove code from
-                    // Account manager
-                }
+        checkCallerAccessToEntities(caller, owners, entitiesToAccess);
+    }
+
+    protected Account[] getEntityOwners(BaseCmd cmd) {
+        List<Long> entityOwners = cmd.getEntityOwnerIds();
+        if (entityOwners != null) {
+            return entityOwners.stream().map(id -> _accountMgr.getAccount(id)).toArray(Account[]::new);
+        }
+
+        if (cmd.getEntityOwnerId() == Account.ACCOUNT_ID_SYSTEM && cmd instanceof BaseAsyncCmd && cmd.getApiResourceType() == ApiCommandResourceType.Network) {
+            logger.debug("Skipping access check on the network owner if the owner is ROOT/system.");
+        } else {
+            Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
+            if (owner != null) {
+                return new Account[]{owner};
             }
+        }
+        return new Account[]{};
+    }
+
+    protected void checkCallerAccessToEntities(Account caller, Account[] owners, Map<Object, AccessType> entitiesToAccess) {
+        if (entitiesToAccess.isEmpty()) {
+            return;
+        }
+        _accountMgr.checkAccess(caller, null, false, owners);
+        for (Map.Entry<Object, AccessType> entry : entitiesToAccess.entrySet()) {
+            Object entity = entry.getKey();
+            _accountMgr.validateAccountHasAccessToResource(caller, entry.getValue(), entity);
         }
     }
 

@@ -93,4 +93,8 @@ public interface Account extends ControlledEntity, InternalIdentity, Identity {
 
     boolean isDefault();
 
+    public void setApiKeyAccess(Boolean apiKeyAccess);
+
+    public Boolean getApiKeyAccess();
+
 }

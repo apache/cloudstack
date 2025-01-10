@@ -26,7 +26,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.event.ActionEventUtils;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -89,6 +91,9 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
     @Mock
     private UpdateUserCmd UpdateUserCmdMock;
+
+    @Mock
+    private UpdateAccountCmd UpdateAccountCmdMock;
 
     private long userVoIdMock = 111l;
     @Mock
@@ -507,6 +512,46 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.verify(userVoMock).setSecretKey(secretKey);
     }
 
+    @Test
+    public void validateAndUpdatUserApiKeyAccess() {
+        Mockito.doReturn("Enabled").when(UpdateUserCmdMock).getApiKeyAccess();
+        try (MockedStatic<ActionEventUtils> eventUtils = Mockito.mockStatic(ActionEventUtils.class)) {
+            Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                    Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyString(),
+                    Mockito.anyLong(), Mockito.anyString())).thenReturn(1L);
+            accountManagerImpl.validateAndUpdateUserApiKeyAccess(UpdateUserCmdMock, userVoMock);
+        }
+
+        Mockito.verify(userVoMock).setApiKeyAccess(true);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateAndUpdatUserApiKeyAccessInvalidParameter() {
+        Mockito.doReturn("False").when(UpdateUserCmdMock).getApiKeyAccess();
+        accountManagerImpl.validateAndUpdateUserApiKeyAccess(UpdateUserCmdMock, userVoMock);
+    }
+
+    @Test
+    public void validateAndUpdatAccountApiKeyAccess() {
+        Mockito.doReturn("Inherit").when(UpdateAccountCmdMock).getApiKeyAccess();
+        try (MockedStatic<ActionEventUtils> eventUtils = Mockito.mockStatic(ActionEventUtils.class)) {
+            Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                    Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyString(),
+                    Mockito.anyLong(), Mockito.anyString())).thenReturn(1L);
+            accountManagerImpl.validateAndUpdateAccountApiKeyAccess(UpdateAccountCmdMock, accountVoMock);
+        }
+
+        Mockito.verify(accountVoMock).setApiKeyAccess(null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateAndUpdatAccountApiKeyAccessInvalidParameter() {
+        Mockito.doReturn("False").when(UpdateAccountCmdMock).getApiKeyAccess();
+        accountManagerImpl.validateAndUpdateAccountApiKeyAccess(UpdateAccountCmdMock, accountVoMock);
+    }
+
     @Test(expected = CloudRuntimeException.class)
     public void retrieveAndValidateAccountTestAccountNotFound() {
         Mockito.doReturn(accountMockId).when(userVoMock).getAccountId();
@@ -825,6 +870,36 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
         Mockito.doThrow(new InvalidParameterValueException("")).when(passwordPolicyMock).verifyIfPasswordCompliesWithPasswordPolicies(Mockito.anyString(), Mockito.anyString(),
                 Mockito.anyLong());
+
+        accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, currentPassword, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateUserPasswordAndUpdateIfNeededTestSaml2UserShouldNotBeAllowedToUpdateTheirPassword() {
+        String newPassword = "newPassword";
+        String currentPassword = "theCurrentPassword";
+
+        Mockito.when(userVoMock.getSource()).thenReturn(User.Source.SAML2);
+
+        accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, currentPassword, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateUserPasswordAndUpdateIfNeededTestSaml2DisabledUserShouldNotBeAllowedToUpdateTheirPassword() {
+        String newPassword = "newPassword";
+        String currentPassword = "theCurrentPassword";
+
+        Mockito.when(userVoMock.getSource()).thenReturn(User.Source.SAML2DISABLED);
+
+        accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, currentPassword, false);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateUserPasswordAndUpdateIfNeededTestLdapUserShouldNotBeAllowedToUpdateTheirPassword() {
+        String newPassword = "newPassword";
+        String currentPassword = "theCurrentPassword";
+
+        Mockito.when(userVoMock.getSource()).thenReturn(User.Source.LDAP);
 
         accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, currentPassword, false);
     }
