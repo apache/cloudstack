@@ -1497,6 +1497,12 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             return false;
         }
 
+        List<StoragePoolHostVO> poolHostVOsBySdc = storagePoolHostDao.findByLocalPath(sdcId);
+        if (CollectionUtils.isNotEmpty(poolHostVOsBySdc) && poolHostVOsBySdc.size() > 1) {
+            logger.debug(String.format("There are other connected pools with the same SDC of the host %s, shouldn't disconnect SDC", host));
+            return false;
+        }
+
         try {
             final ScaleIOGatewayClient client = getScaleIOClient(pool);
             return client.listVolumesMappedToSdc(sdcId).isEmpty();
