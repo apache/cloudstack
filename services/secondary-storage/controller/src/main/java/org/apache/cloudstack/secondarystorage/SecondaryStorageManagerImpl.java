@@ -408,9 +408,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
                 }
                 allowedCidrs.add(NetUtils.getCleanIp4Cidr(cidr));
             } else if (NetUtils.isValidIp4(cidr)) {
-                String newCidr = cidr + "/32";
-                s_logger.warn(String.format("Ip address is not a valid CIDR; %s using %s/32", cidr, newCidr));
-                allowedCidrs.add(newCidr);
+                s_logger.warn(String.format("Ip address is not a valid CIDR; %s consider using %s/32", cidr, cidr));
+                allowedCidrs.add(cidr);
             }
         }
         return allowedCidrs;
