@@ -221,7 +221,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
                     if (answer != null && answer.getResult()) {
                         SpApiResponse resSnapshot = StorPoolUtil.volumeSnapshot(volumeName, template.getUuid(), null, "template", null, conn);
                         if (resSnapshot.getError() != null) {
-                            logger.debug(String.format("Could not snapshot volume with ID=%s", snapshot.getId()));
+                            logger.debug(String.format("Could not snapshot volume with ID={}", snapshot.getId()));
                             StorPoolUtil.spLog("VolumeSnapshot failed with error=%s", resSnapshot.getError().getDescr());
                             err = resSnapshot.getError().getDescr();
                         } else {
