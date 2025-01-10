@@ -96,13 +96,12 @@ public class SshKeysDistriMonitor implements Listener {
             String pubKey = _configDao.getValue("ssh.publickey");
             String prvKey = _configDao.getValue("ssh.privatekey");
 
-                try {
-                    ModifySshKeysCommand cmds = new ModifySshKeysCommand(pubKey, prvKey);
-                    Commands c = new Commands(cmds);
-                    _agentMgr.send(host.getId(), c, this);
-                } catch (AgentUnavailableException e) {
-                    logger.debug("Failed to send keys to agent: {}", host);
-                }
+            try {
+                ModifySshKeysCommand cmds = new ModifySshKeysCommand(pubKey, prvKey);
+                Commands c = new Commands(cmds);
+                _agentMgr.send(host.getId(), c, this);
+            } catch (AgentUnavailableException e) {
+                logger.debug("Failed to send keys to agent: {}", host);
             }
         }
     }

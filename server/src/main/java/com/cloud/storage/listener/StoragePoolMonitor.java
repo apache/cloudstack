@@ -127,20 +127,19 @@ public class StoragePoolMonitor implements Listener {
                     continue;
                 }
 
-                    if (pool.getPoolType() == StoragePoolType.OCFS2 && !_ocfs2Mgr.prepareNodes(pool.getClusterId())) {
-                        throw new ConnectionException(true, String.format("Unable to prepare OCFS2 nodes for pool %s", pool));
-                    }
+                if (pool.getPoolType() == StoragePoolType.OCFS2 && !_ocfs2Mgr.prepareNodes(pool.getClusterId())) {
+                    throw new ConnectionException(true, String.format("Unable to prepare OCFS2 nodes for pool %s", pool));
+                }
 
-                    Long hostId = host.getId();
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Host {} connected, connecting host to shared pool {} and sending storage pool information ...", host, pool);
-                    }
-                    try {
-                        _storageManager.connectHostToSharedPool(host, pool.getId());
-                        _storageManager.createCapacityEntry(pool.getId());
-                    } catch (Exception e) {
-                        throw new ConnectionException(true, String.format("Unable to connect host %s to storage pool %s due to %s", host, pool, e.toString()), e);
-                    }
+                Long hostId = host.getId();
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Host {} connected, connecting host to shared pool {} and sending storage pool information ...", host, pool);
+                }
+                try {
+                    _storageManager.connectHostToSharedPool(host, pool.getId());
+                    _storageManager.createCapacityEntry(pool.getId());
+                } catch (Exception e) {
+                    throw new ConnectionException(true, String.format("Unable to connect host %s to storage pool %s due to %s", host, pool, e.toString()), e);
                 }
             }
         }
