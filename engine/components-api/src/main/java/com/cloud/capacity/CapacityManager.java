@@ -140,7 +140,7 @@ public interface CapacityManager {
      * @param ram required RAM
      * @param cpuOverprovisioningFactor factor to apply to the actual host cpu
      */
-    boolean checkIfHostHasCapacity(long hostId, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOverprovisioningFactor, float memoryOvercommitRatio,
+    boolean checkIfHostHasCapacity(Host host, Integer cpu, long ram, boolean checkFromReservedCapacity, float cpuOverprovisioningFactor, float memoryOvercommitRatio,
         boolean considerReservedCapacity);
 
     void updateCapacityForHost(Host host);

@@ -38,6 +38,7 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -182,7 +183,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     }
 
    @Override
-    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details) {
+    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate) {
         LOGGER.info("connectPhysicalDisk called for [" + volumePath + "]");
 
         if (StringUtils.isEmpty(volumePath)) {
@@ -604,7 +605,9 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         }
 
         public String toString() {
-            return String.format("type=%s; address=%s; connid=%s", getType(), getAddress(), getConnectionId());
+            return String.format("AddressInfo %s",
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                            this, "type", "address", "connectionId"));
         }
     }
 
