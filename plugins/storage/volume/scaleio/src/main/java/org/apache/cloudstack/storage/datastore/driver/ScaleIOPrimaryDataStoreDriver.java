@@ -1498,7 +1498,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         try {
-            final ScaleIOGatewayClient client = getScaleIOClient(pool.getId());
+            final ScaleIOGatewayClient client = getScaleIOClient(pool);
             return client.listVolumesMappedToSdc(sdcId).isEmpty();
         } catch (Exception e) {
             logger.warn("Unable to check whether the host: " + host.getId() + " can be disconnected from storage pool: " + pool.getId() + ", due to " + e.getMessage(), e);
