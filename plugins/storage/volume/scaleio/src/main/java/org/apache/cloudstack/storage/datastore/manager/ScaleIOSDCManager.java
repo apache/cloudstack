@@ -74,18 +74,18 @@ public interface ScaleIOSDCManager {
     /**
      * Returns the SDC Id of the host for the pool.
      * @param sdcGuid the SDC GUID
-     * @param poolId the pool id
+     * @param dataStore the datastore
      * @return SDC Id of the host for the pool
      */
-    String getHostSdcId(String sdcGuid, long poolId);
+    String getHostSdcId(String sdcGuid, DataStore dataStore);
 
     /**
      * Returns the connection status of host SDC of the pool.
      * @param sdcId the SDC id
-     * @param poolId the pool id
+     * @param dataStore the datastore
      * @return true if Host SDC is connected to the pool
      */
-    boolean isHostSdcConnected(String sdcId, long poolId, int waitTimeInSecs);
+    boolean isHostSdcConnected(String sdcId, DataStore dataStore, int waitTimeInSecs);
 
     /**
      * Returns the comma-separated list of MDM IPs of the pool.

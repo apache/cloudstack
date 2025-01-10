@@ -18,9 +18,6 @@
  */
 package org.apache.cloudstack.storage.datastore.provider;
 
-import java.net.URISyntaxException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -33,7 +30,6 @@ import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.manager.ScaleIOSDCManager;
 import org.apache.cloudstack.storage.datastore.manager.ScaleIOSDCManagerImpl;
 import org.apache.commons.collections.MapUtils;
@@ -83,7 +79,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         DataStore dataStore = _dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
         StoragePool storagePool = (StoragePool) dataStore;
         StoragePoolHostVO storagePoolHost = _storagePoolHostDao.findByPoolHost(poolId, hostId);
-        String sdcId = getSdcIdOfHost(host, storagePool);
+        String sdcId = getSdcIdOfHost(host, dataStore);
         if (StringUtils.isBlank(sdcId)) {
             if (storagePoolHost != null) {
                 _storagePoolHostDao.deleteStoragePoolHostDetails(hostId, poolId);
@@ -101,7 +97,8 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         return true;
     }
 
-    private String getSdcIdOfHost(HostVO host, StoragePool storagePool) {
+    private String getSdcIdOfHost(HostVO host, DataStore dataStore) {
+        StoragePool storagePool = (StoragePool) dataStore;
         long hostId = host.getId();
         long poolId = storagePool.getId();
         String systemId = null;
@@ -136,7 +133,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
             sdcId = poolDetails.get(ScaleIOGatewayClient.SDC_ID);
         } else if (poolDetails.containsKey(ScaleIOGatewayClient.SDC_GUID)) {
             String sdcGuid = poolDetails.get(ScaleIOGatewayClient.SDC_GUID);
-            sdcId = _sdcManager.getHostSdcId(sdcGuid, poolId);
+            sdcId = _sdcManager.getHostSdcId(sdcGuid, dataStore);
         }
 
         if (StringUtils.isBlank(sdcId)) {
@@ -148,7 +145,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
 
         if (details.containsKey(ScaleIOSDCManager.ConnectOnDemand.key())) {
             String connectOnDemand = details.get(ScaleIOSDCManager.ConnectOnDemand.key());
-            if (connectOnDemand != null && !Boolean.parseBoolean(connectOnDemand) && !_sdcManager.isHostSdcConnected(sdcId, poolId, 15)) {
+            if (connectOnDemand != null && !Boolean.parseBoolean(connectOnDemand) && !_sdcManager.isHostSdcConnected(sdcId, dataStore, 15)) {
                 logger.warn("SDC not connected on the host: " + hostId);
                 String msg = "SDC not connected on the host: " + hostId + ", reconnect the SDC to MDM and restart agent";
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC not connected on host: " + host.getUuid(), msg);
@@ -163,19 +160,19 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         Answer answer = _agentMgr.easySend(host.getId(), cmd);
 
         if (answer == null) {
-            throw new CloudRuntimeException(String.format("Unable to get an answer to the modify storage pool command (add: %s) for PowerFlex storage pool %s, sent to host %d",
-                    cmd.getAdd(), getStoragePoolDetails(storagePool), hostId));
+            throw new CloudRuntimeException(String.format("Unable to get an answer to the modify storage pool command (add: %s) for PowerFlex storage pool %s, sent to host %s",
+                    cmd.getAdd(), getStoragePoolDetails(storagePool), host));
         }
 
         if (!answer.getResult()) {
             if (cmd.getAdd()) {
-                String msg = "Unable to attach PowerFlex storage pool " + getStoragePoolDetails(storagePool) + " to the host " + hostId;
+                String msg = "Unable to attach PowerFlex storage pool " + getStoragePoolDetails(storagePool) + " to the host " + host;
 
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
 
                 throw new CloudRuntimeException("Unable to connect to PowerFlex storage pool " + getStoragePoolDetails(storagePool) + " due to " + answer.getDetails());
             } else {
-                String msg = "Unable to detach PowerFlex storage pool " + getStoragePoolDetails(storagePool) + " from the host " + hostId;
+                String msg = "Unable to detach PowerFlex storage pool " + getStoragePoolDetails(storagePool) + " from the host " + host;
 
                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
             }
@@ -214,7 +211,7 @@ public class ScaleIOHostListener implements HypervisorHostListener {
         }
 
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(false, storagePool, storagePool.getPath(), details);
-        ModifyStoragePoolAnswer answer  = sendModifyStoragePoolCommand(cmd, storagePool, hostId);
+        ModifyStoragePoolAnswer answer  = sendModifyStoragePoolCommand(cmd, storagePool, host);
         if (!answer.getResult()) {
             logger.error("Failed to disconnect storage pool: " + storagePool + " and host: " + hostId);
             return false;
