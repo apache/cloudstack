@@ -578,7 +578,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             logger.info("Unable to find vm: " + vmId);
             return null;
         }
-        if (checkAndCancelWorkIfNeeded(work, vm)) {
+        if (checkAndCancelWorkIfNeeded(work)) {
             return null;
         }
 
@@ -782,7 +782,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         return (System.currentTimeMillis() >> 10) + _restartRetryInterval;
     }
 
-    protected boolean checkAndCancelWorkIfNeeded(final HaWorkVO work, final VirtualMachine vm) {
+    protected boolean checkAndCancelWorkIfNeeded(final HaWorkVO work) {
         if (!Step.Investigating.equals(work.getStep())) {
             return false;
         }
@@ -809,7 +809,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             logger.info("Unable to find vm: " + vmId + ", skipping migrate.");
             return null;
         }
-        if (checkAndCancelWorkIfNeeded(work, vm)) {
+        if (checkAndCancelWorkIfNeeded(work)) {
             return null;
         }
         logger.info("Migration attempt: for VM {}from host {}. Starting attempt: {}/{} times.", vm, srcHost, 1 + work.getTimesTried(), _maxRetries);
@@ -878,7 +878,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             logger.info("No longer can find VM " + work.getInstanceId() + ". Throwing away " + work);
             return null;
         }
-        if (checkAndCancelWorkIfNeeded(work, vm)) {
+        if (checkAndCancelWorkIfNeeded(work)) {
             return null;
         }
         boolean expunge = VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())
@@ -915,7 +915,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             work.setStep(Step.Done);
             return null;
         }
-        if (checkAndCancelWorkIfNeeded(work, vm)) {
+        if (checkAndCancelWorkIfNeeded(work)) {
             return null;
         }
         logger.info("Stopping " + vm);
