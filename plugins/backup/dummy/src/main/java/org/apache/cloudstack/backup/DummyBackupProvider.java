@@ -42,7 +42,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     @Inject
     private VolumeDao volumeDao;
     @Inject
-    private BackupManagerImpl backupManager;
+    private BackupManager backupManager;
 
     @Override
     public String getName() {

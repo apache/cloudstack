@@ -985,7 +985,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_RESETSSHKEY, eventDescription = "resetting Vm SSHKey", async = true)
     public UserVm resetVMSSHKey(ResetVMSSHKeyCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException {
-
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
         Long vmId = cmd.getId();
@@ -1011,32 +1010,40 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Vm " + userVm + " should be stopped to do SSH Key reset");
         }
 
-        if (cmd.getNames() == null || cmd.getNames().isEmpty()) {
+        List<String> names = cmd.getNames();
+        if (names == null || names.isEmpty()) {
             throw new InvalidParameterValueException("'keypair' or 'keypairs' must be specified");
         }
+
+        userVm = resetVMSSHKeyInternal(userVm, owner, names);
+        return userVm;
+    }
+
+    private UserVmVO resetVMSSHKeyInternal(UserVmVO userVm, Account owner, List<String> names) throws ResourceUnavailableException, InsufficientCapacityException {
+        Account caller = CallContext.current().getCallingAccount();
 
         String keypairnames = "";
         String sshPublicKeys = "";
         List<SSHKeyPairVO> pairs = new ArrayList<>();
 
-        pairs = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), cmd.getNames());
-        if (pairs == null || pairs.size() != cmd.getNames().size()) {
+        pairs = _sshKeyPairDao.findByNames(owner.getAccountId(), owner.getDomainId(), names);
+        if (pairs == null || pairs.size() != names.size()) {
             throw new InvalidParameterValueException("Not all specified keypairs exist");
         }
         sshPublicKeys = pairs.stream().map(p -> p.getPublicKey()).collect(Collectors.joining("\n"));
-        keypairnames = String.join(",", cmd.getNames());
+        keypairnames = String.join(",", names);
 
         _accountMgr.checkAccess(caller, null, true, userVm);
 
-        boolean result = resetVMSSHKeyInternal(vmId, sshPublicKeys, keypairnames);
+        boolean result = resetVMSSHKeyInternal(userVm.getId(), sshPublicKeys, keypairnames);
 
-        UserVmVO vm = _vmDao.findById(vmId);
+        UserVmVO vm = _vmDao.findById(userVm.getId());
         _vmDao.loadDetails(vm);
         if (!result) {
             throw new CloudRuntimeException("Failed to reset SSH Key for the virtual machine ");
         }
 
-        removeEncryptedPasswordFromUserVmVoDetails(vmId);
+        removeEncryptedPasswordFromUserVmVoDetails(userVm.getId());
 
         _vmDao.loadDetails(userVm);
         return userVm;
@@ -8957,21 +8964,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         UserVm vm = startVirtualMachine(vmId, null, null, null, diskOfferingMap, additonalParams, null);
 
         boolean status = false;
-        try {
-            VirtualMachineEntity vmEntity = _orchSrvc.getVirtualMachine(vm.getUuid());
-            status = vmEntity.stop(Long.toString(CallContext.current().getCallingUserId()));
-            if (!status) {
-                // todo : error handling
-            }
-        } catch (ResourceUnavailableException e) {
-            throw new CloudRuntimeException("Unable to contact the agent to stop the instance before restore " + e);
-            // todo : error handling
-        } catch (CloudException e) {
-            throw new CloudRuntimeException("Unable to contact the agent to stop the instance before restore " + e);
-            // todo : error handling
+        status =  stopVirtualMachine(CallContext.current().getCallingUserId(), vm.getId()) ;
+        if (!status) {
+            expungeVm(vm.getId());
+            throw new CloudRuntimeException("Unable to stop the instance before restore ");
         }
 
         backupManager.restoreBackupToVM(cmd.getBackupId(), vmId);
+
+        Account owner = _accountService.getActiveAccountById(cmd.getEntityOwnerId());
+        UserVmVO userVm = _vmDao.findById(vmId);
+
+        List<String> sshKeyPairNames = cmd.getSSHKeyPairNames();
+        if (sshKeyPairNames != null && !sshKeyPairNames.isEmpty()) {
+            vm = resetVMSSHKeyInternal(userVm, owner, sshKeyPairNames);
+        }
 
         if (cmd.getStartVm()) {
             vm = startVirtualMachine(vmId, null, null, null, diskOfferingMap, additonalParams, null);
