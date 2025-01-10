@@ -45,57 +45,6 @@
                   </div>
                 </template>
               </a-step>
-              <a-step :title="$t('label.select.deployment.infrastructure')" status="process">
-                <template #description>
-                  <div style="margin-top: 15px">
-                    <a-form-item
-                      v-if="!isNormalAndDomainUser"
-                      :label="$t('label.podid')"
-                      name="podid"
-                      ref="podid">
-                      <a-select
-                        v-model:value="form.podid"
-                        showSearch
-                        optionFilterProp="label"
-                        :filterOption="filterOption"
-                        :options="podSelectOptions"
-                        :loading="loading.pods"
-                        @change="onSelectPodId"
-                      ></a-select>
-                    </a-form-item>
-                    <a-form-item
-                      v-if="!isNormalAndDomainUser"
-                      :label="$t('label.clusterid')"
-                      name="clusterid"
-                      ref="clusterid">
-                      <a-select
-                        v-model:value="form.clusterid"
-                        showSearch
-                        optionFilterProp="label"
-                        :filterOption="filterOption"
-                        :options="clusterSelectOptions"
-                        :loading="loading.clusters"
-                        @change="onSelectClusterId"
-                      ></a-select>
-                    </a-form-item>
-                    <a-form-item
-                      v-if="!isNormalAndDomainUser"
-                      :label="$t('label.hostid')"
-                      name="hostid"
-                      ref="hostid">
-                      <a-select
-                        v-model:value="form.hostid"
-                        showSearch
-                        optionFilterProp="label"
-                        :filterOption="filterOption"
-                        :options="hostSelectOptions"
-                        :loading="loading.hosts"
-                        @change="onSelectHostId"
-                      ></a-select>
-                    </a-form-item>
-                  </div>
-                </template>
-              </a-step>
               <a-step
                 :title="$t('label.template')"
                 :status="zoneSelected ? 'process' : 'wait'">
@@ -209,7 +158,7 @@
                         v-if="!template.deployasis && template.childtemplates && template.childtemplates.length > 0" >
                         <template #description>
                           <div v-if="zoneSelected">
-                            <volume-disk-offering-map
+                            <multi-disk-selection
                               :items="template.childtemplates"
                               :diskOfferings="options.diskOfferings"
                               :zoneId="zoneId"
@@ -276,7 +225,7 @@
                 <template #description>
                   <div v-if="zoneSelected">
                     <volume-disk-offering-map
-                      :items="dataPreFill.diskofferingids"
+                      :items="dataPreFill.datadisksdetails"
                       :zoneId="zoneId"
                       @select-volumes-disk-offering="updateVolumesDiskOffering($event)" />
                   </div>
@@ -679,11 +628,8 @@
               <a-button @click="closeAction" :disabled="loading.deploy">
                 {{ $t('label.cancel') }}
               </a-button>
-              <a-button @click="restoreDefaults" :disabled="loading.deploy">
-                {{ $t('label.reset.to.default') }}
-              </a-button>
               <a-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit" :loading="loading.deploy">
-                {{ $t('label.ok') }}
+                {{ $t('label.create') }}
               </a-button>
             </div>
           </a-form>
@@ -759,8 +705,6 @@ export default {
   data () {
     return {
       zoneId: '',
-      podId: null,
-      clusterId: null,
       zoneSelected: false,
       isZoneSelectedMultiArch: false,
       dynamicscalingenabled: true,
@@ -799,9 +743,6 @@ export default {
         networks: [],
         sshKeyPairs: [],
         UserDatas: [],
-        pods: [],
-        clusters: [],
-        hosts: [],
         groups: [],
         keyboards: [],
         bootTypes: [],
@@ -821,9 +762,6 @@ export default {
         sshKeyPairs: false,
         userDatas: false,
         zones: false,
-        pods: false,
-        clusters: false,
-        hosts: false,
         groups: false
       },
       owner: {
@@ -1050,35 +988,6 @@ export default {
             showIcon: true
           }
         },
-        pods: {
-          list: 'listPods',
-          isLoad: !this.isNormalAndDomainUser,
-          options: {
-            zoneid: _.get(this.zone, 'id')
-          },
-          field: 'podid'
-        },
-        clusters: {
-          list: 'listClusters',
-          isLoad: !this.isNormalAndDomainUser,
-          options: {
-            zoneid: _.get(this.zone, 'id'),
-            podid: this.podId
-          },
-          field: 'clusterid'
-        },
-        hosts: {
-          list: 'listHosts',
-          isLoad: !this.isNormalAndDomainUser,
-          options: {
-            zoneid: _.get(this.zone, 'id'),
-            podid: this.podId,
-            clusterid: this.clusterId,
-            state: 'Up',
-            type: 'Routing'
-          },
-          field: 'hostid'
-        },
         templates2: {
           list: 'listTemplates',
           isLoad: true,
@@ -1116,45 +1025,6 @@ export default {
           value: hypervisor.name
         }
       })
-    },
-    podSelectOptions () {
-      const options = this.options.pods.map((pod) => {
-        return {
-          label: pod.name,
-          value: pod.id
-        }
-      })
-      options.unshift({
-        label: this.$t('label.default'),
-        value: null
-      })
-      return options
-    },
-    clusterSelectOptions () {
-      const options = this.options.clusters.map((cluster) => {
-        return {
-          label: cluster.name,
-          value: cluster.id
-        }
-      })
-      options.unshift({
-        label: this.$t('label.default'),
-        value: null
-      })
-      return options
-    },
-    hostSelectOptions () {
-      const options = this.options.hosts.map((host) => {
-        return {
-          label: host.name,
-          value: host.id
-        }
-      })
-      options.unshift({
-        label: this.$t('label.default'),
-        value: null
-      })
-      return options
     },
     keyboardSelectOptions () {
       const keyboardOpts = this.$config.keyboardOptions || {}
@@ -1260,24 +1130,6 @@ export default {
         if (this.zone) {
           this.vm.zoneid = this.zone.id
           this.vm.zonename = this.zone.name
-        }
-
-        const pod = _.find(this.options.pods, (option) => option.id === instanceConfig.podid)
-        if (pod) {
-          this.vm.podid = pod.id
-          this.vm.podname = pod.name
-        }
-
-        const cluster = _.find(this.options.clusters, (option) => option.id === instanceConfig.clusterid)
-        if (cluster) {
-          this.vm.clusterid = cluster.id
-          this.vm.clustername = cluster.name
-        }
-
-        const host = _.find(this.options.hosts, (option) => option.id === instanceConfig.hostid)
-        if (host) {
-          this.vm.hostid = host.id
-          this.vm.hostname = host.name
         }
 
         if (this.diskSize) {
@@ -1637,7 +1489,6 @@ export default {
       this.form.multidiskoffering = value
     },
     updateVolumesDiskOffering (value) {
-      console.log('11   ' + JSON.stringify(value, null, 2))
       this.form.volumesdiskoffering = value
     },
     updateAffinityGroups (ids) {
@@ -1752,9 +1603,6 @@ export default {
 
         // step 1 : select zone
         deployVmData.zoneid = values.zoneid
-        deployVmData.podid = values.podid
-        deployVmData.clusterid = values.clusterid
-        deployVmData.hostid = values.hostid
         deployVmData.keyboard = values.keyboard
         if (!this.template?.deployasis) {
           deployVmData.boottype = values.boottype
@@ -1827,11 +1675,17 @@ export default {
 
         if (values.volumesdiskoffering) {
           let i = 0
-          Object.entries(values.volumesdiskoffering).forEach(([disk, { offering, size }]) => {
+          Object.entries(values.volumesdiskoffering).forEach(([disk, { offering, size, miniops, maxiops, iscustomizediops }]) => {
             const offeringKey = `datadisksdetails[${i}].diskofferingid`
             const sizeKey = `datadisksdetails[${i}].size`
+            const minIopsKey = `datadisksdetails[${i}].miniops`
+            const maxIopsKey = `datadisksdetails[${i}].maxiops`
             deployVmData[offeringKey] = offering
             deployVmData[sizeKey] = size
+            if (iscustomizediops) {
+              deployVmData[minIopsKey] = miniops
+              deployVmData[maxIopsKey] = maxiops
+            }
             i++
           })
         }
@@ -2075,7 +1929,7 @@ export default {
       param.loading = true
       param.opts = []
       const options = param.options || {}
-      if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
+      if (!('listall' in options) && !['dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
         options.listall = true
       }
       api(param.list, options).then((response) => {
@@ -2181,8 +2035,6 @@ export default {
     },
     onSelectZoneId (value) {
       this.zoneId = value
-      this.podId = null
-      this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.isZoneSelectedMultiArch = this.zone.ismultiarch
       if (this.isZoneSelectedMultiArch) {
@@ -2192,9 +2044,6 @@ export default {
       this.form.startvm = true
       this.selectedZone = this.zoneId
       this.form.zoneid = this.zoneId
-      this.form.clusterid = undefined
-      this.form.podid = undefined
-      this.form.hostid = undefined
       this.form.templateid = undefined
 
       _.each(this.params, (param, name) => {
@@ -2210,29 +2059,6 @@ export default {
       this.fetchAllTemplates()
       this.updateTemplateKey()
       this.formModel = toRaw(this.form)
-    },
-    onSelectPodId (value) {
-      this.podId = value
-      if (this.podId === null) {
-        this.form.podid = undefined
-      }
-
-      this.fetchOptions(this.params.clusters, 'clusters')
-      this.fetchOptions(this.params.hosts, 'hosts')
-    },
-    onSelectClusterId (value) {
-      this.clusterId = value
-      if (this.clusterId === null) {
-        this.form.clusterid = undefined
-      }
-
-      this.fetchOptions(this.params.hosts, 'hosts')
-    },
-    onSelectHostId (value) {
-      this.hostId = value
-      if (this.hostId === null) {
-        this.form.hostid = undefined
-      }
     },
     handleSearchFilter (name, options) {
       this.params[name].options = { ...this.params[name].options, ...options }

@@ -77,16 +77,19 @@ export default {
     this.dataPreFill.templateid = this.resource.vmdetails.templateid
     this.dataPreFill.networkids = (this.resource.vmdetails.networkids || '').split(',').map(item => item.trim())
     this.diskofferingids = (this.resource.vmdetails.diskofferingids || '').split(',').map(item => item.trim())
+    this.miniops = (this.resource.vmdetails.miniops || '').split(',').map(item => item.trim())
+    this.maxiops = (this.resource.vmdetails.maxiops || '').split(',').map(item => item.trim())
     console.log(this.diskofferingids)
     const volumes = JSON.parse(this.resource.volumes).slice(1)
-    const result = volumes.map((volume, index) => ({
+    const datadisksdetails = volumes.map((volume, index) => ({
       id: index,
       name: volume.uuid,
-      size: volume.size / (1024 * 1024 * 1024), // Convert size from bytes to GB
-      diskofferingid: this.diskofferingids[index]
+      size: volume.size / (1024 * 1024 * 1024),
+      diskofferingid: this.diskofferingids[index],
+      miniops: this.miniops[index],
+      maxiops: this.maxiops[index]
     }))
-    console.log(result)
-    this.dataPreFill.diskofferingids = result
+    this.dataPreFill.datadisksdetails = datadisksdetails
   },
   methods: {
     setConfigure () {

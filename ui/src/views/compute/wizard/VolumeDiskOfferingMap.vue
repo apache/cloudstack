@@ -31,11 +31,10 @@
         </template>
         <template v-if="column.key === 'offering'">
           <span
-            style="width: 50%"
             v-if="validOfferings[record.id] && validOfferings[record.id].length > 0">
             <a-select
               @change="updateOfferingSelect($event, record.id)"
-              :defaultValue="validOfferings[record.id][0].id"
+              :defaultValue="record.diskofferingid"
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
@@ -52,13 +51,28 @@
         </template>
         <template v-if="column.key === 'size'">
           <span
-            style="width: 50%"
             v-if="custom[record.id]">
             <a-input-number
-              :min="1"
-              :max="1000"
               :defaultValue="record.size"
               @change="updateCustomDiskSize($event, record.id)"
+            />
+          </span>
+        </template>
+        <template v-if="column.key === 'miniops'">
+          <span
+            v-if="customIops[record.id]">
+            <a-input-number
+              :defaultValue="record.miniops"
+              @change="updateCustomMinIops($event, record.id)"
+            />
+          </span>
+        </template>
+        <template v-if="column.key === 'maxiops'">
+          <span
+            v-if="customIops[record.id]">
+            <a-input-number
+              :defaultValue="record.maxiops"
+              @change="updateCustomMaxIops($event, record.id)"
             />
           </span>
         </template>
@@ -87,20 +101,37 @@ export default {
   data () {
     return {
       custom: {},
+      customIops: {},
       columns: [
         {
           key: 'name',
           dataIndex: 'name',
-          title: this.$t('label.data.disk')
+          title: this.$t('label.data.disk'),
+          width: '35%'
         },
         {
           key: 'offering',
           dataIndex: 'offering',
-          title: this.$t('label.data.disk.offering')
+          title: this.$t('label.data.disk.offering'),
+          width: '25%'
         },
         {
           key: 'size',
-          title: this.$t('label.sizegb')
+          dataIndex: 'size',
+          title: this.$t('label.sizegb'),
+          width: '15%'
+        },
+        {
+          key: 'miniops',
+          dataIndex: 'miniops',
+          title: this.$t('label.miniops'),
+          width: '10%'
+        },
+        {
+          key: 'maxiops',
+          dataIndex: 'maxiops',
+          title: this.$t('label.maxiops'),
+          width: '10%'
         }
       ],
       loading: false,
@@ -109,7 +140,10 @@ export default {
       selectedCustomDiskOffering: null,
       values: {
         offering: '',
-        size: ''
+        size: '',
+        miniops: '',
+        maxiops: '',
+        iscustomizediops: false
       }
     }
   },
@@ -120,9 +154,6 @@ export default {
         disk.name = `${item.name} (${item.size} GB)`
         return disk
       })
-    },
-    isOfferingCustom () {
-      return 'true'
     }
   },
   watch: {
@@ -160,9 +191,12 @@ export default {
       for (const item of this.items) {
         this.validOfferings[item.id] = this.diskOfferings.filter(x => x.disksize >= item.size || (x.iscustomized))
       }
-      this.diskOfferings.map(x => {
-        this.custom[x.id] = x.iscustomized
+      this.items.map(x => {
+        this.custom[x.id] = this.diskOfferings.find(offering => offering.id === x.diskofferingid)?.iscustomized
+        this.customIops[x.id] = this.diskOfferings.find(offering => offering.id === x.diskofferingid)?.iscustomizediops || false
       })
+      console.log('a ' + JSON.stringify(this.custom, null, 2))
+      console.log('b ' + JSON.stringify(this.customIops, null, 2))
       this.setDefaultValues()
       this.loading = false
     },
@@ -180,9 +214,35 @@ export default {
       this.values[diskId].size = value
       this.sendValues()
     },
+    updateCustomMinIops (value, diskId) {
+      this.values[diskId].miniops = value
+      this.sendValues()
+    },
+    updateCustomMaxIops (value, diskId) {
+      this.values[diskId].maxiops = value
+      this.sendValues()
+    },
     updateOfferingSelect (value, diskId) {
       this.values[diskId].offering = value
+      if (this.diskOfferings.find(x => x.id === value)?.iscustomized) {
+        this.values[diskId].size = this.items[diskId].size
+      } else {
+        this.values[diskId].size = this.diskOfferings.find(x => x.id === value)?.disksize
+      }
+
+      this.values[diskId].iscustomizediops = this.diskOfferings.find(x => x.id === value)?.iscustomizediops || false
+
+      if (this.values[diskId].iscustomizediops) {
+        this.values[diskId].miniops = this.diskOfferings.find(x => x.id === value)?.miniops
+        this.values[diskId].maxiops = this.diskOfferings.find(x => x.id === value)?.maxiops
+      }
+
       this.custom[diskId] = this.diskOfferings.find(x => x.id === value)?.iscustomized
+      this.customIops[diskId] = this.diskOfferings.find(x => x.id === value)?.iscustomizediops || false
+      console.log('1' + JSON.stringify(this.values, null, 2))
+      console.log('2' + JSON.stringify(this.custom, null, 2))
+      console.log('3' + JSON.stringify(this.customIops, null, 2))
+
       this.sendValues()
     },
     sendValues () {

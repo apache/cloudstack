@@ -2913,7 +2913,7 @@
 "message.create.sharedfs.failed": "Failed to create Shared FileSystem.",
 "message.create.sharedfs.processing": "Shared FileSystem creation in progress.",
 "message.create.tungsten.public.network": "Create Tungsten-Fabric public Network",
-"message.create.instance.from.backup.prefill": "Data is prefilled using the configurations stored in the backup. Edit to change individual fields",
+"message.create.instance.from.backup.prefill": "Data is prefilled using the configurations stored in the backup. Edit to change individual fields.",
 "message.create.internallb": "Creating internal LB",
 "message.create.internallb.failed": "Failed to create internal LB.",
 "message.create.internallb.processing": "Creation of internal LB is in progress",
