@@ -873,6 +873,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // delete the account from project accounts
             _projectAccountDao.removeAccountFromProjects(accountId);
 
+            // Delete account's network permissions
+            networkPermissionDao.removeAccountPermissions(accountId);
+
             if (account.getType() != Account.Type.PROJECT) {
                 // delete the account from group
                 _messageBus.publish(_name, MESSAGE_REMOVE_ACCOUNT_EVENT, PublishScope.LOCAL, accountId);
@@ -1865,7 +1868,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         checkIfAccountManagesProjects(accountId);
-        checkIfAccountHasNetworkPermissions(accountId);
 
         CallContext.current().putContextParameter(Account.class, account.getUuid());
 
@@ -1876,18 +1878,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         List<Long> managedProjectIds = _projectAccountDao.listAdministratedProjectIds(accountId);
         if (!CollectionUtils.isEmpty(managedProjectIds)) {
             throw new InvalidParameterValueException(String.format(
-                    "Unable to delete account [%s], because it manages the following project(s): %s. Please, remove the account from these projects first.",
+                    "Unable to delete account [%s], because it manages the following project(s): %s. Please, remove the account from these projects or demote it to a regular project role first.",
                     accountId, managedProjectIds
-            ));
-        }
-    }
-
-    protected void checkIfAccountHasNetworkPermissions(long accountId) {
-        List<Long> networkIds = networkPermissionDao.listPermittedNetworkIdsByAccounts(List.of(accountId));
-        if (!CollectionUtils.isEmpty(networkIds)) {
-            throw new InvalidParameterValueException(String.format(
-                    "Unable to delete account [%s], because it has network permissions for the following network(s): %s. Please, remove the network permissions first.",
-                    accountId, networkIds
             ));
         }
     }

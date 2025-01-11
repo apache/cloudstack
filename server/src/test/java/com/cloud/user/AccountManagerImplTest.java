@@ -1211,24 +1211,6 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void checkIfAccountHasNetworkPermissionsTestThrowExceptionWhenTheAccountHasNetworkPermissions() {
-        long accountId = 1L;
-        List<Long> networkIds = List.of(1L);
-
-        Mockito.when(networkPermissionDaoMock.listPermittedNetworkIdsByAccounts(List.of(accountId))).thenReturn(networkIds);
-        accountManagerImpl.checkIfAccountHasNetworkPermissions(accountId);
-    }
-
-    @Test
-    public void checkIfAccountHasNetworkPermissionsTestNotThrowExceptionWhenTheAccountDoesNotHaveNetworkPermissions() {
-        long accountId = 1L;
-        List<Long> networkIds = new ArrayList<>();
-
-        Mockito.when(networkPermissionDaoMock.listPermittedNetworkIdsByAccounts(List.of(accountId))).thenReturn(networkIds);
-        accountManagerImpl.checkIfAccountHasNetworkPermissions(accountId);
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
     public void checkIfAccountManagesProjectsTestThrowExceptionWhenTheAccountIsAProjectAdministrator() {
         long accountId = 1L;
         List<Long> managedProjectIds = List.of(1L);
