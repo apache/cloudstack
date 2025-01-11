@@ -1200,4 +1200,40 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(roleService.findRole(2L)).thenReturn(callerRole);
         accountManagerImpl.validateRoleChange(account, newRole, caller);
     }
+
+     @Test
+     public void checkIfAccountManagesProjectsTestNotThrowExceptionWhenTheAccountIsNotAProjectAdministrator() {
+        long accountId = 1L;
+        List<Long> managedProjectIds = new ArrayList<>();
+
+        Mockito.when(_projectAccountDao.listAdministratedProjectIds(accountId)).thenReturn(managedProjectIds);
+        accountManagerImpl.checkIfAccountManagesProjects(accountId);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkIfAccountHasNetworkPermissionsTestThrowExceptionWhenTheAccountHasNetworkPermissions() {
+        long accountId = 1L;
+        List<Long> networkIds = List.of(1L);
+
+        Mockito.when(networkPermissionDaoMock.listPermittedNetworkIdsByAccounts(List.of(accountId))).thenReturn(networkIds);
+        accountManagerImpl.checkIfAccountHasNetworkPermissions(accountId);
+    }
+
+    @Test
+    public void checkIfAccountHasNetworkPermissionsTestNotThrowExceptionWhenTheAccountDoesNotHaveNetworkPermissions() {
+        long accountId = 1L;
+        List<Long> networkIds = new ArrayList<>();
+
+        Mockito.when(networkPermissionDaoMock.listPermittedNetworkIdsByAccounts(List.of(accountId))).thenReturn(networkIds);
+        accountManagerImpl.checkIfAccountHasNetworkPermissions(accountId);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkIfAccountManagesProjectsTestThrowExceptionWhenTheAccountIsAProjectAdministrator() {
+        long accountId = 1L;
+        List<Long> managedProjectIds = List.of(1L);
+
+        Mockito.when(_projectAccountDao.listAdministratedProjectIds(accountId)).thenReturn(managedProjectIds);
+        accountManagerImpl.checkIfAccountManagesProjects(accountId);
+    }
 }
