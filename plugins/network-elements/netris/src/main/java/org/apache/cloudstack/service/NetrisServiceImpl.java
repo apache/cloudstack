@@ -18,17 +18,15 @@ package org.apache.cloudstack.service;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.VlanDao;
-import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddress;
+import com.cloud.network.Ipv6GuestPrefixSubnetNetworkMapVO;
 import com.cloud.network.Network;
 import com.cloud.network.Networks;
 import com.cloud.network.SDNProviderNetworkRule;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
@@ -37,6 +35,7 @@ import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.netris.NetrisService;
 import com.cloud.network.vpc.Vpc;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import inet.ipaddr.IPAddress;
@@ -82,11 +81,9 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
     @Inject
     private PhysicalNetworkDao physicalNetworkDao;
     @Inject
-    private IPAddressDao ipAddressDao;
-    @Inject
     private VlanDao vlanDao;
     @Inject
-    private VlanDetailsDao vlanDetailsDao;
+    private Ipv6GuestPrefixSubnetNetworkMapDao  ipv6PrefixNetworkMapDao;
 
     @Override
     public String getConfigComponentName() {
@@ -138,10 +135,10 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
     /**
      * Prepare the Netris Public Range to be used by CloudStack after the zone is created and the Netris provider is added
      */
-    public SetupNetrisPublicRangeCommand createSetupPublicRangeCommand(long zoneId, String gateway, String netmask, String ipRange) {
+    private Pair<String, String> getAllocationAndSubnet(String gateway, String netmask, String ipRange) {
         String superCidr = NetUtils.getCidrFromGatewayAndNetmask(gateway, netmask);
         String subnetNatCidr = calculateSubnetCidrFromIpRange(ipRange);
-        return new SetupNetrisPublicRangeCommand(zoneId, superCidr, subnetNatCidr);
+        return new Pair<>(superCidr, subnetNatCidr);
     }
 
     @Override
@@ -151,38 +148,38 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         if (CollectionUtils.isEmpty(physicalNetworks)) {
             return false;
         }
-        for (PhysicalNetworkVO physicalNetwork : physicalNetworks) {
-            List<IPAddressVO> publicIps = ipAddressDao.listByPhysicalNetworkId(physicalNetwork.getId());
-            List<Long> vlanDbIds = publicIps.stream()
-                    .filter(x -> !x.isForSystemVms())
-                    .map(IPAddressVO::getVlanId)
-                    .collect(Collectors.toList());
-            if (CollectionUtils.isEmpty(vlanDbIds)) {
-                String msg = "Cannot find a public IP range VLAN range for the Netris Public traffic";
-                logger.error(msg);
-                throw new CloudRuntimeException(msg);
+
+        List<VlanVO> providerVlanIds = vlanDao.listVlansForExternalNetworkProvider(zoneId, ApiConstants.NETRIS_DETAIL_KEY);
+        List<Long> vlanDbIds = providerVlanIds.stream().map(VlanVO::getId).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(vlanDbIds)) {
+            String msg = "Cannot find a public IP range VLAN range for the Netris Public traffic";
+            logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        for (Long vlanDbId : vlanDbIds) {
+            VlanVO vlanRecord = vlanDao.findById(vlanDbId);
+
+            String gateway = Objects.nonNull(vlanRecord.getVlanGateway()) ? vlanRecord.getVlanGateway() : vlanRecord.getIp6Gateway();
+            String netmask = vlanRecord.getVlanNetmask();
+            String ipRange = vlanRecord.getIpRange();
+            String ip6Cidr = vlanRecord.getIp6Cidr();
+            SetupNetrisPublicRangeCommand cmd = null;
+            if (NetUtils.isValidIp4(gateway)) {
+                Pair<String, String> allocationAndSubnet = getAllocationAndSubnet(gateway, netmask, ipRange);
+                cmd = new SetupNetrisPublicRangeCommand(zoneId, allocationAndSubnet.first(), allocationAndSubnet.second());
+            } else if (NetUtils.isValidIp6(gateway)) {
+                cmd = new SetupNetrisPublicRangeCommand(zoneId, ip6Cidr, ip6Cidr);
             }
-            for (Long vlanDbId : vlanDbIds) {
-                VlanVO vlanRecord = vlanDao.findById(vlanDbId);
-                if (vlanRecord == null) {
-                    logger.error("Cannot set up the Netris Public IP range as it cannot find the public range on database");
-                    return false;
-                }
-                VlanDetailsVO vlanDetail = vlanDetailsDao.findDetail(vlanDbId, ApiConstants.NETRIS_DETAIL_KEY);
-                if (vlanDetail == null) {
-                    logger.debug("Skipping the Public IP range {} creation on Netris as it does not belong to the Netris Public IP Pool", vlanRecord.getIpRange());
-                    continue;
-                }
-                String gateway = vlanRecord.getVlanGateway();
-                String netmask = vlanRecord.getVlanNetmask();
-                String ipRange = vlanRecord.getIpRange();
-                SetupNetrisPublicRangeCommand cmd = createSetupPublicRangeCommand(zoneId, gateway, netmask, ipRange);
-                NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
-                if (!answer.getResult()) {
-                    throw new CloudRuntimeException("Netris Public IP Range setup failed, please check the logs");
-                }
+
+            if (cmd == null) {
+                throw new CloudRuntimeException("Incorrect gateway and netmask details provided for the Netris Public IP range setup");
+            }
+            NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
+            if (!answer.getResult()) {
+                throw new CloudRuntimeException("Netris Public IP Range setup failed, please check the logs");
             }
         }
+
         return true;
     }
 
@@ -208,6 +205,10 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         cmd.setVxlanId(Integer.parseInt(vxlanId));
         NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(zoneId);
         cmd.setNetrisTag(netrisProvider.getNetrisTag());
+        if (Objects.nonNull(networkId)) {
+            Ipv6GuestPrefixSubnetNetworkMapVO ipv6PrefixNetworkMapVO = ipv6PrefixNetworkMapDao.findByNetworkId(networkId);
+            cmd.setIpv6Cidr(ipv6PrefixNetworkMapVO.getSubnet());
+        }
         NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
         return answer.getResult();
     }
