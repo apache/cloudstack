@@ -41,13 +41,19 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.offering.DiskOffering;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
+import org.apache.cloudstack.api.command.user.vm.CreateVMFromBackupCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
 import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.backup.BackupVO;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -91,6 +97,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.security.SecurityGroupVO;
+import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
@@ -217,6 +224,12 @@ public class UserVmManagerImplTest {
 
     @Mock
     PrimaryDataStoreDao primaryDataStoreDao;
+
+    @Mock
+    BackupDao backupDao;
+
+    @Mock
+    BackupManager backupManager;
 
     @Mock
     VirtualMachineManager virtualMachineManager;
@@ -1629,5 +1642,111 @@ public class UserVmManagerImplTest {
         Mockito.doReturn(true).when(accountManager).isAdmin(Mockito.anyLong());
 
         userVmManagerImpl.checkExpungeVmPermission(accountMock);
+    }
+    @Test
+    public void testAllocateVMFromBackupUsingCmdValues() throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException {
+        Long backupId = 1L;
+        Long diskOfferingId = 2L;
+        Long rootDiskOfferingId = 3L;
+
+        CreateVMFromBackupCmd cmd = mock(CreateVMFromBackupCmd.class);
+        when(cmd.getEntityOwnerId()).thenReturn(accountId);
+        when(cmd.getServiceOfferingId()).thenReturn(serviceOfferingId);
+        when(cmd.getDiskOfferingId()).thenReturn(diskOfferingId);
+        when(cmd.getTemplateId()).thenReturn(templateId);
+        when(cmd.getZoneId()).thenReturn(zoneId);
+        when(cmd.getBackupId()).thenReturn(backupId);
+
+        Account owner = mock(Account.class);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(owner);
+
+        ServiceOffering serviceOffering = mock(ServiceOffering.class);
+        when(serviceOffering.getDiskOfferingId()).thenReturn(rootDiskOfferingId);
+        DiskOffering diskOffering = mock(DiskOffering.class);
+        when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
+        when(entityManager.findById(DiskOffering.class, diskOfferingId)).thenReturn(diskOffering);
+        when(entityManager.findById(DiskOffering.class, rootDiskOfferingId)).thenReturn(diskOffering);
+
+        VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
+        when(entityManager.findById(VirtualMachineTemplate.class, templateId)).thenReturn(template);
+
+        DataCenter zone = mock(DataCenter.class);
+        when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(zone);
+
+        BackupVO backup = mock(BackupVO.class);
+        when(backup.getZoneId()).thenReturn(zoneId);
+        when(backupDao.findById(backupId)).thenReturn(backup);
+
+        Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(false), any(), any());
+
+        UserVm result = userVmManagerImpl.allocateVMFromBackup(cmd);
+
+        assertNotNull(result);
+        Mockito.verify(accountService).getActiveAccountById(accountId);
+        Mockito.verify(backupDao).findById(backupId);
+        Mockito.verify(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(false), any(), any());
+    }
+
+    @Test
+    public void testAllocateVMFromBackupUsingBackupValues() throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException {
+        Long backupId = 1L;
+        Long rootDiskOfferingId = 2L;
+        Long network1Id = 3L;
+        Long network2Id = 4L;
+
+        CreateVMFromBackupCmd cmd = mock(CreateVMFromBackupCmd.class);
+        when(cmd.getZoneId()).thenReturn(zoneId);
+        when(cmd.getBackupId()).thenReturn(backupId);
+        when(cmd.getEntityOwnerId()).thenReturn(accountId);
+        when(cmd.getServiceOfferingId()).thenReturn(null);
+        when(cmd.getDiskOfferingId()).thenReturn(null);
+        when(cmd.getTemplateId()).thenReturn(null);
+        when(cmd.getNetworkIds()).thenReturn(null);
+        when(cmd.getIpToNetworkMap()).thenReturn(null);
+        when(cmd.getDataDiskOfferingsInfo()).thenReturn(null);
+
+        Account owner = mock(Account.class);
+        when(accountService.getActiveAccountById(accountId)).thenReturn(owner);
+
+        DataCenter zone = mock(DataCenter.class);
+        when(entityManager.findById(DataCenter.class, zoneId)).thenReturn(zone);
+
+        BackupVO backup = mock(BackupVO.class);
+        when(backup.getZoneId()).thenReturn(zoneId);
+        when(backupDao.findById(backupId)).thenReturn(backup);
+
+        DiskOffering diskOffering = mock(DiskOffering.class);
+        when(backup.getDetail(ApiConstants.SERVICE_OFFERING_ID)).thenReturn("service-offering-uuid");
+        when(_serviceOfferingDao.findByUuid("service-offering-uuid")).thenReturn(serviceOffering);
+        when(serviceOffering.getDiskOfferingId()).thenReturn(rootDiskOfferingId);
+        when(entityManager.findById(DiskOffering.class, rootDiskOfferingId)).thenReturn(diskOffering);
+
+        when(backup.getDetail(ApiConstants.TEMPLATE_ID)).thenReturn("template-uuid");
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        when(templateDao.findByUuid("template-uuid")).thenReturn(template);
+
+        when(backup.getDetail(ApiConstants.NETWORK_IDS)).thenReturn("net1-uuid,net2-uuid");
+        NetworkVO network1 = mock(NetworkVO.class);
+        NetworkVO network2 = mock(NetworkVO.class);
+        when(_networkDao.findByUuid("net1-uuid")).thenReturn(network1);
+        when(_networkDao.findByUuid("net2-uuid")).thenReturn(network2);
+        when(network1.getId()).thenReturn(network1Id);
+        when(network2.getId()).thenReturn(network2Id);
+        when(backupManager.getDataDiskOfferingListFromBackup(backup)).thenReturn(List.of(new DiskOfferingInfo(diskOffering, 10L, 1000L, 2000L)));
+
+        Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(false), any(), any());
+
+        UserVm result = userVmManagerImpl.allocateVMFromBackup(cmd);
+
+        assertNotNull(result);
+        Mockito.verify(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
+                any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
+                any(), any(), any(), any(), eq(false), any(), any());
     }
 }

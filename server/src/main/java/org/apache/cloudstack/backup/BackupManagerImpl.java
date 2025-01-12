@@ -842,6 +842,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             Long maxIops = (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) ?
                     maxIopsList.get(index) : null;
             diskOfferingInfoList.add(new DiskOfferingInfo(diskOffering, size, minIops, maxIops));
+            index++;
         }
 
         return diskOfferingInfoList;
