@@ -230,6 +230,16 @@
           <a-form-item name="ip6cidr" ref="ip6cidr" :label="$t('label.cidr')" class="form__item">
             <a-input v-model:value="form.ip6cidr" />
           </a-form-item>
+          <a-form-item name="provider" ref="provider">
+            <template #label>
+              <tooltip-label :title="$t('label.provider')"/>
+            </template>
+            <a-select v-model:value="form.provider">
+              <a-select-option value=""></a-select-option>
+              <a-select-option value="NSX">{{ $t('label.nsx') }}</a-select-option>
+              <a-select-option value="Netris">{{ $t('label.netris') }}</a-select-option>
+            </a-select>
+          </a-form-item>
         </div>
         <div v-else>
           <a-form-item name="gateway" ref="gateway" :label="$t('label.gateway')" class="form__item">

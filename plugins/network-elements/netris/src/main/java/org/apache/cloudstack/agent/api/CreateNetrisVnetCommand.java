@@ -23,6 +23,7 @@ public class CreateNetrisVnetCommand extends NetrisCommand {
     private Integer vxlanId;
     private String gateway;
     private String netrisTag;
+    private String ipv6Cidr;
 
     public CreateNetrisVnetCommand(Long zoneId, Long accountId, Long domainId, String vpcName, Long vpcId, String vNetName, Long networkId, String cidr, String gateway, boolean isVpc) {
         super(zoneId, accountId, domainId, vNetName, networkId, isVpc);
@@ -63,5 +64,13 @@ public class CreateNetrisVnetCommand extends NetrisCommand {
 
     public void setNetrisTag(String netrisTag) {
         this.netrisTag = netrisTag;
+    }
+
+    public String getIpv6Cidr() {
+        return ipv6Cidr;
+    }
+
+    public void setIpv6Cidr(String ipv6Cidr) {
+        this.ipv6Cidr = ipv6Cidr;
     }
 }

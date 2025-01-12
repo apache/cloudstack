@@ -594,6 +594,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String netrisTag = cmd.getNetrisTag();
         String netmask = vnetCidr.split("/")[1];
         String netrisGateway = cmd.getGateway() + "/" + netmask;
+        String netrisV6Cidr = cmd.getIpv6Cidr();
         boolean isVpc = cmd.isVpc();
 
         String suffix = getNetrisVpcNameSuffix(vpcId, vpcName, networkId, networkName, isVpc);
@@ -614,9 +615,18 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, vnetCidr) ;
 
         createIpamSubnetInternal(netrisSubnetName, vnetCidr, SubnetBody.PurposeEnum.COMMON, associatedVpc);
+        if (Objects.nonNull(netrisV6Cidr)) {
+            String netrisV6IpamAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, netrisV6Cidr);
+            String netrisV6SubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, netrisV6Cidr) ;
+            InlineResponse2004Data createdIpamAllocation = createIpamAllocationInternal(netrisV6IpamAllocationName, netrisV6Cidr, associatedVpc);
+            if (Objects.isNull(createdIpamAllocation)) {
+                throw new CloudRuntimeException(String.format("Failed to create Netris IPAM Allocation %s for VPC %s", netrisV6IpamAllocationName, netrisVpcName));
+            }
+            createIpamSubnetInternal(netrisV6SubnetName, netrisV6Cidr, SubnetBody.PurposeEnum.COMMON, associatedVpc);
+        }
         logger.debug("Successfully created IPAM Subnet {} for network {} on Netris", netrisSubnetName, networkName);
 
-        VnetResAddBody vnetResponse = createVnetInternal(associatedVpc, netrisVnetName, netrisGateway, vxlanId, netrisTag);
+        VnetResAddBody vnetResponse = createVnetInternal(associatedVpc, netrisVnetName, netrisGateway, netrisV6Cidr, vxlanId, netrisTag);
         if (vnetResponse == null || !vnetResponse.isIsSuccess()) {
             String reason = vnetResponse == null ? "Empty response" : "Operation failed on Netris";
             logger.debug("The Netris vNet creation {} failed: {}", vNetName, reason);
@@ -1107,25 +1117,33 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         }
     }
 
-    VnetResAddBody createVnetInternal(VPCListing associatedVpc, String netrisVnetName, String netrisGateway, Integer vxlanId, String netrisTag) {
+    VnetResAddBody createVnetInternal(VPCListing associatedVpc, String netrisVnetName, String netrisGateway, String netrisV6Gateway, Integer vxlanId, String netrisTag) {
         logger.debug("Creating Netris VPC vNet {} for CIDR {}", netrisVnetName, netrisGateway);
         try {
             VnetAddBody vnetBody = new VnetAddBody();
 
             vnetBody.setCustomAnycastMac("");
 
-            VnetAddBodyGateways gateways = new VnetAddBodyGateways();
-            gateways.prefix(netrisGateway);
-            gateways.setDhcpEnabled(false);
+            VnetAddBodyGateways gatewayV4 = new VnetAddBodyGateways();
+            gatewayV4.prefix(netrisGateway);
+            gatewayV4.setDhcpEnabled(false);
             VnetAddBodyDhcp dhcp = new VnetAddBodyDhcp();
             dhcp.setEnd("");
             dhcp.setStart("");
             dhcp.setOptionSet(new VnetAddBodyDhcpOptionSet());
-            gateways.setDhcp(dhcp);
+            gatewayV4.setDhcp(dhcp);
             List<VnetAddBodyGateways> gatewaysList = new ArrayList<>();
-            gatewaysList.add(gateways);
-            vnetBody.setGateways(gatewaysList);
+            gatewaysList.add(gatewayV4);
 
+            if (Objects.nonNull(netrisV6Gateway)) {
+                VnetAddBodyGateways gatewayV6 = new VnetAddBodyGateways();
+                gatewayV6.prefix(netrisV6Gateway);
+                gatewayV6.setDhcpEnabled(false);
+                gatewayV6.setDhcp(dhcp);
+                gatewaysList.add(gatewayV6);
+            }
+
+            vnetBody.setGateways(gatewaysList);
             vnetBody.setGuestTenants(new ArrayList<>());
             vnetBody.setL3vpn(false);
             vnetBody.setName(netrisVnetName);

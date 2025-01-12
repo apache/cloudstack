@@ -43,6 +43,7 @@ import com.cloud.bgp.BGPService;
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.VlanDetailsDao;
+import com.cloud.network.dao.Ipv6GuestPrefixSubnetNetworkMapDao;
 import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NsxProviderDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -361,6 +362,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     private ASNumberDao asNumberDao;
     @Inject
     private BGPService bgpService;
+    @Inject
+    private Ipv6GuestPrefixSubnetNetworkMapDao ipv6GuestPrefixSubnetNetworkMapDao;
 
     @Override
     public List<NetworkGuru> getNetworkGurus() {
@@ -823,6 +826,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                         if (domainId != null && aclType == ACLType.Domain) {
                             _networksDao.addDomainToNetwork(id, domainId, subdomainAccess == null || subdomainAccess);
+                        }
+                        String ipv6Cidr = network.getIp6Cidr();
+                        String ipv6Gateway = network.getIp6Gateway();
+                        if (StringUtils.isNoneBlank(ipv6Cidr, ipv6Gateway)) {
+                            ipv6Service.assignIpv6SubnetToNetwork(ipv6Cidr, networkPersisted.getId());
                         }
                     }
                 });

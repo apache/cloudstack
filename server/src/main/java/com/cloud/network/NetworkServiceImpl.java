@@ -1800,10 +1800,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.hideIpAddressUsage, String.valueOf(hideIpAddressUsage), false));
         }
 
-        if (ip6GatewayCidr != null) {
-            ipv6Service.assignIpv6SubnetToNetwork(ip6Cidr, network.getId());
-        }
-
         // assign to network
         if (NetworkOffering.NetworkMode.ROUTED.equals(ntwkOff.getNetworkMode())) {
             routedIpv4Manager.assignIpv4SubnetToNetwork(network);
