@@ -29,6 +29,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "external_bigswitch_bcf_devices")
@@ -88,6 +89,13 @@ public class BigSwitchBcfDeviceVO implements InternalIdentity {
         this.password = password;
         this.nat = nat;
         this.hash = hash;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("BigSwitchBcfDevice %s.",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name"));
     }
 
     @Override

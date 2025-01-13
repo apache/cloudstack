@@ -27,6 +27,7 @@ import javax.persistence.Table;
 
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.utils.DateUtil.IntervalType;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "snapshot_policy")
@@ -74,6 +75,13 @@ public class SnapshotPolicyVO implements SnapshotPolicy {
         this.active = true;
         this.display = display;
         this.uuid = UUID.randomUUID().toString();
+    }
+
+    @Override
+    public String toString() {
+        return String.format("SnapshotPolicy %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "volumeId"));
     }
 
     @Override

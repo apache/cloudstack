@@ -22,6 +22,7 @@ import java.util.Date;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 public class NetworkProfile implements Network {
     private final long id;
@@ -382,6 +383,13 @@ public class NetworkProfile implements Network {
     @Override
     public Integer getNetworkCidrSize() {
         return networkCidrSize;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("NetworkProfile %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "networkOfferingId"));
     }
 
 }

@@ -136,18 +136,18 @@ public class BrocadeVcsElement extends AdapterBase implements NetworkElement, Re
     }
 
     protected boolean canHandle(Network network, Service service) {
-        logger.debug("Checking if BrocadeVcsElement can handle service " + service.getName() + " on network " + network.getDisplayText());
+        logger.debug(String.format("Checking if BrocadeVcsElement can handle service %s on network %s", service.getName(), network));
         if (network.getBroadcastDomainType() != BroadcastDomainType.Vcs) {
             return false;
         }
 
         if (!_networkModel.isProviderForNetwork(getProvider(), network.getId())) {
-            logger.debug("BrocadeVcsElement is not a provider for network " + network.getDisplayText());
+            logger.debug(String.format("BrocadeVcsElement is not a provider for network %s", network));
             return false;
         }
 
         if (!_ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), service, Network.Provider.BrocadeVcs)) {
-            logger.debug("BrocadeVcsElement can't provide the " + service.getName() + " service on network " + network.getDisplayText());
+            logger.debug(String.format("BrocadeVcsElement can't provide the %s service on network %s", service.getName(), network));
             return false;
         }
 
@@ -164,7 +164,7 @@ public class BrocadeVcsElement extends AdapterBase implements NetworkElement, Re
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
             ResourceUnavailableException, InsufficientCapacityException {
-        logger.debug("entering BrocadeVcsElement implement function for network " + network.getDisplayText() + " (state " + network.getState() + ")");
+        logger.debug(String.format("entering BrocadeVcsElement implement function for network %s (state %s)", network, network.getState()));
 
         if (!canHandle(network, Service.Connectivity)) {
             return false;
@@ -276,11 +276,9 @@ public class BrocadeVcsElement extends AdapterBase implements NetworkElement, Re
         final PhysicalNetworkServiceProviderVO ntwkSvcProvider = _physicalNetworkServiceProviderDao.findByServiceProvider(physicalNetwork.getId(),
                 networkDevice.getNetworkServiceProvder());
         if (ntwkSvcProvider == null) {
-            throw new CloudRuntimeException("Network Service Provider: " + networkDevice.getNetworkServiceProvder() + " is not enabled in the physical network: "
-                    + physicalNetworkId + "to add this device");
+            throw new CloudRuntimeException(String.format("Network Service Provider: %s is not enabled in the physical network: %s to add this device", networkDevice.getNetworkServiceProvder(), physicalNetwork));
         } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
-            throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() + " is in shutdown state in the physical network: "
-                    + physicalNetworkId + "to add this device");
+            throw new CloudRuntimeException(String.format("Network Service Provider: %s is in shutdown state in the physical network: %s to add this device", ntwkSvcProvider.getProviderName(), physicalNetwork));
         }
 
         Map<String, String> params = new HashMap<String, String>();

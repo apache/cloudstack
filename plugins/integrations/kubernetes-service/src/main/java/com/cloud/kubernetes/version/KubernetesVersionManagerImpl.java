@@ -152,7 +152,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
                         versions.remove(i);
                     }
                 } catch (IllegalArgumentException e) {
-                    logger.warn(String.format("Unable to compare Kubernetes version for supported version ID: %s with %s", version.getUuid(), minimumSemanticVersion));
+                    logger.warn("Unable to compare Kubernetes version for supported version {} with {}", version, minimumSemanticVersion);
                     versions.remove(i);
                 }
             }
@@ -383,13 +383,13 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
 
         VMTemplateVO template = templateDao.findByIdIncludingRemoved(version.getIsoId());
         if (template == null) {
-            logger.warn(String.format("Unable to find ISO associated with supported Kubernetes version ID: %s", version.getUuid()));
+            logger.warn("Unable to find ISO associated with supported Kubernetes version {}", version);
         }
         if (template != null && template.getRemoved() == null) { // Delete ISO
             try {
                 deleteKubernetesVersionIso(template.getId());
             } catch (IllegalAccessException | NoSuchFieldException | IllegalArgumentException ex) {
-                logger.error(String.format("Unable to delete binaries ISO ID: %s associated with supported kubernetes version ID: %s", template.getUuid(), version.getUuid()), ex);
+                logger.error("Unable to delete binaries ISO: {} associated with supported kubernetes version: {}", template, version, ex);
                 throw new CloudRuntimeException(String.format("Unable to delete binaries ISO ID: %s associated with supported kubernetes version ID: %s", template.getUuid(), version.getUuid()));
             }
         }

@@ -121,7 +121,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                 } else {
                     res = deleteSnapshotFromDbIfNeeded(snapshotVO, zoneId);
                     markSnapshotAsDestroyedIfAlreadyRemoved(snapshotId,true);
-                    StorPoolUtil.spLog("StorpoolSnapshotStrategy.deleteSnapshot: executed successfully=%s, snapshot uuid=%s, name=%s", res, snapshotVO.getUuid(), name);
+                    StorPoolUtil.spLog("StorpoolSnapshotStrategy.deleteSnapshot: executed successfully=%s, snapshot %s, name=%s", res, snapshotVO, name);
                 }
             } catch (Exception e) {
                 String errMsg = String.format("Cannot delete snapshot due to %s", e.getMessage());
@@ -152,7 +152,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
 
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
-        logger.debug(String.format("StorpoolSnapshotStrategy.canHandle: snapshot=%s, uuid=%s, op=%s", snapshot.getName(), snapshot.getUuid(), op));
+        logger.debug("StorpoolSnapshotStrategy.canHandle: snapshot {}, op={}", snapshot, op);
 
         if (op != SnapshotOperation.DELETE) {
             return StrategyPriority.CANT_HANDLE;
@@ -181,7 +181,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
     }
 
     private boolean deleteSnapshotChain(SnapshotInfo snapshot) {
-        logger.debug("delete snapshot chain for snapshot: " + snapshot.getId());
+        logger.debug("delete snapshot chain for snapshot: {}", snapshot);
         final SnapshotInfo snapOnImage = snapshot;
         boolean result = false;
         boolean resultIsSet = false;
@@ -194,7 +194,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                     logger.debug("the snapshot has child, can't delete it on the storage");
                     break;
                 }
-                logger.debug("Snapshot: " + snapshot.getId() + " doesn't have children, so it's ok to delete it and its parents");
+                logger.debug("Snapshot: {} doesn't have children, so it's ok to delete it and its parents", snapshot);
                 SnapshotInfo parent = snapshot.getParent();
                 boolean deleted = false;
                 if (parent != null) {
@@ -216,7 +216,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                             if (r) {
                                 List<SnapshotInfo> cacheSnaps = snapshotDataFactory.listSnapshotOnCache(snapshot.getId());
                                 for (SnapshotInfo cacheSnap : cacheSnaps) {
-                                    logger.debug("Delete snapshot " + snapshot.getId() + " from image cache store: " + cacheSnap.getDataStore().getName());
+                                    logger.debug("Delete snapshot {} from image cache store: {}", snapshot, cacheSnap.getDataStore());
                                     cacheSnap.delete();
                                 }
                             }
@@ -335,7 +335,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
 
         if (!Snapshot.State.BackedUp.equals(snapshotVO.getState()) && !Snapshot.State.Error.equals(snapshotVO.getState()) &&
                 !Snapshot.State.Destroying.equals(snapshotVO.getState())) {
-            throw new InvalidParameterValueException("Can't delete snapshot " + snapshotId + " due to it is in " + snapshotVO.getState() + " Status");
+            throw new InvalidParameterValueException(String.format("Can't delete snapshot %s due to it is in %s Status", snapshotVO, snapshotVO.getState()));
         }
         List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image);
         if (zoneId != null) {

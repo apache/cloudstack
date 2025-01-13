@@ -164,7 +164,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         // would be {ResourceState.Creating, ResourceState.Error};
         if (!allowedStates.contains(host.getResourceState())) {
             if (logger.isTraceEnabled()) {
-                logger.trace(String.format("host is in '%s' state, not adding to the host list, (id = %s)", host.getResourceState(), host.getUuid()));
+                logger.trace("host ({}) is in '{}' state, not adding to the host list", host, host.getResourceState());
             }
             return;
         }
@@ -174,7 +174,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                 && host.getType() != Host.Type.SecondaryStorage
                 && host.getType() != Host.Type.SecondaryStorageVM) {
             if (logger.isTraceEnabled()) {
-                logger.trace(String.format("host is of wrong type, not adding to the host list, (id = %s, type = %s)", host.getUuid(), host.getType()));
+                logger.trace(String.format("host (%s) is of wrong type, not adding to the host list, type = %s", host, host.getType()));
             }
             return;
         }
@@ -183,7 +183,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                 && ! (host.getHypervisorType() == Hypervisor.HypervisorType.KVM || host.getHypervisorType() == Hypervisor.HypervisorType.LXC)) {
 
             if (logger.isTraceEnabled()) {
-                logger.trace(String.format("hypervisor is not the right type, not adding to the host list, (id = %s, hypervisortype = %s)", host.getUuid(), host.getHypervisorType()));
+                logger.trace(String.format("hypervisor is not the right type, not adding to the host list, (host: %s, hypervisortype: %s)", host, host.getHypervisorType()));
             }
             return;
         }

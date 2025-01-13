@@ -104,7 +104,7 @@ public class RemoveVpnUserCmd extends BaseAsyncCmd {
     public void execute() {
         Account owner = _accountService.getAccount(getEntityOwnerId());
         long ownerId = owner.getId();
-        boolean result = _ravService.removeVpnUser(ownerId, userName, CallContext.current().getCallingAccount());
+        boolean result = _ravService.removeVpnUser(owner, userName, CallContext.current().getCallingAccount());
         if (!result) {
             String errorMessage = String.format("Failed to remove VPN user=[%s]. VPN owner id=[%s].", userName, ownerId);
             logger.error(errorMessage);
