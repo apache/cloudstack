@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -47,7 +46,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.net.ssl.SSLEngine;
 
@@ -81,26 +79,26 @@ public abstract class NioConnection implements Callable<Boolean> {
     protected ExecutorService _sslHandshakeExecutor;
     protected CAService caService;
     protected Integer sslHandshakeTimeout = null;
-    private final int sslHandshakeMaxWorkers;
-    private final AtomicInteger activeAcceptConnections = new AtomicInteger(0);
-    private final BlockingQueue<Runnable> workerQueue;
-    private final BlockingQueue<Runnable> sslHandshakeQueue;
+    private final int factoryMaxNewConnectionsCount;
 
-    public NioConnection(final String name, final int port, final int workers, final int sslHandshakeMinWorkers,
-             final int sslHandshakeMaxWorkers, final HandlerFactory factory) {
+    public NioConnection(final String name, final int port, final int workers, final HandlerFactory factory) {
         _name = name;
         _isRunning = false;
         _selector = null;
         _port = port;
         _factory = factory;
-        this.sslHandshakeMaxWorkers = Math.max(sslHandshakeMaxWorkers, 1);
-        workerQueue = new LinkedBlockingQueue<>(5 * workers);
+        this.factoryMaxNewConnectionsCount = factory.getMaxConcurrentNewConnectionsCount();
         _executor = new ThreadPoolExecutor(workers, 5 * workers, 1, TimeUnit.DAYS,
-                workerQueue, new NamedThreadFactory(name + "-Handler"), new ThreadPoolExecutor.AbortPolicy());
-        sslHandshakeQueue = new SynchronousQueue<>();
-        _sslHandshakeExecutor = new ThreadPoolExecutor(Math.max(sslHandshakeMinWorkers, 0), this.sslHandshakeMaxWorkers, 30,
-                TimeUnit.MINUTES, sslHandshakeQueue, new NamedThreadFactory(name + "-SSLHandshakeHandler"),
+                new LinkedBlockingQueue<>(5 * workers), new NamedThreadFactory(name + "-Handler"),
                 new ThreadPoolExecutor.AbortPolicy());
+        String sslHandshakeHandlerName = name + "-SSLHandshakeHandler";
+        if (factoryMaxNewConnectionsCount > 0) {
+            _sslHandshakeExecutor = new ThreadPoolExecutor(0, this.factoryMaxNewConnectionsCount, 30,
+                    TimeUnit.MINUTES, new SynchronousQueue<>(), new NamedThreadFactory(sslHandshakeHandlerName),
+                    new ThreadPoolExecutor.AbortPolicy());
+        } else {
+            _sslHandshakeExecutor = Executors.newCachedThreadPool(new NamedThreadFactory(sslHandshakeHandlerName));
+        }
     }
 
     public void setCAService(final CAService caService) {
@@ -210,12 +208,12 @@ public abstract class NioConnection implements Callable<Boolean> {
     abstract void unregisterLink(InetSocketAddress saddr);
 
     protected boolean rejectConnectionIfBusy(final SocketChannel socketChannel) throws IOException {
-        if (activeAcceptConnections.get() < sslHandshakeMaxWorkers) {
+        if (factoryMaxNewConnectionsCount <= 0  || _factory.getNewConnectionsCount() < factoryMaxNewConnectionsCount) {
             return false;
         }
         // Reject new connection if the server is busy
         logger.warn("{} Rejecting new connection. {} active connections currently",
-                SERVER_BUSY_MESSAGE, sslHandshakeMaxWorkers);
+                SERVER_BUSY_MESSAGE, factoryMaxNewConnectionsCount);
         socketChannel.close();
         _selector.wakeup();
         return true;
@@ -241,8 +239,7 @@ public abstract class NioConnection implements Callable<Boolean> {
             final NioConnection nioConnection = this;
             _sslHandshakeExecutor.submit(() -> {
                 final InetSocketAddress socketAddress = (InetSocketAddress)socket.getRemoteSocketAddress();
-                activeAcceptConnections.incrementAndGet();
-                long startTime = System.currentTimeMillis();
+                _factory.registerNewConnection(socketAddress);
                 _selector.wakeup();
                 try {
                     final SSLEngine sslEngine = Link.initServerSSLEngine(caService, socketChannel.getRemoteAddress().toString());
@@ -260,16 +257,11 @@ public abstract class NioConnection implements Callable<Boolean> {
                     registerLink(socketAddress, link);
                     _executor.submit(task);
                 } catch (final GeneralSecurityException | IOException e) {
+                    _factory.unregisterNewConnection(socketAddress);
                     logger.trace("Connection closed with {} due to failure: {}", socket.getRemoteSocketAddress(), e.getMessage());
                     closeAutoCloseable(socket, "accepting socket");
                     closeAutoCloseable(socketChannel, "accepting socketChannel");
                 } finally {
-                    int connections = activeAcceptConnections.decrementAndGet();
-                    if (logger.isTraceEnabled()) {
-                        logger.trace("Accept task complete for {} - time taken: {}, " +
-                                "active accept connections: {}", () -> socketAddress,
-                                () -> (System.currentTimeMillis() - startTime), () -> connections);
-                    }
                     _selector.wakeup();
                 }
             });

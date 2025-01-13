@@ -18,6 +18,7 @@ package com.cloud.agent.manager;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -187,6 +188,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     protected StateMachine2<Status, Status.Event, Host> _statusStateMachine = Status.getStateMachine();
     private final ConcurrentHashMap<Long, Long> _pingMap = new ConcurrentHashMap<Long, Long>(10007);
+    private int maxConcurrentNewAgentConnections;
+    private final ConcurrentHashMap<String, Boolean> newAgentConnections = new ConcurrentHashMap<>();
 
     @Inject
     ResourceManager _resourceMgr;
@@ -199,12 +202,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected final ConfigKey<Integer> RemoteAgentSslHandshakeTimeout = new ConfigKey<>("Advanced",
             Integer.class, "agent.ssl.handshake.timeout", "30",
             "Seconds after which SSL handshake times out during remote agent connections.", false);
-    protected final ConfigKey<Integer> RemoteAgentSslHandshakeMinWorkers = new ConfigKey<>("Advanced",
-            Integer.class, "agent.ssl.handshake.min.workers", "5",
-            "Number of minimum worker threads handling SSL handshake with remote agents.", false);
-    protected final ConfigKey<Integer> RemoteAgentSslHandshakeMaxWorkers = new ConfigKey<>("Advanced",
-            Integer.class, "agent.ssl.handshake.max.workers", "50",
-            "Number of maximum worker threads handling SSL handshake with remote agents.", false);
+    protected final ConfigKey<Integer> RemoteAgentMaxConcurrentNewConnections = new ConfigKey<>("Advanced",
+            Integer.class, "agent.max.concurrent.new.connections", "0",
+            "Number of maximum concurrent new connections server allows for remote agents. " +
+                    "If set to zero (default value) then no limit will be enforced on concurrent new connections",
+            false);
     protected final ConfigKey<Integer> AlertWait = new ConfigKey<Integer>("Advanced", Integer.class, "alert.wait", "1800",
             "Seconds to wait before alerting on a disconnected agent", true);
     protected final ConfigKey<Integer> DirectAgentLoadSize = new ConfigKey<Integer>("Advanced", Integer.class, "direct.agent.load.size", "16",
@@ -238,9 +240,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         // allow core threads to time out even when there are no items in the queue
         _connectExecutor.allowCoreThreadTimeOut(true);
 
+        maxConcurrentNewAgentConnections = RemoteAgentMaxConcurrentNewConnections.value();
+
         _connection = new NioServer("AgentManager", Port.value(), Workers.value() + 10,
-                RemoteAgentSslHandshakeMinWorkers.value(), RemoteAgentSslHandshakeMaxWorkers.value(), this,
-                caService, RemoteAgentSslHandshakeTimeout.value());
+                this, caService, RemoteAgentSslHandshakeTimeout.value());
         logger.info("Listening on {} with {} workers.", Port.value(), Workers.value());
 
         final int directAgentPoolSize = DirectAgentPoolSize.value();
@@ -259,6 +262,26 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Override
     public Task create(final Task.Type type, final Link link, final byte[] data) {
         return new AgentHandler(type, link, data);
+    }
+
+    @Override
+    public int getMaxConcurrentNewConnectionsCount() {
+        return maxConcurrentNewAgentConnections;
+    }
+
+    @Override
+    public int getNewConnectionsCount() {
+        return newAgentConnections.size();
+    }
+
+    @Override
+    public void registerNewConnection(SocketAddress address) {
+        newAgentConnections.putIfAbsent(address.toString(), true);
+    }
+
+    @Override
+    public void unregisterNewConnection(SocketAddress address) {
+        newAgentConnections.remove(address.toString());
     }
 
     @Override
@@ -1240,6 +1263,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             if (attache == null) {
                 logger.warn("Unable to create attache for agent: {}", _request);
             }
+            unregisterNewConnection(_link.getSocketAddress());
         }
     }
 
@@ -1815,7 +1839,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
                 DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait,
-                RemoteAgentSslHandshakeTimeout, RemoteAgentSslHandshakeMinWorkers, RemoteAgentSslHandshakeMaxWorkers
+                RemoteAgentSslHandshakeTimeout, RemoteAgentMaxConcurrentNewConnections
         };
     }
 

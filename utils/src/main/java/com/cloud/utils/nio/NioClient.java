@@ -36,8 +36,9 @@ public class NioClient extends NioConnection {
     protected String host;
     protected SocketChannel clientConnection;
 
-    public NioClient(final String name, final String host, final int port, final int workers, final Integer sslHandshakeTimeout, final HandlerFactory factory) {
-        super(name, port, workers, 1, 2, factory);
+    public NioClient(final String name, final String host, final int port, final int workers,
+             final Integer sslHandshakeTimeout, final HandlerFactory factory) {
+        super(name, port, workers, factory);
         setSslHandshakeTimeout(sslHandshakeTimeout);
         this.host = host;
     }
