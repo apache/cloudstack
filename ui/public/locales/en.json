@@ -1076,7 +1076,7 @@
 "label.hastate": "HA state",
 "label.headers": "Headers",
 "label.header.backup.schedule": "You can set up recurring backup schedules by selecting from the available options below and applying your policy preference.",
-"label.header.volume.snapshot": "You can set up recurring Snapshot schedules by selecting from the available options below and applying your policy preference.",
+"label.header.volume.snapshot": "You can set up recurring Snapshots by selecting from the available options below and applying your policy preference.",
 "label.header.volume.take.snapshot": "Please confirm that you want to take a Snapshot of this volume.",
 "label.health.check": "Health check",
 "label.heapmemoryused": "Heap-memory used",
