@@ -75,11 +75,10 @@ export default {
     this.dataPreFill.backupid = this.resource.id
     this.dataPreFill.computeofferingid = this.resource.vmdetails.serviceofferingid
     this.dataPreFill.templateid = this.resource.vmdetails.templateid
-    this.dataPreFill.networkids = (this.resource.vmdetails.networkids || '').split(',').map(item => item.trim())
-    this.diskofferingids = (this.resource.vmdetails.diskofferingids || '').split(',').map(item => item.trim())
-    this.miniops = (this.resource.vmdetails.miniops || '').split(',').map(item => item.trim())
-    this.maxiops = (this.resource.vmdetails.maxiops || '').split(',').map(item => item.trim())
-    console.log(this.diskofferingids)
+    this.dataPreFill.networkids = (this.resource.vmdetails.networkids || '').split(',')
+    this.diskofferingids = (this.resource.vmdetails.diskofferingids || '').split(',')
+    this.miniops = (this.resource.vmdetails.miniops || '').split(',').map(item => item === 'null' ? '' : item)
+    this.maxiops = (this.resource.vmdetails.maxiops || '').split(',').map(item => item === 'null' ? '' : item)
     const volumes = JSON.parse(this.resource.volumes).slice(1)
     const datadisksdetails = volumes.map((volume, index) => ({
       id: index,
@@ -108,7 +107,7 @@ export default {
       args.zoneid = this.resource.zoneid
       args.backupid = this.resource.id
 
-      const title = this.$t('label.launch.vm')
+      const title = this.$t('label.create.new.instance.from.backup')
       const description = ''
       const password = this.$t('label.password')
 

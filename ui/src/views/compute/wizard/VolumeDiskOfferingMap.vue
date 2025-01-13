@@ -137,6 +137,7 @@ export default {
       loading: false,
       diskOfferings: [],
       validOfferings: {},
+      tablerows: {},
       selectedCustomDiskOffering: null,
       values: {
         offering: '',
@@ -149,9 +150,9 @@ export default {
   },
   computed: {
     tableSource () {
-      return this.items.map(item => {
-        var disk = { ...item, disabled: this.validOfferings[item.id] && this.validOfferings[item.id].length === 0 }
-        disk.name = `${item.name} (${item.size} GB)`
+      return this.tablerows.map(row => {
+        var disk = { ...row, disabled: this.validOfferings[row.id] && this.validOfferings[row.id].length === 0 }
+        disk.name = `${this.items.find(item => item.id === row.id).name} (${this.items.find(item => item.id === row.id).size} GB)`
         return disk
       })
     }
@@ -170,6 +171,7 @@ export default {
   },
   created () {
     this.fetchDiskOfferings()
+    this.tablerows = JSON.parse(JSON.stringify(this.items))
   },
   methods: {
     fetchDiskOfferings () {
@@ -204,8 +206,11 @@ export default {
       this.values = {}
       for (const item of this.items) {
         this.values[item.id] = {
-          offering: this.validOfferings[item.id]?.[0]?.id || '',
-          size: this.validOfferings[item.id]?.[0]?.disksize || ''
+          offering: item.diskofferingid,
+          size: item.size,
+          miniops: item.miniops,
+          maxiops: item.maxiops,
+          iscustomizediops: this.diskOfferings.find(x => x.id === item.diskofferingid)?.iscustomizediops || false
         }
       }
       this.sendValues()
@@ -226,15 +231,24 @@ export default {
       this.values[diskId].offering = value
       if (this.diskOfferings.find(x => x.id === value)?.iscustomized) {
         this.values[diskId].size = this.items[diskId].size
+        this.tablerows[diskId].size = this.items[diskId].size
       } else {
         this.values[diskId].size = this.diskOfferings.find(x => x.id === value)?.disksize
+        this.tablerows[diskId].size = this.diskOfferings.find(x => x.id === value)?.disksize
       }
 
       this.values[diskId].iscustomizediops = this.diskOfferings.find(x => x.id === value)?.iscustomizediops || false
 
       if (this.values[diskId].iscustomizediops) {
-        this.values[diskId].miniops = this.diskOfferings.find(x => x.id === value)?.miniops
-        this.values[diskId].maxiops = this.diskOfferings.find(x => x.id === value)?.maxiops
+        this.values[diskId].miniops = this.items[diskId].miniops
+        this.values[diskId].maxiops = this.items[diskId].maxiops
+        this.tablerows[diskId].miniops = this.items[diskId].miniops
+        this.tablerows[diskId].maxiops = this.items[diskId].maxiops
+      } else {
+        this.values[diskId].miniops = ''
+        this.values[diskId].maxiops = ''
+        this.tablerows[diskId].miniops = ''
+        this.tablerows[diskId].maxiops = ''
       }
 
       this.custom[diskId] = this.diskOfferings.find(x => x.id === value)?.iscustomized

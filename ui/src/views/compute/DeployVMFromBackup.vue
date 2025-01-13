@@ -1774,7 +1774,7 @@ export default {
           deployVmData.projectid = this.owner.projectid
         }
 
-        const title = this.$t('label.launch.vm')
+        const title = this.$t('label.create.new.instance.from.backup')
         const description = values.name || ''
         const password = this.$t('label.password')
 

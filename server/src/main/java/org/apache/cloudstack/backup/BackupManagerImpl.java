@@ -311,7 +311,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             for (UserVmJoinVO userVmJoinVO : userVmJoinVOs) {
                 networkIds.add(userVmJoinVO.getNetworkUuid());
             }
-            details.put(ApiConstants.NETWORK_IDS, String.join(",", networkIds));
+            if (!networkIds.isEmpty()) {
+                details.put(ApiConstants.NETWORK_IDS, String.join(",", networkIds));
+            }
         }
         return details;
     }
@@ -334,10 +336,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             minIops.add(vol.getMinIops());
             maxIops.add(vol.getMaxIops());
         }
-        details.put(ApiConstants.DISK_OFFERING_IDS, String.join(",", diskOfferingIds));
-        details.put(ApiConstants.DISK_SIZES, String.join(",", diskSizes.stream().map(String::valueOf).collect(Collectors.toList())));
-        details.put(ApiConstants.MIN_IOPS, String.join(",", minIops.stream().map(String::valueOf).collect(Collectors.toList())));
-        details.put(ApiConstants.MAX_IOPS, String.join(",", maxIops.stream().map(String::valueOf).collect(Collectors.toList())));
+        if (!diskOfferingIds.isEmpty()) {
+            details.put(ApiConstants.DISK_OFFERING_IDS, String.join(",", diskOfferingIds));
+            details.put(ApiConstants.DISK_SIZES, String.join(",", diskSizes.stream().map(String::valueOf).collect(Collectors.toList())));
+            details.put(ApiConstants.MIN_IOPS, String.join(",", minIops.stream().map(String::valueOf).collect(Collectors.toList())));
+            details.put(ApiConstants.MAX_IOPS, String.join(",", maxIops.stream().map(String::valueOf).collect(Collectors.toList())));
+        }
         return details;
     }
 
@@ -820,7 +824,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         List<Long> minIopsList;
         List<Long> maxIopsList;
 
-        diskOfferings = Stream.of(backup.getDetail(ApiConstants.DISK_OFFERING_IDS).split(","))
+        String diskOfferingIds = backup.getDetail(ApiConstants.DISK_OFFERING_IDS);
+        if (diskOfferingIds == null) {
+            return null;
+        }
+
+        diskOfferings = Stream.of(diskOfferingIds.split(","))
                 .map(uuid -> diskOfferingDao.findByUuid(uuid))
                 .collect(Collectors.toList());
         diskSizes = Stream.of(backup.getDetail(ApiConstants.DISK_SIZES).split(","))
