@@ -43,7 +43,7 @@ import java.util.List;
 @APICommand(name = "removeNodesFromKubernetesCluster",
         description = "Removes external nodes from a CKS cluster. ",
         responseObject = KubernetesClusterResponse.class,
-        since = "4.20.0",
+        since = "4.21.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RemoveNodesFromKubernetesClusterCmd extends BaseAsyncCmd {
 
@@ -59,12 +59,12 @@ public class RemoveNodesFromKubernetesClusterCmd extends BaseAsyncCmd {
             description = "comma separated list of node (physical or virtual machines) IDs that need to be" +
                     "removed from the Kubernetes cluster (CKS)",
             required = true,
-            since = "4.20.0")
+            since = "4.21.0")
     private List<Long> nodeIds;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true,
             entityType = KubernetesClusterResponse.class,
-            description = "the ID of the Kubernetes cluster", since = "4.20.0")
+            description = "the ID of the Kubernetes cluster", since = "4.21.0")
     private Long clusterId;
 
     /////////////////////////////////////////////////////

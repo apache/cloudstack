@@ -35,7 +35,9 @@ from marvin.cloudstackAPI import (listInfrastructure,
                                   destroyVirtualMachine,
                                   deleteNetwork,
                                   addVirtualMachinesToKubernetesCluster,
-                                  removeVirtualMachinesFromKubernetesCluster)
+                                  removeVirtualMachinesFromKubernetesCluster,
+                                  addNodesToKubernetesCluster,
+                                  removeNodesFromKubernetesCluster)
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.codes import PASS, FAILED
 from marvin.lib.base import (Template,
@@ -49,27 +51,83 @@ from marvin.lib.base import (Template,
                              VPC,
                              NetworkACLList,
                              NetworkACL,
-                             VirtualMachine)
+                             VirtualMachine,
+                             PublicIPAddress,
+                             FireWallRule,
+                             NATRule)
 from marvin.lib.utils import (cleanup_resources,
                               validateList,
                               random_gen)
 from marvin.lib.common import (get_zone,
                                get_domain,
-                               get_template)
+                               get_template,
+                               get_test_template)
 from marvin.sshClient import SshClient
 from nose.plugins.attrib import attr
 from marvin.lib.decoratorGenerators import skipTestIf
 
 from kubernetes import client, config
-import time, io, yaml
+import time, io, yaml, random
 
 _multiprocess_shared_ = True
 
 k8s_cluster = None
+k8s_cluster_node_offerings = None
 VPC_DATA = {
     "cidr": "10.1.0.0/22",
     "tier1_gateway": "10.1.1.1",
     "tier_netmask": "255.255.255.0"
+}
+RAND_SUFFIX = random_gen()
+NODES_TEMPLATE = {
+    "kvm": {
+        "name": "cks-u2204-kvm-" + RAND_SUFFIX,
+        "displaytext": "cks-u2204-kvm-" + RAND_SUFFIX,
+        "format": "qcow2",
+        "hypervisor": "kvm",
+        "ostypeid": "5d83ac5d-d03c-4743-9629-7d70b5928f7f",
+        "url": "https://download.cloudstack.org/testing/custom_templates/ubuntu/22.04/cks-ubuntu-2204-kvm.qcow2.bz2",
+        "requireshvm": "True",
+        "ispublic": "True",
+        "isextractable": "True",
+        "forcks": "True"
+    },
+    "xenserver": {
+        "name": "cks-u2204-hyperv-" + RAND_SUFFIX,
+        "displaytext": "cks-u2204-hyperv-" + RAND_SUFFIX,
+        "format": "vhd",
+        "hypervisor": "xenserver",
+        "ostypeid": "5d83ac5d-d03c-4743-9629-7d70b5928f7f",
+        "url": "https://download.cloudstack.org/testing/custom_templates/ubuntu/22.04/cks-ubuntu-2204-hyperv.vhd.zip",
+        "requireshvm": "True",
+        "ispublic": "True",
+        "isextractable": "True",
+        "forcks": "True"
+    },
+    "hyperv": {
+        "name": "cks-u2204-hyperv-" + RAND_SUFFIX,
+        "displaytext": "cks-u2204-hyperv-" + RAND_SUFFIX,
+        "format": "vhd",
+        "hypervisor": "hyperv",
+        "ostypeid": "5d83ac5d-d03c-4743-9629-7d70b5928f7f",
+        "url": "https://download.cloudstack.org/testing/custom_templates/ubuntu/22.04/cks-ubuntu-2204-hyperv.vhd.zip",
+        "requireshvm": "True",
+        "ispublic": "True",
+        "isextractable": "True",
+        "forcks": "True"
+    },
+    "vmware": {
+        "name": "cks-u2204-vmware-" + RAND_SUFFIX,
+        "displaytext": "cks-u2204-vmware-" + RAND_SUFFIX,
+        "format": "ova",
+        "hypervisor": "vmware",
+        "ostypeid": "5d83ac5d-d03c-4743-9629-7d70b5928f7f",
+        "url": "https://download.cloudstack.org/testing/custom_templates/ubuntu/22.04/cks-ubuntu-2204-vmware.ova",
+        "requireshvm": "True",
+        "ispublic": "True",
+        "isextractable": "True",
+        "forcks": "True"
+    }
 }
 
 class TestKubernetesCluster(cloudstackTestCase):
@@ -84,6 +142,7 @@ class TestKubernetesCluster(cloudstackTestCase):
         cls.mgtSvrDetails = cls.config.__dict__["mgtSvr"][0].__dict__
 
         cls.hypervisorNotSupported = False
+        cls.hypervisorIsNotVmware = cls.hypervisor.lower() != "vmware"
         if cls.hypervisor.lower() not in ["kvm", "vmware", "xenserver"]:
             cls.hypervisorNotSupported = True
         cls.setup_failed = False
@@ -129,6 +188,15 @@ class TestKubernetesCluster(cloudstackTestCase):
                         (cls.services["cks_kubernetes_versions"][cls.k8s_version_to]["semanticversion"], cls.services["cks_kubernetes_versions"][cls.k8s_version_to]["url"], e))
 
             if cls.setup_failed == False:
+                cls.nodes_template = None
+                cls.mgmtSshKey = None
+                if cls.hypervisor.lower() == "vmware":
+                    cls.nodes_template = get_test_template(cls.apiclient,
+                                                           cls.zone.id,
+                                                           cls.hypervisor,
+                                                           NODES_TEMPLATE)
+                    cls.nodes_template.update(cls.apiclient, forcks=True)
+                    cls.mgmtSshKey = cls.getMgmtSshKey()
                 cks_offering_data = cls.services["cks_service_offering"]
                 cks_offering_data["name"] = 'CKS-Instance-' + random_gen()
                 cls.cks_service_offering = ServiceOffering.create(
@@ -221,6 +289,19 @@ class TestKubernetesCluster(cloudstackTestCase):
                                       storageid=pool.id,
                                       name="vmware.create.full.clone",
                                       value=value)
+
+    @classmethod
+    def getMgmtSshKey(cls):
+        """Get the management server SSH public key"""
+        sshClient = SshClient(
+            cls.mgtSvrDetails["mgtSvrIp"],
+            22,
+            cls.mgtSvrDetails["user"],
+            cls.mgtSvrDetails["passwd"]
+        )
+        command = "cat /var/cloudstack/management/.ssh/id_rsa.pub"
+        response = sshClient.execute(command)
+        return str(response[0])
 
     @classmethod
     def restartServer(cls):
@@ -666,8 +747,12 @@ class TestKubernetesCluster(cloudstackTestCase):
     def test_12_test_deploy_cluster_different_offerings_per_node_type(self):
         """Test creating a CKS cluster with different offerings per node type
 
-        # Validate the following:
+        # Validate the following on Kubernetes cluster creation:
+        # - Use a service offering for control nodes
+        # - Use a service offering for worker nodes
         """
+        if self.setup_failed == True:
+            self.fail("Setup incomplete")
         cluster = self.getValidKubernetesCluster(worker_offering=self.cks_worker_nodes_offering,
                                                  control_offering=self.cks_control_nodes_offering)
         self.assertEqual(
@@ -685,6 +770,117 @@ class TestKubernetesCluster(cloudstackTestCase):
             0,
             "No Etcd Nodes expected but got {}".format(cluster.etcdnodes)
         )
+        self.debug("Deleting Kubernetes cluster with ID: %s" % cluster.id)
+        self.deleteKubernetesClusterAndVerify(cluster.id)
+        return
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    @skipTestIf("hypervisorIsNotVmware")
+    def test_13_test_add_external_nodes_to_cluster(self):
+        """Test creating a CKS cluster with different offerings per node type
+
+        # Validate the following:
+        # - Deploy Kubernetes Cluster
+        # - Deploy VM on the same network as the Kubernetes cluster with the worker nodes offering and CKS ready template
+        # - Add external node to the Kubernetes Cluster
+        """
+        if self.setup_failed == True:
+            self.fail("Setup incomplete")
+        cluster = self.getValidKubernetesCluster(worker_offering=self.cks_worker_nodes_offering,
+                                                 control_offering=self.cks_control_nodes_offering)
+        self.assertEqual(
+            cluster.size,
+            1,
+            "Expected 1 worker node but got {}".format(cluster.size)
+        )
+        self.services["virtual_machine"]["template"] = self.nodes_template.id
+        external_node = VirtualMachine.create(self.apiclient,
+                                             self.services["virtual_machine"],
+                                             zoneid=self.zone.id,
+                                             accountid=self.account.name,
+                                             domainid=self.account.domainid,
+                                             serviceofferingid=self.cks_worker_nodes_offering.id,
+                                             networkids=cluster.networkid)
+
+        # Acquire public IP and create Port Forwarding Rule and Firewall rule for SSH access
+        free_ip_addresses = PublicIPAddress.list(
+            self.apiclient,
+            domainid=self.account.domainid,
+            account=self.account.name,
+            forvirtualnetwork=True,
+            state='Free'
+        )
+        random.shuffle(free_ip_addresses)
+        external_node_ip = free_ip_addresses[0]
+        external_node_ipaddress = PublicIPAddress.create(
+            self.apiclient,
+            zoneid=self.zone.id,
+            networkid=cluster.networkid,
+            ipaddress=external_node_ip.ipaddress
+        )
+        self.debug("Creating Firewall rule for VM ID: %s" % external_node.id)
+        fw_rule = FireWallRule.create(
+            self.apiclient,
+            ipaddressid=external_node_ip.id,
+            protocol='TCP',
+            cidrlist=['0.0.0.0/0'],
+            startport=22,
+            endport=22
+        )
+        pf_rule = {
+            "privateport": 22,
+            "publicport": 22,
+            "protocol": "TCP"
+        }
+        nat_rule = NATRule.create(
+            self.apiclient,
+            external_node,
+            pf_rule,
+            ipaddressid=external_node_ip.id
+        )
+
+        # Add the management server SSH key to the authorized hosts on the external node
+        node_ssh_client = SshClient(
+            external_node_ip.ipaddress,
+            22,
+            'cloud',
+            'cloud',
+            retries=30,
+            delay=10
+        )
+        node_ssh_client.execute("echo '" + self.mgmtSshKey + "' > ~/.ssh/authorized_keys")
+
+        self.addExternalNodesToKubernetesCluster(cluster.id, [external_node.id])
+        self.assertEqual(
+            cluster.size,
+            2,
+            "Expected 2 worker nodes but got {}".format(cluster.size)
+        )
+        self.removeExternalNodesFromKubernetesCluster(cluster.id, [external_node.id])
+        self.assertEqual(
+            cluster.size,
+            1,
+            "Expected 1 worker node but got {}".format(cluster.size)
+        )
+        nat_rule.delete(self.apiclient)
+        fw_rule.delete(self.apiclient)
+        external_node_ipaddress.delete(self.apiclient)
+        VirtualMachine.delete(external_node, self.apiclient, expunge=True)
+        self.debug("Deleting Kubernetes cluster with ID: %s" % cluster.id)
+        self.deleteKubernetesClusterAndVerify(cluster.id)
+        return
+
+    def addExternalNodesToKubernetesCluster(self, cluster_id, vm_list):
+        cmd = addNodesToKubernetesCluster.addNodesToKubernetesClusterCmd()
+        cmd.id = cluster_id
+        cmd.nodeids = vm_list
+        return self.apiclient.addNodesToKubernetesCluster(cmd)
+
+    def removeExternalNodesFromKubernetesCluster(self, cluster_id, vm_list):
+        cmd = removeNodesFromKubernetesCluster.removeNodesFromKubernetesClusterCmd()
+        cmd.id = cluster_id
+        cmd.nodeids = vm_list
+        return self.apiclient.removeNodesFromKubernetesCluster(cmd)
 
     def addVirtualMachinesToKubernetesCluster(self, cluster_id, vm_list):
         cmd = addVirtualMachinesToKubernetesCluster.addVirtualMachinesToKubernetesClusterCmd()

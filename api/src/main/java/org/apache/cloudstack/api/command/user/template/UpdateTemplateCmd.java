@@ -48,7 +48,7 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd implements Use
 
     @Parameter(name = ApiConstants.FOR_CKS, type = CommandType.BOOLEAN,
     description = "indicates that the template can be used for deployment of CKS clusters",
-    since = "4.20.0")
+    since = "4.21.0")
     private Boolean forCks;
 
     /////////////////////////////////////////////////////
@@ -68,8 +68,8 @@ public class UpdateTemplateCmd extends BaseUpdateTemplateOrIsoCmd implements Use
         return templateTag;
     }
 
-    public boolean getForCks() {
-        return Boolean.TRUE.equals(forCks);
+    public Boolean getForCks() {
+        return forCks;
     }
 
     /////////////////////////////////////////////////////

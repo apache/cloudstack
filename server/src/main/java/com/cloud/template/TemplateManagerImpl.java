@@ -2130,7 +2130,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Map details = cmd.getDetails();
         Account account = CallContext.current().getCallingAccount();
         boolean cleanupDetails = cmd.isCleanupDetails();
-        boolean forCks = cmd instanceof UpdateTemplateCmd && ((UpdateTemplateCmd) cmd).getForCks();
+        Boolean forCks = cmd instanceof UpdateTemplateCmd ? ((UpdateTemplateCmd) cmd).getForCks() : null;
         CPU.CPUArch arch = cmd.getCPUArch();
 
         // verify that template exists
@@ -2180,6 +2180,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   isRoutingTemplate == null &&
                   templateType == null &&
                   templateTag == null &&
+                  forCks == null &&
                   arch == null &&
                   (! cleanupDetails && details == null) //update details in every case except this one
                   );
@@ -2284,7 +2285,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             template.setDetails(details);
             _tmpltDao.saveDetails(template);
         }
-        template.setForCks(forCks);
+        if (forCks != null) {
+            template.setForCks(forCks);
+        }
 
         _tmpltDao.update(id, template);
 

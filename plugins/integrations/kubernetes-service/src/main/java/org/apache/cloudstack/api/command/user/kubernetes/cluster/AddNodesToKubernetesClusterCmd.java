@@ -39,7 +39,7 @@ import java.util.List;
 @APICommand(name = "addNodesToKubernetesCluster",
         description = "Add nodes as workers to an existing CKS cluster. ",
         responseObject = KubernetesClusterResponse.class,
-        since = "4.20.0",
+        since = "4.21.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class AddNodesToKubernetesClusterCmd extends BaseAsyncCmd {
 
@@ -53,22 +53,22 @@ public class AddNodesToKubernetesClusterCmd extends BaseAsyncCmd {
             description = "comma separated list of (external) node (physical or virtual machines) IDs that need to be" +
                     "added as worker nodes to an existing managed Kubernetes cluster (CKS)",
             required = true,
-            since = "4.20.0")
+            since = "4.21.0")
     private List<Long> nodeIds;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true,
             entityType = KubernetesClusterResponse.class,
-            description = "the ID of the Kubernetes cluster", since = "4.20.0")
+            description = "the ID of the Kubernetes cluster", since = "4.21.0")
     private Long clusterId;
 
     @Parameter(name = ApiConstants.MOUNT_CKS_ISO_ON_VR, type = CommandType.BOOLEAN,
             description = "(optional) Vmware only, uses the CKS cluster network VR to mount the CKS ISO",
-            since = "4.20.0")
+            since = "4.21.0")
     private Boolean mountCksIsoOnVr;
 
     @Parameter(name = ApiConstants.MANUAL_UPGRADE, type = CommandType.BOOLEAN,
             description = "(optional) indicates if the node is marked for manual upgrade and excluded from the Kubernetes cluster upgrade operation",
-            since = "4.20.0")
+            since = "4.21.0")
     private Boolean manualUpgrade;
 
     /////////////////////////////////////////////////////
