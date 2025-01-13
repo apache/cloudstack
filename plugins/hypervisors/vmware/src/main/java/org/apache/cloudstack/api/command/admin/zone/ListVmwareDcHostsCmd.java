@@ -139,9 +139,9 @@ public class ListVmwareDcHostsCmd extends BaseCmd implements ListVmwareDcItems {
         HostResponse response = new HostResponse();
         response.setHypervisor(Hypervisor.HypervisorType.VMware.toString());
         response.setName(hostInstance.getHostName());
+        response.setObjectName("host");
         return response;
     }
-
 
     private void checkParameters() {
         if ((existingVcenterId == null && vcenter == null) || (existingVcenterId != null && vcenter != null)) {

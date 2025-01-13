@@ -3004,6 +3004,7 @@
 "message.license.agreements.not.accepted": "License agreements not accepted.",
 "message.linstor.resourcegroup.description": "Linstor resource group to use for primary storage.",
 "message.list.zone.vmware.datacenter.empty": "No VMware Datacenter exists in the selected Zone",
+"message.list.zone.vmware.hosts.empty": "No VMware hosts were found in the selected Datacenter",
 "message.listnsp.not.return.providerid": "error: listNetworkServiceProviders API doesn't return VirtualRouter provider ID.",
 "message.load.host.failed": "Failed to load hosts.",
 "message.loadbalancer.stickypolicy.configuration": "Customize the load balancer stickiness policy:",
