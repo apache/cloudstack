@@ -110,7 +110,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Override
     public boolean willDeleteBackupsOnOfferingRemoval() {
-        return true;
+        return false;
     }
 
     @Override

@@ -896,6 +896,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             String errorMessage = "Failed to find backup offering of the VM backup.";
             throw new CloudRuntimeException("Failed to find backup offering of the VM backup.");
         }
+        if ("networker".equals(offering.getProvider())) {
+            throw new CloudRuntimeException("Create instance from VM is not supported for Networker Backup plugin.");
+        }
 
         String backupDetailsInMessage = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(backup, "uuid", "externalId", "newVMId", "type", "status", "date");
         try {
