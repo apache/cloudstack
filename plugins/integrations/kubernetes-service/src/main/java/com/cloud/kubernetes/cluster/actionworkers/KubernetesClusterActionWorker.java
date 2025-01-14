@@ -720,7 +720,8 @@ public class KubernetesClusterActionWorker {
             }
             SshHelper.scpTo(nodeAddress, sshPort, getControlNodeLoginUser(), sshKeyFile, null,
                 "~/", file.getAbsolutePath(), "0755", 20000, 30 * 60 * 1000);
-            String cmdStr = String.format("sudo mv ~/%s %s/%s", file.getName(), scriptPath, destination);
+            // Ensure destination dir scriptPath exists and copy file to destination
+            String cmdStr = String.format("sudo mkdir -p %s ; sudo mv ~/%s %s/%s", scriptPath, file.getName(), scriptPath, destination);
             SshHelper.sshExecute(nodeAddress, sshPort, getControlNodeLoginUser(), sshKeyFile, null,
                 cmdStr, 10000, 10000, 10 * 60 * 1000);
         } catch (Exception e) {

@@ -85,7 +85,7 @@ NODES_TEMPLATE = {
         "displaytext": "cks-u2204-kvm-" + RAND_SUFFIX,
         "format": "qcow2",
         "hypervisor": "kvm",
-        "ostypeid": "5d83ac5d-d03c-4743-9629-7d70b5928f7f",
+        "ostype": "Ubuntu 22.04 LTS",
         "url": "https://download.cloudstack.org/testing/custom_templates/ubuntu/22.04/cks-ubuntu-2204-kvm.qcow2.bz2",
         "requireshvm": "True",
         "ispublic": "True",
@@ -97,7 +97,7 @@ NODES_TEMPLATE = {
         "displaytext": "cks-u2204-hyperv-" + RAND_SUFFIX,
         "format": "vhd",
         "hypervisor": "xenserver",
-        "ostypeid": "5d83ac5d-d03c-4743-9629-7d70b5928f7f",
+        "ostype": "Ubuntu 22.04 LTS",
         "url": "https://download.cloudstack.org/testing/custom_templates/ubuntu/22.04/cks-ubuntu-2204-hyperv.vhd.zip",
         "requireshvm": "True",
         "ispublic": "True",
@@ -109,7 +109,7 @@ NODES_TEMPLATE = {
         "displaytext": "cks-u2204-hyperv-" + RAND_SUFFIX,
         "format": "vhd",
         "hypervisor": "hyperv",
-        "ostypeid": "5d83ac5d-d03c-4743-9629-7d70b5928f7f",
+        "ostype": "Ubuntu 22.04 LTS",
         "url": "https://download.cloudstack.org/testing/custom_templates/ubuntu/22.04/cks-ubuntu-2204-hyperv.vhd.zip",
         "requireshvm": "True",
         "ispublic": "True",
@@ -121,7 +121,7 @@ NODES_TEMPLATE = {
         "displaytext": "cks-u2204-vmware-" + RAND_SUFFIX,
         "format": "ova",
         "hypervisor": "vmware",
-        "ostypeid": "5d83ac5d-d03c-4743-9629-7d70b5928f7f",
+        "ostype": "Ubuntu 22.04 LTS",
         "url": "https://download.cloudstack.org/testing/custom_templates/ubuntu/22.04/cks-ubuntu-2204-vmware.ova",
         "requireshvm": "True",
         "ispublic": "True",
@@ -777,12 +777,13 @@ class TestKubernetesCluster(cloudstackTestCase):
     @attr(tags=["advanced", "smoke"], required_hardware="true")
     @skipTestIf("hypervisorIsNotVmware")
     def test_13_test_add_external_nodes_to_cluster(self):
-        """Test creating a CKS cluster with different offerings per node type
+        """Test adding and removing external nodes to CKS clusters
 
         # Validate the following:
         # - Deploy Kubernetes Cluster
         # - Deploy VM on the same network as the Kubernetes cluster with the worker nodes offering and CKS ready template
         # - Add external node to the Kubernetes Cluster
+        # - Remove external node from the Kubernetes Cluster
         """
         if self.setup_failed == True:
             self.fail("Setup incomplete")
@@ -795,12 +796,14 @@ class TestKubernetesCluster(cloudstackTestCase):
         )
         self.services["virtual_machine"]["template"] = self.nodes_template.id
         external_node = VirtualMachine.create(self.apiclient,
-                                             self.services["virtual_machine"],
-                                             zoneid=self.zone.id,
-                                             accountid=self.account.name,
-                                             domainid=self.account.domainid,
-                                             serviceofferingid=self.cks_worker_nodes_offering.id,
-                                             networkids=cluster.networkid)
+                                              self.services["virtual_machine"],
+                                              zoneid=self.zone.id,
+                                              accountid=self.account.name,
+                                              domainid=self.account.domainid,
+                                              rootdiskcontroller="osdefault",
+                                              rootdisksize=8,
+                                              serviceofferingid=self.cks_worker_nodes_offering.id,
+                                              networkids=cluster.networkid)
 
         # Acquire public IP and create Port Forwarding Rule and Firewall rule for SSH access
         free_ip_addresses = PublicIPAddress.list(
@@ -849,22 +852,25 @@ class TestKubernetesCluster(cloudstackTestCase):
             delay=10
         )
         node_ssh_client.execute("echo '" + self.mgmtSshKey + "' > ~/.ssh/authorized_keys")
+        # Remove acquired public IP address and rules
+        nat_rule.delete(self.apiclient)
+        fw_rule.delete(self.apiclient)
+        external_node_ipaddress.delete(self.apiclient)
 
         self.addExternalNodesToKubernetesCluster(cluster.id, [external_node.id])
+        cluster = self.listKubernetesCluster(cluster.id)
         self.assertEqual(
             cluster.size,
             2,
             "Expected 2 worker nodes but got {}".format(cluster.size)
         )
         self.removeExternalNodesFromKubernetesCluster(cluster.id, [external_node.id])
+        cluster = self.listKubernetesCluster(cluster.id)
         self.assertEqual(
             cluster.size,
             1,
             "Expected 1 worker node but got {}".format(cluster.size)
         )
-        nat_rule.delete(self.apiclient)
-        fw_rule.delete(self.apiclient)
-        external_node_ipaddress.delete(self.apiclient)
         VirtualMachine.delete(external_node, self.apiclient, expunge=True)
         self.debug("Deleting Kubernetes cluster with ID: %s" % cluster.id)
         self.deleteKubernetesClusterAndVerify(cluster.id)
