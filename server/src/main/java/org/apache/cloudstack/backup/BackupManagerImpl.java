@@ -858,7 +858,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_RESTORE_TO_NEW_VM, eventDescription = "Resoring backup to new vm", async = true)
     public boolean restoreBackupToVM(final Long backupId, final Long vmId) throws ResourceUnavailableException {
         final BackupVO backup = backupDao.findById(backupId);
         if (backup == null) {
@@ -931,10 +930,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         updateVolumeState(vm, Volume.Event.RestoreSucceeded, Volume.State.Ready);
         updateVmState(vm, VirtualMachine.Event.RestoringSuccess, VirtualMachine.State.Stopped);
-
-        return importRestoredVM(vm.getDataCenterId(), vm.getDomainId(), vm.getAccountId(), vm.getUserId(),
-                vm.getInstanceName(), vm.getHypervisorType(), backup);
-
+        return true;
     }
 
     @Override
