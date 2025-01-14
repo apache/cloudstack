@@ -414,102 +414,6 @@
                           @change="val => { dynamicscalingenabled = val }"/>
                       </a-form-item>
                     </a-form-item>
-                    <a-form-item :label="$t('label.userdata')">
-                      <a-card>
-                        <div v-if="this.template && this.template.userdataid">
-                          <a-text type="primary">
-                              Userdata "{{ $t(this.template.userdataname) }}" is linked with template "{{ $t(this.template.name) }}" with override policy "{{ $t(this.template.userdatapolicy) }}"
-                          </a-text><br/><br/>
-                          <div v-if="templateUserDataParams.length > 0 && !doUserdataOverride">
-                            <a-text type="primary" v-if="this.template && this.template.userdataid && templateUserDataParams.length > 0">
-                                Enter the values for the variables in userdata
-                            </a-text>
-                            <a-input-group>
-                              <a-table
-                                size="small"
-                                style="overflow-y: auto"
-                                :columns="userDataParamCols"
-                                :dataSource="templateUserDataParams"
-                                :pagination="false"
-                                :rowKey="record => record.key">
-                                <template #bodyCell="{ column, record }">
-                                  <template v-if="column.key === 'value'">
-                                    <a-input v-model:value="templateUserDataValues[record.key]" />
-                                  </template>
-                                </template>
-                              </a-table>
-                            </a-input-group>
-                          </div>
-                        </div>
-                        <div v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' || userdataDefaultOverridePolicy === 'APPEND' || !userdataDefaultOverridePolicy">
-                          <span v-if="userdataDefaultOverridePolicy === 'ALLOWOVERRIDE'" >
-                            {{ $t('label.userdata.do.override') }}
-                            <a-switch v-model:checked="doUserdataOverride" style="margin-left: 10px"/>
-                          </span>
-                          <span v-if="userdataDefaultOverridePolicy === 'APPEND'">
-                            {{ $t('label.userdata.do.append') }}
-                            <a-switch v-model:checked="doUserdataAppend" style="margin-left: 10px"/>
-                          </span>
-                          <a-step
-                            :status="zoneSelected ? 'process' : 'wait'">
-                            <template #description>
-                              <div v-if="doUserdataOverride || doUserdataAppend || !userdataDefaultOverridePolicy" style="margin-top: 15px">
-                                <a-card
-                                  :tabList="userdataTabList"
-                                  :activeTabKey="userdataTabKey"
-                                  @tabChange="key => onUserdataTabChange(key, 'userdataTabKey')">
-                                  <div v-if="userdataTabKey === 'userdataregistered'">
-                                    <a-step
-                                      v-if="isUserAllowedToListUserDatas"
-                                      :status="zoneSelected ? 'process' : 'wait'">
-                                      <template #description>
-                                        <div v-if="zoneSelected">
-                                          <user-data-selection
-                                            :items="options.userDatas"
-                                            :row-count="rowCount.userDatas"
-                                            :zoneId="zoneId"
-                                            :disabled="template.userdatapolicy === 'DENYOVERRIDE'"
-                                            :loading="loading.userDatas"
-                                            :preFillContent="dataPreFill"
-                                            @select-user-data-item="($event) => updateUserData($event)"
-                                            @handle-search-filter="($event) => handleSearchFilter('userData', $event)"
-                                          />
-                                          <div v-if="userDataParams.length > 0">
-                                            <a-input-group>
-                                              <a-table
-                                                size="small"
-                                                style="overflow-y: auto"
-                                                :columns="userDataParamCols"
-                                                :dataSource="userDataParams"
-                                                :pagination="false"
-                                                :rowKey="record => record.key">
-                                                <template #bodyCell="{ column, record }">
-                                                  <template v-if="column.key === 'value'">
-                                                    <a-input v-model:value="userDataValues[record.key]" />
-                                                  </template>
-                                                </template>
-                                              </a-table>
-                                            </a-input-group>
-                                          </div>
-                                        </div>
-                                      </template>
-                                    </a-step>
-                                  </div>
-                                  <div v-else>
-                                    <a-form-item name="userdata" ref="userdata" >
-                                      <a-textarea
-                                        placeholder="Userdata"
-                                        v-model:value="form.userdata">
-                                      </a-textarea>
-                                    </a-form-item>
-                                  </div>
-                                </a-card>
-                              </div>
-                            </template>
-                          </a-step>
-                        </div>
-                      </a-card>
-                    </a-form-item>
                     <a-form-item :label="$t('label.affinity.groups')">
                       <affinity-group-selection
                         :items="options.affinityGroups"
@@ -712,7 +616,6 @@ export default {
       showRegisteredUserdata: true,
       doUserdataOverride: false,
       doUserdataAppend: false,
-      userdataDefaultOverridePolicy: 'ALLOWOVERRIDE',
       vm: {
         name: null,
         zoneid: null,
@@ -760,7 +663,6 @@ export default {
         affinityGroups: false,
         networks: false,
         sshKeyPairs: false,
-        userDatas: false,
         zones: false,
         groups: false
       },
@@ -787,32 +689,6 @@ export default {
       zone: {},
       sshKeyPairs: [],
       sshKeyPair: {},
-      userData: {},
-      userDataParams: [],
-      userDataParamCols: [
-        {
-          title: this.$t('label.key'),
-          dataIndex: 'key'
-        },
-        {
-          title: this.$t('label.value'),
-          dataIndex: 'value',
-          key: 'value'
-        }
-      ],
-      userDataValues: {},
-      templateUserDataCols: [
-        {
-          title: this.$t('label.userdata'),
-          dataIndex: 'userdata'
-        },
-        {
-          title: this.$t('label.userdatapolicy'),
-          dataIndex: 'userdataoverridepolicy'
-        }
-      ],
-      templateUserDataParams: [],
-      templateUserDataValues: {},
       overrideDiskOffering: {},
       templateFilter: [
         'featured',
@@ -824,7 +700,6 @@ export default {
       defaultnetworkid: '',
       networkConfig: [],
       dataNetworkCreated: [],
-      userdataTabKey: 'userdataregistered',
       dataPreFill: {},
       showDetails: false,
       showRootDiskSizeChanger: false,
@@ -965,15 +840,6 @@ export default {
             listall: false
           }
         },
-        userDatas: {
-          list: 'listUserData',
-          options: {
-            page: 1,
-            pageSize: 10,
-            keyword: undefined,
-            listall: false
-          }
-        },
         networks: {
           list: 'listNetworks',
           options: {
@@ -1043,19 +909,6 @@ export default {
     },
     networkId () {
       return this.$route.query.networkid || null
-    },
-    userdataTabList () {
-      let tabList = []
-      tabList = [{
-        key: 'userdataregistered',
-        tab: this.$t('label.userdata.registered')
-      },
-      {
-        key: 'userdatatext',
-        tab: this.$t('label.userdata.text')
-      }]
-
-      return tabList
     },
     showSecurityGroupSection () {
       if (this.networks.length < 1) {
@@ -1333,7 +1186,7 @@ export default {
       this.fetchInstaceGroups()
       this.fetchIoPolicyTypes()
       nextTick().then(() => {
-        ['name', 'keyboard', 'boottype', 'bootmode', 'userdata', 'iothreadsenabled', 'iodriverpolicy', 'nicmultiqueuenumber', 'nicpackedvirtqueues'].forEach(this.fillValue)
+        ['name', 'keyboard', 'boottype', 'bootmode', 'iothreadsenabled', 'iodriverpolicy', 'nicmultiqueuenumber', 'nicpackedvirtqueues'].forEach(this.fillValue)
         this.form.boottype = this.defaultBootType ? this.defaultBootType : this.options.bootTypes && this.options.bootTypes.length > 0 ? this.options.bootTypes[0].id : undefined
         this.form.bootmode = this.defaultBootMode ? this.defaultBootMode : this.options.bootModes && this.options.bootModes.length > 0 ? this.options.bootModes[0].id : undefined
         this.instanceConfig = toRaw(this.form)
@@ -1450,8 +1303,6 @@ export default {
         if (template) {
           var size = template.size / (1024 * 1024 * 1024) || 0 // bytes to GB
           this.dataPreFill.minrootdisksize = Math.ceil(size)
-          this.updateTemplateLinkedUserData(template.userdataid)
-          this.userdataDefaultOverridePolicy = template.userdatapolicy
           this.form.dynamicscalingenabled = template.isdynamicallyscalable
           this.defaultBootType = template.details?.UEFI ? 'UEFI' : 'BIOS'
           this.form.boottype = this.defaultBootType
@@ -1507,54 +1358,6 @@ export default {
     updateSshKeyPairs (names) {
       this.form.keypairs = names
       this.sshKeyPairs = names.map((sshKeyPair) => { return sshKeyPair.name })
-    },
-    updateUserData (id) {
-      if (id === '0') {
-        this.form.userdataid = undefined
-        return
-      }
-
-      this.form.userdataid = id
-      this.userDataParams = []
-      api('listUserData', { id: id }).then(json => {
-        const resp = json?.listuserdataresponse?.userdata || []
-        if (resp[0]) {
-          const params = resp[0].params
-          const dataParams = params ? params.split(',') : []
-          dataParams.forEach((val, index) => {
-            this.userDataParams.push({
-              id: index,
-              key: val
-            })
-          })
-        }
-      })
-    },
-    updateTemplateLinkedUserData (id) {
-      if (id === '0') {
-        return
-      }
-      this.templateUserDataParams = []
-
-      api('listUserData', { id: id }).then(json => {
-        const resp = json.listuserdataresponse.userdata || []
-        if (resp.length > 0) {
-          var params = resp[0].params
-          if (params) {
-            var dataParams = params.split(',')
-          }
-          var that = this
-          that.templateUserDataParams = []
-          if (dataParams) {
-            dataParams.forEach(function (val, index) {
-              that.templateUserDataParams.push({
-                id: index,
-                key: val
-              })
-            })
-          }
-        }
-      })
     },
     escapePropertyKey (key) {
       return key.split('.').join('\\002E')
@@ -1613,10 +1416,7 @@ export default {
         deployVmData.iodriverpolicy = values.iodriverpolicy
         deployVmData.nicmultiqueuenumber = values.nicmultiqueuenumber
         deployVmData.nicpackedvirtqueuesenabled = values.nicpackedvirtqueuesenabled
-        const isUserdataAllowed = !this.userdataDefaultOverridePolicy || (this.userdataDefaultOverridePolicy === 'ALLOWOVERRIDE' && this.doUserdataOverride) || (this.userdataDefaultOverridePolicy === 'APPEND' && this.doUserdataAppend)
-        if (isUserdataAllowed && values.userdata && values.userdata.length > 0) {
-          deployVmData.userdata = this.$toBase64AndURIEncoded(values.userdata)
-        }
+
         // step 2: select template
         deployVmData.templateid = values.templateid
         values.hypervisor = null
@@ -1744,9 +1544,6 @@ export default {
         }
         // step 7: select ssh key pair
         deployVmData.keypairs = this.sshKeyPairs.join(',')
-        if (isUserdataAllowed) {
-          deployVmData.userdataid = values.userdataid
-        }
 
         if (values.name) {
           deployVmData.name = values.name
@@ -1783,25 +1580,7 @@ export default {
         deployVmData = Object.fromEntries(
           Object.entries(deployVmData).filter(([key, value]) => value !== undefined))
 
-        var idx = 0
-        if (this.templateUserDataValues) {
-          for (const [key, value] of Object.entries(this.templateUserDataValues)) {
-            deployVmData['userdatadetails[' + idx + '].' + `${key}`] = value
-            idx++
-          }
-        }
-        if (isUserdataAllowed && this.userDataValues) {
-          for (const [key, value] of Object.entries(this.userDataValues)) {
-            deployVmData['userdatadetails[' + idx + '].' + `${key}`] = value
-            idx++
-          }
-        }
-
-        const httpMethod = deployVmData.userdata ? 'POST' : 'GET'
-        const args = httpMethod === 'POST' ? {} : deployVmData
-        const data = httpMethod === 'POST' ? deployVmData : {}
-
-        api('createVMFromBackup', args, httpMethod, data).then(response => {
+        api('createVMFromBackup', deployVmData, 'GET', {}).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {
             this.$pollJob({
@@ -2068,10 +1847,6 @@ export default {
     },
     onTabChange (key, type) {
       this[type] = key
-    },
-    onUserdataTabChange (key, type) {
-      this[type] = key
-      this.userDataParams = []
     },
     fetchTemplateNics (template) {
       var nics = []
