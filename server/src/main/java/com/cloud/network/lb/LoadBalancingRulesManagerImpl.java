@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.lb;
 
+import com.cloud.api.ApiDBUtils;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,6 +31,7 @@ import javax.inject.Inject;
 
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -347,15 +349,15 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
             if (user == null) {
                 throw new InvalidParameterValueException("Unable to find user by id " + autoscaleUserId);
             }
-            apiKey = user.getApiKey();
-            secretKey = user.getSecretKey();
-            if (apiKey == null) {
-                throw new InvalidParameterValueException("apiKey for user: " + user.getUsername() + " is empty. Please generate it");
+
+            ApiKeyPairVO latestKeypair = ApiDBUtils.searchForLatestUserKeyPair(user.getId());
+
+            if (latestKeypair == null) {
+                throw new InvalidParameterValueException(String.format("No API keypair for user [%s]. Please generate it.", user.getUsername()));
             }
 
-            if (secretKey == null) {
-                throw new InvalidParameterValueException("secretKey for user: " + user.getUsername() + " is empty. Please generate it");
-            }
+            apiKey = latestKeypair.getApiKey();
+            secretKey = latestKeypair.getSecretKey();
 
             if (csUrl == null || csUrl.contains("localhost")) {
                 throw new InvalidParameterValueException(String.format("Global setting %s has to be set to the Management Server's API end point", ApiServiceConfiguration.ApiServletPath.key()));
