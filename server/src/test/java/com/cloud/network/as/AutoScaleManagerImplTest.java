@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.network.as;
 
+import com.cloud.api.ApiDBUtils;
+import org.apache.cloudstack.acl.ApiKeyPairVO;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.PerformanceMonitorAnswer;
 import com.cloud.agent.api.PerformanceMonitorCommand;
@@ -261,8 +264,13 @@ public class AutoScaleManagerImplTest {
     @Mock
     VirtualMachineManager virtualMachineManager;
 
+    @Mock
+    NetworkOrchestrationService networkOrchestrationService;
+
     AccountVO account;
     UserVO user;
+
+    MockedStatic<ApiDBUtils> mockedApiDBUtils;
 
     final static String INVALID = "invalid";
 
@@ -414,6 +422,11 @@ public class AutoScaleManagerImplTest {
         Mockito.doNothing().when(accountManager).checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.anyBoolean(), Mockito.any());
 
         when(asPolicyDao.persist(any(AutoScalePolicyVO.class))).thenReturn(asScaleUpPolicyMock);
+        mockedApiDBUtils = Mockito.mockStatic(ApiDBUtils.class);
+        ApiKeyPairVO ret = new ApiKeyPairVO();
+        ret.setSecretKey("secretkey");
+        ret.setApiKey("apikey");
+        when(ApiDBUtils.searchForLatestUserKeyPair(Mockito.any())).thenReturn(ret);
 
         userDataDetails.put("0", new HashMap<>() {{ put("key1", "value1"); put("key2", "value2"); }});
         Mockito.doReturn(userDataFinal).when(userVmMgr).finalizeUserData(any(), any(), any());
@@ -422,6 +435,7 @@ public class AutoScaleManagerImplTest {
 
     @After
     public void tearDown() {
+        mockedApiDBUtils.close();
         CallContext.unregister();
     }
 
@@ -869,9 +883,6 @@ public class AutoScaleManagerImplTest {
     public void testCheckAutoScaleUserSucceed() throws NoSuchFieldException, IllegalAccessException {
         when(userDao.findById(any())).thenReturn(userMock);
         when(userMock.getAccountId()).thenReturn(accountId);
-        when(userMock.getApiKey()).thenReturn(autoScaleUserApiKey);
-        when(userMock.getSecretKey()).thenReturn(autoScaleUserSecretKey);
-
         final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
         f.setAccessible(true);
         f.set(ApiServiceConfiguration.ApiServletPath, "http://10.10.10.10:8080/client/api");
@@ -882,43 +893,22 @@ public class AutoScaleManagerImplTest {
     @Test(expected = InvalidParameterValueException.class)
     public void testCheckAutoScaleUserFail1() {
         when(userDao.findById(any())).thenReturn(userMock);
-        when(userMock.getAccountId()).thenReturn(accountId);
-        when(userMock.getApiKey()).thenReturn(autoScaleUserApiKey);
-        when(userMock.getSecretKey()).thenReturn(null);
-
-        autoScaleManagerImplSpy.checkAutoScaleUser(autoScaleUserId, accountId);
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void testCheckAutoScaleUserFail2() {
-        when(userDao.findById(any())).thenReturn(userMock);
-        when(userMock.getAccountId()).thenReturn(accountId);
-        when(userMock.getApiKey()).thenReturn(null);
-
-        autoScaleManagerImplSpy.checkAutoScaleUser(autoScaleUserId, accountId);
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void testCheckAutoScaleUserFail3() {
-        when(userDao.findById(any())).thenReturn(userMock);
         when(userMock.getAccountId()).thenReturn(accountId + 1L);
 
         autoScaleManagerImplSpy.checkAutoScaleUser(autoScaleUserId, accountId);
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testCheckAutoScaleUserFail4() {
+    public void testCheckAutoScaleUserFail2() {
         when(userDao.findById(any())).thenReturn(null);
 
         autoScaleManagerImplSpy.checkAutoScaleUser(autoScaleUserId, accountId);
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void testCheckAutoScaleUserFail5() throws NoSuchFieldException, IllegalAccessException {
+    public void testCheckAutoScaleUserFail3() throws NoSuchFieldException, IllegalAccessException {
         when(userDao.findById(any())).thenReturn(userMock);
         when(userMock.getAccountId()).thenReturn(accountId);
-        when(userMock.getApiKey()).thenReturn(autoScaleUserApiKey);
-        when(userMock.getSecretKey()).thenReturn(autoScaleUserSecretKey);
 
         final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
         f.setAccessible(true);

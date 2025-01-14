@@ -34,7 +34,6 @@ import javax.persistence.Transient;
 
 import org.apache.cloudstack.api.InternalIdentity;
 
-import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -68,13 +67,6 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
 
     @Column(name = "state")
     private String state;
-
-    @Column(name = "api_key")
-    private String apiKey = null;
-
-    @Encrypt
-    @Column(name = "secret_key")
-    private String secretKey = null;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
@@ -207,24 +199,6 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
 
     public void setState(String state) {
         this.state = state;
-    }
-
-    @Override
-    public String getApiKey() {
-        return apiKey;
-    }
-
-    public void setApiKey(String apiKey) {
-        this.apiKey = apiKey;
-    }
-
-    @Override
-    public String getSecretKey() {
-        return secretKey;
-    }
-
-    public void setSecretKey(String secretKey) {
-        this.secretKey = secretKey;
     }
 
     @Override
