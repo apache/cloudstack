@@ -120,7 +120,7 @@
         </a-form-item>
       </div>
       <div v-if="selectedExistingVcenterId">
-        <a-form-item ref="host" name="host" v-if="hosts.length > 0">
+        <a-form-item :label="$t('label.vcenter.host')" ref="host" name="host" v-if="hosts.length > 0">
           <a-select
             v-model:value="form.host"
             :loading="loading"
@@ -130,8 +130,8 @@
             }"
             :placeholder="$t('label.vcenter.host')"
             @change="onSelectExistingVmwareHost">
-            <a-select-option v-for="opt in hosts" :key="opt.id">
-                {{ 'ESXi: ' + opt.host + ' - DC: ' + opt.name }}
+            <a-select-option v-for="opt in hosts" :key="opt.name">
+                {{ 'ESXi: ' + opt.name }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -239,7 +239,7 @@ export default {
       } else {
         params.existingvcenterid = this.selectedExistingVcenterId
       }
-      params.host = this.selectedhost
+      params.host = this.selectedHost
       api('listVmwareDcVms', params).then(json => {
         const obj = {
           params: params,
@@ -290,8 +290,8 @@ export default {
         params.existingvcenterid = this.selectedExistingVcenterId
       }
       api('listVmwareDcHosts', params).then(response => {
-        if (response.listvmwaredchostsresponse.VMwareDC && response.listvmwaredchostsresponse.VMwareDC.length > 0) {
-          this.hosts = response.listvmwaredchostsresponse.hosts
+        if (response.listvmwaredchostsresponse.host && response.listvmwaredchostsresponse.host.length > 0) {
+          this.hosts = response.listvmwaredchostsresponse.host
         }
       }).catch(error => {
         this.$notifyError(error)

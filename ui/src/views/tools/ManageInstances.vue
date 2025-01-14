@@ -1184,6 +1184,7 @@ export default {
         } else {
           params.existingvcenterid = this.selectedVmwareVcenter.existingvcenterid
         }
+        params.host = this.selectedVmwareVcenter.host
       }
 
       api(apiName, params).then(json => {
@@ -1408,31 +1409,10 @@ export default {
         })
       }
     },
-    async fetchMoreVms (obj) {
-      var params = obj.params
-      params.token = obj.response.token
-      api('listVmwareDcVms', params).then(json => {
-        const obj = {
-          params: params,
-          response: json.listvmwaredcvmsresponse
-        }
-        this.unmanagedInstances.append(obj.response.unmanagedinstance)
-        this.checkForMoreVms(obj)
-      })
-    },
     onListUnmanagedInstancesFromVmware (obj) {
       this.selectedVmwareVcenter = obj.params
       this.unmanagedInstances = obj.response.unmanagedinstance
       this.itemCount.unmanaged = obj.response.count
-      this.checkForMoreVms(obj)
-    },
-    checkForMoreVms (obj) {
-      if (obj.response.token) {
-        this.fetchMoreVms(obj)
-      // keep loading, for now this means the API called was api('listVmwareDcVms', params)
-      } else {
-        this.unmanagedInstancesLoading = false
-      }
     },
     updateVmwareVcenterType (type) {
       this.vmwareVcenterType = type

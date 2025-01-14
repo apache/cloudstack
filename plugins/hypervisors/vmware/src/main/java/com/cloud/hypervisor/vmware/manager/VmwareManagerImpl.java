@@ -1567,9 +1567,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public List<HostMO> listHostsInDatacenter(ListVmwareDcHostsCmd cmd) {
-        Integer maxObjects = cmd.getBatchSize();
-        String token = cmd.getToken();
-
         VcenterData vmwaredc = getVcenterData(cmd);
 
         try {

@@ -75,15 +75,6 @@ public class ListVmwareDcHostsCmd extends BaseCmd implements ListVmwareDcItems {
     @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "The password for specified username.")
     private String password;
 
-    @Parameter(name = ApiConstants.BATCH_SIZE, type = CommandType.INTEGER, description = "The maximum number of results to return.")
-    private Integer batchSize;
-
-    @Parameter(name = ApiConstants.TOKEN, type = CommandType.STRING,
-            description = "For listVmwareDcVms, if the maximum number of results (the `batchsize`) is exceeded, " +
-                    " a token is returned. This token can be used in subsequent calls to retrieve more results." +
-                    " As long as a token is returned, more results can be retrieved.")
-    private String token;
-
     public String getVcenter() {
         return vcenter;
     }
@@ -94,14 +85,6 @@ public class ListVmwareDcHostsCmd extends BaseCmd implements ListVmwareDcItems {
 
     public String getPassword() {
         return password;
-    }
-
-    public Integer getBatchSize() {
-        return batchSize;
-    }
-
-    public String getToken() {
-        return token;
     }
 
     public String getDatacenterName() {
