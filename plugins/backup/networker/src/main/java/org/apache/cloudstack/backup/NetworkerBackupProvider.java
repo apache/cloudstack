@@ -524,9 +524,9 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         BackupVO backup = getClient(vm.getDataCenterId()).registerBackupForVm(vm, backupJobStart, saveTime);
         if (backup != null) {
             backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
-            Map<String, String> details = backupManager.getBackupVmDetails(vm);
+            Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
             backup.setDetails(details);
-            details = backupManager.getBackupDiskOfferingDetails(vm.getId());
+            details = backupManager.getDiskOfferingDetailsForBackup(vm.getId());
             backup.addDetails(details);
             backupDao.persist(backup);
             return true;

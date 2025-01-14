@@ -183,7 +183,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backupVO.setSize(answer.getSize());
             backupVO.setStatus(Backup.Status.BackedUp);
             backupVO.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
-            Map<String, String> details = backupManager.getBackupDiskOfferingDetails(vm.getId());
+            Map<String, String> details = backupManager.getDiskOfferingDetailsForBackup(vm.getId());
             backupVO.addDetails(details);
             return backupDao.update(backupVO.getId(), backupVO);
         } else {
@@ -211,7 +211,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         backup.setAccountId(vm.getAccountId());
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
-        Map<String, String> details = backupManager.getBackupVmDetails(vm);
+        Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
         backup.setDetails(details);
 
         return backupDao.persist(backup);

@@ -79,15 +79,19 @@ export default {
     this.diskofferingids = (this.resource.vmdetails.diskofferingids || '').split(',')
     this.miniops = (this.resource.vmdetails.miniops || '').split(',').map(item => item === 'null' ? '' : item)
     this.maxiops = (this.resource.vmdetails.maxiops || '').split(',').map(item => item === 'null' ? '' : item)
-    const volumes = JSON.parse(this.resource.volumes).slice(1)
-    const datadisksdetails = volumes.map((volume, index) => ({
+    this.deviceid = (this.resource.vmdetails.deviceids || '').split(',').map(item => item === 'null' ? '' : item)
+    const volumes = JSON.parse(this.resource.volumes)
+    const disksdetails = volumes.map((volume, index) => ({
       id: index,
-      name: volume.uuid,
+      name: volume.path,
+      type: volume.type,
       size: volume.size / (1024 * 1024 * 1024),
       diskofferingid: this.diskofferingids[index],
       miniops: this.miniops[index],
-      maxiops: this.maxiops[index]
+      maxiops: this.maxiops[index],
+      deviceid: this.deviceid[index]
     }))
+    const datadisksdetails = disksdetails.filter(datadisk => datadisk.type !== 'ROOT')
     this.dataPreFill.datadisksdetails = datadisksdetails
   },
   methods: {

@@ -547,6 +547,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             Long size = null;
             Long minIops = null;
             Long maxIops = null;
+            Long deviceId = Long.parseLong(dataDisk.get(ApiConstants.DEVICE_ID));
             if (diskOffering.isCustomized()) {
                 if (dataDisk.get(ApiConstants.SIZE) == null) {
                     throw new InvalidParameterValueException("Size is required for custom disk offering");
@@ -565,7 +566,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 minIops = Long.parseLong(dataDisk.get(ApiConstants.MIN_IOPS));
                 maxIops = Long.parseLong(dataDisk.get(ApiConstants.MAX_IOPS));
             }
-            DiskOfferingInfo diskOfferingInfo = new DiskOfferingInfo(diskOffering, size, minIops, maxIops);
+            DiskOfferingInfo diskOfferingInfo = new DiskOfferingInfo(diskOffering, size, minIops, maxIops, deviceId);
             diskOfferingInfoList.add(diskOfferingInfo);
         }
         this.dataDiskOfferingsInfo = diskOfferingInfoList;

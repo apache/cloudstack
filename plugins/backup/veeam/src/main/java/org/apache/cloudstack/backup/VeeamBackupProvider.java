@@ -384,9 +384,9 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                         backup.setDomainId(vm.getDomainId());
                         backup.setZoneId(vm.getDataCenterId());
                         backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
-                        Map<String, String> details = backupManager.getBackupVmDetails(vm);
+                        Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
                         backup.setDetails(details);
-                        details = backupManager.getBackupDiskOfferingDetails(vm.getId());
+                        details = backupManager.getDiskOfferingDetailsForBackup(vm.getId());
                         backup.addDetails(details);
 
                         logger.debug("Creating a new entry in backups: [id: {}, uuid: {}, name: {}, vm_id: {}, external_id: {}, type: {}, date: {}, backup_offering_id: {}, account_id: {}, "

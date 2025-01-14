@@ -130,9 +130,9 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
         backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
-        Map<String, String> details = backupManager.getBackupVmDetails(vm);
+        Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
         backup.setDetails(details);
-        Map<String, String> diskOfferingDetails = backupManager.getBackupDiskOfferingDetails(vm.getId());
+        Map<String, String> diskOfferingDetails = backupManager.getDiskOfferingDetailsForBackup(vm.getId());
         backup.addDetails(diskOfferingDetails);
 
         return backupDao.persist(backup) != null;

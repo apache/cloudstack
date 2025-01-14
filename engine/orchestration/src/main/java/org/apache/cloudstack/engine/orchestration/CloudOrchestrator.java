@@ -226,6 +226,7 @@ public class CloudOrchestrator implements OrchestrationService {
                 DiskOfferingInfo dataDiskOfferingInfo = new DiskOfferingInfo();
 
                 dataDiskOfferingInfo.setDiskOffering(diskOffering);
+                dataDiskOfferingInfo.setDeviceId(1L);
                 dataDiskOfferingInfo.setSize(size);
 
                 if (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) {

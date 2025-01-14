@@ -152,7 +152,8 @@ export default {
     tableSource () {
       return this.tablerows.map(row => {
         var disk = { ...row, disabled: this.validOfferings[row.id] && this.validOfferings[row.id].length === 0 }
-        disk.name = `${this.items.find(item => item.id === row.id).name} (${this.items.find(item => item.id === row.id).size} GB)`
+        var item = this.items.find(item => item.id === row.id)
+        disk.name = `${item.name} (${item.size} GB)`
         return disk
       })
     }
@@ -207,6 +208,7 @@ export default {
       for (const item of this.items) {
         this.values[item.id] = {
           offering: item.diskofferingid,
+          deviceid: item.deviceid,
           size: item.size,
           miniops: item.miniops,
           maxiops: item.maxiops,

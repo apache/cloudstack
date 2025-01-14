@@ -1675,13 +1675,15 @@ export default {
 
         if (values.volumesdiskoffering) {
           let i = 0
-          Object.entries(values.volumesdiskoffering).forEach(([disk, { offering, size, miniops, maxiops, iscustomizediops }]) => {
+          Object.entries(values.volumesdiskoffering).forEach(([disk, { offering, deviceid, size, miniops, maxiops, iscustomizediops }]) => {
             const offeringKey = `datadisksdetails[${i}].diskofferingid`
             const sizeKey = `datadisksdetails[${i}].size`
             const minIopsKey = `datadisksdetails[${i}].miniops`
             const maxIopsKey = `datadisksdetails[${i}].maxiops`
+            const deviceIdKey = `datadisksdetails[${i}].deviceid`
             deployVmData[offeringKey] = offering
             deployVmData[sizeKey] = size
+            deployVmData[deviceIdKey] = deviceid
             if (iscustomizediops) {
               deployVmData[minIopsKey] = miniops
               deployVmData[maxIopsKey] = maxiops

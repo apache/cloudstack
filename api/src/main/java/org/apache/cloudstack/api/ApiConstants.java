@@ -146,6 +146,7 @@ public class ApiConstants {
     public static final String DESTINATION_ZONE_ID = "destzoneid";
     public static final String DETAILS = "details";
     public static final String DEVICE_ID = "deviceid";
+    public static final String DEVICE_IDS = "deviceids";
     public static final String DIRECT_DOWNLOAD = "directdownload";
     public static final String DISK = "disk";
     public static final String DISK_OFFERING_ID = "diskofferingid";

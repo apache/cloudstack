@@ -161,7 +161,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     List<DiskOfferingInfo> getDataDiskOfferingListFromBackup(Backup backup);
 
-    Map<String, String> getBackupVmDetails(VirtualMachine vm);
+    Map<String, String> getVmDetailsForBackup(VirtualMachine vm);
 
-    Map<String, String> getBackupDiskOfferingDetails(Long vmId);
+    Map<String, String> getDiskOfferingDetailsForBackup(Long vmId);
 }

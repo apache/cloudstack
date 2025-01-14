@@ -298,7 +298,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public Map<String, String> getBackupVmDetails(VirtualMachine vm) {
+    public Map<String, String> getVmDetailsForBackup(VirtualMachine vm) {
         HashMap<String, String> details = new HashMap<>();
         details.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
         ServiceOffering serviceOffering =  entityManager.findById(ServiceOffering.class, vm.getServiceOfferingId());
@@ -319,15 +319,17 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public Map<String, String> getBackupDiskOfferingDetails(Long vmId) {
+    public Map<String, String> getDiskOfferingDetailsForBackup(Long vmId) {
         List<VolumeVO> volumes = volumeDao.findByInstance(vmId);
         List<String> diskOfferingIds = new ArrayList<>();
         List<Long> diskSizes = new ArrayList<>();
         List<Long> minIops = new ArrayList<>();
         List<Long> maxIops = new ArrayList<>();
+        List<Long> deviceIds = new ArrayList<>();
         Map<String, String> details = new HashMap<>();
+
         for (Volume vol : volumes) {
-            if (vol.getVolumeType() != Volume.Type.DATADISK) {
+            if (vol.getVolumeType() != Volume.Type.ROOT && vol.getVolumeType() != Volume.Type.DATADISK) {
                 continue;
             }
             DiskOffering diskOffering = diskOfferingDao.findById(vol.getDiskOfferingId());
@@ -335,12 +337,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             diskSizes.add(vol.getSize());
             minIops.add(vol.getMinIops());
             maxIops.add(vol.getMaxIops());
+            deviceIds.add(vol.getDeviceId());
         }
         if (!diskOfferingIds.isEmpty()) {
             details.put(ApiConstants.DISK_OFFERING_IDS, String.join(",", diskOfferingIds));
             details.put(ApiConstants.DISK_SIZES, String.join(",", diskSizes.stream().map(String::valueOf).collect(Collectors.toList())));
             details.put(ApiConstants.MIN_IOPS, String.join(",", minIops.stream().map(String::valueOf).collect(Collectors.toList())));
             details.put(ApiConstants.MAX_IOPS, String.join(",", maxIops.stream().map(String::valueOf).collect(Collectors.toList())));
+            details.put(ApiConstants.DEVICE_IDS, String.join(",", deviceIds.stream().map(String::valueOf).collect(Collectors.toList())));
         }
         return details;
     }
@@ -823,6 +827,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         List<Long> diskSizes;
         List<Long> minIopsList;
         List<Long> maxIopsList;
+        List<Long> deviceIds;
 
         String diskOfferingIds = backup.getDetail(ApiConstants.DISK_OFFERING_IDS);
         if (diskOfferingIds == null) {
@@ -841,16 +846,24 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         maxIopsList = Stream.of(backup.getDetail(ApiConstants.MAX_IOPS).split(","))
                 .map(s -> "null".equals(s) ? null : Long.valueOf(s))
                 .collect(Collectors.toList());
+        deviceIds = Stream.of(backup.getDetail(ApiConstants.DEVICE_IDS).split(","))
+                .map(Long::valueOf)
+                .collect(Collectors.toList());
 
         int index = 0;
         for (DiskOfferingVO diskOffering : diskOfferings) {
+            Long deviceId = deviceIds.get(index);
+            if (deviceId == 0) {
+                index++;
+                continue;
+            }
             Long size = diskOffering.isCustomized() ? diskSizes.get(index) : diskOffering.getDiskSize();
             size = size / (1024 * 1024 * 1024);
             Long minIops = (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) ?
                     minIopsList.get(index) : null;
             Long maxIops = (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) ?
                     maxIopsList.get(index) : null;
-            diskOfferingInfoList.add(new DiskOfferingInfo(diskOffering, size, minIops, maxIops));
+            diskOfferingInfoList.add(new DiskOfferingInfo(diskOffering, size, minIops, maxIops, deviceId));
             index++;
         }
 
