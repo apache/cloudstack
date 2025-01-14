@@ -139,6 +139,8 @@ public interface QueryService {
 
     ListResponse<UserResponse> searchForUsers(Long domainId, boolean recursive) throws PermissionDeniedException;
 
+    List<Long> searchForAccessableUsers();
+
     ListResponse<EventResponse> searchForEvents(ListEventsCmd cmd);
 
     ListResponse<ResourceTagResponse> listTags(ListTagsCmd cmd);
