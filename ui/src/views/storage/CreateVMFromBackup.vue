@@ -103,7 +103,7 @@ export default {
       this.$emit('close-action')
     },
     handleSubmit (e) {
-      console.log('wizard submit')
+      console.log('submit')
       e.preventDefault()
       const args = {}
       args.zoneid = this.resource.zoneid

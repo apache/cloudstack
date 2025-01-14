@@ -190,8 +190,6 @@ export default {
         this.custom[x.id] = this.diskOfferings.find(offering => offering.id === x.diskofferingid)?.iscustomized
         this.customIops[x.id] = this.diskOfferings.find(offering => offering.id === x.diskofferingid)?.iscustomizediops || false
       })
-      console.log('a ' + JSON.stringify(this.custom, null, 2))
-      console.log('b ' + JSON.stringify(this.customIops, null, 2))
       this.setDefaultValues()
       this.loading = false
     },
@@ -246,9 +244,6 @@ export default {
 
       this.custom[diskId] = this.diskOfferings.find(x => x.id === value)?.iscustomized
       this.customIops[diskId] = this.diskOfferings.find(x => x.id === value)?.iscustomizediops || false
-      console.log('1' + JSON.stringify(this.values, null, 2))
-      console.log('2' + JSON.stringify(this.custom, null, 2))
-      console.log('3' + JSON.stringify(this.customIops, null, 2))
 
       this.sendValues()
     },

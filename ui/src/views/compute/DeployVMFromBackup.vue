@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div class="form">
+  <div>
     <a-row :gutter="12">
       <a-col :md="24" :lg="17">
         <a-alert>
@@ -1382,7 +1382,7 @@ export default {
       this.handleSubmit(e.domEvent)
     },
     handleSubmit (e) {
-      console.log('wizard submit')
+      console.log('submit')
       e.preventDefault()
       if (this.loading.deploy) return
       this.formRef.value.validate().then(async () => {
@@ -1642,7 +1642,6 @@ export default {
           }
 
           console.log('error found')
-          console.log('error 6')
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('error.form.message')
@@ -2133,15 +2132,6 @@ export default {
 </script>
 
 <style lang="less" scoped>
-  .form {
-    width: 80vw;
-
-    @media (min-width: 500px) {
-      min-width: 400px;
-      width: 100%;
-    }
-  }
-
   .card-footer {
     text-align: right;
     margin-top: 2rem;
