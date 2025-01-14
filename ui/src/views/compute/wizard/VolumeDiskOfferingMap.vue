@@ -27,11 +27,10 @@
 
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'name'">
-          <span>{{ record.displaytext || record.name }}</span>
+          <span>{{ record.name }}</span>
         </template>
         <template v-if="column.key === 'offering'">
-          <span
-            v-if="validOfferings[record.id] && validOfferings[record.id].length > 0">
+          <span>
             <a-select
               @change="updateOfferingSelect($event, record.id)"
               :defaultValue="record.diskofferingid"
@@ -40,13 +39,10 @@
               :filterOption="(input, option) => {
                 return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }" >
-              <a-select-option v-for="offering in validOfferings[record.id]" :key="offering.id" :label="offering.displaytext">
+              <a-select-option v-for="offering in diskOfferings" :key="offering.id" :label="offering.displaytext">
                 {{ offering.displaytext }}
               </a-select-option>
             </a-select>
-          </span>
-          <span v-else style="width: 50%">
-            {{ $t('label.no.matching.offering') }}
           </span>
         </template>
         <template v-if="column.key === 'size'">
@@ -54,6 +50,7 @@
             v-if="custom[record.id]">
             <a-input-number
               :defaultValue="record.size"
+              :min="items[record.id].size"
               @change="updateCustomDiskSize($event, record.id)"
             />
           </span>
@@ -136,7 +133,6 @@ export default {
       ],
       loading: false,
       diskOfferings: [],
-      validOfferings: {},
       tablerows: {},
       selectedCustomDiskOffering: null,
       values: {
@@ -151,7 +147,7 @@ export default {
   computed: {
     tableSource () {
       return this.tablerows.map(row => {
-        var disk = { ...row, disabled: this.validOfferings[row.id] && this.validOfferings[row.id].length === 0 }
+        var disk = { ...row, disabled: this.diskofferings && this.diskOfferings.length === 0 }
         var item = this.items.find(item => item.id === row.id)
         disk.name = `${item.name} (${item.size} GB)`
         return disk
@@ -190,10 +186,6 @@ export default {
     },
     orderDiskOfferings () {
       this.loading = true
-      this.validOfferings = {}
-      for (const item of this.items) {
-        this.validOfferings[item.id] = this.diskOfferings.filter(x => x.disksize >= item.size || (x.iscustomized))
-      }
       this.items.map(x => {
         this.custom[x.id] = this.diskOfferings.find(offering => offering.id === x.diskofferingid)?.iscustomized
         this.customIops[x.id] = this.diskOfferings.find(offering => offering.id === x.diskofferingid)?.iscustomizediops || false
@@ -233,11 +225,10 @@ export default {
       this.values[diskId].offering = value
       if (this.diskOfferings.find(x => x.id === value)?.iscustomized) {
         this.values[diskId].size = this.items[diskId].size
-        this.tablerows[diskId].size = this.items[diskId].size
       } else {
-        this.values[diskId].size = this.diskOfferings.find(x => x.id === value)?.disksize
-        this.tablerows[diskId].size = this.diskOfferings.find(x => x.id === value)?.disksize
+        this.values[diskId].size = Math.max(this.diskOfferings.find(x => x.id === value)?.disksize, this.items[diskId].size)
       }
+      this.tablerows[diskId].size = this.values[diskId].size
 
       this.values[diskId].iscustomizediops = this.diskOfferings.find(x => x.id === value)?.iscustomizediops || false
 

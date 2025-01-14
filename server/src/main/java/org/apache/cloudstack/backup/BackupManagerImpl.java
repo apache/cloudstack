@@ -821,6 +821,16 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
+    public void updateDiskOfferingSizeFromBackup(List<DiskOfferingInfo> dataDiskOfferingsInfo, Backup backup) {
+        List<DiskOfferingInfo> dataDiskOfferingsInfoFromBackup = getDataDiskOfferingListFromBackup(backup);
+        int index = 0;
+        for(DiskOfferingInfo diskOfferingInfo : dataDiskOfferingsInfo) {
+            diskOfferingInfo.setSize(Math.max(diskOfferingInfo.getSize(), dataDiskOfferingsInfoFromBackup.get(index).getSize()));
+            index++;
+        }
+    }
+
+    @Override
     public List<DiskOfferingInfo> getDataDiskOfferingListFromBackup(Backup backup) {
         List<DiskOfferingInfo> diskOfferingInfoList = new ArrayList<>();
         List<DiskOfferingVO> diskOfferings;
@@ -862,8 +872,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 index++;
                 continue;
             }
-            Long size = diskOffering.isCustomized() ? diskSizes.get(index) : diskOffering.getDiskSize();
-            size = size / (1024 * 1024 * 1024);
+            Long size = diskSizes.get(index) / (1024 * 1024 * 1024);
             Long minIops = (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) ?
                     minIopsList.get(index) : null;
             Long maxIops = (diskOffering.isCustomizedIops() != null && diskOffering.isCustomizedIops()) ?

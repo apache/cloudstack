@@ -40,7 +40,7 @@
     <div v-else class="form">
       <DeployVMFromBackup
         :preFillContent="dataPreFill"
-        @close-action="closeModal"/>
+        @close-action="closeAction"/>
     </div>
   </div>
 </template>
@@ -82,7 +82,6 @@ export default {
     this.deviceid = (this.resource.vmdetails.deviceids || '').split(',').map(item => item === 'null' ? '' : item)
     const volumes = JSON.parse(this.resource.volumes)
     const disksdetails = volumes.map((volume, index) => ({
-      id: index,
       name: volume.path,
       type: volume.type,
       size: volume.size / (1024 * 1024 * 1024),
@@ -90,18 +89,17 @@ export default {
       miniops: this.miniops[index],
       maxiops: this.maxiops[index],
       deviceid: this.deviceid[index]
+    })).filter(volume => volume.type !== 'ROOT')
+    this.dataPreFill.datadisksdetails = disksdetails.map((disk, index) => ({
+      id: index,
+      ...disk
     }))
-    const datadisksdetails = disksdetails.filter(datadisk => datadisk.type !== 'ROOT')
-    this.dataPreFill.datadisksdetails = datadisksdetails
   },
   methods: {
     setConfigure () {
       this.configure = true
     },
     closeAction () {
-      this.$emit('close-action')
-    },
-    closeModal () {
       this.$emit('close-action')
     },
     handleSubmit (e) {

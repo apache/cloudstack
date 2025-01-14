@@ -8873,6 +8873,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         List<DiskOfferingInfo> dataDiskOfferingsInfo = cmd.getDataDiskOfferingsInfo();
+        if (dataDiskOfferingsInfo != null) {
+            backupManager.updateDiskOfferingSizeFromBackup(dataDiskOfferingsInfo, backup);
+        }
         if (dataDiskOfferingsInfo != null && diskOfferingId != null) {
             new InvalidParameterValueException("Cannot specify both disk offering id and data disk offering details");
         }
