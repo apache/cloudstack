@@ -1,0 +1,23 @@
+description: "Thank you for reporting a bug!"
+name: bug
+title: "[SHORT PROBLEM DESCRIPTION]"
+labels: issue, needs-testing
+body:
+- type: markdown
+  attributes:
+    value: "## Welcome, please describe your problem below;"
+- type: textarea
+  attributes:
+    label: problem
+    value: the long description of your problem
+- type: textarea
+  attributes:
+    label: reproduction steps
+    value: |
+      1.
+      2.
+      3.
+      ...
+- type: textarea
+  attributes:
+    label: "What to do about it?"

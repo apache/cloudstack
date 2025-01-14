@@ -1,0 +1,9 @@
+description: "Thank you for your new feature idea!"
+name: feature
+title: "[SHORT FUNCTIONAL DESCRIPTION]"
+labels:  new
+body:
+- type: textarea
+  attributes:
+    label: "As a User/Admin/Operator I would like to ..."
+    value: the long description of your functionality
