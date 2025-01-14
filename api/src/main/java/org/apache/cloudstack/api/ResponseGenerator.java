@@ -26,6 +26,8 @@ import com.cloud.bgp.ASNumber;
 import com.cloud.bgp.ASNumberRange;
 
 import org.apache.cloudstack.storage.object.Bucket;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
@@ -44,6 +46,7 @@ import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupRepositoryResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
+import org.apache.cloudstack.api.response.BaseRolePermissionResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
@@ -79,6 +82,7 @@ import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
 import org.apache.cloudstack.api.response.IsolationMethodResponse;
+import org.apache.cloudstack.api.response.ApiKeyPairResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -568,4 +572,8 @@ public interface ResponseGenerator {
     BackupRepositoryResponse createBackupRepositoryResponse(BackupRepository repository);
 
     SharedFSResponse createSharedFSResponse(ResponseView view, SharedFS sharedFS);
+
+    ApiKeyPairResponse createKeyPairResponse(ApiKeyPair keyPair);
+
+    ListResponse<BaseRolePermissionResponse> createKeypairPermissionsResponse(List<ApiKeyPairPermission> permissions);
 }
