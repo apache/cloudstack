@@ -139,6 +139,7 @@ class CsDhcp(CsDataBag):
             # Listen Address
             if self.cl.is_redundant():
                 listen_address.append(gateway)
+                listen_address.append(ip)
             else:
                 listen_address.append(ip)
             # Add localized "data-server" records in /etc/hosts for VPC routers
