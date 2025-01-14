@@ -835,8 +835,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         diskOfferings = Stream.of(diskOfferingIds.split(","))
-                .map(uuid -> diskOfferingDao.findByUuid(uuid))
-                .collect(Collectors.toList());
+                .map(uuid -> {
+                    DiskOfferingVO diskOffering = diskOfferingDao.findByUuid(uuid);
+                    if (diskOffering == null) {
+                        throw new CloudRuntimeException("Unable to find disk offering with uuid (" + uuid + ") stored in backup. Please specify a valid disk offering id while creating the instance");
+                    }
+                    return diskOffering;
+                }).collect(Collectors.toList());
         diskSizes = Stream.of(backup.getDetail(ApiConstants.DISK_SIZES).split(","))
                 .map(Long::valueOf)
                 .collect(Collectors.toList());

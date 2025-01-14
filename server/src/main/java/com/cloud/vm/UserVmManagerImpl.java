@@ -8812,7 +8812,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else {
             String serviceOfferingUuid = backup.getDetail(ApiConstants.SERVICE_OFFERING_ID);
             if (serviceOfferingUuid == null) {
-                throw new CloudRuntimeException("Backup doesn't contain service offering uuid. Please specify a valid service offering id while creating instance");
+                throw new CloudRuntimeException("Backup doesn't contain service offering uuid. Please specify a valid service offering id while creating the instance");
             }
             serviceOffering = serviceOfferingDao.findByUuid(serviceOfferingUuid);
             if (serviceOffering == null) {
@@ -8852,7 +8852,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             template = _templateDao.findByUuid(templateUuid);
             if (template == null) {
-                throw new CloudRuntimeException("Unable to find template with the uuid stored in backup. Please specify a valid template id while creating instance");
+                throw new CloudRuntimeException("Unable to find template with the uuid stored in backup. Please specify a valid template id while creating the instance");
             }
         }
 
@@ -8902,7 +8902,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             for (String networkUuid: networkUuids) {
                 Network network = _networkDao.findByUuid(networkUuid);
                 if (network == null) {
-                    throw new CloudRuntimeException("Unable to find network with the uuid " + networkUuid + "stored in backup. Please specify a valid network id while creating instance");
+                    throw new CloudRuntimeException("Unable to find network with the uuid " + networkUuid + "stored in backup. Please specify a valid network id while creating the instance");
                 }
                 Long networkId = network.getId();
                 ipToNetworkMap.put(networkId, null);
