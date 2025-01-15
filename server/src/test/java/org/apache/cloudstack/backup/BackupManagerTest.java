@@ -331,7 +331,6 @@ public class BackupManagerTest {
 
     @Test
     public void testGetVmDetailsForBackup() {
-        // Mock the VM and its dependencies
         Long vmId = 1L;
         VirtualMachine vm = mock(VirtualMachine.class);
         when(vm.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
@@ -339,7 +338,6 @@ public class BackupManagerTest {
         when(vm.getTemplateId()).thenReturn(1L);
         when(vm.getId()).thenReturn(vmId);
 
-        // Mock the entity manager to return the service offering and template
         ServiceOffering serviceOffering = mock(ServiceOffering.class);
         when(serviceOffering.getUuid()).thenReturn("service-offering-uuid");
         when(entityManager.findById(ServiceOffering.class, 1L)).thenReturn(serviceOffering);
@@ -353,10 +351,8 @@ public class BackupManagerTest {
         List<UserVmJoinVO> userVmJoinVOs = Collections.singletonList(userVmJoinVO);
         when(userVmJoinDao.searchByIds(vmId)).thenReturn(userVmJoinVOs);
 
-        // Call the method
         Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
 
-        // Verify the results
         assertEquals("KVM", details.get(ApiConstants.HYPERVISOR));
         assertEquals("service-offering-uuid", details.get(ApiConstants.SERVICE_OFFERING_ID));
         assertEquals("template-uuid", details.get(ApiConstants.TEMPLATE_ID));
@@ -388,7 +384,7 @@ public class BackupManagerTest {
     }
 
     @Test
-    public void getDataDiskOfferingListFromBackupReturnsCorrectDetails() {
+    public void getDataDiskOfferingListFromBackup() {
         Long size1 = 5L * 1024 * 1024 * 1024;
         Long size2 = 10L * 1024 * 1024 * 1024;
         Backup backup = mock(Backup.class);
@@ -398,16 +394,17 @@ public class BackupManagerTest {
         when(backup.getDetail(ApiConstants.MIN_IOPS)).thenReturn("0,100,200");
         when(backup.getDetail(ApiConstants.MAX_IOPS)).thenReturn("0,300,400");
 
+        DiskOfferingVO rootDiskOffering = mock(DiskOfferingVO.class);
+
         DiskOfferingVO diskOffering1 = mock(DiskOfferingVO.class);
         when(diskOffering1.getUuid()).thenReturn("disk-offering-uuid-1");
-        when(diskOffering1.isCustomized()).thenReturn(true);
         when(diskOffering1.isCustomizedIops()).thenReturn(true);
 
         DiskOfferingVO diskOffering2 = mock(DiskOfferingVO.class);
         when(diskOffering2.getUuid()).thenReturn("disk-offering-uuid-2");
-        when(diskOffering2.isCustomized()).thenReturn(true);
         when(diskOffering2.isCustomizedIops()).thenReturn(true);
 
+        when(diskOfferingDao.findByUuid("root-disk-offering-uuid")).thenReturn(rootDiskOffering);
         when(diskOfferingDao.findByUuid("disk-offering-uuid-1")).thenReturn(diskOffering1);
         when(diskOfferingDao.findByUuid("disk-offering-uuid-2")).thenReturn(diskOffering2);
 
@@ -428,7 +425,7 @@ public class BackupManagerTest {
     }
 
     @Test
-    public void getDataDiskOfferingListFromBackupHandlesNullIops() {
+    public void getDataDiskOfferingListFromBackupNullIops() {
         Long size = 5L * 1024 * 1024 * 1024;
         Backup backup = mock(Backup.class);
         when(backup.getDetail(ApiConstants.DISK_OFFERING_IDS)).thenReturn("disk-offering-uuid-1");
@@ -439,7 +436,6 @@ public class BackupManagerTest {
 
         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
         when(diskOffering.getUuid()).thenReturn("disk-offering-uuid-1");
-        when(diskOffering.isCustomized()).thenReturn(true);
         when(diskOffering.isCustomizedIops()).thenReturn(true);
 
         when(diskOfferingDao.findByUuid("disk-offering-uuid-1")).thenReturn(diskOffering);

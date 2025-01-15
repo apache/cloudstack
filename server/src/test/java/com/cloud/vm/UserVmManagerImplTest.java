@@ -1646,13 +1646,12 @@ public class UserVmManagerImplTest {
     @Test
     public void testAllocateVMFromBackupUsingCmdValues() throws InsufficientCapacityException, ResourceAllocationException, ResourceUnavailableException {
         Long backupId = 1L;
-        Long diskOfferingId = 2L;
         Long rootDiskOfferingId = 3L;
 
         CreateVMFromBackupCmd cmd = mock(CreateVMFromBackupCmd.class);
         when(cmd.getEntityOwnerId()).thenReturn(accountId);
         when(cmd.getServiceOfferingId()).thenReturn(serviceOfferingId);
-        when(cmd.getDiskOfferingId()).thenReturn(diskOfferingId);
+        when(cmd.getDiskOfferingId()).thenReturn(null);
         when(cmd.getTemplateId()).thenReturn(templateId);
         when(cmd.getZoneId()).thenReturn(zoneId);
         when(cmd.getBackupId()).thenReturn(backupId);
@@ -1664,7 +1663,6 @@ public class UserVmManagerImplTest {
         when(serviceOffering.getDiskOfferingId()).thenReturn(rootDiskOfferingId);
         DiskOffering diskOffering = mock(DiskOffering.class);
         when(entityManager.findById(ServiceOffering.class, serviceOfferingId)).thenReturn(serviceOffering);
-        when(entityManager.findById(DiskOffering.class, diskOfferingId)).thenReturn(diskOffering);
         when(entityManager.findById(DiskOffering.class, rootDiskOfferingId)).thenReturn(diskOffering);
 
         VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
