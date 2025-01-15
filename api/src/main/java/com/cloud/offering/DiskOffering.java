@@ -37,7 +37,7 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
     State getState();
 
     enum DiskCacheMode {
-        NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough");
+        HYPERVISOR_DEFAULT("hypervisor_default"), NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough");
 
         private final String _diskCacheMode;
 
