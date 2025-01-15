@@ -26,15 +26,16 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -187,7 +188,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected StateMachine2<Status, Status.Event, Host> _statusStateMachine = Status.getStateMachine();
     private final ConcurrentHashMap<Long, Long> _pingMap = new ConcurrentHashMap<Long, Long>(10007);
     private int maxConcurrentNewAgentConnections;
-    private final ConcurrentHashMap<String, Boolean> newAgentConnections = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Long> newAgentConnections = new ConcurrentHashMap<>();
+    protected ScheduledExecutorService newAgentConnectionsMonitor;
 
     @Inject
     ResourceManager _resourceMgr;
@@ -254,6 +256,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         _monitorExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("AgentMonitor"));
 
+        newAgentConnectionsMonitor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NewAgentConnectionsMonitor"));
+
         return true;
     }
 
@@ -274,11 +278,17 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Override
     public void registerNewConnection(SocketAddress address) {
-        newAgentConnections.putIfAbsent(address.toString(), true);
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("Adding new agent connection from %s", address.toString()));
+        }
+        newAgentConnections.putIfAbsent(address.toString(), System.currentTimeMillis());
     }
 
     @Override
     public void unregisterNewConnection(SocketAddress address) {
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("Removing new agent connection for %s", address.toString()));
+        }
         newAgentConnections.remove(address.toString());
     }
 
@@ -653,6 +663,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), mgmtServiceConf.getPingInterval(), mgmtServiceConf.getPingInterval(), TimeUnit.SECONDS);
 
+        final int cleanupTime = Wait.value();
+        newAgentConnectionsMonitor.scheduleAtFixedRate(new AgentNewConnectionsMonitorTask(), cleanupTime,
+                cleanupTime, TimeUnit.MINUTES);
+
         return true;
     }
 
@@ -810,6 +824,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         _connectExecutor.shutdownNow();
         _monitorExecutor.shutdownNow();
+        newAgentConnectionsMonitor.shutdownNow();
         return true;
     }
 
@@ -1758,6 +1773,35 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             }
 
             return agentsBehind;
+        }
+    }
+
+    protected class AgentNewConnectionsMonitorTask extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
+            s_logger.trace("Agent New Connections Monitor is started.");
+            final int cleanupTime = Wait.value();
+            Set<Map.Entry<String, Long>> entrySet = newAgentConnections.entrySet();
+            long cutOff = System.currentTimeMillis() - (cleanupTime * 60 * 1000L);
+            if (s_logger.isDebugEnabled()) {
+                List<String> expiredConnections = newAgentConnections.entrySet()
+                        .stream()
+                        .filter(e -> e.getValue() <= cutOff)
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toList());
+                s_logger.debug(String.format("Currently %d active new connections, of which %d have expired - %s",
+                        entrySet.size(),
+                        expiredConnections.size(),
+                        StringUtils.join(expiredConnections)));
+            }
+            for (Map.Entry<String, Long> entry : entrySet) {
+                if (entry.getValue() <= cutOff) {
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.trace(String.format("Cleaning up new agent connection for %s", entry.getKey()));
+                    }
+                    newAgentConnections.remove(entry.getKey());
+                }
+            }
         }
     }
 

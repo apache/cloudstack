@@ -278,11 +278,11 @@ public abstract class NioConnection implements Callable<Boolean> {
         final Link link = (Link)key.attachment();
         closeConnection(key);
         if (link != null) {
-            logger.warn("Will terminate connection due to: {}", msg);
+            logger.trace("Will terminate connection due to: {}", msg);
             link.terminated();
             final Task task = _factory.create(Task.Type.DISCONNECT, link, null);
             unregisterLink(link.getSocketAddress());
-
+            _factory.unregisterNewConnection(link.getSocketAddress());
             try {
                 _executor.submit(task);
             } catch (final Exception e) {
