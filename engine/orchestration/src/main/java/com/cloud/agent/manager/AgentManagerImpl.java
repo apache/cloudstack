@@ -141,8 +141,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected List<Pair<Integer, StartupCommandProcessor>> _creationMonitors = new ArrayList<Pair<Integer, StartupCommandProcessor>>(17);
     protected List<Long> _loadingAgents = new ArrayList<Long>();
     private int _monitorId = 0;
-    // FIXME: this is causing contention
-    private final Lock _agentStatusLock = new ReentrantLock();
 
     @Inject
     protected CAManager caService;
