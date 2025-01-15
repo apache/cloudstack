@@ -35,6 +35,7 @@ public class NetworkPermissionDaoImpl extends GenericDaoBase<NetworkPermissionVO
 
     private SearchBuilder<NetworkPermissionVO> NetworkAndAccountSearch;
     private SearchBuilder<NetworkPermissionVO> NetworkIdSearch;
+    private SearchBuilder<NetworkPermissionVO> accountSearch;
     private GenericSearchBuilder<NetworkPermissionVO, Long> FindNetworkIdsByAccount;
 
     protected NetworkPermissionDaoImpl() {
@@ -46,6 +47,10 @@ public class NetworkPermissionDaoImpl extends GenericDaoBase<NetworkPermissionVO
         NetworkIdSearch = createSearchBuilder();
         NetworkIdSearch.and("networkId", NetworkIdSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         NetworkIdSearch.done();
+
+        accountSearch = createSearchBuilder();
+        accountSearch.and("accountId", accountSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
+        accountSearch.done();
 
         FindNetworkIdsByAccount = createSearchBuilder(Long.class);
         FindNetworkIdsByAccount.select(null, SearchCriteria.Func.DISTINCT, FindNetworkIdsByAccount.entity().getNetworkId());
@@ -69,6 +74,16 @@ public class NetworkPermissionDaoImpl extends GenericDaoBase<NetworkPermissionVO
         SearchCriteria<NetworkPermissionVO> sc = NetworkIdSearch.create();
         sc.setParameters("networkId", networkId);
         expunge(sc);
+    }
+
+    @Override
+    public void removeAccountPermissions(long accountId) {
+        SearchCriteria<NetworkPermissionVO> sc = accountSearch.create();
+        sc.setParameters("accountId", accountId);
+        int networkPermissionRemoved = expunge(sc);
+        if (networkPermissionRemoved > 0) {
+            s_logger.debug(String.format("Removed [%s] network permission(s) for the account with Id [%s]", networkPermissionRemoved, accountId));
+        }
     }
 
     @Override
