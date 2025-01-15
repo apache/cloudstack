@@ -17,7 +17,7 @@
 description: "Thank you for reporting a bug!"
 name: bug
 title: "[SHORT PROBLEM DESCRIPTION]"
-labels: issue, needs-testing
+labels: bug, needs-triageing
 body:
 - type: markdown
   attributes:
@@ -25,10 +25,10 @@ body:
 - type: textarea
   attributes:
     label: problem
-    value: the long description of your problem
+    value: The long description of your problem
 - type: textarea
   attributes:
-    label: reproduction steps
+    label: The steps to reproduce the bug
     value: |
       1.
       2.

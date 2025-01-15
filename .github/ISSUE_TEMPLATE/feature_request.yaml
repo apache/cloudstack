@@ -21,5 +21,5 @@ labels:  new
 body:
 - type: textarea
   attributes:
-    label: "As a User/Admin/Operator I would like to ..."
-    value: the long description of your functionality
+    label: "The required feature described as a wish"
+    value: As a User/Admin/Operator I would like to , ... have the system make my morning coffee.
