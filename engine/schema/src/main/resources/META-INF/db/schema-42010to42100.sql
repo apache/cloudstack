@@ -35,3 +35,10 @@ CREATE TABLE `cloud`.`backup_details` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_backup_details__backup_id` FOREIGN KEY `fk_backup_details__backup_id`(`backup_id`) REFERENCES `backups`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Allow default roles to use quotaCreditsList
+INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'quotaCreditsList', permission, sort_order
+FROM `cloud`.`role_permissions` rp
+WHERE rp.rule = 'quotaStatement'
+AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaCreditsList');
