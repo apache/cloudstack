@@ -612,7 +612,6 @@
 "label.create.backup": "Start backup",
 "label.create.sharedfs": "Create Shared FileSystem",
 "label.create.network": "Create new Network",
-"label.create.new.instance.from.backup": "Create new instance from backup",
 "label.create.nfs.secondary.staging.storage": "Create NFS secondary staging storage",
 "label.create.project": "Create project",
 "label.create.project.role": "Create project role",

@@ -669,6 +669,11 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
+    public boolean supportsInstanceFromBackup() {
+        return false;
+    }
+
+    @Override
     public boolean willDeleteBackupsOnOfferingRemoval() { return false; }
 
     @Override

@@ -1012,7 +1012,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         List<String> names = cmd.getNames();
-        if (names == null || names.isEmpty()) {
+        if (CollectionUtils.isEmpty(names)) {
             throw new InvalidParameterValueException("'keypair' or 'keypairs' must be specified");
         }
 

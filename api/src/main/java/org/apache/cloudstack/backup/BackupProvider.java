@@ -111,4 +111,9 @@ public interface BackupProvider {
      * @param metric
      */
     void syncBackups(VirtualMachine vm, Backup.Metric metric);
+
+    /**
+     * Returns if the backup provider supports creating new instance from backup
+     */
+    boolean supportsInstanceFromBackup();
 }

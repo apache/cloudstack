@@ -415,6 +415,11 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
+    public boolean supportsInstanceFromBackup() {
+        return true;
+    }
+
+    @Override
     public String getConfigComponentName() {
         return BackupService.class.getSimpleName();
     }

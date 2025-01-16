@@ -52,7 +52,7 @@ import { api } from '@/api'
 import { Button } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
 
-import DeployVMFromBackup from '@/views/compute/DeployVMFromBackup'
+import DeployVMFromBackup from '@/components/view/DeployVMFromBackup'
 
 export default {
   name: 'CreateVMFromBackup',
@@ -134,7 +134,7 @@ export default {
       args.zoneid = this.resource.zoneid
       args.backupid = this.resource.id
 
-      const title = this.$t('label.create.new.instance.from.backup')
+      const title = this.$t('label.create.instance.from.backup')
       const description = ''
       const password = this.$t('label.password')
 

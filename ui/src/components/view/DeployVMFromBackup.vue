@@ -224,7 +224,7 @@
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div v-if="zoneSelected">
-                    <volume-disk-offering-map
+                    <volume-disk-offering-select-view
                       :items="dataPreFill.datadisksdetails"
                       :zoneId="zoneId"
                       @select-volumes-disk-offering="updateVolumesDiskOffering($event)" />
@@ -565,7 +565,7 @@ import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelec
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import DiskOfferingSelection from '@views/compute/wizard/DiskOfferingSelection'
 import DiskSizeSelection from '@views/compute/wizard/DiskSizeSelection'
-import VolumeDiskOfferingMap from '@views/compute/wizard/VolumeDiskOfferingMap'
+import VolumeDiskOfferingSelectView from '@views/compute/wizard/VolumeDiskOfferingSelectView'
 import AffinityGroupSelection from '@views/compute/wizard/AffinityGroupSelection'
 import NetworkSelection from '@views/compute/wizard/NetworkSelection'
 import NetworkConfiguration from '@views/compute/wizard/NetworkConfiguration'
@@ -585,7 +585,7 @@ export default {
     NetworkSelection,
     AffinityGroupSelection,
     DiskSizeSelection,
-    VolumeDiskOfferingMap,
+    VolumeDiskOfferingSelectView,
     DiskOfferingSelection,
     InfoCard,
     ComputeOfferingSelection,
@@ -1574,7 +1574,7 @@ export default {
           deployVmData.projectid = this.owner.projectid
         }
 
-        const title = this.$t('label.create.new.instance.from.backup')
+        const title = this.$t('label.create.instance.from.backup')
         const description = values.name || ''
         const password = this.$t('label.password')
 

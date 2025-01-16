@@ -104,7 +104,7 @@ public class BackupResponse extends BaseResponse {
     private String zone;
 
     @SerializedName(ApiConstants.VM_DETAILS)
-    @Param(description = "Lists the vm specific details for the backup")
+    @Param(description = "Lists the vm specific details for the backup", since = "4.21.0")
     private Map<String, String> vmDetails;
 
     public String getId() {

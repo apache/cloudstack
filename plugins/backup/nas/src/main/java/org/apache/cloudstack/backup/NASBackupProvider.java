@@ -424,6 +424,11 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
+    public boolean supportsInstanceFromBackup() {
+        return true;
+    }
+
+    @Override
     public List<BackupOffering> listBackupOfferings(Long zoneId) {
         final List<BackupRepository> repositories = backupRepositoryDao.listByZoneAndProvider(zoneId, getName());
         final List<BackupOffering> offerings = new ArrayList<>();

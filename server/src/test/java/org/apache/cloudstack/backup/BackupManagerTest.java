@@ -22,16 +22,17 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOfferingInfo;
-import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
-import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VMInstanceVO;
@@ -91,7 +92,10 @@ public class BackupManagerTest {
     DiskOfferingDao diskOfferingDao;
 
     @Mock
-    EntityManager entityManager;
+    ServiceOfferingDao serviceOfferingDao;
+
+    @Mock
+    VMTemplateDao vmTemplateDao;
 
     @Mock
     UserVmJoinDao userVmJoinDao;
@@ -338,13 +342,13 @@ public class BackupManagerTest {
         when(vm.getTemplateId()).thenReturn(1L);
         when(vm.getId()).thenReturn(vmId);
 
-        ServiceOffering serviceOffering = mock(ServiceOffering.class);
+        ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
         when(serviceOffering.getUuid()).thenReturn("service-offering-uuid");
-        when(entityManager.findById(ServiceOffering.class, 1L)).thenReturn(serviceOffering);
+        when(serviceOfferingDao.findById(1L)).thenReturn(serviceOffering);
 
-        VirtualMachineTemplate template = mock(VirtualMachineTemplate.class);
+        VMTemplateVO template = mock(VMTemplateVO.class);
         when(template.getUuid()).thenReturn("template-uuid");
-        when(entityManager.findById(VirtualMachineTemplate.class, 1L)).thenReturn(template);
+        when(vmTemplateDao.findById(1L)).thenReturn(template);
 
         UserVmJoinVO userVmJoinVO = mock(UserVmJoinVO.class);
         when(userVmJoinVO.getNetworkUuid()).thenReturn("mocked-network-uuid");
