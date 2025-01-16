@@ -62,7 +62,8 @@ export default {
   data () {
     return {
       configure: false,
-      dataPreFill: {}
+      dataPreFill: {},
+      serviceOffering: {}
     }
   },
   props: {
@@ -72,6 +73,7 @@ export default {
     }
   },
   created () {
+    this.fetchServiceOffering()
     this.dataPreFill.backupid = this.resource.id
     this.dataPreFill.computeofferingid = this.resource.vmdetails.serviceofferingid
     this.dataPreFill.templateid = this.resource.vmdetails.templateid
@@ -94,8 +96,31 @@ export default {
       id: index,
       ...disk
     }))
+    const rootdisksdetails = volumes.map((volume, index) => ({
+      size: volume.size / (1024 * 1024 * 1024),
+      type: volume.type,
+      diskofferingid: this.diskofferingids[index]
+    })).filter(volume => volume.type === 'ROOT')
+    if (this.serviceOffering.diskofferingid === rootdisksdetails[0].diskofferingid) {
+      this.dataPreFill.overridediskoffering = false
+    } else {
+      this.dataPreFill.overridediskoffering = true
+      this.dataPreFill.diskofferingid = rootdisksdetails[0].diskofferingid
+      this.dataPreFill.size = rootdisksdetails[0].size
+    }
   },
   methods: {
+    fetchServiceOffering () {
+      this.serviceOfferings = []
+      api('listServiceOfferings', {
+        zoneid: this.resource.zoneid,
+        id: this.resource.vmdetails.serviceofferingid,
+        listall: true
+      }).then(response => {
+        const serviceOfferings = response.listserviceofferingsresponse.serviceoffering || []
+        this.serviceOffering = serviceOfferings[0]
+      })
+    },
     setConfigure () {
       this.configure = true
     },

@@ -8821,6 +8821,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         Long overrideDiskOfferingId = cmd.getOverrideDiskOfferingId();
+        if (overrideDiskOfferingId == null) {
+            DiskOfferingInfo rootDiskOfferingInfo = backupManager.getRootDiskOfferingInfoFromBackup(backup);
+            if (serviceOffering.getDiskOfferingId() != rootDiskOfferingInfo.getDiskOffering().getId()) {
+                overrideDiskOfferingId = rootDiskOfferingInfo.getDiskOffering().getId();
+                Map<String, String> details = cmd.getDetails();
+                details.put(VmDetailConstants.ROOT_DISK_SIZE, rootDiskOfferingInfo.getSize().toString());
+                details.put(MIN_IOPS, rootDiskOfferingInfo.getSize().toString());
+                details.put(MAX_IOPS, rootDiskOfferingInfo.getSize().toString());
+            }
+        }
 
         if (ServiceOffering.State.Inactive.equals(serviceOffering.getState())) {
             throw new InvalidParameterValueException(String.format("Service offering is inactive: [%s].", serviceOffering.getUuid()));

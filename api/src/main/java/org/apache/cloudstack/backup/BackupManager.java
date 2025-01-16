@@ -159,6 +159,8 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     BackupOffering updateBackupOffering(UpdateBackupOfferingCmd updateBackupOfferingCmd);
 
+    DiskOfferingInfo getRootDiskOfferingInfoFromBackup(Backup backup);
+
     List<DiskOfferingInfo> getDataDiskOfferingListFromBackup(Backup backup);
 
     void updateDiskOfferingSizeFromBackup(List<DiskOfferingInfo> dataDiskOfferingsInfo, Backup backup);

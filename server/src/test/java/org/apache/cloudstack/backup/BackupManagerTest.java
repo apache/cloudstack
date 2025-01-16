@@ -404,7 +404,6 @@ public class BackupManagerTest {
         when(diskOffering2.getUuid()).thenReturn("disk-offering-uuid-2");
         when(diskOffering2.isCustomizedIops()).thenReturn(true);
 
-        when(diskOfferingDao.findByUuid("root-disk-offering-uuid")).thenReturn(rootDiskOffering);
         when(diskOfferingDao.findByUuid("disk-offering-uuid-1")).thenReturn(diskOffering1);
         when(diskOfferingDao.findByUuid("disk-offering-uuid-2")).thenReturn(diskOffering2);
 

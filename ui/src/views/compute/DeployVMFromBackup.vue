@@ -1049,6 +1049,7 @@ export default {
   created () {
     this.initForm()
     this.dataPreFill = this.preFillContent && Object.keys(this.preFillContent).length > 0 ? this.preFillContent : {}
+    this.showOverrideDiskOfferingOption = this.dataPreFill.overridediskoffering
     this.fetchData()
   },
   provide () {
