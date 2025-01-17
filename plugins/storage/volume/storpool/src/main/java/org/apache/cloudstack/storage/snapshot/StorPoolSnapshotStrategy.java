@@ -46,7 +46,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
-import org.apache.cloudstack.storage.command.CreateObjectAnswer;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -199,8 +198,10 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
 
     private void processResult(List<SnapshotInfo> snapshotInfos, ObjectInDataStoreStateMachine.Event event) {
         for (SnapshotInfo snapshot : snapshotInfos) {
-                SnapshotObject snapshotObject = (SnapshotObject) snapshot;
+            SnapshotObject snapshotObject = (SnapshotObject) snapshot;
+            if (DataStoreRole.Primary.equals(snapshotObject.getDataStore().getRole())) {
                 snapshotObject.processEvent(event);
+            }
         }
     }
 
@@ -363,7 +364,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                 !Snapshot.State.Destroying.equals(snapshotVO.getState())) {
             throw new InvalidParameterValueException(String.format("Can't delete snapshot %s due to it is in %s Status", snapshotVO, snapshotVO.getState()));
         }
-        List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image);
+        List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.listBySnapshot(snapshotId, DataStoreRole.Image);
         if (zoneId != null) {
             storeRefs.removeIf(ref -> !zoneId.equals(dataStoreMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole())));
         }
@@ -413,7 +414,6 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
         StoragePoolVO storagePoolVO = _primaryDataStoreDao.findById(snapshotDest.getDataStore().getId());
         String location = StorPoolConfigurationManager.StorPoolClusterLocation.valueIn(snapshotDest.getDataStore().getId());
         StorPoolUtil.spLog("StorpoolSnapshotStrategy.copySnapshot: snapshot %s to pool=%s", snapshot.getUuid(), storagePoolVO.getName());
-        CreateCmdResult res = null;
         SnapshotInfo srcSnapshot = (SnapshotInfo) snapshot;
         SnapshotInfo destSnapshot = (SnapshotInfo) snapshotDest;
         String err = null;
@@ -421,9 +421,9 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
         if (location != null) {
             SpApiResponse resp = exportSnapshot(snapshot, location, snapshotName);
             if (resp.getError() != null) {
-                StorPoolUtil.spLog("Failed to export snapshot %s from %s due to %s", snapshotName, location, resp.getError());
-                err = String.format("Failed to export snapshot %s from %s due to %s", snapshotName, location, resp.getError());
-                completeCallback(callback, res, destSnapshot.getPath(), err);
+                err = String.format("Failed to export snapshot [{}] from [{}] due to [{}]", snapshotName, location, resp.getError());
+                StorPoolUtil.spLog(err);
+                completeCallback(callback, destSnapshot.getPath(), err);
                 return;
             }
             keepExportedSnapshot(snapshot, location, snapshotName);
@@ -433,32 +433,31 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
             SpApiResponse respFromRemote = copySnapshotFromRemote(snapshot, storagePoolVO, snapshotName, connectionRemote);
 
             if (respFromRemote.getError() != null) {
-                StorPoolUtil.spLog("Failed to copy snapshot %s to %s due to %s", snapshotName, location, respFromRemote.getError());
-                err = String.format("Failed to copy snapshot %s to %s due to %s", snapshotName, location, respFromRemote.getError());
-                completeCallback(callback, res, destSnapshot.getPath(), err);
+                err = String.format("Failed to copy snapshot [{}] to [{}] due to [{}]", snapshotName, location, respFromRemote.getError());
+                StorPoolUtil.spLog(err);
+                completeCallback(callback, destSnapshot.getPath(), err);
                 return;
             }
             StorPoolUtil.spLog("The snapshot [%s] was copied from remote", snapshotName);
 
             respFromRemote = StorPoolUtil.snapshotReconcile("~" + snapshotName, connectionRemote);
             if (respFromRemote.getError() != null) {
-                StorPoolUtil.spLog("Failed to reconcile snapshot %s from %s due to %s", snapshotName, location, respFromRemote.getError());
-                err = String.format("Failed to reconcile snapshot %s from %s due to %s", snapshotName, location, respFromRemote.getError());
-                completeCallback(callback, res, destSnapshot.getPath(), err);
+                err = String.format("Failed to reconcile snapshot [{}] from [{}] due to [{}]", snapshotName, location, respFromRemote.getError());
+                StorPoolUtil.spLog(err);
+                completeCallback(callback, destSnapshot.getPath(), err);
                 return;
             }
             updateSnapshotPath(snapshotDest, srcSnapshot, destSnapshot);
         } else {
-            completeCallback(callback, res, destSnapshot.getPath(), "The snapshot is not in the right location");
+            completeCallback(callback, destSnapshot.getPath(), "The snapshot is not in the right location");
         }
         SnapshotObjectTO snap = (SnapshotObjectTO) snapshotDest.getTO();
         snap.setPath(srcSnapshot.getPath());
-        CreateObjectAnswer answer = new CreateObjectAnswer(snap);
-        completeCallback(callback, res, destSnapshot.getPath(), err);
+        completeCallback(callback, destSnapshot.getPath(), err);
     }
 
-    private void completeCallback(AsyncCompletionCallback<CreateCmdResult> callback, CreateCmdResult res, String snapshotPath, String err) {
-        res = new CreateCmdResult(snapshotPath, null);
+    private void completeCallback(AsyncCompletionCallback<CreateCmdResult> callback, String snapshotPath, String err) {
+        CreateCmdResult res = new CreateCmdResult(snapshotPath, null);
         res.setResult(err);
         callback.complete(res);
     }
