@@ -107,7 +107,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
             return null;
         }
         if (!isCallerRootAdmin() && (RoleType.Admin == role.getRoleType() || (!role.isPublicRole() && ignorePrivateRoles))) {
-            logger.debug(String.format("Role [id=%s, name=%s] is either of 'Admin' type or is private and is only visible to 'Root admins'.", id, role.getName()));
+            logger.debug("Role [{}] is either of 'Admin' type or is private and is only visible to 'Root admins'.", role);
             return null;
         }
         return role;
@@ -128,7 +128,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         }
         for (Role role : roles) {
             if (!isCallerRootAdmin() && (RoleType.Admin == role.getRoleType() || (!role.isPublicRole() && ignorePrivateRoles))) {
-                logger.debug(String.format("Role [id=%s, name=%s] is either of 'Admin' type or is private and is only visible to 'Root admins'.", role.getId(), role.getName()));
+                logger.debug("Role [{}] is either of 'Admin' type or is private and is only visible to 'Root admins'.", role);
                 continue;
             }
             result.add(role);

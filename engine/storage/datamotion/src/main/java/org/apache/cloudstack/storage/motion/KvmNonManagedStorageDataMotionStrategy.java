@@ -210,7 +210,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
 
         TemplateInfo directDownloadTemplateInfo = templateDataFactory.getReadyBypassedTemplateOnPrimaryStore(srcVolumeInfo.getTemplateId(), destDataStore.getId(), destHost.getId());
         if (directDownloadTemplateInfo != null) {
-            logger.debug(String.format("Template %s was of direct download type and successfully staged to primary store %s", directDownloadTemplateInfo.getId(), directDownloadTemplateInfo.getDataStore().getId()));
+            logger.debug("Template {} was of direct download type and successfully staged to primary store {}", directDownloadTemplateInfo.getImage(), directDownloadTemplateInfo.getDataStore());
             return;
         }
 
@@ -221,8 +221,8 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
                 TemplateInfo sourceTemplateInfo = templateDataFactory.getTemplate(srcVolumeInfo.getTemplateId(), sourceTemplateDataStore);
                 TemplateObjectTO sourceTemplate = new TemplateObjectTO(sourceTemplateInfo);
 
-                logger.debug(String.format("Could not find template [id=%s, name=%s] on the storage pool [id=%s]; copying the template to the target storage pool.",
-                        srcVolumeInfo.getTemplateId(), sourceTemplateInfo.getName(), destDataStore.getId()));
+                logger.debug("Could not find template [id={}, uuid={}, name={}] on the storage pool [{}]; copying the template to the target storage pool.",
+                        srcVolumeInfo.getTemplateId(), sourceTemplateInfo.getUuid(), sourceTemplateInfo.getName(), destDataStore);
 
                 TemplateInfo destTemplateInfo = templateDataFactory.getTemplate(srcVolumeInfo.getTemplateId(), destDataStore);
                 final TemplateObjectTO destTemplate = new TemplateObjectTO(destTemplateInfo);
@@ -234,7 +234,8 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
                 return;
             }
         }
-        logger.debug(String.format("Skipping 'copy template to target filesystem storage before migration' due to the template [%s] already exist on the storage pool [%s].", srcVolumeInfo.getTemplateId(), destStoragePool.getId()));
+        logger.debug("Skipping 'copy template to target filesystem storage before migration' due to the template [{}] already exist on the storage pool [{}].",
+                srcVolumeInfo.getTemplateId(), destStoragePool);
     }
 
     /**
@@ -267,8 +268,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     }
 
     private String generateFailToCopyTemplateMessage(TemplateObjectTO sourceTemplate, DataStore destDataStore) {
-        return String.format("Failed to copy template [id=%s, name=%s] to the primary storage pool [id=%s].", sourceTemplate.getId(),
-                sourceTemplate.getName(), destDataStore.getId());
+        return String.format("Failed to copy template [%s] to the primary storage pool [%s].", sourceTemplate, destDataStore);
     }
 
     /**

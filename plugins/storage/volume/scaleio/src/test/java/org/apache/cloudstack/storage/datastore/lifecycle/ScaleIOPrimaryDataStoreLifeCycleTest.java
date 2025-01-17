@@ -57,6 +57,8 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
@@ -94,6 +96,8 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     private TemplateManager templateMgr;
     @Mock
     HostDao hostDao;
+    @Mock
+    DataCenterDao dataCenterDao;
 
     @InjectMocks
     private StorageManager storageMgr = new StorageManagerImpl();
@@ -109,6 +113,7 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     public void setUp() {
         closeable = MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(scaleIOPrimaryDataStoreLifeCycleTest, "storageMgr", storageMgr);
+        when(dataCenterDao.findById(anyLong())).thenReturn(mock(DataCenterVO.class));
     }
 
     @After
@@ -125,7 +130,7 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
         ScaleIOGatewayClientImpl client = mock(ScaleIOGatewayClientImpl.class);
         ScaleIOGatewayClientConnectionPool pool = mock(ScaleIOGatewayClientConnectionPool.class);
         scaleIOGatewayClientConnectionPoolMocked.when(() -> ScaleIOGatewayClientConnectionPool.getInstance()).thenReturn(pool);
-        lenient().when(pool.getClient(1L, storagePoolDetailsDao)).thenReturn(client);
+        lenient().when(pool.getClient(dataStore, storagePoolDetailsDao)).thenReturn(client);
 
         lenient().when(client.haveConnectedSdcs()).thenReturn(true);
 
@@ -135,14 +140,11 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
                 .thenReturn(List.of(1L, 2L));
 
         when(dataStoreMgr.getDataStore(anyLong(), eq(DataStoreRole.Primary))).thenReturn(store);
-        when(store.getId()).thenReturn(1L);
         when(store.isShared()).thenReturn(true);
-        when(store.getName()).thenReturn("ScaleIOPool");
         when(store.getStorageProviderName()).thenReturn(ScaleIOUtil.PROVIDER_NAME);
 
         when(dataStoreProviderMgr.getDataStoreProvider(ScaleIOUtil.PROVIDER_NAME)).thenReturn(dataStoreProvider);
         when(dataStoreProvider.getName()).thenReturn(ScaleIOUtil.PROVIDER_NAME);
-        when(hostListener.hostConnect(Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
         storageMgr.registerHostListener(ScaleIOUtil.PROVIDER_NAME, hostListener);
 
         when(dataStoreHelper.attachZone(Mockito.any(DataStore.class))).thenReturn(null);

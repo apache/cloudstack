@@ -22,6 +22,7 @@ package org.apache.cloudstack.storage.datastore.lifecycle;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -54,6 +55,7 @@ import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.exception.StorageConflictException;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.DataStoreRole;
@@ -133,19 +135,18 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
         when(_dataStoreMgr.getDataStore(anyLong(), eq(DataStoreRole.Primary))).thenReturn(store);
         when(store.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
         when(store.isShared()).thenReturn(true);
-        when(store.getName()).thenReturn("newPool");
         when(store.getStorageProviderName()).thenReturn("default");
 
 
         when(_dataStoreProviderMgr.getDataStoreProvider(anyString())).thenReturn(dataStoreProvider);
         when(dataStoreProvider.getName()).thenReturn("default");
 
-        when(hostListener.hostConnect(Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
         storageMgr.registerHostListener("default", hostListener);
 
 
         when(hostDao.listIdsForUpRouting(anyLong(), anyLong(), anyLong()))
                 .thenReturn(List.of(1L, 2L));
+        when(hostDao.findById(anyLong())).thenReturn(mock(HostVO.class));
         when(agentMgr.easySend(anyLong(), Mockito.any(ModifyStoragePoolCommand.class))).thenReturn(answer);
         when(answer.getResult()).thenReturn(true);
 

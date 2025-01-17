@@ -54,6 +54,7 @@ import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -72,6 +73,8 @@ import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
+    @Inject
+    DataCenterDao dataCenterDao;
     @Inject
     private ClusterDao clusterDao;
     @Inject
@@ -262,10 +265,10 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
                 primaryDataStoreInfo.getPodId(), primaryDataStoreInfo.getClusterId());
         if (hostIds.isEmpty()) {
             primaryDataStoreDao.expunge(primaryDataStoreInfo.getId());
-            throw new CloudRuntimeException("No hosts are Up to associate a storage pool with in cluster: " + primaryDataStoreInfo.getClusterId());
+            throw new CloudRuntimeException("No hosts are Up to associate a storage pool with in cluster: " + cluster);
         }
 
-        logger.debug("Attaching the pool to each of the hosts in the cluster: {}", primaryDataStoreInfo.getClusterId());
+        logger.debug("Attaching the pool to each of the hosts in the {}", cluster);
         storageMgr.connectHostsToPool(dataStore, hostIds, scope, false, false);
 
         dataStoreHelper.attachCluster(dataStore);
@@ -283,7 +286,8 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
             throw new CloudRuntimeException("Unsupported hypervisor type: " + hypervisorType.toString());
         }
 
-        logger.debug("Attaching the pool to each of the hosts in the zone: {}", scope.getScopeId());
+        logger.debug("Attaching the pool to each of the hosts in the {}",
+                dataCenterDao.findById(scope.getScopeId()));
         List<Long> hostIds = hostDao.listIdsForUpEnabledByZoneAndHypervisor(scope.getScopeId(), hypervisorType);
         storageMgr.connectHostsToPool(dataStore, hostIds, scope, false, false);
 
@@ -335,17 +339,17 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
             DeleteStoragePoolCommand deleteStoragePoolCommand = new DeleteStoragePoolCommand(storagePool);
             final Answer answer = agentMgr.easySend(poolHostVO.getHostId(), deleteStoragePoolCommand);
             if (answer != null && answer.getResult()) {
-                logger.info("Successfully deleted storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId());
+                logger.info("Successfully deleted storage pool: {} from host: {}", storagePool, poolHostVO.getHostId());
             } else {
                 if (answer != null) {
-                    logger.error("Failed to delete storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId() + " , result: " + answer.getResult());
+                    logger.error("Failed to delete storage pool: {} from host: {} , result: {}", storagePool, poolHostVO.getHostId(), answer.getResult());
                 } else {
-                    logger.error("Failed to delete storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId());
+                    logger.error("Failed to delete storage pool: {} from host: {}", storagePool, poolHostVO.getHostId());
                 }
             }
         }
 
-        ScaleIOGatewayClientConnectionPool.getInstance().removeClient(dataStore.getId());
+        ScaleIOGatewayClientConnectionPool.getInstance().removeClient(dataStore);
 
         return dataStoreHelper.deletePrimaryDataStore(dataStore);
     }

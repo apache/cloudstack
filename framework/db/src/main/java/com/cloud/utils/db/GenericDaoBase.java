@@ -1051,6 +1051,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     protected T findById(ID id, boolean removed, Boolean lock) {
+        if (id == null) {
+            return null;
+        }
+
         StringBuilder sql = new StringBuilder(_selectByIdSql);
         if (!removed && _removed != null) {
             sql.append(" AND ").append(_removed.first());

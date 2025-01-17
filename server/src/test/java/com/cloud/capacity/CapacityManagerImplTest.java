@@ -64,7 +64,6 @@ public class CapacityManagerImplTest {
     private Host host;
     private ServiceOffering offering;
     private static final long CLUSTER_ID = 1L;
-    private static final long HOST_ID = 100L;
     private static final int OFFERING_CPU = 4;
     private static final int OFFERING_CPU_SPEED = 2000;
     private static final int OFFERING_MEMORY = 4096;
@@ -74,7 +73,6 @@ public class CapacityManagerImplTest {
         host = mock(Host.class);
         offering = mock(ServiceOffering.class);
         when(host.getClusterId()).thenReturn(CLUSTER_ID);
-        when(host.getId()).thenReturn(HOST_ID);
         when(offering.getCpu()).thenReturn(OFFERING_CPU);
         when(offering.getSpeed()).thenReturn(OFFERING_CPU_SPEED);
         when(offering.getRamSize()).thenReturn(OFFERING_MEMORY);
@@ -130,14 +128,14 @@ public class CapacityManagerImplTest {
         doReturn(clusterDetails).when(capacityManager).getClusterValues(CLUSTER_ID);
         doReturn(true).when(capacityManager).checkIfHostHasCpuCapability(any(Host.class), eq(OFFERING_CPU),
                 eq(OFFERING_CPU_SPEED));
-        doReturn(true).when(capacityManager).checkIfHostHasCapacity(eq(HOST_ID), eq(OFFERING_CPU * OFFERING_CPU_SPEED),
+        doReturn(true).when(capacityManager).checkIfHostHasCapacity(eq(host), eq(OFFERING_CPU * OFFERING_CPU_SPEED),
                 eq(ByteScaleUtils.mebibytesToBytes(OFFERING_MEMORY)), eq(false), eq(cpuOvercommit), eq(memoryOvercommit), eq(false));
         Pair<Boolean, Boolean> result = capacityManager.checkIfHostHasCpuCapabilityAndCapacity(host, offering, false);
         assertTrue(result.first());
         assertTrue(result.second());
         verify(capacityManager).getClusterValues(CLUSTER_ID);
         verify(capacityManager).checkIfHostHasCpuCapability(any(Host.class), eq(OFFERING_CPU), eq(OFFERING_CPU_SPEED));
-        verify(capacityManager).checkIfHostHasCapacity(eq(HOST_ID), eq(OFFERING_CPU * OFFERING_CPU_SPEED),
+        verify(capacityManager).checkIfHostHasCapacity(eq(host), eq(OFFERING_CPU * OFFERING_CPU_SPEED),
                 eq(ByteScaleUtils.mebibytesToBytes(OFFERING_MEMORY)),
                 eq(false), eq(cpuOvercommit), eq(memoryOvercommit), eq(false));
     }
@@ -150,14 +148,14 @@ public class CapacityManagerImplTest {
         doReturn(clusterDetails).when(capacityManager).getClusterValues(CLUSTER_ID);
         doReturn(false).when(capacityManager).checkIfHostHasCpuCapability(any(Host.class), eq(OFFERING_CPU),
                 eq(OFFERING_CPU_SPEED));
-        doReturn(true).when(capacityManager).checkIfHostHasCapacity(eq(HOST_ID), eq(OFFERING_CPU * OFFERING_CPU_SPEED),
+        doReturn(true).when(capacityManager).checkIfHostHasCapacity(eq(host), eq(OFFERING_CPU * OFFERING_CPU_SPEED),
                 eq(ByteScaleUtils.mebibytesToBytes(OFFERING_MEMORY)), eq(false), eq(cpuOvercommit), eq(memoryOvercommit), eq(false));
         Pair<Boolean, Boolean> result = capacityManager.checkIfHostHasCpuCapabilityAndCapacity(host, offering, false);
         assertFalse(result.first());
         assertTrue(result.second());
         verify(capacityManager).getClusterValues(CLUSTER_ID);
         verify(capacityManager).checkIfHostHasCpuCapability(any(Host.class), eq(OFFERING_CPU), eq(OFFERING_CPU_SPEED));
-        verify(capacityManager).checkIfHostHasCapacity(eq(HOST_ID), eq(OFFERING_CPU * OFFERING_CPU_SPEED),
+        verify(capacityManager).checkIfHostHasCapacity(eq(host), eq(OFFERING_CPU * OFFERING_CPU_SPEED),
                 eq(ByteScaleUtils.mebibytesToBytes(OFFERING_MEMORY)),
                 eq(false), eq(cpuOvercommit), eq(memoryOvercommit), eq(false));
     }
@@ -170,14 +168,14 @@ public class CapacityManagerImplTest {
         doReturn(clusterDetails).when(capacityManager).getClusterValues(CLUSTER_ID);
         doReturn(true).when(capacityManager).checkIfHostHasCpuCapability(any(Host.class), eq(OFFERING_CPU),
                 eq(OFFERING_CPU_SPEED));
-        doReturn(false).when(capacityManager).checkIfHostHasCapacity(eq(HOST_ID), eq(OFFERING_CPU * OFFERING_CPU_SPEED),
+        doReturn(false).when(capacityManager).checkIfHostHasCapacity(eq(host), eq(OFFERING_CPU * OFFERING_CPU_SPEED),
                 eq(ByteScaleUtils.mebibytesToBytes(OFFERING_MEMORY)), eq(false), eq(cpuOvercommit), eq(memoryOvercommit), eq(false));
         Pair<Boolean, Boolean> result = capacityManager.checkIfHostHasCpuCapabilityAndCapacity(host, offering, false);
         assertTrue(result.first());
         assertFalse(result.second());
         verify(capacityManager).getClusterValues(CLUSTER_ID);
         verify(capacityManager).checkIfHostHasCpuCapability(any(Host.class), eq(OFFERING_CPU), eq(OFFERING_CPU_SPEED));
-        verify(capacityManager).checkIfHostHasCapacity(eq(HOST_ID), eq(OFFERING_CPU * OFFERING_CPU_SPEED),
+        verify(capacityManager).checkIfHostHasCapacity(eq(host), eq(OFFERING_CPU * OFFERING_CPU_SPEED),
                 eq(ByteScaleUtils.mebibytesToBytes(OFFERING_MEMORY)),
                 eq(false), eq(cpuOvercommit), eq(memoryOvercommit), eq(false));
     }

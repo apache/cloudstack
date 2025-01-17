@@ -240,7 +240,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
             lbAnswer = (ExternalNetworkResourceUsageAnswer)_agentMgr.easySend(externalLoadBalancer.getId(), cmd);
             if (lbAnswer == null || !lbAnswer.getResult()) {
                 String details = (lbAnswer != null) ? lbAnswer.getDetails() : "details unavailable";
-                String msg = "Unable to get external load balancer stats for network" + networkId + " due to: " + details + ".";
+                String msg = String.format("Unable to get external load balancer stats for network %s due to: %s.", network, details);
                 logger.error(msg);
                 return;
             }
@@ -413,7 +413,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
 
                     for (NetworkVO network : networksForAccount) {
                         if (!_networkModel.networkIsConfiguredForExternalNetworking(zoneId, network.getId())) {
-                            logger.debug("Network " + network.getId() + " is not configured for external networking, so skipping usage check.");
+                            logger.debug("Network {} is not configured for external networking, so skipping usage check.", network);
                             continue;
                         }
 
@@ -456,7 +456,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                                     }
                                 } else {
                                     if (logger.isTraceEnabled()) {
-                                        logger.trace("Reusing usage Answer for device id " + fwDeviceId + "for Network " + network.getId());
+                                        logger.trace("Reusing usage Answer for device id {} for Network {}", fwDeviceId, network);
                                     }
                                     firewallAnswer = fwDeviceUsageAnswerMap.get(fwDeviceId);
                                 }
@@ -491,7 +491,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
                                     }
                                 } else {
                                     if (logger.isTraceEnabled()) {
-                                        logger.trace("Reusing usage Answer for device id " + lbDeviceId + "for Network " + network.getId());
+                                        logger.trace("Reusing usage Answer for device id {} for Network {}", lbDeviceId, network);
                                     }
                                     lbAnswer = lbDeviceUsageAnswerMap.get(lbDeviceId);
                                 }
@@ -598,7 +598,7 @@ public class ExternalDeviceUsageManagerImpl extends ManagerBase implements Exter
             } else {
                 URI broadcastURI = network.getBroadcastUri();
                 if (broadcastURI == null) {
-                    logger.debug("Not updating stats for guest network with ID " + network.getId() + " because the network is not implemented.");
+                    logger.debug("Not updating stats for guest network {} because the network is not implemented.", network);
                     return true;
                 } else {
                     long vlanTag = Integer.parseInt(BroadcastDomainType.getValue(broadcastURI));

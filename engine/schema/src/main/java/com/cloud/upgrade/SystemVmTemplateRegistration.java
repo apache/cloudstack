@@ -796,12 +796,16 @@ public class SystemVmTemplateRegistration {
                                     Long templateId = getRegisteredTemplateId(hypervisorAndTemplateName);
                                     if (templateId != null) {
                                         VMTemplateVO templateVO = vmTemplateDao.findById(templateId);
-                                        TemplateDataStoreVO templateDataStoreVO = templateDataStoreDao.findByTemplate(templateId, DataStoreRole.Image);
-                                        String installPath = templateDataStoreVO.getInstallPath();
-                                        if (validateIfSeeded(storeUrlAndId.first(), installPath, nfsVersion)) {
-                                            continue;
-                                        } else if (templateVO != null) {
+                                        TemplateDataStoreVO templateDataStoreVO = templateDataStoreDao.findByStoreTemplate(storeUrlAndId.second(), templateId);
+                                        if (templateDataStoreVO != null) {
+                                            String installPath = templateDataStoreVO.getInstallPath();
+                                            if (validateIfSeeded(storeUrlAndId.first(), installPath, nfsVersion)) {
+                                                continue;
+                                            }
+                                        }
+                                        if (templateVO != null) {
                                             registerTemplate(hypervisorAndTemplateName, storeUrlAndId, templateVO, templateDataStoreVO, filePath);
+                                            updateRegisteredTemplateDetails(templateId, hypervisorAndTemplateName);
                                             continue;
                                         }
                                     }
@@ -825,6 +829,11 @@ public class SystemVmTemplateRegistration {
     }
 
     private void updateRegisteredTemplateDetails(Long templateId, Map.Entry<Hypervisor.HypervisorType, String> hypervisorAndTemplateName) {
+        Pair<Hypervisor.HypervisorType, String> entry = new Pair<>(hypervisorAndTemplateName.getKey(), hypervisorAndTemplateName.getValue());
+        updateRegisteredTemplateDetails(templateId, entry);
+    }
+
+    private void updateRegisteredTemplateDetails(Long templateId, Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName) {
         VMTemplateVO templateVO = vmTemplateDao.findById(templateId);
         templateVO.setTemplateType(Storage.TemplateType.SYSTEM);
         boolean updated = vmTemplateDao.update(templateVO.getId(), templateVO);
@@ -834,11 +843,11 @@ public class SystemVmTemplateRegistration {
             throw new CloudRuntimeException(errMsg);
         }
 
-        updateSystemVMEntries(templateId, hypervisorAndTemplateName.getKey());
+        updateSystemVMEntries(templateId, hypervisorAndTemplateName.first());
 
         // Change value of global configuration parameter router.template.* for the corresponding hypervisor and minreq.sysvmtemplate.version for the ACS version
         Map<String, String> configParams = new HashMap<>();
-        configParams.put(RouterTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()), hypervisorAndTemplateName.getValue());
+        configParams.put(RouterTemplateConfigurationNames.get(hypervisorAndTemplateName.first()), hypervisorAndTemplateName.second());
         configParams.put("minreq.sysvmtemplate.version", getSystemVmTemplateVersion());
         updateConfigurationParams(configParams);
     }

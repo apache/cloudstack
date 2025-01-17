@@ -27,12 +27,16 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.utils.cache.LazyCache;
 import org.apache.commons.collections.MapUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.configuration.ManagementServiceConfiguration;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -41,29 +45,33 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
 
     @Inject MessageBus _messageBus;
     @Inject VMInstanceDao _instanceDao;
+    @Inject HostDao hostDao;
     @Inject ManagementServiceConfiguration mgmtServiceConf;
 
+    private LazyCache<Long, VMInstanceVO> vmCache;
+    private LazyCache<Long, HostVO> hostCache;
+
     public VirtualMachinePowerStateSyncImpl() {
+        vmCache = new LazyCache<>(16, 10, this::getVmFromId);
+        hostCache = new LazyCache<>(16, 10, this::getHostFromId);
     }
 
     @Override
-    public void resetHostSyncState(long hostId) {
-        logger.info("Reset VM power state sync for host: {}.", hostId);
-        _instanceDao.resetHostPowerStateTracking(hostId);
+    public void resetHostSyncState(Host host) {
+        logger.info("Reset VM power state sync for host: {}", host);
+        _instanceDao.resetHostPowerStateTracking(host.getId());
     }
 
     @Override
     public void processHostVmStateReport(long hostId, Map<String, HostVmStateReportEntry> report) {
-        logger.debug("Process host VM state report. host: {}.", hostId);
-
+        logger.debug("Process host VM state report. host: {}", hostCache.get(hostId));
         Map<Long, VirtualMachine.PowerState> translatedInfo = convertVmStateReport(report);
         processReport(hostId, translatedInfo, false);
     }
 
     @Override
     public void processHostVmStatePingReport(long hostId, Map<String, HostVmStateReportEntry> report, boolean force) {
-        logger.debug("Process host VM state report from ping process. host: {}.", hostId);
-
+        logger.debug("Process host VM state report from ping process. host: {}", hostCache.get(hostId));
         Map<Long, VirtualMachine.PowerState> translatedInfo = convertVmStateReport(report);
         processReport(hostId, translatedInfo, force);
     }
@@ -81,13 +89,13 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
         }
         for (Long vmId : vmIds) {
             if (!notUpdated.isEmpty() && !notUpdated.containsKey(vmId)) {
-                logger.debug("VM state report is updated. host: {}, vm id: {}}, power state: {}}",
-                        hostId, vmId, instancePowerStates.get(vmId));
+                logger.debug("VM state report is updated. {}, {}, power state: {}",
+                        () -> hostCache.get(hostId), () -> vmCache.get(vmId), () -> instancePowerStates.get(vmId));
                 _messageBus.publish(null, VirtualMachineManager.Topics.VM_POWER_STATE,
                         PublishScope.GLOBAL, vmId);
                 continue;
             }
-            logger.trace("VM power state does not change, skip DB writing. vm id: {}", vmId);
+            logger.trace("VM power state does not change, skip DB writing. {}", () -> vmCache.get(vmId));
         }
     }
 
@@ -102,9 +110,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
             return;
         }
         Date currentTime = DateUtil.currentGMTTime();
-        if (logger.isDebugEnabled()) {
-            logger.debug("Run missing VM report. current time: " + currentTime.getTime());
-        }
+        logger.debug("Run missing VM report. current time: {}", currentTime.getTime());
         if (!force) {
             List<Long> outdatedVms = vmsThatAreMissingReport.stream()
                     .filter(v -> !_instanceDao.isPowerStateUpToDate(v))
@@ -122,12 +128,10 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
         for (VMInstanceVO instance : vmsThatAreMissingReport) {
             Date vmStateUpdateTime = instance.getPowerStateUpdateTime();
             if (vmStateUpdateTime == null) {
-                logger.warn("VM power state update time is null, falling back to update time for vm id: {}",
-                        instance.getId());
+                logger.warn("VM power state update time is null, falling back to update time for {}", instance);
                 vmStateUpdateTime = instance.getUpdateTime();
                 if (vmStateUpdateTime == null) {
-                    logger.warn("VM update time is null, falling back to creation time for vm id: {}",
-                            instance.getId());
+                    logger.warn("VM update time is null, falling back to creation time for {}", instance);
                     vmStateUpdateTime = instance.getCreated();
                 }
             }
@@ -154,21 +158,18 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
     }
 
     private void processReport(long hostId, Map<Long, VirtualMachine.PowerState> translatedInfo, boolean force) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Process VM state report. Host: {}, number of records in report: {}. VMs: [{}]",
-                    () -> hostId,
-                    translatedInfo::size,
-                    () -> translatedInfo.entrySet().stream().map(entry -> entry.getKey() + ":" + entry.getValue())
-                            .collect(Collectors.joining(", ")) + "]");
-        }
+        logger.debug("Process VM state report. {}, number of records in report: {}. VMs: [{}]",
+                () -> hostCache.get(hostId),
+                translatedInfo::size,
+                () -> translatedInfo.entrySet().stream().map(entry -> entry.getKey() + ":" + entry.getValue())
+                        .collect(Collectors.joining(", ")) + "]");
         updateAndPublishVmPowerStates(hostId, translatedInfo, DateUtil.currentGMTTime());
 
         processMissingVmReport(hostId, translatedInfo.keySet(), force);
 
-        logger.debug("Done with process of VM state report. host: {}", hostId);
+        logger.debug("Done with process of VM state report. host: {}", () -> hostCache.get(hostId));
     }
 
-    @Override
     public Map<Long, VirtualMachine.PowerState> convertVmStateReport(Map<String, HostVmStateReportEntry> states) {
         final HashMap<Long, VirtualMachine.PowerState> map = new HashMap<>();
         if (MapUtils.isEmpty(states)) {
@@ -180,9 +181,17 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
             if (id != null) {
                 map.put(id, entry.getValue().getState());
             } else {
-                logger.debug("Unable to find matched VM in CloudStack DB. name: {}", entry.getKey());
+                logger.debug("Unable to find matched VM in CloudStack DB. name: {} powerstate: {}", entry.getKey(), entry.getValue());
             }
         }
         return map;
+    }
+
+    protected VMInstanceVO getVmFromId(long vmId) {
+        return _instanceDao.findById(vmId);
+    }
+
+    protected HostVO getHostFromId(long hostId) {
+        return hostDao.findById(hostId);
     }
 }

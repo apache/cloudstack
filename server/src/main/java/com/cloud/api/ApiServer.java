@@ -1036,8 +1036,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final Account account = userAcctPair.second();
 
             if (user.getState() != Account.State.ENABLED || !account.getState().equals(Account.State.ENABLED)) {
-                logger.info("disabled or locked user accessing the api, userid = " + user.getId() + "; name = " + user.getUsername() + "; state: " + user.getState() +
-                        "; accountState: " + account.getState());
+                logger.info("disabled or locked user accessing the api, user = {} (state: {}); " +
+                        "account: {} (state: {})", user, user.getState(), account, account.getState());
                 return false;
             }
 
@@ -1052,7 +1052,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             // verify secret key exists
             secretKey = user.getSecretKey();
             if (secretKey == null) {
-                logger.info("User does not have a secret key associated with the account -- ignoring request, username: " + user.getUsername());
+                logger.info("User does not have a secret key associated with the account -- ignoring request, username: {}", user);
                 return false;
             }
 
@@ -1097,7 +1097,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             throw new ServerApiException(ApiErrorCode.UNAUTHORIZED , errorMessage);
         } catch (final OriginDeniedException ex) {
             // in this case we can remove the session with extreme prejudice
-            final String errorMessage = "The user '" + user.getUsername() + "' is not allowed to execute commands from ip address '" + remoteAddress.getHostName() + "'.";
+            final String errorMessage = String.format("The user '%s' is not allowed to execute commands from ip address '%s'.", user, remoteAddress.getHostName());
             logger.debug(errorMessage);
             return false;
         }
@@ -1278,7 +1278,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
         if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.ENABLED) || (account == null) ||
                 !account.getState().equals(Account.State.ENABLED)) {
-            logger.warn("Deleted/Disabled/Locked user with id=" + userId + " attempting to access public API");
+            logger.warn("Deleted/Disabled/Locked user [{} account={}] with id={} attempting to access public API", user, account, userId);
             return false;
         }
         return true;

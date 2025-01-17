@@ -374,9 +374,9 @@ public interface StorageManager extends StorageService {
     void connectHostsToPool(DataStore primaryStore, List<Long> hostIds, Scope scope,
             boolean handleStorageConflictException, boolean errorOnNoUpHost) throws CloudRuntimeException;
 
-    boolean connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
+    boolean connectHostToSharedPool(Host host, long poolId) throws StorageUnavailableException, StorageConflictException;
 
-    void disconnectHostFromSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
+    void disconnectHostFromSharedPool(Host host, StoragePool pool) throws StorageUnavailableException, StorageConflictException;
 
     void enableHost(long hostId) throws StorageUnavailableException, StorageConflictException;
 

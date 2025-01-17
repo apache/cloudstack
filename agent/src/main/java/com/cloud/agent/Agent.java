@@ -56,6 +56,7 @@ import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -135,6 +136,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     ServerResource serverResource;
     Link link;
     Long id;
+    String _uuid;
+    String _name;
 
     ScheduledExecutorService selfTaskExecutor;
     ScheduledExecutorService certExecutor;
@@ -219,9 +222,12 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         serverResource = resource;
         link = null;
         resource.setAgentControl(this);
-        final String value = this.shell.getPersistentProperty(getResourceName(), "id");
+        final String value = shell.getPersistentProperty(getResourceName(), "id");
+        _uuid = shell.getPersistentProperty(getResourceName(), "uuid");
+        _name = shell.getPersistentProperty(getResourceName(), "name");
         id = value != null ? Long.parseLong(value) : null;
-        logger.info("id is {}", (id != null ? id : ""));
+        logger.info("Initialising agent [id: {}, uuid: {}, name: {}]", ObjectUtils.defaultIfNull(id, ""), _uuid, _name);
+
         final Map<String, Object> params = new HashMap<>();
         // merge with properties from command line to let resource access command line parameters
         for (final Map.Entry<String, Object> cmdLineProp : this.shell.getCmdLineProperties().entrySet()) {
@@ -238,15 +244,17 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         logger.info("{} with host = {}, local id = {}", this, host, localAgentId);
     }
 
+
     @Override
     public String toString() {
-        return String.format("Agent [id = %s, type = %s, zone = %s, pod = %s, workers = %d, host = %s, port = %d]",
-                (id != null ? String.valueOf(id) : "new"),
+        return String.format("Agent [id = %s, uuid = %s, name = %s, type = %s, zone = %s, pod = %s, workers = %d, port = %d]",
+                ObjectUtils.defaultIfNull(id, "new"),
+                _uuid,
+                _name,
                 getResourceName(),
                 this.shell.getZone(),
                 this.shell.getPod(),
                 this.shell.getWorkers(),
-                this.shell.getNextHost(),
                 this.shell.getPort());
     }
 
@@ -404,6 +412,24 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         logger.debug("Set agent id {}", id);
         this.id = id;
         shell.setPersistentProperty(getResourceName(), "id", Long.toString(id));
+    }
+
+    public String getUuid() {
+        return _uuid;
+    }
+
+    public void setUuid(String uuid) {
+        this._uuid = uuid;
+        shell.setPersistentProperty(getResourceName(), "uuid", uuid);
+    }
+
+    public String getName() {
+        return _name;
+    }
+
+    public void setName(String name) {
+        this._name = name;
+        shell.setPersistentProperty(getResourceName(), "name", name);
     }
 
     private void scheduleCertificateRenewalTask() {
@@ -655,9 +681,12 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             return;
         }
 
-        logger.info("Process agent startup answer, agent id = {}", startup.getHostId());
+        logger.info("Process agent startup answer, agent [id: {}, uuid: {}, name: {}] connected to the server",
+                startup.getHostId(), startup.getHostUuid(), startup.getHostName());
 
         setId(startup.getHostId());
+        setUuid(startup.getHostUuid());
+        setName(startup.getHostName());
         pingInterval = startup.getPingInterval() * 1000L; // change to ms.
 
         updateLastPingResponseTime();
@@ -665,7 +694,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
 
         outRequestHandler.setKeepAliveTime(2 * pingInterval, TimeUnit.MILLISECONDS);
 
-        logger.info("Startup Response Received: agent id = {}", getId());
+        logger.info("Startup Response Received: agent [id: {}, uuid: {}, name: {}]",
+                startup.getHostId(), startup.getHostUuid(), startup.getHostName());
     }
 
     protected void processRequest(final Request request, final Link link) {
@@ -921,15 +951,17 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             NumbersUtil.enableHumanReadableSizes = humanReadable;
         }
 
-        logger.info("Processing agent ready command, agent id = {}", ready.getHostId());
+        logger.info("Processing agent ready command, agent id = {}, uuid = {}, name = {}", ready.getHostId(), ready.getHostUuid(), ready.getHostName());
         if (ready.getHostId() != null) {
             setId(ready.getHostId());
+            setUuid(ready.getHostUuid());
+            setName(ready.getHostName());
         }
 
         verifyAgentArch(ready.getArch());
         processManagementServerList(ready.getMsHostList(), ready.getLbAlgorithm(), ready.getLbCheckInterval());
 
-        logger.info("Ready command is processed for agent id = {}", getId());
+        logger.info("Ready command is processed for agent [id: {}, uuid: {}, name: {}]", getId(), getUuid(), getName());
     }
 
     private void verifyAgentArch(String arch) {
