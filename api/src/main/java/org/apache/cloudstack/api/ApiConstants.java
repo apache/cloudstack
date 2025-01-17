@@ -1213,6 +1213,14 @@ public class ApiConstants {
             "numeric value will be applied; if the result is neither a boolean nor a numeric value, the tariff will not be applied. If the rule is not informed, the tariff " +
             "value will be applied.";
 
+    public static final String PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS = "The recommended format is \"yyyy-MM-dd'T'HH:mm:ssZ\" (e.g.: \"2023-01-01T12:00:00+0100\"); " +
+            "however, the following formats are also accepted: \"yyyy-MM-dd HH:mm:ss\" (e.g.: \"2023-01-01 12:00:00\") and \"yyyy-MM-dd\" (e.g.: \"2023-01-01\" - if the time is not " +
+            "added, it will be interpreted as \"00:00:00\"). If the recommended format is not used, the date will be considered in the server timezone.";
+
+    public static final String PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS = "The recommended format is \"yyyy-MM-dd'T'HH:mm:ssZ\" (e.g.: \"2023-01-01T12:00:00+0100\"); " +
+            "however, the following formats are also accepted: \"yyyy-MM-dd HH:mm:ss\" (e.g.: \"2023-01-01 12:00:00\") and \"yyyy-MM-dd\" (e.g.: \"2023-01-01\" - if the time is not " +
+            "added, it will be interpreted as \"23:59:59\"). If the recommended format is not used, the date will be considered in the server timezone.";
+
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
      * Qemu guests support "threads" and "native" options Since 0.8.8 ; "io_uring" is supported Since 6.3.0 (QEMU 5.0).
@@ -1234,14 +1242,6 @@ public class ApiConstants {
             return ioDriver;
         }
     }
-
-    public static final String PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS = "The recommended format is \"yyyy-MM-dd'T'HH:mm:ssZ\" (e.g.: \"2023-01-01T12:00:00+0100\"); " +
-            "however, the following formats are also accepted: \"yyyy-MM-dd HH:mm:ss\" (e.g.: \"2023-01-01 12:00:00\") and \"yyyy-MM-dd\" (e.g.: \"2023-01-01\" - if the time is not " +
-            "added, it will be interpreted as \"00:00:00\"). If the recommended format is not used, the date will be considered in the server timezone.";
-
-    public static final String PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS = "The recommended format is \"yyyy-MM-dd'T'HH:mm:ssZ\" (e.g.: \"2023-01-01T12:00:00+0100\"); " +
-            "however, the following formats are also accepted: \"yyyy-MM-dd HH:mm:ss\" (e.g.: \"2023-01-01 12:00:00\") and \"yyyy-MM-dd\" (e.g.: \"2023-01-01\" - if the time is not " +
-            "added, it will be interpreted as \"23:59:59\"). If the recommended format is not used, the date will be considered in the server timezone.";
 
     public enum BootType {
         UEFI, BIOS;
