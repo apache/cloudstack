@@ -988,20 +988,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     public UserVm resetVMSSHKey(ResetVMSSHKeyCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException {
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
-        Long vmId = cmd.getId();
         UserVmVO userVm = _vmDao.findById(cmd.getId());
 
         if (userVm == null) {
-            throw new InvalidParameterValueException("unable to find a virtual machine by id" + cmd.getId());
+            throw new InvalidParameterValueException("unable to find a virtual machine by id " + cmd.getId());
         }
         if (UserVmManager.SHAREDFSVM.equals(userVm.getUserVmType())) {
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
         }
 
-        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
-
         // Do parameters input validation
-
         if (userVm.getState() == State.Error || userVm.getState() == State.Expunging) {
             logger.error("vm ({}) is not in the right state: {}", userVm, userVm.getState());
             throw new InvalidParameterValueException("Vm with specified id is not in the right state");
@@ -9040,7 +9036,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         //Verify that all objects exist before passing them to the service
         Account owner = _accountService.getActiveAccountById(cmd.getEntityOwnerId());
         Long zoneId = cmd.getZoneId();
-        DataCenter zone = _entityMgr.findById(DataCenter.class, zoneId);
+        DataCenter zone = _dcDao.findById(zoneId);
         if (zone == null) {
             throw new InvalidParameterValueException("Unable to find zone by id=" + zoneId);
         }
@@ -9060,7 +9056,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long serviceOfferingId = cmd.getServiceOfferingId();
         ServiceOffering serviceOffering;
         if (serviceOfferingId != null) {
-            serviceOffering = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
+            serviceOffering = serviceOfferingDao.findById(serviceOfferingId);
             if (serviceOffering == null) {
                 throw new InvalidParameterValueException("Unable to find service offering: " + serviceOfferingId);
             }
@@ -9078,7 +9074,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long overrideDiskOfferingId = cmd.getOverrideDiskOfferingId();
         if (overrideDiskOfferingId == null) {
             DiskOfferingInfo rootDiskOfferingInfo = backupManager.getRootDiskOfferingInfoFromBackup(backup);
-            if (serviceOffering.getDiskOfferingId() != rootDiskOfferingInfo.getDiskOffering().getId()) {
+            if (rootDiskOfferingInfo != null &&
+                serviceOffering.getDiskOfferingId() != rootDiskOfferingInfo.getDiskOffering().getId()) {
                 overrideDiskOfferingId = rootDiskOfferingInfo.getDiskOffering().getId();
                 Map<String, String> details = cmd.getDetails();
                 details.put(VmDetailConstants.ROOT_DISK_SIZE, rootDiskOfferingInfo.getSize().toString());
@@ -9106,7 +9103,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long templateId = cmd.getTemplateId();
         VirtualMachineTemplate template;
         if (templateId != null) {
-            template = _entityMgr.findById(VirtualMachineTemplate.class, templateId);
+            template = _templateDao.findById(templateId);
             if (template == null) {
                 throw new InvalidParameterValueException("Unable to use template " + templateId);
             }
@@ -9136,7 +9133,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             dataDiskOfferingsInfo = backupManager.getDataDiskOfferingListFromBackup(backup);
         }
 
-        DiskOffering diskOfferingMappedInServiceOffering = _entityMgr.findById(DiskOffering.class, serviceOffering.getDiskOfferingId());
+        DiskOffering diskOfferingMappedInServiceOffering = _diskOfferingDao.findById(serviceOffering.getDiskOfferingId());
         if (diskOfferingMappedInServiceOffering.isUseLocalStorage()) {
             throw new InvalidParameterValueException("Local storage disk offering not supported for instance created from backup");
         }
@@ -9149,7 +9146,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         Map<Long, IpAddresses> ipToNetworkMap = cmd.getIpToNetworkMap();
         if (networkIds == null && ipToNetworkMap == null) {
-            List<String> networkUuids = List.of(backup.getDetail(ApiConstants.NETWORK_IDS).split(","));
+            String networkIdsString = backup.getDetail(ApiConstants.NETWORK_IDS);
+            if (networkIdsString == null) {
+                throw new CloudRuntimeException("Backup doesn't contain network information. Please specify atleast one valid network while creating instance");
+            }
+            List<String> networkUuids = List.of(networkIdsString.split(","));
             ipToNetworkMap = new LinkedHashMap<Long, IpAddresses>();
             networkIds = new ArrayList<Long>();
             for (String networkUuid: networkUuids) {
