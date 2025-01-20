@@ -315,10 +315,10 @@ export default {
     },
     fetchStaticFieldData (arrayField) {
       if (arrayField.includes('displaynetwork')) {
-          const typeIndex = this.fields.findIndex(item => item.name === 'displaynetwork')
-          this.fields[typeIndex].loading = true
-          this.fields[typeIndex].opts = this.fetchBoolean()
-          this.fields[typeIndex].loading = false
+        const typeIndex = this.fields.findIndex(item => item.name === 'displaynetwork')
+        this.fields[typeIndex].loading = true
+        this.fields[typeIndex].opts = this.fetchBoolean()
+        this.fields[typeIndex].loading = false
       }
       if (arrayField.includes('type')) {
         if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
