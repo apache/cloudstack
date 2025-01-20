@@ -42,8 +42,8 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = "listVmwareDcVms", responseObject = VmwareRequestReponse.class,
-        description = "Lists the VMs in a VMware Datacenter",
+@APICommand(name = "listVmwareDcVms", responseObject = VmwareRequestResponse.class,
+        description = "Lists the VMs in a Vmware Datacenter",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVmwareDcVmsCmd extends BaseCmd  implements ListVmwareDcItems {
 
@@ -61,7 +61,7 @@ public class ListVmwareDcVmsCmd extends BaseCmd  implements ListVmwareDcItems {
             description = "The name/ip of vCenter. Make sure it is IP address or full qualified domain name for host running vCenter server.")
     private String vcenter;
 
-    @Parameter(name = ApiConstants.DATACENTER_NAME, type = CommandType.STRING, description = "Name of VMware datacenter.")
+    @Parameter(name = ApiConstants.DATACENTER_NAME, type = CommandType.STRING, description = "Name of Vmware datacenter.")
     private String datacenterName;
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "The Username required to connect to resource.")
@@ -127,13 +127,13 @@ public class ListVmwareDcVmsCmd extends BaseCmd  implements ListVmwareDcItems {
                     baseResponseList.add(resp);
                 }
             }
-            VmwareRequestReponse<BaseResponse> response = new VmwareRequestReponse<>();
+            VmwareRequestResponse<BaseResponse> response = new VmwareRequestResponse<>();
             response.setResponses(baseResponseList, baseResponseList.size());
             response.setResponseName(getCommandName());
             response.setToken(results.first());
             setResponseObject(response);
         } catch (CloudRuntimeException e) {
-            String errorMsg = String.format("Error retrieving VMs from VMware VC: %s", e.getMessage());
+            String errorMsg = String.format("Error retrieving VMs from Vmware VC: %s", e.getMessage());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMsg);
         }
     }
@@ -152,5 +152,10 @@ public class ListVmwareDcVmsCmd extends BaseCmd  implements ListVmwareDcItems {
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public String getCommandName() {
+        return "listVmwareDcVmsResponse".toLowerCase();
     }
 }

@@ -269,8 +269,8 @@ export default {
     listZoneVmwareDcs () {
       this.loading = true
       api('listVmwareDcs', { zoneid: this.sourcezoneid }).then(response => {
-        if (response.listvmwaredcsresponse.VMwareDC && response.listvmwaredcsresponse.VMwareDC.length > 0) {
-          this.existingvcenter = response.listvmwaredcsresponse.VMwareDC
+        if (response.listvmwaredcsresponse.vmwaredc && response.listvmwaredcsresponse.vmwaredc.length > 0) {
+          this.existingvcenter = response.listvmwaredcsresponse.vmwaredc
         }
       }).catch(error => {
         this.$notifyError(error)

@@ -23,9 +23,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.response.ListResponse;
 
-public class VmwareRequestReponse<T extends ResponseObject> extends ListResponse<T> {
+public class VmwareRequestResponse<T extends ResponseObject> extends ListResponse<T> {
     @SerializedName(ApiConstants.TOKEN)
-    @Param(description = "The VMware API token to use for retrieving further responses with")
+    @Param(description = "The Vmware API token to use for retrieving further responses with")
     private String token;
 
     public String getToken() {
