@@ -19,6 +19,7 @@ package com.cloud.ha;
 import static org.apache.cloudstack.framework.config.ConfigKey.Scope.Zone;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -134,7 +135,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             "Enable/Disable alerts for the VM HA operations, it is enabled by default.", true, Zone);
 
     protected static final List<ReasonType> CancellableWorkReasonTypes =
-            List.of(ReasonType.HostMaintenance, ReasonType.HostDown, ReasonType.HostDegraded);
+            Arrays.asList(ReasonType.HostMaintenance, ReasonType.HostDown, ReasonType.HostDegraded);
 
     WorkerThread[] _workers;
     boolean _stopped;
@@ -789,7 +790,6 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         if (!CancellableWorkReasonTypes.contains(work.getReasonType())) {
             return false;
         }
-
         Status hostStatus = investigate(work.getHostId());
         if (!Status.Up.equals(hostStatus)) {
             return false;

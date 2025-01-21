@@ -449,13 +449,22 @@ public class HighAvailabilityManagerImplTest {
         Mockito.verify(mockWork, Mockito.never()).setStep(Mockito.any());
     }
 
-    @Test
-    public void testCheckAndCancelWorkIfNeeded_InvalidReasonType() {
+    private void runInvalidReasonCheckAndCancelWorkIfNeeded(HighAvailabilityManager.ReasonType reasonType) {
         Mockito.when(mockWork.getStep()).thenReturn(Step.Investigating);
-        Mockito.when(mockWork.getReasonType()).thenReturn(HighAvailabilityManager.ReasonType.Unknown);
+        Mockito.when(mockWork.getReasonType()).thenReturn(reasonType);
         boolean result = highAvailabilityManagerSpy.checkAndCancelWorkIfNeeded(mockWork);
         assertFalse(result);
         Mockito.verify(mockWork, Mockito.never()).setStep(Mockito.any());
+    }
+
+    @Test
+    public void testCheckAndCancelWorkIfNeeded_InvalidReasonType() {
+        runInvalidReasonCheckAndCancelWorkIfNeeded(HighAvailabilityManager.ReasonType.Unknown);
+    }
+
+    @Test
+    public void testCheckAndCancelWorkIfNeeded_NullReasonType() {
+        runInvalidReasonCheckAndCancelWorkIfNeeded(null);
     }
 
     @Test
