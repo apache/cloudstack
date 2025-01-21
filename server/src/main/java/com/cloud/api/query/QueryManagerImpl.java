@@ -3385,7 +3385,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<DiskOfferingResponse> searchForDiskOfferings(ListDiskOfferingsCmd cmd) {
         Pair<List<DiskOfferingJoinVO>, Integer> result = searchForDiskOfferingsInternal(cmd);
-        ListResponse<DiskOfferingResponse> response = new ListResponse<DiskOfferingResponse>();
+        ListResponse<DiskOfferingResponse> response = new ListResponse<>();
         List<DiskOfferingResponse> offeringResponses = ViewResponseHelper.createDiskOfferingResponse(result.first().toArray(new DiskOfferingJoinVO[result.first().size()]));
         response.setResponses(offeringResponses, result.second());
         return response;
@@ -3444,16 +3444,21 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Boolean encrypt = cmd.getEncrypt();
         String storageType = cmd.getStorageType();
         DiskOffering.State state = cmd.getState();
+        String tags = cmd.getTags();
 
         Filter searchFilter = new Filter(DiskOfferingVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
         searchFilter.addOrderBy(DiskOfferingVO.class, "id", true);
-        SearchBuilder<DiskOfferingVO> diskOfferingSearch = _diskOfferingDao.createSearchBuilder();
+        SearchBuilder<DiskOfferingJoinVO> diskOfferingSearch = _diskOfferingJoinDao.createSearchBuilder();
         diskOfferingSearch.select(null, Func.DISTINCT, diskOfferingSearch.entity().getId()); // select distinct
 
         diskOfferingSearch.and("computeOnly", diskOfferingSearch.entity().isComputeOnly(), Op.EQ);
 
         if (state != null) {
             diskOfferingSearch.and("state", diskOfferingSearch.entity().getState(), Op.EQ);
+        }
+
+        if (tags != null) {
+            diskOfferingSearch.and("tags", SearchCriteria.Op.EQ, tags);
         }
 
         // Keeping this logic consistent with domain specific zones
@@ -3471,17 +3476,17 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                         domainDetailsSearch.entity().getName(), diskOfferingSearch.entity().setString(ApiConstants.DOMAIN_ID));
 
                 if (!isRootAdmin) {
-                    diskOfferingSearch.and("displayOffering", diskOfferingSearch.entity().getDisplayOffering(), Op.EQ);
+                    diskOfferingSearch.and("displayOffering", diskOfferingSearch.entity().isDisplayOffering(), Op.EQ);
                 }
 
-                SearchCriteria<DiskOfferingVO> sc = diskOfferingSearch.create();
+                SearchCriteria<DiskOfferingJoinVO> sc = diskOfferingSearch.create();
                 sc.setParameters("computeOnly", false);
                 sc.setParameters("activeState", DiskOffering.State.Active);
 
                 sc.setJoinParameters("domainDetailsSearch", "domainId", domainId);
 
-                Pair<List<DiskOfferingVO>, Integer> uniquePairs = _diskOfferingDao.searchAndCount(sc, searchFilter);
-                List<Long> idsArray = uniquePairs.first().stream().map(DiskOfferingVO::getId).collect(Collectors.toList());
+                Pair<List<DiskOfferingJoinVO>, Integer> uniquePairs = _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
+                List<Long> idsArray = uniquePairs.first().stream().map(DiskOfferingJoinVO::getId).collect(Collectors.toList());
                 return new Ternary<>(idsArray, uniquePairs.second(), new String[0]);
             } else {
                 throw new PermissionDeniedException("The account:" + account.getAccountName() + " does not fall in the same domain hierarchy as the disk offering");
@@ -3564,7 +3569,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     domainDetailsSearch.entity().getName(), diskOfferingSearch.entity().setString(ApiConstants.DOMAIN_ID));
         }
 
-        SearchCriteria<DiskOfferingVO> sc = diskOfferingSearch.create();
+        SearchCriteria<DiskOfferingJoinVO> sc = diskOfferingSearch.create();
 
         sc.setParameters("computeOnly", false);
 
@@ -3624,7 +3629,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setJoinParameters("domainDetailsSearch", "domainIdIN", domainIds.toArray());
         }
 
-        Pair<List<DiskOfferingVO>, Integer> uniquePairs = _diskOfferingDao.searchAndCount(sc, searchFilter);
+        Pair<List<DiskOfferingJoinVO>, Integer> uniquePairs = _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
         String[] requiredTagsArray = new String[0];
         if (CollectionUtils.isNotEmpty(uniquePairs.first()) && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.valueIn(zoneId)) {
             if (volumeId != null) {
@@ -3633,7 +3638,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 requiredTagsArray = _storageTagDao.getStoragePoolTags(storagePoolId).toArray(new String[0]);
             }
         }
-        List<Long> idsArray = uniquePairs.first().stream().map(DiskOfferingVO::getId).collect(Collectors.toList());
+        List<Long> idsArray = uniquePairs.first().stream().map(DiskOfferingJoinVO::getId).collect(Collectors.toList());
 
         return new Ternary<>(idsArray, uniquePairs.second(), requiredTagsArray);
     }

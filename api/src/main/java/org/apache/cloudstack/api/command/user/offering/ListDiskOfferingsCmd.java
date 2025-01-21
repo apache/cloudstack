@@ -77,6 +77,9 @@ public class ListDiskOfferingsCmd extends BaseListProjectAndAccountResourcesCmd 
                since = "4.19")
     private String diskOfferingState;
 
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "list network offerings by tags", length = 4096)
+    private String tags;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -114,6 +117,10 @@ public class ListDiskOfferingsCmd extends BaseListProjectAndAccountResourcesCmd 
             throw new IllegalArgumentException("Invalid state value: " + diskOfferingState);
         }
         return state;
+    }
+
+    public String getTags() {
+        return tags;
     }
 
     /////////////////////////////////////////////////////
