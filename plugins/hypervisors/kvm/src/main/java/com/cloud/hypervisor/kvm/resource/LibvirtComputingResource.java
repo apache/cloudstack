@@ -3098,7 +3098,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setBusType(DiskDef.DiskBus.SCSI);
                 }
             } else {
-                if (diskBusType == DiskDef.DiskBus.SCSI || diskBusType == DiskDef.DiskBus.VIRTIO_BLK) {
+                if (diskBusType == DiskDef.DiskBus.SCSI || diskBusType == DiskDef.DiskBus.VIRTIOBLK) {
                     disk.setQemuDriver(true);
                     disk.setDiscard(DiscardType.UNMAP);
                 }
