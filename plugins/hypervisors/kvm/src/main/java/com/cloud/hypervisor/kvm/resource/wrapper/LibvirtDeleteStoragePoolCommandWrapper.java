@@ -22,11 +22,19 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.agent.dao.impl.PropertiesStorage;
+import com.cloud.agent.properties.AgentProperties;
+import com.cloud.agent.properties.AgentPropertiesFileHandler;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.stream.Collectors;
 
 @ResourceWrapper(handles =  DeleteStoragePoolCommand.class)
 public final class LibvirtDeleteStoragePoolCommandWrapper extends CommandWrapper<DeleteStoragePoolCommand, Answer, LibvirtComputingResource> {
@@ -39,6 +47,34 @@ public final class LibvirtDeleteStoragePoolCommandWrapper extends CommandWrapper
                 final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
 
                 storagePoolMgr.deleteStoragePool(pool.getType(), pool.getUuid());
+                if (Storage.StoragePoolType.Filesystem.equals(pool.getType()) && !libvirtComputingResource.DEFAULT_LOCAL_STORAGE_PATH.equals(pool.getPath())) {
+                    String localStoragePath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LOCAL_STORAGE_PATH);
+                    String localStorageUuid = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LOCAL_STORAGE_UUID);
+
+                    String uuidToRemove = pool.getUuid();
+                    String pathToRemove = pool.getPath();
+
+                    if (localStorageUuid != null && uuidToRemove != null) {
+                        localStorageUuid = Arrays.stream(localStorageUuid.split(","))
+                                .filter(uuid -> !uuid.equals(uuidToRemove))
+                                .collect(Collectors.joining(","));
+                    }
+
+                    if (localStoragePath != null && pathToRemove != null) {
+                        localStoragePath = Arrays.stream(localStoragePath.split(","))
+                                .filter(path -> !path.equals(pathToRemove))
+                                .collect(Collectors.joining(","));
+                    }
+
+                    PropertiesStorage agentProperties = new PropertiesStorage();
+                    agentProperties.configure("AgentProperties", new HashMap<String, Object>());
+                    if (localStorageUuid != null) {
+                        agentProperties.persist(AgentProperties.LOCAL_STORAGE_UUID.getName(), localStorageUuid);
+                    }
+                    if (localStoragePath != null) {
+                        agentProperties.persist(AgentProperties.LOCAL_STORAGE_PATH.getName(), localStoragePath);
+                    }
+                }
             }
 
             return new Answer(command);
