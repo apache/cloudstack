@@ -21,3 +21,6 @@
 
 -- Add last_id to the volumes table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'last_id', 'bigint(20) unsigned DEFAULT NULL');
+
+ALTER TABLE `cloud`.`counter` DROP KEY `uc_counter__provider__source__value`;
+CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.counter', 'uc_counter__provider__source__value_removed', '(provider, source, value, removed)');
