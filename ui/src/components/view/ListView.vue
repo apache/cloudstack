@@ -220,6 +220,10 @@
       <template v-if="column.key === 'allocationstate'">
         <status :text="text ? text : ''" displayText />
       </template>
+      <template v-if="column.key === 'redundantstate'">
+        <status v-if="record && record.isredundantrouter" :text="text ? text : ''" displayText />
+        <status v-else :text="'N/A'" displayText :styles="{ 'min-width': '80px' }" />
+      </template>
       <template v-if="column.key === 'resourcestate'">
         <status :text="text ? text : ''" displayText />
       </template>
