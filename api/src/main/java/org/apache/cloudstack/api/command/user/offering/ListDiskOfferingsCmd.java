@@ -77,7 +77,7 @@ public class ListDiskOfferingsCmd extends BaseListProjectAndAccountResourcesCmd 
                since = "4.19")
     private String diskOfferingState;
 
-    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "list network offerings by tags", length = 4096)
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "list disk offerings by tags", length = 4096)
     private String tags;
 
     /////////////////////////////////////////////////////
