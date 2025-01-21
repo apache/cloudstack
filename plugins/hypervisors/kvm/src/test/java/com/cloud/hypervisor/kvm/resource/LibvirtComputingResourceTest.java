@@ -6408,4 +6408,14 @@ public class LibvirtComputingResourceTest {
             assertEquals(DiskDef.DiscardType.UNMAP, rootDisk.getDiscard());
         }
     }
+
+    @Test
+    public void testGetDiskModelFromVMDetailVirtioBlk() {
+        VirtualMachineTO virtualMachineTO = Mockito.mock(VirtualMachineTO.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "virtio_blk");
+        Mockito.when(virtualMachineTO.getDetails()).thenReturn(details);
+        DiskDef.DiskBus diskBus = libvirtComputingResourceSpy.getDiskModelFromVMDetail(virtualMachineTO);
+        assertEquals(DiskDef.DiskBus.VIRTIO_BLK, diskBus);
+    }
 }

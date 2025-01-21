@@ -1408,12 +1408,14 @@ public class KVMStorageProcessor implements StorageProcessor {
                     if (disk.getDeviceType() == DeviceType.DISK) {
                         if (disk.getBusType() == DiskDef.DiskBus.SCSI) {
                             busT = DiskDef.DiskBus.SCSI;
+                        } else if (disk.getBusType() == DiskDef.DiskBus.VIRTIO_BLK) {
+                            busT = DiskDef.DiskBus.VIRTIO_BLK;
                         }
                         break;
                     }
                 }
                 diskdef = new DiskDef();
-                if (busT == DiskDef.DiskBus.SCSI) {
+                if (busT == DiskDef.DiskBus.SCSI || busT == DiskDef.DiskBus.VIRTIO_BLK) {
                     diskdef.setQemuDriver(true);
                     diskdef.setDiscard(DiscardType.UNMAP);
                 }
