@@ -89,7 +89,7 @@ public class NetworkACLVO implements NetworkACL {
 
     @Override
     public String toString() {
-        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "uuid", "name", "vpcId");
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "name", "vpcId");
     }
 
     public void setUuid(String uuid) {

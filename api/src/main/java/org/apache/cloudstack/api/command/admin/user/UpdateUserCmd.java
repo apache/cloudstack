@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.admin.user;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -69,6 +70,9 @@ public class UpdateUserCmd extends BaseCmd {
     @Parameter(name = ApiConstants.USER_SECRET_KEY, type = CommandType.STRING, description = "The secret key for the user. Must be specified with userApiKey")
     private String secretKey;
 
+    @Parameter(name = ApiConstants.API_KEY_ACCESS, type = CommandType.STRING, description = "Determines if Api key access for this user is enabled, disabled or inherits the value from its parent, the owning account", since = "4.20.1.0", authorized = {RoleType.Admin})
+    private String apiKeyAccess;
+
     @Parameter(name = ApiConstants.TIMEZONE,
             type = CommandType.STRING,
             description = "Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
@@ -118,6 +122,10 @@ public class UpdateUserCmd extends BaseCmd {
 
     public String getSecretKey() {
         return secretKey;
+    }
+
+    public String getApiKeyAccess() {
+        return apiKeyAccess;
     }
 
     public String getTimezone() {

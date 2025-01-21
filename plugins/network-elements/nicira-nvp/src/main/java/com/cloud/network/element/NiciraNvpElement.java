@@ -187,18 +187,18 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
     }
 
     protected boolean canHandle(Network network, Service service) {
-        logger.debug("Checking if NiciraNvpElement can handle service " + service.getName() + " on network " + network.getDisplayText());
+        logger.debug(String.format("Checking if NiciraNvpElement can handle service %s on network %s", service.getName(), network));
         if (network.getBroadcastDomainType() != BroadcastDomainType.Lswitch) {
             return false;
         }
 
         if (!networkModel.isProviderForNetwork(getProvider(), network.getId())) {
-            logger.debug("NiciraNvpElement is not a provider for network " + network.getDisplayText());
+            logger.debug(String.format("NiciraNvpElement is not a provider for network %s", network));
             return false;
         }
 
         if (!ntwkSrvcDao.canProviderSupportServiceInNetwork(network.getId(), service, Network.Provider.NiciraNvp)) {
-            logger.debug("NiciraNvpElement can't provide the " + service.getName() + " service on network " + network.getDisplayText());
+            logger.debug(String.format("NiciraNvpElement can't provide the %s service on network %s", service.getName(), network));
             return false;
         }
 
@@ -215,7 +215,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
     @Override
     public boolean implement(Network network, NetworkOffering offering, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
     ResourceUnavailableException, InsufficientCapacityException {
-        logger.debug("entering NiciraNvpElement implement function for network " + network.getDisplayText() + " (state " + network.getState() + ")");
+        logger.debug(String.format("entering NiciraNvpElement implement function for network %s (state %s)", network, network.getState()));
 
         if (!canHandle(network, Service.Connectivity)) {
             return false;
@@ -276,7 +276,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
                                     context.getAccount().getAccountName());
             CreateLogicalRouterAnswer answer = (CreateLogicalRouterAnswer)agentMgr.easySend(niciraNvpHost.getId(), cmd);
             if (answer.getResult() == false) {
-                logger.error("Failed to create Logical Router for network " + network.getDisplayText());
+                logger.error(String.format("Failed to create Logical Router for network %s", network));
                 return false;
             }
 
@@ -313,7 +313,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
                 new ConfigureSharedNetworkUuidCommand(lRouterUuid, lSwitchUuid, portIpAddress, ownerName, network.getId());
         ConfigureSharedNetworkUuidAnswer answer = (ConfigureSharedNetworkUuidAnswer)agentMgr.easySend(niciraNvpHost.getId(), cmd);
         if (answer.getResult() == false) {
-            logger.error("Failed to configure Logical Router for Shared network " + network.getDisplayText());
+            logger.error(String.format("Failed to configure Logical Router for Shared network %s", network));
             return false;
         }
         return true;
@@ -332,7 +332,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
                         new ConfigureSharedNetworkVlanIdCommand(lSwitchUuid, l2GatewayServiceUuid , vlanId, ownerName, network.getId());
                 ConfigureSharedNetworkVlanIdAnswer answer = (ConfigureSharedNetworkVlanIdAnswer)agentMgr.easySend(niciraNvpHost.getId(), cmd);
                 if (answer.getResult() == false) {
-                    logger.error("Failed to configure Shared network " + network.getDisplayText());
+                    logger.error(String.format("Failed to configure Shared network %s", network));
                     return false;
                 }
             }
@@ -431,7 +431,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
 
         NiciraNvpNicMappingVO nicMap = niciraNvpNicMappingDao.findByNicUuid(nicVO.getUuid());
         if (nicMap == null) {
-            logger.error("No mapping for nic " + nic.getName());
+            logger.error(String.format("No mapping for nic %s", nic));
             return false;
         }
 
@@ -470,7 +470,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
             // nat rules.
             NiciraNvpRouterMappingVO routermapping = niciraNvpRouterMappingDao.findByNetworkId(network.getId());
             if (routermapping == null) {
-                logger.warn("No logical router uuid found for network " + network.getDisplayText());
+                logger.warn(String.format("No logical router uuid found for network %s", network));
                 // This might be cause by a failed deployment, so don't make shutdown fail as well.
                 return true;
             }
@@ -478,7 +478,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
             DeleteLogicalRouterCommand cmd = new DeleteLogicalRouterCommand(routermapping.getLogicalRouterUuid());
             DeleteLogicalRouterAnswer answer = (DeleteLogicalRouterAnswer)agentMgr.easySend(niciraNvpHost.getId(), cmd);
             if (answer.getResult() == false) {
-                logger.error("Failed to delete LogicalRouter for network " + network.getDisplayText());
+                logger.error(String.format("Failed to delete LogicalRouter for network %s", network));
                 return false;
             }
 
@@ -582,11 +582,9 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
         final PhysicalNetworkServiceProviderVO ntwkSvcProvider =
                 physicalNetworkServiceProviderDao.findByServiceProvider(physicalNetwork.getId(), networkDevice.getNetworkServiceProvder());
         if (ntwkSvcProvider == null) {
-            throw new CloudRuntimeException("Network Service Provider: " + networkDevice.getNetworkServiceProvder() + " is not enabled in the physical network: " +
-                    physicalNetworkId + "to add this device");
+            throw new CloudRuntimeException(String.format("Network Service Provider: %s is not enabled in the physical network: %s to add this device", networkDevice.getNetworkServiceProvder(), physicalNetwork));
         } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
-            throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() + " is in shutdown state in the physical network: " +
-                    physicalNetworkId + "to add this device");
+            throw new CloudRuntimeException(String.format("Network Service Provider: %s is in shutdown state in the physical network: %s to add this device", ntwkSvcProvider.getProviderName(), physicalNetwork));
         }
 
         if (niciraNvpDao.listByPhysicalNetwork(physicalNetworkId).size() != 0) {
@@ -814,7 +812,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
 
             NiciraNvpRouterMappingVO routermapping = niciraNvpRouterMappingDao.findByNetworkId(network.getId());
             if (routermapping == null) {
-                logger.error("No logical router uuid found for network " + network.getDisplayText());
+                logger.error(String.format("No logical router uuid found for network %s", network));
                 return false;
             }
 
@@ -858,7 +856,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
 
         NiciraNvpRouterMappingVO routermapping = niciraNvpRouterMappingDao.findByNetworkId(network.getId());
         if (routermapping == null) {
-            logger.error("No logical router uuid found for network " + network.getDisplayText());
+            logger.error(String.format("No logical router uuid found for network %s", network));
             return false;
         }
 
@@ -898,7 +896,7 @@ NiciraNvpElementService, ResourceStateAdapter, IpDeployer {
 
         NiciraNvpRouterMappingVO routermapping = niciraNvpRouterMappingDao.findByNetworkId(network.getId());
         if (routermapping == null) {
-            logger.error("No logical router uuid found for network " + network.getDisplayText());
+            logger.error(String.format("No logical router uuid found for network %s", network));
             return false;
         }
 

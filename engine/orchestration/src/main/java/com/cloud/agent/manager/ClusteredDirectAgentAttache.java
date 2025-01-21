@@ -26,8 +26,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class ClusteredDirectAgentAttache extends DirectAgentAttache implements Routable {
     private final long _nodeId;
 
-    public ClusteredDirectAgentAttache(ClusteredAgentManagerImpl agentMgr, long id, String name, long mgmtId, ServerResource resource, boolean maintenance) {
-        super(agentMgr, id, name, resource, maintenance);
+    public ClusteredDirectAgentAttache(ClusteredAgentManagerImpl agentMgr, long id, String uuid, String name, long mgmtId, ServerResource resource, boolean maintenance) {
+        super(agentMgr, id, uuid, name, resource, maintenance);
         _nodeId = mgmtId;
     }
 
@@ -37,9 +37,9 @@ public class ClusteredDirectAgentAttache extends DirectAgentAttache implements R
         try {
             req = Request.parse(data);
         } catch (ClassNotFoundException e) {
-            throw new CloudRuntimeException("Unable to rout to an agent ", e);
+            throw new CloudRuntimeException("Unable to route to an agent ", e);
         } catch (UnsupportedVersionException e) {
-            throw new CloudRuntimeException("Unable to rout to an agent ", e);
+            throw new CloudRuntimeException("Unable to route to an agent ", e);
         }
 
         if (req instanceof Response) {

@@ -173,8 +173,8 @@ public class WebhookDeliveryJoinVO extends BaseViewVO implements InternalIdentit
 
     @Override
     public String toString() {
-        return String.format("WebhookDelivery [%s]", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                this, "id", "uuid", "webhookId", "startTime", "success"));
+        return String.format("WebhookDelivery %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "webhookId", "webhookName", "startTime", "success"));
     }
 
     public WebhookDeliveryJoinVO() {

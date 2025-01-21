@@ -18,6 +18,8 @@
  */
 package org.apache.cloudstack.vm.schedule;
 
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -69,6 +71,14 @@ public class VMScheduledJobVO implements VMScheduledJob {
         this.vmScheduleId = vmScheduleId;
         this.action = action;
         this.scheduledTime = scheduledTime;
+    }
+
+
+    @Override
+    public String toString() {
+        return String.format("VMScheduledJob %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "action", "vmScheduleId", "vmId", "asyncJobId"));
     }
 
     @Override
