@@ -3448,7 +3448,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Filter searchFilter = new Filter(DiskOfferingVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
         searchFilter.addOrderBy(DiskOfferingVO.class, "id", true);
-        SearchBuilder<DiskOfferingJoinVO> diskOfferingSearch = _diskOfferingJoinDao.createSearchBuilder();
+        SearchBuilder<DiskOfferingVO> diskOfferingSearch = _diskOfferingDao.createSearchBuilder();
         diskOfferingSearch.select(null, Func.DISTINCT, diskOfferingSearch.entity().getId()); // select distinct
 
         diskOfferingSearch.and("computeOnly", diskOfferingSearch.entity().isComputeOnly(), Op.EQ);
@@ -3476,17 +3476,17 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                         domainDetailsSearch.entity().getName(), diskOfferingSearch.entity().setString(ApiConstants.DOMAIN_ID));
 
                 if (!isRootAdmin) {
-                    diskOfferingSearch.and("displayOffering", diskOfferingSearch.entity().isDisplayOffering(), Op.EQ);
+                    diskOfferingSearch.and("displayOffering", diskOfferingSearch.entity().getDisplayOffering(), Op.EQ);
                 }
 
-                SearchCriteria<DiskOfferingJoinVO> sc = diskOfferingSearch.create();
+                SearchCriteria<DiskOfferingVO> sc = diskOfferingSearch.create();
                 sc.setParameters("computeOnly", false);
                 sc.setParameters("activeState", DiskOffering.State.Active);
 
                 sc.setJoinParameters("domainDetailsSearch", "domainId", domainId);
 
-                Pair<List<DiskOfferingJoinVO>, Integer> uniquePairs = _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
-                List<Long> idsArray = uniquePairs.first().stream().map(DiskOfferingJoinVO::getId).collect(Collectors.toList());
+                Pair<List<DiskOfferingVO>, Integer> uniquePairs = _diskOfferingDao.searchAndCount(sc, searchFilter);
+                List<Long> idsArray = uniquePairs.first().stream().map(DiskOfferingVO::getId).collect(Collectors.toList());
                 return new Ternary<>(idsArray, uniquePairs.second(), new String[0]);
             } else {
                 throw new PermissionDeniedException("The account:" + account.getAccountName() + " does not fall in the same domain hierarchy as the disk offering");
@@ -3569,7 +3569,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     domainDetailsSearch.entity().getName(), diskOfferingSearch.entity().setString(ApiConstants.DOMAIN_ID));
         }
 
-        SearchCriteria<DiskOfferingJoinVO> sc = diskOfferingSearch.create();
+        SearchCriteria<DiskOfferingVO> sc = diskOfferingSearch.create();
 
         sc.setParameters("computeOnly", false);
 
@@ -3629,7 +3629,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setJoinParameters("domainDetailsSearch", "domainIdIN", domainIds.toArray());
         }
 
-        Pair<List<DiskOfferingJoinVO>, Integer> uniquePairs = _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
+        Pair<List<DiskOfferingVO>, Integer> uniquePairs = _diskOfferingDao.searchAndCount(sc, searchFilter);
         String[] requiredTagsArray = new String[0];
         if (CollectionUtils.isNotEmpty(uniquePairs.first()) && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.valueIn(zoneId)) {
             if (volumeId != null) {
@@ -3638,7 +3638,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 requiredTagsArray = _storageTagDao.getStoragePoolTags(storagePoolId).toArray(new String[0]);
             }
         }
-        List<Long> idsArray = uniquePairs.first().stream().map(DiskOfferingJoinVO::getId).collect(Collectors.toList());
+        List<Long> idsArray = uniquePairs.first().stream().map(DiskOfferingVO::getId).collect(Collectors.toList());
 
         return new Ternary<>(idsArray, uniquePairs.second(), requiredTagsArray);
     }
