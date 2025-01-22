@@ -2108,7 +2108,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to Scale VM, since disk offering strictness flag is not same for new service offering and old service offering");
         }
 
-        if (currentServiceOffering.getDiskOfferingStrictness() && currentServiceOffering.getDiskOfferingId() != newServiceOffering.getDiskOfferingId()) {
+        if (currentServiceOffering.getDiskOfferingStrictness() && !currentServiceOffering.getDiskOfferingId().equals(newServiceOffering.getDiskOfferingId())) {
             throw new InvalidParameterValueException("Unable to Scale VM, since disk offering id associated with the old service offering is not same for new service offering");
         }
 
