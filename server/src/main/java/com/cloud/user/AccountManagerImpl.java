@@ -850,6 +850,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public boolean deleteAccount(AccountVO account, long callerUserId, Account caller) {
         long accountId = account.getId();
 
+        if (account.getState() != State.DISABLED) {
+            throw new CloudRuntimeException("Account must be disabled before it can be deleted.");
+        }
+
         // delete the account record
         if (!_accountDao.remove(accountId)) {
             logger.error("Unable to delete account " + accountId);

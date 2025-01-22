@@ -118,6 +118,7 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
 
         AccountVO account = new AccountVO();
         account.setId(ACCOUNT_ID);
+        account.setState(Account.State.DISABLED);
         when(_accountDao.remove(ACCOUNT_ID)).thenReturn(true);
         when(_accountDao.findById(ACCOUNT_ID)).thenReturn(account);
 
