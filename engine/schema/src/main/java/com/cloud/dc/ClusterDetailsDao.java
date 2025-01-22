@@ -32,4 +32,6 @@ public interface ClusterDetailsDao extends GenericDao<ClusterDetailsVO, Long> {
     void deleteDetails(long clusterId);
 
     String getVmwareDcName(Long clusterId);
+
+    String getActualValue(ClusterDetailsVO clusterDetailsVO);
 }

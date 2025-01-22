@@ -29,4 +29,6 @@ public interface ImageStoreDetailsDao extends GenericDao<ImageStoreDetailVO, Lon
     Map<String, String> getDetails(long storeId);
 
     void deleteDetails(long storeId);
+
+    String getActualValue(ImageStoreDetailVO imageStorageDetailVO);
 }

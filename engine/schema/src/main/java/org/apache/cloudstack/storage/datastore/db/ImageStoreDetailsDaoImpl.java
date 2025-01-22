@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -35,9 +37,13 @@ import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
+import javax.inject.Inject;
+
 @Component
 public class ImageStoreDetailsDaoImpl extends ResourceDetailsDaoBase<ImageStoreDetailVO> implements ImageStoreDetailsDao, ScopedConfigStorage {
 
+    @Inject
+    private ConfigurationDao _configDao;
     protected final SearchBuilder<ImageStoreDetailVO> storeSearch;
 
     public ImageStoreDetailsDaoImpl() {
@@ -108,7 +114,7 @@ public class ImageStoreDetailsDaoImpl extends ResourceDetailsDaoBase<ImageStoreD
     @Override
     public String getConfigValue(long id, ConfigKey<?> key) {
         ImageStoreDetailVO vo = findDetail(id, key.key());
-        return vo == null ? null : vo.getValue();
+        return vo == null ? null : getActualValue(vo);
     }
 
     @Override
@@ -116,4 +122,12 @@ public class ImageStoreDetailsDaoImpl extends ResourceDetailsDaoBase<ImageStoreD
         super.addDetail(new ImageStoreDetailVO(resourceId, key, value, display));
     }
 
+    @Override
+    public String getActualValue(ImageStoreDetailVO imageStorageDetailVO) {
+        ConfigurationVO configurationVO = _configDao.findByName(imageStorageDetailVO.getName());
+        if (configurationVO != null && configurationVO.isEncrypted()) {
+            return DBEncryptionUtil.decrypt(imageStorageDetailVO.getValue());
+        }
+        return imageStorageDetailVO.getValue();
+    }
 }
