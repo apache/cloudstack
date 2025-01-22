@@ -41,45 +41,58 @@ public final class LibvirtDeleteStoragePoolCommandWrapper extends CommandWrapper
     @Override
     public Answer execute(final DeleteStoragePoolCommand command, final LibvirtComputingResource libvirtComputingResource) {
         try {
-            // if getRemoveDatastore() is true, then we are dealing with managed storage and can skip the delete logic here
             if (!command.getRemoveDatastore()) {
-                final StorageFilerTO pool = command.getPool();
-                final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
-
-                storagePoolMgr.deleteStoragePool(pool.getType(), pool.getUuid());
-                if (Storage.StoragePoolType.Filesystem.equals(pool.getType()) && !libvirtComputingResource.DEFAULT_LOCAL_STORAGE_PATH.equals(pool.getPath())) {
-                    String localStoragePath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LOCAL_STORAGE_PATH);
-                    String localStorageUuid = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LOCAL_STORAGE_UUID);
-
-                    String uuidToRemove = pool.getUuid();
-                    String pathToRemove = pool.getPath();
-
-                    if (localStorageUuid != null && uuidToRemove != null) {
-                        localStorageUuid = Arrays.stream(localStorageUuid.split(","))
-                                .filter(uuid -> !uuid.equals(uuidToRemove))
-                                .collect(Collectors.joining(","));
-                    }
-
-                    if (localStoragePath != null && pathToRemove != null) {
-                        localStoragePath = Arrays.stream(localStoragePath.split(","))
-                                .filter(path -> !path.equals(pathToRemove))
-                                .collect(Collectors.joining(","));
-                    }
-
-                    PropertiesStorage agentProperties = new PropertiesStorage();
-                    agentProperties.configure("AgentProperties", new HashMap<String, Object>());
-                    if (localStorageUuid != null) {
-                        agentProperties.persist(AgentProperties.LOCAL_STORAGE_UUID.getName(), localStorageUuid);
-                    }
-                    if (localStoragePath != null) {
-                        agentProperties.persist(AgentProperties.LOCAL_STORAGE_PATH.getName(), localStoragePath);
-                    }
-                }
+                handleStoragePoolDeletion(command, libvirtComputingResource);
             }
-
             return new Answer(command);
         } catch (final CloudRuntimeException e) {
             return new Answer(command, false, e.toString());
+        }
+    }
+
+    private void handleStoragePoolDeletion(final DeleteStoragePoolCommand command, final LibvirtComputingResource libvirtComputingResource) {
+        final StorageFilerTO pool = command.getPool();
+        final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+        storagePoolMgr.deleteStoragePool(pool.getType(), pool.getUuid());
+
+        if (isLocalStorageAndNotHavingDefaultPath(pool, libvirtComputingResource)) {
+            updateLocalStorageProperties(pool);
+        }
+    }
+
+    private boolean isLocalStorageAndNotHavingDefaultPath(final StorageFilerTO pool, final LibvirtComputingResource libvirtComputingResource) {
+        return Storage.StoragePoolType.Filesystem.equals(pool.getType())
+                && !libvirtComputingResource.DEFAULT_LOCAL_STORAGE_PATH.equals(pool.getPath());
+    }
+
+    private void updateLocalStorageProperties(final StorageFilerTO pool) {
+        String localStoragePath = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LOCAL_STORAGE_PATH);
+        String localStorageUuid = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.LOCAL_STORAGE_UUID);
+
+        String uuidToRemove = pool.getUuid();
+        String pathToRemove = pool.getPath();
+
+        if (localStorageUuid != null && uuidToRemove != null) {
+            localStorageUuid = Arrays.stream(localStorageUuid.split(","))
+                    .filter(uuid -> !uuid.equals(uuidToRemove))
+                    .collect(Collectors.joining(","));
+        }
+
+        if (localStoragePath != null && pathToRemove != null) {
+            localStoragePath = Arrays.stream(localStoragePath.split(","))
+                    .filter(path -> !path.equals(pathToRemove))
+                    .collect(Collectors.joining(","));
+        }
+
+        PropertiesStorage agentProperties = new PropertiesStorage();
+        agentProperties.configure("AgentProperties", new HashMap<String, Object>());
+
+        if (localStorageUuid != null) {
+            agentProperties.persist(AgentProperties.LOCAL_STORAGE_UUID.getName(), localStorageUuid);
+        }
+
+        if (localStoragePath != null) {
+            agentProperties.persist(AgentProperties.LOCAL_STORAGE_PATH.getName(), localStoragePath);
         }
     }
 }
