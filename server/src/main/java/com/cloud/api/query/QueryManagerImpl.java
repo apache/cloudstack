@@ -3457,10 +3457,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             diskOfferingSearch.and("state", diskOfferingSearch.entity().getState(), Op.EQ);
         }
 
-        if (tags != null) {
-            diskOfferingSearch.and("tags", diskOfferingSearch.entity().getTags(), Op.EQ);
-        }
-
         // Keeping this logic consistent with domain specific zones
         // if a domainId is provided, we just return the disk offering
         // associated with this domain
@@ -3523,6 +3519,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (encrypt != null) {
             diskOfferingSearch.and("encrypt", diskOfferingSearch.entity().getEncrypt(), Op.EQ);
+        }
+
+        if (tags != null) {
+            diskOfferingSearch.and("tags", diskOfferingSearch.entity().getTags(), Op.EQ);
         }
 
         if (storageType != null || zoneId != null) {
@@ -3592,6 +3592,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (encrypt != null) {
             sc.setParameters("encrypt", encrypt);
+        }
+
+        if (tags != null) {
+            sc.setParameters("tags", tags);
         }
 
         if (storageType != null) {
