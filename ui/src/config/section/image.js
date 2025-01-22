@@ -110,16 +110,27 @@ export default {
           docHelp: 'adminguide/templates.html#uploading-templates-from-a-remote-http-server',
           listView: true,
           popup: true,
+          show: () => {
+            if (!store.getters.zones || store.getters.zones.length === 0) {
+              return false
+            }
+            return true
+          },
           component: shallowRef(defineAsyncComponent(() => import('@/views/image/RegisterOrUploadTemplate.vue')))
         },
         {
           api: 'registerTemplate',
           icon: 'cloud-upload-outlined',
           label: 'label.upload.template.from.local',
-          show: () => { return 'getUploadParamsForTemplate' in store.getters.apis },
           docHelp: 'adminguide/templates.html#uploading-templates-and-isos-from-a-local-computer',
           listView: true,
           popup: true,
+          show: () => {
+            if (!store.getters.zones || store.getters.zones.length === 0) {
+              return false
+            }
+            return 'getUploadParamsForTemplate' in store.getters.apis
+          },
           component: shallowRef(defineAsyncComponent(() => import('@/views/image/RegisterOrUploadTemplate.vue')))
         },
         {

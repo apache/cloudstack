@@ -242,6 +242,12 @@ export default {
           icon: 'plus-outlined',
           label: 'label.add.vpc',
           docHelp: 'adminguide/networking_and_traffic.html#adding-a-virtual-private-cloud',
+          show: () => {
+            if (!store.getters.zones || store.getters.zones.length === 0) {
+              return false
+            }
+            return true
+          },
           listView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/network/CreateVpc.vue')))

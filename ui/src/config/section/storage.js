@@ -103,6 +103,12 @@ export default {
           icon: 'plus-outlined',
           docHelp: 'adminguide/storage.html#creating-a-new-volume',
           label: 'label.action.create.volume',
+          show: () => {
+            if (!store.getters.zones || store.getters.zones.length === 0) {
+              return false
+            }
+            return true
+          },
           listView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateVolume.vue')))
@@ -112,7 +118,12 @@ export default {
           icon: 'cloud-upload-outlined',
           docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
           label: 'label.upload.volume.from.local',
-          show: () => { return 'getUploadParamsForVolume' in store.getters.apis },
+          show: () => {
+            if (!store.getters.zones || store.getters.zones.length === 0) {
+              return false
+            }
+            return 'getUploadParamsForVolume' in store.getters.apis
+          },
           listView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UploadLocalVolume.vue')))
@@ -122,6 +133,12 @@ export default {
           icon: 'link-outlined',
           docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
           label: 'label.upload.volume.from.url',
+          show: () => {
+            if (!store.getters.zones || store.getters.zones.length === 0) {
+              return false
+            }
+            return true
+          },
           listView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UploadVolume.vue')))
