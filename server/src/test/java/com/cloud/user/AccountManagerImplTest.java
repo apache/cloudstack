@@ -234,7 +234,6 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
             callContextMocked.when(CallContext::current).thenReturn(callContextMock);
             long accountId = 1L;
 
-            Mockito.doReturn(accountVoMock).when(callContextMock).getCallingAccount();
             Mockito.doReturn(2L).when(accountVoMock).getId();
             Mockito.doReturn(true).when(accountManagerImpl).isDeleteNeeded(Mockito.any(), Mockito.anyLong(), Mockito.any());
             Mockito.doReturn(new ArrayList<Long>()).when(_projectAccountDao).listAdministratedProjectIds(Mockito.anyLong());
