@@ -22,5 +22,20 @@
 -- Add last_id to the volumes table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'last_id', 'bigint(20) unsigned DEFAULT NULL');
 
-ALTER TABLE `cloud`.`counter` DROP KEY `uc_counter__provider__source__value`;
-CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.counter', 'uc_counter__provider__source__value_removed', '(provider, source, value, removed)');
+SELECT
+    COUNT(*)
+INTO @exists
+FROM information_schema.STATISTICS
+WHERE TABLE_SCHEMA = 'cloud'
+  AND TABLE_NAME = 'counter'
+  AND INDEX_NAME = 'uc_counter__provider__source__value';
+
+-- Drop the key if it exists
+SET @sql = IF(@exists > 0, 'ALTER TABLE counter DROP KEY uc_counter__provider__source__value', NULL);
+
+-- Execute the drop statement if the index exists
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.counter', 'uc_counter__provider__source__value__removed', '(provider, source, value, removed)');
