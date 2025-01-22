@@ -167,7 +167,6 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     public void deleteUserAccount() {
         AccountVO account = new AccountVO();
         account.setId(42l);
-        account.setState(State.DISABLED);
         DomainVO domain = new DomainVO();
         Mockito.when(_accountDao.findById(42l)).thenReturn(account);
         Mockito.doNothing().when(accountManagerImpl).checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.anyBoolean(), Mockito.any(Account.class));
@@ -196,7 +195,6 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     public void deleteUserAccountCleanup() {
         AccountVO account = new AccountVO();
         account.setId(42l);
-        account.setState(State.DISABLED);
         DomainVO domain = new DomainVO();
         Mockito.when(_accountDao.findById(42l)).thenReturn(account);
         Mockito.doNothing().when(accountManagerImpl).checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.anyBoolean(), Mockito.any(Account.class));
@@ -211,16 +209,6 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Assert.assertTrue(accountManagerImpl.deleteUserAccount(42l));
         // assert that this was NOT a clean delete
         Mockito.verify(_accountDao, Mockito.atLeastOnce()).markForCleanup(Mockito.eq(42l));
-    }
-
-    @Test (expected = CloudRuntimeException.class)
-    public void deleteUserAccountEnabled() {
-        AccountVO account = new AccountVO();
-        account.setId(42l);
-        account.setState(State.ENABLED);
-        Mockito.when(_accountDao.findById(42l)).thenReturn(account);
-        Mockito.doNothing().when(accountManagerImpl).checkAccess(Mockito.any(Account.class), Mockito.isNull(), Mockito.anyBoolean(), Mockito.any(Account.class));
-        accountManagerImpl.deleteUserAccount(42l);
     }
 
     @Test (expected = InvalidParameterValueException.class)
@@ -246,11 +234,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
             callContextMocked.when(CallContext::current).thenReturn(callContextMock);
             long accountId = 1L;
 
-            AccountVO account = new AccountVO();
-            account.setId(accountId);
-            account.setState(State.DISABLED);
             Mockito.doReturn(accountVoMock).when(callContextMock).getCallingAccount();
-            Mockito.doReturn(account).when(_accountDao).findById(accountId);
             Mockito.doReturn(2L).when(accountVoMock).getId();
             Mockito.doReturn(true).when(accountManagerImpl).isDeleteNeeded(Mockito.any(), Mockito.anyLong(), Mockito.any());
             Mockito.doReturn(new ArrayList<Long>()).when(_projectAccountDao).listAdministratedProjectIds(Mockito.anyLong());
