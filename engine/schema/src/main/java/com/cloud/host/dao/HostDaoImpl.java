@@ -60,6 +60,7 @@ import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -83,13 +84,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     private static final Logger status_logger = Logger.getLogger(Status.class);
     private static final Logger state_logger = Logger.getLogger(ResourceState.class);
 
-    private static final String LIST_HOST_IDS_BY_COMPUTETAGS = "SELECT filtered.host_id, COUNT(filtered.tag) AS tag_count "
-                                                             + "FROM (SELECT host_id, tag, is_tag_a_rule FROM host_tags GROUP BY host_id,tag) AS filtered "
-                                                             + "WHERE tag IN(%s) AND is_tag_a_rule = 0 "
+    private static final String LIST_HOST_IDS_BY_HOST_TAGS = "SELECT filtered.host_id, COUNT(filtered.tag) AS tag_count "
+                                                             + "FROM (SELECT host_id, tag, is_tag_a_rule FROM host_tags GROUP BY host_id,tag,is_tag_a_rule) AS filtered "
+                                                             + "WHERE tag IN (%s) AND (is_tag_a_rule = 0 OR is_tag_a_rule IS NULL) "
                                                              + "GROUP BY host_id "
                                                              + "HAVING tag_count = %s ";
     private static final String SEPARATOR = ",";
-    private static final String LIST_CLUSTERID_FOR_HOST_TAG = "select distinct cluster_id from host join ( %s ) AS selected_hosts ON host.id = selected_hosts.host_id";
+    private static final String LIST_CLUSTER_IDS_FOR_HOST_TAGS = "select distinct cluster_id from host join ( %s ) AS selected_hosts ON host.id = selected_hosts.host_id";
     private static final String GET_HOSTS_OF_ACTIVE_VMS = "select h.id " +
             "from vm_instance vm " +
             "join host h on (vm.host_id=h.id) " +
@@ -785,6 +786,15 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag) {
+        return listHostsWithOrWithoutHostTags(type, clusterId, podId, dcId, hostTag, true);
+    }
+
+    private List<HostVO> listHostsWithOrWithoutHostTags(Host.Type type, Long clusterId, Long podId, long dcId, String hostTags, boolean withHostTags) {
+        if (StringUtils.isEmpty(hostTags)) {
+            s_logger.debug("Host tags not specified, to list hosts");
+            return new ArrayList();
+        }
+
         SearchBuilder<HostVO> hostSearch = createSearchBuilder();
         HostVO entity = hostSearch.entity();
         hostSearch.and("type", entity.getType(), SearchCriteria.Op.EQ);
@@ -795,7 +805,9 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         hostSearch.and("resourceState", entity.getResourceState(), SearchCriteria.Op.EQ);
 
         SearchCriteria<HostVO> sc = hostSearch.create();
-        sc.setParameters("type", type.toString());
+        if (type != null) {
+            sc.setParameters("type", type.toString());
+        }
         if (podId != null) {
             sc.setParameters("pod", podId);
         }
@@ -806,27 +818,38 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("status", Status.Up.toString());
         sc.setParameters("resourceState", ResourceState.Enabled.toString());
 
-        List<HostVO> tmpHosts = listBy(sc);
-        List<HostVO> correctHostsByHostTags = new ArrayList();
-        List<Long> hostIdsByComputeOffTags = findHostByComputeOfferings(hostTag);
+        List<HostVO> upAndEnabledHosts = listBy(sc);
+        if (CollectionUtils.isEmpty(upAndEnabledHosts)) {
+            return new ArrayList();
+        }
 
-        tmpHosts.forEach((host) -> { if(hostIdsByComputeOffTags.contains(host.getId())) correctHostsByHostTags.add(host);});
+        List<Long> hostIdsByHostTags = findHostIdsByHostTags(hostTags);
+        if (CollectionUtils.isEmpty(hostIdsByHostTags)) {
+            return withHostTags ? new ArrayList() : upAndEnabledHosts;
+        }
 
-        return correctHostsByHostTags;
+        if (withHostTags) {
+            List<HostVO> upAndEnabledHostsWithHostTags = new ArrayList();
+            upAndEnabledHosts.forEach((host) -> { if (hostIdsByHostTags.contains(host.getId())) upAndEnabledHostsWithHostTags.add(host);});
+            return upAndEnabledHostsWithHostTags;
+        } else {
+            List<HostVO> upAndEnabledHostsWithoutHostTags = new ArrayList();
+            upAndEnabledHosts.forEach((host) -> { if (!hostIdsByHostTags.contains(host.getId())) upAndEnabledHostsWithoutHostTags.add(host);});
+            return upAndEnabledHostsWithoutHostTags;
+        }
     }
 
     @Override
     public List<HostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId, String haTag) {
+        if (StringUtils.isNotEmpty(haTag)) {
+            return listHostsWithOrWithoutHostTags(type, clusterId, podId, dcId, haTag, false);
+        }
+
         SearchBuilder<HostTagVO> hostTagSearch = _hostTagsDao.createSearchBuilder();
         hostTagSearch.and();
         hostTagSearch.op("isTagARule", hostTagSearch.entity().getIsTagARule(), Op.EQ);
         hostTagSearch.or("tagDoesNotExist", hostTagSearch.entity().getIsTagARule(), Op.NULL);
         hostTagSearch.cp();
-        if (haTag != null && !haTag.isEmpty()) {
-            hostTagSearch.and().op("tag", hostTagSearch.entity().getTag(), SearchCriteria.Op.NEQ);
-            hostTagSearch.or("tagNull", hostTagSearch.entity().getTag(), SearchCriteria.Op.NULL);
-            hostTagSearch.cp();
-        }
 
         SearchBuilder<HostVO> hostSearch = createSearchBuilder();
 
@@ -837,17 +860,11 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         hostSearch.and("status", hostSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         hostSearch.and("resourceState", hostSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
 
-
         hostSearch.join("hostTagSearch", hostTagSearch, hostSearch.entity().getId(), hostTagSearch.entity().getHostId(), JoinBuilder.JoinType.LEFTOUTER);
-
 
         SearchCriteria<HostVO> sc = hostSearch.create();
 
         sc.setJoinParameters("hostTagSearch", "isTagARule", false);
-
-        if (haTag != null && !haTag.isEmpty()) {
-            sc.setJoinParameters("hostTagSearch", "tag", haTag);
-        }
 
         if (type != null) {
             sc.setParameters("type", type);
@@ -1300,19 +1317,19 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public List<Long> listClustersByHostTag(String computeOfferingTags) {
+    public List<Long> listClustersByHostTag(String hostTags) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        String sql = this.LIST_CLUSTERID_FOR_HOST_TAG;
+        String selectStmtToListClusterIdsByHostTags = this.LIST_CLUSTER_IDS_FOR_HOST_TAGS;
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList();
-        List<String> tags = Arrays.asList(computeOfferingTags.split(this.SEPARATOR));
-        String subselect = getHostIdsByComputeTags(tags);
-        sql = String.format(sql, subselect);
+        List<String> tags = Arrays.asList(hostTags.split(this.SEPARATOR));
+        String selectStmtToListHostIdsByHostTags = getSelectStmtToListHostIdsByHostTags(tags);
+        selectStmtToListClusterIdsByHostTags = String.format(selectStmtToListClusterIdsByHostTags, selectStmtToListHostIdsByHostTags);
 
         try {
-            pstmt = txn.prepareStatement(sql);
+            pstmt = txn.prepareStatement(selectStmtToListClusterIdsByHostTags);
 
-            for(int i = 0; i < tags.size(); i++){
+            for (int i = 0; i < tags.size(); i++){
                 pstmt.setString(i+1, tags.get(i));
             }
 
@@ -1323,20 +1340,20 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             pstmt.close();
             return result;
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + sql, e);
+            throw new CloudRuntimeException("DB Exception on: " + selectStmtToListClusterIdsByHostTags, e);
         }
     }
 
-    private List<Long> findHostByComputeOfferings(String computeOfferingTags){
+    private List<Long> findHostIdsByHostTags(String hostTags){
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList();
-        List<String> tags = Arrays.asList(computeOfferingTags.split(this.SEPARATOR));
-        String select = getHostIdsByComputeTags(tags);
+        List<String> tags = Arrays.asList(hostTags.split(this.SEPARATOR));
+        String selectStmtToListHostIdsByHostTags = getSelectStmtToListHostIdsByHostTags(tags);
         try {
-            pstmt = txn.prepareStatement(select);
+            pstmt = txn.prepareStatement(selectStmtToListHostIdsByHostTags);
 
-            for(int i = 0; i < tags.size(); i++){
+            for (int i = 0; i < tags.size(); i++){
                 pstmt.setString(i+1, tags.get(i));
             }
 
@@ -1347,7 +1364,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             pstmt.close();
             return result;
         } catch (SQLException e) {
-            throw new CloudRuntimeException("DB Exception on: " + select, e);
+            throw new CloudRuntimeException("DB Exception on: " + selectStmtToListHostIdsByHostTags, e);
         }
     }
 
@@ -1372,10 +1389,10 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return new ArrayList<>(result);
     }
 
-    private String getHostIdsByComputeTags(List<String> offeringTags){
+    private String getSelectStmtToListHostIdsByHostTags(List<String> hostTags){
         List<String> questionMarks = new ArrayList();
-        offeringTags.forEach((tag) -> { questionMarks.add("?"); });
-        return String.format(this.LIST_HOST_IDS_BY_COMPUTETAGS, String.join(",", questionMarks),questionMarks.size());
+        hostTags.forEach((tag) -> { questionMarks.add("?"); });
+        return String.format(this.LIST_HOST_IDS_BY_HOST_TAGS, String.join(",", questionMarks), questionMarks.size());
     }
 
     @Override
