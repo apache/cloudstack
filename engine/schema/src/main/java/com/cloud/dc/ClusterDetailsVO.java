@@ -23,11 +23,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
 @Table(name = "cluster_details")
-public class ClusterDetailsVO implements InternalIdentity {
+public class ClusterDetailsVO implements ResourceDetail {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -56,12 +56,22 @@ public class ClusterDetailsVO implements InternalIdentity {
         return clusterId;
     }
 
+    @Override
+    public long getResourceId() {
+        return clusterId;
+    }
+
     public String getName() {
         return name;
     }
 
     public String getValue() {
         return value;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return true;
     }
 
     public void setValue(String value) {

@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.cloudstack.api.ResourceDetail;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -28,8 +29,16 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.SearchCriteria.Op;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+
+import javax.inject.Inject;
 
 public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends GenericDaoBase<R, Long> implements ResourceDetailsDao<R> {
+
+    @Inject
+    private ConfigurationDao _configDao;
+
     private SearchBuilder<R> AllFieldsSearch;
 
     public ResourceDetailsDaoBase() {
@@ -200,5 +209,14 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         sc.setParameters("value", values);
 
         return customSearch(sc, null);
+    }
+
+    @Override
+    public String getActualValue(ResourceDetail resourceDetail) {
+        ConfigurationVO configurationVO = _configDao.findByName(resourceDetail.getName());
+        if (configurationVO != null && configurationVO.isEncrypted()) {
+            return DBEncryptionUtil.decrypt(resourceDetail.getValue());
+        }
+        return resourceDetail.getValue();
     }
 }

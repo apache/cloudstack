@@ -26,19 +26,13 @@ import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
-import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
-import javax.inject.Inject;
+public class ClusterDetailsDaoImpl extends ResourceDetailsDaoBase<ClusterDetailsVO> implements ClusterDetailsDao, ScopedConfigStorage {
 
-public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long> implements ClusterDetailsDao, ScopedConfigStorage {
-
-    @Inject
-    private ConfigurationDao _configDao;
     protected final SearchBuilder<ClusterDetailsVO> ClusterSearch;
     protected final SearchBuilder<ClusterDetailsVO> DetailSearch;
 
@@ -71,6 +65,11 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
             detail.setValue(DBEncryptionUtil.decrypt(detail.getValue()));
         }
         return detail;
+    }
+
+    @Override
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new ClusterDetailsVO(resourceId, key, value));
     }
 
     @Override
@@ -167,14 +166,5 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
         }
 
         return name;
-    }
-
-    @Override
-    public String getActualValue(ClusterDetailsVO clusterDetailsVO) {
-        ConfigurationVO configurationVO = _configDao.findByName(clusterDetailsVO.getName());
-        if (configurationVO != null && configurationVO.isEncrypted()) {
-            return DBEncryptionUtil.decrypt(clusterDetailsVO.getValue());
-        }
-        return clusterDetailsVO.getValue();
     }
 }

@@ -19,8 +19,9 @@ package com.cloud.dc;
 import java.util.Map;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
-public interface ClusterDetailsDao extends GenericDao<ClusterDetailsVO, Long> {
+public interface ClusterDetailsDao extends GenericDao<ClusterDetailsVO, Long>, ResourceDetailsDao<ClusterDetailsVO> {
     Map<String, String> findDetails(long clusterId);
 
     void persist(long clusterId, Map<String, String> details);
@@ -32,6 +33,4 @@ public interface ClusterDetailsDao extends GenericDao<ClusterDetailsVO, Long> {
     void deleteDetails(long clusterId);
 
     String getVmwareDcName(Long clusterId);
-
-    String getActualValue(ClusterDetailsVO clusterDetailsVO);
 }

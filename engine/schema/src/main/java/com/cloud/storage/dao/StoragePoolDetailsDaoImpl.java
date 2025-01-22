@@ -17,12 +17,9 @@
 package com.cloud.storage.dao;
 
 
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
@@ -36,8 +33,6 @@ public class StoragePoolDetailsDaoImpl extends ResourceDetailsDaoBase<StoragePoo
 
     @Inject
     PrimaryDataStoreDao _storagePoolDao;
-    @Inject
-    private ConfigurationDao _configDao;
 
     public StoragePoolDetailsDaoImpl() {
     }
@@ -60,14 +55,5 @@ public class StoragePoolDetailsDaoImpl extends ResourceDetailsDaoBase<StoragePoo
             super.addDetail(new StoragePoolDetailVO(childPool.getId(), key, value, display));
         }
         super.addDetail(new StoragePoolDetailVO(resourceId, key, value, display));
-    }
-
-    @Override
-    public String getActualValue(StoragePoolDetailVO storagePoolDetailVO) {
-        ConfigurationVO configurationVO = _configDao.findByName(storagePoolDetailVO.getName());
-        if (configurationVO != null && configurationVO.isEncrypted()) {
-            return DBEncryptionUtil.decrypt(storagePoolDetailVO.getValue());
-        }
-        return storagePoolDetailVO.getValue();
     }
 }

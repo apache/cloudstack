@@ -22,6 +22,4 @@ import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 public interface DataCenterDetailsDao extends GenericDao<DataCenterDetailVO, Long>, ResourceDetailsDao<DataCenterDetailVO> {
     void persist(long zoneId, String name, String value);
-
-    String getActualValue(DataCenterDetailVO dataCenterDetailVO);
 }

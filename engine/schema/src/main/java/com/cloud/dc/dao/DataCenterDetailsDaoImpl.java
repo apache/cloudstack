@@ -16,12 +16,9 @@
 // under the License.
 package com.cloud.dc.dao;
 
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
 import com.cloud.dc.DataCenterDetailVO;
@@ -29,12 +26,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
-import javax.inject.Inject;
-
 public class DataCenterDetailsDaoImpl extends ResourceDetailsDaoBase<DataCenterDetailVO> implements DataCenterDetailsDao, ScopedConfigStorage {
-
-    @Inject
-    private ConfigurationDao _configDao;
 
     private final SearchBuilder<DataCenterDetailVO> DetailSearch;
 
@@ -73,14 +65,5 @@ public class DataCenterDetailsDaoImpl extends ResourceDetailsDaoBase<DataCenterD
         DataCenterDetailVO vo = new DataCenterDetailVO(zoneId, name, value, true);
         persist(vo);
         txn.commit();
-    }
-
-    @Override
-    public String getActualValue(DataCenterDetailVO dataCenterDetailVO) {
-        ConfigurationVO configurationVO = _configDao.findByName(dataCenterDetailVO.getName());
-        if (configurationVO != null && configurationVO.isEncrypted()) {
-            return DBEncryptionUtil.decrypt(dataCenterDetailVO.getValue());
-        }
-        return dataCenterDetailVO.getValue();
     }
 }

@@ -23,11 +23,11 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
 @Table(name = "domain_details")
-public class DomainDetailVO implements InternalIdentity {
+public class DomainDetailVO implements ResourceDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -55,12 +55,22 @@ public class DomainDetailVO implements InternalIdentity {
         return domainId;
     }
 
+    @Override
+    public long getResourceId() {
+        return domainId;
+    }
+
     public String getName() {
         return name;
     }
 
     public String getValue() {
         return value;
+    }
+
+    @Override
+    public boolean isDisplay() {
+        return true;
     }
 
     public void setValue(String value) {
