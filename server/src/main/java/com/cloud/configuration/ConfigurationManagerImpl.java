@@ -6964,10 +6964,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if (tags != null) {
-            SearchCriteria<NetworkOfferingJoinVO> tagsSc = networkOfferingJoinDao.createSearchCriteria();
-            tagsSc.addAnd("tags", SearchCriteria.Op.EQ, tags);
-            tagsSc.addOr("isDefault", SearchCriteria.Op.EQ, true);
-            sc.addAnd("tags", SearchCriteria.Op.SC, tagsSc);
+            if (GuestType.Shared.name().equalsIgnoreCase(guestIpType)) {
+                SearchCriteria<NetworkOfferingJoinVO> tagsSc = networkOfferingJoinDao.createSearchCriteria();
+                tagsSc.addAnd("tags", SearchCriteria.Op.EQ, tags);
+                tagsSc.addOr("isDefault", SearchCriteria.Op.EQ, true);
+                sc.addAnd("tags", SearchCriteria.Op.SC, tagsSc);
+            } else {
+                sc.addAnd("tags", SearchCriteria.Op.EQ, tags);
+            }
         }
 
         if (zoneId != null) {
