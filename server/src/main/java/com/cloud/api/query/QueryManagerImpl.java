@@ -3458,7 +3458,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (tags != null) {
-            diskOfferingSearch.and("tags", SearchCriteria.Op.EQ, tags);
+            diskOfferingSearch.and("tags", diskOfferingSearch.entity().getTags(), Op.EQ);
         }
 
         // Keeping this logic consistent with domain specific zones
