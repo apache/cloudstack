@@ -41,6 +41,7 @@ public final class LibvirtDeleteStoragePoolCommandWrapper extends CommandWrapper
     @Override
     public Answer execute(final DeleteStoragePoolCommand command, final LibvirtComputingResource libvirtComputingResource) {
         try {
+            // if getRemoveDatastore() is true, then we are dealing with managed storage and can skip the delete logic here
             if (!command.getRemoveDatastore()) {
                 handleStoragePoolDeletion(command, libvirtComputingResource);
             }
