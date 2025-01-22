@@ -105,7 +105,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
 
     @Override
     public List<String> getSourceCidrList() {
-        if (CollectionUtils.isNotEmpty(cidrlist) && (cidrlist.size() == 1 && StringUtils.isNotBlank(cidrlist.get(0)))) {
+        if (CollectionUtils.isNotEmpty(cidrlist) && !(cidrlist.size() == 1 && StringUtils.isNotBlank(cidrlist.get(0)))) {
             return cidrlist;
         } else {
             List<String> oneCidrList = new ArrayList<>();
