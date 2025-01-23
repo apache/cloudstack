@@ -54,7 +54,7 @@ export default {
         return fields
       },
       filters: ['all', 'account', 'domainpath', 'shared'],
-      searchFilters: ['keyword', 'zoneid', 'domainid', 'account', 'type', 'tags'],
+      searchFilters: ['keyword', 'zoneid', 'domainid', 'account', 'type', 'displaynetwork', 'tags'],
       related: [{
         name: 'vm',
         title: 'label.instances',
