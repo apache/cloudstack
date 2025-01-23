@@ -175,8 +175,8 @@
           <div class="center">
             <h3><cloud-outlined /> {{ $t('label.compute') }}</h3>
             <a-switch
-              :checked-children="$t('label.allocated') + ' Capacity'"
-              :un-checked-children="$t('label.used') + ' Capacity'"
+              :checked-children="$t('label.allocated') + ' ' + $t('label.capacity')"
+              :un-checked-children="$t('label.used') + ' ' + $t('label.capacity')"
               v-model:checked="this.displayAllocatedCompute"
               @change="val => { this.displayAllocatedCompute = val }"
             />
