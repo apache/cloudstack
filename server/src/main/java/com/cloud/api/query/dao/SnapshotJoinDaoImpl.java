@@ -244,7 +244,7 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
     private List<SnapshotJoinVO> findById(Long zoneId, long id) {
         SearchBuilder<SnapshotJoinVO> sb = createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("zone_id", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.done();
         SearchCriteria<SnapshotJoinVO> sc = sb.create();
         sc.setParameters("id", id);
