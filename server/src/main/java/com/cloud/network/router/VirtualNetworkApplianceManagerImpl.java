@@ -65,10 +65,8 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.lb.ApplicationLoadBalancerRuleVO;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.network.BgpPeerVO;
+import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
-import org.apache.cloudstack.network.dao.BgpPeerDao;
-import org.apache.cloudstack.network.dao.BgpPeerNetworkMapDao;
 import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.CloudStackVersion;
@@ -114,6 +112,7 @@ import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.bgp.BGPService;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.configuration.Config;
@@ -348,9 +347,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     @Inject
     RoutedIpv4Manager routedIpv4Manager;
     @Inject
-    BgpPeerDao bgpPeerDao;
-    @Inject
-    BgpPeerNetworkMapDao bgpPeerNetworkMapDao;
+    BGPService bgpService;
 
     private int _routerRamSize;
     private int _routerCpuMHz;
@@ -397,7 +394,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         _accountMgr.checkAccess(caller, null, true, router);
 
         if (router.getServiceOfferingId() == serviceOfferingId) {
-            logger.debug("Router: " + routerId + "already has service offering: " + serviceOfferingId);
+            logger.debug("Router: {} already has service offering: {}", router, serviceOfferingId);
             return _routerDao.findById(routerId);
         }
 
@@ -413,7 +410,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // check if it is a system service offering, if yes return with error as
         // it cannot be used for user vms
         if (!newServiceOffering.isSystemUse()) {
-            throw new InvalidParameterValueException("Cannot upgrade router vm to a non system service offering " + serviceOfferingId);
+            throw new InvalidParameterValueException(String.format("Cannot upgrade router vm to a non system service offering %s", newServiceOffering));
         }
 
         // Check that the router is stopped
@@ -429,15 +426,16 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // storage pool preference as the VM's current service
         // offering
         if (_itMgr.isRootVolumeOnLocalStorage(routerId) != newDiskOffering.isUseLocalStorage()) {
-            throw new InvalidParameterValueException("Can't upgrade, due to new local storage status : " + newDiskOffering.isUseLocalStorage() + " is different from "
-                    + "current local storage status of router " +  routerId);
+            throw new InvalidParameterValueException(String.format(
+                    "Can't upgrade, due to new local storage status : %s is different from current local storage status of router %s",
+                    newDiskOffering.isUseLocalStorage(), router));
         }
 
         router.setServiceOfferingId(serviceOfferingId);
         if (_routerDao.update(routerId, router)) {
             return _routerDao.findById(routerId);
         } else {
-            throw new CloudRuntimeException("Unable to upgrade router " + routerId);
+            throw new CloudRuntimeException("Unable to upgrade router " + router);
         }
 
     }
@@ -460,7 +458,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         final VirtualRouter virtualRouter = stop(router, forced, user, account);
         if (virtualRouter == null) {
-            throw new CloudRuntimeException("Failed to stop router with id " + routerId);
+            throw new CloudRuntimeException("Failed to stop router " + router);
         }
 
         // Clear stop pending flag after stopped successfully
@@ -495,7 +493,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                         _userStatsDao.update(userStats.getId(), userStats);
                         logger.debug("Successfully updated user statistics as a part of domR " + router + " reboot/stop");
                     } else {
-                        logger.warn("User stats were not created for account " + router.getAccountId() + " and dc " + router.getDataCenterId());
+                        DataCenterVO zone = _dcDao.findById(router.getDataCenterId());
+                        Account account = _accountMgr.getAccount(router.getAccountId());
+                        logger.warn("User stats for router {} were not created for account {} and dc {}", router, account, zone);
                     }
                 }
             }
@@ -847,7 +847,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 for (final Site2SiteVpnConnectionVO conn : conns) {
                     final Site2SiteVpnConnectionVO lock = _s2sVpnConnectionDao.acquireInLockTable(conn.getId());
                     if (lock == null) {
-                        throw new CloudRuntimeException("Unable to acquire lock for site to site vpn connection id " + conn.getId());
+                        throw new CloudRuntimeException(String.format("Unable to acquire lock for site to site vpn connection %s", conn));
                     }
                     try {
                         if (conn.getState() != Site2SiteVpnConnection.State.Connected && conn.getState() != Site2SiteVpnConnection.State.Disconnected && conn.getState() != Site2SiteVpnConnection.State.Connecting) {
@@ -865,9 +865,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                             _s2sVpnConnectionDao.persist(conn);
                             if (oldState != conn.getState()) {
                                 final String title = "Site-to-site Vpn Connection to " + gw.getName() + " just switched from " + oldState + " to " + conn.getState();
-                                final String context =
-                                        "Site-to-site Vpn Connection to " + gw.getName() + " on router " + router.getHostName() + "(id: " + router.getId() + ") " +
-                                                " just switched from " + oldState + " to " + conn.getState();
+                                final String context = String.format(
+                                        "Site-to-site Vpn Connection to %s on router %s(%s)  just switched from %s to %s",
+                                        gw.getName(), router.getHostName(), router, oldState, conn.getState());
                                 logger.info(context);
                                 _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
                             }
@@ -927,8 +927,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             final RedundantState currState = router.getRedundantState();
             if (prevState != currState) {
                 final String title = "Redundant virtual router " + router.getInstanceName() + " just switch from " + prevState + " to " + currState;
-                final String context = "Redundant virtual router (name: " + router.getHostName() + ", id: " + router.getId() + ") " + " just switch from " + prevState + " to "
-                        + currState;
+                final String context = String.format(
+                        "Redundant virtual router [%s] with hostname: %s just switch from %s to %s",
+                        router, router.getHostName(), prevState, currState);
                 logger.info(context);
                 if (currState == RedundantState.PRIMARY) {
                     _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
@@ -1035,8 +1036,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                             final DomainRouterVO dupRouter = networkRouterMaps.get(routerGuestNtwkId);
                             final String title = "More than one redundant virtual router is in PRIMARY state! Router " + router.getHostName() + " and router "
                                     + dupRouter.getHostName();
-                            final String context = "Virtual router (name: " + router.getHostName() + ", id: " + router.getId() + " and router (name: " + dupRouter.getHostName()
-                                    + ", id: " + router.getId() + ") are both in PRIMARY state! If the problem persist, restart both of routers. ";
+                            final String context = String.format(
+                                    "Virtual router %s with hostname: %s and router %s " +
+                                            "with hostname %s are both in PRIMARY state! " +
+                                            "If the problem persist, restart both of routers. ",
+                                    router, router.getHostName(), dupRouter, dupRouter.getHostName());
                             _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, router.getDataCenterId(), router.getPodIdToDeployIn(), title, context);
                             logger.warn(context);
                         } else {
@@ -1192,7 +1196,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
         } else {
             resetRouterHealthChecksAndConnectivity(router.getId(), true, true, "Successfully fetched data");
-            updateDbHealthChecksFromRouterResponse(router.getId(), answer.getMonitoringResults());
+            updateDbHealthChecksFromRouterResponse(router, answer.getMonitoringResults());
             return answer.getFailingChecks();
         }
     }
@@ -1236,7 +1240,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (recreateRouter) {
             logger.warn("Health Check Alert: Found failing checks in " +
                     RouterHealthChecksFailuresToRecreateVrCK + ", attempting recreating router.");
-            recreateRouter(router.getId());
+            recreateRouter(router);
         }
     }
 
@@ -1293,7 +1297,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
      * @param routerId - the id of the router to be recreated.
      * @return true if successfully restart is attempted else false.
      */
-    private boolean recreateRouter(long routerId) {
+    private boolean recreateRouter(DomainRouterVO router) {
+        long routerId = router.getId();
         User systemUser = _userDao.getUser(User.UID_SYSTEM);
 
         // Find any VPC containing router join VO, restart it and return
@@ -1308,7 +1313,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             return restartGuestNetworkInDomainRouter(routerJoinToRestart, systemUser);
         }
 
-        logger.warn("Unable to find a valid guest network or VPC to restart for recreating router id " + routerId);
+        logger.warn("Unable to find a valid guest network or VPC to restart for recreating router {}", router);
         return false;
     }
 
@@ -1405,8 +1410,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
      * @return converts the above JSON into list of RouterHealthCheckResult.
      */
     private List<RouterHealthCheckResult> parseHealthCheckResults(
-            final Map<String, Map<String, Map<String, String>>> checksJson, final long routerId) {
-        final Map<String, Map<String, RouterHealthCheckResultVO>> checksInDb = getHealthChecksFromDb(routerId);
+            final Map<String, Map<String, Map<String, String>>> checksJson, final DomainRouterVO router) {
+        final Map<String, Map<String, RouterHealthCheckResultVO>> checksInDb = getHealthChecksFromDb(router.getId());
         List<RouterHealthCheckResult> healthChecks = new ArrayList<>();
         final String lastRunKey = "lastRun";
         for (String checkType : checksJson.keySet()) {
@@ -1423,28 +1428,27 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                 try {
                     final RouterHealthCheckResultVO hcVo = parseHealthCheckVOFromJson(
-                            routerId, checkName, checkType, checksJson.get(checkType).get(checkName), checksInDb);
+                            router.getId(), checkName, checkType, checksJson.get(checkType).get(checkName), checksInDb);
                     healthChecks.add(hcVo);
                 } catch (Exception ex) {
-                    logger.error("Skipping health check: Exception while parsing check result data for router id " + routerId +
-                            ", check type: " + checkType + ", check name: " + checkName + ":" + ex.getLocalizedMessage(), ex);
+                    logger.error("Skipping health check: Exception while parsing check result data for router {}, check type: {}, check name: {}:{}", router, checkType, checkName, ex.getLocalizedMessage(), ex);
                 }
             }
         }
         return healthChecks;
     }
 
-    private List<RouterHealthCheckResult> updateDbHealthChecksFromRouterResponse(final long routerId, final String monitoringResult) {
+    private List<RouterHealthCheckResult> updateDbHealthChecksFromRouterResponse(final DomainRouterVO router, final String monitoringResult) {
         if (StringUtils.isBlank(monitoringResult)) {
-            logger.warn("Attempted parsing empty monitoring results string for router " + routerId);
+            logger.warn("Attempted parsing empty monitoring results string for router {}", router);
             return Collections.emptyList();
         }
 
         try {
-            logger.debug("Parsing and updating DB health check data for router: " + routerId + " with data: " + monitoringResult) ;
+            logger.debug("Parsing and updating DB health check data for router: {} with data: {}", router, monitoringResult);
             final Type t = new TypeToken<Map<String, Map<String, Map<String, String>>>>() {}.getType();
             final Map<String, Map<String, Map<String, String>>> checks = GsonHelper.getGson().fromJson(monitoringResult, t);
-            return parseHealthCheckResults(checks, routerId);
+            return parseHealthCheckResults(checks, router);
         } catch (JsonSyntaxException ex) {
             logger.error("Unable to parse the result of health checks due to " + ex.getLocalizedMessage(), ex);
         }
@@ -2508,12 +2512,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         if (guestNetwork.getVpcId() != null) {
             final Vpc vpc = _vpcDao.findById(guestNetwork.getVpcId());
             if (routedIpv4Manager.isDynamicRoutedVpc(vpc)) {
-                final List<BgpPeerVO> bgpPeers = bgpPeerDao.listNonRevokeByVpcId(guestNetwork.getVpcId());
+                List<? extends BgpPeer> bgpPeers = bgpService.getBgpPeersForVpc(vpc);
                 _commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, guestNetwork);
             }
         } else {
             if (routedIpv4Manager.isDynamicRoutedNetwork(guestNetwork)) {
-                final List<BgpPeerVO> bgpPeers = bgpPeerDao.listNonRevokeByNetworkId(guestNetworkId);
+                List<? extends BgpPeer> bgpPeers = bgpService.getBgpPeersForNetwork(guestNetwork);
                 _commandSetupHelper.createBgpPeersCommands(bgpPeers, router, cmds, guestNetwork);
             }
         }
@@ -2670,7 +2674,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
             rules.add(rule);
         } else {
-            logger.debug("Egress policy for the Network " + networkId + " is already defined as Deny. So, no need to default the rule to Allow. ");
+            logger.debug("Egress policy for the Network {} is already defined as Deny. So, no need to default the rule to Allow. ", network);
         }
     }
 
@@ -2880,23 +2884,24 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
             Answer answer = cmds.getAnswer("users");
             if (answer == null) {
-                logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
-                        + router.getInstanceName() + " due to null answer");
-                throw new ResourceUnavailableException("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
-                        + router.getInstanceName() + " due to null answer", DataCenter.class, router.getDataCenterId());
+                DataCenterVO zone = _dcDao.findById(router.getDataCenterId());
+                Account account = _accountMgr.getAccount(vpn.getAccountId());
+                logger.error("Unable to start vpn {} : unable add users to vpn in zone {} for account {} on domR: {} due to null answer", vpn, zone, account, router.getInstanceName());
+                throw new ResourceUnavailableException(String.format("Unable to start vpn %s in zone %s for account %s on domR: %s due to null answer", vpn, zone, account, router.getInstanceName()), DataCenter.class, router.getDataCenterId());
             }
             if (!answer.getResult()) {
-                logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
-                        + router.getInstanceName() + " due to " + answer.getDetails());
-                throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + router.getDataCenterId() + " for account "
-                        + vpn.getAccountId() + " on domR: " + router.getInstanceName() + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterId());
+                DataCenterVO zone = _dcDao.findById(router.getDataCenterId());
+                Account account = _accountMgr.getAccount(vpn.getAccountId());
+                logger.error("Unable to start vpn {} : unable add users to vpn in zone {} for account {} on domR: {} due to {}", vpn, zone, account, router.getInstanceName(), answer.getDetails());
+                throw new ResourceUnavailableException(String.format("Unable to start vpn %s : Unable to add users to vpn in zone %s for account %s on domR: %s due to %s", vpn, zone, account, router.getInstanceName(), answer.getDetails()), DataCenter.class, router.getDataCenterId());
             }
             answer = cmds.getAnswer("startVpn");
             if (!answer.getResult()) {
-                logger.error("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName()
-                        + " due to " + answer.getDetails());
-                throw new ResourceUnavailableException("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
-                        + router.getInstanceName() + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterId());
+                DataCenterVO zone = _dcDao.findById(router.getDataCenterId());
+                Account account = _accountMgr.getAccount(vpn.getAccountId());
+
+                logger.error("Unable to start vpn {}  in zone {} for account {} on domR: {} due to {}", vpn, zone, account, router.getInstanceName(), answer.getDetails());
+                throw new ResourceUnavailableException(String.format("Unable to start vpn %s  in zone %s for account %s on domR: %s due to %s", vpn, zone, account, router.getInstanceName(), answer.getDetails()), DataCenter.class, router.getDataCenterId());
             }
 
         }
@@ -2945,7 +2950,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     public boolean removeDhcpSupportForSubnet(final Network network, final List<DomainRouterVO> routers) throws ResourceUnavailableException {
         if (routers == null || routers.isEmpty()) {
             logger.warn("Failed to add/remove VPN users: no router found for account and zone");
-            throw new ResourceUnavailableException("Unable to assign ip addresses, domR doesn't exist for network " + network.getId(), DataCenter.class, network.getDataCenterId());
+            throw new ResourceUnavailableException(String.format("Unable to assign ip addresses, domR doesn't exist for network %s", network), DataCenter.class, network.getDataCenterId());
         }
 
         for (final DomainRouterVO router : routers) {
@@ -3027,8 +3032,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         for (final NicVO nic : nics) {
             if (!_networkMgr.startNetwork(nic.getNetworkId(), dest, context)) {
-                logger.warn("Failed to start network id=" + nic.getNetworkId() + " as a part of domR start");
-                throw new CloudRuntimeException("Failed to start network id=" + nic.getNetworkId() + " as a part of domR start");
+                NetworkVO network = _networkDao.findById(nic.getNetworkId());
+                logger.warn("Failed to start network {} as a part of domR start", network);
+                throw new CloudRuntimeException(String.format("Failed to start network %s as a part of domR start", network));
             }
         }
 
@@ -3047,7 +3053,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         }
         final VirtualRouter virtualRouter = _nwHelper.startVirtualRouter(router, user, caller, params);
         if (virtualRouter == null) {
-            throw new CloudRuntimeException("Failed to start router with id " + routerId);
+            throw new CloudRuntimeException(String.format("Failed to start router %s", router));
         }
         return virtualRouter;
     }
@@ -3194,14 +3200,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     try {
                         answer = (NetworkUsageAnswer) _agentMgr.easySend(router.getHostId(), usageCmd);
                     } catch (final Exception e) {
-                        logger.warn("Error while collecting network stats from router: " + router.getInstanceName() + " from host: " + router.getHostId(), e);
+                        logger.warn("Error while collecting network stats from router: {} from host: {}", router, router.getHostId(), e);
                         continue;
                     }
 
                     if (answer != null) {
                         if (!answer.getResult()) {
-                            logger.warn("Error while collecting network stats from router: " + router.getInstanceName() + " from host: " + router.getHostId() + "; details: "
-                                    + answer.getDetails());
+                            logger.warn("Error while collecting network stats from router: {} from host: {}; details: {}", router, router.getHostId(), answer.getDetails());
                             continue;
                         }
                         try {
@@ -3217,7 +3222,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                     final UserStatisticsVO stats = _userStatsDao.lock(router.getAccountId(), router.getDataCenterId(), network.getId(),
                                             forVpc ? routerNic.getIPv4Address() : null, router.getId(), routerType);
                                     if (stats == null) {
-                                        logger.warn("unable to find stats for account: " + router.getAccountId());
+                                        logger.warn("unable to find stats for account: {}", () -> _accountMgr.getAccount(router.getAccountId()));
                                         return;
                                     }
 
@@ -3254,8 +3259,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                                 }
                             });
                         } catch (final Exception e) {
-                            logger.warn("Unable to update user statistics for account: " + router.getAccountId() + " Rx: " + toHumanReadableSize(answer.getBytesReceived()) + "; Tx: "
-                                    + toHumanReadableSize(answer.getBytesSent()));
+                            logger.warn("Unable to update user statistics for account: {} Rx: {}; Tx: {}",
+                                    _accountMgr.getAccount(router.getAccountId()), toHumanReadableSize(answer.getBytesReceived()), toHumanReadableSize(answer.getBytesSent()));
                         }
                     }
                 }
@@ -3337,7 +3342,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         final List<Long> jobIds = new ArrayList<Long>();
         for (final DomainRouterVO router : routers) {
             if (!_nwHelper.checkRouterTemplateVersion(router)) {
-                logger.debug("Upgrading template for router: " + router.getId());
+                logger.debug("Upgrading template for router: {}", router);
                 final Map<String, String> params = new HashMap<String, String>();
                 params.put("ctxUserId", "1");
                 params.put("ctxAccountId", "" + router.getAccountId());
@@ -3352,7 +3357,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 final long jobId = _asyncMgr.submitAsyncJob(job);
                 jobIds.add(jobId);
             } else {
-                logger.debug("Router: " + router.getId() + " is already at the latest version. No upgrade required");
+                logger.debug("Router: {} is already at the latest version. No upgrade required", router);
             }
         }
         return jobIds;

@@ -17,6 +17,12 @@
 package com.cloud.alert;
 
 import com.cloud.alert.dao.AlertDao;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
@@ -42,6 +48,15 @@ public class AlertManagerImplTest {
     AlertDao alertDaoMock;
 
     @Mock
+    private DataCenterDao _dcDao;
+
+    @Mock
+    private HostPodDao _podDao;
+
+    @Mock
+    private ClusterDao _clusterDao;
+
+    @Mock
     AlertVO alertVOMock;
 
     @Mock
@@ -52,6 +67,16 @@ public class AlertManagerImplTest {
 
     private void sendMessage (){
         try {
+            DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+            Mockito.when(zone.getId()).thenReturn(0L);
+            Mockito.when(_dcDao.findById(0L)).thenReturn(zone);
+            HostPodVO pod = Mockito.mock(HostPodVO.class);
+            Mockito.when(pod.getId()).thenReturn(1L);
+            Mockito.when(_podDao.findById(1L)).thenReturn(pod);
+            ClusterVO cluster = Mockito.mock(ClusterVO.class);
+            Mockito.when(cluster.getId()).thenReturn(1L);
+            Mockito.when(_clusterDao.findById(1L)).thenReturn(cluster);
+
             alertManagerImplMock.sendAlert(AlertManager.AlertType.ALERT_TYPE_CPU, 0, 1l, 1l, "", "");
         } catch (UnsupportedEncodingException | MessagingException e) {
             Assert.fail();

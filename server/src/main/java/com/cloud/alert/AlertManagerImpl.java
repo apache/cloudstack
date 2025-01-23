@@ -33,6 +33,9 @@ import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Pod;
+import com.cloud.org.Cluster;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -672,7 +675,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 logger.debug(msgSubject);
                 logger.debug(msgContent);
             }
-            sendAlert(alertType, dc.getId(), podId, clusterId, msgSubject, msgContent);
+            sendAlert(alertType, dc, pod, cluster, msgSubject, msgContent);
         } catch (Exception ex) {
             logger.error("Exception in CapacityChecker", ex);
         }
@@ -723,15 +726,25 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     public void sendAlert(AlertType alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content)
             throws MessagingException, UnsupportedEncodingException {
-        logger.warn(String.format("alertType=[%s] dataCenterId=[%s] podId=[%s] clusterId=[%s] message=[%s].", alertType, dataCenterId, podId, clusterId, subject));
+        DataCenterVO zone = _dcDao.findById(dataCenterId);
+        HostPodVO pod = podId == null ? null : _podDao.findById(podId);
+        ClusterVO cluster = clusterId == null ? null : _clusterDao.findById(clusterId);
+        sendAlert(alertType, zone, pod, cluster, subject, content);
+    }
+
+    public void sendAlert(AlertType alertType, DataCenter dataCenter, Pod pod, Cluster cluster, String subject, String content)
+            throws MessagingException, UnsupportedEncodingException {
+        logger.warn(String.format("alertType=[%s] dataCenter=[%s] pod=[%s] cluster=[%s] message=[%s].", alertType, dataCenter, pod, cluster, subject));
         AlertVO alert = null;
+        Long clusterId = cluster == null ? null : cluster.getId();
+        Long podId = pod == null ? null : pod.getId();
         if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) && (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM)
                 && (alertType != AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER) && (alertType != AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY)
                 && (alertType != AlertManager.AlertType.ALERT_TYPE_SSVM) && (alertType != AlertManager.AlertType.ALERT_TYPE_STORAGE_MISC)
                 && (alertType != AlertManager.AlertType.ALERT_TYPE_MANAGEMENT_NODE) && (alertType != AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED)
                 && (alertType != AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED) && (alertType != AlertManager.AlertType.ALERT_TYPE_OOBM_AUTH_ERROR)
                 && (alertType != AlertManager.AlertType.ALERT_TYPE_HA_ACTION) && (alertType != AlertManager.AlertType.ALERT_TYPE_CA_CERT)) {
-            alert = _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId, clusterId);
+            alert = _alertDao.getLastAlert(alertType.getType(), dataCenter.getId(), podId, clusterId);
         }
 
         if (alert == null) {
@@ -741,7 +754,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             newAlert.setContent(content);
             newAlert.setClusterId(clusterId);
             newAlert.setPodId(podId);
-            newAlert.setDataCenterId(dataCenterId);
+            newAlert.setDataCenterId(dataCenter.getId());
             newAlert.setSentCount(1);
             newAlert.setLastSent(new Date());
             newAlert.setName(alertType.getName());

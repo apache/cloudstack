@@ -173,7 +173,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             List<HostVO> altClusterHosts = hostDao.findHypervisorHostInCluster(host.getClusterId());
             for (final HostVO candidateClusterHost : altClusterHosts) {
                 if ( candidateClusterHost.getStatus() == Status.Up ) {
-                    LOG.debug("Found Host " + candidateClusterHost.getName());
+                    LOG.debug(String.format("Found Host %s", candidateClusterHost));
                     return candidateClusterHost;
                 }
             }
@@ -182,7 +182,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         List<HostVO> altZoneHosts = hostDao.findByDataCenterId(host.getDataCenterId());
         for (final HostVO candidateZoneHost : altZoneHosts) {
             if ( candidateZoneHost.getStatus() == Status.Up && candidateZoneHost.getHypervisorType() == Hypervisor.HypervisorType.KVM ) {
-                LOG.debug("Found Host " + candidateZoneHost.getName());
+                LOG.debug("Found Host " + candidateZoneHost);
                 return candidateZoneHost;
             }
         }
@@ -331,7 +331,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         final NetworkerBackup networkerBackup=getClient(zoneId).getNetworkerBackupInfo(externalBackupId);
         final String SSID = networkerBackup.getShortId();
 
-        LOG.debug("Restoring vm " + vm.getUuid() + "from backup " + backup.getUuid() + " on the Networker Backup Provider");
+        LOG.debug(String.format("Restoring vm %s from backup %s on the Networker Backup Provider", vm, backup));
 
         if ( SSID.isEmpty() ) {
             LOG.debug("There was an error retrieving the SSID for backup with id " + externalBackupId + " from EMC NEtworker");
@@ -359,7 +359,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             script.add("-v");
 
         Date restoreJobStart = new Date();
-        LOG.debug("Starting Restore for VM ID " + vm.getUuid() + " and SSID" + SSID + " at " + restoreJobStart);
+        LOG.debug(String.format("Starting Restore for VM %s and %s at %s", vm, SSID, restoreJobStart));
 
         if ( executeRestoreCommand(hostVO, credentials.first(), credentials.second(), script.toString()) ) {
             Date restoreJobEnd = new Date();
@@ -387,7 +387,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         final String destinationNetworkerClient = hostVO.getName().split("\\.")[0];
         Long restoredVolumeDiskSize = 0L;
 
-        LOG.debug("Restoring volume " + volumeUuid + "from backup " + backup.getUuid() + " on the Networker Backup Provider");
+        LOG.debug(String.format("Restoring volume %s with uuid %s from backup %s on the Networker Backup Provider", volume, volumeUuid, backup));
 
         if ( SSID.isEmpty() ) {
             LOG.debug("There was an error retrieving the SSID for backup with id " + externalBackupId + " from EMC NEtworker");
@@ -448,7 +448,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             script.add("-v");
 
         Date restoreJobStart = new Date();
-        LOG.debug("Starting Restore for Volume UUID " + volume.getUuid() + " and SSID" + SSID + " at " + restoreJobStart);
+        LOG.debug(String.format("Starting Restore for Volume UUID %s and SSID %s at %s", volume, SSID, restoreJobStart));
 
         if ( executeRestoreCommand(hostVO, credentials.first(), credentials.second(), script.toString()) ) {
             Date restoreJobEnd = new Date();
@@ -505,18 +505,18 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         if ( Boolean.TRUE.equals(NetworkerClientVerboseLogs.value()) )
             script.add("-v");
 
-        LOG.debug("Starting backup for VM ID " + vm.getUuid() + " on Networker provider");
+        LOG.debug("Starting backup for VM {} on Networker provider", vm);
         Date backupJobStart = new Date();
 
         String saveTime = executeBackupCommand(hostVO, credentials.first(), credentials.second(), script.toString());
-        LOG.info ("EMC Networker finished backup job for vm " + vm.getName() + " with saveset Time: " + saveTime);
+        LOG.info("EMC Networker finished backup job for vm {} with saveset Time: {}", vm, saveTime);
         BackupVO backup = getClient(vm.getDataCenterId()).registerBackupForVm(vm, backupJobStart, saveTime);
         if (backup != null) {
             backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
             backupDao.persist(backup);
             return true;
         } else {
-            LOG.error("Could not register backup for vm " + vm.getName() + " with saveset Time: " + saveTime);
+            LOG.error("Could not register backup for vm {} with saveset Time: {}", vm, saveTime);
             // We need to handle this rare situation where backup is successful but can't be registered properly.
             return false;
         }
@@ -558,8 +558,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
                 vmBackupProtectedSize+= vmNwBackup.getSize().getValue() / 1024L;
             }
             Backup.Metric vmBackupMetric = new Backup.Metric(vmBackupSize,vmBackupProtectedSize);
-            LOG.debug(String.format("Metrics for VM [uuid: %s, name: %s] is [backup size: %s, data size: %s].", vm.getUuid(),
-                    vm.getInstanceName(), vmBackupMetric.getBackupSize(), vmBackupMetric.getDataSize()));
+            LOG.debug(String.format("Metrics for VM [%s] is [backup size: %s, data size: %s].", vm, vmBackupMetric.getBackupSize(), vmBackupMetric.getDataSize()));
             metrics.put(vm, vmBackupMetric);
         }
         return metrics;
@@ -578,14 +577,14 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
                     Long vmBackupSize=0L;
                     boolean backupExists = false;
                     for (final Backup backupInDb : backupsInDb) {
-                        LOG.debug("Checking if Backup with external ID " + backupInDb.getName() + " for VM " + backupInDb.getVmId() + "is valid");
+                        LOG.debug(String.format("Checking if Backup %s with external ID %s for VM %s is valid", backupsInDb, backupInDb.getName(), vm));
                         if ( networkerBackupId.equals(backupInDb.getExternalId()) ) {
-                            LOG.debug("Found Backup with id " + backupInDb.getId() + " in both Database and Networker");
+                            LOG.debug(String.format("Found Backup %s in both Database and Networker", backupInDb));
                             backupExists = true;
                             removeList.remove(backupInDb.getId());
                             if (metric != null) {
-                                LOG.debug(String.format("Update backup with [uuid: %s, external id: %s] from [size: %s, protected size: %s] to [size: %s, protected size: %s].",
-                                        backupInDb.getUuid(), backupInDb.getExternalId(), backupInDb.getSize(), backupInDb.getProtectedSize(),
+                                LOG.debug(String.format("Update backup [%s] from [size: %s, protected size: %s] to [size: %s, protected size: %s].",
+                                        backupInDb, backupInDb.getSize(), backupInDb.getProtectedSize(),
                                         metric.getBackupSize(), metric.getDataSize()));
                                 ((BackupVO) backupInDb).setSize(metric.getBackupSize());
                                 ((BackupVO) backupInDb).setProtectedSize(metric.getDataSize());
@@ -627,12 +626,12 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
                         strayBackup.setAccountId(vm.getAccountId());
                         strayBackup.setDomainId(vm.getDomainId());
                         strayBackup.setZoneId(vm.getDataCenterId());
-                        LOG.debug(String.format("Creating a new entry in backups: [uuid: %s, vm_id: %s, external_id: %s, type: %s, date: %s, backup_offering_id: %s, account_id: %s, "
-                                        + "domain_id: %s, zone_id: %s].", strayBackup.getUuid(), strayBackup.getVmId(), strayBackup.getExternalId(),
+                        LOG.debug(String.format("Creating a new entry in backups: [id: %s, uuid: %s, vm_id: %s, external_id: %s, type: %s, date: %s, backup_offering_id: %s, account_id: %s, "
+                                        + "domain_id: %s, zone_id: %s].", strayBackup.getId(), strayBackup.getUuid(), strayBackup.getVmId(), strayBackup.getExternalId(),
                                 strayBackup.getType(), strayBackup.getDate(), strayBackup.getBackupOfferingId(), strayBackup.getAccountId(),
                                 strayBackup.getDomainId(), strayBackup.getZoneId()));
                         backupDao.persist(strayBackup);
-                        LOG.warn("Added backup found in provider with ID: [" + strayBackup.getId() + "]");
+                        LOG.warn("Added backup found in provider [" + strayBackup + "]");
                     } else {
                         LOG.debug ("Backup is in progress, skipping addition for this run");
                     }

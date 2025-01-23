@@ -36,6 +36,7 @@ import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.FileUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 
 @ResourceWrapper(handles =  SetupDirectDownloadCertificateCommand.class)
@@ -131,6 +132,9 @@ public class LibvirtSetupDirectDownloadCertificateCommandWrapper extends Command
     public Answer execute(SetupDirectDownloadCertificateCommand cmd, LibvirtComputingResource serverResource) {
         String certificate = cmd.getCertificate();
         String certificateName = cmd.getCertificateName();
+        if (!NetUtils.verifyDomainNameLabel(certificateName, false)) {
+            return new Answer(cmd, false, "The provided certificate name is invalid");
+        }
 
         try {
             File agentFile = getAgentPropertiesFile();

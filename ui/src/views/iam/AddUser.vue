@@ -313,75 +313,79 @@ export default {
     isValidValueForKey (obj, key) {
       return key in obj && obj[key] != null
     },
-    handleSubmit (e) {
+    async handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
-      this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
-        this.loading = true
-        const params = {
-          username: values.username,
-          password: values.password,
-          email: values.email,
-          firstname: values.firstname,
-          lastname: values.lastname,
-          accounttype: 0
-        }
 
-        if (this.account) {
-          params.account = this.account
-        } else if (this.accountList[values.account]) {
-          params.account = this.accountList[values.account].name
-        }
+      await this.formRef.value.validate()
+        .catch(error => this.formRef.value.scrollToField(error.errorFields[0].name))
 
-        if (this.domainid) {
-          params.domainid = this.domainid
-        } else if (values.domainid) {
-          params.domainid = values.domainid
-        }
-
-        if (this.isValidValueForKey(values, 'timezone') && values.timezone.length > 0) {
-          params.timezone = values.timezone
-        }
-
-        api('createUser', {}, 'POST', params).then(response => {
-          this.$emit('refresh-data')
-          this.$notification.success({
-            message: this.$t('label.create.user'),
-            description: `${this.$t('message.success.create.user')} ${params.username}`
-          })
-          const user = response.createuserresponse.user
-          if (values.samlenable && user) {
-            api('authorizeSamlSso', {
-              enable: values.samlenable,
-              entityid: values.samlentity,
-              userid: user.id
-            }).then(response => {
-              this.$notification.success({
-                message: this.$t('label.samlenable'),
-                description: this.$t('message.success.enable.saml.auth')
-              })
-            }).catch(error => {
-              this.$notification.error({
-                message: this.$t('message.request.failed'),
-                description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
-                duration: 0
-              })
-            })
-          }
-          this.closeAction()
-        }).catch(error => {
-          this.$notification.error({
-            message: this.$t('message.request.failed'),
-            description: (error.response && error.response.headers && error.response.headers['x-description']) || error.message,
-            duration: 0
-          })
-        }).finally(() => {
-          this.loading = false
+      this.loading = true
+      const values = toRaw(this.form)
+      try {
+        const userCreationResponse = await this.createUser(values)
+        this.$notification.success({
+          message: this.$t('label.create.user'),
+          description: `${this.$t('message.success.create.user')} ${values.username}`
         })
-      }).catch(error => {
-        this.formRef.value.scrollToField(error.errorFields[0].name)
-      })
+
+        const user = userCreationResponse?.createuserresponse?.user
+        if (values.samlenable && user) {
+          await api('authorizeSamlSso', {
+            enable: values.samlenable,
+            entityid: values.samlentity,
+            userid: user.id
+          })
+          this.$notification.success({
+            message: this.$t('label.samlenable'),
+            description: this.$t('message.success.enable.saml.auth')
+          })
+        }
+
+        this.closeAction()
+        this.$emit('refresh-data')
+      } catch (error) {
+        if (error?.config?.params?.command === 'authorizeSamlSso') {
+          this.closeAction()
+          this.$emit('refresh-data')
+        }
+
+        this.$notification.error({
+          message: this.$t('message.request.failed'),
+          description: error?.response?.headers['x-description'] || error.message,
+          duration: 0
+        })
+      } finally {
+        this.loading = false
+      }
+    },
+    async createUser (rawParams) {
+      const params = {
+        username: rawParams.username,
+        password: rawParams.password,
+        email: rawParams.email,
+        firstname: rawParams.firstname,
+        lastname: rawParams.lastname,
+        accounttype: 0
+      }
+
+      if (this.account) {
+        params.account = this.account
+      } else if (this.accountList[rawParams.account]) {
+        params.account = this.accountList[rawParams.account].name
+      }
+
+      if (this.domainid) {
+        params.domainid = this.domainid
+      } else if (rawParams.domainid) {
+        params.domainid = rawParams.domainid
+      }
+
+      if (this.isValidValueForKey(rawParams, 'timezone') && rawParams.timezone.length > 0) {
+        params.timezone = rawParams.timezone
+      }
+
+      return api('createUser', {}, 'POST', params)
     },
     async validateConfirmPassword (rule, value) {
       if (!value || value.length === 0) {
