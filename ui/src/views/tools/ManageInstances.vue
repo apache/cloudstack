@@ -1413,6 +1413,7 @@ export default {
       this.selectedVmwareVcenter = obj.params
       this.unmanagedInstances = obj.response.unmanagedinstance
       this.itemCount.unmanaged = obj.response.count
+      this.unmanagedInstancesLoading = false
     },
     updateVmwareVcenterType (type) {
       this.vmwareVcenterType = type
