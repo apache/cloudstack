@@ -767,7 +767,8 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
     @Override
     public boolean saveHypervisorHostname(NicProfile nicProfile, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
-        if (_networkModel.getUserDataUpdateProvider(network).getProvider().equals(Provider.VirtualRouter) && vm.getVirtualMachine().getType() == VirtualMachine.Type.User) {
+        final UserDataServiceProvider userDataUpdateProvider = _networkModel.getUserDataUpdateProvider(network);
+        if (userDataUpdateProvider != null && Provider.VirtualRouter.equals(userDataUpdateProvider.getProvider()) && vm.getVirtualMachine().getType() == VirtualMachine.Type.User) {
             VirtualMachine uvm = vm.getVirtualMachine();
             UserVmVO destVm = _userVmDao.findById(uvm.getId());
             VirtualMachineProfile profile = null;
