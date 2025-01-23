@@ -896,7 +896,7 @@ export default {
 
       this.chosenColumns = this.columns.filter(column => {
         return ![this.$t('label.state'), this.$t('label.hostname'), this.$t('label.hostid'), this.$t('label.zonename'),
-          this.$t('label.zone'), this.$t('label.zoneid'), this.$t('label.ip'), this.$t('label.ipaddress'), this.$t('label.privateip'),
+          this.$t('label.zone'), this.$t('label.zoneid'), this.$t('label.ip'), this.$t('label.privateip'),
           this.$t('label.linklocalip'), this.$t('label.size'), this.$t('label.sizegb'), this.$t('label.current'),
           this.$t('label.created'), this.$t('label.order')].includes(column.title)
       })
@@ -1423,6 +1423,7 @@ export default {
             filters: [
               { text: 'In Progress', value: 'InProgress' },
               { text: 'Success', value: 'success' },
+              { text: 'Skipped', value: 'skipped' },
               { text: 'Failed', value: 'failed' }
             ]
           })
@@ -1461,6 +1462,13 @@ export default {
     },
     callGroupApi (params, resourceName) {
       return new Promise((resolve, reject) => {
+        if (params.skipGroupAction) {
+          eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource: this.getDataIdentifier(params), state: 'skipped' })
+          this.actionLoading = false
+          this.showAction = false
+          return
+        }
+        delete params.skipGroupAction
         const action = this.currentAction
         api(action.api, params).then(json => {
           resolve(this.handleResponse(json, resourceName, this.getDataIdentifier(params), action, false))

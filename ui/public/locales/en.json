@@ -1929,6 +1929,7 @@
 "label.site.to.site.vpn.connections": "Site-to-site VPN Connections",
 "label.size": "Size",
 "label.sizegb": "Size",
+"label.skipped": "Skipped",
 "label.smb.domain": "SMB domain",
 "label.smb.password": "SMB password",
 "label.smb.username": "SMB username",
