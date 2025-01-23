@@ -191,10 +191,10 @@
               <a-progress
               status="active"
               :percent="statsMap[ctype]?.capacitytotal > 0 ?
-                this.displayAllocatedCompute ? parseFloat(100.0 * statsMap[ctype]?.capacityallocated / statsMap[ctype]?.capacitytotal) : parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal)
+                displayPercentUsedOrAllocated(statsMap[ctype]?.capacityused, statsMap[ctype]?.capacityallocated, statsMap[ctype]?.capacitytotal)
                 : 0"
               :format="p => statsMap[ctype]?.capacitytotal > 0 ?
-                this.displayAllocatedCompute ? parseFloat(100.0 * statsMap[ctype]?.capacityallocated / statsMap[ctype]?.capacitytotal).toFixed(2) + '%' : parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) + '%'
+                displayPercentFormatUsedOrAllocated(statsMap[ctype]?.capacityused, statsMap[ctype]?.capacityallocated, statsMap[ctype]?.capacitytotal)
                 : '0%'"
               stroke-color="#52c41a"
               size="small"
@@ -202,7 +202,7 @@
               />
               <br/>
               <div style="text-align: center">
-                {{ this.displayAllocatedCompute ? displayData(ctype, statsMap[ctype]?.capacityallocated) : displayData(ctype, statsMap[ctype]?.capacityused) }} {{ this.displayAllocatedCompute ? $t('label.allocated') : $t('label.used') }} | {{ displayData(ctype, statsMap[ctype]?.capacitytotal) }} {{ $t('label.total') }}
+                {{ displayDataUsedOrAllocated(ctype, statsMap[ctype]?.capacityused, statsMap[ctype]?.capacityallocated) }} {{ this.displayAllocatedCompute ? $t('label.allocated') : $t('label.used') }} | {{ displayData(ctype, statsMap[ctype]?.capacitytotal) }} {{ $t('label.total') }}
               </div>
             </div>
           </div>
@@ -412,6 +412,18 @@ export default {
         return 'active'
       }
       return 'normal'
+    },
+    displayPercentUsedOrAllocated (used, allocated, total) {
+      var value = this.displayAllocatedCompute ? allocated : used
+      return parseFloat(100.0 * value / total)
+    },
+    displayPercentFormatUsedOrAllocated (used, allocated, total) {
+      var value = this.displayAllocatedCompute ? allocated : used
+      return parseFloat(100.0 * value / total).toFixed(2) + '%'
+    },
+    displayDataUsedOrAllocated (dataType, used, allocated) {
+      var value = this.displayAllocatedCompute ? allocated : used
+      return this.displayData(dataType, value)
     },
     displayData (dataType, value) {
       if (!value) {
