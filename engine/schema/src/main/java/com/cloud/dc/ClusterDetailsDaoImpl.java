@@ -43,11 +43,11 @@ public class ClusterDetailsDaoImpl extends ResourceDetailsDaoBase<ClusterDetails
 
     protected ClusterDetailsDaoImpl() {
         ClusterSearch = createSearchBuilder();
-        ClusterSearch.and("clusterId", ClusterSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        ClusterSearch.and("clusterId", ClusterSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         ClusterSearch.done();
 
         DetailSearch = createSearchBuilder();
-        DetailSearch.and("clusterId", DetailSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        DetailSearch.and("clusterId", DetailSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         DetailSearch.and("name", DetailSearch.entity().getName(), SearchCriteria.Op.EQ);
         DetailSearch.done();
     }

@@ -45,14 +45,14 @@ public class DomainDetailsDaoImpl extends ResourceDetailsDaoBase<DomainDetailVO>
 
     protected DomainDetailsDaoImpl() {
         domainSearch = createSearchBuilder();
-        domainSearch.and("domainId", domainSearch.entity().getDomainId(), Op.EQ);
+        domainSearch.and("domainId", domainSearch.entity().getResourceId(), Op.EQ);
         domainSearch.done();
     }
 
     @Override
     public Map<String, String> findDetails(long domainId) {
         QueryBuilder<DomainDetailVO> sc = QueryBuilder.create(DomainDetailVO.class);
-        sc.and(sc.entity().getDomainId(), Op.EQ, domainId);
+        sc.and(sc.entity().getResourceId(), Op.EQ, domainId);
         List<DomainDetailVO> results = sc.list();
         Map<String, String> details = new HashMap<String, String>(results.size());
         for (DomainDetailVO r : results) {
@@ -78,7 +78,7 @@ public class DomainDetailsDaoImpl extends ResourceDetailsDaoBase<DomainDetailVO>
     @Override
     public DomainDetailVO findDetail(long domainId, String name) {
         QueryBuilder<DomainDetailVO> sc = QueryBuilder.create(DomainDetailVO.class);
-        sc.and(sc.entity().getDomainId(), Op.EQ, domainId);
+        sc.and(sc.entity().getResourceId(), Op.EQ, domainId);
         sc.and(sc.entity().getName(), Op.EQ, name);
         return sc.find();
     }

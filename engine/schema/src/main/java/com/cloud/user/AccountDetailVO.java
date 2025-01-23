@@ -34,7 +34,7 @@ public class AccountDetailVO implements ResourceDetail {
     private long id;
 
     @Column(name = "account_id")
-    private long accountId;
+    private long resourceId;
 
     @Column(name = "name")
     private String name;
@@ -46,18 +46,14 @@ public class AccountDetailVO implements ResourceDetail {
     }
 
     public AccountDetailVO(long accountId, String name, String value) {
-        this.accountId = accountId;
+        this.resourceId = accountId;
         this.name = name;
         this.value = value;
     }
 
-    public long getAccountId() {
-        return accountId;
-    }
-
     @Override
     public long getResourceId() {
-        return accountId;
+        return resourceId;
     }
 
     public String getName() {

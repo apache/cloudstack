@@ -34,7 +34,7 @@ public class DomainDetailVO implements ResourceDetail {
     private long id;
 
     @Column(name = "domain_id")
-    private long domainId;
+    private long resourceId;
 
     @Column(name = "name")
     private String name;
@@ -46,18 +46,14 @@ public class DomainDetailVO implements ResourceDetail {
     }
 
     public DomainDetailVO(long domainId, String name, String value) {
-        this.domainId = domainId;
+        this.resourceId = domainId;
         this.name = name;
         this.value = value;
     }
 
-    public long getDomainId() {
-        return domainId;
-    }
-
     @Override
     public long getResourceId() {
-        return domainId;
+        return resourceId;
     }
 
     public String getName() {

@@ -35,7 +35,7 @@ public class ClusterDetailsVO implements ResourceDetail {
     private long id;
 
     @Column(name = "cluster_id")
-    private long clusterId;
+    private long resourceId;
 
     @Column(name = "name")
     private String name;
@@ -47,18 +47,14 @@ public class ClusterDetailsVO implements ResourceDetail {
     }
 
     public ClusterDetailsVO(long clusterId, String name, String value) {
-        this.clusterId = clusterId;
+        this.resourceId = clusterId;
         this.name = name;
         this.value = value;
     }
 
-    public long getClusterId() {
-        return clusterId;
-    }
-
     @Override
     public long getResourceId() {
-        return clusterId;
+        return resourceId;
     }
 
     public String getName() {

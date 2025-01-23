@@ -55,14 +55,14 @@ public class AccountDetailsDaoImpl extends ResourceDetailsDaoBase<AccountDetailV
 
     protected AccountDetailsDaoImpl() {
         accountSearch = createSearchBuilder();
-        accountSearch.and("accountId", accountSearch.entity().getAccountId(), Op.EQ);
+        accountSearch.and("accountId", accountSearch.entity().getResourceId(), Op.EQ);
         accountSearch.done();
     }
 
     @Override
     public Map<String, String> findDetails(long accountId) {
         QueryBuilder<AccountDetailVO> sc = QueryBuilder.create(AccountDetailVO.class);
-        sc.and(sc.entity().getAccountId(), Op.EQ, accountId);
+        sc.and(sc.entity().getResourceId(), Op.EQ, accountId);
         List<AccountDetailVO> results = sc.list();
         Map<String, String> details = new HashMap<String, String>(results.size());
         for (AccountDetailVO r : results) {
@@ -88,7 +88,7 @@ public class AccountDetailsDaoImpl extends ResourceDetailsDaoBase<AccountDetailV
     @Override
     public AccountDetailVO findDetail(long accountId, String name) {
         QueryBuilder<AccountDetailVO> sc = QueryBuilder.create(AccountDetailVO.class);
-        sc.and(sc.entity().getAccountId(), Op.EQ, accountId);
+        sc.and(sc.entity().getResourceId(), Op.EQ, accountId);
         sc.and(sc.entity().getName(), Op.EQ, name);
         return sc.find();
     }
