@@ -56,6 +56,7 @@
         :loading="loading"
         :tabs="$route.meta.tabs" />
       <tree-view
+        v-else
         :key="treeViewKey"
         :treeData="treeData"
         :treeSelected="treeSelected"
@@ -133,7 +134,13 @@ export default {
   },
   created () {
     this.domainStore = store.getters.domainStore
-    this.fetchData()
+    // When the route changes from /domain/:id to /domain or vice versa, the component is not destroyed and created again
+    // So, we need to watch the route params to fetch the data again to update the component
+    this.$watch(
+      () => this.$route.params.id,
+      this.fetchData,
+      { immediate: true }
+    )
     eventBus.on('refresh-domain-icon', () => {
       if (this.$showIcon()) {
         this.fetchData()
