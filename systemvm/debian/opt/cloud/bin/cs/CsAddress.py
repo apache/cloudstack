@@ -563,8 +563,8 @@ class CsIP:
                     static_route = static_routes.get_bag()[item]
                     if static_route['ip_address'] == self.address['public_ip'] and not static_route['revoke']:
                         self.fw.append(["mangle", "",
-                                        "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s -j ACL_OUTBOUND_%s" %
-                                        (self.dev, self.address['network'], static_route['network'], self.dev)])
+                                        "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
+                                        (self.dev, static_route['network'], static_route['gateway'], self.dev)])
                         self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
                                 (static_route['network'], self.dev, self.dev)])
 
