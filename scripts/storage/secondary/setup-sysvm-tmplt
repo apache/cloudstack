@@ -90,7 +90,7 @@ fi
 localfile=$uuid.$ext
 
 
-sudo mkdir -p $destdir
+mkdir -p $destdir
 if [[ $? -ne 0 ]]; then
   failed 2 "Failed to write to destdir $destdir -- is it mounted?\n"
 fi
@@ -108,7 +108,7 @@ tmpfolder=/tmp/cloud/templates/
 mkdir -p $tmpfolder
 tmplfile=$tmpfolder/$localfile
 
-sudo touch $tmplfile
+touch $tmplfile
 if [[ $? -ne 0 ]]; then
   failed 2 "Failed to create temporary file in directory $tmpfolder -- is it read-only or full?\n"
 fi
@@ -121,7 +121,7 @@ localcap=$(df -P $tmpfolder | awk '{print $4}' | tail -1 )
 
 
 if [[ "$fflag" == "1" ]]; then
-  sudo cp $tmpltimg $tmplfile
+  cp $tmpltimg $tmplfile
   if [[ $? -ne 0 ]]; then
     failed 2 "Failed to create temporary file in directory $tmpfolder -- is it read-only or full?\n"
   fi
@@ -138,7 +138,7 @@ tmpdestdir=$tmpfolder
 if [ "$ext" == "ova" ]
 then
   tar xvf $tmpdestdir/$localfile -C $tmpdestdir &> /dev/null
-  sudo cp $tmpdestdir/*.vmdk $tmpdestdir/*.mf $tmpdestdir/*.ovf $destdir/
+  cp $tmpdestdir/*.vmdk $tmpdestdir/*.mf $tmpdestdir/*.ovf $destdir/
   rm -rf $tmpdestdir/*.vmdk $tmpdestdir/*.mf $tmpdestdir/*.ovf $tmpdestdir/*.ova
 else
   rm -rf $tmpdestdir/*.tmp
@@ -154,7 +154,7 @@ else
 fi
 
 templateId=${destdir##*/}
-sudo touch $destdir/template.properties
+touch $destdir/template.properties
 echo "$ext=true" >> $tmpdestdir/template.properties
 echo "id=$templateId" >> $tmpdestdir/template.properties
 echo "public=true" >> $tmpdestdir/template.properties
@@ -164,7 +164,7 @@ echo "$ext.virtualsize=$vrtmpltsize" >> $tmpdestdir/template.properties
 echo "virtualsize=$vrtmpltsize" >> $tmpdestdir/template.properties
 echo "$ext.size=$tmpltsize" >> $tmpdestdir/template.properties
 
-sudo cp $tmpdestdir/template.properties $destdir/template.properties
+cp $tmpdestdir/template.properties $destdir/template.properties
 if [ -f "$tmpdestdir/template.properties" ]
 then
     rm -rf $tmpdestdir/template.properties
