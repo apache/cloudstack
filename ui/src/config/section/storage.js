@@ -223,7 +223,7 @@ export default {
           label: 'label.change.offering.for.volume',
           args: ['id', 'diskofferingid', 'size', 'miniops', 'maxiops', 'automigrate'],
           dataView: true,
-          show: (record, store) => { return ['Allocated', 'Ready'].includes(record.state) && store.apis.changeOfferingForVolume },
+          show: (record, store) => { return ['Allocated', 'Ready'].includes(record.state) },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/ChangeOfferingForVolume.vue')))
         },
