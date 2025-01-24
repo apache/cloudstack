@@ -1599,7 +1599,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             if (com.cloud.utils.StringUtils.isNotBlank(host)) {
                 ManagedObjectReference hostMor = dcMo.findHost(host);
                 if (hostMor == null) {
-                    throw new VmwareClientException(String.format("no host '%s' found.",host));
+                    throw new VmwareClientException(String.format("No host '%s' found on DC: %s.", host, dcMo.getName()));
                 }
                 HostMO hostMo = new HostMO(context, hostMor);
                 return hostMo.getVms(maxObjects, token);
