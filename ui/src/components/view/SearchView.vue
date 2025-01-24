@@ -311,9 +311,12 @@ export default {
         if (item === 'isencrypted' && !('listVolumes' in this.$store.getters.apis)) {
           return true
         }
+        if (item === 'displaynetwork' && this.$store.getters.userInfo.roletype !== 'Admin') {
+          return true
+        }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
-          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'networkid', 'usagetype', 'restartrequired'].includes(item)
+          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'networkid', 'usagetype', 'restartrequired', 'displaynetwork'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -335,6 +338,12 @@ export default {
       return arrayField
     },
     fetchStaticFieldData (arrayField) {
+      if (arrayField.includes('displaynetwork')) {
+        const typeIndex = this.fields.findIndex(item => item.name === 'displaynetwork')
+        this.fields[typeIndex].loading = true
+        this.fields[typeIndex].opts = this.fetchBoolean()
+        this.fields[typeIndex].loading = false
+      }
       if (arrayField.includes('type')) {
         if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
           const typeIndex = this.fields.findIndex(item => item.name === 'type')
@@ -1007,6 +1016,18 @@ export default {
           name: 'label.l2'
         })
       }
+      return types
+    },
+    fetchBoolean () {
+      const types = []
+      types.push({
+        id: 'true',
+        name: 'label.true'
+      })
+      types.push({
+        id: 'false',
+        name: 'label.false'
+      })
       return types
     },
     fetchAccountTypes () {

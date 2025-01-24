@@ -2315,6 +2315,8 @@
 "label.traffictype": "Traffic type",
 "label.transportzoneuuid": "Transport zone UUID",
 "label.trigger.shutdown": "Trigger Safe Shutdown",
+"label.true": "True",
+"label.false": "False",
 "label.try.again": "Try again",
 "label.tuesday": "Tuesday",
 "label.two.factor.authentication.secret.key": "Your Two factor authentication secret key",
