@@ -143,6 +143,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -2741,7 +2742,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    private void verifyVmLimits(UserVmVO vmInstance, Map<String, String> details) {
+    protected void verifyVmLimits(UserVmVO vmInstance, Map<String, String> details) {
         Account owner = _accountDao.findById(vmInstance.getAccountId());
         if (owner == null) {
             throw new InvalidParameterValueException("The owner of " + vmInstance + " does not exist: " + vmInstance.getAccountId());
@@ -7386,514 +7387,768 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @DB
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_MOVE, eventDescription = "move VM to another user", async = false)
-    public UserVm moveVMToUser(final AssignVMCmd cmd) throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        // VERIFICATIONS and VALIDATIONS
-
-        // VV 1: verify the two users
+    public UserVm moveVmToUser(final AssignVMCmd cmd) throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         Account caller = CallContext.current().getCallingAccount();
-        if (!_accountMgr.isRootAdmin(caller.getId())
-                && !_accountMgr.isDomainAdmin(caller.getId())) { // only
-            // root
-            // admin
-            // can
-            // assign
-            // VMs
-            throw new InvalidParameterValueException("Only domain admins are allowed to assign VMs and not " + caller.getType());
+        Long callerId = caller.getId();
+        logger.trace("Verifying if caller [{}] is root or domain admin.", caller);
+        if (!_accountMgr.isRootAdmin(callerId) && !_accountMgr.isDomainAdmin(callerId)) {
+            throw new InvalidParameterValueException(String.format("Only root or domain admins are allowed to assign VMs. Caller [%s] is of type [%s].", caller, caller.getType()));
         }
 
-        // get and check the valid VM
-        final UserVmVO vm = _vmDao.findById(cmd.getVmId());
-        if (vm == null) {
-            throw new InvalidParameterValueException("There is no vm by that id " + cmd.getVmId());
-        } else if (vm.getState() == State.Running) { // VV 3: check if vm is
-            // running
-            if (logger.isDebugEnabled()) {
-                logger.debug("VM is Running, unable to move the vm " + vm);
-            }
-            InvalidParameterValueException ex = new InvalidParameterValueException("VM is Running, unable to move the vm with specified vmId");
-            ex.addProxyObject(vm.getUuid(), "vmId");
-            throw ex;
-        }
-        if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
-            throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
-        }
+        Long vmId = cmd.getVmId();
+        final UserVmVO vm = _vmDao.findById(vmId);
+        validateIfVmSupportsMigration(vm, vmId);
 
-        final Account oldAccount = _accountService.getActiveAccountById(vm.getAccountId());
-        if (oldAccount == null) {
-            throw new InvalidParameterValueException("Invalid account for VM " + vm.getAccountId() + " in domain.");
-        }
-        final Account newAccount = _accountMgr.finalizeOwner(caller, cmd.getAccountName(), cmd.getDomainId(), cmd.getProjectId());
-        if (newAccount == null) {
-            throw new InvalidParameterValueException("Invalid accountid=" + cmd.getAccountName() + " in domain " + cmd.getDomainId());
-        }
+        Long domainId = cmd.getDomainId();
+        Long projectId = cmd.getProjectId();
+        Long oldAccountId = vm.getAccountId();
+        String newAccountName = cmd.getAccountName();
+        final Account oldAccount = _accountService.getActiveAccountById(oldAccountId);
+        final Account newAccount = _accountMgr.finalizeOwner(caller, newAccountName, domainId, projectId);
+        validateOldAndNewAccounts(oldAccount, newAccount, oldAccountId, newAccountName, domainId);
 
-        if (newAccount.getState() == Account.State.DISABLED) {
-            throw new InvalidParameterValueException("The new account owner " + cmd.getAccountName() + " is disabled.");
-        }
+        checkCallerAccessToAccounts(caller, oldAccount, newAccount);
 
-        if (cmd.getProjectId() != null && cmd.getDomainId() == null) {
+        logger.trace("Verifying if the provided domain ID [{}] is valid.", domainId);
+        if (projectId != null && domainId == null) {
             throw new InvalidParameterValueException("Please provide a valid domain ID; cannot assign VM to a project if domain ID is NULL.");
         }
 
-        //check caller has access to both the old and new account
-        _accountMgr.checkAccess(caller, null, true, oldAccount);
-        _accountMgr.checkAccess(caller, null, true, newAccount);
+        validateIfVmHasNoRules(vm, vmId);
 
-        // make sure the accounts are not same
-        if (oldAccount.getAccountId() == newAccount.getAccountId()) {
-            throw new InvalidParameterValueException("The new account is the same as the old account. Account: " + oldAccount);
-        }
+        final List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
+        validateIfVolumesHaveNoSnapshots(volumes);
 
-        // don't allow to move the vm if there are existing PF/LB/Static Nat
-        // rules, or vm is assigned to static Nat ip
-        List<PortForwardingRuleVO> pfrules = _portForwardingDao.listByVm(cmd.getVmId());
-        if (pfrules != null && pfrules.size() > 0) {
-            throw new InvalidParameterValueException("Remove the Port forwarding rules for this VM before assigning to another user.");
-        }
-        List<FirewallRuleVO> snrules = _rulesDao.listStaticNatByVmId(vm.getId());
-        if (snrules != null && snrules.size() > 0) {
-            throw new InvalidParameterValueException("Remove the StaticNat rules for this VM before assigning to another user.");
-        }
-        List<LoadBalancerVMMapVO> maps = _loadBalancerVMMapDao.listByInstanceId(vm.getId());
-        if (maps != null && maps.size() > 0) {
-            throw new InvalidParameterValueException("Remove the load balancing rules for this VM before assigning to another user.");
-        }
-        // check for one on one nat
-        List<IPAddressVO> ips = _ipAddressDao.findAllByAssociatedVmId(cmd.getVmId());
-        for (IPAddressVO ip : ips) {
-            if (ip.isOneToOneNat()) {
-                throw new InvalidParameterValueException("Remove the one to one nat rule for this VM for ip " + ip.toString());
-            }
-        }
-
-        final List<VolumeVO> volumes = _volsDao.findByInstance(cmd.getVmId());
-
-        for (VolumeVO volume : volumes) {
-            List<SnapshotVO> snapshots = _snapshotDao.listByStatusNotIn(volume.getId(), Snapshot.State.Destroyed,Snapshot.State.Error);
-            if (snapshots != null && snapshots.size() > 0) {
-                throw new InvalidParameterValueException(
-                        "Snapshots exists for volume: "+ volume.getName()+ ", Detach volume or remove snapshots for volume before assigning VM to another user.");
-            }
-        }
-
-        DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
-
-        VirtualMachineTemplate template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
-        // Get serviceOffering and Volumes for Virtual Machine
         final ServiceOfferingVO offering = serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId());
+        VirtualMachineTemplate template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
 
-        //Remove vm from instance group
-        removeInstanceFromInstanceGroup(cmd.getVmId());
+        verifyResourceLimitsForAccountAndStorage(newAccount, vm, offering, volumes, template);
 
-        // VV 2: check if account/domain is with in resource limits to create a new vm
-        if (!VirtualMachineManager.ResourceCountRunningVMsonly.value()) {
-            resourceLimitService.checkVmResourceLimit(newAccount, vm.isDisplayVm(), offering, template);
-        }
+        validateIfNewOwnerHasAccessToTemplate(vm, newAccount, template);
 
-        // VV 3: check if volumes and primary storage space are with in resource limits
-        checkVolumesLimits(newAccount, volumes);
-
-        // VV 4: Check if new owner can use the vm template
-        if (template == null) {
-            throw new InvalidParameterValueException(String.format("Template for VM: %s cannot be found", vm.getUuid()));
-        }
-        _accountMgr.checkAccess(newAccount, AccessType.UseEntry, true, template);
-
-        // VV 5: check the new account can create vm in the domain
-        DomainVO domain = _domainDao.findById(cmd.getDomainId());
+        DomainVO domain = _domainDao.findById(domainId);
+        logger.trace("Verifying if the new account [{}] has access to the specified domain [{}].", newAccount, domain);
         _accountMgr.checkAccess(newAccount, domain);
 
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
-                //generate destroy vm event for usage
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(),
-                        vm.getId(), vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(),
-                        vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
-                // update resource counts for old account
-                resourceCountDecrement(oldAccount.getAccountId(), vm.isDisplayVm(), offering, template);
-
-                // OWNERSHIP STEP 1: update the vm owner
-                vm.setAccountId(newAccount.getAccountId());
-                vm.setDomainId(cmd.getDomainId());
-                _vmDao.persist(vm);
-
-                // OS 2: update volume
-                for (VolumeVO volume : volumes) {
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                            Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
-                    DiskOfferingVO diskOfferingVO = _diskOfferingDao.findById(volume.getDiskOfferingId());
-                    _resourceLimitMgr.decrementVolumeResourceCount(oldAccount.getAccountId(), volume.isDisplay(), volume.getSize(), diskOfferingVO);
-                    volume.setAccountId(newAccount.getAccountId());
-                    volume.setDomainId(newAccount.getDomainId());
-                    _volsDao.persist(volume);
-                    _resourceLimitMgr.incrementVolumeResourceCount(newAccount.getAccountId(), volume.isDisplay(), volume.getSize(), diskOfferingVO);
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                            volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(),
-                            volume.getUuid(), volume.isDisplayVolume());
-                }
-
-                //update resource count of new account
-                resourceCountIncrement(newAccount.getAccountId(), vm.isDisplayVm(), offering, template);
-
-                //generate usage events to account for this change
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                        vm.getHostName(), vm.getServiceOfferingId(), vm.getTemplateId(), vm.getHypervisorType().toString(),
-                        VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
+                executeStepsToChangeOwnershipOfVm(cmd, caller, oldAccount, newAccount, vm, offering, volumes, template, domainId);
             }
         });
+
+        logger.info("VM [{}] now belongs to account [{}].", vm.getInstanceName(), newAccountName);
+        return vm;
+    }
+
+    protected void validateIfVmSupportsMigration(UserVmVO vm, Long vmId) {
+        logger.trace("Validating if VM [{}] exists and is not in state [{}].", vmId, State.Running);
+
+        if (vm == null) {
+            throw new InvalidParameterValueException(String.format("There is no VM by ID [%s].", vmId));
+        } else if (vm.getState() == State.Running) {
+            throw new InvalidParameterValueException(String.format("Unable to move VM [%s] in [%s] state.", vm, vm.getState()));
+        } else if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
+            throw new InvalidParameterValueException("Migration is not supported for Shared FileSystem Instances.");
+        }
+    }
+
+    /**
+     * Validates if the provided VM does not have any existing Port Forwarding, Load Balancer, Static Nat, and One to One Nat rules.
+     * If any rules exist, throws a {@link InvalidParameterValueException}.
+     * @param vm the VM to be checked for the rules.
+     * @param vmId the ID of the VM to be checked.
+     * @throws InvalidParameterValueException
+     */
+    protected void validateIfVmHasNoRules(UserVmVO vm, Long vmId) throws InvalidParameterValueException {
+        logger.trace("Validating if VM [{}] has no Port Forwarding, Static Nat, Load Balancing or One to One Nat rules.", vm);
+
+        List<PortForwardingRuleVO> portForwardingRules = _portForwardingDao.listByVm(vmId);
+        if (CollectionUtils.isNotEmpty(portForwardingRules)) {
+            throw new InvalidParameterValueException(String.format("Remove any Port Forwarding rules for VM [%s] before assigning it to another user.", vm));
+        }
+
+        List<FirewallRuleVO> staticNatRules = _rulesDao.listStaticNatByVmId(vmId);
+        if (CollectionUtils.isNotEmpty(staticNatRules)) {
+            throw new InvalidParameterValueException(String.format("Remove the StaticNat rules for VM [%s] before assigning it to another user.", vm));
+        }
+
+        List<LoadBalancerVMMapVO> loadBalancerVmMaps = _loadBalancerVMMapDao.listByInstanceId(vmId);
+        if (CollectionUtils.isNotEmpty(loadBalancerVmMaps)) {
+            throw new InvalidParameterValueException(String.format("Remove the Load Balancing rules for VM [%s] before assigning it to another user.", vm));
+        }
+
+        List<IPAddressVO> ips = _ipAddressDao.findAllByAssociatedVmId(vmId);
+        for (IPAddressVO ip : ips) {
+            if (ip.isOneToOneNat()) {
+                throw new InvalidParameterValueException(String.format("Remove the One to One Nat rule for VM [%s] for IP [%s].", vm, ip));
+            }
+        }
+    }
+
+    protected void validateIfVolumesHaveNoSnapshots(List<VolumeVO> volumes) throws InvalidParameterValueException {
+        logger.trace("Verifying if there are any snapshots for any of the VM volumes.");
+        for (VolumeVO volume : volumes) {
+            logger.trace("Verifying snapshots for volume [{}].", volume);
+            List<SnapshotVO> snapshots = _snapshotDao.listByStatusNotIn(volume.getId(), Snapshot.State.Destroyed, Snapshot.State.Error);
+            if (CollectionUtils.isNotEmpty(snapshots)) {
+                throw new InvalidParameterValueException(String.format("Snapshots exist for volume [%s]. Detach volume or remove snapshots for the volume before assigning VM to "
+                        + "another user.", volume.getName()));
+            }
+        }
+    }
+
+    /**
+     * Verifies if the CPU, RAM and volume size do not exceed the account and the primary storage limit.
+     * If any limit is exceeded, throws a {@link ResourceAllocationException}.
+     * @param account The account to check if CPU and RAM limit has been exceeded.
+     * @param vm The VM which can exceed resource limits.
+     * @param offering The service offering which can exceed resource limits.
+     * @param volumes The volumes whose total size can exceed resource limits.
+     * @throws ResourceAllocationException
+     */
+    protected void verifyResourceLimitsForAccountAndStorage(Account account, UserVmVO vm, ServiceOfferingVO offering, List<VolumeVO> volumes, VirtualMachineTemplate template)
+            throws ResourceAllocationException {
+
+        logger.trace("Verifying if CPU and RAM for VM [{}] do not exceed account [{}] limit.", vm, account);
+
+        if (!countOnlyRunningVmsInResourceLimitation()) {
+            resourceLimitService.checkVmResourceLimit(account, vm.isDisplayVm(), offering, template);
+        }
+
+        logger.trace("Verifying if volume size for VM [{}] does not exceed account [{}] limit.", vm, account);
+
+        checkVolumesLimits(account, volumes);
+    }
+
+    protected boolean countOnlyRunningVmsInResourceLimitation() {
+        return VirtualMachineManager.ResourceCountRunningVMsonly.value();
+    }
+
+    protected void validateIfNewOwnerHasAccessToTemplate(UserVmVO vm, Account newAccount, VirtualMachineTemplate template) {
+        logger.trace("Validating if new owner [{}] has access to the template specified for VM [{}].", newAccount, vm);
+
+        if (template == null) {
+            throw new InvalidParameterValueException(String.format("Template for VM [%s] cannot be found.", vm.getUuid()));
+        }
+
+        logger.debug("Verifying if new owner [{}] has access to the template [{}].", newAccount, template.getUuid());
+        try {
+            _accountMgr.checkAccess(newAccount, AccessType.UseEntry, true, template);
+        } catch (PermissionDeniedException e) {
+            String newMsg = String.format("New owner [%s] does not have access to the template specified for VM [%s].", newAccount, vm);
+            throw new PermissionDeniedException(newMsg, e);
+        }
+    }
+
+    /**
+     * Executes all ownership steps necessary to assign a VM to another user:
+     * generating a destroy VM event ({@link EventTypes}),
+     * decrementing the old user resource count ({@link #resourceCountDecrement(long, Boolean, ServiceOffering, VirtualMachineTemplate)}),
+     * removing the VM from its instance group ({@link #removeInstanceFromInstanceGroup(long)}),
+     * updating the VM owner to the new account ({@link #updateVmOwner(Account, UserVmVO, Long, Long)}),
+     * updating the volumes to the new account ({@link #updateVolumesOwner(List, Account, Account, Long)}),
+     * updating the network for the VM ({@link #updateVmNetwork(AssignVMCmd, Account, UserVmVO, Account, VirtualMachineTemplate)}),
+     * incrementing the new user resource count ({@link #resourceCountIncrement(long, Boolean, ServiceOffering, VirtualMachineTemplate)}),
+     * and generating a create VM event ({@link EventTypes}).
+     * @param cmd The assignVMCmd.
+     * @param caller The account calling the assignVMCmd.
+     * @param oldAccount The old account from whom the VM will be moved.
+     * @param newAccount The new account to whom the VM will move.
+     * @param vm The VM to be moved between accounts.
+     * @param offering The service offering which will be used to decrement and increment resource counts.
+     * @param volumes The volumes of the VM which will be assigned to another user.
+     * @param template The template of the VM which will be assigned to another user.
+     * @param domainId The ID of the domain where the VM which will be assigned to another user is.
+     */
+    protected void executeStepsToChangeOwnershipOfVm(AssignVMCmd cmd, Account caller, Account oldAccount, Account newAccount, UserVmVO vm, ServiceOfferingVO offering,
+                                                     List<VolumeVO> volumes, VirtualMachineTemplate template, Long domainId) {
+
+        logger.trace("Generating destroy event for VM [{}].", vm);
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(),
+                vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
+
+        logger.trace("Decrementing old account [{}] resource count.", oldAccount);
+        resourceCountDecrement(oldAccount.getAccountId(), vm.isDisplayVm(), offering, template);
+
+        logger.trace("Removing VM [{}] from its instance group.", vm);
+        removeInstanceFromInstanceGroup(vm.getId());
+
+        Long newAccountId = newAccount.getAccountId();
+        updateVmOwner(newAccount, vm, domainId, newAccountId);
+
+        updateVolumesOwner(volumes, oldAccount, newAccount, newAccountId);
+
+        try {
+            updateVmNetwork(cmd, caller, vm, newAccount, template);
+        } catch (InsufficientCapacityException | ResourceAllocationException e) {
+            throw new CloudRuntimeException(String.format("Unable to update networks when assigning VM [%s] due to [%s].", vm, e.getMessage()), e);
+        }
+
+        logger.trace(String.format("Incrementing new account [%s] resource count.", newAccount));
+        if (!isResourceCountRunningVmsOnlyEnabled()) {
+            resourceCountIncrement(newAccountId, vm.isDisplayVm(), offering, template);
+        }
+
+        logger.trace(String.format("Generating create event for VM [%s].", vm));
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(),
+                vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
+    }
+
+    protected void updateVmOwner(Account newAccount, UserVmVO vm, Long domainId, Long newAccountId) {
+        logger.debug("Updating VM [{}] owner to [{}].", vm, newAccount);
+
+        vm.setAccountId(newAccountId);
+        vm.setDomainId(domainId);
+
+        _vmDao.persist(vm);
+    }
+
+    protected void updateVolumesOwner(final List<VolumeVO> volumes, Account oldAccount, Account newAccount, Long newAccountId) {
+        logger.debug("Updating volumes owner from old account [{}] to new account [{}].", oldAccount, newAccount);
+
+        for (VolumeVO volume : volumes) {
+            logger.trace("Generating a delete volume event for volume [{}].", volume);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
+
+            logger.trace("Decrementing volume [{}] and primary storage resource count for the old account [{}].", volume, oldAccount);
+            DiskOfferingVO diskOfferingVO = _diskOfferingDao.findById(volume.getDiskOfferingId());
+            _resourceLimitMgr.decrementVolumeResourceCount(oldAccount.getAccountId(), volume.isDisplay(), volume.getSize(), diskOfferingVO);
+
+            logger.trace("Setting the new account [{}] and domain [{}] for volume [{}].", newAccount, newAccount.getDomainId(), volume);
+            volume.setAccountId(newAccountId);
+            volume.setDomainId(newAccount.getDomainId());
+
+            _volsDao.persist(volume);
+
+            logger.trace("Incrementing volume [{}] and primary storage resource count for the new account [{}].", volume, newAccount);
+            _resourceLimitMgr.incrementVolumeResourceCount(newAccount.getAccountId(), volume.isDisplay(), volume.getSize(), diskOfferingVO);
+
+            logger.trace("Generating a create volume event for volume [{}].", volume);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_CREATE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
+        }
+    }
+
+    /**
+     * Updates the network for a VM being assigned to a new account.
+     * If the network type for the zone is basic, calls
+     * {@link #updateBasicTypeNetworkForVm(AssignVMCmd, UserVmVO, Account, VirtualMachineTemplate, VirtualMachineProfileImpl, DataCenterVO, List, List)}.
+     * If the network type for the zone is advanced, calls
+     * {@link #updateAdvancedTypeNetworkForVm(AssignVMCmd, Account, UserVmVO, Account, VirtualMachineTemplate, VirtualMachineProfileImpl, DataCenterVO, List, List)}.
+     * @param cmd The assignVMCmd.
+     * @param caller The account calling the assignVMCmd.
+     * @param vm The VM to be assigned to another user, which has to have networks updated.
+     * @param newAccount The account to whom the VM will be assigned to.
+     * @param template The template of the VM which will be assigned to another account.
+     * @throws InsufficientCapacityException
+     * @throws ResourceAllocationException
+     */
+    protected void updateVmNetwork(AssignVMCmd cmd, Account caller, UserVmVO vm, Account newAccount, VirtualMachineTemplate template)
+            throws InsufficientCapacityException, ResourceAllocationException {
+
+        logger.trace("Updating network for VM [{}].", vm);
 
         VirtualMachine vmoi = _itMgr.findById(vm.getId());
         VirtualMachineProfileImpl vmOldProfile = new VirtualMachineProfileImpl(vmoi);
 
-        // OS 3: update the network
+        DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
+
         List<Long> networkIdList = cmd.getNetworkIds();
         List<Long> securityGroupIdList = cmd.getSecurityGroupIdList();
 
         if (zone.getNetworkType() == NetworkType.Basic) {
-            if (networkIdList != null && !networkIdList.isEmpty()) {
-                throw new InvalidParameterValueException("Can't move vm with network Ids; this is a basic zone VM");
-            }
-            // cleanup the old security groups
-            _securityGroupMgr.removeInstanceFromGroups(vm);
-            // cleanup the network for the oldOwner
-            _networkMgr.cleanupNics(vmOldProfile);
-            _networkMgr.removeNics(vmOldProfile);
-            // security groups will be recreated for the new account, when the
-            // VM is started
-            List<NetworkVO> networkList = new ArrayList<NetworkVO>();
+            updateBasicTypeNetworkForVm(cmd, vm, newAccount, template, vmOldProfile, zone, networkIdList, securityGroupIdList);
+            return;
+        }
 
-            // Get default guest network in Basic zone
-            Network defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
-
-            if (defaultNetwork == null) {
-                throw new InvalidParameterValueException("Unable to find a default network to start a vm");
-            } else {
-                networkList.add(_networkDao.findById(defaultNetwork.getId()));
-            }
-
-            boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware);
-
-            if (securityGroupIdList != null && isVmWare) {
-                throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
-            } else if (!isVmWare && _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkModel.canAddDefaultSecurityGroup()) {
-                if (securityGroupIdList == null) {
-                    securityGroupIdList = new ArrayList<Long>();
-                }
-                SecurityGroup defaultGroup = _securityGroupMgr.getDefaultSecurityGroup(newAccount.getId());
-                if (defaultGroup != null) {
-                    // check if security group id list already contains Default
-                    // security group, and if not - add it
-                    boolean defaultGroupPresent = false;
-                    for (Long securityGroupId : securityGroupIdList) {
-                        if (securityGroupId.longValue() == defaultGroup.getId()) {
-                            defaultGroupPresent = true;
-                            break;
-                        }
-                    }
-
-                    if (!defaultGroupPresent) {
-                        securityGroupIdList.add(defaultGroup.getId());
-                    }
-
-                } else {
-                    // create default security group for the account
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Couldn't find default security group for the account " + newAccount + " so creating a new one");
-                    }
-                    defaultGroup = _securityGroupMgr.createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION,
-                            newAccount.getDomainId(), newAccount.getId(), newAccount.getAccountName());
-                    securityGroupIdList.add(defaultGroup.getId());
-                }
-            }
-
-            LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>();
-            NicProfile profile = new NicProfile();
-            profile.setDefaultNic(true);
-            networks.put(networkList.get(0), new ArrayList<NicProfile>(Arrays.asList(profile)));
-
-            VirtualMachine vmi = _itMgr.findById(vm.getId());
-            VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
-            _networkMgr.allocate(vmProfile, networks, null);
-
-            _securityGroupMgr.addInstanceToGroups(vm, securityGroupIdList);
-
-            int securityIdList = securityGroupIdList != null ? securityGroupIdList.size() : 0;
-            logger.debug("AssignVM: Basic zone, adding security groups no " + securityIdList + " to " + vm.getInstanceName());
-        } else {
-            Set<NetworkVO> applicableNetworks = new LinkedHashSet<>();
-            Map<Long, String> requestedIPv4ForNics = new HashMap<>();
-            Map<Long, String> requestedIPv6ForNics = new HashMap<>();
-            if (_networkModel.checkSecurityGroupSupportForNetwork(newAccount, zone, networkIdList, securityGroupIdList))  { // advanced zone with security groups
-                // cleanup the old security groups
-                _securityGroupMgr.removeInstanceFromGroups(vm);
-                // if networkIdList is null and the first network of vm is shared network, then keep it if possible
-                if (networkIdList == null || networkIdList.isEmpty()) {
-                    NicVO defaultNicOld = _nicDao.findDefaultNicForVM(vm.getId());
-                    if (defaultNicOld != null) {
-                        NetworkVO defaultNetworkOld = _networkDao.findById(defaultNicOld.getNetworkId());
-                        if (canAccountUseNetwork(newAccount, defaultNetworkOld)) {
-                            applicableNetworks.add(defaultNetworkOld);
-                            requestedIPv4ForNics.put(defaultNetworkOld.getId(), defaultNicOld.getIPv4Address());
-                            requestedIPv6ForNics.put(defaultNetworkOld.getId(), defaultNicOld.getIPv6Address());
-                            logger.debug("AssignVM: use old shared network {} with old ip {} on default nic of vm: {}", defaultNetworkOld, defaultNicOld.getIPv4Address(), vm);
-                        }
-                    }
-                }
-
-                if (networkIdList != null && !networkIdList.isEmpty()) {
-                    // add any additional networks
-                    for (Long networkId : networkIdList) {
-                        NetworkVO network = _networkDao.findById(networkId);
-                        if (network == null) {
-                            InvalidParameterValueException ex = new InvalidParameterValueException(
-                                    "Unable to find specified network id");
-                            ex.addProxyObject(networkId.toString(), "networkId");
-                            throw ex;
-                        }
-
-                        _networkModel.checkNetworkPermissions(newAccount, network);
-
-                        // don't allow to use system networks
-                        NetworkOffering networkOffering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
-                        if (networkOffering.isSystemOnly()) {
-                            InvalidParameterValueException ex = new InvalidParameterValueException(
-                                    "Specified Network id is system only and can't be used for vm deployment");
-                            ex.addProxyObject(network.getUuid(), "networkId");
-                            throw ex;
-                        }
-
-                        if (network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain) {
-                            NicVO nicOld = _nicDao.findByNtwkIdAndInstanceId(network.getId(), vm.getId());
-                            if (nicOld != null) {
-                                requestedIPv4ForNics.put(network.getId(), nicOld.getIPv4Address());
-                                requestedIPv6ForNics.put(network.getId(), nicOld.getIPv6Address());
-                                logger.debug("AssignVM: use old shared network {} with old ip {} on nic of vm: {}", network, nicOld.getIPv4Address(), vm);
-                            }
-                        }
-                        logger.debug("AssignVM: Added network {} to vm {}", network, vm);
-                        applicableNetworks.add(network);
-                    }
-                }
-
-                // cleanup the network for the oldOwner
-                _networkMgr.cleanupNics(vmOldProfile);
-                _networkMgr.removeNics(vmOldProfile);
-
-                // add the new nics
-                LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>();
-                int toggle = 0;
-                NetworkVO defaultNetwork = null;
-                for (NetworkVO appNet : applicableNetworks) {
-                    NicProfile defaultNic = new NicProfile();
-                    if (toggle == 0) {
-                        defaultNic.setDefaultNic(true);
-                        defaultNetwork = appNet;
-                        toggle++;
-                    }
-
-                    defaultNic.setRequestedIPv4(requestedIPv4ForNics.get(appNet.getId()));
-                    defaultNic.setRequestedIPv6(requestedIPv6ForNics.get(appNet.getId()));
-                    networks.put(appNet, new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
-
-                }
-
-                boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware);
-                if (securityGroupIdList != null && isVmWare) {
-                    throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
-                } else if (!isVmWare && (defaultNetwork == null || _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork)) && _networkModel.canAddDefaultSecurityGroup()) {
-                    if (securityGroupIdList == null) {
-                        securityGroupIdList = new ArrayList<Long>();
-                    }
-                    SecurityGroup defaultGroup = _securityGroupMgr
-                            .getDefaultSecurityGroup(newAccount.getId());
-                    if (defaultGroup != null) {
-                        // check if security group id list already contains Default
-                        // security group, and if not - add it
-                        boolean defaultGroupPresent = false;
-                        for (Long securityGroupId : securityGroupIdList) {
-                            if (securityGroupId.longValue() == defaultGroup.getId()) {
-                                defaultGroupPresent = true;
-                                break;
-                            }
-                        }
-
-                        if (!defaultGroupPresent) {
-                            securityGroupIdList.add(defaultGroup.getId());
-                        }
-
-                    } else {
-                        // create default security group for the account
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Couldn't find default security group for the account "
-                                    + newAccount + " so creating a new one");
-                        }
-                        defaultGroup = _securityGroupMgr.createSecurityGroup(
-                                SecurityGroupManager.DEFAULT_GROUP_NAME,
-                                SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION,
-                                newAccount.getDomainId(), newAccount.getId(),
-                                newAccount.getAccountName());
-                        securityGroupIdList.add(defaultGroup.getId());
-                    }
-                }
-
-                VirtualMachine vmi = _itMgr.findById(vm.getId());
-                VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
-
-                if (applicableNetworks.isEmpty()) {
-                    throw new InvalidParameterValueException("No network is specified, please specify one when you move the vm. For now, please add a network to VM on NICs tab.");
-                } else {
-                    _networkMgr.allocate(vmProfile, networks, null);
-                }
-
-                _securityGroupMgr.addInstanceToGroups(vm, securityGroupIdList);
-                logger.debug("AssignVM: Advanced zone, adding security groups no {} to {}", securityGroupIdList.size(), vm);
-
-            } else {
-                if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
-                    throw new InvalidParameterValueException("Can't move vm with security groups; security group feature is not enabled in this zone");
-                }
-                // if networkIdList is null and the first network of vm is shared network, then keep it if possible
-                if (networkIdList == null || networkIdList.isEmpty()) {
-                    NicVO defaultNicOld = _nicDao.findDefaultNicForVM(vm.getId());
-                    if (defaultNicOld != null) {
-                        NetworkVO defaultNetworkOld = _networkDao.findById(defaultNicOld.getNetworkId());
-                        if (canAccountUseNetwork(newAccount, defaultNetworkOld)) {
-                            applicableNetworks.add(defaultNetworkOld);
-                            requestedIPv4ForNics.put(defaultNetworkOld.getId(), defaultNicOld.getIPv4Address());
-                            requestedIPv6ForNics.put(defaultNetworkOld.getId(), defaultNicOld.getIPv6Address());
-                            logger.debug("AssignVM: use old shared network {} with old ip {} on default nic of vm: {}", defaultNetworkOld, defaultNicOld.getIPv4Address(), vm);
-                        }
-                    }
-                }
-
-                if (networkIdList != null && !networkIdList.isEmpty()) {
-                    // add any additional networks
-                    for (Long networkId : networkIdList) {
-                        NetworkVO network = _networkDao.findById(networkId);
-                        if (network == null) {
-                            InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find specified network id");
-                            ex.addProxyObject(networkId.toString(), "networkId");
-                            throw ex;
-                        }
-
-                        _networkModel.checkNetworkPermissions(newAccount, network);
-
-                        // don't allow to use system networks
-                        NetworkOffering networkOffering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
-                        if (networkOffering.isSystemOnly()) {
-                            InvalidParameterValueException ex = new InvalidParameterValueException("Specified Network id is system only and can't be used for vm deployment");
-                            ex.addProxyObject(network.getUuid(), "networkId");
-                            throw ex;
-                        }
-
-                        if (network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain) {
-                            NicVO nicOld = _nicDao.findByNtwkIdAndInstanceId(network.getId(), vm.getId());
-                            if (nicOld != null) {
-                                requestedIPv4ForNics.put(network.getId(), nicOld.getIPv4Address());
-                                requestedIPv6ForNics.put(network.getId(), nicOld.getIPv6Address());
-                                logger.debug("AssignVM: use old shared network {} with old ip {} on nic of vm: {}", network, nicOld.getIPv4Address(), vm);
-                            }
-                        }
-                        logger.debug("AssignVM: Added network {} to vm {}", network, vm);
-                        applicableNetworks.add(network);
-                    }
-                } else if (applicableNetworks.isEmpty()) {
-                    NetworkVO defaultNetwork = null;
-                    List<NetworkOfferingVO> requiredOfferings = _networkOfferingDao.listByAvailability(Availability.Required, false);
-                    if (requiredOfferings.size() < 1) {
-                        throw new InvalidParameterValueException("Unable to find network offering with availability=" + Availability.Required
-                                + " to automatically create the network as a part of vm creation");
-                    }
-                    if (requiredOfferings.get(0).getState() == NetworkOffering.State.Enabled) {
-                        // get Virtual networks
-                        List<? extends Network> virtualNetworks = _networkModel.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
-                        if (virtualNetworks.isEmpty()) {
-                            long physicalNetworkId = _networkModel.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0)
-                                    .getTrafficType());
-                            // Validate physical network
-                            PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
-                            if (physicalNetwork == null) {
-                                throw new InvalidParameterValueException("Unable to find physical network with id: " + physicalNetworkId + " and tag: "
-                                        + requiredOfferings.get(0).getTags());
-                            }
-                            logger.debug("Creating network for account {} from the network offering {} as a part of deployVM process", newAccount, requiredOfferings.get(0));
-                            Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), newAccount.getAccountName() + "-network",
-                                    newAccount.getAccountName() + "-network", null, null, null, false, null, newAccount,
-                                    null, physicalNetwork, zone.getId(), ACLType.Account, null, null,
-                                    null, null, true, null, null, null, null, null, null, null, null, null, null, null);
-                            // if the network offering has persistent set to true, implement the network
-                            if (requiredOfferings.get(0).isPersistent()) {
-                                DeployDestination dest = new DeployDestination(zone, null, null, null);
-                                UserVO callerUser = _userDao.findById(CallContext.current().getCallingUserId());
-                                Journal journal = new Journal.LogJournal("Implementing " + newNetwork, logger);
-                                ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), journal, callerUser, caller);
-                                logger.debug("Implementing the network for account" + newNetwork + " as a part of" + " network provision for persistent networks");
-                                try {
-                                    Pair<? extends NetworkGuru, ? extends Network> implementedNetwork = _networkMgr.implementNetwork(newNetwork.getId(), dest, context);
-                                    if (implementedNetwork == null || implementedNetwork.first() == null) {
-                                        logger.warn("Failed to implement the network " + newNetwork);
-                                    }
-                                    newNetwork = implementedNetwork.second();
-                                } catch (Exception ex) {
-                                    logger.warn("Failed to implement network " + newNetwork + " elements and"
-                                            + " resources as a part of network provision for persistent network due to ", ex);
-                                    CloudRuntimeException e = new CloudRuntimeException("Failed to implement network"
-                                            + " (with specified id) elements and resources as a part of network provision");
-                                    e.addProxyObject(newNetwork.getUuid(), "networkId");
-                                    throw e;
-                                }
-                            }
-                            defaultNetwork = _networkDao.findById(newNetwork.getId());
-                        } else if (virtualNetworks.size() > 1) {
-                            throw new InvalidParameterValueException("More than 1 default Isolated networks are found " + "for account " + newAccount
-                                    + "; please specify networkIds");
-                        } else {
-                            defaultNetwork = _networkDao.findById(virtualNetworks.get(0).getId());
-                        }
-                    } else {
-                        throw new InvalidParameterValueException(String.format("Required network offering %s is not in %s", requiredOfferings.get(0), NetworkOffering.State.Enabled));
-                    }
-
-                    applicableNetworks.add(defaultNetwork);
-                }
-
-                // cleanup the network for the oldOwner
-                _networkMgr.cleanupNics(vmOldProfile);
-                _networkMgr.removeNics(vmOldProfile);
-
-                // add the new nics
-                LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<Network, List<? extends NicProfile>>();
-                int toggle = 0;
-                for (NetworkVO appNet : applicableNetworks) {
-                    NicProfile defaultNic = new NicProfile();
-                    if (toggle == 0) {
-                        defaultNic.setDefaultNic(true);
-                        toggle++;
-                    }
-                    defaultNic.setRequestedIPv4(requestedIPv4ForNics.get(appNet.getId()));
-                    defaultNic.setRequestedIPv6(requestedIPv6ForNics.get(appNet.getId()));
-                    networks.put(appNet, new ArrayList<NicProfile>(Arrays.asList(defaultNic)));
-                }
-                VirtualMachine vmi = _itMgr.findById(vm.getId());
-                VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
-                _networkMgr.allocate(vmProfile, networks, null);
-                logger.debug("AssignVM: Advance virtual, adding networks no {} to {}", networks.size(), vm);
-            } // END IF NON SEC GRP ENABLED
-        } // END IF ADVANCED
-        logger.info("AssignVM: vm {} now belongs to account {}", vm, newAccount);
-        return vm;
+        updateAdvancedTypeNetworkForVm(cmd, caller, vm, newAccount, template, vmOldProfile, zone, networkIdList, securityGroupIdList);
     }
 
-    private boolean canAccountUseNetwork(Account newAccount, Network network) {
-        if (network != null && network.getAclType() == ACLType.Domain
-                && (network.getGuestType() == Network.GuestType.Shared
-                || network.getGuestType() == Network.GuestType.L2)) {
+    /**
+     * Validates if the old account exists, the new account exists and is not disabled, and they are different from each other.
+     * If any of the validations fail, throws a {@link InvalidParameterValueException}.
+     * @param oldAccount The old account which will be checked if exists, and if it is different from the new account.
+     * @param newAccount The new account which will be checked if exists, if it is different from the old account, and if it is not disabled.
+     * @param oldAccountId The ID of the old account to be checked.
+     * @param newAccountName The name of the new account to be checked.
+     * @param domainId The domain where to validate the conditions.
+     * @throws InvalidParameterValueException
+     */
+    protected void validateOldAndNewAccounts(Account oldAccount, Account newAccount, Long oldAccountId, String newAccountName, Long domainId)
+            throws InvalidParameterValueException {
+
+        logger.trace("Validating old [{}] and new accounts [{}].", oldAccount, newAccount);
+
+        if (oldAccount == null) {
+            throw new InvalidParameterValueException(String.format("Invalid old account [%s] for VM in domain [%s].", oldAccountId, domainId));
+        }
+
+        if (newAccount == null) {
+            throw new InvalidParameterValueException(String.format("Invalid new account [%s] for VM in domain [%s].", newAccountName, domainId));
+        }
+
+        if (newAccount.getState() == Account.State.DISABLED) {
+            throw new InvalidParameterValueException(String.format("The new account owner [%s] is disabled.", newAccount));
+        }
+
+        if (oldAccount.getAccountId() == newAccount.getAccountId()) {
+            throw new InvalidParameterValueException(String.format("The new account [%s] is the same as the old account.", newAccount));
+        }
+    }
+
+    protected void checkCallerAccessToAccounts(Account caller, Account oldAccount, Account newAccount) {
+        logger.trace("Verifying if caller [{}] has access to old account [{}].", caller, oldAccount);
+        _accountMgr.checkAccess(caller, null, true, oldAccount);
+
+        logger.trace("Verifying if caller [{}] has access to new account [{}].", caller, newAccount);
+        _accountMgr.checkAccess(caller, null, true, newAccount);
+    }
+
+    protected Boolean isResourceCountRunningVmsOnlyEnabled() {
+        return VirtualMachineManager.ResourceCountRunningVMsonly.value();
+    }
+
+    /**
+     * Updates a basic type network by:
+     * cleaning up the old network ({@link #cleanupOfOldOwnerNicsForNetwork(VirtualMachineProfileImpl)}),
+     * allocating all networks ({@link #allocateNetworksForVm(UserVmVO, LinkedHashMap)}),
+     * and adding security groups to the VM ({@link #addSecurityGroupsToVm(Account, UserVmVO, VirtualMachineTemplate, List, Network)}).
+     * If the network has network IDs, throws a {@link InvalidParameterValueException}.
+     * @param cmd The assignVMCmd which attempts to update a basic network.
+     * @param vm The VM for which the networks are allocated.
+     * @param newAccount The new account to which the VM will be assigned to.
+     * @param template The template of the VM.
+     * @param vmOldProfile The VM profile.
+     * @param zone The zone where the network has to be allocated.
+     * @param networkIdList The list of network IDs provided to the assignVMCmd.
+     * @param securityGroupIdList The list of security groups provided to the assignVMCmd.
+     * @throws InsufficientCapacityException
+     */
+    protected void updateBasicTypeNetworkForVm(AssignVMCmd cmd, UserVmVO vm, Account newAccount, VirtualMachineTemplate template, VirtualMachineProfileImpl vmOldProfile,
+                                               DataCenterVO zone, List<Long> networkIdList, List<Long> securityGroupIdList) throws InsufficientCapacityException {
+
+        if (networkIdList != null && !networkIdList.isEmpty()) {
+            throw new InvalidParameterValueException("Cannot move VM with Network IDs; this is a basic zone VM.");
+        }
+
+        logger.trace("Cleanup of old security groups for VM [{}]. They will be recreated for the new account once the VM is started.", vm);
+        _securityGroupMgr.removeInstanceFromGroups(vm);
+
+        cleanupOfOldOwnerNicsForNetwork(vmOldProfile);
+
+        List<NetworkVO> networkList = new ArrayList<>();
+        Network defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
+        addDefaultNetworkToNetworkList(networkList, defaultNetwork);
+
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<>();
+        NicProfile profile = new NicProfile();
+        profile.setDefaultNic(true);
+        networks.put(networkList.get(0), new ArrayList<>(Arrays.asList(profile)));
+
+        allocateNetworksForVm(vm, networks);
+
+        addSecurityGroupsToVm(newAccount, vm, template, securityGroupIdList, defaultNetwork);
+    }
+
+    /**
+     * Updates an advanced type network by:
+     * adding NICs to the networks ({@link #addNicsToApplicableNetworksAndReturnDefaultNetwork(LinkedHashSet, Map, Map, LinkedHashMap)}),
+     * allocating - if security groups are enabled ({@link #allocateNetworksForVm(UserVmVO, LinkedHashMap)}) -
+     * or selecting applicable networks otherwise ({@link #selectApplicableNetworkToCreateVm(Account, Account, DataCenterVO, Set)}),
+     * and adding security groups to the VM ({@link #addSecurityGroupsToVm(Account, UserVmVO, VirtualMachineTemplate, List, Network)}) - if enabled in the zone.
+     * If no applicable network is provided and the zone has security groups enabled, throws a {@link InvalidParameterValueException}.
+     * If security groups are not enabled, but security groups have been provided, throws a {@link InvalidParameterValueException}.
+     * @param cmd The assignVMCmd which attempts to update an advanced network.
+     * @param caller The caller of the assignVMCmd.
+     * @param vm The VM for which the networks are allocated or selected.
+     * @param newAccount The new account to which the VM will be assigned to.
+     * @param template The template of the VM.
+     * @param vmOldProfile The VM profile.
+     * @param zone The zone where the network has to be allocated or selected.
+     * @param networkIdList The list of network IDs provided to the assignVMCmd.
+     * @param securityGroupIdList The list of security groups provided to the assignVMCmd.
+     * @throws InsufficientCapacityException
+     * @throws ResourceAllocationException
+     * @throws InvalidParameterValueException
+     */
+    protected void updateAdvancedTypeNetworkForVm(AssignVMCmd cmd, Account caller, UserVmVO vm, Account newAccount, VirtualMachineTemplate template,
+                                                  VirtualMachineProfileImpl vmOldProfile, DataCenterVO zone, List<Long> networkIdList, List<Long> securityGroupIdList)
+            throws InsufficientCapacityException, ResourceAllocationException, InvalidParameterValueException {
+
+        LinkedHashSet<NetworkVO> applicableNetworks = new LinkedHashSet<>();
+        Map<Long, String> requestedIPv4ForNics = new HashMap<>();
+        Map<Long, String> requestedIPv6ForNics = new HashMap<>();
+        LinkedHashMap<Network, List<? extends NicProfile>> networks = new LinkedHashMap<>();
+
+        if (_networkModel.checkSecurityGroupSupportForNetwork(newAccount, zone, networkIdList, securityGroupIdList))  {
+            logger.debug("Cleanup of old security groups for VM [{}]. They will be recreated for the new account once the VM is started.", vm);
+            _securityGroupMgr.removeInstanceFromGroups(vm);
+
+            addNetworksToNetworkIdList(vm, newAccount, vmOldProfile, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+
+            NetworkVO defaultNetwork = addNicsToApplicableNetworksAndReturnDefaultNetwork(applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics, networks);
+
+            if (applicableNetworks.isEmpty()) {
+                throw new InvalidParameterValueException("No network is specified, please specify one when you move the VM. For now, please add a network to VM on NICs tab.");
+            } else {
+                allocateNetworksForVm(vm, networks);
+            }
+
+            addSecurityGroupsToVm(newAccount, vm, template, securityGroupIdList, defaultNetwork);
+            return;
+        }
+
+        if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
+            throw new InvalidParameterValueException("Cannot move VM with security groups; security group feature is not enabled in this zone.");
+        }
+
+        addNetworksToNetworkIdList(vm, newAccount, vmOldProfile, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+
+        if (applicableNetworks.isEmpty()) {
+            selectApplicableNetworkToCreateVm(caller, newAccount, zone, applicableNetworks);
+        }
+
+        addNicsToApplicableNetworksAndReturnDefaultNetwork(applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics, networks);
+
+        allocateNetworksForVm(vm, networks);
+        logger.debug("Adding [{}] networks to VM [{}].", networks.size(), vm.getInstanceName());
+    }
+
+    protected void cleanupOfOldOwnerNicsForNetwork(VirtualMachineProfileImpl vmOldProfile) {
+        logger.trace("Cleanup of old owner network for VM [{}].", vmOldProfile);
+
+        _networkMgr.cleanupNics(vmOldProfile);
+        _networkMgr.removeNics(vmOldProfile);
+    }
+
+    protected void addDefaultNetworkToNetworkList(List<NetworkVO> networkList, Network defaultNetwork) {
+        logger.trace("Adding default network to network list.");
+
+        if (defaultNetwork == null) {
+            throw new InvalidParameterValueException("Unable to find a default network to start a VM.");
+        }
+
+        networkList.add(_networkDao.findById(defaultNetwork.getId()));
+    }
+
+    protected void allocateNetworksForVm(UserVmVO vm, LinkedHashMap<Network, List<? extends NicProfile>> networks) throws InsufficientCapacityException {
+        logger.trace("Allocating networks for VM [{}].", vm);
+
+        VirtualMachine vmi = _itMgr.findById(vm.getId());
+        VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vmi);
+        _networkMgr.allocate(vmProfile, networks, null);
+    }
+
+    protected void addSecurityGroupsToVm(Account newAccount, UserVmVO vm, VirtualMachineTemplate template, List<Long> securityGroupIdList, Network defaultNetwork) {
+        int securityIdList = securityGroupIdList != null ? securityGroupIdList.size() : 0;
+        logger.debug("Adding security groups no " + securityIdList + " to " + vm.getInstanceName());
+
+        boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware);
+        if (securityGroupIdList != null && isVmWare) {
+            throw new InvalidParameterValueException("Security group feature is not supported for VMWare hypervisor.");
+        } else if (!isVmWare && (defaultNetwork == null || _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork)) && _networkModel.canAddDefaultSecurityGroup()) {
+            if (securityGroupIdList == null) {
+                securityGroupIdList = new ArrayList<>();
+            }
+
+            addDefaultSecurityGroupToSecurityGroupIdList(newAccount, securityGroupIdList);
+        }
+
+        _securityGroupMgr.addInstanceToGroups(vm, securityGroupIdList);
+    }
+
+    /**
+     * Adds all networks to the list of network IDs by:
+     * attempting to keep the shared network for the VM ({@link #keepOldSharedNetworkForVm(UserVmVO, Account, List, Set, Map, Map)}),
+     * adding any additional applicable networks to the VM ({@link #addAdditionalNetworksToVm(UserVmVO, Account, List, Set, Map, Map)}),
+     * and cleaning up the network associated to the old owner ({@link #cleanupOfOldOwnerNicsForNetwork(VirtualMachineProfileImpl)}).
+     * @param vm The VM to add the networks to.
+     * @param newAccount The account to access the networks.
+     * @param vmOldProfile The old profile of the VM.
+     * @param networkIdList The network IDs which have to be added to the VM.
+     * @param applicableNetworks The applicable networks which have to be added to the VM.
+     * @param requestedIPv4ForNics All requested IPv4 for NICs.
+     * @param requestedIPv6ForNics All requested IPv6 for NICs.
+     */
+    protected void addNetworksToNetworkIdList(UserVmVO vm, Account newAccount, VirtualMachineProfileImpl vmOldProfile, List<Long> networkIdList, Set<NetworkVO> applicableNetworks,
+                                              Map<Long, String> requestedIPv4ForNics, Map<Long, String> requestedIPv6ForNics) {
+
+        logger.trace("Adding networks to network list.");
+
+        keepOldSharedNetworkForVm(vm, newAccount, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+
+        addAdditionalNetworksToVm(vm, newAccount, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
+
+        cleanupOfOldOwnerNicsForNetwork(vmOldProfile);
+    }
+
+    /**
+     * Adds NICs to the applicable networks. The first applicable network is considered the default network, and is associated to the default NIC.
+     * @param applicableNetworks The applicable networks which will be associated with NICs.
+     * @param requestedIPv4ForNics All requested IPv4 for NICs.
+     * @param requestedIPv6ForNics All requested IPv6 for NICs.
+     * @param networks The networks to which the networks and NICs have to be added.
+     * @return The default network, if it exists. Otherwise, returns null.
+     */
+    @Nullable
+    protected NetworkVO addNicsToApplicableNetworksAndReturnDefaultNetwork(LinkedHashSet<NetworkVO> applicableNetworks, Map<Long, String> requestedIPv4ForNics,
+                                                                           Map<Long, String> requestedIPv6ForNics, LinkedHashMap<Network, List<? extends NicProfile>> networks) {
+
+        logger.trace("Adding NICs to applicable networks.");
+
+        NetworkVO defaultNetwork = null;
+
+        if (!applicableNetworks.isEmpty()) {
+            NicProfile defaultNic = new NicProfile();
+            defaultNic.setDefaultNic(true);
+            defaultNetwork = applicableNetworks.iterator().next();
+
+            for (NetworkVO appNet : applicableNetworks) {
+                defaultNic.setRequestedIPv4(requestedIPv4ForNics.get(appNet.getId()));
+                defaultNic.setRequestedIPv6(requestedIPv6ForNics.get(appNet.getId()));
+                networks.put(appNet, new ArrayList<>(Arrays.asList(defaultNic)));
+
+                defaultNic = new NicProfile();
+            }
+        }
+        return defaultNetwork;
+    }
+
+    /**
+     * Selects the default network as the applicable network to be used to create the VM. If none exists, creates a new one.
+     * If no network offerings are applicable, throws a {@link InvalidParameterValueException}.
+     * If the network offering applicable is not enabled, throws a {@link InvalidParameterValueException}.
+     * If more than one default isolated network is related to the account, throws a {@link InvalidParameterValueException}, since the ID of the network to be used has to be
+     * specified.
+     * @param caller The account which calls to select the applicable network.
+     * @param newAccount The new account associated to the selected network.
+     * @param zone The zone where the network is selected.
+     * @param applicableNetworks The applicable networks to which the selected network has to be added to.
+     * @throws InsufficientCapacityException
+     * @throws ResourceAllocationException
+     */
+    protected void selectApplicableNetworkToCreateVm(Account caller, Account newAccount, DataCenterVO zone, Set<NetworkVO> applicableNetworks)
+            throws InsufficientCapacityException, ResourceAllocationException {
+
+        logger.trace("Selecting the applicable network to create the VM.");
+
+        List<NetworkOfferingVO> requiredOfferings = _networkOfferingDao.listByAvailability(Availability.Required, false);
+        if (CollectionUtils.isEmpty(requiredOfferings)) {
+            throw new InvalidParameterValueException(String.format("Unable to find network offering with availability [%s] to automatically create the network as a part of VM "
+                    + "creation.", Availability.Required));
+        }
+
+        NetworkOfferingVO firstRequiredOffering = requiredOfferings.get(0);
+        if (firstRequiredOffering.getState() != NetworkOffering.State.Enabled) {
+            throw new InvalidParameterValueException(String.format("Required network offering ID [%s] is not in [%s] state.", firstRequiredOffering.getId(),
+                    NetworkOffering.State.Enabled));
+        }
+
+        NetworkVO defaultNetwork;
+        List<? extends Network> virtualNetworks = _networkModel.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
+        if (virtualNetworks.isEmpty()) {
+            defaultNetwork = createApplicableNetworkToCreateVm(caller, newAccount, zone, firstRequiredOffering);
+        } else if (virtualNetworks.size() > 1) {
+            throw new InvalidParameterValueException(String.format("More than one default isolated network has been found for account [%s]; please specify networkIDs.",
+                    newAccount));
+        } else {
+            defaultNetwork = _networkDao.findById(virtualNetworks.get(0).getId());
+        }
+
+        applicableNetworks.add(defaultNetwork);
+    }
+
+    /**
+     * Adds the default security group to a security group ID list. If the default security group does not exist, creates a new one.
+     * @param newAccount The account to be checked for the security groups.
+     * @param securityGroupIdList The list of security group IDs.
+     */
+    protected void addDefaultSecurityGroupToSecurityGroupIdList(Account newAccount, List<Long> securityGroupIdList) {
+        logger.debug("Adding default security group to security group list if not already in it.");
+
+        Long newAccountId = newAccount.getId();
+        SecurityGroup defaultGroup = _securityGroupMgr.getDefaultSecurityGroup(newAccountId);
+        boolean defaultGroupPresent = false;
+
+        if (defaultGroup != null) {
+            if (securityGroupIdList.contains(defaultGroup.getId())) {
+                defaultGroupPresent = true;
+            }
+        } else {
+            logger.debug("Could not find a default security group for account [{}]. Creating a new one.", newAccount);
+            defaultGroup = _securityGroupMgr.createSecurityGroup(SecurityGroupManager.DEFAULT_GROUP_NAME, SecurityGroupManager.DEFAULT_GROUP_DESCRIPTION, newAccount.getDomainId(),
+                    newAccountId, newAccount.getAccountName());
+        }
+
+        if (!defaultGroupPresent) {
+            securityGroupIdList.add(defaultGroup.getId());
+        }
+    }
+
+    /**
+     * Attempts to keep the old shared network for the VM to be assigned to a new account by checking if:
+     * any old shared network exists,
+     * and the new account can use the old shared network.
+     * @param vm The VM to be associated to the network.
+     * @param newAccount The account which has to be able to access the old shared network.
+     * @param networkIdList The IDs of the networks to be checked for.
+     * @param applicableNetworks The applicable networks, which will contain the old shared network if applicable.
+     * @param requestedIPv4ForNics All requested IPv4 for NICs.
+     * @param requestedIPv6ForNics All requested IPv6 for NICs.
+     */
+    protected void keepOldSharedNetworkForVm(UserVmVO vm, Account newAccount, List<Long> networkIdList, Set<NetworkVO> applicableNetworks, Map<Long, String> requestedIPv4ForNics,
+                                             Map<Long, String> requestedIPv6ForNics) {
+        logger.trace("Attempting to keep old shared network for VM [{}].", vm);
+
+        if (CollectionUtils.isNotEmpty(networkIdList)) {
+            return;
+        }
+
+        NicVO defaultNicOld = _nicDao.findDefaultNicForVM(vm.getId());
+        if (defaultNicOld == null) {
+            return;
+        }
+
+        NetworkVO defaultNetworkOld = _networkDao.findById(defaultNicOld.getNetworkId());
+        if (canAccountUseNetwork(newAccount, defaultNetworkOld)) {
+            applicableNetworks.add(defaultNetworkOld);
+
+            Long defaultNetworkOldId = defaultNetworkOld.getId();
+            requestedIPv4ForNics.put(defaultNetworkOldId, defaultNicOld.getIPv4Address());
+            requestedIPv6ForNics.put(defaultNetworkOldId, defaultNicOld.getIPv6Address());
+
+            logger.debug("Using old shared network [{}] with old IP [{}] on default NIC of VM [{}].", defaultNicOld.getIPv4Address(), defaultNetworkOld, vm);
+        }
+    }
+
+    /**
+     * Adds any additional networks used by the VM assigned to another user.
+     * If one of the networks does not exist, throws a {@link InvalidParameterValueException}.
+     * If any of the network offerings is system only, throws a {@link InvalidParameterValueException}.
+     * @param vm The VM to which the networks are associated to.
+     * @param newAccount The new account which will access the VM.
+     * @param networkIdList The list of network IDs to be checked if they can be added to the VM.
+     * @param applicableNetworks The list of applicable networks to be added to the VM.
+     * @param requestedIPv4ForNics All requested IPv4 for NICs.
+     * @param requestedIPv6ForNics All requested IPv6 for NICs.
+     */
+    protected void addAdditionalNetworksToVm(UserVmVO vm, Account newAccount, List<Long> networkIdList, Set<NetworkVO> applicableNetworks, Map<Long, String> requestedIPv4ForNics,
+                                             Map<Long, String> requestedIPv6ForNics) {
+        logger.trace("Adding additional networks to VM [{}].", vm);
+
+        if (CollectionUtils.isEmpty(networkIdList)) {
+            return;
+        }
+
+        for (Long networkId : networkIdList) {
+            NetworkVO network = _networkDao.findById(networkId);
+            if (network == null) {
+                InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find specified Network ID.");
+                ex.addProxyObject(networkId.toString(), "networkId");
+                throw ex;
+            }
+
+            _networkModel.checkNetworkPermissions(newAccount, network);
+
+            NetworkOffering networkOffering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
+            if (networkOffering.isSystemOnly()) {
+                throw new InvalidParameterValueException(String.format("Specified network [%s] is system only and cannot be used for VM deployment.", network));
+            }
+
+            if (network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Domain) {
+                NicVO nicOld = _nicDao.findByNtwkIdAndInstanceId(networkId, vm.getId());
+                if (nicOld != null) {
+                    requestedIPv4ForNics.put(networkId, nicOld.getIPv4Address());
+                    requestedIPv6ForNics.put(networkId, nicOld.getIPv6Address());
+                    logger.debug("Using old shared network [{}] with old IP [{}] on NIC of VM [{}].", network, nicOld.getIPv4Address(), vm);
+                }
+            }
+            logger.debug("Added network [{}] to VM [{}].", network.getName(), vm.getId());
+            applicableNetworks.add(network);
+        }
+    }
+
+    /**
+     * Attempts to create a network suitable for the creation of a VM ({@link NetworkOrchestrationService#createGuestNetwork}).
+     * If no physical network is found, throws a {@link InvalidParameterValueException}.
+     * @param caller The account which calls for the network creation.
+     * @param newAccount The account to which the network will be created.
+     * @param zone The zone where the network will be created.
+     * @param requiredOffering The network offering required to create the network.
+     * @return The NetworkVO for the network created.
+     * @throws InsufficientCapacityException
+     * @throws ResourceAllocationException
+     */
+    protected NetworkVO createApplicableNetworkToCreateVm(Account caller, Account newAccount, DataCenterVO zone, NetworkOfferingVO requiredOffering)
+            throws InsufficientCapacityException, ResourceAllocationException {
+
+        logger.trace("Creating an applicable network to create the VM.");
+
+        NetworkVO defaultNetwork;
+        Long zoneId = zone.getId();
+        String requiredOfferingTags = requiredOffering.getTags();
+
+        long physicalNetworkId = _networkModel.findPhysicalNetworkId(zoneId, requiredOfferingTags, requiredOffering.getTrafficType());
+
+        PhysicalNetwork physicalNetwork = _physicalNetworkDao.findById(physicalNetworkId);
+        if (physicalNetwork == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find physical network with ID [%s] and tag [%s].", physicalNetworkId, requiredOfferingTags));
+        }
+
+        Long requiredOfferingId = requiredOffering.getId();
+        logger.debug("Creating network for account [{}] from the network offering [{}] as a part of VM deployment process.", newAccount, requiredOfferingId);
+
+        String newAccountName = newAccount.getAccountName();
+        Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferingId, newAccountName + "-network",
+                newAccountName + "-network", null, null, null, false, null, newAccount,
+                null, physicalNetwork, zoneId, ACLType.Account, null, null,
+                null, null, true, null, null, null, null, null, null, null, null, null, null, null);
+
+        if (requiredOffering.isPersistent()) {
+            newNetwork = implementNetwork(caller, zone, newNetwork);
+        }
+
+        defaultNetwork = _networkDao.findById(newNetwork.getId());
+        return defaultNetwork;
+    }
+
+    protected Network implementNetwork(Account caller, DataCenterVO zone, Network newNetwork) {
+        logger.trace("Implementing network [{}].", newNetwork);
+
+        DeployDestination dest = new DeployDestination(zone, null, null, null);
+
+        Journal journal = new Journal.LogJournal("Implementing " + newNetwork, logger);
+
+        UserVO callerUser = _userDao.findById(CallContext.current().getCallingUserId());
+        ReservationContext context = new ReservationContextImpl(UUID.randomUUID().toString(), journal, callerUser, caller);
+
+        logger.debug("Implementing the network for account [{}] as a part of network provision for persistent networks.", newNetwork);
+
+        try {
+            Pair<? extends NetworkGuru, ? extends Network> implementedNetwork = _networkMgr.implementNetwork(newNetwork.getId(), dest, context);
+
+            if (implementedNetwork == null || implementedNetwork.first() == null || implementedNetwork.second() == null) {
+                logger.warn("Failed to implement network [{}].", newNetwork);
+            } else {
+                newNetwork = implementedNetwork.second();
+            }
+        } catch (Exception ex) {
+            logger.warn("Failed to implement network [{}] elements and resources as a part of network provision for persistent network due to [{}].", newNetwork, ex.getMessage(), ex);
+            throw new CloudRuntimeException(String.format("Failed to implement network [%s] elements and resources as a part of network provision.", newNetwork));
+        }
+
+        return newNetwork;
+    }
+
+    protected boolean canAccountUseNetwork(Account newAccount, Network network) {
+        if (network != null && network.getAclType() == ACLType.Domain && (network.getGuestType() == Network.GuestType.Shared || network.getGuestType() == Network.GuestType.L2)) {
             try {
                 _networkModel.checkNetworkPermissions(newAccount, network);
                 return true;
             } catch (PermissionDeniedException e) {
-                logger.debug("AssignVM: {} network {} can not be used by new account {}", network.getGuestType(), network, newAccount);
+                logger.debug("[{}] network [{}] cannot be used by new account [{}].", network.getGuestType(), network, newAccount);
                 return false;
             }
         }
