@@ -1730,7 +1730,7 @@
 "label.primera.username.tooltip": "The username with edit privileges",
 "label.primera.url.tooltip": "URL designating the Primera storage array endpoint, formatted as: http[s]://HOSTNAME:PORT?cpg=NAME&hostset=NAME[&skipTlsValidation=true][&snapCPG=NAME][&taskWaitTimeoutMs=#][&keyttl=#][&connectTimeoutMs=#] where values in [] are optional.",
 "label.flashArray.username.tooltip": "The username with edit privileges",
-"label.flashArray.url.tooltip": "URL designating the Flash Array endpoint, formatted as: http[s]://HOSTNAME:PORT?pod=NAME&hostgroup=NAME[&skipTlsValidation=true][&postCopyWaitMs=#][&keyttl=#][&connectTimeoutMs=#][&apiLoginVersion=#][&apiVersion=#] where values in [] are optional.",
+"label.flashArray.url.tooltip": "URL designating the FlashArray endpoint, formatted as: http[s]://HOSTNAME:PORT?pod=NAME&hostgroup=NAME[&skipTlsValidation=true][&postCopyWaitMs=#][&keyttl=#][&connectTimeoutMs=#][&apiLoginVersion=#][&apiVersion=#] where values in [] are optional.",
 "label.primary": "Primary",
 "label.primary.storage": "Primary storage",
 "label.primary.storage.allocated": "Primary storage allocated",
