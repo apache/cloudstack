@@ -1341,7 +1341,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      */
     private void checkRoleEscalation(Account caller, Account requested) {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
+            s_logger.debug(String.format("Checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
                     caller.getAccountName(),
                     caller.getUuid(),
                     caller.getRoleId(),
@@ -1355,12 +1355,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 checkApiAccess(apiCheckers, requested, command);
             } catch (PermissionDeniedException pde) {
                 if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format("checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
+                    s_logger.trace(String.format(
+                            "Checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
                             command,
-                            pde.getAccount().getAccountName(),
-                            pde.getAccount().getUuid(),
-                            pde.getEntitiesInViolation()
-                            ));
+                            requested.getAccountName(),
+                            requested.getUuid()
+                        )
+                    );
                 }
                 continue;
             }
