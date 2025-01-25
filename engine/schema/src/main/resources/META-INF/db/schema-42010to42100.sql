@@ -31,3 +31,165 @@ SELECT uuid(), role_id, 'quotaCreditsList', permission, sort_order
 FROM `cloud`.`role_permissions` rp
 WHERE rp.rule = 'quotaStatement'
 AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaCreditsList');
+
+-- Grant access to 2FA APIs for the "Read-Only User - Default" role
+
+UPDATE `cloud`.`role_permissions` `rp`
+SET `rp`.`sort_order` = `rp`.`sort_order` + 3
+WHERE `rp`.`rule` = '*'
+    AND `rp`.`permission` = 'DENY'
+    AND `rp`.`role_id` IN (
+        SELECT `r`.`id`
+        FROM `cloud`.`roles` `r`
+        WHERE `r`.`name` = 'Read-Only User - Default'
+            AND `r`.`is_default` = 1
+    );
+
+INSERT INTO `cloud`.`role_permissions`
+    (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'setupUserTwoFactorAuthentication','ALLOW',MAX(sort_order) - 3
+FROM `cloud`.`role_permissions`
+WHERE role_id = (
+    SELECT `r`.`id`
+    FROM `cloud`.`roles` `r`
+    WHERE `r`.`name` = 'Read-Only User - Default'
+    AND `r`.`is_default` = 1
+);
+
+INSERT INTO `cloud`.`role_permissions`
+    (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'validateUserTwoFactorAuthenticationCode','ALLOW',MAX(sort_order) - 2
+FROM `cloud`.`role_permissions`
+WHERE role_id = (
+    SELECT `r`.`id`
+    FROM `cloud`.`roles` `r`
+    WHERE `r`.`name` = 'Read-Only User - Default'
+      AND `r`.`is_default` = 1
+);
+
+INSERT INTO `cloud`.`role_permissions`
+    (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'listUserTwoFactorAuthenticatorProviders','ALLOW',MAX(sort_order) - 1
+FROM `cloud`.`role_permissions`
+WHERE role_id = (
+    SELECT `r`.`id`
+    FROM `cloud`.`roles` `r`
+    WHERE `r`.`name` = 'Read-Only User - Default'
+      AND `r`.`is_default` = 1
+);
+
+-- Grant access to 2FA APIs for the "Support User - Default" role
+
+UPDATE `cloud`.`role_permissions` `rp`
+SET `rp`.`sort_order` = `rp`.`sort_order` + 3
+WHERE `rp`.`rule` = '*'
+    AND `rp`.`permission` = 'DENY'
+    AND `rp`.`role_id` IN (
+        SELECT `r`.`id`
+        FROM `cloud`.`roles` `r`
+        WHERE `r`.`name` = 'Support User - Default'
+            AND `r`.`is_default` = 1
+        );
+
+INSERT INTO `cloud`.`role_permissions`
+    (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'setupUserTwoFactorAuthentication','ALLOW',MAX(sort_order) - 3
+FROM `cloud`.`role_permissions`
+WHERE role_id = (
+    SELECT `r`.`id`
+    FROM `cloud`.`roles` `r`
+    WHERE `r`.`name` = 'Support User - Default'
+      AND `r`.`is_default` = 1
+);
+
+INSERT INTO `cloud`.`role_permissions`
+    (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'validateUserTwoFactorAuthenticationCode','ALLOW',MAX(sort_order) - 2
+FROM `cloud`.`role_permissions`
+WHERE role_id = (
+    SELECT `r`.`id`
+    FROM `cloud`.`roles` `r`
+    WHERE `r`.`name` = 'Support User - Default'
+      AND `r`.`is_default` = 1
+);
+
+INSERT INTO `cloud`.`role_permissions`
+    (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'listUserTwoFactorAuthenticatorProviders','ALLOW',MAX(sort_order) - 1
+FROM `cloud`.`role_permissions`
+WHERE role_id = (
+    SELECT `r`.`id`
+    FROM `cloud`.`roles` `r`
+    WHERE `r`.`name` = 'Support User - Default'
+      AND `r`.`is_default` = 1
+);
+
+-- Grant access to 2FA APIs for the "Read-Only Admin - Default" role
+
+UPDATE `cloud`.`role_permissions` `rp`
+SET `rp`.`sort_order` = `rp`.`sort_order` + 2
+WHERE `rp`.`rule` = '*'
+  AND `rp`.`permission` = 'DENY'
+  AND `rp`.`role_id` IN (
+    SELECT `r`.`id`
+    FROM `cloud`.`roles` `r`
+    WHERE `r`.`name` = 'Read-Only Admin - Default'
+      AND `r`.`is_default` = 1
+);
+
+INSERT INTO `cloud`.`role_permissions`
+    (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'setupUserTwoFactorAuthentication','ALLOW',MAX(sort_order) - 2
+FROM `cloud`.`role_permissions`
+WHERE role_id = (
+    SELECT `r`.`id`
+    FROM `cloud`.`roles` `r`
+    WHERE `r`.`name` = 'Read-Only Admin - Default'
+      AND `r`.`is_default` = 1
+);
+
+INSERT INTO `cloud`.`role_permissions`
+    (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'validateUserTwoFactorAuthenticationCode','ALLOW',MAX(sort_order) - 1
+FROM `cloud`.`role_permissions`
+WHERE role_id = (
+    SELECT `r`.`id`
+    FROM `cloud`.`roles` `r`
+    WHERE `r`.`name` = 'Read-Only Admin - Default'
+      AND `r`.`is_default` = 1
+);
+
+-- Grant access to 2FA APIs for the "Support Admin - Default" role
+
+UPDATE `cloud`.`role_permissions` `rp`
+SET `rp`.`sort_order` = `rp`.`sort_order` + 2
+WHERE `rp`.`rule` = '*'
+  AND `rp`.`permission` = 'DENY'
+  AND `rp`.`role_id` IN (
+    SELECT `r`.`id`
+    FROM `cloud`.`roles` `r`
+    WHERE `r`.`name` = 'Support Admin - Default'
+      AND `r`.`is_default` = 1
+);
+
+INSERT INTO `cloud`.`role_permissions`
+    (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'setupUserTwoFactorAuthentication','ALLOW',MAX(sort_order) - 2
+FROM `cloud`.`role_permissions`
+WHERE role_id = (
+    SELECT `r`.`id`
+    FROM `cloud`.`roles` `r`
+    WHERE `r`.`name` = 'Support Admin - Default'
+      AND `r`.`is_default` = 1
+);
+
+INSERT INTO `cloud`.`role_permissions`
+    (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'validateUserTwoFactorAuthenticationCode','ALLOW',MAX(sort_order) - 1
+FROM `cloud`.`role_permissions`
+WHERE role_id = (
+    SELECT `r`.`id`
+    FROM `cloud`.`roles` `r`
+    WHERE `r`.`name` = 'Support Admin - Default'
+      AND `r`.`is_default` = 1
+);
