@@ -1050,10 +1050,12 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         registerControlListener(listener);
         try {
             postRequest(request);
-            try {
-                listener.wait(timeoutInMilliseconds);
-            } catch (final InterruptedException e) {
-                logger.warn("sendRequest is interrupted, exit waiting");
+            synchronized (listener) {
+                try {
+                    listener.wait(timeoutInMilliseconds);
+                } catch (final InterruptedException e) {
+                    logger.warn("sendRequest is interrupted, exit waiting");
+                }
             }
             return listener.getAnswer();
         } finally {
