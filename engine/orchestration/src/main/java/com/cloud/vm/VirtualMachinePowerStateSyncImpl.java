@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.utils.cache.LazyCache;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -99,6 +100,20 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
         }
     }
 
+    private List<VMInstanceVO> filterOutdatedFromMissingVmReport(List<VMInstanceVO> vmsThatAreMissingReport) {
+        List<Long> outdatedVms = vmsThatAreMissingReport.stream()
+                .filter(v -> !_instanceDao.isPowerStateUpToDate(v))
+                .map(VMInstanceVO::getId)
+                .collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(outdatedVms)) {
+            return vmsThatAreMissingReport;
+        }
+        _instanceDao.resetVmPowerStateTracking(outdatedVms);
+        return vmsThatAreMissingReport.stream()
+                .filter(v -> !outdatedVms.contains(v.getId()))
+                .collect(Collectors.toList());
+    }
+
     private void processMissingVmReport(long hostId, Set<Long> vmIds, boolean force) {
         // any state outdates should be checked against the time before this list was retrieved
         Date startTime = DateUtil.currentGMTTime();
@@ -112,14 +127,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
         Date currentTime = DateUtil.currentGMTTime();
         logger.debug("Run missing VM report. current time: {}", currentTime.getTime());
         if (!force) {
-            List<Long> outdatedVms = vmsThatAreMissingReport.stream()
-                    .filter(v -> !_instanceDao.isPowerStateUpToDate(v))
-                    .map(VMInstanceVO::getId)
-                    .collect(Collectors.toList());
-            _instanceDao.resetVmPowerStateTracking(outdatedVms);
-            vmsThatAreMissingReport = vmsThatAreMissingReport.stream()
-                    .filter(v -> !outdatedVms.contains(v.getId()))
-                    .collect(Collectors.toList());
+            vmsThatAreMissingReport = filterOutdatedFromMissingVmReport(vmsThatAreMissingReport);
         }
 
         // 2 times of sync-update interval for graceful period

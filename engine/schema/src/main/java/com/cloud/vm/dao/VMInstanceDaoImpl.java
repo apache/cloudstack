@@ -1082,6 +1082,9 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
 
     @Override
     public void resetVmPowerStateTracking(List<Long> instanceIds) {
+        if (CollectionUtils.isEmpty(instanceIds)) {
+            return;
+        }
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
