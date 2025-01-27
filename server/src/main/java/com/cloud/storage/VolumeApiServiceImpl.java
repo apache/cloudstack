@@ -2439,6 +2439,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volumeToAttach.getName(), volumeToAttach.getId(), volumeToAttach.getSize(), offering.getTagsArray(),
                 offering.isUseLocalStorage(), offering.isRecreatable(),
                 volumeToAttach.getTemplateId());
+        diskProfile.setHyperType(vm.getHypervisorType());
         StoragePool pool = _volumeMgr.findStoragePool(diskProfile, zone, pod, clusterHostId.first(),
                 clusterHostId.second(), vm, Collections.emptySet());
         if (pool == null) {
