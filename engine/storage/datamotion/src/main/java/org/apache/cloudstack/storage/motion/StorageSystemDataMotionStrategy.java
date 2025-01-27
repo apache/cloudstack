@@ -40,6 +40,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -923,6 +924,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         HostVO hostVO;
 
         // if either source or destination is a HOST-scoped storage pool, the migration MUST be performed on that host
+
         if (ScopeType.HOST.equals(srcVolumeInfo.getDataStore().getScope().getScopeType())) {
             hostVO = _hostDao.findById(srcVolumeInfo.getDataStore().getScope().getScopeId());
         } else if (ScopeType.HOST.equals(destVolumeInfo.getDataStore().getScope().getScopeType())) {
@@ -1533,6 +1535,16 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 verifyFormat(templateInfo.getFormat());
             }
 
+            // this blurb handles the case where the storage system can clone a volume from a template
+            String canCloneVolumeFromTemplate = templateInfo.getDataStore().getDriver().getCapabilities().get("CAN_CLONE_VOLUME_FROM_TEMPLATE");
+            if (canCloneVolumeFromTemplate != null && canCloneVolumeFromTemplate.toLowerCase().equals("true")) {
+                DataStoreDriver driver = templateInfo.getDataStore().getDriver();
+                driver.createAsync(volumeInfo.getDataStore(), volumeInfo, null);
+                volumeInfo = _volumeDataFactory.getVolume(volumeInfo.getId(), volumeInfo.getDataStore());
+                driver.copyAsync(templateInfo, volumeInfo, null);
+                return;
+            }
+
             HostVO hostVO = null;
 
             final boolean computeClusterSupportsVolumeClone;
@@ -1567,6 +1579,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                             volumeInfo.getDataCenterId());
                 }
             }
+
+
 
             VolumeDetailVO volumeDetail = new VolumeDetailVO(volumeInfo.getId(),
                     "cloneOfTemplate",
@@ -1640,7 +1654,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 errMsg = "Create volume from template failed: " + ex.getMessage();
             }
 
-            throw new CloudRuntimeException(errMsg);
+            throw new CloudRuntimeException(errMsg, ex);
         }
         finally {
             if (copyCmdAnswer == null) {
@@ -2633,7 +2647,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         catch (Exception ex) {
             errMsg = ex.getMessage();
 
-            throw new CloudRuntimeException(errMsg);
+            throw new CloudRuntimeException(errMsg, ex);
         }
         finally {
             if (copyCmdAnswer == null) {
