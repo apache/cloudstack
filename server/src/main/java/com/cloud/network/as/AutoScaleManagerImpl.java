@@ -1475,6 +1475,12 @@ public class AutoScaleManagerImpl extends ManagerBase implements AutoScaleManage
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_COUNTER_CREATE, eventDescription = "Creating a counter", async = true)
+    public Counter getCounter(long counterId) {
+        return counterDao.findById(counterId);
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_CONDITION_CREATE, eventDescription = "Condition", create = true)
     public Condition createCondition(CreateConditionCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
