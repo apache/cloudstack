@@ -128,7 +128,7 @@ public class VMSchedulerImplTest {
 
         actionEventUtilsMocked.verify(() -> ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), null,
                 actionEventMap.get(action), true,
-                String.format("Executing action (%s) for VM Id:%s", vmScheduledJob.getAction(), vm.getUuid()),
+                String.format("Executing action (%s) for VM: %s", vmScheduledJob.getAction(), vm),
                 vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0));
         Assert.assertEquals(expectedValue, jobId);
     }

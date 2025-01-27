@@ -31,8 +31,8 @@ public class ConnectedAgentAttache extends AgentAttache {
 
     protected Link _link;
 
-    public ConnectedAgentAttache(final AgentManagerImpl agentMgr, final long id, final String name, final Link link, final boolean maintenance) {
-        super(agentMgr, id, name, maintenance);
+    public ConnectedAgentAttache(final AgentManagerImpl agentMgr, final long id, final String uuid, final String name, final Link link, final boolean maintenance) {
+        super(agentMgr, id, uuid, name, maintenance);
         _link = link;
     }
 
@@ -98,7 +98,7 @@ public class ConnectedAgentAttache extends AgentAttache {
             assert _link == null : "Duh...Says you....Forgot to call disconnect()!";
             synchronized (this) {
                 if (_link != null) {
-                    logger.warn("Lost attache " + _id + "(" + _name + ")");
+                    logger.warn("Lost attache {} ({})", _id, _name);
                     disconnect(Status.Alert);
                 }
             }

@@ -26,6 +26,20 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class ValueTest {
 
     @Test
+    public void setIdTestAddFieldIdToCollection() {
+        Value variable = new Value();
+        variable.setId(null);
+        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("id"));
+    }
+
+    @Test
+    public void setNameTestAddFieldNameToCollection() {
+        Value variable = new Value();
+        variable.setName(null);
+        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("name"));
+    }
+
+    @Test
     public void setHostTestAddFieldHostToCollection() {
         Value variable = new Value();
         variable.setHost(null);
@@ -150,4 +164,12 @@ public class ValueTest {
         variable.setVolumeFormat(null);
         Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("volumeFormat"));
     }
+
+    @Test
+    public void setStateTestAddFieldStateToCollection() {
+        Value variable = new Value();
+        variable.setState(null);
+        Assert.assertTrue(variable.fieldNamesToIncludeInToString.contains("state"));
+    }
+
 }

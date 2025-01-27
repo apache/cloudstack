@@ -34,10 +34,14 @@ db.cloud.uri=
 
 
 # CloudStack database tuning parameters
+db.cloud.connectionPoolLib=hikaricp
 db.cloud.maxActive=250
 db.cloud.maxIdle=30
-db.cloud.maxWait=10000
-db.cloud.validationQuery=SELECT 1
+db.cloud.maxWait=600000
+db.cloud.minIdleConnections=5
+db.cloud.connectionTimeout=30000
+db.cloud.keepAliveTime=600000
+db.cloud.validationQuery=/* ping */ SELECT 1
 db.cloud.testOnBorrow=true
 db.cloud.testWhileIdle=true
 db.cloud.timeBetweenEvictionRunsMillis=40000
@@ -70,9 +74,13 @@ db.usage.uri=
 
 
 # usage database tuning parameters
+db.usage.connectionPoolLib=hikaricp
 db.usage.maxActive=100
 db.usage.maxIdle=30
-db.usage.maxWait=10000
+db.usage.maxWait=600000
+db.usage.minIdleConnections=5
+db.usage.connectionTimeout=30000
+db.usage.keepAliveTime=600000
 db.usage.url.params=serverTimezone=UTC
 
 # Simulator database settings
@@ -82,9 +90,13 @@ db.simulator.host=@DBHOST@
 db.simulator.driver=@DBDRIVER@
 db.simulator.port=3306
 db.simulator.name=simulator
+db.simulator.connectionPoolLib=hikaricp
 db.simulator.maxActive=250
 db.simulator.maxIdle=30
-db.simulator.maxWait=10000
+db.simulator.maxWait=600000
+db.simulator.minIdleConnections=5
+db.simulator.connectionTimeout=30000
+db.simulator.keepAliveTime=600000
 db.simulator.autoReconnect=true
 
 # Connection URI to the database "simulator". When this property is set, only the following properties will be used along with it: db.simulator.host, db.simulator.port, db.simulator.name, db.simulator.autoReconnect. Other properties will be ignored.

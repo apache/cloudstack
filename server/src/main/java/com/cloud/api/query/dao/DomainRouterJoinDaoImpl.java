@@ -208,6 +208,7 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
 
         routerResponse.setDomainId(router.getDomainUuid());
         routerResponse.setDomainName(router.getDomainName());
+        routerResponse.setDomainPath(router.getDomainPath());
 
         routerResponse.setZoneName(router.getDataCenterName());
         routerResponse.setDns1(router.getDns1());

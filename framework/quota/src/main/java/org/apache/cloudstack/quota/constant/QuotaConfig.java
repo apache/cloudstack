@@ -48,16 +48,16 @@ public interface QuotaConfig {
 
     public static final ConfigKey<String> QuotaSmtpPort = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.port", "", "Quota SMTP port.", true);
 
-    public static final ConfigKey<String> QuotaSmtpAuthType = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.useAuth", "",
+    public static final ConfigKey<Boolean> QuotaSmtpAuthType = new ConfigKey<Boolean>("Advanced", Boolean.class, "quota.usage.smtp.useAuth", "false",
             "If true, use secure SMTP authentication when sending emails.", true);
 
     public static final ConfigKey<String> QuotaSmtpSender = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.sender", "",
             "Sender of quota alert email (will be in the From header of the email).", true);
 
     public static final ConfigKey<String> QuotaSmtpEnabledSecurityProtocols = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.enabledSecurityProtocols", "",
-            "White-space separated security protocols; ex: \"TLSv1 TLSv1.1\". Supported protocols: SSLv2Hello, SSLv3, TLSv1, TLSv1.1 and TLSv1.2.", true);
+            "White-space separated security protocols; ex: \"TLSv1 TLSv1.1\". Supported protocols: SSLv2Hello, SSLv3, TLSv1, TLSv1.1 and TLSv1.2.", true, ConfigKey.Kind.WhitespaceSeparatedListWithOptions, "SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2");
 
-    public static final ConfigKey<String> QuotaSmtpUseStartTLS = new ConfigKey<String>("Advanced", String.class, "quota.usage.smtp.useStartTLS", "false",
+    public static final ConfigKey<Boolean> QuotaSmtpUseStartTLS = new ConfigKey<Boolean>("Advanced", Boolean.class, "quota.usage.smtp.useStartTLS", "false",
             "If set to true and if we enable security via quota.usage.smtp.useAuth, this will enable StartTLS to secure the connection.", true);
 
     public static final ConfigKey<Long> QuotaActivationRuleTimeout = new ConfigKey<>("Advanced", Long.class, "quota.activationrule.timeout", "2000", "The maximum runtime,"

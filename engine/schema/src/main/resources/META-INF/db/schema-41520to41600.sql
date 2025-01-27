@@ -123,20 +123,6 @@ CREATE VIEW `cloud`.`service_offering_view` AS
     GROUP BY
         `service_offering`.`id`;
 
---;
--- Stored procedure to do idempotent column add;
--- This is copied from schema-41000to41100.sql
---;
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
-
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
-    IN in_table_name VARCHAR(200),
-    IN in_column_name VARCHAR(200),
-    IN in_column_definition VARCHAR(1000)
-)
-BEGIN
-
-    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.account','created', 'datetime DEFAULT NULL COMMENT ''date created'' AFTER `state` ');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.domain','created', 'datetime DEFAULT NULL COMMENT ''date created'' AFTER `next_child_seq` ');
@@ -729,39 +715,6 @@ ALTER TABLE `cloud`.`annotations` ADD COLUMN `admins_only` tinyint(1) unsigned N
 
 -- Add uuid for ssh keypairs
 ALTER TABLE `cloud`.`ssh_keypairs` ADD COLUMN `uuid` varchar(40) AFTER `id`;
-
--- PR#4699 Drop the procedure `ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` if it already exist.
-DROP PROCEDURE IF EXISTS `cloud`.`ADD_GUEST_OS_AND_HYPERVISOR_MAPPING`;
-
--- PR#4699 Create the procedure `ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` to add guest_os and guest_os_hypervisor mapping.
-CREATE PROCEDURE `cloud`.`ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` (
-    IN guest_os_category_id bigint(20) unsigned,
-    IN guest_os_display_name VARCHAR(255),
-    IN guest_os_hypervisor_hypervisor_type VARCHAR(32),
-    IN guest_os_hypervisor_hypervisor_version VARCHAR(32),
-    IN guest_os_hypervisor_guest_os_name VARCHAR(255)
-)
-BEGIN
-	INSERT  INTO cloud.guest_os (uuid, category_id, display_name, created)
-	SELECT 	UUID(), guest_os_category_id, guest_os_display_name, now()
-	FROM    DUAL
-	WHERE 	not exists( SELECT  1
-	                    FROM    cloud.guest_os
-	                    WHERE   cloud.guest_os.category_id = guest_os_category_id
-	                    AND     cloud.guest_os.display_name = guest_os_display_name)
-
-;	INSERT  INTO cloud.guest_os_hypervisor (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created)
-	SELECT 	UUID(), guest_os_hypervisor_hypervisor_type, guest_os_hypervisor_hypervisor_version, guest_os_hypervisor_guest_os_name, guest_os.id, now()
-	FROM 	cloud.guest_os
-	WHERE 	guest_os.category_id = guest_os_category_id
-	AND 	guest_os.display_name = guest_os_display_name
-	AND	NOT EXISTS (SELECT  1
-	                    FROM    cloud.guest_os_hypervisor as hypervisor
-	                    WHERE   hypervisor_type = guest_os_hypervisor_hypervisor_type
-	                    AND     hypervisor_version = guest_os_hypervisor_hypervisor_version
-	                    AND     hypervisor.guest_os_id = guest_os.id
-	                    AND     hypervisor.guest_os_name = guest_os_hypervisor_guest_os_name)
-;END;
 
 -- PR#4699 Call procedure `ADD_GUEST_OS_AND_HYPERVISOR_MAPPING` to add new data to guest_os and guest_os_hypervisor.
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (10, 'Ubuntu 20.04 LTS', 'KVM', 'default', 'Ubuntu 20.04 LTS');

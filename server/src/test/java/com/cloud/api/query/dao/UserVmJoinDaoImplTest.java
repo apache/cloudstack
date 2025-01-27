@@ -16,20 +16,12 @@
 // under the License.
 package com.cloud.api.query.dao;
 
-import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.storage.Storage;
-import com.cloud.storage.VnfTemplateDetailVO;
-import com.cloud.storage.VnfTemplateNicVO;
-import com.cloud.storage.dao.VnfTemplateDetailsDao;
-import com.cloud.storage.dao.VnfTemplateNicDao;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.UserStatisticsVO;
-import com.cloud.user.dao.UserDao;
-import com.cloud.user.dao.UserStatisticsDao;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.MockitoAnnotations.openMocks;
+
+import java.util.Arrays;
+import java.util.EnumSet;
+
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ResponseObject;
@@ -44,11 +36,20 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.Arrays;
-import java.util.EnumSet;
-
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.MockitoAnnotations.openMocks;
+import com.cloud.api.query.vo.UserVmJoinVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.VnfTemplateDetailVO;
+import com.cloud.storage.VnfTemplateNicVO;
+import com.cloud.storage.dao.VnfTemplateDetailsDao;
+import com.cloud.storage.dao.VnfTemplateNicDao;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.UserStatisticsVO;
+import com.cloud.user.dao.UserDao;
+import com.cloud.user.dao.UserStatisticsDao;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.dao.UserVmDetailsDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseTest<UserVmJoinVO, UserVmResponse> {
@@ -113,6 +114,7 @@ public class UserVmJoinDaoImplTest extends GenericDaoBaseWithTagInformationBaseT
         Mockito.when(userVmMock.getId()).thenReturn(vmId);
         Mockito.when(userVmMock.getTemplateId()).thenReturn(templateId);
         Mockito.when(userVmMock.getTemplateType()).thenReturn(Storage.TemplateType.VNF);
+        Mockito.when(userVmMock.getTemplateFormat()).thenReturn(Storage.ImageFormat.OVA);
 
         Mockito.when(caller.getId()).thenReturn(2L);
         Mockito.when(accountMgr.isRootAdmin(nullable(Long.class))).thenReturn(true);

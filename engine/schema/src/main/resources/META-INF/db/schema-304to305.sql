@@ -5,9 +5,9 @@
 -- to you under the Apache License, Version 2.0 (the
 -- "License"); you may not use this file except in compliance
 -- with the License.  You may obtain a copy of the License at
--- 
+--
 --   http://www.apache.org/licenses/LICENSE-2.0
--- 
+--
 -- Unless required by applicable law or agreed to in writing,
 -- software distributed under the License is distributed on an
 -- "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -80,7 +80,7 @@ CREATE TABLE `cloud`.`vpc` (
   PRIMARY KEY  (`id`),
   INDEX `i_vpc__removed`(`removed`),
   CONSTRAINT `fk_vpc__zone_id` FOREIGN KEY `fk_vpc__zone_id` (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_vpc__vpc_offering_id` FOREIGN KEY (`vpc_offering_id`) REFERENCES `vpc_offerings`(`id`), 
+  CONSTRAINT `fk_vpc__vpc_offering_id` FOREIGN KEY (`vpc_offering_id`) REFERENCES `vpc_offerings`(`id`),
   CONSTRAINT `fk_vpc__account_id` FOREIGN KEY `fk_vpc__account_id` (`account_id`) REFERENCES `account`(`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_vpc__domain_id` FOREIGN KEY `fk_vpc__domain_id` (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -141,7 +141,7 @@ CREATE TABLE `cloud`.`static_routes` (
   `id` bigint unsigned NOT NULL auto_increment COMMENT 'id',
   `uuid` varchar(40),
   `vpc_gateway_id` bigint unsigned COMMENT 'id of the corresponding ip address',
-  `cidr` varchar(18) COMMENT 'cidr for the static route', 
+  `cidr` varchar(18) COMMENT 'cidr for the static route',
   `state` char(32) NOT NULL COMMENT 'current state of this rule',
   `vpc_id` bigint unsigned COMMENT 'vpc the firewall rule is associated with',
   `account_id` bigint unsigned NOT NULL COMMENT 'owner id',

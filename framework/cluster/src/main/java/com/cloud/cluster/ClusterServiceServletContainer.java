@@ -17,11 +17,23 @@
 package com.cloud.cluster;
 
 import java.io.IOException;
-import java.net.ServerSocket;
+import java.net.InetAddress;
 import java.net.Socket;
+import java.security.GeneralSecurityException;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateParsingException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.SSLServerSocketFactory;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
+
+import org.apache.cloudstack.framework.ca.CAService;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.http.ConnectionClosedException;
 import org.apache.http.HttpException;
 import org.apache.http.impl.DefaultConnectionReuseStrategy;
@@ -41,12 +53,12 @@ import org.apache.http.protocol.ResponseConnControl;
 import org.apache.http.protocol.ResponseContent;
 import org.apache.http.protocol.ResponseDate;
 import org.apache.http.protocol.ResponseServer;
-
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-
-import com.cloud.utils.concurrency.NamedThreadFactory;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.nio.Link;
 
 public class ClusterServiceServletContainer {
 
@@ -55,9 +67,9 @@ public class ClusterServiceServletContainer {
     public ClusterServiceServletContainer() {
     }
 
-    public boolean start(HttpRequestHandler requestHandler, int port) {
+    public boolean start(HttpRequestHandler requestHandler, String ip, int port, CAService caService) {
 
-        listenerThread = new ListenerThread(requestHandler, port);
+        listenerThread = new ListenerThread(requestHandler, ip, port, caService);
         listenerThread.start();
 
         return true;
@@ -69,26 +81,46 @@ public class ClusterServiceServletContainer {
         }
     }
 
+
+    protected static SSLServerSocket getSecuredServerSocket(SSLContext sslContext, String ip, int port)
+            throws IOException {
+        SSLServerSocketFactory sslFactory = sslContext.getServerSocketFactory();
+        SSLServerSocket serverSocket = null;
+        if (StringUtils.isNotEmpty(ip)) {
+            serverSocket = (SSLServerSocket) sslFactory.createServerSocket(port, 0,
+                    InetAddress.getByName(ip));
+        } else {
+            serverSocket = (SSLServerSocket) sslFactory.createServerSocket(port);
+        }
+        serverSocket.setNeedClientAuth(true);
+        return serverSocket;
+    }
+
     static class ListenerThread extends Thread {
 
         private static Logger LOGGER = LogManager.getLogger(ListenerThread.class);
-        private HttpService _httpService = null;
-        private volatile ServerSocket _serverSocket = null;
-        private HttpParams _params = null;
-        private ExecutorService _executor;
+        private HttpService httpService = null;
+        private volatile SSLServerSocket serverSocket = null;
+        private HttpParams params = null;
+        private ExecutorService executor;
+        private CAService caService = null;
 
-        public ListenerThread(HttpRequestHandler requestHandler, int port) {
-            _executor = Executors.newCachedThreadPool(new NamedThreadFactory("Cluster-Listener"));
+        public ListenerThread(HttpRequestHandler requestHandler, String ip, int port,
+                      CAService caService) {
+            this.executor = Executors.newCachedThreadPool(new NamedThreadFactory("Cluster-Listener"));
+            this.caService = caService;
 
             try {
-                _serverSocket = new ServerSocket(port);
-            } catch (IOException ioex) {
-                LOGGER.error("error initializing cluster service servlet container", ioex);
+                SSLContext sslContext = Link.initManagementSSLContext(caService);
+                serverSocket = getSecuredServerSocket(sslContext, ip, port);
+            } catch (IOException | GeneralSecurityException e) {
+                LOGGER.error("Error initializing cluster service servlet container for secure connection",
+                        e);
                 return;
             }
 
-            _params = new BasicHttpParams();
-            _params.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 5000)
+            params = new BasicHttpParams();
+            params.setIntParameter(CoreConnectionPNames.SO_TIMEOUT, 5000)
                 .setIntParameter(CoreConnectionPNames.SOCKET_BUFFER_SIZE, 8 * 1024)
                 .setBooleanParameter(CoreConnectionPNames.STALE_CONNECTION_CHECK, false)
                 .setBooleanParameter(CoreConnectionPNames.TCP_NODELAY, true)
@@ -106,35 +138,55 @@ public class ClusterServiceServletContainer {
             reqistry.register("/clusterservice", requestHandler);
 
             // Set up the HTTP service
-            _httpService = new HttpService(httpproc, new DefaultConnectionReuseStrategy(), new DefaultHttpResponseFactory());
-            _httpService.setParams(_params);
-            _httpService.setHandlerResolver(reqistry);
+            httpService = new HttpService(httpproc, new DefaultConnectionReuseStrategy(), new DefaultHttpResponseFactory());
+            httpService.setParams(params);
+            httpService.setHandlerResolver(reqistry);
         }
 
         public void stopRunning() {
-            if (_serverSocket != null) {
+            if (serverSocket != null) {
                 try {
-                    _serverSocket.close();
+                    serverSocket.close();
                 } catch (IOException e) {
                     LOGGER.info("[ignored] error on closing server socket", e);
                 }
-                _serverSocket = null;
+                serverSocket = null;
             }
+        }
+
+        protected boolean isValidPeerConnection(Socket socket) throws SSLPeerUnverifiedException,
+                CertificateParsingException {
+            SSLSocket sslSocket = (SSLSocket) socket;
+            SSLSession session = sslSocket.getSession();
+            if (session == null || !session.isValid()) {
+                return false;
+            }
+            Certificate[] certs = session.getPeerCertificates();
+            if (certs == null || certs.length < 1) {
+                return false;
+            }
+            return caService.isManagementCertificate(certs[0]);
         }
 
         @Override
         public void run() {
             if (LOGGER.isInfoEnabled())
-                LOGGER.info("Cluster service servlet container listening on port " + _serverSocket.getLocalPort());
+                LOGGER.info(String.format("Cluster service servlet container listening on host: %s and port %d",
+                        serverSocket.getInetAddress().getHostAddress(), serverSocket.getLocalPort()));
 
-            while (_serverSocket != null) {
+            while (serverSocket != null) {
                 try {
                     // Set up HTTP connection
-                    Socket socket = _serverSocket.accept();
+                    Socket socket = serverSocket.accept();
                     final DefaultHttpServerConnection conn = new DefaultHttpServerConnection();
-                    conn.bind(socket, _params);
-
-                    _executor.execute(new ManagedContextRunnable() {
+                    conn.bind(socket, params);
+                    if (!isValidPeerConnection(socket)) {
+                        LOGGER.warn(String.format("Failure during validating cluster request from %s",
+                                socket.getInetAddress().getHostAddress()));
+                        conn.shutdown();
+                        continue;
+                    }
+                    executor.execute(new ManagedContextRunnable() {
                         @Override
                         protected void runInContext() {
                             HttpContext context = new BasicHttpContext(null);
@@ -143,7 +195,7 @@ public class ClusterServiceServletContainer {
                                     if (LOGGER.isTraceEnabled())
                                         LOGGER.trace("dispatching cluster request from " + conn.getRemoteAddress().toString());
 
-                                    _httpService.handleRequest(conn, context);
+                                    httpService.handleRequest(conn, context);
 
                                     if (LOGGER.isTraceEnabled())
                                         LOGGER.trace("Cluster request from " + conn.getRemoteAddress().toString() + " is processed");
@@ -178,7 +230,7 @@ public class ClusterServiceServletContainer {
                 }
             }
 
-            _executor.shutdown();
+            executor.shutdown();
             if (LOGGER.isInfoEnabled())
                 LOGGER.info("Cluster service servlet container shutdown");
         }

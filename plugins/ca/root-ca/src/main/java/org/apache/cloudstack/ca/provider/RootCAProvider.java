@@ -35,9 +35,11 @@ import java.security.Security;
 import java.security.SignatureException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashSet;
@@ -53,7 +55,6 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 import javax.xml.bind.DatatypeConverter;
 
-import com.cloud.configuration.Config;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.ca.CAProvider;
 import org.apache.cloudstack.framework.ca.Certificate;
@@ -62,6 +63,8 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Extension;
@@ -75,11 +78,11 @@ import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 
 import com.cloud.certificate.dao.CrlDao;
+import com.cloud.configuration.Config;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import org.apache.commons.lang3.StringUtils;
 
 public final class RootCAProvider extends AdapterBase implements CAProvider, Configurable {
 
@@ -129,6 +132,8 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             "ca.plugin.root.allow.expired.cert",
             "true",
             "When set to true, it will allow expired client certificate during SSL handshake.", true);
+
+    private static String managementCertificateCustomSAN;
 
 
     ///////////////////////////////////////////////////////////
@@ -371,8 +376,11 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         List<String> nicIps = NetUtils.getAllDefaultNicIps();
         addConfiguredManagementIp(nicIps);
         nicIps = new ArrayList<>(new HashSet<>(nicIps));
+        List<String> domainNames = new ArrayList<>();
+        domainNames.add(NetUtils.getHostName());
+        domainNames.add(CAManager.CertManagementCustomSubjectAlternativeName.value());
 
-        final Certificate serverCertificate = issueCertificate(Collections.singletonList(NetUtils.getHostName()), nicIps, getCaValidityDays());
+        final Certificate serverCertificate = issueCertificate(domainNames, nicIps, getCaValidityDays());
 
         if (serverCertificate == null || serverCertificate.getPrivateKey() == null) {
             throw new CloudRuntimeException("Failed to generate management server certificate and load management server keystore");
@@ -431,6 +439,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
 
     @Override
     public boolean start() {
+        managementCertificateCustomSAN = CAManager.CertManagementCustomSubjectAlternativeName.value();
         return loadRootCAKeyPair() && loadRootCAKeyPair() && loadManagementKeyStore();
     }
 
@@ -484,5 +493,27 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     @Override
     public String getDescription() {
         return "CloudStack's Root CA provider plugin";
+    }
+
+    @Override
+    public boolean isManagementCertificate(java.security.cert.Certificate certificate) throws CertificateParsingException {
+        if (!(certificate instanceof X509Certificate)) {
+            return false;
+        }
+        X509Certificate x509Certificate = (X509Certificate) certificate;
+
+        // Check for alternative names
+        Collection<List<?>> altNames = x509Certificate.getSubjectAlternativeNames();
+        if (CollectionUtils.isEmpty(altNames)) {
+            return false;
+        }
+        for (List<?> altName : altNames) {
+            int type = (Integer) altName.get(0);
+            String name = (String) altName.get(1);
+            if (type == GeneralName.dNSName && managementCertificateCustomSAN.equals(name)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

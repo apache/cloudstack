@@ -41,6 +41,7 @@ public class VRScripts {
     public static final String DHCP_CONFIG = "dhcp.json";
     public static final String IP_ALIAS_CONFIG = "ip_aliases.json";
     public static final String LOAD_BALANCER_CONFIG = "load_balancer.json";
+    public static final String BGP_PEERS_CONFIG = "bgp_peers.json";
 
     public static final String SYSTEM_VM_PATCHED = "patched.sh";
     public final static String CONFIG_CACHE_LOCATION = "/var/cache/cloud/";
@@ -81,4 +82,5 @@ public class VRScripts {
     public static final String VR_UPDATE_INTERFACE_CONFIG = "update_interface_config.sh";
 
     public static final String ROUTER_FILESYSTEM_WRITABLE_CHECK = "filesystem_writable_check.py";
+    public static final String MANAGE_SERVICE = "manage_service.sh";
 }

@@ -136,7 +136,6 @@ public class VMSnapshotManagerTest {
     VMSnapshotDetailsDao _vmSnapshotDetailsDao;
     @Mock
     UserVmManager _userVmManager;
-    int _vmSnapshotMax = 10;
 
     private static final long TEST_VM_ID = 3L;
     private static final long SERVICE_OFFERING_ID = 1L;
@@ -193,8 +192,6 @@ public class VMSnapshotManagerTest {
         _vmSnapshotMgr._serviceOfferingDetailsDao = _serviceOfferingDetailsDao;
 
         doNothing().when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
-
-        _vmSnapshotMgr._vmSnapshotMax = _vmSnapshotMax;
 
         _vmSnapshotMgr._serviceOfferingDao = _serviceOfferingDao;
         _vmSnapshotMgr._userVmDetailsDao = _userVmDetailsDao;
@@ -356,7 +353,7 @@ public class VMSnapshotManagerTest {
 
         verify(_vmSnapshotMgr).changeUserVmServiceOffering(userVm, vmSnapshotVO);
         verify(_vmSnapshotMgr).getVmMapDetails(userVm);
-        verify(_vmSnapshotMgr).upgradeUserVmServiceOffering(ArgumentMatchers.eq(TEST_VM_ID), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture());
+        verify(_vmSnapshotMgr).upgradeUserVmServiceOffering(ArgumentMatchers.eq(userVm), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture());
     }
 
     @Test
@@ -374,7 +371,7 @@ public class VMSnapshotManagerTest {
         when(_userVmManager.upgradeVirtualMachine(ArgumentMatchers.eq(TEST_VM_ID), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture())).thenReturn(true);
         _vmSnapshotMgr.changeUserVmServiceOffering(userVm, vmSnapshotVO);
         verify(_vmSnapshotMgr).getVmMapDetails(userVm);
-        verify(_vmSnapshotMgr).upgradeUserVmServiceOffering(ArgumentMatchers.eq(TEST_VM_ID), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture());
+        verify(_vmSnapshotMgr).upgradeUserVmServiceOffering(ArgumentMatchers.eq(userVm), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture());
     }
 
     @Test(expected=CloudRuntimeException.class)
@@ -382,7 +379,7 @@ public class VMSnapshotManagerTest {
         when(_userVmManager.upgradeVirtualMachine(ArgumentMatchers.eq(TEST_VM_ID), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture())).thenReturn(false);
         _vmSnapshotMgr.changeUserVmServiceOffering(userVm, vmSnapshotVO);
         verify(_vmSnapshotMgr).getVmMapDetails(userVm);
-        verify(_vmSnapshotMgr).upgradeUserVmServiceOffering(ArgumentMatchers.eq(TEST_VM_ID), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture());
+        verify(_vmSnapshotMgr).upgradeUserVmServiceOffering(ArgumentMatchers.eq(userVm), ArgumentMatchers.eq(SERVICE_OFFERING_ID), mapDetailsCaptor.capture());
     }
 
     @Test
@@ -392,7 +389,7 @@ public class VMSnapshotManagerTest {
                 put(userVmDetailMemory.getName(), userVmDetailMemory.getValue());
         }};
         when(_userVmManager.upgradeVirtualMachine(TEST_VM_ID, SERVICE_OFFERING_ID, details)).thenReturn(true);
-        _vmSnapshotMgr.upgradeUserVmServiceOffering(TEST_VM_ID, SERVICE_OFFERING_ID, details);
+        _vmSnapshotMgr.upgradeUserVmServiceOffering(userVm, SERVICE_OFFERING_ID, details);
 
         verify(_userVmManager).upgradeVirtualMachine(TEST_VM_ID, SERVICE_OFFERING_ID, details);
     }

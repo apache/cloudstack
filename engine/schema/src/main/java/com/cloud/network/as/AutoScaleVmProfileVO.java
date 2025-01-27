@@ -37,6 +37,7 @@ import javax.persistence.Table;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -126,7 +127,9 @@ public class AutoScaleVmProfileVO implements AutoScaleVmProfile, Identity, Inter
 
     @Override
     public String toString() {
-        return new StringBuilder("AutoScaleVMProfileVO[").append("id").append(id).append("-").append("templateId").append("-").append(templateId).append("]").toString();
+        return String.format("AutoScaleVMProfile %s.",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "templateId"));
     }
 
     @Override

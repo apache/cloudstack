@@ -34,6 +34,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import junit.framework.TestCase;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -57,7 +58,6 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -143,14 +143,12 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
         when(_dataStoreMgr.getDataStore(anyLong(), eq(DataStoreRole.Primary))).thenReturn(store);
         when(store.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
         when(store.isShared()).thenReturn(true);
-        when(store.getName()).thenReturn("newPool");
         when(store.getStorageProviderName()).thenReturn("default");
 
 
         when(_dataStoreProviderMgr.getDataStoreProvider(anyString())).thenReturn(dataStoreProvider);
         when(dataStoreProvider.getName()).thenReturn("default");
 
-        when(hostListener.hostConnect(Mockito.anyLong(), Mockito.anyLong())).thenReturn(true);
         storageMgr.registerHostListener("default", hostListener);
 
 
@@ -170,5 +168,24 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
     @Test
     public void testAttachCluster() throws Exception {
         Assert.assertTrue(_cloudStackPrimaryDataStoreLifeCycle.attachCluster(store, new ClusterScope(1L, 1L, 1L)));
+    }
+
+    @Test
+    public void testAttachClusterException() throws Exception {
+        String exceptionString = "Mount failed due to incorrect mount options.";
+        String mountFailureReason = "Incorrect mount option specified.";
+
+        CloudRuntimeException exception = new CloudRuntimeException(exceptionString);
+        StorageManager storageManager = Mockito.mock(StorageManager.class);
+        Mockito.when(storageManager.connectHostToSharedPool(Mockito.any(), Mockito.anyLong())).thenThrow(exception);
+        Mockito.when(storageManager.getStoragePoolMountFailureReason(exceptionString)).thenReturn(mountFailureReason);
+        ReflectionTestUtils.setField(_cloudStackPrimaryDataStoreLifeCycle, "storageMgr", storageManager);
+
+        try {
+            _cloudStackPrimaryDataStoreLifeCycle.attachCluster(store, new ClusterScope(1L, 1L, 1L));
+            Assert.fail();
+        } catch (Exception e) {
+           Assert.assertEquals(e.getMessage(), mountFailureReason);
+        }
     }
 }

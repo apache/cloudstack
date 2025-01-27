@@ -41,6 +41,7 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -184,8 +185,7 @@ public class SnapshotObject implements SnapshotInfo {
             processEvent(Event.OperationNotPerformed);
         } catch (NoTransitionException ex) {
             logger.error("no transition error: ", ex);
-            throw new CloudRuntimeException("Error marking snapshot backed up: " +
-                    this.snapshot.getId() + " " + ex.getMessage());
+            throw new CloudRuntimeException(String.format("Error marking snapshot backed up: %s %s", this.snapshot, ex.getMessage()));
         }
     }
 
@@ -370,12 +370,11 @@ public class SnapshotObject implements SnapshotInfo {
                 if (snapshotTO.getVolume() != null && snapshotTO.getVolume().getPath() != null) {
                     VolumeVO vol = volumeDao.findByUuid(snapshotTO.getVolume().getUuid());
                     if (vol != null) {
-                        logger.info("Update volume path change due to snapshot operation, volume " + vol.getId() + " path: " + vol.getPath() + "->" +
-                            snapshotTO.getVolume().getPath());
+                        logger.info("Update volume path change due to snapshot operation, volume {} path: {}->{}", vol, vol.getPath(), snapshotTO.getVolume().getPath());
                         vol.setPath(snapshotTO.getVolume().getPath());
                         volumeDao.update(vol.getId(), vol);
                     } else {
-                        logger.error("Cound't find the original volume with uuid: " + snapshotTO.getVolume().getUuid());
+                        logger.error("Couldn't find the original volume: {}", snapshotTO.getVolume());
                     }
                 }
             } else {
@@ -465,5 +464,12 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public Class<?> getEntityType() {
         return Snapshot.class;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("SnapshotObject %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "snapshot", "store"));
     }
 }

@@ -30,5 +30,5 @@
     <bean id="UserDispersingPlanner" class="com.cloud.deploy.UserDispersingPlanner">
         <property name="name" value="UserDispersingPlanner" />
     </bean>
-    
+
 </beans>

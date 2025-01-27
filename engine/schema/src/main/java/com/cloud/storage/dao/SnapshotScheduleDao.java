@@ -27,13 +27,11 @@ import com.cloud.utils.db.GenericDao;
  */
 public interface SnapshotScheduleDao extends GenericDao<SnapshotScheduleVO, Long> {
 
-    List<SnapshotScheduleVO> getCoincidingSnapshotSchedules(long volumeId, Date date);
-
     List<SnapshotScheduleVO> getSchedulesToExecute(Date currentTimestamp);
 
-    SnapshotScheduleVO getCurrentSchedule(Long volumeId, Long policyId, boolean executing);
+    List<SnapshotScheduleVO> getSchedulesAssignedWithAsyncJob();
 
-    SnapshotScheduleVO findOneByVolume(long volumeId);
+    SnapshotScheduleVO getCurrentSchedule(Long volumeId, Long policyId, boolean executing);
 
     SnapshotScheduleVO findOneByVolumePolicy(long volumeId, long policyId);
 

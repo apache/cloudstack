@@ -183,7 +183,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
 
     @Override public long makeCopyOfNetwork(Network network, NetworkOffering networkOffering, Long vpcId) {
         if (logger.isDebugEnabled()) {
-            logger.debug("Making a copy of network with uuid " + network.getUuid() + " and id " + network.getId() + " for migration.");
+            logger.debug("Making a copy of network {} for migration.", network);
         }
         long originalNetworkId = network.getId();
         NetworkDomainVO domainNetworkMapByNetworkId = _networkDomainDao.getDomainNetworkMapByNetworkId(originalNetworkId);
@@ -235,7 +235,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
         _networksDao.update(networkCopyId, copiedNetwork);
 
         copyNetworkDetails(originalNetworkId, networkCopyId);
-        copyFirewallRulesToNewNetwork(network, networkCopyId);
+        copyFirewallRulesToNewNetwork(network, copiedNetwork);
         assignUserNicsToNewNetwork(originalNetworkId, networkCopyId);
         assignRouterNicsToNewNetwork(network.getId(), networkCopyId);
 
@@ -287,7 +287,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
     public Long makeCopyOfVpc(long vpcId, long vpcOfferingId) {
         VpcVO vpc = _vpcDao.findById(vpcId);
         if (logger.isDebugEnabled()) {
-            logger.debug("Making a copy of vpc with uuid " + vpc.getUuid() + " and id " + vpc.getId() + " for migration.");
+            logger.debug("Making a copy of vpc {} for migration.", vpc);
         }
         if (vpc == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Specified vpc id doesn't exist in the system");
@@ -301,7 +301,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
 
             copyOfVpc = _vpcService.createVpc(vpc.getZoneId(), vpcOfferingId, vpc.getAccountId(), vpc.getName(),
                     vpc.getDisplayText(), vpc.getCidr(), vpc.getNetworkDomain(), vpc.getIp4Dns1(), vpc.getIp4Dns2(),
-                    vpc.getIp6Dns1(), vpc.getIp6Dns2(), vpc.isDisplay(), vpc.getPublicMtu());
+                    vpc.getIp6Dns1(), vpc.getIp6Dns2(), vpc.isDisplay(), vpc.getPublicMtu(), null, null, null);
 
             copyOfVpcId = copyOfVpc.getId();
             //on resume of migration the uuid will be swapped already. So the copy will have the value of the original vpcid.
@@ -393,11 +393,11 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
         }
     }
 
-    private void copyFirewallRulesToNewNetwork(Network srcNetwork, long dstNetworkId) {
+    private void copyFirewallRulesToNewNetwork(Network srcNetwork, Network dstNetwork) {
         List<FirewallRuleVO> firewallRules = _firewallDao.listByNetworkPurposeTrafficType(srcNetwork.getId(), FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Egress);
         firewallRules.addAll(_firewallDao.listByNetworkPurposeTrafficType(srcNetwork.getId(), FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Ingress));
         if (logger.isDebugEnabled()) {
-            logger.debug("Copying firewall rules from network with id " + srcNetwork.getId() + " to network with id " + dstNetworkId);
+            logger.debug("Copying firewall rules from network {} to network {}", srcNetwork, dstNetwork);
         }
 
         //Loop over all the firewall rules in the original network and copy all values to a new firewall rule
@@ -408,7 +408,7 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
                                                        originalFirewallRule.getSourcePortStart(),
                                                        originalFirewallRule.getSourcePortEnd(),
                                                        originalFirewallRule.getProtocol(),
-                                                       dstNetworkId,
+                                                       dstNetwork.getId(),
                                                        srcNetwork.getAccountId(),
                                                        srcNetwork.getDomainId(),
                                                        originalFirewallRule.getPurpose(),
@@ -613,11 +613,11 @@ public class NetworkMigrationManagerImpl implements NetworkMigrationManager {
                 ipAddress.setAssociatedWithNetworkId(networkInNewPhysicalNet.getId());
                 _ipAddressDao.persist(ipAddress);
             } else {
-                _ipAddressManager.disassociatePublicIpAddress(ipAddress.getId(), callerUserId, caller);
+                _ipAddressManager.disassociatePublicIpAddress(ipAddress, callerUserId, caller);
             }
         }
 
-        _rulesMgr.applyStaticNatsForNetwork(networkInNewPhysicalNet.getId(), false, networkAccount);
+        _rulesMgr.applyStaticNatsForNetwork(networkInNewPhysicalNet, false, networkAccount);
     }
 
     private void copyNicDetails(long originalNicId, long dstNicId) {

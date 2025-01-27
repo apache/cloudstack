@@ -27,7 +27,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.vnc.packet.client.ClientPacket;
 import com.cloud.consoleproxy.vnc.packet.client.FramebufferUpdateRequestPacket;
 import com.cloud.consoleproxy.vnc.packet.client.KeyboardEventPacket;
@@ -35,8 +34,11 @@ import com.cloud.consoleproxy.vnc.packet.client.MouseEventPacket;
 import com.cloud.consoleproxy.vnc.packet.client.SetEncodingsPacket;
 import com.cloud.consoleproxy.vnc.packet.client.SetPixelFormatPacket;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class VncClientPacketSender implements Runnable, PaintNotificationListener, KeyListener, MouseListener, MouseMotionListener, FrameBufferUpdateListener {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     // Queue for outgoing packets
     private final BlockingQueue<ClientPacket> queue = new ArrayBlockingQueue<ClientPacket>(30);

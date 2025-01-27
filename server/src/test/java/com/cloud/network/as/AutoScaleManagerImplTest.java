@@ -42,6 +42,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.as.dao.AutoScalePolicyConditionMapDao;
 import com.cloud.network.as.dao.AutoScalePolicyDao;
 import com.cloud.network.as.dao.AutoScaleVmGroupDao;
@@ -85,6 +86,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
@@ -99,6 +101,7 @@ import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
@@ -122,6 +125,7 @@ import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.userdata.UserDataManager;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -138,6 +142,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -188,6 +193,9 @@ public class AutoScaleManagerImplTest {
 
     @Mock
     UserVmManager userVmMgr;
+
+    @Mock
+    UserDataManager userDataMgr;
 
     @Mock
     EntityManager entityManager;
@@ -259,6 +267,7 @@ public class AutoScaleManagerImplTest {
     final static String INVALID = "invalid";
 
     private static final Long counterId = 1L;
+    private static final String counterUuid = "1111-1111-1100";
     private static final String counterName = "counter name";
     private static final Counter.Source counterSource = Counter.Source.CPU;
     private static final String counterValue = "counter value";
@@ -351,6 +360,8 @@ public class AutoScaleManagerImplTest {
     @Mock
     NetworkVO networkMock;
     @Mock
+    NetworkModel networkModel;
+    @Mock
     NetworkOfferingVO networkOfferingMock;
     @Mock
     CounterVO counterMock;
@@ -389,7 +400,7 @@ public class AutoScaleManagerImplTest {
     public void setUp() {
 
         account = new AccountVO("testaccount", 1L, "networkdomain", Account.Type.NORMAL, "uuid");
-        account.setId(2L);
+        account.setId(5L);
         user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone",
                 UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
@@ -406,7 +417,7 @@ public class AutoScaleManagerImplTest {
 
         userDataDetails.put("0", new HashMap<>() {{ put("key1", "value1"); put("key2", "value2"); }});
         Mockito.doReturn(userDataFinal).when(userVmMgr).finalizeUserData(any(), any(), any());
-        Mockito.doReturn(userDataFinal).when(userVmMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
+        Mockito.doReturn(userDataFinal).when(userDataMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
     }
 
     @After
@@ -760,7 +771,7 @@ public class AutoScaleManagerImplTest {
             Mockito.verify(autoScaleVmProfileDao).persist(Mockito.any());
 
             Mockito.verify(userVmMgr).finalizeUserData(any(), any(), any());
-            Mockito.verify(userVmMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
+            Mockito.verify(userDataMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
         }
     }
 
@@ -821,7 +832,7 @@ public class AutoScaleManagerImplTest {
         Mockito.verify(autoScaleVmProfileDao).persist(Mockito.any());
 
         Mockito.verify(userVmMgr).finalizeUserData(any(), any(), any());
-        Mockito.verify(userVmMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
+        Mockito.verify(userDataMgr).validateUserData(eq(userDataFinal), nullable(BaseCmd.HTTPMethod.class));
     }
 
     @Test
@@ -1194,7 +1205,7 @@ public class AutoScaleManagerImplTest {
         when(autoScaleVmGroupVmMapDao.removeByGroup(vmGroupId)).thenReturn(true);
         when(asGroupStatisticsDao.removeByGroupId(vmGroupId)).thenReturn(true);
 
-        boolean result = autoScaleManagerImplSpy.deleteAutoScaleVmGroupsByAccount(accountId);
+        boolean result = autoScaleManagerImplSpy.deleteAutoScaleVmGroupsByAccount(account);
 
         Assert.assertTrue(result);
 
@@ -1210,7 +1221,7 @@ public class AutoScaleManagerImplTest {
         when(asPolicyDao.removeByAccountId(accountId)).thenReturn(2);
         when(conditionDao.removeByAccountId(accountId)).thenReturn(3);
 
-        autoScaleManagerImplSpy.cleanUpAutoScaleResources(accountId);
+        autoScaleManagerImplSpy.cleanUpAutoScaleResources(account);
 
         Mockito.verify(autoScaleVmProfileDao).removeByAccountId(accountId);
         Mockito.verify(asPolicyDao).removeByAccountId(accountId);
@@ -1257,15 +1268,14 @@ public class AutoScaleManagerImplTest {
         Mockito.doReturn(networkMock).when(autoScaleManagerImplSpy).getNetwork(loadBalancerId);
         when(networkMock.getId()).thenReturn(networkId);
 
-        when(userVmMock.getId()).thenReturn(virtualMachineId);
         when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Basic);
         when(userVmService.createBasicSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any())).thenReturn(userVmMock);
 
-        long result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
+        UserVm result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
 
-        Assert.assertEquals((long) virtualMachineId, result);
+        Assert.assertEquals(userVmMock, result);
 
         String vmHostNamePattern = autoScaleManagerImplSpy.VM_HOSTNAME_PREFIX + vmGroupName +
                 "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
@@ -1305,16 +1315,16 @@ public class AutoScaleManagerImplTest {
         Mockito.doReturn(networkMock).when(autoScaleManagerImplSpy).getNetwork(loadBalancerId);
         when(networkMock.getId()).thenReturn(networkId);
 
-        when(userVmMock.getId()).thenReturn(virtualMachineId);
         when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
-        when(zoneMock.isSecurityGroupEnabled()).thenReturn(true);
         when(userVmService.createAdvancedSecurityGroupVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), eq(true), any(), any())).thenReturn(userVmMock);
+        when(networkModel.checkSecurityGroupSupportForNetwork(account, zoneMock,
+                List.of(networkId), Collections.emptyList())).thenReturn(true);
 
-        long result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
+        UserVm result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
 
-        Assert.assertEquals((long) virtualMachineId, result);
+        Assert.assertEquals(userVmMock, result);
 
         String vmHostNamePattern = autoScaleManagerImplSpy.VM_HOSTNAME_PREFIX + vmGroupName +
                 "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
@@ -1354,16 +1364,16 @@ public class AutoScaleManagerImplTest {
         Mockito.doReturn(networkMock).when(autoScaleManagerImplSpy).getNetwork(loadBalancerId);
         when(networkMock.getId()).thenReturn(networkId);
 
-        when(userVmMock.getId()).thenReturn(virtualMachineId);
         when(zoneMock.getNetworkType()).thenReturn(DataCenter.NetworkType.Advanced);
-        when(zoneMock.isSecurityGroupEnabled()).thenReturn(false);
         when(userVmService.createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), eq(userData), eq(userDataId), eq(userDataDetails.toString()), any(), any(), any(), eq(true), any(), any(), any(),
                 any(), any(), any(), any(), eq(true), any(), any())).thenReturn(userVmMock);
+        when(networkModel.checkSecurityGroupSupportForNetwork(account, zoneMock,
+                List.of(networkId), Collections.emptyList())).thenReturn(false);
 
-        long result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
+        UserVm result = autoScaleManagerImplSpy.createNewVM(asVmGroupMock);
 
-        Assert.assertEquals((long) virtualMachineId, result);
+        Assert.assertEquals(userVmMock, result);
 
         String vmHostNamePattern = autoScaleManagerImplSpy.VM_HOSTNAME_PREFIX + vmGroupNameWithMaxLength.substring(0, 41) +
                 "-" + asVmGroupMock.getNextVmSeq() + "-[a-z]{6}";
@@ -1493,18 +1503,21 @@ public class AutoScaleManagerImplTest {
 
             when(autoScaleVmGroupDao.updateState(vmGroupId, AutoScaleVmGroup.State.ENABLED, AutoScaleVmGroup.State.SCALING)).thenReturn(true);
             when(autoScaleVmGroupDao.updateState(vmGroupId, AutoScaleVmGroup.State.SCALING, AutoScaleVmGroup.State.ENABLED)).thenReturn(true);
-            Mockito.doReturn(virtualMachineId).when(autoScaleManagerImplSpy).createNewVM(asVmGroupMock);
+            Mockito.doReturn(userVmMock).when(autoScaleManagerImplSpy).createNewVM(asVmGroupMock);
+            when(userVmMock.getId()).thenReturn(virtualMachineId);
 
             when(asVmGroupMock.getLoadBalancerId()).thenReturn(loadBalancerId);
             when(lbVmMapDao.listByLoadBalancerId(loadBalancerId)).thenReturn(Arrays.asList(loadBalancerVMMapMock));
             when(loadBalancerVMMapMock.getInstanceId()).thenReturn(virtualMachineId + 1);
 
             when(loadBalancingRulesService.assignToLoadBalancer(anyLong(), any(), any(), eq(true))).thenReturn(true);
+            Mockito.doReturn(new Pair<UserVmVO, Map<VirtualMachineProfile.Param, Object>>(userVmMock, null)).when(userVmMgr).startVirtualMachine(virtualMachineId, null, new HashMap<>(), null);
 
             autoScaleManagerImplSpy.doScaleUp(vmGroupId, 1);
 
             Mockito.verify(autoScaleManagerImplSpy).createNewVM(asVmGroupMock);
             Mockito.verify(loadBalancingRulesService).assignToLoadBalancer(anyLong(), any(), any(), eq(true));
+            Mockito.verify(userVmMgr).startVirtualMachine(virtualMachineId, null, new HashMap<>(), null);
         }
     }
 
@@ -1959,8 +1972,8 @@ public class AutoScaleManagerImplTest {
 
         autoScaleManagerImplSpy.processPerformanceMonitorAnswer(countersMap, countersNumberMap, groupTO, params, details);
 
-        Mockito.verify(autoScaleManagerImplSpy).updateCountersMapWithInstantData(any(), any(), eq(groupTO), eq(scaleUpCounterId), eq(scaleUpConditionId), eq(0L), eq(value1), eq(AutoScaleValueType.INSTANT_VM));
-        Mockito.verify(autoScaleManagerImplSpy).updateCountersMapWithInstantData(any(), any(), eq(groupTO), eq(scaleDownCounterId), eq(scaleDownConditionId), eq(0L), eq(value2), eq(AutoScaleValueType.INSTANT_VM));
+        Mockito.verify(autoScaleManagerImplSpy).updateCountersMapWithInstantData(any(), any(), eq(groupTO), eq(scaleUpCounterId), any(ConditionTO.class), any(AutoScalePolicyTO.class), eq(value1), eq(AutoScaleValueType.INSTANT_VM));
+        Mockito.verify(autoScaleManagerImplSpy).updateCountersMapWithInstantData(any(), any(), eq(groupTO), eq(scaleDownCounterId), any(ConditionTO.class), any(AutoScalePolicyTO.class), eq(value2), eq(AutoScaleValueType.INSTANT_VM));
     }
 
     @Test
@@ -2099,6 +2112,11 @@ public class AutoScaleManagerImplTest {
     public void updateCountersMapWithInstantDataForMemory() {
         AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
         AutoScaleVmProfileTO profileTO = Mockito.mock(AutoScaleVmProfileTO.class);
+        AutoScalePolicyTO scaleUpPolicyTO = Mockito.mock(AutoScalePolicyTO.class);
+        ConditionTO conditionTO = Mockito.mock(ConditionTO.class);
+
+        when(conditionTO.getId()).thenReturn(conditionId);
+        when(scaleUpPolicyTO.getId()).thenReturn(scaleUpPolicyId);
 
         when(counterDao.findById(counterId)).thenReturn(counterMock);
         when(counterMock.getSource()).thenReturn(Counter.Source.MEMORY);
@@ -2117,7 +2135,7 @@ public class AutoScaleManagerImplTest {
 
         double value = 512;
         autoScaleManagerImplSpy.updateCountersMapWithInstantData(countersMap, countersNumberMap,
-                groupTO, counterId, conditionId, scaleUpPolicyId, value, AutoScaleValueType.INSTANT_VM);
+                groupTO, counterId, conditionTO, scaleUpPolicyTO, value, AutoScaleValueType.INSTANT_VM);
 
         Assert.assertEquals(1, countersMap.size());
         Assert.assertEquals(1, countersNumberMap.size());
@@ -2130,7 +2148,11 @@ public class AutoScaleManagerImplTest {
     public void updateCountersMapWithInstantDataForCPU() {
         AutoScaleVmGroupTO groupTO = Mockito.mock(AutoScaleVmGroupTO.class);
         AutoScaleVmProfileTO profileTO = Mockito.mock(AutoScaleVmProfileTO.class);
+        AutoScalePolicyTO scaleUpPolicyTO = Mockito.mock(AutoScalePolicyTO.class);
+        ConditionTO conditionTO = Mockito.mock(ConditionTO.class);
 
+        when(conditionTO.getId()).thenReturn(conditionId);
+        when(scaleUpPolicyTO.getId()).thenReturn(scaleUpPolicyId);
         when(counterDao.findById(counterId)).thenReturn(counterMock);
         when(counterMock.getSource()).thenReturn(Counter.Source.CPU);
 
@@ -2143,7 +2165,7 @@ public class AutoScaleManagerImplTest {
 
         double value = 0.5;
         autoScaleManagerImplSpy.updateCountersMapWithInstantData(countersMap, countersNumberMap,
-                groupTO, counterId, conditionId, scaleUpPolicyId, value, AutoScaleValueType.INSTANT_VM);
+                groupTO, counterId, conditionTO, scaleUpPolicyTO, value, AutoScaleValueType.INSTANT_VM);
 
         Assert.assertEquals(1, countersMap.size());
         Assert.assertEquals(1, countersNumberMap.size());
@@ -2277,9 +2299,9 @@ public class AutoScaleManagerImplTest {
         vmStatsById.put(virtualMachineId, vmStats);
 
         Map<Long, List<CounterTO>> policyCountersMap = new HashMap<>();
-        CounterTO counter1 = new CounterTO(counterId, counterName, Counter.Source.CPU, counterValue, counterProvider);
-        CounterTO counter2 = new CounterTO(counterId + 1, counterName, Counter.Source.MEMORY, counterValue, counterProvider);
-        CounterTO counter3 = new CounterTO(counterId + 2, counterName, Counter.Source.VIRTUALROUTER, counterValue, counterProvider);
+        CounterTO counter1 = new CounterTO(counterId, counterUuid, counterName, Counter.Source.CPU, counterValue, counterProvider);
+        CounterTO counter2 = new CounterTO(counterId + 1, counterUuid, counterName, Counter.Source.MEMORY, counterValue, counterProvider);
+        CounterTO counter3 = new CounterTO(counterId + 2, counterUuid, counterName, Counter.Source.VIRTUALROUTER, counterValue, counterProvider);
         policyCountersMap.put(scaleUpPolicyId, Arrays.asList(counter1, counter2, counter3));
 
         when(asGroupStatisticsDao.persist(any())).thenReturn(Mockito.mock(AutoScaleVmGroupStatisticsVO.class));

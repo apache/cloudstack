@@ -73,21 +73,28 @@ public class CloudInitUserDataProviderTest {
 
     @Test
     public void testGetUserDataFormatType() {
-        CloudInitUserDataProvider.FormatType type = provider.getUserDataFormatType(CLOUD_CONFIG_USERDATA);
+        CloudInitUserDataProvider.FormatType type = provider.getUserDataFormatType(CLOUD_CONFIG_USERDATA, null);
         Assert.assertEquals(CloudInitUserDataProvider.FormatType.CLOUD_CONFIG, type);
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testGetUserDataFormatTypeNoHeader() {
         String userdata = "password: password\nchpasswd: { expire: False }\nssh_pwauth: True";
-        provider.getUserDataFormatType(userdata);
+        provider.getUserDataFormatType(userdata, null);
+    }
+
+    @Test
+    public void testGetUserDataFormatTypeNoHeaderDefaultFormat() {
+        String userdata = "password: password\nchpasswd: { expire: False }\nssh_pwauth: True";
+        CloudInitUserDataProvider.FormatType defaultFormatType = CloudInitUserDataProvider.FormatType.CLOUD_CONFIG;
+        Assert.assertEquals(defaultFormatType, provider.getUserDataFormatType(userdata, defaultFormatType));
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testGetUserDataFormatTypeInvalidType() {
         String userdata = "#invalid-type\n" +
                 "password: password\nchpasswd: { expire: False }\nssh_pwauth: True";
-        provider.getUserDataFormatType(userdata);
+        provider.getUserDataFormatType(userdata, null);
     }
 
     private MimeMultipart getCheckedMultipartFromMultipartData(String multipartUserData, int count) {
@@ -112,6 +119,16 @@ public class CloudInitUserDataProviderTest {
     }
 
     @Test
+    public void testAppendUserDataSecondWithoutHeader() {
+        String userdataWithHeader = Base64.encodeBase64String(SHELL_SCRIPT_USERDATA1.getBytes());
+        String bashScriptWithoutHeader = "echo \"without header\"";
+        String userdataWithoutHeader = Base64.encodeBase64String(bashScriptWithoutHeader.getBytes());
+        String appended = provider.appendUserData(userdataWithHeader, userdataWithoutHeader);
+        String expected = String.format("%s\n\n%s", SHELL_SCRIPT_USERDATA1, bashScriptWithoutHeader);
+        Assert.assertEquals(expected, appended);
+    }
+
+    @Test
     public void testAppendSameShellScriptTypeUserData() {
         String result = SHELL_SCRIPT_USERDATA + "\n\n" +
                 SHELL_SCRIPT_USERDATA1.replace("#!/bin/bash\n", "");
@@ -127,6 +144,22 @@ public class CloudInitUserDataProviderTest {
         String appendUserData = provider.appendUserData(Base64.encodeBase64String(CLOUD_CONFIG_USERDATA.getBytes()),
                 Base64.encodeBase64String(CLOUD_CONFIG_USERDATA1.getBytes()));
         Assert.assertEquals(result, appendUserData);
+    }
+
+    @Test
+    public void testAppendCloudConfig() {
+        String userdata1 = "#cloud-config\n" +
+                "chpasswd:\n" +
+                "  list: |\n" +
+                "    root:password\n" +
+                "  expire: False";
+        String userdata2 = "write_files:\n" +
+                "- path: /root/CLOUD_INIT_WAS_HERE";
+        String userdataWithHeader = Base64.encodeBase64String(userdata1.getBytes());
+        String userdataWithoutHeader = Base64.encodeBase64String(userdata2.getBytes());
+        String appended = provider.appendUserData(userdataWithHeader, userdataWithoutHeader);
+        String expected = String.format("%s\n\n%s", userdata1, userdata2);
+        Assert.assertEquals(expected, appended);
     }
 
     @Test

@@ -171,7 +171,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             try {
                 ep.sendMessageAsync(dcmd, new UploadListener.Callback(ep.getId(), dl));
             } catch (Exception e) {
-                logger.warn("Unable to start /resume download of template " + template.getId() + " to " + store.getName(), e);
+                logger.warn("Unable to start /resume download of template {} to {}", template, store, e);
                 dl.setDisconnected();
                 dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
             }
@@ -228,7 +228,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             try {
                 ep.sendMessageAsync(dcmd, new UploadListener.Callback(ep.getId(), dl));
             } catch (Exception e) {
-                logger.warn("Unable to start /resume download of snapshot " + snapshot.getId() + " to " + store.getName(), e);
+                logger.warn("Unable to start /resume download of snapshot {} to {}", snapshot, store, e);
                 dl.setDisconnected();
                 dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
             }
@@ -305,7 +305,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         try {
             ep.sendMessageAsync(dcmd, new UploadListener.Callback(ep.getId(), dl));
         } catch (Exception e) {
-            logger.warn("Unable to start /resume download of volume " + volume.getId() + " to " + store.getName(), e);
+            logger.warn("Unable to start /resume download of volume {} to {}", volume, store, e);
             dl.setDisconnected();
             dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
         }

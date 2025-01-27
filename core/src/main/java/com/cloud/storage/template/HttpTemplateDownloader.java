@@ -28,6 +28,7 @@ import java.io.RandomAccessFile;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
+import java.util.List;
 
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
@@ -78,6 +79,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
     private long maxTemplateSizeInBytes;
     private ResourceType resourceType = ResourceType.TEMPLATE;
     private final HttpMethodRetryHandler myretryhandler;
+    private boolean followRedirects = false;
 
     public HttpTemplateDownloader(StorageLayer storageLayer, String downloadUrl, String toDir, DownloadCompleteCallback callback, long maxTemplateSizeInBytes,
             String user, String password, Proxy proxy, ResourceType resourceType) {
@@ -109,7 +111,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
     private GetMethod createRequest(String downloadUrl) {
         GetMethod request = new GetMethod(downloadUrl);
         request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
-        request.setFollowRedirects(true);
+        request.setFollowRedirects(followRedirects);
         return request;
     }
 
@@ -335,6 +337,12 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         } else if ((responseCode = client.executeMethod(request)) != HttpStatus.SC_OK) {
             status = Status.UNRECOVERABLE_ERROR;
             errorString = " HTTP Server returned " + responseCode + " (expected 200 OK) ";
+            if (List.of(HttpStatus.SC_MOVED_PERMANENTLY, HttpStatus.SC_MOVED_TEMPORARILY).contains(responseCode)
+                    && !followRedirects) {
+                errorString = String.format("Failed to download %s due to redirection, response code: %d",
+                        downloadUrl, responseCode);
+                logger.error(errorString);
+            }
             return true; //FIXME: retry?
         }
         return false;
@@ -534,6 +542,14 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                 verifiedFormat = true;
             }
             return this;
+        }
+    }
+
+    @Override
+    public void setFollowRedirects(boolean followRedirects) {
+        this.followRedirects = followRedirects;
+        if (this.request != null) {
+            this.request.setFollowRedirects(followRedirects);
         }
     }
 }

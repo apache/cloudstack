@@ -136,4 +136,10 @@ public class CreateVMSnapshotCmd extends BaseAsyncCreateCmd {
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.VmSnapshot;
     }
+
+    @Override
+    public Long getApiResourceId() {
+        return getEntityId();
+    }
+
 }

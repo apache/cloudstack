@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -54,20 +54,20 @@ then
 fi
 
 
-if [ "$iflag" == 1 ] 
+if [ "$iflag" == 1 ]
 then
   rm -rf $instancefs
-  if [ $? -gt 0 ] 
+  if [ $? -gt 0 ]
   then
     printf "Failed to destroy instance fs\n" >&2
     exit 5
   fi
 fi
 
-if [ "$uflag" == 1 ] 
+if [ "$uflag" == 1 ]
 then
-  rm -rf $userfs  
-  if [ $? -gt 0 ] 
+  rm -rf $userfs
+  if [ $? -gt 0 ]
   then
     printf "Failed to destroy user fs\n" >&2
     exit 5

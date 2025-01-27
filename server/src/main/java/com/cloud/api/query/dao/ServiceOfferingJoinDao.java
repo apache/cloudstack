@@ -34,5 +34,6 @@ public interface ServiceOfferingJoinDao extends GenericDao<ServiceOfferingJoinVO
     ServiceOfferingJoinVO newServiceOfferingView(ServiceOffering offering);
 
     Map<Long, List<String>> listDomainsOfServiceOfferingsUsedByDomainPath(String domainPath);
+
     List<ServiceOfferingJoinVO> searchByIds(Long... id);
 }

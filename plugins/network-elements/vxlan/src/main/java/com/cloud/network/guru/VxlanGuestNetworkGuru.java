@@ -57,7 +57,7 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
         // This guru handles only Guest Isolated network that supports Source nat service
         if (networkType == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) &&
                 (offering.getGuestType() == Network.GuestType.Isolated || offering.getGuestType() == Network.GuestType.L2) &&
-                isMyIsolationMethod(physicalNetwork)) {
+                isMyIsolationMethod(physicalNetwork) && !offering.isSystemOnly()) {
             return true;
         } else {
             logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " or " + GuestType.L2 + " in zone of type " + NetworkType.Advanced);
@@ -149,7 +149,7 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
     public void shutdown(NetworkProfile profile, NetworkOffering offering) {
         NetworkVO networkObject = _networkDao.findById(profile.getId());
         if (networkObject.getBroadcastDomainType() != BroadcastDomainType.Vxlan || networkObject.getBroadcastUri() == null) {
-            logger.warn("BroadcastUri is empty or incorrect for guestnetwork " + networkObject.getDisplayText());
+            logger.warn(String.format("BroadcastUri is empty or incorrect for guest network %s", networkObject));
             return;
         }
 

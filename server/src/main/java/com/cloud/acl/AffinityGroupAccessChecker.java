@@ -67,10 +67,10 @@ public class AffinityGroupAccessChecker extends DomainChecker {
                 if (!_affinityGroupService.isAffinityGroupAvailableInDomain(group.getId(), caller.getDomainId())) {
                     DomainVO callerDomain = _domainDao.findById(caller.getDomainId());
                     if (callerDomain == null) {
-                        throw new CloudRuntimeException("cannot check permission on account " + caller.getAccountName() + " whose domain does not exist");
+                        throw new CloudRuntimeException(String.format("cannot check permission on account %s whose domain does not exist", caller));
                     }
 
-                    throw new PermissionDeniedException("Affinity group is not available in domain id=" + callerDomain.getUuid());
+                    throw new PermissionDeniedException(String.format("Affinity group is not available in domain id=%s", callerDomain));
                 } else {
                     return true;
                 }

@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -23,6 +24,8 @@ import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 
 public interface StorageAdaptor {
 
@@ -37,23 +40,44 @@ public interface StorageAdaptor {
     // it with info from local disk, and return it
     public KVMPhysicalDisk getPhysicalDisk(String volumeUuid, KVMStoragePool pool);
 
-    public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details);
+    public KVMStoragePool createStoragePool(String name, String host, int port, String path, String userInfo, StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage);
 
     public boolean deleteStoragePool(String uuid);
+
+    public default KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
+                                                      PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, Long usableSize, byte[] passphrase) {
+        return createPhysicalDisk(name, pool, format, provisioningType, size, passphrase);
+    }
 
     public KVMPhysicalDisk createPhysicalDisk(String name, KVMStoragePool pool,
             PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size, byte[] passphrase);
 
-    // given disk path (per database) and pool, prepare disk on host
-    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details);
+    /**
+     * given disk path (per database) and pool, prepare disk on host
+     * @param volumePath volume path
+     * @param pool storage pool the disk is part of
+     * @param details disk details map
+     * @param isVMMigrate Indicates if request is while VM is migration
+     * @return true if connect was a success
+     */
+    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate);
 
     // given disk path (per database) and pool, clean up disk on host
     public boolean disconnectPhysicalDisk(String volumePath, KVMStoragePool pool);
 
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect);
 
-    // given local path to file/device (per Libvirt XML), 1) check that device is
-    // handled by your adaptor, return false if not. 2) clean up device, return true
+    /**
+     * Given local path to file/device (per Libvirt XML),
+     * 1) Make sure to check that device is handled by your adaptor, return false if not.
+     * 2) clean up device, return true
+     * 3) if clean up fails, then return false
+     *
+     * If the method wrongly returns true, then there are chances that disconnect will not reach the right storage adapter
+     *
+     * @param localPath path for the file/device from the disk definition per Libvirt XML.
+     * @return true if the operation is successful; false if the operation fails or the adapter fails to handle the path.
+     */
     public boolean disconnectPhysicalDiskByPath(String localPath);
 
     public boolean deletePhysicalDisk(String uuid, KVMStoragePool pool, Storage.ImageFormat format);
@@ -99,5 +123,26 @@ public interface StorageAdaptor {
      */
     default boolean supportsPhysicalDiskCopy(StoragePoolType type) {
         return StoragePoolType.PowerFlex == type;
+    }
+
+    /**
+     * Prepares the storage client.
+     * @param type type of the storage pool
+     * @param uuid uuid of the storage pool
+     * @param details any details of the storage pool that are required for client preparation
+     * @return status, client details, & message in case failed
+     */
+    default Ternary<Boolean, Map<String, String>, String> prepareStorageClient(StoragePoolType type, String uuid, Map<String, String> details) {
+        return new Ternary<>(true, new HashMap<>(), "");
+    }
+
+    /**
+     * Unprepares the storage client.
+     * @param type type of the storage pool
+     * @param uuid uuid of the storage pool
+     * @return status, & message in case failed
+     */
+    default Pair<Boolean, String> unprepareStorageClient(StoragePoolType type, String uuid) {
+        return new Pair<>(true, "");
     }
 }

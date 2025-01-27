@@ -46,11 +46,17 @@ public final class LinstorBackupSnapshotCommandWrapper
 {
     protected static Logger LOGGER = LogManager.getLogger(LinstorBackupSnapshotCommandWrapper.class);
 
+    private static String zfsDatasetName(String zfsFullSnapshotUrl) {
+        String zfsFullPath = zfsFullSnapshotUrl.substring(6);
+        int atPos = zfsFullPath.indexOf('@');
+        return atPos >= 0 ? zfsFullPath.substring(0, atPos) : zfsFullPath;
+    }
+
     private String zfsSnapdev(boolean hide, String zfsUrl) {
-        Script script = new Script("/usr/bin/zfs", Duration.millis(5000));
+        Script script = new Script("zfs", Duration.millis(5000));
         script.add("set");
         script.add("snapdev=" + (hide ? "hidden" : "visible"));
-        script.add(zfsUrl.substring(6));  // cutting zfs://
+        script.add(zfsDatasetName(zfsUrl));  // cutting zfs:// and @snapshotname
         return script.execute();
     }
 
@@ -134,10 +140,10 @@ public final class LinstorBackupSnapshotCommandWrapper
             LOGGER.info("Src: " + srcPath + " | " + src.getName());
             if (srcPath.startsWith("zfs://")) {
                 zfsHidden = true;
-                if (zfsSnapdev(false, srcPath) != null) {
+                if (zfsSnapdev(false, src.getPath()) != null) {
                     return new CopyCmdAnswer("Unable to unhide zfs snapshot device.");
                 }
-                srcPath = "/dev/" + srcPath.substring(6);
+                srcPath = "/dev/zvol/" + srcPath.substring(6);
             }
 
             secondaryPool = storagePoolMgr.getStoragePoolByURI(dstDataStore.getUrl());

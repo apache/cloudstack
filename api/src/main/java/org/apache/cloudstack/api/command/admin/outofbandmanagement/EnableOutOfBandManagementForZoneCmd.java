@@ -27,6 +27,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -93,5 +94,15 @@ public class EnableOutOfBandManagementForZoneCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return "enable out-of-band management password for zone: " + getZoneId();
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getZoneId();
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Zone;
     }
 }

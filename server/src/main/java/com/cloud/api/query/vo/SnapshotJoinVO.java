@@ -20,6 +20,7 @@ package com.cloud.api.query.vo;
 import java.util.Date;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -34,6 +35,7 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
 @Table(name = "snapshot_view")
@@ -71,7 +73,7 @@ public class SnapshotJoinVO extends BaseViewWithTagInformationVO implements Cont
     private Snapshot.LocationType locationType;
 
     @Column(name = "hypervisor_type")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     Hypervisor.HypervisorType hypervisorType;
 
     @Column(name = "account_id")
@@ -129,6 +131,10 @@ public class SnapshotJoinVO extends BaseViewWithTagInformationVO implements Cont
     @Column(name = "volume_type")
     @Enumerated(EnumType.STRING)
     Volume.Type volumeType = Volume.Type.UNKNOWN;
+
+    @Column(name = "volume_state")
+    @Enumerated(EnumType.STRING)
+    Volume.State volumeState;
 
     @Column(name = "volume_size")
     Long volumeSize;
@@ -295,6 +301,10 @@ public class SnapshotJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     public Volume.Type getVolumeType() {
         return volumeType;
+    }
+
+    public Volume.State getVolumeState() {
+        return volumeState;
     }
 
     public Long getVolumeSize() {

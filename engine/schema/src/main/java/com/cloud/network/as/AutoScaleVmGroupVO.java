@@ -32,6 +32,7 @@ import javax.persistence.TemporalType;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.utils.db.GenericDao;
@@ -126,11 +127,9 @@ public class AutoScaleVmGroupVO implements AutoScaleVmGroup, InternalIdentity, I
 
     @Override
     public String toString() {
-        return new StringBuilder("AutoScaleVmGroupVO[").append("id=").append(id)
-                .append("|name=").append(name)
-                .append("|loadBalancerId=").append(loadBalancerId)
-                .append("|profileId=").append(profileId)
-                .append("]").toString();
+        return String.format("AutoScaleVmGroup %s.",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "loadBalancerId", "profileId"));
     }
 
     @Override

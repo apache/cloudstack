@@ -30,7 +30,6 @@ import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.jmx.MBeanContainer;
-import org.eclipse.jetty.server.ForwardedRequestCustomizer;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.NCSARequestLog;
@@ -83,6 +82,8 @@ public class ServerDaemon implements Daemon {
     private static final String ACCESS_LOG = "access.log";
     private static final String REQUEST_CONTENT_SIZE_KEY = "request.content.size";
     private static final int DEFAULT_REQUEST_CONTENT_SIZE = 1048576;
+    private static final String REQUEST_MAX_FORM_KEYS_KEY = "request.max.form.keys";
+    private static final int DEFAULT_REQUEST_MAX_FORM_KEYS = 5000;
 
     ////////////////////////////////////////////////////////
     /////////////// Server Configuration ///////////////////
@@ -95,6 +96,7 @@ public class ServerDaemon implements Daemon {
     private int httpsPort = 8443;
     private int sessionTimeout = 30;
     private int maxFormContentSize = DEFAULT_REQUEST_CONTENT_SIZE;
+    private int maxFormKeys = DEFAULT_REQUEST_MAX_FORM_KEYS;
     private boolean httpsEnable = false;
     private String accessLogFile = "access.log";
     private String bindInterface = null;
@@ -142,6 +144,7 @@ public class ServerDaemon implements Daemon {
             setAccessLogFile(properties.getProperty(ACCESS_LOG, "access.log"));
             setSessionTimeout(Integer.valueOf(properties.getProperty(SESSION_TIMEOUT, "30")));
             setMaxFormContentSize(Integer.valueOf(properties.getProperty(REQUEST_CONTENT_SIZE_KEY, String.valueOf(DEFAULT_REQUEST_CONTENT_SIZE))));
+            setMaxFormKeys(Integer.valueOf(properties.getProperty(REQUEST_MAX_FORM_KEYS_KEY, String.valueOf(DEFAULT_REQUEST_MAX_FORM_KEYS))));
         } catch (final IOException e) {
             logger.warn("Failed to read configuration from server.properties file", e);
         } finally {
@@ -174,7 +177,7 @@ public class ServerDaemon implements Daemon {
 
         // HTTP config
         final HttpConfiguration httpConfig = new HttpConfiguration();
-        httpConfig.addCustomizer( new ForwardedRequestCustomizer() );
+// it would be nice to make this dynamic but we take care of this ourselves for now: httpConfig.addCustomizer( new ForwardedRequestCustomizer() );
         httpConfig.setSecureScheme("https");
         httpConfig.setSecurePort(httpsPort);
         httpConfig.setOutputBufferSize(32768);
@@ -193,6 +196,7 @@ public class ServerDaemon implements Daemon {
         // Extra config options
         server.setStopAtShutdown(true);
         server.setAttribute(ContextHandler.MAX_FORM_CONTENT_SIZE_KEY, maxFormContentSize);
+        server.setAttribute(ContextHandler.MAX_FORM_KEYS_KEY, maxFormKeys);
 
         // HTTPS Connector
         createHttpsConnector(httpConfig);
@@ -265,6 +269,7 @@ public class ServerDaemon implements Daemon {
         webApp.setContextPath(contextPath);
         webApp.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed", "false");
         webApp.setMaxFormContentSize(maxFormContentSize);
+        webApp.setMaxFormKeys(maxFormKeys);
 
         // GZIP handler
         final GzipHandler gzipHandler = new GzipHandler();
@@ -366,5 +371,9 @@ public class ServerDaemon implements Daemon {
 
     public void setMaxFormContentSize(int maxFormContentSize) {
         this.maxFormContentSize = maxFormContentSize;
+    }
+
+    public void setMaxFormKeys(int maxFormKeys) {
+        this.maxFormKeys = maxFormKeys;
     }
 }

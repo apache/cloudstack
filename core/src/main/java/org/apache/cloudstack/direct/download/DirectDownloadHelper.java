@@ -35,27 +35,30 @@ public class DirectDownloadHelper {
      * Get direct template downloader from direct download command and destination pool
      */
     public static DirectTemplateDownloader getDirectTemplateDownloaderFromCommand(DirectDownloadCommand cmd,
-                                                                                  String destPoolLocalPath,
-                                                                                  String temporaryDownloadPath) {
+                  String destPoolLocalPath,  String temporaryDownloadPath) {
         if (cmd instanceof HttpDirectDownloadCommand) {
-            return new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPoolLocalPath, cmd.getChecksum(), cmd.getHeaders(),
-                    cmd.getConnectTimeout(), cmd.getSoTimeout(), temporaryDownloadPath);
+            return new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPoolLocalPath,
+                    cmd.getChecksum(), cmd.getHeaders(), cmd.getConnectTimeout(), cmd.getSoTimeout(),
+                    temporaryDownloadPath, cmd.isFollowRedirects());
         } else if (cmd instanceof HttpsDirectDownloadCommand) {
-            return new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPoolLocalPath, cmd.getChecksum(), cmd.getHeaders(),
-                    cmd.getConnectTimeout(), cmd.getSoTimeout(), cmd.getConnectionRequestTimeout(), temporaryDownloadPath);
+            return new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPoolLocalPath,
+                    cmd.getChecksum(), cmd.getHeaders(), cmd.getConnectTimeout(), cmd.getSoTimeout(),
+                    cmd.getConnectionRequestTimeout(), temporaryDownloadPath, cmd.isFollowRedirects());
         } else if (cmd instanceof NfsDirectDownloadCommand) {
-            return new NfsDirectTemplateDownloader(cmd.getUrl(), destPoolLocalPath, cmd.getTemplateId(), cmd.getChecksum(), temporaryDownloadPath);
+            return new NfsDirectTemplateDownloader(cmd.getUrl(), destPoolLocalPath, cmd.getTemplateId(),
+                    cmd.getChecksum(), temporaryDownloadPath);
         } else if (cmd instanceof MetalinkDirectDownloadCommand) {
-            return new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPoolLocalPath, cmd.getTemplateId(), cmd.getChecksum(), cmd.getHeaders(),
-                    cmd.getConnectTimeout(), cmd.getSoTimeout(), temporaryDownloadPath);
+            return new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPoolLocalPath, cmd.getTemplateId(),
+                    cmd.getChecksum(), cmd.getHeaders(), cmd.getConnectTimeout(), cmd.getSoTimeout(),
+                    temporaryDownloadPath, cmd.isFollowRedirects());
         } else {
             throw new IllegalArgumentException("Unsupported protocol, please provide HTTP(S), NFS or a metalink");
         }
     }
 
-    public static boolean checkUrlExistence(String url) {
+    public static boolean checkUrlExistence(String url, boolean followRedirects) {
         try {
-            DirectTemplateDownloader checker = getCheckerDownloader(url, null, null, null);
+            DirectTemplateDownloader checker = getCheckerDownloader(url, null, null, null, followRedirects);
             return checker.checkUrl(url);
         } catch (CloudRuntimeException e) {
             LOGGER.error(String.format("Cannot check URL %s is reachable due to: %s", url, e.getMessage()), e);
@@ -63,9 +66,9 @@ public class DirectDownloadHelper {
         }
     }
 
-    public static boolean checkUrlExistence(String url, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout) {
+    public static boolean checkUrlExistence(String url, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout, boolean followRedirects) {
         try {
-            DirectTemplateDownloader checker = getCheckerDownloader(url, connectTimeout, connectionRequestTimeout, socketTimeout);
+            DirectTemplateDownloader checker = getCheckerDownloader(url, connectTimeout, connectionRequestTimeout, socketTimeout, followRedirects);
             return checker.checkUrl(url);
         } catch (CloudRuntimeException e) {
             LOGGER.error(String.format("Cannot check URL %s is reachable due to: %s", url, e.getMessage()), e);
@@ -73,27 +76,27 @@ public class DirectDownloadHelper {
         }
     }
 
-    private static DirectTemplateDownloader getCheckerDownloader(String url, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout) {
+    private static DirectTemplateDownloader getCheckerDownloader(String url, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout, boolean followRedirects) {
         if (url.toLowerCase().startsWith("https:")) {
-            return new HttpsDirectTemplateDownloader(url, connectTimeout, connectionRequestTimeout, socketTimeout);
+            return new HttpsDirectTemplateDownloader(url, connectTimeout, connectionRequestTimeout, socketTimeout, followRedirects);
         } else if (url.toLowerCase().startsWith("http:")) {
-            return new HttpDirectTemplateDownloader(url, connectTimeout, socketTimeout);
+            return new HttpDirectTemplateDownloader(url, connectTimeout, socketTimeout, followRedirects);
         } else if (url.toLowerCase().startsWith("nfs:")) {
             return new NfsDirectTemplateDownloader(url);
         } else if (url.toLowerCase().endsWith(".metalink")) {
-            return new MetalinkDirectTemplateDownloader(url, connectTimeout, socketTimeout);
+            return new MetalinkDirectTemplateDownloader(url, connectTimeout, socketTimeout, followRedirects);
         } else {
             throw new CloudRuntimeException(String.format("Cannot find a download checker for url: %s", url));
         }
     }
 
-    public static Long getFileSize(String url, String format) {
-        DirectTemplateDownloader checker = getCheckerDownloader(url, null, null, null);
+    public static Long getFileSize(String url, String format, boolean followRedirects) {
+        DirectTemplateDownloader checker = getCheckerDownloader(url, null, null, null, followRedirects);
         return checker.getRemoteFileSize(url, format);
     }
 
-    public static Long getFileSize(String url, String format, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout) {
-        DirectTemplateDownloader checker = getCheckerDownloader(url, connectTimeout, connectionRequestTimeout, socketTimeout);
+    public static Long getFileSize(String url, String format, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout, boolean followRedirects) {
+        DirectTemplateDownloader checker = getCheckerDownloader(url, connectTimeout, connectionRequestTimeout, socketTimeout, followRedirects);
         return checker.getRemoteFileSize(url, format);
     }
 }

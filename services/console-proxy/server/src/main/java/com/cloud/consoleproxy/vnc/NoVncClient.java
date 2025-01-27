@@ -31,7 +31,6 @@ import java.security.spec.KeySpec;
 import java.util.Arrays;
 import java.util.List;
 
-import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.util.RawHTTP;
 import com.cloud.consoleproxy.vnc.network.NioSocket;
 import com.cloud.consoleproxy.vnc.network.NioSocketHandler;
@@ -42,7 +41,11 @@ import com.cloud.consoleproxy.vnc.security.VncTLSSecurity;
 import com.cloud.consoleproxy.websocket.WebSocketReverseProxy;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import org.eclipse.jetty.websocket.api.Session;
 
 import javax.crypto.BadPaddingException;
@@ -54,7 +57,7 @@ import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.DESKeySpec;
 
 public class NoVncClient {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private Socket socket;
     private DataInputStream is;
@@ -79,6 +82,7 @@ public class NoVncClient {
                 port = 80;
         }
 
+        logger.info("Connecting to VNC server {}:{} ...", host, port);
         RawHTTP tunnel = new RawHTTP("CONNECT", host, port, path, session, useSSL);
         socket = tunnel.connect();
         setTunnelSocketStreams();
@@ -86,7 +90,7 @@ public class NoVncClient {
 
     public void connectTo(String host, int port) {
         // Connect to server
-        logger.info(String.format("Connecting to VNC server %s:%s ...", host, port));
+        logger.info("Connecting to VNC server {}:{} ...", host, port);
         try {
             NioSocket nioSocket = new NioSocket(host, port);
             this.nioSocketConnection = new NioSocketHandlerImpl(nioSocket);
@@ -175,8 +179,9 @@ public class NoVncClient {
                 is.readFully(buf);
                 String reason = new String(buf, RfbConstants.CHARSET);
 
-                logger.error("Authentication to VNC server is failed. Reason: " + reason);
-                throw new RuntimeException("Authentication to VNC server is failed. Reason: " + reason);
+                String msg = String.format("Authentication to VNC server has failed. Reason: %s", reason);
+                logger.error(msg);
+                throw new RuntimeException(msg);
             }
 
             case RfbConstants.NO_AUTH: {
@@ -191,9 +196,9 @@ public class NoVncClient {
             }
 
             default:
-                logger.error("Unsupported VNC protocol authorization scheme, scheme code: " + authType + ".");
-                throw new RuntimeException(
-                        "Unsupported VNC protocol authorization scheme, scheme code: " + authType + ".");
+                String msg = String.format("Unsupported VNC protocol authorization scheme, scheme code: %d.", authType);
+                logger.error(msg);
+                throw new RuntimeException(msg);
         }
         // Since we've taken care of the auth, we tell the client that there's no auth
         // going on

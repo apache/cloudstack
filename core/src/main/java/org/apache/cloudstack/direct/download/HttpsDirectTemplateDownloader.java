@@ -68,20 +68,26 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
     protected CloseableHttpClient httpsClient;
     private HttpUriRequest req;
 
-    protected HttpsDirectTemplateDownloader(String url, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout) {
-        this(url, null, null, null, null, connectTimeout, socketTimeout, connectionRequestTimeout, null);
+    protected HttpsDirectTemplateDownloader(String url, Integer connectTimeout, Integer connectionRequestTimeout, Integer socketTimeout, boolean followRedirects) {
+        this(url, null, null, null, null, connectTimeout, socketTimeout, connectionRequestTimeout, null, followRedirects);
     }
 
-    public HttpsDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers,
-                                         Integer connectTimeout, Integer soTimeout, Integer connectionRequestTimeout, String temporaryDownloadPath) {
-        super(url, destPoolPath, templateId, checksum, temporaryDownloadPath);
+    public HttpsDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum,
+                 Map<String, String> headers, Integer connectTimeout, Integer soTimeout,
+                 Integer connectionRequestTimeout, String temporaryDownloadPath, boolean followRedirects) {
+        super(url, destPoolPath, templateId, checksum, temporaryDownloadPath, followRedirects);
         SSLContext sslcontext = getSSLContext();
         SSLConnectionSocketFactory factory = new SSLConnectionSocketFactory(sslcontext, SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
         RequestConfig config = RequestConfig.custom()
                 .setConnectTimeout(connectTimeout == null ? 5000 : connectTimeout)
                 .setConnectionRequestTimeout(connectionRequestTimeout == null ? 5000 : connectionRequestTimeout)
-                .setSocketTimeout(soTimeout == null ? 5000 : soTimeout).build();
-        httpsClient = HttpClients.custom().setSSLSocketFactory(factory).setDefaultRequestConfig(config).build();
+                .setSocketTimeout(soTimeout == null ? 5000 : soTimeout)
+                .setRedirectsEnabled(followRedirects)
+                .build();
+        httpsClient = HttpClients.custom()
+                .setSSLSocketFactory(factory)
+                .setDefaultRequestConfig(config)
+                .build();
         createUriRequest(url, headers);
         String downloadDir = getDirectDownloadTempPath(templateId);
         File tempFile = createTemporaryDirectoryAndFile(downloadDir);
@@ -90,6 +96,7 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
 
     protected void createUriRequest(String downloadUrl, Map<String, String> headers) {
         req = new HttpGet(downloadUrl);
+        setFollowRedirects(this.isFollowRedirects());
         if (MapUtils.isNotEmpty(headers)) {
             for (String headerKey: headers.keySet()) {
                 req.setHeader(headerKey, headers.get(headerKey));
@@ -164,8 +171,9 @@ public class HttpsDirectTemplateDownloader extends DirectTemplateDownloaderImpl 
         HttpHead httpHead = new HttpHead(url);
         try {
             CloseableHttpResponse response = httpsClient.execute(httpHead);
-            if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-                logger.error(String.format("Invalid URL: %s", url));
+            int responseCode = response.getStatusLine().getStatusCode();
+            if (responseCode != HttpStatus.SC_OK) {
+                logger.error(String.format("HTTP HEAD request to URL: %s failed, response code: %d", url, responseCode));
                 return false;
             }
             return true;

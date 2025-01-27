@@ -338,7 +338,7 @@ class TestPathVMLC(cloudstackTestCase):
         # 13. Find suitable host for VM to migrate and migrate the VM
         # 14. Verify VM accessibility on new host
         """
-        if self.hypervisor.lower() in ['hyperv', 'lxc']  and value == VPC_NETWORK:
+        if self.hypervisor.lower() in ['hyperv', 'lxc'] and value == VPC_NETWORK:
             self.skipTest("can't be run for {} hypervisor".format(self.hypervisor))
 
         # List created service offering in setUpClass by name

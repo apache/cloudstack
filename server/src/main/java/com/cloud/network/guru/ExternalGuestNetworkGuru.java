@@ -24,6 +24,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -35,6 +37,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.event.EventVO;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
@@ -87,6 +90,8 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     FirewallRulesDao _fwRulesDao;
     @Inject
     FirewallRulesCidrsDao _fwRulesCidrDao;
+    @Inject
+    RoutedIpv4Manager routedIpv4Manager;
 
     public ExternalGuestNetworkGuru() {
         super();
@@ -120,6 +125,23 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
         } else if (_networkModel.networkIsConfiguredForExternalNetworking(plan.getDataCenterId(), config.getId())) {
             /* In order to revert userSpecified network setup */
             config.setState(State.Allocated);
+        }
+        if (NetworkOffering.NetworkMode.ROUTED.equals(offering.getNetworkMode()) && !offering.isForVpc()) {
+            if (userSpecified.getCidr() != null) {
+                routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(config, userSpecified.getCidr());
+            } else {
+                if (userSpecified.getNetworkCidrSize() == null) {
+                    throw new InvalidParameterValueException("The network CIDR or CIDR size must be specified.");
+                }
+                Ipv4GuestSubnetNetworkMap subnet = routedIpv4Manager.getOrCreateIpv4SubnetForGuestNetwork(owner.getDomainId(), owner.getAccountId(), config.getDataCenterId(), userSpecified.getNetworkCidrSize());
+                if (subnet != null) {
+                    final String[] cidrTuple = subnet.getSubnet().split("\\/");
+                    config.setGateway(NetUtils.getIpRangeStartIpFromCidr(cidrTuple[0], Long.parseLong(cidrTuple[1])));
+                    config.setCidr(subnet.getSubnet());
+                } else {
+                    throw new InvalidParameterValueException("Failed to allocate a CIDR with requested size.");
+                }
+            }
         }
         return updateNetworkDesignForIPv6IfNeeded(config, userSpecified);
     }

@@ -17,7 +17,6 @@
 
 package com.cloud.agent.api;
 
-@LogLevel(LogLevel.Log4jLevel.Trace)
 public class CheckVolumeAnswer extends Answer {
 
     private long size;

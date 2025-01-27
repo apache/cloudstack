@@ -232,7 +232,7 @@ export default {
     width: 100%;
 
     @media (min-width: 1000px) {
-      width: 800px;
+      width: 1000px;
     }
 
     :deep(.form-action) {

@@ -19,6 +19,7 @@ package com.cloud.vm;
 public interface VmDetailConstants {
     String KEYBOARD = "keyboard";
     String CPU_CORE_PER_SOCKET = "cpu.corespersocket";
+    String CPU_THREAD_PER_CORE = "cpu.threadspercore";
     String ROOT_DISK_SIZE = "rootdisksize";
     String BOOT_MODE = "boot.mode";
     String NAME_ON_HYPERVISOR= "nameonhypervisor";
@@ -73,6 +74,7 @@ public interface VmDetailConstants {
     String ENCRYPTED_PASSWORD = "Encrypted.Password";
 
     String CONFIG_DRIVE_LOCATION = "configDriveLocation";
+    String LAST_CONFIG_DRIVE_LOCATION = "lastConfigDriveLocation";
 
     String SKIP_DRS = "skipFromDRS";
 

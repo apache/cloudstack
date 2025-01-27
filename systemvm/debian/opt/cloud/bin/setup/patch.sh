@@ -87,14 +87,16 @@ install_package() {
   if [ "$os" == "" ]; then
     return
   fi
+
+  local package=${package_properties["package_name"]}
+  local file=${package_properties["file_name"]}
+
   local DEBIAN_RELEASE=$(lsb_release -rs)
   if [ "$os" != "$DEBIAN_RELEASE" ]; then
     log_it "Skipped the installation of package $package on Debian $DEBIAN_RELEASE as it can only be installed on Debian $os."
     return
   fi
 
-  local package=${package_properties["package_name"]}
-  local file=${package_properties["file_name"]}
   if [ -z "$package" ] || [ -z "$file" ]; then
     log_it "Skipped the installation due to empty package of file name (package name: $package, file name: $file)."
     return

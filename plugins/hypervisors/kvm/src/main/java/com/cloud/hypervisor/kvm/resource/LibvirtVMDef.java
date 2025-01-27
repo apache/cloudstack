@@ -95,6 +95,8 @@ public class LibvirtVMDef {
         }
 
         private GuestType _type;
+        private String manufacturer;
+        private String product;
         private BootType _boottype;
         private BootMode _bootmode;
         private String _arch;
@@ -122,6 +124,28 @@ public class LibvirtVMDef {
 
         public GuestType getGuestType() {
             return _type;
+        }
+
+        public String getManufacturer() {
+            if (StringUtils.isEmpty(manufacturer)) {
+                return "Apache Software Foundation";
+            }
+            return manufacturer;
+        }
+
+        public void setManufacturer(String manufacturer) {
+            this.manufacturer = manufacturer;
+        }
+
+        public String getProduct() {
+            if (StringUtils.isEmpty(product)) {
+                return "CloudStack KVM Hypervisor";
+            }
+            return product;
+        }
+
+        public void setProduct(String product) {
+            this.product = product;
         }
 
         public void setNvram(String nvram) { _nvram = nvram; }
@@ -182,9 +206,10 @@ public class LibvirtVMDef {
 
                 guestDef.append("<sysinfo type='smbios'>\n");
                 guestDef.append("<system>\n");
-                guestDef.append("<entry name='manufacturer'>Apache Software Foundation</entry>\n");
-                guestDef.append("<entry name='product'>CloudStack " + _type.toString() + " Hypervisor</entry>\n");
+                guestDef.append("<entry name='manufacturer'>" + getManufacturer() +"</entry>\n");
+                guestDef.append("<entry name='product'>" + getProduct() + "</entry>\n");
                 guestDef.append("<entry name='uuid'>" + _uuid + "</entry>\n");
+                guestDef.append("<entry name='serial'>" + _uuid + "</entry>\n");
                 guestDef.append("</system>\n");
                 guestDef.append("</sysinfo>\n");
 
@@ -223,9 +248,7 @@ public class LibvirtVMDef {
                         guestDef.append("<boot dev='" + bo + "'/>\n");
                     }
                 }
-                if (_arch == null || !_arch.equals("aarch64")) {
-                    guestDef.append("<smbios mode='sysinfo'/>\n");
-                }
+                guestDef.append("<smbios mode='sysinfo'/>\n");
                 guestDef.append("</os>\n");
                 if (iothreads) {
                     guestDef.append(String.format("<iothreads>%s</iothreads>", NUMBER_OF_IOTHREADS));
@@ -596,6 +619,22 @@ public class LibvirtVMDef {
             public QemuObject.EncryptFormat getEncryptFormat() { return this.encryptFormat; }
         }
 
+        public static class DiskGeometry {
+            int cylinders;
+            int heads;
+            int sectors;
+
+            public DiskGeometry(int cylinders, int heads, int sectors) {
+                this.cylinders = cylinders;
+                this.heads = heads;
+                this.sectors = sectors;
+            }
+
+            public String toXml() {
+                return String.format("<geometry cyls='%d' heads='%d' secs='%d'/>\n", this.cylinders, this.heads, this.sectors);
+            }
+        }
+
         public enum DeviceType {
             FLOPPY("floppy"), DISK("disk"), CDROM("cdrom"), LUN("lun");
             String _type;
@@ -747,6 +786,7 @@ public class LibvirtVMDef {
         private boolean isIothreadsEnabled;
         private BlockIOSize logicalBlockIOSize = null;
         private BlockIOSize physicalBlockIOSize = null;
+        private DiskGeometry geometry = null;
 
         public DiscardType getDiscard() {
             return _discard;
@@ -854,8 +894,8 @@ public class LibvirtVMDef {
             }
         }
 
-        public void defISODisk(String volPath) {
-            _diskType = DiskType.FILE;
+        public void defISODisk(String volPath, DiskType diskType) {
+            _diskType = diskType;
             _deviceType = DeviceType.CDROM;
             _sourcePath = volPath;
             _diskLabel = getDevLabel(3, DiskBus.IDE, true);
@@ -864,8 +904,8 @@ public class LibvirtVMDef {
             _bus = DiskBus.IDE;
         }
 
-        public void defISODisk(String volPath, boolean isUefiEnabled) {
-            _diskType = DiskType.FILE;
+        public void defISODisk(String volPath, boolean isUefiEnabled, DiskType diskType) {
+            _diskType = diskType;
             _deviceType = DeviceType.CDROM;
             _sourcePath = volPath;
             _bus = isUefiEnabled ? DiskBus.SATA : DiskBus.IDE;
@@ -874,18 +914,18 @@ public class LibvirtVMDef {
             _diskCacheMode = DiskCacheMode.NONE;
         }
 
-        public void defISODisk(String volPath, Integer devId) {
-            defISODisk(volPath, devId, null);
+        public void defISODisk(String volPath, Integer devId, DiskType diskType) {
+            defISODisk(volPath, devId, null, diskType);
         }
 
-        public void defISODisk(String volPath, Integer devId, String diskLabel) {
+        public void defISODisk(String volPath, Integer devId, String diskLabel, DiskType diskType) {
             if (devId == null && StringUtils.isBlank(diskLabel)) {
                 LOGGER.debug(String.format("No ID or label informed for volume [%s].", volPath));
-                defISODisk(volPath);
+                defISODisk(volPath, diskType);
                 return;
             }
 
-            _diskType = DiskType.FILE;
+            _diskType = diskType;
             _deviceType = DeviceType.CDROM;
             _sourcePath = volPath;
 
@@ -902,11 +942,11 @@ public class LibvirtVMDef {
             _bus = DiskBus.IDE;
         }
 
-        public void defISODisk(String volPath, Integer devId,boolean isSecure) {
+        public void defISODisk(String volPath, Integer devId, boolean isSecure, DiskType diskType) {
             if (!isSecure) {
-                defISODisk(volPath, devId);
+                defISODisk(volPath, devId, diskType);
             } else {
-                _diskType = DiskType.FILE;
+                _diskType = diskType;
                 _deviceType = DeviceType.CDROM;
                 _sourcePath = volPath;
                 _diskLabel = getDevLabel(devId, DiskBus.SATA, true);
@@ -991,6 +1031,10 @@ public class LibvirtVMDef {
 
         public String getDiskLabel() {
             return _diskLabel;
+        }
+
+        public void setDiskLabel(String label) {
+            _diskLabel = label;
         }
 
         public DiskType getDiskType() {
@@ -1087,9 +1131,20 @@ public class LibvirtVMDef {
             this._serial = serial;
         }
 
-        public void setLibvirtDiskEncryptDetails(LibvirtDiskEncryptDetails details) { this.encryptDetails = details; }
+        public void setLibvirtDiskEncryptDetails(LibvirtDiskEncryptDetails details)
+        {
+            this.encryptDetails = details;
+        }
 
-        public LibvirtDiskEncryptDetails getLibvirtDiskEncryptDetails() { return this.encryptDetails; }
+        public LibvirtDiskEncryptDetails getLibvirtDiskEncryptDetails()
+        {
+            return this.encryptDetails;
+        }
+
+        public void setGeometry(DiskGeometry geometry)
+        {
+            this.geometry = geometry;
+        }
 
         public String getSourceHost() {
             return _sourceHost;
@@ -1173,6 +1228,10 @@ public class LibvirtVMDef {
                 diskBuilder.append(" bus='" + _bus + "'");
             }
             diskBuilder.append("/>\n");
+
+            if (geometry != null) {
+                diskBuilder.append(geometry.toXml());
+            }
 
             if (logicalBlockIOSize != null || physicalBlockIOSize != null) {
                 diskBuilder.append("<blockio ");
@@ -1724,6 +1783,7 @@ public class LibvirtVMDef {
         private String _model;
         private List<String> _features;
         private int _coresPerSocket = -1;
+        private int _threadsPerCore = -1;
         private int _sockets = -1;
 
         public void setMode(String mode) {
@@ -1740,8 +1800,9 @@ public class LibvirtVMDef {
             _model = model;
         }
 
-        public void setTopology(int coresPerSocket, int sockets) {
+        public void setTopology(int coresPerSocket, int threadsPerCore, int sockets) {
             _coresPerSocket = coresPerSocket;
+            _threadsPerCore = threadsPerCore;
             _sockets = sockets;
         }
 
@@ -1770,9 +1831,9 @@ public class LibvirtVMDef {
                 }
             }
 
-            // add topology
-            if (_sockets > 0 && _coresPerSocket > 0) {
-                modeBuilder.append("<topology sockets='" + _sockets + "' cores='" + _coresPerSocket + "' threads='1' />");
+            // add topology. Note we require sockets, cores, and threads defined
+            if (_sockets > 0 && _coresPerSocket > 0 && _threadsPerCore > 0) {
+                modeBuilder.append("<topology sockets='" + _sockets + "' cores='" + _coresPerSocket + "' threads='"  + _threadsPerCore + "' />");
             }
 
             // close cpu def
@@ -1783,6 +1844,8 @@ public class LibvirtVMDef {
         public int getCoresPerSocket() {
             return _coresPerSocket;
         }
+        public int getThreadsPerCore() { return _threadsPerCore; }
+        public int getSockets() { return _sockets; }
     }
 
     public static class SerialDef {
@@ -2230,7 +2293,7 @@ public class LibvirtVMDef {
 
     public static class WatchDogDef {
         enum WatchDogModel {
-            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288"), ITCO("itco");
+            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288"), ITCO("itco"), NONE("none");
             String model;
 
             WatchDogModel(String model) {
@@ -2283,6 +2346,10 @@ public class LibvirtVMDef {
 
         @Override
         public String toString() {
+            if (WatchDogModel.NONE == model) {
+                // Do not add watchodogs when the model is set to none
+                return "";
+            }
             StringBuilder wacthDogBuilder = new StringBuilder();
             wacthDogBuilder.append("<watchdog model='" + model + "' action='" + action + "'/>\n");
             return wacthDogBuilder.toString();

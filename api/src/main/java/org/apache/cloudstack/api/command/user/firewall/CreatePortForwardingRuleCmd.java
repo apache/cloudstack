@@ -105,8 +105,12 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
                 description = "the ID of the virtual machine for the port forwarding rule")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.CIDR_LIST, type = CommandType.LIST, collectionType = CommandType.STRING, description = "the cidr list to forward traffic from. Multiple entries must be separated by a single comma character (,). This parameter is deprecated. Do not use.")
-    private List<String> cidrlist;
+    @Parameter(name = ApiConstants.CIDR_LIST,
+            type = CommandType.LIST,
+            collectionType = CommandType.STRING,
+            description = " the source CIDR list to allow traffic from; all other CIDRs will be blocked. " +
+                    "Multiple entries must be separated by a single comma character (,). This param will be used only for VPC tiers. By default, all CIDRs are allowed.")
+    private List<String> sourceCidrList;
 
     @Parameter(name = ApiConstants.OPEN_FIREWALL, type = CommandType.BOOLEAN, description = "if true, firewall rule for source/end public port is automatically created; "
         + "if false - firewall rule has to be created explicitly. If not specified 1) defaulted to false when PF"
@@ -155,11 +159,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     @Override
     public List<String> getSourceCidrList() {
-        if (cidrlist != null) {
-            throw new InvalidParameterValueException("Parameter cidrList is deprecated; if you need to open firewall "
-                + "rule for the specific cidr, please refer to createFirewallRule command");
-        }
-        return null;
+        return sourceCidrList;
     }
 
     public Boolean getOpenFirewall() {
@@ -332,18 +332,14 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
     @Override
     public void create() {
-        // cidr list parameter is deprecated
-        if (cidrlist != null) {
-            throw new InvalidParameterValueException(
-                "Parameter cidrList is deprecated; if you need to open firewall rule for the specific cidr, please refer to createFirewallRule command");
-        }
-
         Ip privateIp = getVmSecondaryIp();
         if (privateIp != null) {
             if (!NetUtils.isValidIp4(privateIp.toString())) {
                 throw new InvalidParameterValueException("Invalid vm ip address");
             }
         }
+
+        _rulesService.validatePortForwardingSourceCidrList(sourceCidrList);
 
         try {
             PortForwardingRule result = _rulesService.createPortForwardingRule(this, virtualMachineId, privateIp, getOpenFirewall(), isDisplay());

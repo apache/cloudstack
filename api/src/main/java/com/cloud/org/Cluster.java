@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.org;
 
+import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Managed.ManagedState;
 import org.apache.cloudstack.kernel.Partition;
@@ -38,4 +39,6 @@ public interface Cluster extends Grouping, Partition {
     AllocationState getAllocationState();
 
     ManagedState getManagedState();
+
+    CPU.CPUArch getArch();
 }

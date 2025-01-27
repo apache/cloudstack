@@ -32,4 +32,6 @@
     <bean id="scaleioDataStoreProvider"
           class="org.apache.cloudstack.storage.datastore.provider.ScaleIOPrimaryDatastoreProvider" />
 
+    <bean id="scaleioSDCManager" class="org.apache.cloudstack.storage.datastore.manager.ScaleIOSDCManagerImpl" />
+
 </beans>

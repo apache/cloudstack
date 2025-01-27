@@ -20,6 +20,7 @@ import java.net.URI;
 import java.util.Date;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -37,6 +38,7 @@ import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
 @Table(name = "domain_router_view")
@@ -138,7 +140,7 @@ public class DomainRouterJoinVO extends BaseViewVO implements ControlledViewEnti
     private ResourceState hostResourceState;
 
     @Column(name="hypervisor_type")
-    @Enumerated(value=EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     private Hypervisor.HypervisorType hypervisorType;
 
     @Column(name = "template_id", updatable = true, nullable = true, length = 17)

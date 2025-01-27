@@ -49,8 +49,11 @@ import com.cloud.vm.dao.VMInstanceDaoImpl;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDaoImpl;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -117,6 +120,8 @@ public class SystemVmTemplateRegistration {
     @Inject
     ImageStoreDao imageStoreDao;
     @Inject
+    ImageStoreDetailsDao imageStoreDetailsDao;
+    @Inject
     ClusterDao clusterDao;
     @Inject
     ConfigurationDao configurationDao;
@@ -130,6 +135,7 @@ public class SystemVmTemplateRegistration {
         templateDataStoreDao = new BasicTemplateDataStoreDaoImpl();
         vmInstanceDao = new VMInstanceDaoImpl();
         imageStoreDao = new ImageStoreDaoImpl();
+        imageStoreDetailsDao = new ImageStoreDetailsDaoImpl();
         clusterDao = new ClusterDaoImpl();
         configurationDao = new ConfigurationDaoImpl();
     }
@@ -140,6 +146,14 @@ public class SystemVmTemplateRegistration {
     public SystemVmTemplateRegistration(String systemVmTemplateVersion) {
         this();
         this.systemVmTemplateVersion = systemVmTemplateVersion;
+    }
+
+    public static String getMountCommand(String nfsVersion, String device, String dir) {
+        String cmd = "sudo mount -t nfs";
+        if (StringUtils.isNotBlank(nfsVersion)) {
+            cmd = String.format("%s -o vers=%s", cmd, nfsVersion);
+        }
+        return String.format("%s %s %s", cmd, device, dir);
     }
 
     public String getSystemVmTemplateVersion() {
@@ -320,14 +334,14 @@ public class SystemVmTemplateRegistration {
         }
     };
 
-    public static boolean validateIfSeeded(String url, String path) {
+    public static boolean validateIfSeeded(String url, String path, String nfsVersion) {
         String filePath = null;
         try {
             filePath = Files.createTempDirectory(TEMPORARY_SECONDARY_STORE).toString();
             if (filePath == null) {
                 throw new CloudRuntimeException("Failed to create temporary directory to mount secondary store");
             }
-            mountStore(url, filePath);
+            mountStore(url, filePath, nfsVersion);
             int lastIdx = path.lastIndexOf(File.separator);
             String partialDirPath = path.substring(0, lastIdx);
             String templatePath = filePath + File.separator + partialDirPath;
@@ -427,14 +441,13 @@ public class SystemVmTemplateRegistration {
         return new Pair<>(url, storeId);
     }
 
-    public static void mountStore(String storeUrl, String path) {
+    public static void mountStore(String storeUrl, String path, String nfsVersion) {
         try {
             if (storeUrl != null) {
                 URI uri = new URI(UriUtils.encodeURIComponent(storeUrl));
                 String host = uri.getHost();
                 String mountPath = uri.getPath();
-                String mount = String.format(MOUNT_COMMAND, host + ":" + mountPath, path);
-                Script.runSimpleBashScript(mount);
+                Script.runSimpleBashScript(getMountCommand(nfsVersion, host + ":" + mountPath, path));
             }
         } catch (Exception e) {
             String msg = "NFS Store URL is not in the correct format";
@@ -446,7 +459,7 @@ public class SystemVmTemplateRegistration {
     private List<String> fetchAllHypervisors(Long zoneId) {
         List<String> hypervisorList = new ArrayList<>();
         List<Hypervisor.HypervisorType> hypervisorTypes = clusterDao.getAvailableHypervisorInZone(zoneId);
-        hypervisorList = hypervisorTypes.stream().distinct().map(Enum::name).collect(Collectors.toList());
+        hypervisorList = hypervisorTypes.stream().distinct().map(Hypervisor.HypervisorType::name).collect(Collectors.toList());
         return hypervisorList;
     }
 
@@ -483,19 +496,19 @@ public class SystemVmTemplateRegistration {
             templateZoneVO = vmTemplateZoneDao.persist(templateZoneVO);
         } else {
             templateZoneVO.setLastUpdated(new java.util.Date());
-            if (vmTemplateZoneDao.update(templateZoneVO.getId(), templateZoneVO)) {
+            if (!vmTemplateZoneDao.update(templateZoneVO.getId(), templateZoneVO)) {
                 templateZoneVO = null;
             }
         }
         return templateZoneVO;
     }
 
-    private void createCrossZonesTemplateZoneRefEntries(VMTemplateVO template) {
+    private void createCrossZonesTemplateZoneRefEntries(Long templateId) {
         List<DataCenterVO> dcs = dataCenterDao.listAll();
         for (DataCenterVO dc : dcs) {
-            VMTemplateZoneVO templateZoneVO = createOrUpdateTemplateZoneEntry(dc.getId(), template.getId());
+            VMTemplateZoneVO templateZoneVO = createOrUpdateTemplateZoneEntry(dc.getId(), templateId);
             if (templateZoneVO == null) {
-                throw new CloudRuntimeException(String.format("Failed to create template_zone_ref record for the systemVM template for hypervisor: %s and zone: %s", template.getHypervisorType().name(), dc));
+                throw new CloudRuntimeException(String.format("Failed to create template_zone_ref record for the systemVM template (id: %s) and zone: %s", templateId, dc));
             }
         }
     }
@@ -625,8 +638,9 @@ public class SystemVmTemplateRegistration {
                 throw new CloudRuntimeException(String.format("Failed to register template for hypervisor: %s", hypervisor.name()));
             }
             templateId = template.getId();
-            createCrossZonesTemplateZoneRefEntries(template);
         }
+        createCrossZonesTemplateZoneRefEntries(templateId);
+
         details.setId(templateId);
         String destTempFolderName = String.valueOf(templateId);
         String destTempFolder = filePath + PARTIAL_TEMPLATE_FOLDER + destTempFolderName;
@@ -719,8 +733,8 @@ public class SystemVmTemplateRegistration {
     }
 
     private void validateTemplates(Set<Hypervisor.HypervisorType> hypervisorsInUse) {
-        Set<String> hypervisors = hypervisorsInUse.stream().map(Enum::name).
-                map(name -> name.toLowerCase(Locale.ROOT)).map(this::getHypervisorName).collect(Collectors.toSet());
+        Set<String> hypervisors = hypervisorsInUse.stream().
+                map(Hypervisor.HypervisorType::name).map(name -> name.toLowerCase(Locale.ROOT)).map(this::getHypervisorName).collect(Collectors.toSet());
         List<String> templates = new ArrayList<>();
         for (Hypervisor.HypervisorType hypervisorType : hypervisorsInUse) {
             templates.add(FileNames.get(hypervisorType));
@@ -772,7 +786,8 @@ public class SystemVmTemplateRegistration {
                                     throw new CloudRuntimeException("Failed to create temporary file path to mount the store");
                                 }
                                 Pair<String, Long> storeUrlAndId = getNfsStoreInZone(zoneId);
-                                mountStore(storeUrlAndId.first(), filePath);
+                                String nfsVersion = getNfsVersion(storeUrlAndId.second());
+                                mountStore(storeUrlAndId.first(), filePath, nfsVersion);
                                 List<String> hypervisorList = fetchAllHypervisors(zoneId);
                                 for (String hypervisor : hypervisorList) {
                                     Hypervisor.HypervisorType name = Hypervisor.HypervisorType.getType(hypervisor);
@@ -781,12 +796,16 @@ public class SystemVmTemplateRegistration {
                                     Long templateId = getRegisteredTemplateId(hypervisorAndTemplateName);
                                     if (templateId != null) {
                                         VMTemplateVO templateVO = vmTemplateDao.findById(templateId);
-                                        TemplateDataStoreVO templateDataStoreVO = templateDataStoreDao.findByTemplate(templateId, DataStoreRole.Image);
-                                        String installPath = templateDataStoreVO.getInstallPath();
-                                        if (validateIfSeeded(storeUrlAndId.first(), installPath)) {
-                                            continue;
-                                        } else if (templateVO != null) {
+                                        TemplateDataStoreVO templateDataStoreVO = templateDataStoreDao.findByStoreTemplate(storeUrlAndId.second(), templateId);
+                                        if (templateDataStoreVO != null) {
+                                            String installPath = templateDataStoreVO.getInstallPath();
+                                            if (validateIfSeeded(storeUrlAndId.first(), installPath, nfsVersion)) {
+                                                continue;
+                                            }
+                                        }
+                                        if (templateVO != null) {
                                             registerTemplate(hypervisorAndTemplateName, storeUrlAndId, templateVO, templateDataStoreVO, filePath);
+                                            updateRegisteredTemplateDetails(templateId, hypervisorAndTemplateName);
                                             continue;
                                         }
                                     }
@@ -810,6 +829,11 @@ public class SystemVmTemplateRegistration {
     }
 
     private void updateRegisteredTemplateDetails(Long templateId, Map.Entry<Hypervisor.HypervisorType, String> hypervisorAndTemplateName) {
+        Pair<Hypervisor.HypervisorType, String> entry = new Pair<>(hypervisorAndTemplateName.getKey(), hypervisorAndTemplateName.getValue());
+        updateRegisteredTemplateDetails(templateId, entry);
+    }
+
+    private void updateRegisteredTemplateDetails(Long templateId, Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName) {
         VMTemplateVO templateVO = vmTemplateDao.findById(templateId);
         templateVO.setTemplateType(Storage.TemplateType.SYSTEM);
         boolean updated = vmTemplateDao.update(templateVO.getId(), templateVO);
@@ -819,11 +843,11 @@ public class SystemVmTemplateRegistration {
             throw new CloudRuntimeException(errMsg);
         }
 
-        updateSystemVMEntries(templateId, hypervisorAndTemplateName.getKey());
+        updateSystemVMEntries(templateId, hypervisorAndTemplateName.first());
 
         // Change value of global configuration parameter router.template.* for the corresponding hypervisor and minreq.sysvmtemplate.version for the ACS version
         Map<String, String> configParams = new HashMap<>();
-        configParams.put(RouterTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()), hypervisorAndTemplateName.getValue());
+        configParams.put(RouterTemplateConfigurationNames.get(hypervisorAndTemplateName.first()), hypervisorAndTemplateName.second());
         configParams.put("minreq.sysvmtemplate.version", getSystemVmTemplateVersion());
         updateConfigurationParams(configParams);
     }
@@ -887,5 +911,18 @@ public class SystemVmTemplateRegistration {
                 LOGGER.debug("Updating System Vm Template IDs Complete");
             }
         });
+    }
+
+    public String getNfsVersion(long storeId) {
+        final String configKey = "secstorage.nfs.version";
+        final Map<String, String> storeDetails = imageStoreDetailsDao.getDetails(storeId);
+        if (storeDetails != null && storeDetails.containsKey(configKey)) {
+            return storeDetails.get(configKey);
+        }
+        ConfigurationVO globalNfsVersion = configurationDao.findByName(configKey);
+        if (globalNfsVersion != null) {
+            return globalNfsVersion.getValue();
+        }
+        return null;
     }
 }

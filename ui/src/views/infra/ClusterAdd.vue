@@ -63,6 +63,21 @@
       </div>
 
       <div class="form__item">
+        <div class="form__label">{{ $t('label.arch') }}</div>
+        <a-select
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }"
+          v-model:value="selectedArchitecture">
+          <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+            {{ opt.name || opt.description }}
+          </a-select-option>
+        </a-select>
+      </div>
+
+      <div class="form__item">
         <div class="form__label">{{ $t('label.podname') }}</div>
         <a-select
           v-model:value="podId"
@@ -174,6 +189,8 @@ export default {
       dedicatedAccount: null,
       domainError: false,
       params: [],
+      architectureTypes: {},
+      selectedArchitecture: null,
       placeholder: {
         clustername: null
       }
@@ -186,6 +203,7 @@ export default {
     fetchData () {
       this.fetchZones()
       this.fetchHypervisors()
+      this.fetchArchitectureTypes()
       this.params = this.$store.getters.apis.addCluster.params
       Object.keys(this.placeholder).forEach(item => { this.returnPlaceholder(item) })
     },
@@ -211,6 +229,20 @@ export default {
       }).finally(() => {
         this.loading = false
       })
+    },
+    fetchArchitectureTypes () {
+      this.architectureTypes.opts = []
+      const typesList = []
+      typesList.push({
+        id: 'x86_64',
+        description: 'AMD 64 bits (x86_64)'
+      })
+      typesList.push({
+        id: 'aarch64',
+        description: 'ARM 64 bits (aarch64)'
+      })
+      this.architectureTypes.opts = typesList
+      this.selectedArchitecture = this.architectureTypes.opts[0].id
     },
     fetchPods () {
       this.loading = true
@@ -285,6 +317,7 @@ export default {
         clustertype: this.clustertype,
         podId: this.podId,
         clustername: clustername,
+        arch: this.selectedArchitecture,
         url: this.url
       }
       if (this.ovm3pool) {

@@ -431,6 +431,17 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
         return null;
     }
 
+    @Override
+    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisor(HypervisorType type, long dcId, long clusterId) {
+        return null;
+    }
+
+    @Override
+    public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisors(List<HypervisorType> types, long dcId, long clusterId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.resource.ResourceManager#listAvailHypervisorInZone(java.lang.Long, java.lang.Long)
      */
@@ -591,6 +602,12 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
+    public List<HostVO> listAllUpHostsInOneZoneByHypervisor(final HypervisorType type, final long dcId) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public List<HostVO> listAllUpAndEnabledHostsInOneZone(final long dcId) {
         // TODO Auto-generated method stub
         return null;
@@ -603,7 +620,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
-    public boolean isGPUDeviceAvailable(final long hostId, final String groupName, final String vgpuType) {
+    public boolean isGPUDeviceAvailable(final Host host, final String groupName, final String vgpuType) {
         // TODO Auto-generated method stub
         return false;
     }

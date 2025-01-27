@@ -79,7 +79,7 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
     private boolean isZoneSGEnabled() {
         Network ntwk = _entityMgr.findById(Network.class, getNetworkId());
         DataCenter dc = _entityMgr.findById(DataCenter.class, ntwk.getDataCenterId());
-        return dc.isSecurityGroupEnabled();
+        return dc.isSecurityGroupEnabled() || _ntwkModel.isSecurityGroupSupportedForZone(dc.getId());
     }
 
     @Override

@@ -18,40 +18,39 @@
  */
 package com.cloud.agent.api.to;
 
+import java.io.Serializable;
+
 import com.cloud.agent.api.LogLevel;
 import com.cloud.hypervisor.Hypervisor;
-
-import java.io.Serializable;
 
 public class RemoteInstanceTO implements Serializable {
 
     private Hypervisor.HypervisorType hypervisorType;
-    private String hostName;
     private String instanceName;
 
-    // Vmware Remote Instances parameters
+    // VMware Remote Instances parameters (required for exporting OVA through ovftool)
     // TODO: cloud.agent.transport.Request#getCommands() cannot handle gsoc decode for polymorphic classes
     private String vcenterUsername;
     @LogLevel(LogLevel.Log4jLevel.Off)
     private String vcenterPassword;
     private String vcenterHost;
     private String datacenterName;
-    private String clusterName;
 
     public RemoteInstanceTO() {
     }
 
-    public RemoteInstanceTO(String hostName, String instanceName, String vcenterHost,
-                            String datacenterName, String clusterName,
-                            String vcenterUsername, String vcenterPassword) {
+    public RemoteInstanceTO(String instanceName) {
         this.hypervisorType = Hypervisor.HypervisorType.VMware;
-        this.hostName = hostName;
+        this.instanceName = instanceName;
+    }
+
+    public RemoteInstanceTO(String instanceName, String vcenterHost, String vcenterUsername, String vcenterPassword, String datacenterName) {
+        this.hypervisorType = Hypervisor.HypervisorType.VMware;
         this.instanceName = instanceName;
         this.vcenterHost = vcenterHost;
-        this.datacenterName = datacenterName;
-        this.clusterName = clusterName;
         this.vcenterUsername = vcenterUsername;
         this.vcenterPassword = vcenterPassword;
+        this.datacenterName = datacenterName;
     }
 
     public Hypervisor.HypervisorType getHypervisorType() {
@@ -60,10 +59,6 @@ public class RemoteInstanceTO implements Serializable {
 
     public String getInstanceName() {
         return this.instanceName;
-    }
-
-    public String getHostName() {
-        return this.hostName;
     }
 
     public String getVcenterUsername() {
@@ -80,9 +75,5 @@ public class RemoteInstanceTO implements Serializable {
 
     public String getDatacenterName() {
         return datacenterName;
-    }
-
-    public String getClusterName() {
-        return clusterName;
     }
 }

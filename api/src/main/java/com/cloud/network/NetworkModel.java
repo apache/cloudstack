@@ -149,7 +149,7 @@ public interface NetworkModel {
 
     boolean areServicesSupportedByNetworkOffering(long networkOfferingId, Service... services);
 
-    Network getNetworkWithSGWithFreeIPs(Long zoneId);
+    Network getNetworkWithSGWithFreeIPs(Account account, Long zoneId);
 
     Network getNetworkWithSecurityGroupEnabled(Long zoneId);
 
@@ -172,6 +172,8 @@ public interface NetworkModel {
     boolean isSecurityGroupSupportedInNetwork(Network network);
 
     boolean isProviderSupportServiceInNetwork(long networkId, Service service, Provider provider);
+
+    boolean isAnyServiceSupportedInNetwork(long networkId, Provider provider, Service... services);
 
     boolean isProviderEnabledInPhysicalNetwork(long physicalNetowrkId, String providerName);
 
@@ -317,6 +319,8 @@ public interface NetworkModel {
 
     void checkIp6Parameters(String startIPv6, String endIPv6, String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException;
 
+    void checkIp6CidrSizeEqualTo64(String ip6Cidr) throws InvalidParameterValueException;
+
     void checkRequestedIpAddresses(long networkId, IpAddresses ips) throws InvalidParameterValueException;
 
     String getStartIpv6Address(long id);
@@ -354,4 +358,8 @@ public interface NetworkModel {
 
     void verifyIp6DnsPair(final String ip6Dns1, final String ip6Dns2);
 
+    boolean isSecurityGroupSupportedForZone(Long zoneId);
+
+    boolean checkSecurityGroupSupportForNetwork(Account account, DataCenter zone, List<Long> networkIds,
+                                                List<Long> securityGroupsIds);
 }

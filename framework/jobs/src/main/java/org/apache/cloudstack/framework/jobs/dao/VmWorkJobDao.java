@@ -39,4 +39,5 @@ public interface VmWorkJobDao extends GenericDao<VmWorkJobVO, Long> {
     void expungeCompletedWorkJobs(Date cutDate);
 
     void expungeLeftoverWorkJobs(long msid);
+    int expungeByVmList(List<Long> vmIds, Long batchSize);
 }

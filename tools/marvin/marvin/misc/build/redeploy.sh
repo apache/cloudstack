@@ -25,7 +25,7 @@ usage() {
 
   printf "\nThe -s flag will clean the secondary path and install the specified
 hypervisor's system template as per -h, if -h is not given then xenserver is
-assumed\n"	
+assumed\n"
 
 }
 
@@ -66,7 +66,7 @@ do
 done
 
 if [[ -e /etc/redhat-release ]]
-then 
+then
 	cat /etc/redhat-release
 else
 	echo "script works on rpm environments only"
@@ -88,7 +88,7 @@ else
 fi
 
 #TODO: archive old logs
-#refresh log state 
+#refresh log state
 cat /dev/null > /var/log/cloud/management/management-server.log
 cat /dev/null > /var/log/cloud/management/api-server.log
 cat /dev/null > /var/log/cloud/management/catalina.out

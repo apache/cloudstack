@@ -26,7 +26,6 @@ import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.offering.ServiceOffering;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.user.Account;
@@ -260,15 +259,18 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
         return _params;
     }
 
-    public void setServiceOffering(ServiceOfferingVO offering) {
+    @Override
+    public void setServiceOffering(ServiceOffering offering) {
         _offering = offering;
     }
 
+    @Override
     public void setCpuOvercommitRatio(Float cpuOvercommitRatio) {
         this.cpuOvercommitRatio = cpuOvercommitRatio;
 
     }
 
+    @Override
     public void setMemoryOvercommitRatio(Float memoryOvercommitRatio) {
         this.memoryOvercommitRatio = memoryOvercommitRatio;
 

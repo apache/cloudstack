@@ -30,7 +30,7 @@ public class VMUserDataResponse extends BaseResponse {
     private String vmId;
 
     @SerializedName(ApiConstants.USER_DATA)
-    @Param(description = "Base 64 encoded VM user data")
+    @Param(description = "Base64 encoded VM user data")
     private String userData;
 
     public void setUserData(String userData) {

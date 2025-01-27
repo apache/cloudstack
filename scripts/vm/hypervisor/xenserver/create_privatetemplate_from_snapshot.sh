@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,20 +17,20 @@
 # under the License.
 
 #set -x
- 
+
 usage() {
-  printf "Usage: %s [vhd file in secondary storage] [template directory in secondary storage] [template local dir] \n" $(basename $0) 
+  printf "Usage: %s [vhd file in secondary storage] [template directory in secondary storage] [template local dir] \n" $(basename $0)
 }
 options='tcp,soft,timeo=133,retrans=1'
 cleanup()
 {
-  if [ ! -z $snapshotdir ]; then 
+  if [ ! -z $snapshotdir ]; then
     umount $snapshotdir
     if [ $? -eq 0 ];  then
       rmdir $snapshotdir
     fi
   fi
-  if [ ! -z $templatedir ]; then 
+  if [ ! -z $templatedir ]; then
     umount $templatedir
     if [ $? -eq 0 ];  then
       rmdir $templatedir
@@ -110,7 +110,7 @@ copyvhd()
     exit 0
   fi
   if [[ "${parent}"  =~ " no parent" ]]; then
-    dd if=$srcvhd of=$desvhd bs=2M     
+    dd if=$srcvhd of=$desvhd bs=2M
     if [ $? -ne 0 ]; then
       echo "31#failed to dd $srcvhd to $desvhd"
       cleanup

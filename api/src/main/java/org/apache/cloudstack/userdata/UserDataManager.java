@@ -17,11 +17,16 @@
 package org.apache.cloudstack.userdata;
 
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
 import com.cloud.utils.component.Manager;
 
 public interface UserDataManager extends Manager, Configurable {
+    String VM_USERDATA_MAX_LENGTH_STRING = "vm.userdata.max.length";
+    ConfigKey<Integer> VM_USERDATA_MAX_LENGTH = new ConfigKey<>("Advanced", Integer.class, VM_USERDATA_MAX_LENGTH_STRING, "32768",
+            "Max length of vm userdata after base64 encoding. Default is 32768 and maximum is 1048576", true);
+
     String concatenateUserData(String userdata1, String userdata2, String userdataProvider);
     String validateUserData(String userData, BaseCmd.HTTPMethod httpmethod);
 }

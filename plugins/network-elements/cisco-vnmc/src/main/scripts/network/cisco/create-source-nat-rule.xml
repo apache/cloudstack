@@ -16,8 +16,8 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
-<configConfMos 
-  cookie="%cookie%" 
+<configConfMos
+  cookie="%cookie%"
   inHierarchical="false">
     <inConfigs>
 
@@ -56,7 +56,7 @@ under the License.
       </pair>
       <pair key="%natruledn%/rule-cond-2/nw-expr2">
         <policyNetworkExpression
-          dn="%natruledn%/rule-cond-2/nw-expr2" 
+          dn="%natruledn%/rule-cond-2/nw-expr2"
           id="2"
           opr="range"
           status="created"/>

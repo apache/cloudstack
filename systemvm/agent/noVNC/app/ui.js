@@ -1000,6 +1000,7 @@ const UI = {
 
     clipboardClear() {
         document.getElementById('noVNC_clipboard_text').value = "";
+        document.getElementById('noVNC_clipboard_text').focus();
     },
 
     clipboardSend() {

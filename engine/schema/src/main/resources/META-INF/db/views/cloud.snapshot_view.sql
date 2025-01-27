@@ -48,6 +48,7 @@ SELECT
     `volumes`.`uuid` AS `volume_uuid`,
     `volumes`.`name` AS `volume_name`,
     `volumes`.`volume_type` AS `volume_type`,
+    `volumes`.`state` AS `volume_state`,
     `volumes`.`size` AS `volume_size`,
     `data_center`.`id` AS `data_center_id`,
     `data_center`.`uuid` AS `data_center_uuid`,

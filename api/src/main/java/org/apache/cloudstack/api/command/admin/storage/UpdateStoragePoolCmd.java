@@ -31,6 +31,8 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 
 import com.cloud.storage.StoragePool;
 import com.cloud.user.Account;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 
 @SuppressWarnings("rawtypes")
 @APICommand(name = "updateStoragePool", description = "Updates a storage pool.", responseObject = StoragePoolResponse.class, since = "3.0.0",
@@ -147,7 +149,17 @@ public class UpdateStoragePoolCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        StoragePool result = _storageService.updateStoragePool(this);
+        StoragePool result = null;
+        if (ObjectUtils.anyNotNull(name, capacityIops, capacityBytes, url, isTagARule, tags) ||
+                MapUtils.isNotEmpty(details)) {
+            result = _storageService.updateStoragePool(this);
+        }
+
+        if (enabled != null) {
+            result = enabled ? _storageService.enablePrimaryStoragePool(id)
+                    : _storageService.disablePrimaryStoragePool(id);
+        }
+
         if (result != null) {
             StoragePoolResponse response = _responseGenerator.createStoragePoolResponse(result);
             response.setResponseName(getCommandName());

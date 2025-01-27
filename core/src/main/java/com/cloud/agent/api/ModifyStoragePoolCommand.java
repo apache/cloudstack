@@ -46,6 +46,10 @@ public class ModifyStoragePoolCommand extends Command {
         this.details = details;
     }
 
+    public ModifyStoragePoolCommand(boolean add, StoragePool pool, Map<String, String> details) {
+        this(add, pool, LOCAL_PATH_PREFIX + File.separator + UUID.nameUUIDFromBytes((pool.getHostAddress() + pool.getPath()).getBytes()), details);
+    }
+
     public ModifyStoragePoolCommand(boolean add, StoragePool pool) {
         this(add, pool, LOCAL_PATH_PREFIX + File.separator + UUID.nameUUIDFromBytes((pool.getHostAddress() + pool.getPath()).getBytes()));
     }

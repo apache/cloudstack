@@ -22,7 +22,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 
-import com.cloud.consoleproxy.util.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -34,7 +35,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 public class ConsoleProxyNoVNCServer {
 
-    protected static Logger LOGGER = Logger.getLogger(ConsoleProxyNoVNCServer.class);
+    protected static Logger LOGGER = LogManager.getLogger(ConsoleProxyNoVNCServer.class);
     public static final int WS_PORT = 8080;
     public static final int WSS_PORT = 8443;
     private static final String VNC_CONF_FILE_LOCATION = "/root/vncport";

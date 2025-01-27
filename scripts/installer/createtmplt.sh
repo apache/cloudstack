@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -51,7 +51,7 @@ verify_cksum() {
   esac
   echo  "$1  $2" | $digestalgo  -c --status
   #printf "$1\t$2" | $digestalgo  -c --status
-  if [ $? -gt 0 ] 
+  if [ $? -gt 0 ]
   then
     printf "Checksum failed, not proceeding with install\n"
     exit 3
@@ -92,12 +92,12 @@ uncompress() {
 	;;
   esac
 
-  if [ $? -gt 0 ] 
+  if [ $? -gt 0 ]
   then
     printf "Failed to uncompress file, exiting "
-    exit 1 
+    exit 1
   fi
- 
+
   mv $tmpfile $imgfile
   printf "$imgfile"
 
@@ -184,10 +184,10 @@ then
   tmpltfs=${tmpltfs:1}
 fi
 
-if [ ! -d /$tmpltfs ] 
+if [ ! -d /$tmpltfs ]
 then
   zfs create -p $tmpltfs
-  if [ $? -gt 0 ] 
+  if [ $? -gt 0 ]
   then
     printf "Failed to create user fs $tmpltfs\n" >&2
     exit 1
@@ -203,7 +203,7 @@ fi
 tmpltimg2=$(uncompress $tmpltimg)
 tmpltimg2=$(untar $tmpltimg2 /$tmpltfs vmi-root)
 
-if [ ! -f $tmpltimg2 ] 
+if [ ! -f $tmpltimg2 ]
 then
   rollback_if_needed $tmpltfs 2 "root disk file $tmpltimg doesn't exist\n"
   exit 3
@@ -217,15 +217,15 @@ fi
 
 #determine source file size -- it needs to be less than or equal to volsize
 imgsize=$(ls -lh $tmpltimg2| awk -F" " '{print $5}')
-if [ ${imgsize:(-1)} == G ] 
+if [ ${imgsize:(-1)} == G ]
 then
-  imgsize=${imgsize%G} #strip out the G 
+  imgsize=${imgsize%G} #strip out the G
   imgsize=${imgsize%.*} #...and any decimal part
   let imgsize=imgsize+1 # add 1 to compensate for decimal part
   volsizetmp=${volsize%G}
   if [ $volsizetmp -lt $imgsize ]
   then
-    volsize=${imgsize}G  
+    volsize=${imgsize}G
   fi
 fi
 
@@ -234,11 +234,11 @@ tgtfile=${tmpltfs}/vmi-root-${tmpltname}
 create_from_file $tmpltfs $tmpltimg2 $tgtfile  $volsize $cleanup
 
 tmpltswap=$(ls -lh /$tmpltfs | grep swap)
-if [ $? -eq 0 ] 
+if [ $? -eq 0 ]
 then
   swapsize=$(echo $tmpltswap | awk '{print $5}')
   tmpltswap=$(echo $tmpltswap | awk '{print $NF}')
-  tmpltswap=/${tmpltfs}/${tmpltswap} 
+  tmpltswap=/${tmpltfs}/${tmpltswap}
   tgtfile=${tmpltfs}/vmi-swap-${tmpltname}
   create_from_file $tmpltfs $tmpltswap $tgtfile $swapsize $cleanup
 fi

@@ -53,16 +53,12 @@ public class ListUsageRecordsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "List usage records for the specified domain.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.END_DATE,
-            type = CommandType.DATE,
-            required = true,
-            description = "End date range for usage record query (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-dd HH:mm:ss\", e.g. startDate=2015-01-01 or startdate=2015-01-01 10:30:00).")
+    @Parameter(name = ApiConstants.END_DATE, type = CommandType.DATE, required = true, description = "End date range for usage record query. " +
+            ApiConstants.PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS)
     private Date endDate;
 
-    @Parameter(name = ApiConstants.START_DATE,
-            type = CommandType.DATE,
-            required = true,
-            description = "Start date range for usage record query (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-dd HH:mm:ss\", e.g. startDate=2015-01-01 or startdate=2015-01-01 11:00:00).")
+    @Parameter(name = ApiConstants.START_DATE, type = CommandType.DATE, required = true, description = "Start date range for usage record query. " +
+            ApiConstants.PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS)
     private Date startDate;
 
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List usage records for the specified account")
@@ -137,11 +133,11 @@ public class ListUsageRecordsCmd extends BaseListCmd {
     }
 
     public void setEndDate(Date endDate) {
-        this.endDate = endDate == null ? null : new Date(endDate.getTime());
+        this.endDate = endDate;
     }
 
     public void setStartDate(Date startDate) {
-        this.startDate = startDate == null ? null : new Date(startDate.getTime());
+        this.startDate = startDate;
     }
 
     public void setAccountId(Long accountId) {
@@ -167,8 +163,8 @@ public class ListUsageRecordsCmd extends BaseListCmd {
     @Override
     public void execute() {
         Pair<List<? extends Usage>, Integer> usageRecords = _usageService.getUsageRecords(this);
-        ListResponse<UsageRecordResponse> response = new ListResponse<UsageRecordResponse>();
-        List<UsageRecordResponse> usageResponses = new ArrayList<UsageRecordResponse>();
+        ListResponse<UsageRecordResponse> response = new ListResponse<>();
+        List<UsageRecordResponse> usageResponses = new ArrayList<>();
         Map<String, Set<ResourceTagResponse>> resourceTagResponseMap = null;
         if (usageRecords != null) {
             //read the resource tags details for all the resources in usage data and store in Map

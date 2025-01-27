@@ -32,6 +32,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import com.cloud.network.Network;
+import com.cloud.usage.dao.UsageNetworksDao;
+import com.cloud.usage.parser.NetworksUsageParser;
+import com.cloud.network.vpc.Vpc;
+import com.cloud.usage.dao.UsageVpcDao;
+import com.cloud.usage.parser.VpcUsageParser;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
@@ -165,9 +171,14 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private QuotaAlertManager _alertManager;
     @Inject
     private QuotaStatement _quotaStatement;
+    @Inject
+    private UsageNetworksDao usageNetworksDao;
 
     @Inject
     private BucketStatisticsDao _bucketStatisticsDao;
+
+    @Inject
+    private UsageVpcDao usageVpcDao;
 
     private String _version = null;
     private final Calendar _jobExecTime = Calendar.getInstance();
@@ -325,6 +336,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             _sanity = _sanityExecutor.scheduleAtFixedRate(new SanityCheck(), 1, _sanityCheckInterval, TimeUnit.DAYS);
         }
 
+        Runtime.getRuntime().addShutdownHook(new AbandonJob());
         TransactionLegacy usageTxn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             if (_heartbeatLock.lock(3)) { // 3 second timeout
@@ -354,8 +366,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (_sanity != null) {
             _sanity.cancel(true);
         }
+
         return true;
     }
+
 
     @Override
     public void run() {
@@ -415,9 +429,14 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 cal.add(Calendar.MILLISECOND, -1);
                 endDate = cal.getTime().getTime();
             } else {
-                endDate = cal.getTime().getTime(); // current time
                 cal.add(Calendar.MINUTE, -1 * _aggregationDuration);
+                cal.set(Calendar.SECOND, 0);
+                cal.set(Calendar.MILLISECOND, 0);
                 startDate = cal.getTime().getTime();
+
+                cal.add(Calendar.MINUTE, _aggregationDuration);
+                cal.add(Calendar.MILLISECOND, -1);
+                endDate = cal.getTime().getTime();
             }
 
             parse(job, startDate, endDate);
@@ -1034,6 +1053,15 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 logger.debug("Bucket usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
             }
         }
+        parsed = NetworksUsageParser.parse(account, currentStartDate, currentEndDate);
+        if (!parsed) {
+            logger.debug("Networks usage not parsed for account [{}}].", account);
+        }
+
+        parsed = VpcUsageParser.parse(account, currentStartDate, currentEndDate);
+        if (!parsed) {
+            logger.debug(String.format("VPC usage failed to parse for account [%s].", account));
+        }
         return parsed;
     }
 
@@ -1068,6 +1096,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 createVmSnapshotOnPrimaryEvent(event);
             } else if (isBackupEvent(eventType)) {
                 createBackupEvent(event);
+            } else if (EventTypes.isNetworkEvent(eventType)) {
+                handleNetworkEvent(event);
+            } else if (EventTypes.isVpcEvent(eventType)) {
+                handleVpcEvent(event);
             }
         } catch (EntityExistsException e) {
             logger.warn(String.format("Failed to create usage event id: %d type: %s due to %s", event.getId(), eventType, e.getMessage()), e);
@@ -2116,6 +2148,34 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
     }
 
+    private void handleNetworkEvent(UsageEventVO event) {
+        Account account = _accountDao.findByIdIncludingRemoved(event.getAccountId());
+        long domainId = account.getDomainId();
+        if (EventTypes.EVENT_NETWORK_DELETE.equals(event.getType())) {
+            usageNetworksDao.remove(event.getResourceId(), event.getCreateDate());
+        } else if (EventTypes.EVENT_NETWORK_CREATE.equals(event.getType())) {
+            UsageNetworksVO usageNetworksVO = new UsageNetworksVO(event.getResourceId(), event.getOfferingId(), event.getZoneId(), event.getAccountId(), domainId, Network.State.Allocated.name(), event.getCreateDate(), null);
+            usageNetworksDao.persist(usageNetworksVO);
+        } else if (EventTypes.EVENT_NETWORK_UPDATE.equals(event.getType())) {
+            usageNetworksDao.update(event.getResourceId(), event.getOfferingId(), event.getResourceType());
+        } else {
+            logger.error("Unknown event type [{}] in Networks event parser. Skipping it.", event.getType());
+        }
+    }
+
+    private void handleVpcEvent(UsageEventVO event) {
+        Account account = _accountDao.findByIdIncludingRemoved(event.getAccountId());
+        long domainId = account.getDomainId();
+        if (EventTypes.EVENT_VPC_DELETE.equals(event.getType())) {
+            usageVpcDao.remove(event.getResourceId(), event.getCreateDate());
+        } else if (EventTypes.EVENT_VPC_CREATE.equals(event.getType())) {
+            UsageVpcVO usageVPCVO = new UsageVpcVO(event.getResourceId(), event.getZoneId(), event.getAccountId(), domainId, Vpc.State.Enabled.name(), event.getCreateDate(), null);
+            usageVpcDao.persist(usageVPCVO);
+        } else {
+            logger.error(String.format("Unknown event type [%s] in VPC event parser. Skipping it.", event.getType()));
+        }
+    }
+
     private class Heartbeat extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
@@ -2238,6 +2298,19 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 }
             } catch (SQLException e) {
                 logger.error("Error in sanity check", e);
+            }
+        }
+    }
+    private class AbandonJob extends Thread {
+        @Override
+        public void run() {
+            logger.info("exitting Usage Manager");
+            deleteOpenjob();
+        }
+        private void deleteOpenjob() {
+            UsageJobVO job = _usageJobDao.isOwner(_hostname, _pid);
+            if (job != null) {
+                _usageJobDao.remove(job.getId());
             }
         }
     }

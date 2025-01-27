@@ -18,3 +18,7 @@
 --;
 -- Schema upgrade cleanup from 4.19.0.0 to 4.19.1.0
 --;
+
+-- List VMs response optimisation, don't sum during API handling
+UPDATE cloud.configuration set value='false' where name='vm.stats.increment.metrics';
+DELETE from cloud.configuration where name='vm.stats.increment.metrics.in.memory';

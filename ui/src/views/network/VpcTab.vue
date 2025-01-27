@@ -28,6 +28,9 @@
       <a-tab-pane :tab="$t('label.networks')" key="tier">
         <VpcTiersTab :resource="resource" :loading="loading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.bgp.peers')" key="bgppeers" v-if="resource.ip4routing === 'Dynamic'">
+        <BgpPeersTab :resource="resource" />
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.public.ips')" key="ip" v-if="'listPublicIpAddresses' in $store.getters.apis">
         <IpAddressesTab :resource="resource" :loading="loading" />
       </a-tab-pane>
@@ -389,10 +392,12 @@ import VnfAppliancesTab from './VnfAppliancesTab'
 import EventsTab from '@/components/view/EventsTab'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import BgpPeersTab from '@/views/infra/zone/BgpPeersTab.vue'
 
 export default {
   name: 'VpcTab',
   components: {
+    BgpPeersTab,
     DetailsTab,
     Status,
     IpAddressesTab,
@@ -795,12 +800,12 @@ export default {
 
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-
-        api('createVpnConnection', {
-          s2svpngatewayid: this.vpnGateways[0].id,
+        const params = {
+          s2svpngatewayid: this.vpnGateways[0] ? this.vpnGateways[0].id : null,
           s2scustomergatewayid: values.vpncustomergateway,
           passive: values.passive ? values.passive : false
-        }).then(response => {
+        }
+        api('createVpnConnection', params).then(response => {
           this.$pollJob({
             jobId: response.createvpnconnectionresponse.jobid,
             title: this.$t('label.vpn.connection'),

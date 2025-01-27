@@ -22,9 +22,9 @@
                       http://www.springframework.org/schema/beans/spring-beans.xsd
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd">
-    
+
     <bean id="override" class="java.lang.String" >
         <constructor-arg value="a string" />
     </bean>
-    
+
 </beans>

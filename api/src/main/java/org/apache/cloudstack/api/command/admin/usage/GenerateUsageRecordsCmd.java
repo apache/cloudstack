@@ -47,13 +47,13 @@ public class GenerateUsageRecordsCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.END_DATE,
                type = CommandType.DATE,
-               required = true,
+               required = false,
                description = "End date range for usage record query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-03.")
     private Date endDate;
 
     @Parameter(name = ApiConstants.START_DATE,
                type = CommandType.DATE,
-               required = true,
+               required = false,
                description = "Start date range for usage record query. Use yyyy-MM-dd as the date format, e.g. startDate=2009-06-01.")
     private Date startDate;
 

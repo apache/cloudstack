@@ -48,13 +48,14 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
     protected GetMethod request;
     protected Map<String, String> reqHeaders = new HashMap<>();
 
-    protected HttpDirectTemplateDownloader(String url, Integer connectTimeout, Integer socketTimeout) {
-        this(url, null, null, null, null, connectTimeout, socketTimeout, null);
+    protected HttpDirectTemplateDownloader(String url, Integer connectTimeout, Integer socketTimeout, boolean followRedirects) {
+        this(url, null, null, null, null, connectTimeout, socketTimeout, null, followRedirects);
     }
 
     public HttpDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum,
-                                        Map<String, String> headers, Integer connectTimeout, Integer soTimeout, String downloadPath) {
-        super(url, destPoolPath, templateId, checksum, downloadPath);
+                Map<String, String> headers, Integer connectTimeout, Integer soTimeout, String downloadPath,
+                boolean followRedirects) {
+        super(url, destPoolPath, templateId, checksum, downloadPath, followRedirects);
         s_httpClientManager.getParams().setConnectionTimeout(connectTimeout == null ? 5000 : connectTimeout);
         s_httpClientManager.getParams().setSoTimeout(soTimeout == null ? 5000 : soTimeout);
         client = new HttpClient(s_httpClientManager);
@@ -66,7 +67,7 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
 
     protected GetMethod createRequest(String downloadUrl, Map<String, String> headers) {
         GetMethod request = new GetMethod(downloadUrl);
-        request.setFollowRedirects(true);
+        request.setFollowRedirects(this.isFollowRedirects());
         if (MapUtils.isNotEmpty(headers)) {
             for (String key : headers.keySet()) {
                 request.setRequestHeader(key, headers.get(key));
@@ -109,9 +110,11 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
     @Override
     public boolean checkUrl(String url) {
         HeadMethod httpHead = new HeadMethod(url);
+        httpHead.setFollowRedirects(this.isFollowRedirects());
         try {
-            if (client.executeMethod(httpHead) != HttpStatus.SC_OK) {
-                logger.error(String.format("Invalid URL: %s", url));
+            int responseCode = client.executeMethod(httpHead);
+            if (responseCode != HttpStatus.SC_OK) {
+                logger.error(String.format("HTTP HEAD request to URL: %s failed, response code: %d", url, responseCode));
                 return false;
             }
             return true;
@@ -126,9 +129,9 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
     @Override
     public Long getRemoteFileSize(String url, String format) {
         if ("qcow2".equalsIgnoreCase(format)) {
-            return QCOW2Utils.getVirtualSize(url);
+            return QCOW2Utils.getVirtualSizeFromUrl(url, this.isFollowRedirects());
         } else {
-            return UriUtils.getRemoteSize(url);
+            return UriUtils.getRemoteSize(url, this.isFollowRedirects());
         }
     }
 

@@ -22,10 +22,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class PrimeraVolumePromoteRequest {
-    /**
-     * Defines action for the request as described at https://support.hpe.com/hpesc/public/docDisplay?docId=a00114827en_us&page=v25706371.html
-     */
-    private Integer action = 4;
+    private Integer action = 4; // PROMOTE_VIRTUAL_COPY, https://support.hpe.com/hpesc/public/docDisplay?docId=a00114827en_us&page=v25706371.html
     private Boolean online = true;
     private Integer priority = 2; // MEDIUM
     private Boolean allowRemoteCopyParent = true;

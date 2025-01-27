@@ -17,7 +17,14 @@
 package org.apache.cloudstack.engine.orchestration;
 
 import java.util.ArrayList;
+import java.util.Date;
 
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.offering.DiskOffering;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Volume;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
@@ -32,6 +39,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedConstruction;
 import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -42,6 +50,7 @@ import com.cloud.exception.StorageAccessException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.Volume.Type;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -54,6 +63,8 @@ public class VolumeOrchestratorTest {
     protected VolumeService volumeService;
     @Mock
     protected VolumeDataFactory volumeDataFactory;
+    @Mock
+    protected VolumeDao volumeDao;
 
     @Spy
     @InjectMocks
@@ -154,5 +165,47 @@ public class VolumeOrchestratorTest {
                 .grantAccess(Mockito.any(DataObject.class), Mockito.any(Host.class), Mockito.any(DataStore.class));
         volumeOrchestrator.grantVolumeAccessToHostIfNeeded(store, 1L,
                 Mockito.mock(HostVO.class), "");
+    }
+
+    @Test
+    public void testImportVolume() {
+        Type volumeType = Type.DATADISK;
+        String name = "new-volume";
+        Long sizeInBytes = 1000000L;
+        Long zoneId = 1L;
+        Long domainId = 2L;
+        Long accountId = 3L;
+        Long diskOfferingId = 4L;
+        DiskOffering diskOffering = Mockito.mock(DiskOffering.class);
+        Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
+        Account owner = Mockito.mock(Account.class);
+        Mockito.when(owner.getDomainId()).thenReturn(domainId);
+        Mockito.when(owner.getId()).thenReturn(accountId);
+        Mockito.when(diskOffering.getId()).thenReturn(diskOfferingId);
+        Long deviceId = 2L;
+        Long poolId = 3L;
+        String path = "volume path";
+        String chainInfo = "chain info";
+
+        MockedConstruction<VolumeVO> volumeVOMockedConstructionConstruction = Mockito.mockConstruction(VolumeVO.class, (mock, context) -> {
+        });
+
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        Mockito.when(volumeDao.persist(Mockito.any(VolumeVO.class))).thenReturn(volumeVO);
+
+        volumeOrchestrator.importVolume(volumeType, name, diskOffering, sizeInBytes, null, null,
+                zoneId, hypervisorType, null, null, owner,
+                deviceId, poolId, path, chainInfo);
+
+        VolumeVO volume = volumeVOMockedConstructionConstruction.constructed().get(0);
+        Mockito.verify(volume, Mockito.never()).setInstanceId(Mockito.anyLong());
+        Mockito.verify(volume, Mockito.never()).setAttached(Mockito.any(Date.class));
+        Mockito.verify(volume, Mockito.times(1)).setDeviceId(deviceId);
+        Mockito.verify(volume, Mockito.never()).setDisplayVolume(Mockito.any(Boolean.class));
+        Mockito.verify(volume, Mockito.times(1)).setFormat(Storage.ImageFormat.QCOW2);
+        Mockito.verify(volume, Mockito.times(1)).setPoolId(poolId);
+        Mockito.verify(volume, Mockito.times(1)).setPath(path);
+        Mockito.verify(volume, Mockito.times(1)).setChainInfo(chainInfo);
+        Mockito.verify(volume, Mockito.times(1)).setState(Volume.State.Ready);
     }
 }

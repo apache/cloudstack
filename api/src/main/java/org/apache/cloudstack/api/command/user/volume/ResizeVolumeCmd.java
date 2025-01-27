@@ -73,6 +73,10 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
                description = "new disk offering id")
     private Long newDiskOfferingId;
 
+    @Parameter(name = ApiConstants.AUTO_MIGRATE, type = CommandType.BOOLEAN, required = false,
+            description = "Flag to allow automatic migration of the volume to another suitable storage pool that accommodates the new size", since = "4.20.1")
+    private Boolean autoMigrate;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -101,6 +105,10 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
         return getEntityId();
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public Long getMinIops() {
         return minIops;
     }
@@ -113,12 +121,20 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
         return size;
     }
 
+    public void setSize(Long size) {
+        this.size = size;
+    }
+
     public boolean isShrinkOk() {
         return shrinkOk;
     }
 
     public Long getNewDiskOfferingId() {
         return newDiskOfferingId;
+    }
+
+    public boolean getAutoMigrate() {
+        return autoMigrate == null ? false : autoMigrate;
     }
 
     /////////////////////////////////////////////////////

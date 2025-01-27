@@ -103,7 +103,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Service Vpn = new Service("Vpn", Capability.SupportedVpnProtocols, Capability.VpnTypes);
         public static final Service Dhcp = new Service("Dhcp", Capability.ExtraDhcpOptions);
         public static final Service Dns = new Service("Dns", Capability.AllowDnsSuffixModification);
-        public static final Service Gateway = new Service("Gateway");
+        public static final Service Gateway = new Service("Gateway", Capability.RedundantRouter);
         public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols, Capability.MultipleIps, Capability.TrafficStatistics,
                 Capability.SupportedTrafficDirection, Capability.SupportedEgressProtocols);
         public static final Service Lb = new Service("Lb", Capability.SupportedLBAlgorithms, Capability.SupportedLBIsolation, Capability.SupportedProtocols,
@@ -412,11 +412,15 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
 
     String getGateway();
 
+    void setGateway(String gateway);
+
     // "cidr" is the Cloudstack managed address space, all CloudStack managed vms get IP address from "cidr",
     // In general "cidr" also serves as the network CIDR
     // But in case IP reservation is configured for a Guest network, "networkcidr" is the Effective network CIDR for that network,
     // "cidr" will still continue to be the effective address space for CloudStack managed vms in that Guest network
     String getCidr();
+
+    void setCidr(String cidr);
 
     // "networkcidr" is the network CIDR of the guest network which uses IP reservation.
     // It is the summation of "cidr" and the reservedIPrange(the address space used for non CloudStack purposes).
@@ -503,4 +507,6 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     Integer getPublicMtu();
 
     Integer getPrivateMtu();
+
+    Integer getNetworkCidrSize();
 }

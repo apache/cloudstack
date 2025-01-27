@@ -25,13 +25,13 @@
                       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd"
-                      >                     
+                      >
 
   <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle" >
     <property name="registry" ref="scopedConfigStorageRegistry" />
     <property name="typeClass" value="org.apache.cloudstack.framework.config.ScopedConfigStorage" />
   </bean>
-  
+
   <bean class="org.apache.cloudstack.spring.lifecycle.ConfigDepotLifeCycle" />
 
 

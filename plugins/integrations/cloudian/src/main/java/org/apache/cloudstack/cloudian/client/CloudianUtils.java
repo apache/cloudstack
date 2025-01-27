@@ -81,12 +81,8 @@ public class CloudianUtils {
             return null;
         }
 
-        stringBuilder.append("&redirect=");
-        if (group.equals("0")) {
-            stringBuilder.append("admin.htm");
-        } else {
-            stringBuilder.append("explorer.htm");
-        }
+        // Redirects to dashboard for admin users or the bucket browser for regular users
+        stringBuilder.append("&redirect=/");
 
         return cmcUrlPath + "ssosecurelogin.htm?" + stringBuilder.toString();
     }

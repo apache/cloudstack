@@ -95,7 +95,7 @@ class Services:
             "iso": {
                 "displaytext": "Test ISO",
                 "name": "Test ISO",
-                "url": "http://people.apache.org/~tsp/dummy.iso",
+                "url": "http://download.cloudstack.org/testing/marvin/dummy.iso",
                 # Source URL where ISO is located
                 "isextractable": True,
                 "isfeatured": True,

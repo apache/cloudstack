@@ -19,6 +19,7 @@ package com.cloud.api.query.vo;
 import java.util.Date;
 
 import javax.persistence.Column;
+import javax.persistence.Convert;
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
@@ -33,6 +34,7 @@ import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
 @Table(name = "volume_view")
@@ -179,7 +181,7 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
     private String errorString;
 
     @Column(name = "hypervisor_type")
-    @Enumerated(value = EnumType.STRING)
+    @Convert(converter = HypervisorTypeConverter.class)
     private HypervisorType hypervisorType;
 
     @Column(name = "disk_offering_id")
@@ -274,6 +276,12 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     @Column(name = "external_uuid")
     private String externalUuid = null;
+
+    @Column(name = "encrypt_format")
+    private String encryptionFormat = null;
+
+    @Column(name = "delete_protection")
+    protected Boolean deleteProtection;
 
     public VolumeJoinVO() {
     }
@@ -610,9 +618,16 @@ public class VolumeJoinVO extends BaseViewWithTagInformationVO implements Contro
         this.externalUuid = externalUuid;
     }
 
+    public String getEncryptionFormat() {
+        return encryptionFormat;
+    }
+
+    public Boolean getDeleteProtection() {
+        return deleteProtection;
+    }
+
     @Override
     public Class<?> getEntityType() {
         return Volume.class;
     }
-
 }

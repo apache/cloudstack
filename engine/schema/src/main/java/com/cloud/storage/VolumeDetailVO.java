@@ -80,4 +80,7 @@ public class VolumeDetailVO implements ResourceDetail {
         return display;
     }
 
+    public void setValue(String value) {
+        this.value = value;
+    }
 }

@@ -53,6 +53,10 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "the name of the disk offering")
     private String name;
 
+    @SerializedName(ApiConstants.STATE)
+    @Param(description = "state of the disk offering")
+    private String state;
+
     @SerializedName(ApiConstants.DISPLAY_TEXT)
     @Param(description = "an alternate display text of the disk offering.")
     private String displayText;
@@ -228,6 +232,14 @@ public class DiskOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getState() {
+        return state;
+    }
+
+    public void setState(String state) {
+        this.state = state;
     }
 
     public String getDisplayText() {

@@ -18,8 +18,12 @@
 package com.cloud.network.dao;
 
 
+import java.util.List;
+
 import com.cloud.utils.db.GenericDao;
 
 public interface OpRouterMonitorServiceDao extends GenericDao<OpRouterMonitorServiceVO, Long> {
+
+    int expungeByVmList(List<Long> vmIds, Long batchSize);
 
 }

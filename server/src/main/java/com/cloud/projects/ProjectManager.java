@@ -22,17 +22,20 @@ import com.cloud.user.Account;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface ProjectManager extends ProjectService {
-    public static final ConfigKey<Boolean> ProjectSmtpUseStartTLS = new ConfigKey<Boolean>("Advanced", Boolean.class, "project.smtp.useStartTLS", "false",
+    public static final ConfigKey<Boolean> ProjectSmtpUseStartTLS = new ConfigKey<Boolean>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "project.smtp.useStartTLS", "false",
             "If set to true and if we enable security via project.smtp.useAuth, this will enable StartTLS to secure the connection.", true);
 
-    public static final ConfigKey<String> ProjectSmtpEnabledSecurityProtocols = new ConfigKey<String>("Advanced", String.class, "project.smtp.enabledSecurityProtocols", "",
-            "White-space separated security protocols; ex: \"TLSv1 TLSv1.1\". Supported protocols: SSLv2Hello, SSLv3, TLSv1, TLSv1.1 and TLSv1.2", true);
+    public static final ConfigKey<String> ProjectSmtpEnabledSecurityProtocols = new ConfigKey<String>(ConfigKey.CATEGORY_ADVANCED, String.class, "project.smtp.enabledSecurityProtocols", "",
+            "White-space separated security protocols; ex: \"TLSv1 TLSv1.1\". Supported protocols: SSLv2Hello, SSLv3, TLSv1, TLSv1.1 and TLSv1.2", true, ConfigKey.Kind.WhitespaceSeparatedListWithOptions, "SSLv2Hello,SSLv3,TLSv1,TLSv1.1,TLSv1.2");
+
+    public static final ConfigKey<Boolean> ProjectSmtpUseAuth = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class, "project.smtp.useAuth", "false",
+            "If true, use SMTP authentication when sending emails", false, ConfigKey.Scope.ManagementServer);
 
     boolean canAccessProjectAccount(Account caller, long accountId);
 
     boolean canModifyProjectAccount(Account caller, long accountId);
 
-    boolean deleteAccountFromProject(long projectId, long accountId);
+    boolean deleteAccountFromProject(long projectId, Account account);
 
     List<Long> listPermittedProjectAccounts(long accountId);
 

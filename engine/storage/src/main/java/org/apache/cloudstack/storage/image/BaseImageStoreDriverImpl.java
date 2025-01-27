@@ -20,9 +20,6 @@ package org.apache.cloudstack.storage.image;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -87,7 +84,6 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Proxy;
 import com.cloud.vm.VirtualMachineManager;
@@ -181,19 +177,19 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         if (data.getType() == DataObjectType.TEMPLATE) {
             caller.setCallback(caller.getTarget().createTemplateAsyncCallback(null, null));
             if (logger.isDebugEnabled()) {
-                logger.debug("Downloading template to data store " + dataStore.getId());
+                logger.debug("Downloading template to data store {}", dataStore);
             }
             _downloadMonitor.downloadTemplateToStorage(data, caller);
         } else if (data.getType() == DataObjectType.VOLUME) {
             caller.setCallback(caller.getTarget().createVolumeAsyncCallback(null, null));
             if (logger.isDebugEnabled()) {
-                logger.debug("Downloading volume to data store " + dataStore.getId());
+                logger.debug("Downloading volume to data store {}", dataStore);
             }
             _downloadMonitor.downloadVolumeToStorage(data, caller);
         } else if (data.getType() == DataObjectType.SNAPSHOT) {
             caller.setCallback(caller.getTarget().createSnapshotAsyncCallback(null, null));
             if (logger.isDebugEnabled()) {
-                logger.debug("Downloading volume to data store " + dataStore.getId());
+                logger.debug("Downloading snapshot to data store {}", dataStore);
             }
             _downloadMonitor.downloadSnapshotToStorage(data, caller);
         }
@@ -216,7 +212,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                     OVFInformationTO ovfInformationTO = answer.getOvfInformationTO();
                     boolean persistDeployAsIs = deployAsIsHelper.persistTemplateOVFInformationAndUpdateGuestOS(template.getId(), ovfInformationTO, tmpltStoreVO);
                     if (!persistDeployAsIs) {
-                        logger.info("Failed persisting deploy-as-is template details for template " + template.getName());
+                        logger.info("Failed persisting deploy-as-is template details for template {}", template);
                         return null;
                     }
                 }
@@ -225,7 +221,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 }
                 return null;
             }
-            logger.info("Updating store ref entry for template " + template.getName());
+            logger.info("Updating store ref entry for template {}", template);
             TemplateDataStoreVO updateBuilder = _templateStoreDao.createForUpdate();
             updateBuilder.setDownloadPercent(answer.getDownloadPct());
             updateBuilder.setDownloadState(answer.getDownloadStatus());
@@ -382,7 +378,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
                 result.setResult(answer.getDetails());
             }
         } catch (Exception ex) {
-            logger.debug("Unable to destroy " + data.getType().toString() + ": " + data.getId(), ex);
+            logger.debug("Unable to destroy {}: [id: {}, uuid: {}, name: {}]", data.getType().toString(), data.getId(), data.getUuid(), data.getName(), ex);
             result.setResult(ex.toString());
         }
         callback.complete(result);
@@ -425,8 +421,9 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     private Answer sendToLeastBusyEndpoint(List<EndPoint> eps, CopyCommand cmd) {
         Answer answer = null;
         EndPoint endPoint = null;
-        List<Long> epIds = ssvmWithLeastMigrateJobs();
 
+        logger.debug("Picking SSVM from the pool with least commands running on it.");
+        List<Long> epIds = hostDao.listSsvmHostsWithPendingMigrateJobsOrderedByJobCount();
         if (epIds.isEmpty()) {
             Collections.shuffle(eps);
             endPoint = eps.get(0);
@@ -446,14 +443,11 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             answer = agentMgr.send(endPoint.getId(), cmd);
             answer.setContextParam("cmd", cmdExecId.toString());
             return answer;
-        }  catch (AgentUnavailableException e) {
+        }  catch (AgentUnavailableException | OperationTimedoutException e) {
             errMsg = e.toString();
-            logger.debug("Failed to send command, due to Agent:" + endPoint.getId() + ", " + e.toString());
-        } catch (OperationTimedoutException e) {
-            errMsg = e.toString();
-            logger.debug("Failed to send command, due to Agent:" + endPoint.getId() + ", " + e.toString());
+            logger.debug("Failed to send command, due to Agent [id: {}, uuid: {}]: {}", endPoint.getId(), endPoint.getUuid(), e.toString());
         }
-        throw new CloudRuntimeException("Failed to send command, due to Agent:" + endPoint.getId() + ", " + errMsg);
+        throw new CloudRuntimeException(String.format("Failed to send command, due to Agent: [id: %s, uuid: %s], %s", endPoint.getId(), endPoint.getUuid(), errMsg));
     }
 
     @Override
@@ -510,7 +504,7 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         Answer answer = null;
         String errMsg = null;
         if (logger.isDebugEnabled()) {
-            logger.debug("Create Datadisk template: " + dataDiskTemplate.getId());
+            logger.debug("Create Datadisk template: {}", dataDiskTemplate);
         }
         CreateDatadiskTemplateCommand cmd = new CreateDatadiskTemplateCommand(dataDiskTemplate.getTO(), path, diskId, fileSize, bootable);
         EndPoint ep = _defaultEpSelector.select(dataDiskTemplate.getDataStore());
@@ -532,24 +526,5 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
 
     private Integer getCopyCmdsCountToSpecificSSVM(Long ssvmId) {
         return _cmdExecLogDao.getCopyCmdCountForSSVM(ssvmId);
-    }
-
-    private List<Long> ssvmWithLeastMigrateJobs() {
-        logger.debug("Picking ssvm from the pool with least commands running on it");
-        String query = "select host_id, count(*) from cmd_exec_log group by host_id order by 2;";
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-
-        List<Long> result = new ArrayList<Long>();
-        PreparedStatement pstmt = null;
-        try {
-            pstmt = txn.prepareAutoCloseStatement(query);
-            ResultSet rs = pstmt.executeQuery();
-            while (rs.next()) {
-                result.add((long) rs.getInt(1));
-            }
-        } catch (SQLException e) {
-            logger.debug("SQLException caught", e);
-        }
-        return result;
     }
 }

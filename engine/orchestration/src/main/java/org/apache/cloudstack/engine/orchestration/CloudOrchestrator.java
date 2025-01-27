@@ -61,6 +61,9 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static org.apache.cloudstack.api.ApiConstants.MAX_IOPS;
+import static org.apache.cloudstack.api.ApiConstants.MIN_IOPS;
+
 @Component
 public class CloudOrchestrator implements OrchestrationService {
 
@@ -196,8 +199,8 @@ public class CloudOrchestrator implements OrchestrationService {
             Map<String, String> userVmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
 
             if (userVmDetails != null) {
-                String minIops = userVmDetails.get("minIops");
-                String maxIops = userVmDetails.get("maxIops");
+                String minIops = userVmDetails.get(MIN_IOPS);
+                String maxIops = userVmDetails.get(MAX_IOPS);
 
                 rootDiskOfferingInfo.setMinIops(minIops != null && minIops.trim().length() > 0 ? Long.parseLong(minIops) : null);
                 rootDiskOfferingInfo.setMaxIops(maxIops != null && maxIops.trim().length() > 0 ? Long.parseLong(maxIops) : null);

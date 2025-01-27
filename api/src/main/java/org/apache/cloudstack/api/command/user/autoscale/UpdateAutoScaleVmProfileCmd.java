@@ -95,7 +95,7 @@ public class UpdateAutoScaleVmProfileCmd extends BaseAsyncCustomIdCmd {
             description = "an optional binary data that can be sent to the virtual machine upon a successful deployment. " +
                     "This binary data must be base64 encoded before adding it to the request. " +
                     "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
-                    "Using HTTP POST(via POST body), you can send up to 1MB of data after base64 encoding." +
+                    "Using HTTP POST (via POST body), you can send up to 1MB of data after base64 encoding. " +
                     "You also need to change vm.userdata.max.length value",
             length = 1048576,
             since = "4.18.0")

@@ -72,7 +72,8 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, description = "host ID of the storage pools")
     private Long hostId;
 
-
+    @Parameter(name = ApiConstants.STORAGE_CUSTOM_STATS, type = CommandType.BOOLEAN, description = "If true, lists the custom stats of the storage pool", since = "4.18.1")
+    private Boolean customStats;
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -127,6 +128,10 @@ public class ListStoragePoolsCmd extends BaseListCmd {
 
     public void setScope(String scope) {
         this.scope = scope;
+    }
+
+    public Boolean getCustomStats() {
+        return customStats != null && customStats;
     }
 
     /////////////////////////////////////////////////////

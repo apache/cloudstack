@@ -142,8 +142,10 @@ public final class CitrixStopCommandWrapper extends CommandWrapper<StopCommand, 
                                 networks.add(vif.getNetwork(conn));
                             }
                             vm.destroy(conn);
-                            final SR sr = citrixResourceBase.getISOSRbyVmName(conn, command.getVmName());
+                            final SR sr = citrixResourceBase.getISOSRbyVmName(conn, command.getVmName(), false);
                             citrixResourceBase.removeSR(conn, sr);
+                            final SR configDriveSR = citrixResourceBase.getISOSRbyVmName(conn, command.getVmName(), true);
+                            citrixResourceBase.removeSR(conn, configDriveSR);
                             // Disable any VLAN networks that aren't used
                             // anymore
                             for (final Network network : networks) {

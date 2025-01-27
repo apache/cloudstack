@@ -57,7 +57,7 @@ public class BaseDirectTemplateDownloaderTest {
     private HttpEntity httpEntity;
 
     @InjectMocks
-    protected HttpsDirectTemplateDownloader httpsDownloader = new HttpsDirectTemplateDownloader(httpUrl, 1000, 1000, 1000);
+    protected HttpsDirectTemplateDownloader httpsDownloader = new HttpsDirectTemplateDownloader(httpUrl, 1000, 1000, 1000, false);
 
     private AutoCloseable closeable;
 

@@ -68,7 +68,7 @@ public class CreateVMScheduleCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACTION,
             type = CommandType.STRING,
             required = true,
-            description = "Action to take on the VM (start/stop/restart/force_stop/force_reboot).")
+            description = "Action to take on the VM (start/stop/reboot/force_stop/force_reboot).")
     private String action;
 
     @Parameter(name = ApiConstants.START_DATE,

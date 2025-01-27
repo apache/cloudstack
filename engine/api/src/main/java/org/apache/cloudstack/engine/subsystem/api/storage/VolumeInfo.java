@@ -26,7 +26,7 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.vm.VirtualMachine;
 
-public interface VolumeInfo extends DataObject, Volume {
+public interface VolumeInfo extends DownloadableDataInfo, Volume {
 
     boolean isAttachedVM();
 

@@ -129,7 +129,7 @@ public class PublicNetworkGuru extends AdapterBase implements NetworkGuru {
             if (vm.getType().equals(VirtualMachine.Type.ConsoleProxy) || vm.getType().equals(VirtualMachine.Type.SecondaryStorageVm)) {
                 forSystemVms = true;
             }
-            PublicIp ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.VirtualNetwork, null, null, false, forSystemVms);
+            PublicIp ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), null, vm.getOwner(), VlanType.VirtualNetwork, null, null, forSystemVms, forSystemVms);
             nic.setIPv4Address(ip.getAddress().toString());
             nic.setIPv4Gateway(ip.getGateway());
             nic.setIPv4Netmask(ip.getNetmask());

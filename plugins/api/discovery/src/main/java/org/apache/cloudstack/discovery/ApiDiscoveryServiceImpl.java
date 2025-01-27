@@ -18,8 +18,10 @@ package org.apache.cloudstack.discovery;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -28,21 +30,22 @@ import java.util.Set;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.APIChecker;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RoleService;
-import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.command.user.discovery.ListApisCmd;
 import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 import org.apache.cloudstack.api.response.ApiParameterResponse;
 import org.apache.cloudstack.api.response.ApiResponseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.reflections.ReflectionUtils;
 import org.springframework.stereotype.Component;
@@ -215,6 +218,9 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
                     paramResponse.setSince(parameterAnnotation.since());
                 }
                 paramResponse.setRelated(parameterAnnotation.entityType()[0].getName());
+                if (parameterAnnotation.authorized() != null) {
+                    paramResponse.setAuthorizedRoleTypes(Arrays.asList(parameterAnnotation.authorized()));
+                }
                 response.addParam(paramResponse);
             }
         }
@@ -247,6 +253,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
 
         if (user == null)
             return null;
+        Account account = accountService.getAccount(user.getAccountId());
 
         if (name != null) {
             if (!s_apiNameDiscoveryResponseMap.containsKey(name))
@@ -260,10 +267,9 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
                     return null;
                 }
             }
-            responseList.add(s_apiNameDiscoveryResponseMap.get(name));
+            responseList.add(getApiDiscoveryResponseWithAccessibleParams(name, account));
 
         } else {
-            Account account = accountService.getAccount(user.getAccountId());
             if (account == null) {
                 throw new PermissionDeniedException(String.format("The account with id [%s] for user [%s] is null.", user.getAccountId(), user));
             }
@@ -284,11 +290,31 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             }
 
             for (String apiName: apisAllowed) {
-                responseList.add(s_apiNameDiscoveryResponseMap.get(apiName));
+                responseList.add(getApiDiscoveryResponseWithAccessibleParams(apiName, account));
             }
         }
         response.setResponses(responseList);
         return response;
+    }
+
+    private static ApiDiscoveryResponse getApiDiscoveryResponseWithAccessibleParams(String name, Account account) {
+        if (Account.Type.ADMIN.equals(account.getType())) {
+            return s_apiNameDiscoveryResponseMap.get(name);
+        }
+        ApiDiscoveryResponse apiDiscoveryResponse =
+                new ApiDiscoveryResponse(s_apiNameDiscoveryResponseMap.get(name));
+        Iterator<ApiParameterResponse> iterator = apiDiscoveryResponse.getParams().iterator();
+        while (iterator.hasNext()) {
+            ApiParameterResponse parameterResponse = iterator.next();
+            List<RoleType> authorizedRoleTypes = parameterResponse.getAuthorizedRoleTypes();
+            RoleType accountRoleType = RoleType.getByAccountType(account.getType());
+            if (CollectionUtils.isNotEmpty(parameterResponse.getAuthorizedRoleTypes()) &&
+                    accountRoleType != null &&
+                    !authorizedRoleTypes.contains(accountRoleType)) {
+                iterator.remove();
+            }
+        }
+        return apiDiscoveryResponse;
     }
 
     @Override

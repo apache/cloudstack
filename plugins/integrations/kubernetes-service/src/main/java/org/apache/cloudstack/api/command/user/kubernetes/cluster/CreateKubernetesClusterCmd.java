@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.kubernetes.cluster;
 
-import java.security.InvalidParameterException;
-
 import javax.inject.Inject;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -227,7 +225,7 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     public Long getNodeRootDiskSize() {
         if (nodeRootDiskSize != null) {
             if (nodeRootDiskSize < DEFAULT_NODE_ROOT_DISK_SIZE) {
-                throw new InvalidParameterException("Provided node root disk size is lesser than default size of " + DEFAULT_NODE_ROOT_DISK_SIZE +"GB");
+                throw new InvalidParameterValueException("Provided node root disk size is lesser than default size of " + DEFAULT_NODE_ROOT_DISK_SIZE +"GB");
             }
             return nodeRootDiskSize;
         } else {
@@ -272,26 +270,23 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getCreateEventDescription() {
-        return "creating Kubernetes cluster";
+        return "Creating Kubernetes cluster";
     }
 
     @Override
     public String getEventDescription() {
-        return "Creating Kubernetes cluster. Cluster Id: " + getEntityId();
+        return "Creating Kubernetes cluster Id: " + getEntityId();
     }
 
     @Override
     public ApiCommandResourceType getApiResourceType() {
-        return ApiCommandResourceType.VirtualMachine;
+        return ApiCommandResourceType.KubernetesCluster;
     }
 
     @Override
     public void execute() {
         try {
-            if (KubernetesCluster.ClusterType.valueOf(getClusterType()) == KubernetesCluster.ClusterType.CloudManaged
-                    && !kubernetesClusterService.startKubernetesCluster(getEntityId(), true)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to start Kubernetes cluster");
-            }
+            kubernetesClusterService.startKubernetesCluster(this);
             KubernetesClusterResponse response = kubernetesClusterService.createKubernetesClusterResponse(getEntityId());
             response.setResponseName(getCommandName());
             setResponseObject(response);

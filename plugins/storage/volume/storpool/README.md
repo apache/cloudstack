@@ -11,7 +11,6 @@ Secondary storage stores the following:
 * ISO images — disc images containing data or bootable media for operating systems
 * Disk volume snapshots — saved copies of VM data which can be used for data recovery or to create new templates
 
-
 ### ROOT and DATA volumes
 
 ROOT volumes correspond to the boot disk of a VM. They are created automatically by CloudStack during VM creation.
@@ -20,7 +19,6 @@ is based on. We may change the ROOT volume disk offering but only to another sys
 
 DATA volumes correspond to additional disks. These can be created by users and then attached/detached to VMs.
 DATA volumes are created based on a user-defined disk offering.
-
 
 ## Plugin Organization
 
@@ -48,7 +46,6 @@ that does pretty much the same.
 
 Note that for the present the StorPool plugin may only be used for a single primary storage cluster; support for
 multiple clusters is planned.
-
 
 ## Build, Install, Setup
 
@@ -121,7 +118,6 @@ SP_TEMPLATE - name of StorPool's template
 
 Storage Tags: If left blank, the StorPool storage plugin will use the pool name to create a corresponding storage tag.
 This storage tag may be used later, when defining service or disk offerings.
-
 
 ## Plugin Functionality
 
@@ -294,7 +290,7 @@ This is independent of StorPool as snapshots exist on secondary.
 ### Creating ROOT volume from templates
 
 When creating the first volume based on the given template, if snapshot of the template does not exists on StorPool it will be first downloaded (cached) to PRIMARY storage.
-This is mapped to a StorPool snapshot so, creating succecutive volumes from the same template does not incur additional 
+This is mapped to a StorPool snapshot so, creating succecutive volumes from the same template does not incur additional
 copying of data to PRIMARY storage.
 
 This cached snapshot is garbage collected when the original template is deleted from CloudStack. This cleanup is done
@@ -344,6 +340,44 @@ Max IOPS are kept in StorPool's volumes with the help of custom service offering
 corresponding system disk offering.
 
 CloudStack has no way to specify max BW. Do they want to be able to specify max BW only is sufficient.
+
+================================================================================
+
+StorPool provides the ‘storpool_qos’ service ([QoS user guide](https://kb.storpool.com/storpool_misc/qos.html#storpool-qos-user-guide)) that tracks and configures the storage tier for all volumes based on a specifically provided `qc` tag specifying the storage tier for each volume.
+
+To manage the QoS limits with a `qc` tag, you have to add a `qc` tag resource detail to each disk offering to which a tier should be applied, with a key `SP_QOSCLASS` and the value from the configuration file for the `storpool_qos` service:
+
+	add resourcedetail resourceid={diskofferingid} details[0].key=SP_QOSCLASS details[0].value={the name of the tier from the config} resourcetype=DiskOffering
+
+To change the tier via CloudStack, you can use the CloudStack API call `changeOfferingForVolume`. The size is required, but the user could use the current volume size. Example:
+
+	change offeringforvolume id={The UUID of the Volume} diskofferingid={The UUID of the disk offering} size={The current or a new size for the volume}
+
+Users who were using the offerings to change the StorPool template via the `SP_TEMPLATE` detail, will continue to have this functionality but should use `changeOfferingForVolume` API call instead of:
+ - `resizeVolume` API call for DATA disk
+ - `scaleVirtualMachine` API call for ROOT disk
+
+If the disk offering has both `SP_TEMPLATE` and `SP_QOSCLASS` defined, the `SP_QOSCLASS` detail will be prioritised, setting the volume’s QoS using the respective ‘qc’ tag value. In case the QoS for a volume is changed manually, the ‘storpool_qos’ service will automatically reset the QoS limits following the ‘qc’ tag value once per minute.
+
+<h4>Usage</h4>
+
+Creating Disk Offering for each tier.
+
+Go to Service Offerings > Disk Offering > Add disk offering.
+
+Add disk offering detail with API call in CloudStack CLI.
+
+	add resourcedetail resourcetype=diskoffering resourceid=$UUID details[0].key=SP_QOSCLASS details[0].value=$Tier Name
+
+Creating VM with QoS
+
+Deploy virtual machine: Go to Compute> Instances> Add Instances.
+ - For the ROOT volume, choose the option `Override disk offering`. This will set the required `qc` tag from the disk offering (DO) detail.
+
+Creating DATA disk with QoS
+ - Create volume via GUI/CLI and choose a disk offering which has the required `SP_QOSCLASS` detail
+
+To update the tier of a ROOT/DATA volume go to Storage> Volumes and select the Volume and click on the Change disk offering for the volume in the upper right corner.
 
 ## Supported operations for Volume encryption
 

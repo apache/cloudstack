@@ -17,7 +17,7 @@ specific language governing permissions and limitations
 under the License.
 -->
 <securitygroups>
-<!-- 
+<!--
 		STEPS/TEST CASES COVERED:
 		2. Create a User and its Account
 		2. Register User Keys
@@ -26,7 +26,7 @@ under the License.
 		5. Release the IP Address
 		6. Reboot the VM
 		7. Stop the VM
-		8. Start the VM 
+		8. Start the VM
 		9. List Routers
 		10. Stop Router
 		11.	List Router
@@ -36,7 +36,7 @@ under the License.
 		15.	Recover virtual machine
 		16. Verify that vm is destroyed
 		17. Delete Account
-		
+
 -->
 
 	<command>
@@ -78,7 +78,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>registerUserKeys</name>
 		<testcase>Registering the User</testcase>
@@ -99,7 +99,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>createNetworkGroup</name>
 		<usercommand>true</usercommand>
@@ -113,7 +113,7 @@ under the License.
 	</command>
 
 	<!-- FIRST INGRESS RULE -->
-	
+
 	<command>
 		<name>authorizeNetworkGroupIngress</name>
 		<testcase>Add the First Ingress Rule</testcase>
@@ -148,7 +148,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -182,7 +182,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -193,8 +193,8 @@ under the License.
 				<value>120</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -210,7 +210,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -221,8 +221,8 @@ under the License.
 				<value>60</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>stopVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -234,7 +234,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>startVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -246,7 +246,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>rebootVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -293,7 +293,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-			
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -310,9 +310,9 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<!-- SECOND INGRESS RULE -->
-	
+
 	<command>
 		<name>authorizeNetworkGroupIngress</name>
 		<testcase>Add the Second Ingress Rule</testcase>
@@ -347,7 +347,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -381,7 +381,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -392,8 +392,8 @@ under the License.
 				<value>120</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -410,7 +410,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>revokeNetworkGroupIngress</name>
 		<testcase>Revoke The Second Ingress Rule</testcase>
@@ -447,7 +447,7 @@ under the License.
 	</command>
 
 	<!-- THIRD INGRESS RULE -->
-	
+
 	<command>
 		<name>authorizeNetworkGroupIngress</name>
 		<testcase>Add the Third Ingress Rule</testcase>
@@ -482,7 +482,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -516,7 +516,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -527,8 +527,8 @@ under the License.
 				<value>120</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -545,7 +545,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>revokeNetworkGroupIngress</name>
 		<testcase>Revoke The Third Ingress Rule</testcase>
@@ -580,9 +580,9 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<!-- FOURTH INGRESS RULE -->
-	
+
 	<command>
 		<name>authorizeNetworkGroupIngress</name>
 		<testcase>Add the Fourth Ingress Rule</testcase>
@@ -617,7 +617,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>deployVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -651,7 +651,7 @@ under the License.
 			</item>
 		</returnvalue>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -662,8 +662,8 @@ under the License.
 				<value>120</value>
 			</item>
 		</parameters>
-	</command>	
-	
+	</command>
+
 	<command>
 		<name>ssh.sh</name>
 		<script>true</script>
@@ -680,7 +680,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>revokeNetworkGroupIngress</name>
 		<testcase>Revoke The Fourth Ingress Rule</testcase>
@@ -715,8 +715,8 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
-	
+
+
 	<!-- Clean Up -->
 	<command>
 		<name>deleteNetworkGroup</name>
@@ -729,7 +729,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-		
+
 	<command>
 		<name>destroyVirtualMachine</name>
 		<usercommand>true</usercommand>
@@ -741,7 +741,7 @@ under the License.
 			</item>
 		</parameters>
 	</command>
-	
+
 	<command>
 		<name>sleep.sh</name>
 		<script>true</script>
@@ -752,10 +752,10 @@ under the License.
 				<value>120</value>
 			</item>
 		</parameters>
-	</command>	
-	
-	
-<!--  Delete user as a part of cleanup -->	
+	</command>
+
+
+<!--  Delete user as a part of cleanup -->
 	<command>
 		<name>deleteUser</name>
 		<testcase>Deleting the user</testcase>
@@ -765,6 +765,6 @@ under the License.
 				<param>userid</param>
 			</item>
 		</parameters>
-	</command>			
+	</command>
 
 </securitygroups>

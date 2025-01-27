@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -41,9 +41,9 @@ no_dhcp_release=$?
 [ ! -f /etc/dhcphosts.txt ] && touch /etc/dhcphosts.txt
 [ ! -f /var/lib/misc/dnsmasq.leases ] && touch /var/lib/misc/dnsmasq.leases
 
-sed -i  /$1/d /etc/dhcphosts.txt 
-sed -i  /$2,/d /etc/dhcphosts.txt 
-sed -i  /$3,/d /etc/dhcphosts.txt 
+sed -i  /$1/d /etc/dhcphosts.txt
+sed -i  /$2,/d /etc/dhcphosts.txt
+sed -i  /$3,/d /etc/dhcphosts.txt
 
 echo "$1,$2,$3,infinite" >>/etc/dhcphosts.txt
 
@@ -54,9 +54,9 @@ then
 fi
 
 #delete leases to supplied mac and ip addresses
-sed -i  /$1/d /var/lib/misc/dnsmasq.leases 
-sed -i  /"$2 "/d /var/lib/misc/dnsmasq.leases 
-sed -i  /"$3 "/d /var/lib/misc/dnsmasq.leases 
+sed -i  /$1/d /var/lib/misc/dnsmasq.leases
+sed -i  /"$2 "/d /var/lib/misc/dnsmasq.leases
+sed -i  /"$3 "/d /var/lib/misc/dnsmasq.leases
 
 #put in the new entry
 echo "0 $1 $2 $3 *" >> /var/lib/misc/dnsmasq.leases

@@ -617,7 +617,6 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             }
 
             metricsResponse.setHasAnnotation(vmResponse.hasAnnotation());
-            metricsResponse.setIpAddress(vmResponse.getNics());
             metricsResponse.setCpuTotal(vmResponse.getCpuNumber(), vmResponse.getCpuSpeed());
             metricsResponse.setMemTotal(vmResponse.getMemory());
             metricsResponse.setNetworkRead(vmResponse.getNetworkKbsRead());
@@ -852,7 +851,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         }
         for (final ManagementServerResponse managementServerResponse: managementServerResponses) {
             if(logger.isDebugEnabled()) {
-                logger.debug(String.format("Processing metrics for MS hosts %s.", managementServerResponse.getId()));
+                logger.debug("Processing metrics for MS host [id: {}, name: {}].", managementServerResponse.getId(), managementServerResponse.getName());
             }
             ManagementServerMetricsResponse metricsResponse = new ManagementServerMetricsResponse();
 

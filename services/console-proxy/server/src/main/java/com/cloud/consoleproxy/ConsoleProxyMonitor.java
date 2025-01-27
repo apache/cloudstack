@@ -24,7 +24,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-import com.cloud.consoleproxy.util.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 
 //
@@ -33,7 +34,7 @@ import org.apache.logging.log4j.core.config.Configurator;
 // itself and the shell script will re-launch console proxy
 //
 public class ConsoleProxyMonitor {
-    protected Logger logger = Logger.getLogger(getClass());
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private String[] _argv;
     private Map<String, String> _argMap = new HashMap<String, String>();

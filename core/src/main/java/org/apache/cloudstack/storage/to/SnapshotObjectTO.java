@@ -30,7 +30,7 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
-public class SnapshotObjectTO implements DataTO {
+public class SnapshotObjectTO extends DownloadableObjectTO implements DataTO {
     private String path;
     private VolumeObjectTO volume;
     private String parentSnapshotPath;

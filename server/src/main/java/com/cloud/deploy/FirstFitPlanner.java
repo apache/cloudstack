@@ -133,16 +133,16 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         //check if datacenter is in avoid set
         if (avoid.shouldAvoid(dc)) {
             if (logger.isDebugEnabled()) {
-                logger.debug("DataCenter id = '" + dc.getId() + "' provided is in avoid set, DeploymentPlanner cannot allocate the VM, returning.");
+                logger.debug("DataCenter {} provided is in avoid set, DeploymentPlanner cannot allocate the VM, returning.", dc);
             }
             return null;
         }
 
-        List<Long> clusterList = new ArrayList<Long>();
+        List<Long> clusterList = new ArrayList<>();
         if (plan.getClusterId() != null) {
             Long clusterIdSpecified = plan.getClusterId();
-            logger.debug("Searching resources only under specified Cluster: " + clusterIdSpecified);
             ClusterVO cluster = clusterDao.findById(plan.getClusterId());
+            logger.debug("Searching resources only under specified Cluster: {}", cluster != null ? cluster : clusterIdSpecified);
             if (cluster != null) {
                 if (avoid.shouldAvoid(cluster)) {
                     logger.debug("The specified cluster is in avoid set, returning.");
@@ -158,9 +158,9 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         } else if (plan.getPodId() != null) {
             //consider clusters under this pod only
             Long podIdSpecified = plan.getPodId();
-            logger.debug("Searching resources only under specified Pod: " + podIdSpecified);
 
             HostPodVO pod = podDao.findById(podIdSpecified);
+            logger.debug("Searching resources only under specified Pod: {}", pod != null ? pod : podIdSpecified);
             if (pod != null) {
                 if (avoid.shouldAvoid(pod)) {
                     logger.debug("The specified pod is in avoid set, returning.");
@@ -176,7 +176,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                 return null;
             }
         } else {
-            logger.debug("Searching all possible resources under this Zone: " + plan.getDataCenterId());
+            logger.debug("Searching all possible resources under this Zone: {}", dcDao.findById(plan.getDataCenterId()));
 
             boolean applyAllocationAtPods = Boolean.parseBoolean(configDao.getValue(Config.ApplyAllocationAlgorithmToPods.key()));
             if (applyAllocationAtPods) {
@@ -209,7 +209,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     }
 
     private void reorderClustersBasedOnImplicitTags(List<Long> clusterList, int requiredCpu, long requiredRam) {
-            final HashMap<Long, Long> UniqueTagsInClusterMap = new HashMap<Long, Long>();
+            final HashMap<Long, Long> UniqueTagsInClusterMap = new HashMap<>();
             Long uniqueTags;
             for (Long clusterId : clusterList) {
                 uniqueTags = (long) 0;
@@ -220,7 +220,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                 }
                 UniqueTagsInClusterMap.put(clusterId, uniqueTags);
             }
-            Collections.sort(clusterList, new Comparator<Long>() {
+            Collections.sort(clusterList, new Comparator<>() {
                 @Override
                 public int compare(Long o1, Long o2) {
                     Long t1 = UniqueTagsInClusterMap.get(o1);
@@ -249,7 +249,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         int requiredCpu = offering.getCpu() * offering.getSpeed();
         long requiredRam = offering.getRamSize() * 1024L * 1024L;
         //list pods under this zone by cpu and ram capacity
-        List<Long> prioritizedPodIds = new ArrayList<Long>();
+        List<Long> prioritizedPodIds;
         Pair<List<Long>, Map<Long, Double>> podCapacityInfo = listPodsByCapacity(plan.getDataCenterId(), requiredCpu, requiredRam);
         List<Long> podsWithCapacity = podCapacityInfo.first();
 
@@ -277,7 +277,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                 return null;
             }
 
-            List<Long> clusterList = new ArrayList<Long>();
+            List<Long> clusterList = new ArrayList<>();
             //loop over pods
             for (Long podId : prioritizedPodIds) {
                 logger.debug("Checking resources under Pod: " + podId);
@@ -298,7 +298,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     private Map<Short, Float> getCapacityThresholdMap() {
         // Lets build this real time so that the admin won't have to restart MS
         // if anyone changes these values
-        Map<Short, Float> disableThresholdMap = new HashMap<Short, Float>();
+        Map<Short, Float> disableThresholdMap = new HashMap<>();
 
         String cpuDisableThresholdString = ClusterCPUCapacityDisableThreshold.value().toString();
         float cpuDisableThreshold = NumbersUtil.parseFloat(cpuDisableThresholdString, 0.85F);
@@ -312,7 +312,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     }
 
     private List<Short> getCapacitiesForCheckingThreshold() {
-        List<Short> capacityList = new ArrayList<Short>();
+        List<Short> capacityList = new ArrayList<>();
         capacityList.add(Capacity.CAPACITY_TYPE_CPU);
         capacityList.add(Capacity.CAPACITY_TYPE_MEMORY);
         return capacityList;
@@ -339,7 +339,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         }
 
         List<Short> capacityList = getCapacitiesForCheckingThreshold();
-        List<Long> clustersCrossingThreshold = new ArrayList<Long>();
+        List<Long> clustersCrossingThreshold = new ArrayList<>();
 
         ServiceOffering offering = vmProfile.getServiceOffering();
         int cpu_requested = offering.getCpu() * offering.getSpeed();
@@ -523,7 +523,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         matchingClusters.addAll(hostDao.findClustersThatMatchHostTagRule(hostTagOnOffering));
 
         if (matchingClusters.isEmpty()) {
-            logger.error(String.format("No suitable host found for the following compute offering tags [%s].", hostTagOnOffering));
+            logger.error("No suitable host found for the following compute offering tags [{}].", hostTagOnOffering);
             throw new CloudRuntimeException("No suitable host found.");
         }
 
@@ -567,7 +567,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        allocationAlgorithm = configDao.getValue(Config.VmAllocationAlgorithm.key());
+        allocationAlgorithm = VmAllocationAlgorithm.value();
         globalDeploymentPlanner = configDao.getValue(Config.VmDeploymentPlanner.key());
         String configValue;
         if ((configValue = configDao.getValue(Config.ImplicitHostTags.key())) != null) {
@@ -594,6 +594,6 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ClusterCPUCapacityDisableThreshold, ClusterMemoryCapacityDisableThreshold, ClusterThresholdEnabled};
+        return new ConfigKey<?>[] {ClusterCPUCapacityDisableThreshold, ClusterMemoryCapacityDisableThreshold, ClusterThresholdEnabled, VmAllocationAlgorithm};
     }
 }

@@ -79,6 +79,7 @@ public interface ScaleIOGatewayClient {
     VolumeStatistics getVolumeStatistics(String volumeId);
     String getSystemId(String protectionDomainId);
     List<Volume> listVolumesInStoragePool(String poolId);
+    List<Volume> listVolumesMappedToSdc(String sdcId);
 
     // SDC APIs
     List<Sdc> listSdcs();
@@ -86,6 +87,7 @@ public interface ScaleIOGatewayClient {
     String getSdcIdByGuid(String sdcGuid);
     Sdc getSdcByIp(String ipAddress);
     Sdc getConnectedSdcByIp(String ipAddress);
+    int getConnectedSdcsCount();
     boolean haveConnectedSdcs();
     boolean isSdcConnected(String sdcId);
     boolean isSdcConnectedByIP(String ipAddress);

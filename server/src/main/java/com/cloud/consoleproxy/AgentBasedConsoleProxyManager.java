@@ -21,8 +21,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.dao.HostPodDao;
 import org.apache.cloudstack.consoleproxy.ConsoleAccessManager;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
@@ -31,6 +31,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.agent.api.StartupProxyCommand;
+import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.info.ConsoleProxyInfo;
@@ -38,9 +39,10 @@ import com.cloud.server.ManagementServer;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.vm.ConsoleProxyVO;
-import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -49,6 +51,8 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
 
     @Inject
     protected HostDao _hostDao;
+    @Inject
+    protected HostPodDao podDao;
     @Inject
     protected UserVmDao _userVmDao;
     protected String _consoleProxyUrlDomain;
@@ -116,7 +120,7 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
             _consoleProxyPort = NumbersUtil.parseInt(value, ConsoleProxyManager.DEFAULT_PROXY_VNC_PORT);
         }
 
-        value = configs.get("consoleproxy.sslEnabled");
+        value = configs.get(ConsoleProxySslEnabled.key());
         if (value != null && value.equalsIgnoreCase("true")) {
             _sslEnabled = true;
         }
@@ -138,17 +142,11 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     }
 
     @Override
-    public ConsoleProxyInfo assignProxy(long dataCenterId, long userVmId) {
-        UserVmVO userVm = _userVmDao.findById(userVmId);
-        if (userVm == null) {
-            logger.warn("User VM " + userVmId + " no longer exists, return a null proxy for user vm:" + userVmId);
-            return null;
-        }
-
+    public ConsoleProxyInfo assignProxy(long dataCenterId, VMInstanceVO userVm) {
         HostVO host = findHost(userVm);
         if (host != null) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Assign embedded console proxy running at " + host.getName() + " to user vm " + userVmId + " with public IP " + host.getPublicIpAddress());
+                logger.debug("Assign embedded console proxy running at {} to user vm {} with public IP {}", host, userVm, host.getPublicIpAddress());
             }
 
             // only private IP, public IP, host id have meaningful values, rest
@@ -170,7 +168,7 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
 
             return new ConsoleProxyInfo(_sslEnabled, publicIp, _consoleProxyPort, urlPort, _consoleProxyUrlDomain);
         } else {
-            logger.warn("Host that VM is running is no longer available, console access to VM " + userVmId + " will be temporarily unavailable.");
+            logger.warn("Host that VM is running is no longer available, console access to VM {} will be temporarily unavailable.", userVm);
         }
         return null;
     }
@@ -178,6 +176,11 @@ public class AgentBasedConsoleProxyManager extends ManagerBase implements Consol
     @Override
     public ConsoleProxyVO startProxy(long proxyVmId, boolean ignoreRestartSetting) {
         return null;
+    }
+
+    @Override
+    public void startProxyForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
+            DeploymentPlanner planner) {
     }
 
     @Override

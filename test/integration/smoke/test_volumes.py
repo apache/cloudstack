@@ -1038,6 +1038,33 @@ class TestVolumes(cloudstackTestCase):
         )
         return
 
+    @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+    def test_14_delete_volume_delete_protection(self):
+        """Delete a Volume with delete protection
+
+        # Validate the following
+        # 1. delete volume will fail when delete protection is enabled
+        # 2. delete volume is successful when delete protection is disabled
+        """
+
+        volume = Volume.create(
+            self.apiclient,
+            self.services,
+            zoneid=self.zone.id,
+            account=self.account.name,
+            domainid=self.account.domainid,
+            diskofferingid=self.disk_offering.id
+        )
+        volume.update(self.apiclient, deleteprotection=True)
+        try:
+            volume.delete(self.apiclient)
+            self.fail("Volume delete should have failed with delete protection enabled")
+        except Exception as e:
+            self.debug("Volume delete failed as expected with error: %s" % e)
+
+        volume.update(self.apiclient, deleteprotection=False)
+        volume.destroy(self.apiclient, expunge=True)
+
 
 class TestVolumeEncryption(cloudstackTestCase):
 

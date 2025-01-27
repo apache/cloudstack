@@ -23,6 +23,7 @@ import java.util.List;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.api.response.BackupScheduleResponse;
 import org.apache.cloudstack.backup.BackupSchedule;
 import org.apache.cloudstack.backup.BackupScheduleVO;
@@ -49,6 +50,7 @@ public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long
         backupScheduleSearch = createSearchBuilder();
         backupScheduleSearch.and("vm_id", backupScheduleSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         backupScheduleSearch.and("async_job_id", backupScheduleSearch.entity().getAsyncJobId(), SearchCriteria.Op.EQ);
+        backupScheduleSearch.and("interval_type", backupScheduleSearch.entity().getScheduleType(), SearchCriteria.Op.EQ);
         backupScheduleSearch.done();
 
         executableSchedulesSearch = createSearchBuilder();
@@ -61,6 +63,21 @@ public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long
     public BackupScheduleVO findByVM(Long vmId) {
         SearchCriteria<BackupScheduleVO> sc = backupScheduleSearch.create();
         sc.setParameters("vm_id", vmId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public List<BackupScheduleVO> listByVM(Long vmId) {
+        SearchCriteria<BackupScheduleVO> sc = backupScheduleSearch.create();
+        sc.setParameters("vm_id", vmId);
+        return listBy(sc, null);
+    }
+
+    @Override
+    public BackupScheduleVO findByVMAndIntervalType(Long vmId, DateUtil.IntervalType intervalType) {
+        SearchCriteria<BackupScheduleVO> sc = backupScheduleSearch.create();
+        sc.setParameters("vm_id", vmId);
+        sc.setParameters("interval_type", intervalType.ordinal());
         return findOneBy(sc);
     }
 

@@ -56,17 +56,10 @@ export default {
         this.url = (json && json.createconsoleendpointresponse) ? json.createconsoleendpointresponse.consoleendpoint.url : '#/exception/404'
         if (json.createconsoleendpointresponse.consoleendpoint.success) {
           if (this.copyUrlToClipboard) {
+            this.$copyText(this.url)
             this.$message.success({
               content: this.$t('label.copied.clipboard')
             })
-            const hiddenElement = document.createElement('textarea')
-            hiddenElement.value = this.url
-            document.body.appendChild(hiddenElement)
-            hiddenElement.focus()
-            hiddenElement.select()
-
-            document.execCommand('copy')
-            document.body.removeChild(hiddenElement)
           } else {
             window.open(this.url, '_blank')
           }

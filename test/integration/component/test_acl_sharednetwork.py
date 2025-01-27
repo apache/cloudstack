@@ -949,7 +949,7 @@ class TestSharedNetwork(cloudstackTestCase):
         Validate that any other user in same domain is NOT allowed to deploy VM in a shared network created with scope="account" for an account
         """
 
-        # deploy VM as user under the same domain but belonging to a different account from the acount that has a shared network with scope=account
+        # deploy VM as user under the same domain but belonging to a different account from the account that has a shared network with scope=account
 
         self.apiclient.connection.apiKey = self.user_d111b_apikey
         self.apiclient.connection.securityKey = self.user_d111b_secretkey

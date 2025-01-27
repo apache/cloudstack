@@ -127,7 +127,7 @@ class CsDhcp(CsDataBag):
             line = "dhcp-option=%s,26,%s" % (device, i['mtu'])
             self.conf.search(sline, line)
 
-        # Netmask
+            # Netmask
             netmask = ''
             if self.config.is_vpc():
                 netmask = gn.get_netmask()

@@ -72,7 +72,14 @@ public class RegisterUserDataCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the userdata")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.USER_DATA, type = CommandType.STRING, required = true, description = "Userdata content", length = 1048576)
+    @Parameter(name = ApiConstants.USER_DATA,
+            type = CommandType.STRING,
+            required = true,
+            description = "Base64 encoded userdata content. " +
+                    "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
+                    "Using HTTP POST (via POST body), you can send up to 1MB of data after base64 encoding. " +
+                    "You also need to change vm.userdata.max.length value",
+            length = 1048576)
     private String userData;
 
     @Parameter(name = ApiConstants.PARAMS, type = CommandType.STRING, description = "comma separated list of variables declared in userdata content")

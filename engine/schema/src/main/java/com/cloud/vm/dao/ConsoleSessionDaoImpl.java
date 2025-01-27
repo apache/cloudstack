@@ -20,6 +20,9 @@
 package com.cloud.vm.dao;
 
 import java.util.Date;
+import java.util.List;
+
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -59,11 +62,22 @@ public class ConsoleSessionDaoImpl extends GenericDaoBase<ConsoleSessionVO, Long
     }
 
     @Override
-    public void acquireSession(String sessionUuid) {
+    public void acquireSession(String sessionUuid, String clientAddress) {
         ConsoleSessionVO consoleSessionVO = findByUuid(sessionUuid);
         consoleSessionVO.setAcquired(new Date());
+        consoleSessionVO.setClientAddress(clientAddress);
         update(consoleSessionVO.getId(), consoleSessionVO);
     }
 
-
+    @Override
+    public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return 0;
+        }
+        SearchBuilder<ConsoleSessionVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getInstanceId(), SearchCriteria.Op.IN);
+        SearchCriteria<ConsoleSessionVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return batchExpunge(sc, batchSize);
+    }
 }

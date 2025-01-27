@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.dc.dao;
 
+import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
@@ -43,6 +44,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements ClusterDao {
@@ -54,6 +56,8 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     protected final SearchBuilder<ClusterVO> ZoneHyTypeSearch;
     protected final SearchBuilder<ClusterVO> ZoneClusterSearch;
     protected final SearchBuilder<ClusterVO> ClusterSearch;
+    protected final SearchBuilder<ClusterVO> ClusterDistinctArchSearch;
+    protected final SearchBuilder<ClusterVO> ClusterArchSearch;
 
     protected GenericSearchBuilder<ClusterVO, Long> ClusterIdSearch;
 
@@ -104,6 +108,16 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         ClusterSearch = createSearchBuilder();
         ClusterSearch.select(null, Func.DISTINCT, ClusterSearch.entity().getHypervisorType());
         ClusterIdSearch.done();
+
+        ClusterDistinctArchSearch = createSearchBuilder();
+        ClusterDistinctArchSearch.and("dataCenterId", ClusterDistinctArchSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        ClusterDistinctArchSearch.select(null, Func.DISTINCT, ClusterDistinctArchSearch.entity().getArch());
+        ClusterDistinctArchSearch.done();
+
+        ClusterArchSearch = createSearchBuilder();
+        ClusterArchSearch.and("dataCenterId", ClusterArchSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        ClusterArchSearch.and("arch", ClusterArchSearch.entity().getArch(), SearchCriteria.Op.EQ);
+        ClusterArchSearch.done();
     }
 
     @Override
@@ -300,5 +314,21 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         }
 
         return false;
+    }
+
+    @Override
+    public List<CPU.CPUArch> getClustersArchsByZone(long zoneId) {
+        SearchCriteria<ClusterVO> sc = ClusterDistinctArchSearch.create();
+        sc.setParameters("dataCenterId", zoneId);
+        List<ClusterVO> clusters = listBy(sc);
+        return clusters.stream().map(ClusterVO::getArch).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<ClusterVO> listClustersByArchAndZoneId(long zoneId, CPU.CPUArch arch) {
+        SearchCriteria<ClusterVO> sc = ClusterArchSearch.create();
+        sc.setParameters("dataCenterId", zoneId);
+        sc.setParameters("arch", arch);
+        return listBy(sc);
     }
 }

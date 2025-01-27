@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -38,7 +38,7 @@ do
   		;;
   c)	cflag=1
   		create_tmplt_path="$OPTARG"
-  		;;    
+  		;;
   ?)	usage
 		exit 2
 		;;
@@ -47,14 +47,14 @@ done
 
 shift $(($OPTIND - 1))
 
-if [ "$tflag" != "1" ] || [ "$cflag" != "1" ] 
+if [ "$tflag" != "1" ] || [ "$cflag" != "1" ]
 then
  usage
  exit 2
 fi
 
 tmpltfs=$template_location/public/os/centos53-x86_64
-if [ "$fflag" == "1" ] 
+if [ "$fflag" == "1" ]
 then
   zfs destroy -Rr $tmpltfs 2> /dev/null
 fi

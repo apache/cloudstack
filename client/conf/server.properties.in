@@ -32,6 +32,9 @@ session.timeout=30
 # Max allowed API request payload/content size in bytes
 request.content.size=1048576
 
+# Max allowed API request form keys
+request.max.form.keys=5000
+
 # Options to configure and enable HTTPS on the management server
 #
 # For the management server to pick up these configuration settings, the configured

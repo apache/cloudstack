@@ -66,44 +66,7 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item ref="domainid" name="domainid" v-if="isAdminOrDomainAdmin()">
-            <template #label>
-              <tooltip-label :title="$t('label.domainid')" :tooltip="apiParams.domainid.description"/>
-            </template>
-            <a-select
-             v-model:value="form.domainid"
-              showSearch
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }"
-              :loading="domain.loading"
-              :placeholder="apiParams.domainid.description"
-              @change="val => { handleDomainChange(domains[val]) }">
-              <a-select-option v-for="(opt, optIndex) in domains" :key="optIndex" :label="opt.path || opt.name || opt.description">
-                {{ opt.path || opt.name || opt.description }}
-              </a-select-option>
-            </a-select>
-          </a-form-item>
-          <a-form-item ref="account" name="account" v-if="accountVisible">
-            <template #label>
-              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
-            </template>
-            <a-select
-             v-model:value="form.account"
-              showSearch
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }"
-              :loading="accountLoading"
-              :placeholder="apiParams.account.description"
-              @change="val => { handleAccountChange(accounts[val]) }">
-              <a-select-option v-for="(opt, optIndex) in accounts" :key="optIndex">
-                {{ opt.name || opt.description }}
-              </a-select-option>
-            </a-select>
-          </a-form-item>
+          <ownership-selection v-if="isAdminOrDomainAdmin()" @fetch-owner="fetchOwnerOptions"/>
           <a-form-item
             ref="networkdomain"
             name="networkdomain"
@@ -131,6 +94,25 @@
               @change="val => { handleNetworkOfferingChange(networkOfferings[val]) }">
               <a-select-option v-for="(opt, optIndex) in networkOfferings" :key="optIndex" :label="opt.displaytext || opt.name || opt.description">
                 {{ opt.displaytext || opt.name || opt.description }}
+              </a-select-option>
+            </a-select>
+          </a-form-item>
+          <a-form-item ref="asnumber" name="asnumber" v-if="isASNumberRequired()">
+            <template #label>
+              <tooltip-label :title="$t('label.asnumber')" :tooltip="apiParams.asnumber.description"/>
+            </template>
+            <a-select
+             v-model:value="form.asnumber"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+              }"
+              :loading="asNumberLoading"
+              :placeholder="apiParams.asnumber.description"
+              @change="val => { handleASNumberChange(val) }">
+              <a-select-option v-for="(opt, optIndex) in asNumbersZone" :key="optIndex" :label="opt.asnumber">
+                {{ opt.asnumber }}
               </a-select-option>
             </a-select>
           </a-form-item>
@@ -210,6 +192,7 @@
               :placeholder="apiParams.externalid.description"/>
           </a-form-item>
           <a-form-item
+            v-if="selectedNetworkOffering && (selectedNetworkOffering.networkmode !== 'ROUTED' || isAdmin())"
             ref="gateway"
             name="gateway">
             <template #label>
@@ -220,6 +203,7 @@
               :placeholder="apiParams.gateway.description"/>
           </a-form-item>
           <a-form-item
+            v-if="selectedNetworkOffering && (selectedNetworkOffering.networkmode !== 'ROUTED' || isAdmin())"
             ref="netmask"
             name="netmask">
             <template #label>
@@ -228,6 +212,17 @@
             <a-input
              v-model:value="form.netmask"
               :placeholder="apiParams.netmask.description"/>
+          </a-form-item>
+          <a-form-item
+            v-if="selectedNetworkOffering && selectedNetworkOffering.networkmode === 'ROUTED'"
+            ref="cidrsize"
+            name="cidrsize">
+            <template #label>
+              <tooltip-label :title="$t('label.cidrsize')" :tooltip="apiParams.cidrsize.description"/>
+            </template>
+            <a-input
+              v-model:value="form.cidrsize"
+              :placeholder="apiParams.cidrsize.description"/>
           </a-form-item>
           <a-form-item v-if="selectedNetworkOffering && selectedNetworkOffering.specifyipranges" name="startip" ref="startip">
             <template #label>
@@ -299,28 +294,6 @@
               v-model:value="form.sourcenatipaddress"
               :placeholder="apiParams.sourcenatipaddress?.description"/>
           </a-form-item>
-          <a-form-item
-            ref="networkdomain"
-            name="networkdomain"
-            v-if="!isObjectEmpty(selectedNetworkOffering) && !selectedNetworkOffering.forvpc">
-            <template #label>
-              <tooltip-label :title="$t('label.networkdomain')" :tooltip="apiParams.networkdomain.description"/>
-            </template>
-            <a-input
-             v-model:value="form.networkdomain"
-              :placeholder="apiParams.networkdomain.description"/>
-          </a-form-item>
-          <a-form-item
-            ref="account"
-            name="account"
-            v-if="accountVisible">
-            <template #label>
-              <tooltip-label :title="$t('label.account')" :tooltip="apiParams.account.description"/>
-            </template>
-            <a-input
-             v-model:value="form.account"
-              :placeholder="apiParams.account.description"/>
-          </a-form-item>
           <div :span="24" class="action-button">
             <a-button
               :loading="actionLoading"
@@ -349,13 +322,15 @@ import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
 
 export default {
   name: 'CreateIsolatedNetworkForm',
   mixins: [mixinForm],
   components: {
     TooltipLabel,
-    ResourceIcon
+    ResourceIcon,
+    OwnershipSelection
   },
   props: {
     loading: {
@@ -374,13 +349,9 @@ export default {
   data () {
     return {
       actionLoading: false,
-      domains: [],
-      domain: { loading: false },
-      selectedDomain: {},
+      owner: {},
       accountVisible: isAdminOrDomainAdmin(),
-      accounts: [],
       accountLoading: false,
-      selectedAccount: {},
       zones: [],
       zoneLoading: false,
       selectedZone: {},
@@ -395,7 +366,10 @@ export default {
       minMTU: 68,
       errorPublicMtu: '',
       errorPrivateMtu: '',
-      setMTU: false
+      setMTU: false,
+      asNumberLoading: false,
+      selectedAsNumber: 0,
+      asNumbersZone: []
     }
   },
   watch: {
@@ -410,12 +384,6 @@ export default {
     this.apiParams = this.$getApiParams('createNetwork')
   },
   created () {
-    this.domains = [
-      {
-        id: '-1',
-        name: ' '
-      }
-    ]
     this.initForm()
     this.fetchData()
   },
@@ -449,14 +417,19 @@ export default {
       })
     },
     fetchData () {
-      this.fetchDomainData()
       this.fetchZoneData()
       this.allowSettingMTU()
     },
     allowSettingMTU () {
     },
+    isAdmin () {
+      return isAdmin()
+    },
     isAdminOrDomainAdmin () {
       return isAdminOrDomainAdmin()
+    },
+    isASNumberRequired () {
+      return !this.isObjectEmpty(this.selectedNetworkOffering) && this.selectedNetworkOffering.specifyasnumber && this.selectedNetworkOffering?.routingmode.toLowerCase() === 'dynamic'
     },
     isObjectEmpty (obj) {
       return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
@@ -495,44 +468,48 @@ export default {
       this.privateMtuMax = zone?.routerprivateinterfacemaxmtu || 1500
       this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
       this.updateVPCCheckAndFetchNetworkOfferingData()
-    },
-    fetchDomainData () {
-      if ('listDomains' in this.$store.getters.apis) {
-        this.domain.loading = true
-        this.loadMore('listDomains', 1, this.domain)
+      if (this.isASNumberRequired()) {
+        this.fetchZoneASNumbers()
       }
     },
-    loadMore (apiToCall, page, sema) {
+    fetchZoneASNumbers () {
       const params = {}
-      params.listAll = true
-      params.details = 'min'
-      params.pagesize = 100
-      params.page = page
-      var count
-      api(apiToCall, params).then(json => {
-        const listDomains = json.listdomainsresponse.domain
-        count = json.listdomainsresponse.count
-        this.domains = this.domains.concat(listDomains)
-      }).finally(() => {
-        if (count <= this.domains.length) {
-          sema.loading = false
-        } else {
-          this.loadMore(apiToCall, page + 1, sema)
-        }
-        this.form.domainid = 0
-        this.handleDomainChange(this.domains[0])
+      this.asNumberLoading = true
+      params.zoneid = this.selectedZone.id
+      params.isallocated = false
+      api('listASNumbers', params).then(json => {
+        this.asNumbersZone = json.listasnumbersresponse.asnumber
+        this.asNumberLoading = false
       })
     },
-    handleDomainChange (domain) {
-      this.selectedDomain = domain
-      this.accountVisible = domain.id !== '-1'
+    handleASNumberChange (selectedIndex) {
+      this.selectedAsNumber = this.asNumbersZone[selectedIndex].asnumber
+      this.form.asnumber = this.selectedAsNumber
+    },
+    fetchOwnerOptions (OwnerOptions) {
+      this.owner = {
+        projectid: null,
+        domainid: this.$store.getters.userInfo.domainid,
+        account: this.$store.getters.userInfo.account
+      }
+      if (OwnerOptions.selectedAccountType === 'Account') {
+        if (!OwnerOptions.selectedAccount) {
+          return
+        }
+        this.owner.account = OwnerOptions.selectedAccount
+        this.owner.domainid = OwnerOptions.selectedDomain
+        this.owner.projectid = null
+      } else if (OwnerOptions.selectedAccountType === 'Project') {
+        if (!OwnerOptions.selectedProject) {
+          return
+        }
+        this.owner.account = null
+        this.owner.domainid = null
+        this.owner.projectid = OwnerOptions.selectedProject
+      }
       if (isAdminOrDomainAdmin()) {
         this.updateVPCCheckAndFetchNetworkOfferingData()
-        this.fetchAccounts()
       }
-    },
-    handleAccountChange (account) {
-      this.selectedAccount = account
     },
     updateVPCCheckAndFetchNetworkOfferingData () {
       if (this.vpc !== null) { // from VPC section
@@ -562,8 +539,8 @@ export default {
         guestiptype: 'Isolated',
         state: 'Enabled'
       }
-      if (isAdminOrDomainAdmin() && this.selectedDomain.id !== '-1') { // domain is visible only for admins
-        params.domainid = this.selectedDomain.id
+      if (isAdminOrDomainAdmin() && this.owner.domainid !== '-1') { // domain is visible only for admins
+        params.domainid = this.owner.domainid
       }
       if (!isAdmin()) { // normal user is not aware of the VLANs in the system, so normal user is not allowed to create network with network offerings whose specifyvlan = true
         params.specifyvlan = false
@@ -575,8 +552,9 @@ export default {
       this.selectedNetworkOffering = {}
       api('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering
-        if (this.selectedZone.isnsxenabled) {
-          this.networkOfferings = this.networkOfferings.filter(offering => offering.fornsx)
+        this.networkOfferings = this.networkOfferings.filter(offering => offering.fornsx === this.selectedZone.isnsxenabled)
+        if (!this.selectedZone.routedmodeenabled) {
+          this.networkOfferings = this.networkOfferings.filter(offering => offering.networkmode !== 'ROUTED')
         }
       }).catch(error => {
         this.$notifyError(error)
@@ -592,6 +570,9 @@ export default {
       this.selectedNetworkOffering = networkOffering
       if (networkOffering.forvpc) {
         this.fetchVpcData()
+      }
+      if (this.isASNumberRequired()) {
+        this.fetchZoneASNumbers()
       }
     },
     fetchVpcData () {
@@ -613,37 +594,11 @@ export default {
         }
       })
     },
-    fetchAccounts () {
-      this.accountLoading = true
-      var params = {}
-      if (isAdminOrDomainAdmin() && this.selectedDomain.id !== '-1') { // domain is visible only for admins
-        params.domainid = this.selectedDomain.id
-      }
-      this.accounts = [
-        {
-          id: '-1',
-          name: ' '
-        }
-      ]
-      this.selectedAccount = {}
-      api('listAccounts', params).then(json => {
-        const listAccounts = json.listaccountsresponse.account || []
-        this.accounts = this.accounts.concat(listAccounts)
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.accountLoading = false
-        if (this.arrayHasItems(this.accounts)) {
-          this.form.account = null
-        }
-      })
-    },
     handleSubmit () {
       if (this.actionLoading) return
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
-        console.log(values)
         this.actionLoading = true
         var params = {
           zoneId: this.selectedZone.id,
@@ -651,7 +606,7 @@ export default {
           displayText: values.displaytext,
           networkOfferingId: this.selectedNetworkOffering.id
         }
-        var usefulFields = ['gateway', 'netmask', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
+        var usefulFields = ['gateway', 'netmask', 'cidrsize', 'startip', 'startipv4', 'endip', 'endipv4', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'sourcenatipaddress', 'externalid', 'vpcid', 'vlan', 'networkdomain']
         for (var field of usefulFields) {
           if (this.isValidTextValueForKey(values, field)) {
             params[field] = values[field]
@@ -666,12 +621,19 @@ export default {
         if ('vpcid' in values) {
           params.vpcid = this.selectedVpc.id
         }
-        if ('domainid' in values && values.domainid > 0) {
-          params.domainid = this.selectedDomain.id
-          if (this.isValidTextValueForKey(values, 'account') && this.selectedAccount.id !== '-1') {
-            params.account = this.selectedAccount.name
-          }
+
+        if (this.owner.account) {
+          params.account = this.owner.account
+          params.domainid = this.owner.domainid
+        } else if (this.owner.projectid) {
+          params.domainid = this.owner.domainid
+          params.projectid = this.owner.projectid
         }
+
+        if ('asnumber' in values && this.isASNumberRequired()) {
+          params.asnumber = values.asnumber
+        }
+
         api('createNetwork', params).then(json => {
           this.$notification.success({
             message: 'Network',
