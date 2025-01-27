@@ -2407,22 +2407,23 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 }
             }
         }
-        if (existingVolumeOfVm != null) {
+        if (existingVolumeOfVm == null) {
             if (s_logger.isTraceEnabled()) {
-                String msg = "attaching volume %s/%s to a VM (%s/%s) with an existing volume %s/%s on primary storage %s";
-                s_logger.trace(String.format(msg,
-                        volumeToAttach.getName(), volumeToAttach.getUuid(),
+                s_logger.trace(String.format("No existing volume found for VM (%s/%s) to attach volume %s/%s",
                         vm.getName(), vm.getUuid(),
-                        existingVolumeOfVm.getName(), existingVolumeOfVm.getUuid(),
-                        existingVolumeOfVm.getPoolId()));
+                        volumeToAttach.getName(), volumeToAttach.getUuid()));
             }
+            return null;
         }
         if (s_logger.isTraceEnabled()) {
-            s_logger.trace(String.format("No existing volume found for VM (%s/%s) to attach volume %s/%s",
+            String msg = "attaching volume %s/%s to a VM (%s/%s) with an existing volume %s/%s on primary storage %s";
+            s_logger.trace(String.format(msg,
+                    volumeToAttach.getName(), volumeToAttach.getUuid(),
                     vm.getName(), vm.getUuid(),
-                    volumeToAttach.getName(), volumeToAttach.getUuid()));
+                    existingVolumeOfVm.getName(), existingVolumeOfVm.getUuid(),
+                    existingVolumeOfVm.getPoolId()));
         }
-        return null;
+        return existingVolumeOfVm;
     }
 
     protected StoragePool getPoolForAllocatedOrUploadedVolumeForAttach(final VolumeInfo volumeToAttach, final UserVmVO vm) {
@@ -2448,7 +2449,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return pool;
     }
 
-    protected VolumeInfo createVolumeOnSecondaryForAttachIfNeeded(final VolumeInfo volumeToAttach, final UserVmVO vm, VolumeVO existingVolumeOfVm) {
+    protected VolumeInfo createVolumeOnPrimaryForAttachIfNeeded(final VolumeInfo volumeToAttach, final UserVmVO vm, VolumeVO existingVolumeOfVm) {
         VolumeInfo newVolumeOnPrimaryStorage = volumeToAttach;
         boolean volumeOnSecondary = volumeToAttach.getState() == Volume.State.Uploaded;
         if (!Arrays.asList(Volume.State.Allocated, Volume.State.Uploaded).contains(volumeToAttach.getState())) {
@@ -2466,7 +2467,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             destPrimaryStorage = getPoolForAllocatedOrUploadedVolumeForAttach(volumeToAttach, vm);
         }
         try {
-            if (volumeOnSecondary && destPrimaryStorage.getPoolType() == Storage.StoragePoolType.PowerFlex) {
+            if (volumeOnSecondary && Storage.StoragePoolType.PowerFlex.equals(destPrimaryStorage.getPoolType())) {
                 throw new InvalidParameterValueException("Cannot attach uploaded volume, this operation is unsupported on storage pool type " + destPrimaryStorage.getPoolType());
             }
             newVolumeOnPrimaryStorage = _volumeMgr.createVolumeOnPrimaryStorage(vm, volumeToAttach,
@@ -2487,7 +2488,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         UserVmVO vm = _userVmDao.findById(vmId);
         VolumeVO existingVolumeOfVm = getVmExistingVolumeForVolumeAttach(vm, volumeToAttach);
-        VolumeInfo newVolumeOnPrimaryStorage = createVolumeOnSecondaryForAttachIfNeeded(volumeToAttach, vm, existingVolumeOfVm);
+        VolumeInfo newVolumeOnPrimaryStorage = createVolumeOnPrimaryForAttachIfNeeded(volumeToAttach, vm, existingVolumeOfVm);
 
         // reload the volume from db
         newVolumeOnPrimaryStorage = volFactory.getVolume(newVolumeOnPrimaryStorage.getId());
