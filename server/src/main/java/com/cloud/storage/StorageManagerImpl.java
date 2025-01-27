@@ -503,8 +503,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public boolean isLocalStorageActiveOnHost(Long hostId) {
         List<StoragePoolHostVO> storagePoolHostRefs = _storagePoolHostDao.listByHostId(hostId);
         for (StoragePoolHostVO storagePoolHostRef : storagePoolHostRefs) {
-            StoragePoolVO PrimaryDataStoreVO = _storagePoolDao.findById(storagePoolHostRef.getPoolId());
-            if (PrimaryDataStoreVO.getPoolType() == StoragePoolType.LVM || PrimaryDataStoreVO.getPoolType() == StoragePoolType.EXT) {
+            StoragePoolVO primaryDataStoreVO = _storagePoolDao.findById(storagePoolHostRef.getPoolId());
+            if (primaryDataStoreVO != null && (primaryDataStoreVO.getPoolType() == StoragePoolType.LVM || primaryDataStoreVO.getPoolType() == StoragePoolType.EXT)) {
                 SearchBuilder<VolumeVO> volumeSB = volumeDao.createSearchBuilder();
                 volumeSB.and("poolId", volumeSB.entity().getPoolId(), SearchCriteria.Op.EQ);
                 volumeSB.and("removed", volumeSB.entity().getRemoved(), SearchCriteria.Op.NULL);
@@ -515,7 +515,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 volumeSB.join("activeVmSB", activeVmSB, volumeSB.entity().getInstanceId(), activeVmSB.entity().getId(), JoinBuilder.JoinType.INNER);
 
                 SearchCriteria<VolumeVO> volumeSC = volumeSB.create();
-                volumeSC.setParameters("poolId", PrimaryDataStoreVO.getId());
+                volumeSC.setParameters("poolId", primaryDataStoreVO.getId());
                 volumeSC.setParameters("state", Volume.State.Expunging, Volume.State.Destroy);
                 volumeSC.setJoinParameters("activeVmSB", "state", State.Starting, State.Running, State.Stopping, State.Migrating);
 
@@ -2142,9 +2142,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         // poolId is null only if volume is destroyed, which has been checked
         // before.
         assert poolId != null;
-        StoragePoolVO PrimaryDataStoreVO = _storagePoolDao.findById(poolId);
-        assert PrimaryDataStoreVO != null;
-        return PrimaryDataStoreVO.getUuid();
+        StoragePoolVO primaryDataStoreVO = _storagePoolDao.findById(poolId);
+        assert primaryDataStoreVO != null;
+        return primaryDataStoreVO.getUuid();
     }
 
     @Override
@@ -2697,8 +2697,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         CapacityVO capacity = new CapacityVO(poolId, zoneId, podId, clusterId, 0, 0, Capacity.CAPACITY_TYPE_STORAGE);
-        for (StoragePoolVO PrimaryDataStoreVO : pools) {
-            StorageStats stats = ApiDBUtils.getStoragePoolStatistics(PrimaryDataStoreVO.getId());
+        for (StoragePoolVO primaryDataStoreVO : pools) {
+            StorageStats stats = ApiDBUtils.getStoragePoolStatistics(primaryDataStoreVO.getId());
             if (stats == null) {
                 continue;
             }
