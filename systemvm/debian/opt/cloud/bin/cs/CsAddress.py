@@ -542,7 +542,7 @@ class CsIP:
                             (self.dev, guestNetworkCidr, self.address['gateway'], self.dev)])
 
         if self.is_private_gateway():
-            self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
+            self.fw.append(["filter", "front", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
                             (self.address['network'], self.dev, self.dev)])
             self.fw.append(["filter", "", "-A ACL_INBOUND_%s -j DROP" % self.dev])
             self.fw.append(["mangle", "",
