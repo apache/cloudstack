@@ -3385,7 +3385,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<DiskOfferingResponse> searchForDiskOfferings(ListDiskOfferingsCmd cmd) {
         Pair<List<DiskOfferingJoinVO>, Integer> result = searchForDiskOfferingsInternal(cmd);
-        ListResponse<DiskOfferingResponse> response = new ListResponse<DiskOfferingResponse>();
+        ListResponse<DiskOfferingResponse> response = new ListResponse<>();
         List<DiskOfferingResponse> offeringResponses = ViewResponseHelper.createDiskOfferingResponse(result.first().toArray(new DiskOfferingJoinVO[result.first().size()]));
         response.setResponses(offeringResponses, result.second());
         return response;
@@ -3444,6 +3444,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Boolean encrypt = cmd.getEncrypt();
         String storageType = cmd.getStorageType();
         DiskOffering.State state = cmd.getState();
+        String tags = cmd.getTags();
 
         Filter searchFilter = new Filter(DiskOfferingVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
         searchFilter.addOrderBy(DiskOfferingVO.class, "id", true);
@@ -3520,6 +3521,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             diskOfferingSearch.and("encrypt", diskOfferingSearch.entity().getEncrypt(), Op.EQ);
         }
 
+        if (tags != null) {
+            diskOfferingSearch.and("tags", diskOfferingSearch.entity().getTags(), Op.EQ);
+        }
+
         if (storageType != null || zoneId != null) {
             diskOfferingSearch.and("useLocalStorage", diskOfferingSearch.entity().isUseLocalStorage(), Op.EQ);
         }
@@ -3587,6 +3592,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (encrypt != null) {
             sc.setParameters("encrypt", encrypt);
+        }
+
+        if (tags != null) {
+            sc.setParameters("tags", tags);
         }
 
         if (storageType != null) {
