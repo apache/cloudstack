@@ -327,7 +327,7 @@ public class FirstFitAllocatorTest {
         Mockito.doCallRealMethod().when(excludeList).getHostsToAvoid();
         Mockito.doReturn(1L).when(serviceOffering).getId();
         Mockito.doReturn(requestedVGpuType).when(serviceOfferingDetailsDao).findDetail(Mockito.anyLong(), Mockito.anyString());
-        Mockito.doReturn(false).when(resourceManagerMock).isGPUDeviceAvailable(Mockito.anyLong(), Mockito.nullable(String.class), Mockito.nullable(String.class));
+        Mockito.doReturn(false).when(resourceManagerMock).isGPUDeviceAvailable(Mockito.any(Host.class), Mockito.nullable(String.class), Mockito.nullable(String.class));
         boolean result = firstFitAllocatorSpy.offeringRequestedVGpuAndHostDoesNotHaveIt(serviceOffering, excludeList, host1);
 
         Assert.assertTrue(result);
@@ -339,10 +339,9 @@ public class FirstFitAllocatorTest {
     public void offeringRequestedVGpuAndHostDoesNotHaveItTestVGpuRequestedAndHostDoesHaveItShouldReturnFalse() {
         ServiceOfferingDetailsVO requestedVGpuType = Mockito.mock(ServiceOfferingDetailsVO.class);
 
-        Mockito.doReturn(1L).when(host1).getId();
         Mockito.doReturn(1L).when(serviceOffering).getId();
         Mockito.doReturn(requestedVGpuType).when(serviceOfferingDetailsDao).findDetail(Mockito.anyLong(), Mockito.anyString());
-        Mockito.doReturn(true).when(resourceManagerMock).isGPUDeviceAvailable(Mockito.anyLong(), Mockito.nullable(String.class), Mockito.nullable(String.class));
+        Mockito.doReturn(true).when(resourceManagerMock).isGPUDeviceAvailable(Mockito.any(Host.class), Mockito.nullable(String.class), Mockito.nullable(String.class));
         boolean result = firstFitAllocatorSpy.offeringRequestedVGpuAndHostDoesNotHaveIt(serviceOffering, excludeList, host1);
 
         Assert.assertFalse(result);
