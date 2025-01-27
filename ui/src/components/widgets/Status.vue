@@ -113,6 +113,7 @@ export default {
         case 'up':
         case 'success':
         case 'poweron':
+        case 'primary':
           status = 'success'
           break
         case 'alert':
@@ -149,6 +150,7 @@ export default {
         case 'pending':
         case 'unsecure':
         case 'warning':
+        case 'backup':
           status = 'warning'
           break
       }

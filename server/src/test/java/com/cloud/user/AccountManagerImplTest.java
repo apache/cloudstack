@@ -1200,4 +1200,22 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(roleService.findRole(2L)).thenReturn(callerRole);
         accountManagerImpl.validateRoleChange(account, newRole, caller);
     }
+
+     @Test
+     public void checkIfAccountManagesProjectsTestNotThrowExceptionWhenTheAccountIsNotAProjectAdministrator() {
+        long accountId = 1L;
+        List<Long> managedProjectIds = new ArrayList<>();
+
+        Mockito.when(_projectAccountDao.listAdministratedProjectIds(accountId)).thenReturn(managedProjectIds);
+        accountManagerImpl.checkIfAccountManagesProjects(accountId);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkIfAccountManagesProjectsTestThrowExceptionWhenTheAccountIsAProjectAdministrator() {
+        long accountId = 1L;
+        List<Long> managedProjectIds = List.of(1L);
+
+        Mockito.when(_projectAccountDao.listAdministratedProjectIds(accountId)).thenReturn(managedProjectIds);
+        accountManagerImpl.checkIfAccountManagesProjects(accountId);
+    }
 }

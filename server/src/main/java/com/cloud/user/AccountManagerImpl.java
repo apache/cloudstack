@@ -74,6 +74,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
@@ -298,6 +299,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private SSHKeyPairDao _sshKeyPairDao;
     @Inject
     private UserDataDao userDataDao;
+    @Inject
+    private NetworkPermissionDao networkPermissionDao;
 
     private List<QuerySelector> _querySelectors;
 
@@ -869,6 +872,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             // delete the account from project accounts
             _projectAccountDao.removeAccountFromProjects(accountId);
+
+            // Delete account's network permissions
+            networkPermissionDao.removeAccountPermissions(accountId);
 
             if (account.getType() != Account.Type.PROJECT) {
                 // delete the account from group
@@ -1857,24 +1863,25 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // If the user is a System user, return an error. We do not allow this
         AccountVO account = _accountDao.findById(accountId);
 
-        if (! isDeleteNeeded(account, accountId, caller)) {
+        if (!isDeleteNeeded(account, accountId, caller)) {
             return true;
         }
 
-        // Account that manages project(s) can't be removed
-        List<Long> managedProjectIds = _projectAccountDao.listAdministratedProjectIds(accountId);
-        if (!managedProjectIds.isEmpty()) {
-            StringBuilder projectIds = new StringBuilder();
-            for (Long projectId : managedProjectIds) {
-                projectIds.append(projectId).append(", ");
-            }
-
-            throw new InvalidParameterValueException("The account id=" + accountId + " manages project(s) with ids " + projectIds + "and can't be removed");
-        }
+        checkIfAccountManagesProjects(accountId);
 
         CallContext.current().putContextParameter(Account.class, account.getUuid());
 
         return deleteAccount(account, callerUserId, caller);
+    }
+
+    protected void checkIfAccountManagesProjects(long accountId) {
+        List<Long> managedProjectIds = _projectAccountDao.listAdministratedProjectIds(accountId);
+        if (!CollectionUtils.isEmpty(managedProjectIds)) {
+            throw new InvalidParameterValueException(String.format(
+                    "Unable to delete account [%s], because it manages the following project(s): %s. Please, remove the account from these projects or demote it to a regular project role first.",
+                    accountId, managedProjectIds
+            ));
+        }
     }
 
     private boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {

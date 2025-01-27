@@ -448,8 +448,6 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
             HostVO host = _hostDao.findById(vm.getLastHostId());
             lastHost = host;
-            _hostDao.loadHostTags(host);
-            _hostDao.loadDetails(host);
             ServiceOfferingDetailsVO offeringDetails = null;
             if (host == null) {
                 s_logger.debug("The last host of this VM cannot be found");

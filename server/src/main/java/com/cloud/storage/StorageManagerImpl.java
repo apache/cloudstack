@@ -803,7 +803,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (!(dc.isLocalStorageEnabled() || useLocalStorageForSystemVM)) {
             return null;
         }
-        DataStore store;
+        DataStore store = null;
+        DataStoreProvider provider = _dataStoreProviderMgr.getDefaultPrimaryDataStoreProvider();
+        DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
         try {
             String hostAddress = pInfo.getHost();
             if (host.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
@@ -829,8 +831,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
 
-            DataStoreProvider provider = _dataStoreProviderMgr.getDefaultPrimaryDataStoreProvider();
-            DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
             if (pool == null) {
                 Map<String, Object> params = new HashMap<String, Object>();
                 String name = pInfo.getName() != null ? pInfo.getName() : createLocalStoragePoolName(host, pInfo);
@@ -860,6 +860,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         } catch (Exception e) {
             s_logger.warn("Unable to setup the local storage pool for " + host, e);
+            try {
+                if (store != null) {
+                    s_logger.debug(String.format("Trying to delete storage pool entry if exists %s", store));
+                    lifeCycle.deleteDataStore(store);
+                }
+            } catch (Exception ex) {
+                s_logger.debug(String.format("Failed to clean up local storage pool: %s", ex.getMessage()));
+            }
             throw new ConnectionException(true, "Unable to setup the local storage pool for " + host, e);
         }
 
@@ -3441,7 +3449,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                     TemplateDataStoreVO templateVO = null;
                                     if (templateId != null) {
                                         vmTemplateVO = _templateDao.findById(templateId);
-                                        templateVO = _templateStoreDao.findByTemplate(templateId, DataStoreRole.Image);
+                                        templateVO = _templateStoreDao.findByStoreTemplate(store.getId(), templateId);
                                         if (templateVO != null) {
                                             try {
                                                 if (SystemVmTemplateRegistration.validateIfSeeded(
