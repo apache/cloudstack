@@ -857,7 +857,16 @@ export default {
           show: (record) => { return record.state === 'Reserved' },
           groupAction: true,
           popup: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+          groupMap: (selection, values, record) => {
+            return selection.map(x => {
+              const data = record.filter(y => { return y.id === x })
+              return {
+                id: x,
+                forced: values.forced,
+                skipGroupAction: data[0].state !== 'Reserved'
+              }
+            })
+          }
         }
       ]
     },
