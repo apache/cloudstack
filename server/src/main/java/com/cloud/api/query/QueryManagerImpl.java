@@ -1377,6 +1377,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (networkId != null || vpcId != null) {
             SearchBuilder<NicVO> nicSearch = nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), Op.EQ);
+            nicSearch.and("removed", nicSearch.entity().getRemoved(), Op.NULL);
             if (vpcId != null) {
                 SearchBuilder<NetworkVO> networkSearch = networkDao.createSearchBuilder();
                 networkSearch.and("vpcId", networkSearch.entity().getVpcId(), Op.EQ);
