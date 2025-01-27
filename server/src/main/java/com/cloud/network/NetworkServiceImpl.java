@@ -1637,7 +1637,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         if (GuestType.Shared == ntwkOff.getGuestType()) {
             if (!ntwkOff.isSpecifyIpRanges()) {
-                throw new CloudRuntimeException("Specify IP Ranged should be true for Shared Networks");
+                throw new CloudRuntimeException("The 'specifyipranges' parameter should be true for Shared Networks");
             }
             if (ipv4 && Objects.isNull(startIP)) {
               throw new CloudRuntimeException("IPv4 address range needs to be provided");
