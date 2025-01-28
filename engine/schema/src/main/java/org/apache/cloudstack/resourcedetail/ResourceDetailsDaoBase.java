@@ -37,7 +37,7 @@ import javax.inject.Inject;
 public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends GenericDaoBase<R, Long> implements ResourceDetailsDao<R> {
 
     @Inject
-    private ConfigurationDao _configDao;
+    private ConfigurationDao configDao;
 
     private SearchBuilder<R> AllFieldsSearch;
 
@@ -213,7 +213,7 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
 
     @Override
     public String getActualValue(ResourceDetail resourceDetail) {
-        ConfigurationVO configurationVO = _configDao.findByName(resourceDetail.getName());
+        ConfigurationVO configurationVO = configDao.findByName(resourceDetail.getName());
         if (configurationVO != null && configurationVO.isEncrypted()) {
             return DBEncryptionUtil.decrypt(resourceDetail.getValue());
         }
