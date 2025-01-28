@@ -813,7 +813,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (!(dc.isLocalStorageEnabled() || useLocalStorageForSystemVM)) {
             return null;
         }
-        DataStore store;
+        DataStore store = null;
+        DataStoreProvider provider = _dataStoreProviderMgr.getDefaultPrimaryDataStoreProvider();
+        DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
         try {
             String hostAddress = pInfo.getHost();
             if (host.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
@@ -839,8 +841,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
 
-            DataStoreProvider provider = _dataStoreProviderMgr.getDefaultPrimaryDataStoreProvider();
-            DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
             if (pool == null) {
                 Map<String, Object> params = new HashMap<>();
                 String name = pInfo.getName() != null ? pInfo.getName() : createLocalStoragePoolName(host, pInfo);
@@ -869,7 +869,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
 
         } catch (Exception e) {
-            logger.warn("Unable to setup the local storage pool for " + host, e);
+            logger.warn("Unable to setup the local storage pool for {}", host, e);
+            try {
+                if (store != null) {
+                    logger.debug("Trying to delete storage pool entry if exists {}", store);
+                    lifeCycle.deleteDataStore(store);
+                }
+            } catch (Exception ex) {
+                logger.debug("Failed to clean up local storage pool: {}", ex.getMessage());
+            }
             throw new ConnectionException(true, "Unable to setup the local storage pool for " + host, e);
         }
 

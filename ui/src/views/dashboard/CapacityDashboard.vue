@@ -174,6 +174,12 @@
         <template #title>
           <div class="center">
             <h3><cloud-outlined /> {{ $t('label.compute') }}</h3>
+            <a-switch
+              :checked-children="$t('label.allocated') + ' ' + $t('label.capacity')"
+              :un-checked-children="$t('label.used') + ' ' + $t('label.capacity')"
+              v-model:checked="this.displayAllocatedCompute"
+              @change="val => { this.displayAllocatedCompute = val }"
+            />
           </div>
         </template>
         <div>
@@ -184,15 +190,19 @@
               </div>
               <a-progress
               status="active"
-              :percent="statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal) : 0"
-              :format="p => statsMap[ctype]?.capacitytotal > 0 ? parseFloat(100.0 * statsMap[ctype]?.capacityused / statsMap[ctype]?.capacitytotal).toFixed(2) + '%' : '0%'"
+              :percent="statsMap[ctype]?.capacitytotal > 0 ?
+                displayPercentUsedOrAllocated(statsMap[ctype]?.capacityused, statsMap[ctype]?.capacityallocated, statsMap[ctype]?.capacitytotal)
+                : 0"
+              :format="p => statsMap[ctype]?.capacitytotal > 0 ?
+                displayPercentFormatUsedOrAllocated(statsMap[ctype]?.capacityused, statsMap[ctype]?.capacityallocated, statsMap[ctype]?.capacitytotal)
+                : '0%'"
               stroke-color="#52c41a"
               size="small"
               style="width:95%; float: left"
               />
               <br/>
               <div style="text-align: center">
-                {{ displayData(ctype, statsMap[ctype]?.capacityused) }} {{ $t('label.allocated') }} | {{ displayData(ctype, statsMap[ctype]?.capacitytotal) }} {{ $t('label.total') }}
+                {{ displayDataUsedOrAllocated(ctype, statsMap[ctype]?.capacityused, statsMap[ctype]?.capacityallocated) }} {{ this.displayAllocatedCompute ? $t('label.allocated') : $t('label.used') }} | {{ displayData(ctype, statsMap[ctype]?.capacitytotal) }} {{ $t('label.total') }}
               </div>
             </div>
           </div>
@@ -347,6 +357,7 @@ export default {
       zones: [],
       zoneSelected: {},
       statsMap: {},
+      displayAllocatedCompute: false,
       data: {
         pods: 0,
         clusters: 0,
@@ -402,6 +413,18 @@ export default {
         return 'active'
       }
       return 'normal'
+    },
+    displayPercentUsedOrAllocated (used, allocated, total) {
+      var value = this.displayAllocatedCompute ? allocated : used
+      return parseFloat(100.0 * value / total)
+    },
+    displayPercentFormatUsedOrAllocated (used, allocated, total) {
+      var value = this.displayAllocatedCompute ? allocated : used
+      return parseFloat(100.0 * value / total).toFixed(2) + '%'
+    },
+    displayDataUsedOrAllocated (dataType, used, allocated) {
+      var value = this.displayAllocatedCompute ? allocated : used
+      return this.displayData(dataType, value)
     },
     displayData (dataType, value) {
       if (!value) {

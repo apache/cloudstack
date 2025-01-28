@@ -516,6 +516,7 @@ public class AgentProperties{
     /**
      * The model of Watchdog timer to present to the Guest.<br>
      * For all models refer to the libvirt documentation.<br>
+     * PLEASE NOTE: to disable the watchdogs definitions, use value: none
      * Data type: String.<br>
      * Default value: <code>i6300esb</code>
      */
