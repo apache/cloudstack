@@ -18,10 +18,20 @@
 package org.apache.cloudstack.storage.datastore.manager;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.host.Host;
 
 public interface ScaleIOSDCManager {
+    ConfigKey<Boolean> ConnectOnDemand = new ConfigKey<>("Storage",
+            Boolean.class,
+            "powerflex.connect.on.demand",
+            Boolean.FALSE.toString(),
+            "When true, connects PowerFlex client on Host when first Volume is mapped to SDC & client connections configured 'storage.pool.connected.clients.limit' are within the limit and disconnects when last Volume is unmapped from SDC; " +
+                    "and When false, connects PowerFlex client on Host when host connects to storage pool & client connections configured 'storage.pool.connected.clients.limit' are within the limit and disconnects when host disconnects from storage pool & no volumes mapped to SDC.",
+            Boolean.TRUE,
+            ConfigKey.Scope.Zone);
+
     /**
      * Checks SDC connections limit.
      * @param storagePoolId the storage pool id
@@ -30,18 +40,57 @@ public interface ScaleIOSDCManager {
     boolean areSDCConnectionsWithinLimit(Long storagePoolId);
 
     /**
-     * Prepares/starts the SDC on the host.
+     * Returns connected SDC Id.
      * @param host the host
      * @param dataStore the datastore
      * @return SDC Id of the host
      */
+    String getConnectedSdc(Host host, DataStore dataStore);
+
+    /**
+     * Prepares the SDC on the host (adds the MDM IPs to SDC, starts scini service if required).
+     * @param host the host
+     * @param dataStore the datastore
+     * @return SDC Id of the host if SDC is successfully prepared-ed on the host
+     */
     String prepareSDC(Host host, DataStore dataStore);
 
     /**
-     * Stops the SDC on the host.
+     * Unprepares the SDC on the host (removes the MDM IPs from SDC, restarts scini service).
      * @param host the host
      * @param dataStore the datastore
-     * @return true if SDC stopped on the host
+     * @return true if SDC is successfully unprepared-ed on the host
      */
-    boolean stopSDC(Host host, DataStore dataStore);
+    boolean unprepareSDC(Host host, DataStore dataStore);
+
+    /**
+     * Checks if the SDC can be unprepared on the host (don't remove MDM IPs from SDC if any volumes mapped to SDC).
+     * @param host the host
+     * @param dataStore the datastore
+     * @return true if SDC can be unprepared on the host
+     */
+    boolean canUnprepareSDC(Host host, DataStore dataStore);
+
+    /**
+     * Returns the SDC Id of the host for the pool.
+     * @param sdcGuid the SDC GUID
+     * @param dataStore the datastore
+     * @return SDC Id of the host for the pool
+     */
+    String getHostSdcId(String sdcGuid, DataStore dataStore);
+
+    /**
+     * Returns the connection status of host SDC of the pool.
+     * @param sdcId the SDC id
+     * @param dataStore the datastore
+     * @return true if Host SDC is connected to the pool
+     */
+    boolean isHostSdcConnected(String sdcId, DataStore dataStore, int waitTimeInSecs);
+
+    /**
+     * Returns the comma-separated list of MDM IPs of the pool.
+     * @param poolId the pool id
+     * @return Comma-separated list of MDM IPs of the pool
+     */
+    String getMdms(long poolId);
 }
