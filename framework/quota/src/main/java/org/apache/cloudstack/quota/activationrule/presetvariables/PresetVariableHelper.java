@@ -224,6 +224,7 @@ public class PresetVariableHelper {
         Account account = new Account();
         account.setId(accountVo.getUuid());
         account.setName(accountVo.getName());
+        account.setCreated(accountVo.getCreated());
 
         setPresetVariableRoleInAccountIfAccountIsNotAProject(accountVo.getType(), accountVo.getRoleId(), account);
 
