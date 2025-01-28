@@ -895,6 +895,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         metricsResponse.setDbLocal(status.isDbLocal());
         metricsResponse.setUsageLocal(status.isUsageLocal());
         metricsResponse.setAvailableProcessors(status.getAvailableProcessors());
+        metricsResponse.setLastAgents(status.getLastAgents());
+        metricsResponse.setAgents(status.getAgents());
         metricsResponse.setAgentCount(status.getAgentCount());
         metricsResponse.setCollectionTime(status.getCollectionTime());
         metricsResponse.setSessions(status.getSessions());

@@ -70,4 +70,8 @@ public interface IAgentShell {
     String getConnectedHost();
 
     void launchNewAgent(ServerResource resource) throws ConfigurationException;
+
+    boolean isConnectionTransfer();
+
+    void setConnectionTransfer(boolean connectionTransfer);
 }

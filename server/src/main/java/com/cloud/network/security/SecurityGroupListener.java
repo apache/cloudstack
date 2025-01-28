@@ -164,22 +164,23 @@ public class SecurityGroupListener implements Listener {
         if (logger.isInfoEnabled())
             logger.info("Received a host startup notification");
 
-        if (cmd instanceof StartupRoutingCommand) {
-            //if (Boolean.toString(true).equals(host.getDetail("can_bridge_firewall"))) {
-            try {
-                int interval = MIN_TIME_BETWEEN_CLEANUPS + _cleanupRandom.nextInt(MIN_TIME_BETWEEN_CLEANUPS / 2);
-                CleanupNetworkRulesCmd cleanupCmd = new CleanupNetworkRulesCmd(interval);
-                Commands c = new Commands(cleanupCmd);
-                _agentMgr.send(host.getId(), c, this);
-                if (logger.isInfoEnabled())
-                    logger.info("Scheduled network rules cleanup, interval=" + cleanupCmd.getInterval());
-            } catch (AgentUnavailableException e) {
-                //usually hypervisors that do not understand sec group rules.
-                logger.debug("Unable to schedule network rules cleanup for host {}", host, e);
-            }
-            if (_workTracker != null) {
-                _workTracker.processConnect(host.getId());
-            }
+        if (!(cmd instanceof StartupRoutingCommand) || cmd.isConnectionTransferred()) {
+            return;
+        }
+
+        try {
+            int interval = MIN_TIME_BETWEEN_CLEANUPS + _cleanupRandom.nextInt(MIN_TIME_BETWEEN_CLEANUPS / 2);
+            CleanupNetworkRulesCmd cleanupCmd = new CleanupNetworkRulesCmd(interval);
+            Commands c = new Commands(cleanupCmd);
+            _agentMgr.send(host.getId(), c, this);
+            if (logger.isInfoEnabled())
+                logger.info("Scheduled network rules cleanup, interval=" + cleanupCmd.getInterval());
+        } catch (AgentUnavailableException e) {
+            //usually hypervisors that do not understand sec group rules.
+            logger.debug("Unable to schedule network rules cleanup for host {}", host, e);
+        }
+        if (_workTracker != null) {
+            _workTracker.processConnect(host.getId());
         }
     }
 

@@ -941,7 +941,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                 try {
                     JmxUtil.unregisterMBean("ClusterManager", "Node " + mshost.getId());
                 } catch (final Exception e) {
-                    logger.warn("Unable to deregiester cluster node from JMX monitoring due to exception " + e.toString());
+                    logger.warn("Unable to deregister cluster node from JMX monitoring due to exception " + e.toString());
                 }
             }
 
@@ -1063,8 +1063,12 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                         logger.info("New instance of management server {}, runId {} is being started", mshost, _runId);
                     }
                 } else {
+                    ManagementServerHost.State msHostState = ManagementServerHost.State.Up;
+                    if (ManagementServerHost.State.Maintenance.equals(mshost.getState()) || ManagementServerHost.State.PreparingForMaintenance.equals(mshost.getState())) {
+                        msHostState = ManagementServerHost.State.Maintenance;
+                    }
                     _mshostDao.update(mshost.getId(), _runId, NetUtils.getCanonicalHostName(), version, _clusterNodeIP, _currentServiceAdapter.getServicePort(),
-                            DateUtil.currentGMTTime());
+                            DateUtil.currentGMTTime(), msHostState);
                     if (logger.isInfoEnabled()) {
                         logger.info("Management server {}, runId {} is being started", mshost, _runId);
                     }
@@ -1102,11 +1106,17 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
 
         if (_mshostId != null) {
             final ManagementServerHostVO mshost = _mshostDao.findByMsid(_msId);
-            final ManagementServerStatusVO mshostStatus = mshostStatusDao.findByMsId(mshost.getUuid());
-            mshost.setState(ManagementServerHost.State.Down);
-            mshostStatus.setLastJvmStop(new Date());
-            _mshostDao.update(_mshostId, mshost);
-            mshostStatusDao.update(mshostStatus.getId(), mshostStatus);
+            if (mshost != null) {
+                final ManagementServerStatusVO mshostStatus = mshostStatusDao.findByMsId(mshost.getUuid());
+                mshostStatus.setLastJvmStop(new Date());
+                mshostStatusDao.update(mshostStatus.getId(), mshostStatus);
+
+                ManagementServerHost.State msHostState = ManagementServerHost.State.Down;
+                if (ManagementServerHost.State.Maintenance.equals(mshost.getState()) || ManagementServerHost.State.PreparingForMaintenance.equals(mshost.getState())) {
+                    msHostState = ManagementServerHost.State.Maintenance;
+                }
+                _mshostDao.updateState(mshost.getId(), msHostState);
+            }
         }
 
         _heartbeatScheduler.shutdownNow();

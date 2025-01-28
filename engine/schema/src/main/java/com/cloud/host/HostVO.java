@@ -404,6 +404,9 @@ public class HostVO implements Host {
     @Column(name = "mgmt_server_id")
     private Long managementServerId;
 
+    @Column(name = "last_mgmt_server_id")
+    private Long lastManagementServerId;
+
     @Column(name = "dom0_memory")
     private long dom0MinMemory;
 
@@ -570,6 +573,10 @@ public class HostVO implements Host {
         this.managementServerId = managementServerId;
     }
 
+    public void setLastManagementServerId(Long lastManagementServerId) {
+        this.lastManagementServerId = lastManagementServerId;
+    }
+
     @Override
     public long getLastPinged() {
         return lastPinged;
@@ -637,6 +644,11 @@ public class HostVO implements Host {
     @Override
     public Long getManagementServerId() {
         return managementServerId;
+    }
+
+    @Override
+    public Long getLastManagementServerId() {
+        return lastManagementServerId;
     }
 
     @Override

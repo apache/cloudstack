@@ -85,6 +85,8 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, boolean forRebalance);
 
+    public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, boolean forRebalance, boolean isTransferredConnection);
+
     public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails);
 
     public HostVO createHostVOForConnectedAgent(StartupCommand[] cmds);
