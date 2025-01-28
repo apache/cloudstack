@@ -272,7 +272,11 @@ public class KVMStorageProcessor implements StorageProcessor {
 
                 String path = derivePath(primaryStore, destData, details);
 
-                if (!storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details)) {
+                if (path == null) {
+                    path = destTempl.getUuid();
+                }
+
+                if (path != null && !storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details)) {
                     s_logger.warn("Failed to connect physical disk at path: " + path + ", in storage pool id: " + primaryStore.getUuid());
                     return new PrimaryStorageDownloadAnswer("Failed to spool template disk at path: " + path + ", in storage pool id: " + primaryStore.getUuid());
                 }
@@ -338,6 +342,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         } else {
             path = details != null ? details.get("managedStoreTarget") : null;
         }
+
         return path;
     }
 

@@ -924,7 +924,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         HostVO hostVO;
 
         // if either source or destination is a HOST-scoped storage pool, the migration MUST be performed on that host
-
         if (ScopeType.HOST.equals(srcVolumeInfo.getDataStore().getScope().getScopeType())) {
             hostVO = _hostDao.findById(srcVolumeInfo.getDataStore().getScope().getScopeId());
         } else if (ScopeType.HOST.equals(destVolumeInfo.getDataStore().getScope().getScopeType())) {
@@ -1579,8 +1578,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                             volumeInfo.getDataCenterId());
                 }
             }
-
-
 
             VolumeDetailVO volumeDetail = new VolumeDetailVO(volumeInfo.getId(),
                     "cloneOfTemplate",
