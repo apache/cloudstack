@@ -2293,7 +2293,7 @@ public class LibvirtVMDef {
 
     public static class WatchDogDef {
         enum WatchDogModel {
-            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288"), ITCO("itco");
+            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288"), ITCO("itco"), NONE("none");
             String model;
 
             WatchDogModel(String model) {
@@ -2346,6 +2346,10 @@ public class LibvirtVMDef {
 
         @Override
         public String toString() {
+            if (WatchDogModel.NONE == model) {
+                // Do not add watchodogs when the model is set to none
+                return "";
+            }
             StringBuilder wacthDogBuilder = new StringBuilder();
             wacthDogBuilder.append("<watchdog model='" + model + "' action='" + action + "'/>\n");
             return wacthDogBuilder.toString();
