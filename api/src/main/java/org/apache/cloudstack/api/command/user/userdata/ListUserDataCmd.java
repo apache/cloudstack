@@ -61,7 +61,7 @@ public class ListUserDataCmd extends BaseListProjectAndAccountResourcesCmd {
 
     @Override
     public void execute() {
-        Pair<List<? extends UserData>, Integer> resultList = _mgr.listUserDatas(this);
+        Pair<List<? extends UserData>, Integer> resultList = _mgr.listUserDatas(this, false);
         List<UserDataResponse> responses = new ArrayList<>();
         for (UserData result : resultList.first()) {
             UserDataResponse r = _responseGenerator.createUserDataResponse(result);
