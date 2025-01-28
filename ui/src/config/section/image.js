@@ -42,7 +42,7 @@ export default {
               }
               return 'Not Ready'
             }
-          }, 'ostypename', 'hypervisor']
+          }, 'ostypename', 'arch', 'hypervisor']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('size')
           fields.push('account')
@@ -218,7 +218,7 @@ export default {
               }
               return 'Not Ready'
             }
-          }, 'ostypename']
+          }, 'ostypename', 'arch']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           fields.push('size')
           fields.push('account')
