@@ -8061,7 +8061,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 !Enums.getIfPresent(DiskOffering.DiskCacheMode.class,
                         cacheMode.toUpperCase()).isPresent()) {
             throw new InvalidParameterValueException(String.format("Invalid cache mode (%s). Please specify one of the following " +
-                    "valid cache mode parameters: none, writeback or writethrough", cacheMode));
+                    "valid cache mode parameters: none, writeback, writethrough or hypervisor_default.", cacheMode));
         }
     }
 
