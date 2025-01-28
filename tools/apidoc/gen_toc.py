@@ -256,6 +256,8 @@ known_categories = {
     'deleteASNRange': 'AS Number Range',
     'listASNumbers': 'AS Number',
     'releaseASNumber': 'AS Number',
+    'addNodesToKubernetesCluster': 'Kubernetes Service',
+    'removeNodesFromKubernetesCluster': 'Kubernetes Service'
 }
 
 

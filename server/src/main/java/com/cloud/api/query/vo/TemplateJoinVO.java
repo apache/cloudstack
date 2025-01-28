@@ -244,6 +244,9 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
     @Column(name = "deploy_as_is")
     private boolean deployAsIs;
 
+    @Column(name = "for_cks")
+    private boolean forCks;
+
     @Column(name = "user_data_id")
     private Long userDataId;
 
@@ -520,6 +523,10 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     public boolean isDeployAsIs() {
         return deployAsIs;
+    }
+
+    public boolean isForCks() {
+        return forCks;
     }
 
     public Object getParentTemplateId() {

@@ -79,6 +79,6 @@ public interface TemplateAdapter extends Adapter {
 
     TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, CPU.CPUArch arch, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url, Boolean isPublic,
                             Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneId, HypervisorType hypervisorType, String chksum, Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshKeyEnabled, String imageStoreUuid, Boolean isDynamicallyScalable,
-                            TemplateType templateType, boolean directDownload, boolean deployAsIs) throws ResourceAllocationException;
+                            TemplateType templateType, boolean directDownload, boolean deployAsIs, boolean forCks) throws ResourceAllocationException;
 
 }
