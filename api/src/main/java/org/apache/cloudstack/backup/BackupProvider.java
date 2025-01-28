@@ -75,7 +75,7 @@ public interface BackupProvider {
      * @param backup
      * @return
      */
-    boolean takeBackup(VirtualMachine vm);
+    Pair<Boolean, Backup> takeBackup(VirtualMachine vm);
 
     /**
      * Delete an existing backup
@@ -104,9 +104,16 @@ public interface BackupProvider {
     Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms);
 
     /**
-     * This method should reconcile and create backup entries for any backups created out-of-band
-     * @param vm
+     * This method should TODO
+     * @param
+     */
+    public List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm);
+
+    /**
+     * This method should TODO
+     * @param
+     * @param
      * @param metric
      */
-    void syncBackups(VirtualMachine vm, Backup.Metric metric);
+    Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric);
 }
