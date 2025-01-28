@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import com.cloud.storage.dao.VolumeDao;
+
 import org.apache.cloudstack.backup.dao.BackupDao;
 
 import com.cloud.utils.Pair;
@@ -40,6 +41,8 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     private BackupDao backupDao;
     @Inject
     private VolumeDao volumeDao;
+    @Inject
+    private BackupManager backupManager;
 
     @Override
     public String getName() {
@@ -107,7 +110,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Override
     public boolean willDeleteBackupsOnOfferingRemoval() {
-        return true;
+        return false;
     }
 
     @Override
@@ -127,6 +130,11 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
         backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+        Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
+        backup.setDetails(details);
+        Map<String, String> diskOfferingDetails = backupManager.getDiskOfferingDetailsForBackup(vm.getId());
+        backup.addDetails(diskOfferingDetails);
+
         return backupDao.persist(backup) != null;
     }
 
@@ -137,5 +145,15 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Override
     public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
+    }
+
+    @Override
+    public boolean supportsInstanceFromBackup() {
+        return true;
+    }
+
+    @Override
+    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
+        return true;
     }
 }

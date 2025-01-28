@@ -14,28 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 package org.apache.cloudstack.backup.dao;
 
-import java.util.List;
 
-import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.backup.Backup;
-import org.apache.cloudstack.backup.BackupVO;
+import org.apache.cloudstack.backup.BackupDetailVO;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
+import org.springframework.stereotype.Component;
 
-import com.cloud.utils.db.GenericDao;
+@Component
+public class BackupDetailsDaoImpl extends ResourceDetailsDaoBase<BackupDetailVO> implements BackupDetailsDao {
 
-public interface BackupDao extends GenericDao<BackupVO, Long> {
-
-    Backup findByVmId(Long vmId);
-    Backup findByVmIdIncludingRemoved(Long vmId);
-
-    List<Backup> listByVmId(Long zoneId, Long vmId);
-    List<Backup> listByAccountId(Long accountId);
-    List<Backup> syncBackups(Long zoneId, Long vmId, List<Backup> externalBackups);
-    BackupVO getBackupVO(Backup backup);
-    List<Backup> listByOfferingId(Long backupOfferingId);
-    void loadDetails(BackupVO backup);
-    void saveDetails(BackupVO backup);
-    BackupResponse newBackupResponse(Backup backup);
+    @Override
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new BackupDetailVO(resourceId, key, value, display));
+    }
 }
