@@ -16,7 +16,7 @@
 // under the License.
 
 <template>
-  <div>
+  <div style="width: 80vw;">
     <a-row :gutter="12">
       <a-col :md="24" :lg="17">
         <a-alert>
@@ -566,6 +566,7 @@ import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import DiskOfferingSelection from '@views/compute/wizard/DiskOfferingSelection'
 import DiskSizeSelection from '@views/compute/wizard/DiskSizeSelection'
 import VolumeDiskOfferingSelectView from '@views/compute/wizard/VolumeDiskOfferingSelectView'
+import MultiDiskSelection from '@views/compute/wizard/MultiDiskSelection'
 import AffinityGroupSelection from '@views/compute/wizard/AffinityGroupSelection'
 import NetworkSelection from '@views/compute/wizard/NetworkSelection'
 import NetworkConfiguration from '@views/compute/wizard/NetworkConfiguration'
@@ -585,6 +586,7 @@ export default {
     NetworkSelection,
     AffinityGroupSelection,
     DiskSizeSelection,
+    MultiDiskSelection,
     VolumeDiskOfferingSelectView,
     DiskOfferingSelection,
     InfoCard,
@@ -2167,15 +2169,6 @@ export default {
     margin: 0 0 1.2rem;
   }
 
-  .zone-radio-button {
-    width:100%;
-    min-width: 345px;
-    height: 60px;
-    display: flex;
-    padding-left: 20px;
-    align-items: center;
-  }
-
   .vm-info-card {
     .ant-card-body {
       min-height: 250px;
@@ -2199,13 +2192,5 @@ export default {
 
   .form-item-hidden {
     display: none;
-  }
-
-  .btn-stay-on-page {
-    &.ant-dropdown-menu-dark {
-      .ant-dropdown-menu-item:hover {
-        background: transparent !important;
-      }
-    }
   }
 </style>

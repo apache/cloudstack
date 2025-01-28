@@ -74,40 +74,6 @@ export default {
   },
   created () {
     this.fetchServiceOffering()
-    this.dataPreFill.backupid = this.resource.id
-    this.dataPreFill.computeofferingid = this.resource.vmdetails.serviceofferingid
-    this.dataPreFill.templateid = this.resource.vmdetails.templateid
-    this.dataPreFill.networkids = (this.resource.vmdetails.networkids || '').split(',')
-    this.diskofferingids = (this.resource.vmdetails.diskofferingids || '').split(',')
-    this.miniops = (this.resource.vmdetails.miniops || '').split(',').map(item => item === 'null' ? '' : item)
-    this.maxiops = (this.resource.vmdetails.maxiops || '').split(',').map(item => item === 'null' ? '' : item)
-    this.deviceid = (this.resource.vmdetails.deviceids || '').split(',').map(item => item === 'null' ? '' : item)
-    const volumes = JSON.parse(this.resource.volumes)
-    const disksdetails = volumes.map((volume, index) => ({
-      name: volume.path,
-      type: volume.type,
-      size: volume.size / (1024 * 1024 * 1024),
-      diskofferingid: this.diskofferingids[index],
-      miniops: this.miniops[index],
-      maxiops: this.maxiops[index],
-      deviceid: this.deviceid[index]
-    })).filter(volume => volume.type !== 'ROOT')
-    this.dataPreFill.datadisksdetails = disksdetails.map((disk, index) => ({
-      id: index,
-      ...disk
-    }))
-    const rootdisksdetails = volumes.map((volume, index) => ({
-      size: volume.size / (1024 * 1024 * 1024),
-      type: volume.type,
-      diskofferingid: this.diskofferingids[index]
-    })).filter(volume => volume.type === 'ROOT')
-    if (this.serviceOffering.diskofferingid === rootdisksdetails[0].diskofferingid) {
-      this.dataPreFill.overridediskoffering = false
-    } else {
-      this.dataPreFill.overridediskoffering = true
-      this.dataPreFill.diskofferingid = rootdisksdetails[0].diskofferingid
-      this.dataPreFill.size = rootdisksdetails[0].size
-    }
   },
   methods: {
     fetchServiceOffering () {
@@ -121,7 +87,44 @@ export default {
         this.serviceOffering = serviceOfferings[0]
       })
     },
+    populatePreFillData () {
+      this.dataPreFill.backupid = this.resource.id
+      this.dataPreFill.computeofferingid = this.resource.vmdetails.serviceofferingid
+      this.dataPreFill.templateid = this.resource.vmdetails.templateid
+      this.dataPreFill.networkids = (this.resource.vmdetails.networkids || '').split(',')
+      this.diskofferingids = (this.resource.vmdetails.diskofferingids || '').split(',')
+      this.miniops = (this.resource.vmdetails.miniops || '').split(',').map(item => item === 'null' ? '' : item)
+      this.maxiops = (this.resource.vmdetails.maxiops || '').split(',').map(item => item === 'null' ? '' : item)
+      this.deviceid = (this.resource.vmdetails.deviceids || '').split(',').map(item => item === 'null' ? '' : item)
+      const volumes = JSON.parse(this.resource.volumes)
+      const disksdetails = volumes.map((volume, index) => ({
+        name: volume.path,
+        type: volume.type,
+        size: volume.size / (1024 * 1024 * 1024),
+        diskofferingid: this.diskofferingids[index],
+        miniops: this.miniops[index],
+        maxiops: this.maxiops[index],
+        deviceid: this.deviceid[index]
+      })).filter(volume => volume.type !== 'ROOT')
+      this.dataPreFill.datadisksdetails = disksdetails.map((disk, index) => ({
+        id: index,
+        ...disk
+      }))
+      const rootdisksdetails = volumes.map((volume, index) => ({
+        size: volume.size / (1024 * 1024 * 1024),
+        type: volume.type,
+        diskofferingid: this.diskofferingids[index]
+      })).filter(volume => volume.type === 'ROOT')
+      if (this.serviceOffering.diskofferingid === rootdisksdetails[0].diskofferingid) {
+        this.dataPreFill.overridediskoffering = false
+      } else {
+        this.dataPreFill.overridediskoffering = true
+        this.dataPreFill.diskofferingid = rootdisksdetails[0].diskofferingid
+        this.dataPreFill.size = rootdisksdetails[0].size
+      }
+    },
     setConfigure () {
+      this.populatePreFillData()
       this.configure = true
     },
     closeAction () {

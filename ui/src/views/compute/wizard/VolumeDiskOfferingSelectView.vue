@@ -147,7 +147,7 @@ export default {
   computed: {
     tableSource () {
       return this.tablerows.map(row => {
-        var disk = { ...row, disabled: this.diskofferings && this.diskOfferings.length === 0 }
+        var disk = { ...row, disabled: this.diskOfferings && this.diskOfferings.length === 0 }
         var item = this.items.find(item => item.id === row.id)
         disk.name = `${item.name} (${item.size} GB)`
         return disk
