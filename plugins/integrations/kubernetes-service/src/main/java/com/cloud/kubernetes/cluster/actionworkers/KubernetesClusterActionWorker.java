@@ -360,7 +360,8 @@ public class KubernetesClusterActionWorker {
             return null;
         }
         IpAddress address = ipAddressDao.findByUuid(detailsVO.getValue());
-        if (address == null || !Objects.equals(network.getVpcId(), address.getVpcId())) {
+	// Under certain circumstances, Long objects may differ even though they have the same primitive value. Compare the primitive values
+	if (address == null || network.getVpcId() == null || address.getVpcId() == null || network.getVpcId().longValue() != address.getVpcId().longValue()) {
             logger.warn(String.format("Public IP with ID: %s linked to the Kubernetes cluster: %s is not usable", detailsVO.getValue(), kubernetesCluster.getName()));
             return null;
         }
