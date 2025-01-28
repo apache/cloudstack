@@ -875,7 +875,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 continue;
             }
             DiskOfferingVO diskOffering = diskOfferingDao.findByUuid(diskOfferingIds[i]);
-            if (diskOffering == null) {
+            if (diskOffering == null || diskOffering.getState().equals(DiskOffering.State.Inactive)) {
                 throw new CloudRuntimeException("Unable to find the disk offering with uuid (" + diskOfferingIds[i] + ") stored in backup. Please specify a valid disk offering id while creating the instance");
             }
             Long size = Long.parseLong(diskSizes[i]) / (1024 * 1024 * 1024);
@@ -951,7 +951,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                         vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), eventId);
                 throw new CloudRuntimeException(String.format("Error restoring backup [%s] to VM %s.", backupDetailsInMessage));
             }
-        } catch (Exception e) {
+        } catch (CloudRuntimeException e) {
             updateVolumeState(vm, Volume.Event.RestoreFailed, Volume.State.Ready);
             updateVmState(vm, VirtualMachine.Event.RestoringFailed, VirtualMachine.State.Stopped);
             logger.error(String.format("Failed to restore backup [%s] to VM %s due to: [%s].", backupDetailsInMessage, vm.getInstanceName(), e.getMessage()), e);
