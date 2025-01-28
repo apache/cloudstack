@@ -29,6 +29,7 @@ class TestMSMaintenanceAndSafeShutdown(cloudstackTestCase):
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.mgtSvrDetails = self.config.__dict__["mgtSvr"][0].__dict__
         self.cleanup = []
 
@@ -86,8 +87,38 @@ class TestMSMaintenanceAndSafeShutdown(cloudstackTestCase):
             {"name": "test", "displaytext": "test"}
         )
 
+    def getActiveManagementServers(self):
+        cmd = listManagementServers.listManagementServersCmd()
+        servers = self.apiclient.listManagementServers(cmd)
+        active_servers = []
+        for idx, server in enumerate(servers):
+            if server.state == 'Up':
+                active_servers.append(server.serviceip)
+        return active_servers
+
     @attr(tags=["advanced", "smoke"])
     def test_01_prepare_and_cancel_maintenance(self):
+        active_management_servers = self.getActiveManagementServers()
+        if len(active_management_servers) <= 1:
+            self.skipTest("Skipping test case, this test is intended for only multiple management servers")
+
+        hypervisor = self.hypervisor.lower()
+        if hypervisor == 'kvm':
+            list_configurations_cmd = listConfigurations.listConfigurationsCmd()
+            list_configurations_cmd.name = "host"
+            list_configurations_response = self.apiclient.listConfigurations(list_configurations_cmd)
+            self.assertNotEqual(len(list_configurations_response), 0,
+                                "Check if the list configurations API returns a non-empty response")
+
+            for item in list_configurations_response:
+                if item.name == list_configurations_cmd.name:
+                    host_config = item
+
+            hosts = host_config.value.split(",")
+            if len(hosts) <= 1:
+                self.skipTest(
+                    "Skipping test case, this test is intended for only multiple management server hosts configured on host setting for kvm")
+
         try :
             prepare_for_maintenance_cmd = prepareForMaintenance.prepareForMaintenanceCmd()
             prepare_for_maintenance_cmd.managementserverid = 1
