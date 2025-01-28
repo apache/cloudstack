@@ -633,11 +633,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     }
                 } catch (final HypervisorVersionChangedException hvce) {
                     handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested, true, true);
-                    throw new CloudRuntimeException("Unable to connect " + attache.getId(), hvce);
+                    throw new CloudRuntimeException("Unable to connect " + (attache == null ? "<unknown agent>" : attache.getId()), hvce);
                 } catch (final Exception e) {
                     logger.error("Monitor {} says there is an error in the connect process for {} due to {}", monitor.second().getClass().getSimpleName(), hostId, e.getMessage(), e);
                     handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true, true);
-                    throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
+                    throw new CloudRuntimeException("Unable to connect " + (attache == null ? "<unknown agent>" : attache.getId()), e);
                 }
             }
         }
@@ -989,7 +989,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         handleDisconnectWithoutInvestigation(attache, event, true, true);
         host = _hostDao.findById(hostId); // Maybe the host magically reappeared?
         if (host != null && host.getStatus() == Status.Down) {
-            _haMgr.scheduleRestartForVmsOnHost(host, true);
+            _haMgr.scheduleRestartForVmsOnHost(host, true, HighAvailabilityManager.ReasonType.HostDown);
         }
         return true;
     }

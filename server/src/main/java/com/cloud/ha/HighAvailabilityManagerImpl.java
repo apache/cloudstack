@@ -19,6 +19,7 @@ package com.cloud.ha;
 import static org.apache.cloudstack.framework.config.ConfigKey.Scope.Zone;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +44,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.logging.log4j.ThreadContext;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
@@ -90,7 +92,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.logging.log4j.ThreadContext;
 
 /**
  * HighAvailabilityManagerImpl coordinates the HA process. VMs are registered with the HA Manager for HA. The request is stored
@@ -132,6 +133,9 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
     protected static ConfigKey<Boolean> VmHaAlertsEnabled = new ConfigKey<>("Advanced", Boolean.class, "vm.ha.alerts.enabled", "true",
             "Enable/Disable alerts for the VM HA operations, it is enabled by default.", true, Zone);
+
+    protected static final List<ReasonType> CancellableWorkReasonTypes =
+            Arrays.asList(ReasonType.HostMaintenance, ReasonType.HostDown, ReasonType.HostDegraded);
 
     WorkerThread[] _workers;
     boolean _stopped;
@@ -269,8 +273,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     }
 
     @Override
-    public void scheduleRestartForVmsOnHost(final HostVO host, boolean investigate) {
-
+    public void scheduleRestartForVmsOnHost(final HostVO host, boolean investigate, ReasonType reasonType) {
         if (host.getType() != Host.Type.Routing) {
             return;
         }
@@ -337,12 +340,12 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
                 logger.debug("VM {} is not on down host {} it is on other host {} VM HA is done", vm, host, hostId);
                 continue;
             }
-            scheduleRestart(vm, investigate);
+            scheduleRestart(vm, investigate, reasonType);
         }
     }
 
     @Override
-    public boolean scheduleStop(VMInstanceVO vm, long hostId, WorkType type) {
+    public boolean scheduleStop(VMInstanceVO vm, long hostId, WorkType type, ReasonType reasonType) {
         assert (type == WorkType.CheckStop || type == WorkType.ForceStop || type == WorkType.Stop);
 
         if (_haDao.hasBeenScheduled(vm.getId(), type)) {
@@ -359,13 +362,18 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             return false;
         }
 
-        HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), type, Step.Scheduled, hostId, vm.getState(), 0, vm.getUpdated());
+        HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), type, Step.Scheduled, hostId, vm.getState(), 0, vm.getUpdated(), reasonType);
         _haDao.persist(work);
         if (logger.isDebugEnabled()) {
             logger.debug("Scheduled " + work);
         }
         wakeupWorkers();
         return true;
+    }
+
+    @Override
+    public boolean scheduleStop(VMInstanceVO vm, long hostId, WorkType type) {
+        return scheduleStop(vm, hostId, type, null);
     }
 
     protected void wakeupWorkers() {
@@ -376,7 +384,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     }
 
     @Override
-    public boolean scheduleMigration(final VMInstanceVO vm) {
+    public boolean scheduleMigration(final VMInstanceVO vm, ReasonType reasonType) {
         if (vm.getHostId() == null) {
             return false;
         }
@@ -390,7 +398,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             return false;
         }
 
-        final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.Migration, Step.Scheduled, vm.getHostId(), vm.getState(), 0, vm.getUpdated());
+        final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.Migration, Step.Scheduled, vm.getHostId(), vm.getState(), 0, vm.getUpdated(), reasonType);
         _haDao.persist(work);
         logger.info("Scheduled migration work of VM {} from host {} with HAWork {}", vm, _hostDao.findById(vm.getHostId()), work);
         wakeupWorkers();
@@ -398,7 +406,12 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     }
 
     @Override
-    public void scheduleRestart(VMInstanceVO vm, boolean investigate) {
+    public boolean scheduleMigration(final VMInstanceVO vm) {
+        return scheduleMigration(vm, null);
+    }
+
+    @Override
+    public void scheduleRestart(VMInstanceVO vm, boolean investigate, ReasonType reasonType) {
         if (!VmHaEnabled.valueIn(vm.getDataCenterId())) {
             String message = String.format("Unable to schedule restart for the VM %s (%d), VM high availability manager is disabled.", vm.getName(), vm.getId());
             if (logger.isDebugEnabled()) {
@@ -490,7 +503,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         }
 
         HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.HA, investigate ? Step.Investigating : Step.Scheduled,
-                hostId != null ? hostId : 0L, vm.getState(), timesTried, vm.getUpdated());
+                hostId != null ? hostId : 0L, vm.getState(), timesTried, vm.getUpdated(), reasonType);
         _haDao.persist(work);
 
         if (logger.isInfoEnabled()) {
@@ -498,6 +511,11 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         }
 
         wakeupWorkers();
+    }
+
+    @Override
+    public void scheduleRestart(VMInstanceVO vm, boolean investigate) {
+        scheduleRestart(vm, investigate, null);
     }
 
     private void startVm(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
@@ -559,6 +577,9 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         VirtualMachine vm = _itMgr.findById(work.getInstanceId());
         if (vm == null) {
             logger.info("Unable to find vm: " + vmId);
+            return null;
+        }
+        if (checkAndCancelWorkIfNeeded(work)) {
             return null;
         }
 
@@ -762,6 +783,22 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         return (System.currentTimeMillis() >> 10) + _restartRetryInterval;
     }
 
+    protected boolean checkAndCancelWorkIfNeeded(final HaWorkVO work) {
+        if (!Step.Investigating.equals(work.getStep())) {
+            return false;
+        }
+        if (!CancellableWorkReasonTypes.contains(work.getReasonType())) {
+            return false;
+        }
+        Status hostStatus = investigate(work.getHostId());
+        if (!Status.Up.equals(hostStatus)) {
+            return false;
+        }
+        logger.debug("Cancelling {} as it is not needed anymore", () -> work);
+        work.setStep(Step.Cancelled);
+        return true;
+    }
+
     public Long migrate(final HaWorkVO work) {
         long vmId = work.getInstanceId();
         long srcHostId = work.getHostId();
@@ -770,6 +807,9 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         VMInstanceVO vm = _instanceDao.findById(vmId);
         if (vm == null) {
             logger.info("Unable to find vm: " + vmId + ", skipping migrate.");
+            return null;
+        }
+        if (checkAndCancelWorkIfNeeded(work)) {
             return null;
         }
         logger.info("Migration attempt: for VM {}from host {}. Starting attempt: {}/{} times.", vm, srcHost, 1 + work.getTimesTried(), _maxRetries);
@@ -791,7 +831,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     }
 
     @Override
-    public boolean scheduleDestroy(VMInstanceVO vm, long hostId) {
+    public boolean scheduleDestroy(VMInstanceVO vm, long hostId, ReasonType reasonType) {
         if (!VmHaEnabled.valueIn(vm.getDataCenterId())) {
             String message = String.format("Unable to schedule destroy for the VM %s (%d) on host %d, VM high availability manager is disabled.", vm.getName(), vm.getId(), hostId);
             if (logger.isDebugEnabled()) {
@@ -801,7 +841,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             return false;
         }
 
-        final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.Destroy, Step.Scheduled, hostId, vm.getState(), 0, vm.getUpdated());
+        final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.Destroy, Step.Scheduled, hostId, vm.getState(), 0, vm.getUpdated(), reasonType);
         _haDao.persist(work);
         if (logger.isDebugEnabled()) {
             logger.debug("Scheduled " + work.toString());
@@ -838,6 +878,9 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             logger.info("No longer can find VM " + work.getInstanceId() + ". Throwing away " + work);
             return null;
         }
+        if (checkAndCancelWorkIfNeeded(work)) {
+            return null;
+        }
         boolean expunge = VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())
                 || VirtualMachine.Type.ConsoleProxy.equals(vm.getType());
         if (!expunge && VirtualMachine.State.Destroyed.equals(work.getPreviousState())) {
@@ -870,6 +913,9 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         if (vm == null) {
             logger.info("No longer can find VM " + work.getInstanceId() + ". Throwing away " + work);
             work.setStep(Step.Done);
+            return null;
+        }
+        if (checkAndCancelWorkIfNeeded(work)) {
             return null;
         }
         logger.info("Stopping " + vm);
@@ -1057,6 +1103,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     public boolean start() {
         _stopped = false;
 
+        _haDao.markPendingWorksAsInvestigating();
+
         for (final WorkerThread thread : _workers) {
             thread.start();
         }
@@ -1073,6 +1121,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         wakeupWorkers();
 
         _executor.shutdown();
+
+        _haDao.markServerPendingWorksAsInvestigating(_msServer.getId());
 
         return true;
     }
