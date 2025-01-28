@@ -1473,8 +1473,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offeringVO, null, null);
         plan.setMigrationPlan(true);
         DeployDestination dest = null;
+        DeploymentPlanner.ExcludeList avoids = new DeploymentPlanner.ExcludeList();
+        avoids.addHost(host.getId());
         try {
-            dest = deploymentManager.planDeployment(profile, plan, new DeploymentPlanner.ExcludeList(), null);
+            dest = deploymentManager.planDeployment(profile, plan, avoids, null);
         } catch (InsufficientServerCapacityException e) {
             throw new CloudRuntimeException(String.format("Maintenance failed, could not find deployment destination for VM: %s.", vm), e);
         }
