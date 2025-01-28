@@ -33,6 +33,8 @@ public class ResizeVolumeCommand extends Command {
     private boolean shrinkOk;
     private String vmInstance;
     private String chainInfo;
+    private Long newMaxIops;
+    private Long newMinIops;
 
     /* For managed storage */
     private boolean managed;
@@ -70,7 +72,6 @@ public class ResizeVolumeCommand extends Command {
     public ResizeVolumeCommand(String path, StorageFilerTO pool, Long currentSize, Long newSize, boolean shrinkOk, String vmInstance,
                                boolean isManaged, String iScsiName) {
         this(path, pool, currentSize, newSize, shrinkOk, vmInstance);
-
         this.iScsiName = iScsiName;
         this.managed = isManaged;
     }
@@ -119,5 +120,21 @@ public class ResizeVolumeCommand extends Command {
     @Override
     public boolean executeInSequence() {
         return false;
+    }
+
+    public Long getNewMaxIops() {
+        return newMaxIops;
+    }
+
+    public void setNewMaxIops(Long newMaxIops) {
+        this.newMaxIops = newMaxIops;
+    }
+
+    public Long getNewMinIops() {
+        return newMinIops;
+    }
+
+    public void setNewMinIops(Long newMinIops) {
+        this.newMinIops = newMinIops;
     }
 }
