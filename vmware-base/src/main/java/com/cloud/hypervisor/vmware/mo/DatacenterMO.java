@@ -69,7 +69,7 @@ public class DatacenterMO extends BaseMO {
     }
 
     @Override
-    public String getName() throws Exception {
+    public String getName() throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         return _context.getVimClient().getDynamicProperty(_mor, "name");
     }
 
