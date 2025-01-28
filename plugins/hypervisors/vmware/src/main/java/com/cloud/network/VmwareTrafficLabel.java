@@ -46,12 +46,12 @@ public class VmwareTrafficLabel implements TrafficLabel {
     }
 
     public VmwareTrafficLabel(TrafficType trafficType, VirtualSwitchType defVswitchType) {
-        _trafficType = trafficType; // Define traffic label with specific traffic type
+        _trafficType = trafficType;
         _parseLabel(null, defVswitchType);
     }
 
     public VmwareTrafficLabel(TrafficType trafficType) {
-        _trafficType = trafficType; // Define traffic label with specific traffic type
+        _trafficType = trafficType;
         _parseLabel(null, VirtualSwitchType.StandardVirtualSwitch);
     }
 
