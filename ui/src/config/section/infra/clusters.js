@@ -26,7 +26,7 @@ export default {
   permission: ['listClustersMetrics'],
   searchFilters: ['name', 'zoneid', 'podid', 'hypervisor'],
   columns: () => {
-    const fields = ['name', 'state', 'allocationstate', 'clustertype', 'hypervisortype', 'hosts']
+    const fields = ['name', 'state', 'allocationstate', 'clustertype', 'arch', 'hypervisortype', 'hosts']
     const metricsFields = ['cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'drsimbalance']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
