@@ -142,9 +142,9 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     }
 
     private Pair<String, String> getKubernetesControlNodeConfig(final String controlNodeIp, final String serverIp,
-                                                  final List<Network.IpAddresses> etcdIps, final String hostName, final boolean haSupported,
-                                                  final boolean ejectIso, final boolean externalCni) throws IOException {
-        String k8sControlNodeConfig = readResourceFile("/conf/k8s-control-node.yml");
+                                                                final List<Network.IpAddresses> etcdIps, final String hostName, final boolean haSupported,
+                                                                final boolean ejectIso, final boolean externalCni) throws IOException {
+        String k8sControlNodeConfig = readK8sConfigFile("/conf/k8s-control-node.yml");
         final String apiServerCert = "{{ k8s_control_node.apiserver.crt }}";
         final String apiServerKey = "{{ k8s_control_node.apiserver.key }}";
         final String caCert = "{{ k8s_control_node.ca.crt }}";
@@ -170,7 +170,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
 
         boolean externalEtcd = !etcdIps.isEmpty();
         final Certificate certificate = caManager.issueCertificate(null, Arrays.asList(hostName, "kubernetes",
-                "kubernetes.default", "kubernetes.default.svc", "kubernetes.default.svc.cluster", "kubernetes.default.svc.cluster.local"),
+                        "kubernetes.default", "kubernetes.default.svc", "kubernetes.default.svc.cluster", "kubernetes.default.svc.cluster.local"),
                 addresses, 3650, null);
         final String tlsClientCert = CertUtils.x509CertificateToPem(certificate.getClientCertificate());
         final String tlsPrivateKey = CertUtils.privateKeyToPem(certificate.getPrivateKey());
@@ -301,7 +301,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     }
 
     private String getKubernetesAdditionalControlNodeConfig(final String joinIp, final boolean ejectIso) throws IOException {
-        String k8sControlNodeConfig = readResourceFile("/conf/k8s-control-node-add.yml");
+        String k8sControlNodeConfig = readK8sConfigFile("/conf/k8s-control-node-add.yml");
         final String joinIpKey = "{{ k8s_control_node.join_ip }}";
         final String clusterTokenKey = "{{ k8s_control_node.cluster.token }}";
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
@@ -336,13 +336,13 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     private String getInitialEtcdClusterDetails(List<String> ipAddresses, List<String> hostnames) {
         String initialCluster = "%s=http://%s:%s";
         StringBuilder clusterInfo = new StringBuilder();
-            for (int i = 0; i < ipAddresses.size(); i++) {
-                clusterInfo.append(String.format(initialCluster, hostnames.get(i), ipAddresses.get(i), KubernetesClusterActionWorker.ETCD_NODE_PEER_COMM_PORT));
-                if (i < ipAddresses.size()-1) {
-                    clusterInfo.append(",");
-                }
+        for (int i = 0; i < ipAddresses.size(); i++) {
+            clusterInfo.append(String.format(initialCluster, hostnames.get(i), ipAddresses.get(i), KubernetesClusterActionWorker.ETCD_NODE_PEER_COMM_PORT));
+            if (i < ipAddresses.size()-1) {
+                clusterInfo.append(",");
             }
-            return clusterInfo.toString();
+        }
+        return clusterInfo.toString();
     }
 
     /**
@@ -373,7 +373,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
 
     private String getEtcdNodeConfig(final List<String> ipAddresses, final List<String> hostnames, final int etcdNodeIndex,
                                      final boolean ejectIso) throws IOException {
-        String k8sEtcdNodeConfig = readResourceFile("/conf/etcd-node.yml");
+        String k8sEtcdNodeConfig = readK8sConfigFile("/conf/etcd-node.yml");
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
         final String ejectIsoKey = "{{ k8s.eject.iso }}";
         final String installWaitTime = "{{ k8s.install.wait.time }}";
@@ -576,7 +576,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     }
 
     private List<Network.IpAddresses> getEtcdNodeGuestIps(final Network network, final long etcdNodeCount) {
-       List<Network.IpAddresses> guestIps = new ArrayList<>();
+        List<Network.IpAddresses> guestIps = new ArrayList<>();
         for (int i = 1; i <= etcdNodeCount; i++) {
             guestIps.add(new Network.IpAddresses(ipAddressManager.acquireGuestIpAddress(network, null), null));
         }
