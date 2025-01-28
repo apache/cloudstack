@@ -102,7 +102,7 @@ public class ListVmwareDcsCmd extends BaseListCmd {
                 vmwareDcResponse.setVcenter(vmwareDc.getVcenterHost());
                 vmwareDcResponse.setName(vmwareDc.getVmwareDatacenterName());
                 vmwareDcResponse.setZoneId(getZoneId());
-                vmwareDcResponse.setObjectName("VmwareDC");
+                vmwareDcResponse.setObjectName(ApiConstants.VMWARE_DC);
 
                 vmwareDcResponses.add(vmwareDcResponse);
             }
