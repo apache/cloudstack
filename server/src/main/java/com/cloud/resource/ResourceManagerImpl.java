@@ -1345,7 +1345,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())
                 || VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
             logger.error("Maintenance: VM is of type {}. Destroying VM {} immediately instead of migration.", vm.getType(), vm);
-            _haMgr.scheduleDestroy(vm, host.getId());
+            _haMgr.scheduleDestroy(vm, host.getId(), HighAvailabilityManager.ReasonType.HostMaintenance);
             return;
         }
         logger.error("Maintenance: No hosts available for migrations. Scheduling shutdown for VM {} instead of migration.", vm);
@@ -1402,10 +1402,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     handleVmForLastHostOrWithVGpu(host, vm);
                 } else if (HypervisorType.LXC.equals(host.getHypervisorType()) && VirtualMachine.Type.User.equals(vm.getType())){
                     //Migration is not supported for LXC Vms. Schedule restart instead.
-                    _haMgr.scheduleRestart(vm, false);
+                    _haMgr.scheduleRestart(vm, false, HighAvailabilityManager.ReasonType.HostMaintenance);
                 } else if (userVmManager.isVMUsingLocalStorage(vm)) {
                     if (isMaintenanceLocalStrategyForceStop()) {
-                        _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
+                        _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop, HighAvailabilityManager.ReasonType.HostMaintenance);
                     } else if (isMaintenanceLocalStrategyMigrate()) {
                         migrateAwayVmWithVolumes(host, vm);
                     } else if (!isMaintenanceLocalStrategyDefault()){
@@ -1418,7 +1418,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     }
                 } else {
                     logger.info("Maintenance: scheduling migration of VM {} from host {}", vm, host);
-                    _haMgr.scheduleMigration(vm);
+                    _haMgr.scheduleMigration(vm, HighAvailabilityManager.ReasonType.HostMaintenance);
                 }
             }
         }
@@ -1634,7 +1634,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         for (VMInstanceVO vm : allVmsOnHost) {
             State vmState = vm.getState();
             if (vmState == State.Starting || vmState == State.Running || vmState == State.Stopping) {
-                _haMgr.scheduleRestart(vm, false);
+                _haMgr.scheduleRestart(vm, false, HighAvailabilityManager.ReasonType.HostDegraded);
             }
         }
     }
