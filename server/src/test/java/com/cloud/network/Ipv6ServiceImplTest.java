@@ -16,6 +16,38 @@
 // under the License.
 package com.cloud.network;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.UUID;
+
+import javax.management.InstanceAlreadyExistsException;
+import javax.management.MBeanRegistrationException;
+import javax.management.MalformedObjectNameException;
+import javax.management.NotCompliantMBeanException;
+
+import org.apache.cloudstack.api.command.user.ipv6.CreateIpv6FirewallRuleCmd;
+import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
+import org.apache.cloudstack.api.response.Ipv6RouteResponse;
+import org.apache.cloudstack.api.response.VpcResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.commons.collections.CollectionUtils;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.stubbing.Answer;
+
 import com.cloud.api.ApiDBUtils;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterGuestIpv6PrefixVO;
@@ -63,36 +95,6 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.googlecode.ipv6.IPv6Network;
 import com.googlecode.ipv6.IPv6NetworkMask;
-import org.apache.cloudstack.api.command.user.ipv6.CreateIpv6FirewallRuleCmd;
-import org.apache.cloudstack.api.command.user.ipv6.UpdateIpv6FirewallRuleCmd;
-import org.apache.cloudstack.api.response.Ipv6RouteResponse;
-import org.apache.cloudstack.api.response.VpcResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.commons.collections.CollectionUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.mockito.stubbing.Answer;
-
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
 
 @RunWith(MockitoJUnitRunner.class)
 public class Ipv6ServiceImplTest {

@@ -19,23 +19,14 @@
 
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.ModifyStoragePoolAnswer;
-import com.cloud.agent.api.ModifyStoragePoolCommand;
-import com.cloud.agent.api.StoragePoolInfo;
-import com.cloud.exception.StorageConflictException;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.Status;
-import com.cloud.resource.ResourceManager;
-import com.cloud.resource.ResourceState;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Storage;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StorageManagerImpl;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.utils.exception.CloudRuntimeException;
-import junit.framework.TestCase;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -58,14 +49,23 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.ModifyStoragePoolAnswer;
+import com.cloud.agent.api.ModifyStoragePoolCommand;
+import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.exception.StorageConflictException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceManager;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StorageManagerImpl;
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.utils.exception.CloudRuntimeException;
+
+import junit.framework.TestCase;
 
 /**
  * Created by ajna123 on 9/22/2015.
@@ -118,6 +118,9 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
     @Mock
     PrimaryDataStoreHelper primaryDataStoreHelper;
 
+    @Mock
+    HostDao hostDao;
+
     AutoCloseable closeable;
 
     @Before
@@ -128,17 +131,6 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
         ReflectionTestUtils.setField(storageMgr, "_dataStoreProviderMgr", _dataStoreProviderMgr);
         ReflectionTestUtils.setField(storageMgr, "_dataStoreMgr", _dataStoreMgr);
         ReflectionTestUtils.setField(_cloudStackPrimaryDataStoreLifeCycle, "storageMgr", storageMgr);
-
-        List<HostVO> hostList = new ArrayList<HostVO>();
-        HostVO host1 = new HostVO(1L, "aa01", Host.Type.Routing, "192.168.1.1", "255.255.255.0", null, null, null, null, null, null, null, null, null, null,
-                UUID.randomUUID().toString(), Status.Up, "1.0", null, null, 1L, null, 0, 0, "aa", 0, Storage.StoragePoolType.NetworkFilesystem);
-        HostVO host2 = new HostVO(1L, "aa02", Host.Type.Routing, "192.168.1.1", "255.255.255.0", null, null, null, null, null, null, null, null, null, null,
-                UUID.randomUUID().toString(), Status.Up, "1.0", null, null, 1L, null, 0, 0, "aa", 0, Storage.StoragePoolType.NetworkFilesystem);
-
-        host1.setResourceState(ResourceState.Enabled);
-        host2.setResourceState(ResourceState.Disabled);
-        hostList.add(host1);
-        hostList.add(host2);
 
         when(_dataStoreMgr.getDataStore(anyLong(), eq(DataStoreRole.Primary))).thenReturn(store);
         when(store.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
@@ -152,7 +144,9 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
         storageMgr.registerHostListener("default", hostListener);
 
 
-        when(_resourceMgr.listAllUpHosts(eq(Host.Type.Routing), anyLong(), anyLong(), anyLong())).thenReturn(hostList);
+        when(hostDao.listIdsForUpRouting(anyLong(), anyLong(), anyLong()))
+                .thenReturn(List.of(1L, 2L));
+        when(hostDao.findById(anyLong())).thenReturn(mock(HostVO.class));
         when(agentMgr.easySend(anyLong(), Mockito.any(ModifyStoragePoolCommand.class))).thenReturn(answer);
         when(answer.getResult()).thenReturn(true);
 
@@ -171,18 +165,17 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
     }
 
     @Test
-    public void testAttachClusterException() throws Exception {
-        String exceptionString = "Mount failed due to incorrect mount options.";
+    public void testAttachClusterException() {
         String mountFailureReason = "Incorrect mount option specified.";
 
-        CloudRuntimeException exception = new CloudRuntimeException(exceptionString);
+        ClusterScope scope = new ClusterScope(1L, 1L, 1L);
+        CloudRuntimeException exception = new CloudRuntimeException(mountFailureReason);
         StorageManager storageManager = Mockito.mock(StorageManager.class);
-        Mockito.when(storageManager.connectHostToSharedPool(Mockito.any(), Mockito.anyLong())).thenThrow(exception);
-        Mockito.when(storageManager.getStoragePoolMountFailureReason(exceptionString)).thenReturn(mountFailureReason);
+        Mockito.doThrow(exception).when(storageManager).connectHostsToPool(Mockito.eq(store), Mockito.anyList(), Mockito.eq(scope), Mockito.eq(true), Mockito.eq(true));
         ReflectionTestUtils.setField(_cloudStackPrimaryDataStoreLifeCycle, "storageMgr", storageManager);
 
         try {
-            _cloudStackPrimaryDataStoreLifeCycle.attachCluster(store, new ClusterScope(1L, 1L, 1L));
+            _cloudStackPrimaryDataStoreLifeCycle.attachCluster(store, scope);
             Assert.fail();
         } catch (Exception e) {
            Assert.assertEquals(e.getMessage(), mountFailureReason);

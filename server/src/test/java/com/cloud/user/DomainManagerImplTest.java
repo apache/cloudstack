@@ -17,6 +17,30 @@
 
 package com.cloud.user;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
+import org.apache.cloudstack.region.RegionManager;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+
 import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.NetworkOfferingJoinDao;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
@@ -44,29 +68,6 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.network.RoutedIpv4Manager;
-import org.apache.cloudstack.region.RegionManager;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
 
 
 @RunWith(MockitoJUnitRunner.class)

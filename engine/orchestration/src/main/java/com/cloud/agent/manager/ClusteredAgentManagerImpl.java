@@ -49,11 +49,12 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.shutdown.ShutdownManager;
+import org.apache.cloudstack.shutdown.command.BaseShutdownManagementServerHostCommand;
 import org.apache.cloudstack.shutdown.command.CancelShutdownManagementServerHostCommand;
 import org.apache.cloudstack.shutdown.command.PrepareForShutdownManagementServerHostCommand;
-import org.apache.cloudstack.shutdown.command.BaseShutdownManagementServerHostCommand;
 import org.apache.cloudstack.shutdown.command.TriggerShutdownManagementServerHostCommand;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.security.SSLUtils;
@@ -73,7 +74,6 @@ import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ClusterServicePdu;
 import com.cloud.cluster.ClusteredAgentRebalanceService;
-import org.apache.cloudstack.management.ManagementServerHost;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.agentlb.AgentLoadBalancerPlanner;
 import com.cloud.cluster.agentlb.HostTransferMapVO;
@@ -215,12 +215,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                                 continue;
                             }
                         }
-
-                        logger.debug("Loading directly connected host {}", host);
+                        logger.debug("Loading directly connected {}", host);
                         loadDirectlyConnectedHost(host, false);
                     } catch (final Throwable e) {
-                        logger.warn(" can not load directly connected host {}({}) due to ",
-                                host, e);
+                        logger.warn(" can not load directly connected {} due to ", host, e);
                     }
                 }
             }
@@ -250,8 +248,8 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         final AgentAttache attache = new ClusteredAgentAttache(this, id, host.getUuid(), host.getName());
         AgentAttache old = null;
         synchronized (_agents) {
-            old = _agents.get(id);
-            _agents.put(id, attache);
+            old = _agents.get(host.getId());
+            _agents.put(host.getId(), attache);
         }
         if (old != null) {
             logger.debug("Remove stale agent attache from current management server");
@@ -550,13 +548,13 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         AgentAttache agent = findAttache(hostId);
         if (agent == null || !agent.forForward()) {
             if (isHostOwnerSwitched(host)) {
-                logger.debug("Host {} has switched to another management server, need to update agent map with a forwarding agent attache",  host);
+                logger.debug("{} has switched to another management server, need to update agent map with a forwarding agent attache",  host);
                 agent = createAttache(host);
             }
         }
         if (agent == null) {
             final AgentUnavailableException ex = new AgentUnavailableException("Host with specified id is not in the right state: " + host.getStatus(), hostId);
-            ex.addProxyObject(_entityMgr.findById(Host.class, hostId).getUuid());
+            ex.addProxyObject(host.getUuid());
             throw ex;
         }
 
@@ -1034,7 +1032,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         } else if (futureOwnerId == _nodeId) {
             final HostVO host = _hostDao.findById(hostId);
             try {
-                logger.debug("Disconnecting host {} as a part of rebalance process without notification", host);
+                logger.debug("Disconnecting {} as a part of rebalance process without notification", host);
 
                 final AgentAttache attache = findAttache(hostId);
                 if (attache != null) {
@@ -1042,7 +1040,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 }
 
                 if (result) {
-                    logger.debug("Loading directly connected host {} to the management server {} as a part of rebalance process", host, _nodeId);
+                    logger.debug("Loading directly connected {} to the management server {} as a part of rebalance process", host, _nodeId);
                     result = loadDirectlyConnectedHost(host, true);
                 } else {
                     logger.warn("Failed to disconnect {} as a part of rebalance process without notification", host);
@@ -1054,9 +1052,9 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             }
 
             if (result) {
-                logger.debug("Successfully loaded directly connected host {} to the management server {} a part of rebalance process without notification", host, _nodeId);
+                logger.debug("Successfully loaded directly connected {} to the management server {} a part of rebalance process without notification", host, _nodeId);
             } else {
-                logger.warn("Failed to load directly connected host {} to the management server {} a part of rebalance process without notification", host, _nodeId);
+                logger.warn("Failed to load directly connected {} to the management server {} a part of rebalance process without notification", host, _nodeId);
             }
         }
 

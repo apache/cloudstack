@@ -16,11 +16,11 @@
 // under the License.
 package org.apache.cloudstack.implicitplanner;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.everyItem;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.everyItem;
-import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -36,7 +36,11 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.cloud.user.User;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -54,12 +58,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.test.utils.SpringUtils;
-
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
@@ -73,7 +71,6 @@ import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.ImplicitDedicationPlanner;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostTagsDao;
@@ -90,6 +87,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
@@ -387,21 +385,9 @@ public class ImplicitPlannerTest {
         when(serviceOfferingDetailsDao.listDetailsKeyPairs(offeringId)).thenReturn(details);
 
         // Initialize hosts in clusters
-        HostVO host1 = mock(HostVO.class);
-        when(host1.getId()).thenReturn(5L);
-        HostVO host2 = mock(HostVO.class);
-        when(host2.getId()).thenReturn(6L);
-        HostVO host3 = mock(HostVO.class);
-        when(host3.getId()).thenReturn(7L);
-        List<HostVO> hostsInCluster1 = new ArrayList<HostVO>();
-        List<HostVO> hostsInCluster2 = new ArrayList<HostVO>();
-        List<HostVO> hostsInCluster3 = new ArrayList<HostVO>();
-        hostsInCluster1.add(host1);
-        hostsInCluster2.add(host2);
-        hostsInCluster3.add(host3);
-        when(resourceMgr.listAllHostsInCluster(1)).thenReturn(hostsInCluster1);
-        when(resourceMgr.listAllHostsInCluster(2)).thenReturn(hostsInCluster2);
-        when(resourceMgr.listAllHostsInCluster(3)).thenReturn(hostsInCluster3);
+        when(hostDao.listIdsByClusterId(1L)).thenReturn(List.of(5L));
+        when(hostDao.listIdsByClusterId(2L)).thenReturn(List.of(6L));
+        when(hostDao.listIdsByClusterId(3L)).thenReturn(List.of(7L));
 
         // Mock vms on each host.
         long offeringIdForVmsOfThisAccount = 15L;

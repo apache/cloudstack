@@ -88,6 +88,8 @@ public interface ResourceDetailsDao<R extends ResourceDetail> extends GenericDao
 
     public Map<String, String> listDetailsKeyPairs(long resourceId);
 
+    Map<String, String> listDetailsKeyPairs(long resourceId, List<String> keys);
+
     public Map<String, String> listDetailsKeyPairs(long resourceId, boolean forDisplay);
 
     Map<String, Boolean> listDetailsVisibility(long resourceId);
