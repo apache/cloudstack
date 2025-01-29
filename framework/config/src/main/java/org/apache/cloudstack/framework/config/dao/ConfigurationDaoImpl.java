@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
@@ -31,7 +30,6 @@ import org.springframework.stereotype.Component;
 import com.cloud.utils.component.ComponentLifecycle;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.DB;
-import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -40,9 +38,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String> implements ConfigurationDao {
-    @Inject
-    EntityManager entityManager;
-
     private Map<String, String> _configs = null;
     private boolean _premium;
 
@@ -211,4 +206,5 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         sc.setParameters("name", name);
         return findOneIncludingRemovedBy(sc);
     }
+
 }

@@ -1229,7 +1229,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (scope != null) {
             ConfigKey.Scope scopeVal = ConfigKey.Scope.valueOf(scope);
             if (!configScope.contains(scopeVal) &&
-                    !(ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN.value() && configScope.contains(ConfigKey.Scope.Account.toString()) &&
+                    !(ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN.value() && configScope.contains(ConfigKey.Scope.Account) &&
                             scope.equals(ConfigKey.Scope.Domain.toString()))) {
                 logger.error("Invalid scope id provided for the parameter " + name);
                 return "Invalid scope id provided for the parameter " + name;

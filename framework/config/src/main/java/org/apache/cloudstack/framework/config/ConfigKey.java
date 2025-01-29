@@ -70,12 +70,12 @@ public class ConfigKey<T> {
         }
 
         public boolean isDescendantOf(Scope other) {
-            Scope current = this;
-            while (current != null) {
-                if (current == other) {
+            Scope parent = this.getParent();
+            while (parent != null) {
+                if (parent == other) {
                     return true;
                 }
-                current = current.getParent();
+                parent = parent.getParent();
             }
             return false;
         }
@@ -363,10 +363,6 @@ public class ConfigKey<T> {
 
     public T valueIn(Long id) {
         return valueInScope(getPrimaryScope(), id);
-    }
-
-    public T valueInDomain(Long domainId) {
-        return valueInScope(Scope.Domain, domainId);
     }
 
     @SuppressWarnings("unchecked")

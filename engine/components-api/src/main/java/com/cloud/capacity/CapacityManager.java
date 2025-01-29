@@ -71,7 +71,7 @@ public interface CapacityManager {
                     "0.85",
                     "Percentage (as a value between 0 and 1) of storage utilization above which allocators will disable using the pool for low storage available.",
                     true,
-                    List.of(ConfigKey.Scope.Zone, ConfigKey.Scope.StoragePool));
+                    List.of(ConfigKey.Scope.StoragePool, ConfigKey.Scope.Zone));
     static final ConfigKey<Double> StorageOverprovisioningFactor =
             new ConfigKey<>(
                     "Storage",
@@ -89,7 +89,7 @@ public interface CapacityManager {
                     "0.85",
                     "Percentage (as a value between 0 and 1) of allocated storage utilization above which allocators will disable using the pool for low allocated storage available.",
                     true,
-                    List.of(ConfigKey.Scope.Zone, ConfigKey.Scope.StoragePool));
+                    List.of(ConfigKey.Scope.StoragePool, ConfigKey.Scope.Zone));
     static final ConfigKey<Boolean> StorageOperationsExcludeCluster =
             new ConfigKey<>(
                     Boolean.class,
@@ -129,7 +129,7 @@ public interface CapacityManager {
                     "Percentage (as a value between 0 and 1) of allocated storage utilization above which allocators will disable using the pool for volume resize. " +
                             "This is applicable only when volume.resize.allowed.beyond.allocation is set to true.",
                     true,
-                    List.of(ConfigKey.Scope.Zone, ConfigKey.Scope.StoragePool));
+                    List.of(ConfigKey.Scope.StoragePool, ConfigKey.Scope.Zone));
 
     public boolean releaseVmCapacity(VirtualMachine vm, boolean moveFromReserved, boolean moveToReservered, Long hostId);
 

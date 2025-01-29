@@ -2311,13 +2311,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (configVo != null) {
                     final ConfigKey<?> key = _configDepot.get(param.getName());
                     if (key != null) {
-                        if (scope.equals(ConfigKey.Scope.Domain)) {
-                            Object value = key.valueInDomain(id);
-                            configVo.setValue(value == null ? null : value.toString());
-                        } else {
-                            Object value = key.valueInScope(scope, id);
-                            configVo.setValue(value == null ? null : value.toString());
-                        }
+                        Object value = key.valueInScope(scope, id);
+                        configVo.setValue(value == null ? null : value.toString());
                         configVOList.add(configVo);
                     } else {
                         logger.warn("ConfigDepot could not find parameter " + param.getName() + " for scope " + scope);

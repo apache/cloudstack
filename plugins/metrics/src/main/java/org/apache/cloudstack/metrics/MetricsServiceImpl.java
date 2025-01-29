@@ -649,7 +649,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             Long poolClusterId = clusterUuidToIdMap.get(poolResponse.getClusterId());
             Long poolId = poolUuidToIdMap.get(poolResponse.getId());
             final Double storageThreshold = AlertManager.StorageCapacityThreshold.valueIn(poolClusterId);
-            final Double storageDisableThreshold = CapacityManager.StorageCapacityDisableThreshold.valueInScope(ConfigKey.Scope.StoragePool, poolId);
+            final Double storageDisableThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(poolId);
 
             metricsResponse.setHasAnnotation(poolResponse.hasAnnotation());
             metricsResponse.setDiskSizeUsedGB(poolResponse.getDiskSizeUsed());
