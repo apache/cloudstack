@@ -99,9 +99,9 @@ override_dh_auto_install:
 	install -D client/target/utilities/bin/cloud-update-xenserver-licenses $(DESTDIR)/usr/bin/cloudstack-update-xenserver-licenses
 
 	install -D plugins/integrations/kubernetes-service/src/main/resources/conf/etcd-node.yml $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/etcd-node.yml
-  install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-control-node.yml $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/k8s-control-node.yml
-  install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-control-node-add.yml $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/k8s-control-node-add.yml
-  install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-node.yml $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/k8s-node.yml
+	install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-control-node.yml $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/k8s-control-node.yml
+	install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-control-node-add.yml $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/k8s-control-node-add.yml
+	install -D plugins/integrations/kubernetes-service/src/main/resources/conf/k8s-node.yml $(DESTDIR)/usr/share/$(PACKAGE)-management/cks/conf/k8s-node.yml
 
 	# Remove configuration in /ur/share/cloudstack-management/webapps/client/WEB-INF
 	# This should all be in /etc/cloudstack/management
