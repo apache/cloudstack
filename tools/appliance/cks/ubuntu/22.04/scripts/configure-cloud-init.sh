@@ -22,6 +22,8 @@ function install_packages() {
     apt-get install -y python3-json-pointer python3-jsonschema cloud-init resolvconf
 
     sudo mkdir -p /etc/apt/keyrings
+    echo "Creating /opt/bin directory"
+    sudo mkdir -p /opt/bin
     curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
     echo \
       "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
