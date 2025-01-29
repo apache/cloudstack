@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -40,6 +41,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.storage.DiskControllerMappingVO;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -118,7 +120,6 @@ import com.vmware.vim25.OvfCreateImportSpecParams;
 import com.vmware.vim25.OvfCreateImportSpecResult;
 import com.vmware.vim25.OvfFile;
 import com.vmware.vim25.OvfFileItem;
-import com.vmware.vim25.ParaVirtualSCSIController;
 import com.vmware.vim25.RuntimeFaultFaultMsg;
 import com.vmware.vim25.TaskInProgressFaultMsg;
 import com.vmware.vim25.VMwareDVSConfigSpec;
@@ -126,15 +127,12 @@ import com.vmware.vim25.VMwareDVSPortSetting;
 import com.vmware.vim25.VMwareDVSPortgroupPolicy;
 import com.vmware.vim25.VMwareDVSPvlanConfigSpec;
 import com.vmware.vim25.VMwareDVSPvlanMapEntry;
-import com.vmware.vim25.VirtualBusLogicController;
-import com.vmware.vim25.VirtualController;
 import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualIDEController;
 import com.vmware.vim25.VirtualLsiLogicController;
-import com.vmware.vim25.VirtualLsiLogicSASController;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineFileInfo;
 import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
@@ -1560,12 +1558,11 @@ public class HypervisorHostHelper {
 
     public static boolean createBlankVm(VmwareHypervisorHost host, String vmName, String vmInternalCSName, int cpuCount, int cpuSpeedMHz, int cpuReservedMHz,
                                         boolean limitCpuUse, int memoryMB, int memoryReserveMB, String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent,
-                                        Pair<String, String> controllerInfo, Boolean systemVm) throws Exception {
+                                        Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo, Boolean systemVm) throws Exception {
 
         if (LOGGER.isInfoEnabled())
             LOGGER.info("Create blank VM. cpuCount: " + cpuCount + ", cpuSpeed(MHz): " + cpuSpeedMHz + ", mem(Mb): " + memoryMB);
 
-        VirtualDeviceConfigSpec controllerSpec = null;
         // VM config basics
         VirtualMachineConfigSpec vmConfig = new VirtualMachineConfigSpec();
         vmConfig.setName(vmName);
@@ -1574,23 +1571,9 @@ public class HypervisorHostHelper {
 
         VmwareHelper.setBasicVmConfig(vmConfig, cpuCount, cpuSpeedMHz, cpuReservedMHz, memoryMB, memoryReserveMB, guestOsIdentifier, limitCpuUse, false);
 
-        Pair<String, String> chosenDiskControllers = VmwareHelper.chooseRequiredDiskControllers(controllerInfo, null, host, guestOsIdentifier);
-        String scsiDiskController = HypervisorHostHelper.getScsiController(chosenDiskControllers);
-        // If there is requirement for a SCSI controller, ensure to create those.
-        if (scsiDiskController != null) {
-        int busNum = 0;
-            int maxControllerCount = VmwareHelper.MAX_SCSI_CONTROLLER_COUNT;
-            if (systemVm) {
-                maxControllerCount = 1;
-            }
-            while (busNum < maxControllerCount) {
-            VirtualDeviceConfigSpec scsiControllerSpec = new VirtualDeviceConfigSpec();
-                scsiControllerSpec = getControllerSpec(DiskControllerType.getType(scsiDiskController).toString(), busNum);
-
-            vmConfig.getDeviceChange().add(scsiControllerSpec);
-            busNum++;
-            }
-        }
+        Pair<DiskControllerMappingVO, DiskControllerMappingVO> chosenDiskControllers = VmwareHelper.chooseDiskControllers(controllerInfo, null, host, guestOsIdentifier);
+        Set<DiskControllerMappingVO> requiredDiskControllers = VmwareHelper.getRequiredDiskControllers(chosenDiskControllers, systemVm);
+        VmwareHelper.addDiskControllersToVmConfigSpec(vmConfig, requiredDiskControllers, systemVm);
 
         if (guestOsIdentifier.startsWith("darwin")) { //Mac OS
             LOGGER.debug("Add USB Controller device for blank Mac OS VM " + vmName);
@@ -1689,34 +1672,6 @@ public class HypervisorHostHelper {
         return version;
     }
 
-    private static VirtualDeviceConfigSpec getControllerSpec(String diskController, int busNum) {
-        VirtualDeviceConfigSpec controllerSpec = new VirtualDeviceConfigSpec();
-        VirtualController controller = null;
-
-        if (diskController.equalsIgnoreCase(DiskControllerType.ide.toString())) {
-           controller = new VirtualIDEController();
-        } else if (DiskControllerType.pvscsi == DiskControllerType.getType(diskController)) {
-            controller = new ParaVirtualSCSIController();
-        } else if (DiskControllerType.lsisas1068 == DiskControllerType.getType(diskController)) {
-            controller = new VirtualLsiLogicSASController();
-        } else if (DiskControllerType.buslogic == DiskControllerType.getType(diskController)) {
-            controller = new VirtualBusLogicController();
-        } else if (DiskControllerType.lsilogic == DiskControllerType.getType(diskController)) {
-            controller = new VirtualLsiLogicController();
-        }
-
-        if (!diskController.equalsIgnoreCase(DiskControllerType.ide.toString())) {
-            ((VirtualSCSIController)controller).setSharedBus(VirtualSCSISharing.NO_SHARING);
-        }
-
-        controller.setBusNumber(busNum);
-        controller.setKey(busNum - VmwareHelper.MAX_SCSI_CONTROLLER_COUNT);
-
-        controllerSpec.setDevice(controller);
-        controllerSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-
-        return controllerSpec;
-    }
     public static VirtualMachineMO createWorkerVM(VmwareHypervisorHost hyperHost, DatastoreMO dsMo, String vmName, String vmxFormattedHardwareVersion) throws Exception {
 
         // Allow worker VM to float within cluster so that we will have better chance to
@@ -2247,35 +2202,6 @@ public class HypervisorHostHelper {
         morHyperHost.setValue(hostTokens[1]);
 
         return morHyperHost;
-    }
-
-    public static String getScsiController(Pair<String, String> controllerInfo) {
-        String rootDiskController = controllerInfo.first();
-        String dataDiskController = controllerInfo.second();
-
-        String scsiDiskController; //If any of the controller provided is SCSI then return it's sub-type.
-        if (isIdeController(rootDiskController) && isIdeController(dataDiskController)) {
-            //Default controllers would exist
-            return null;
-        } else if (isIdeController(rootDiskController) || isIdeController(dataDiskController)) {
-            // Only one of the controller types is IDE. Pick the other controller type to create controller.
-            if (isIdeController(rootDiskController)) {
-                scsiDiskController = dataDiskController;
-            } else {
-                scsiDiskController = rootDiskController;
-            }
-        } else if (DiskControllerType.getType(rootDiskController) != DiskControllerType.getType(dataDiskController)) {
-            // Both ROOT and DATA controllers are SCSI controllers but different sub-types, then prefer ROOT controller
-            scsiDiskController = rootDiskController;
-        } else {
-            // Both are SCSI controllers.
-            scsiDiskController = rootDiskController;
-        }
-        return scsiDiskController;
-    }
-
-    public static boolean isIdeController(String controller) {
-        return DiskControllerType.getType(controller) == DiskControllerType.ide;
     }
 
     public static void createBaseFolder(DatastoreMO dsMo, VmwareHypervisorHost hyperHost, StoragePoolType poolType) throws Exception {

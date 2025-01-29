@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import org.apache.cloudstack.api.command.admin.zone.UpdateVmwareDcCmd;
+import org.apache.cloudstack.storage.dao.DiskControllerMappingDao;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,6 +70,8 @@ public class VmwareManagerImplTest {
     private Map<String, String> clusterDetails;
     @Mock
     private Map<String, String> hostDetails;
+    @Mock
+    private DiskControllerMappingDao diskControllerMappingDaoMock;
 
     @Before
     public void beforeTest() {

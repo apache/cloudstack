@@ -153,6 +153,8 @@ import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.secstorage.HeuristicVO;
 import org.apache.cloudstack.secstorage.dao.SecondaryStorageHeuristicDao;
 import org.apache.cloudstack.secstorage.heuristics.Heuristic;
+import org.apache.cloudstack.storage.DiskControllerMappingVO;
+import org.apache.cloudstack.storage.dao.DiskControllerMappingDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -613,6 +615,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private ManagementServerHostPeerJoinDao mshostPeerJoinDao;
+
+    @Inject
+    private DiskControllerMappingDao diskControllerMappingDao;
 
     @Inject
     private AsyncJobManager jobManager;
@@ -5085,8 +5090,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (HypervisorType.VMware.equals(hypervisorType)) {
             options.put(VmDetailConstants.NIC_ADAPTER, Arrays.asList("E1000", "PCNet32", "Vmxnet2", "Vmxnet3"));
-            options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "lsilogic", "lsisas1068", "buslogic", "pvscsi"));
-            options.put(VmDetailConstants.DATA_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "lsilogic", "lsisas1068", "buslogic", "pvscsi"));
+            List<String> availableDiskControllers = diskControllerMappingDao.listForHypervisor(HypervisorType.VMware).stream().map(DiskControllerMappingVO::getName).collect(Collectors.toList());
+            options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, availableDiskControllers);
+            options.put(VmDetailConstants.DATA_DISK_CONTROLLER, availableDiskControllers);
             options.put(VmDetailConstants.NESTED_VIRTUALIZATION_FLAG, Arrays.asList("true", "false"));
             options.put(VmDetailConstants.SVGA_VRAM_SIZE, Collections.emptyList());
             options.put(VmDetailConstants.RAM_RESERVATION, Collections.emptyList());

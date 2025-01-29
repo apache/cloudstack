@@ -43,6 +43,8 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
+import org.apache.cloudstack.storage.DiskControllerMappingVO;
+import org.apache.cloudstack.storage.dao.DiskControllerMappingDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
@@ -254,6 +256,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     private IndirectAgentLB indirectAgentLB;
     @Inject
     private CAManager caManager;
+    @Inject
+    private DiskControllerMappingDao diskControllerMappingDao;
     private int _secStorageVmMtuSize;
 
     private String _instance;
@@ -378,6 +382,12 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         String copyPasswd = _configDao.getValue("secstorage.copy.password");
         setupCmd.setCopyPassword(copyPasswd);
         setupCmd.setCopyUserName(TemplateConstants.DEFAULT_HTTP_AUTH_USER);
+
+        List<DiskControllerMappingVO> mappingsInDatabase = diskControllerMappingDao.listForHypervisor(HypervisorType.VMware);
+        if (!CollectionUtils.isEmpty(mappingsInDatabase)) {
+            setupCmd.setSupportedDiskControllers(mappingsInDatabase);
+            setupCmd.setContextParam("hypervisor", HypervisorType.VMware.toString());
+        }
 
         Answer answer = _agentMgr.easySend(ssAHostId, setupCmd);
         if (answer != null && answer.getResult()) {

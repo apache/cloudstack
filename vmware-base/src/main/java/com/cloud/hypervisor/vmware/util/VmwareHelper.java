@@ -31,9 +31,12 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.annotation.Nonnull;
 import javax.xml.datatype.DatatypeConfigurationException;
@@ -56,18 +59,26 @@ import com.vmware.vim25.GuestInfo;
 import com.vmware.vim25.GuestNicInfo;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.NasDatastoreInfo;
+import com.vmware.vim25.ParaVirtualSCSIController;
 import com.vmware.vim25.VMwareDVSPortSetting;
+import com.vmware.vim25.VirtualController;
+import com.vmware.vim25.VirtualDeviceConfigSpec;
+import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 import com.vmware.vim25.VirtualDeviceFileBackingInfo;
 import com.vmware.vim25.VirtualIDEController;
+import com.vmware.vim25.VirtualLsiLogicController;
 import com.vmware.vim25.VirtualMachineConfigSummary;
 import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachineToolsStatus;
 import com.vmware.vim25.VirtualSCSIController;
+import com.vmware.vim25.VirtualSCSISharing;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
+import org.apache.cloudstack.storage.DiskControllerMappingVO;
 import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -124,17 +135,20 @@ public class VmwareHelper {
     protected static Logger LOGGER = LogManager.getLogger(VmwareHelper.class);
 
     public static final int MAX_SCSI_CONTROLLER_COUNT = 4;
-    public static final int MAX_IDE_CONTROLLER_COUNT = 2;
-    public static final int MAX_ALLOWED_DEVICES_IDE_CONTROLLER = 2;
     public static final int MAX_ALLOWED_DEVICES_SCSI_CONTROLLER = 16;
     public static final int MAX_SUPPORTED_DEVICES_SCSI_CONTROLLER = MAX_ALLOWED_DEVICES_SCSI_CONTROLLER - 1; // One device node is unavailable for hard disks or SCSI devices
-    public static final int MAX_USABLE_SCSI_CONTROLLERS = 2;
     public static final String MIN_VERSION_UEFI_LEGACY = "5.5";
     public static final String MIN_VERSION_VMFS6 = "6.5";
 
+    private static List<DiskControllerMappingVO> supportedDiskControllers;
+
+    public static void setSupportedDiskControllers(List<DiskControllerMappingVO> controllers) {
+        supportedDiskControllers = controllers;
+    }
+
     public static boolean isReservedScsiDeviceNumber(int deviceNumber) {
         // The SCSI controller is assigned to virtual device node (z:7), so that device node is unavailable for hard disks or SCSI devices.
-        return (deviceNumber % VmwareHelper.MAX_ALLOWED_DEVICES_SCSI_CONTROLLER) == 7;
+        return (deviceNumber % MAX_ALLOWED_DEVICES_SCSI_CONTROLLER) == 7;
     }
 
     @Nonnull
@@ -746,13 +760,11 @@ public class VmwareHelper {
     }
 
     public static String getRecommendedDiskControllerFromDescriptor(GuestOsDescriptor guestOsDescriptor) throws Exception {
-        String recommendedController;
-
-        recommendedController = guestOsDescriptor.getRecommendedDiskController();
+        String recommendedController = guestOsDescriptor.getRecommendedDiskController();
 
         // By-pass auto detected PVSCSI controller to use LsiLogic Parallel instead
-        if (DiskControllerType.getType(recommendedController) == DiskControllerType.pvscsi) {
-            recommendedController = DiskControllerType.lsilogic.toString();
+        if (ParaVirtualSCSIController.class.getSimpleName().equals(recommendedController)) {
+            return VirtualLsiLogicController.class.getSimpleName();
         }
 
         return recommendedController;
@@ -769,8 +781,18 @@ public class VmwareHelper {
         return name;
     }
 
-    public static boolean isControllerOsRecommended(String dataDiskController) {
-        return DiskControllerType.getType(dataDiskController) == DiskControllerType.osdefault;
+    /**
+     * Returns true if the provided mapping's name is "osdefault".
+     */
+    public static boolean isControllerOsRecommended(DiskControllerMappingVO mapping) {
+        return DiskControllerType.osdefault.toString().equals(mapping.getName());
+    }
+
+    /**
+     * Returns true if the provided mapping's bus name is "scsi".
+     */
+    public static boolean isControllerScsi(DiskControllerMappingVO mapping) {
+        return DiskControllerType.scsi.toString().equals(mapping.getBusName());
     }
 
     public static XMLGregorianCalendar getXMLGregorianCalendar(final Date date, final int offsetSeconds) throws DatatypeConfigurationException {
@@ -878,18 +900,18 @@ public class VmwareHelper {
                             instanceDisk.setChainInfo(GsonHelper.getGsonLogger().toJson(diskInfo));
                         }
                         for (VirtualDevice device : vmMo.getAllDeviceList()) {
-                            if (diskDevice.getControllerKey() == device.getKey()) {
-                                if (device instanceof VirtualIDEController) {
-                                    instanceDisk.setController(DiskControllerType.getType(device.getClass().getSimpleName()).toString());
-                                    instanceDisk.setControllerUnit(((VirtualIDEController) device).getBusNumber());
-                                } else if (device instanceof VirtualSCSIController) {
-                                    instanceDisk.setController(DiskControllerType.getType(device.getClass().getSimpleName()).toString());
-                                    instanceDisk.setControllerUnit(((VirtualSCSIController) device).getBusNumber());
-                                } else {
-                                    instanceDisk.setController(DiskControllerType.none.toString());
-                                }
-                                break;
+                            if (diskDevice.getControllerKey() != device.getKey()) {
+                                continue;
                             }
+                            try {
+                                DiskControllerMappingVO diskController = VmwareHelper.getDiskControllerMapping(null, device.getClass().getName());
+                                instanceDisk.setController(diskController.getName());
+                                instanceDisk.setControllerUnit(((VirtualController) device).getBusNumber());
+                            } catch (CloudRuntimeException e) {
+                                LOGGER.debug("Unable to find a disk controller mapping for class [{}]; defaulting disk controller to 'none'.", device.getClass().getName());
+                                instanceDisk.setController(DiskControllerType.none.toString());
+                            }
+                            break;
                         }
                         if (disk.getBacking() instanceof VirtualDeviceFileBackingInfo) {
                             VirtualDeviceFileBackingInfo diskBacking = (VirtualDeviceFileBackingInfo) disk.getBacking();
@@ -1069,45 +1091,127 @@ public class VmwareHelper {
     }
 
     /**
-     * Validates an instance's <code>rootDiskController</code> and <code>dataDiskController</code> details. Throws a
-     * <code>CloudRuntimeException</code> if they are invalid.
+     * Returns a disk controller mapping that has the provided name or the provided controller reference.
+     * @throws CloudRuntimeException if there is no configured disk controller matching the provided params.
      */
-    public static void validateDiskControllerDetails(String rootDiskControllerDetail, String dataDiskControllerDetail) {
-        rootDiskControllerDetail = DiskControllerType.getType(rootDiskControllerDetail).toString();
-        if (DiskControllerType.getType(rootDiskControllerDetail) == DiskControllerType.none) {
-            throw new CloudRuntimeException(String.format("[%s] is not a valid root disk controller", rootDiskControllerDetail));
+    public static DiskControllerMappingVO getDiskControllerMapping(String name, String controllerReference) {
+        for (DiskControllerMappingVO mapping : getAllSupportedDiskControllerMappings()) {
+            if (mapping.getName().equals(name) || mapping.getControllerReference().equals(controllerReference)) {
+                return mapping;
+            }
         }
-        dataDiskControllerDetail = DiskControllerType.getType(dataDiskControllerDetail).toString();
-        if (DiskControllerType.getType(dataDiskControllerDetail) == DiskControllerType.none) {
-            throw new CloudRuntimeException(String.format("[%s] is not a valid data disk controller", dataDiskControllerDetail));
+        LOGGER.debug("No corresponding disk controller mapping found for name [{}] and controller reference [{}].", name, controllerReference);
+        throw new CloudRuntimeException("Specified disk controller is invalid.");
+    }
+
+    public static List<DiskControllerMappingVO> getAllSupportedDiskControllerMappings() {
+        return supportedDiskControllers;
+    }
+
+    public static List<DiskControllerMappingVO> getAllSupportedDiskControllerMappingsExceptOsDefault() {
+        return getAllSupportedDiskControllerMappings().stream()
+                .filter(c -> !isControllerOsRecommended(c))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns a set containing the disk controllers an instance should have based on the provided params.
+     * @param controllerInfo pair containing the root disk and data disk controllers, respectively.
+     * @param isSystemVm if true, only the root disk controller is required; otherwise, both controllers are required.
+     */
+    public static Set<DiskControllerMappingVO> getRequiredDiskControllers(Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo,
+                                                                          boolean isSystemVm) {
+        Set<DiskControllerMappingVO> requiredDiskControllers = new HashSet<>();
+        requiredDiskControllers.add(controllerInfo.first());
+        if (!isSystemVm) {
+            requiredDiskControllers.add(controllerInfo.second());
+        }
+        return requiredDiskControllers;
+    }
+
+    /**
+     * Instructs the provided <code>VirtualMachineConfigSpec</code> to create the disk controllers contained in <code>requiredDiskControllers</code>.
+     * @param isSystemVm if true, only one disk controller of each type will be created; otherwise, the maximum amount of each controller will be created.
+     * @throws Exception if a disk controller mapping has an invalid controller reference.
+     */
+    public static void addDiskControllersToVmConfigSpec(VirtualMachineConfigSpec vmConfigSpec, Set<DiskControllerMappingVO> requiredDiskControllers,
+                                                        boolean isSystemVm) throws Exception {
+        int currentKey = -1;
+
+        for (DiskControllerMappingVO diskController : requiredDiskControllers) {
+            Class<?> controllerClass = Class.forName(diskController.getControllerReference());
+            if (controllerClass == VirtualIDEController.class) {
+                continue;
+            }
+            for (int bus = 0; bus < diskController.getMaxControllerCount(); bus++) {
+                VirtualController controller = (VirtualController) controllerClass.newInstance();
+                controller.setBusNumber(bus);
+                controller.setKey(currentKey);
+                currentKey--;
+
+                if (controller instanceof VirtualSCSIController) {
+                    ((VirtualSCSIController) controller).setSharedBus(VirtualSCSISharing.NO_SHARING);
+                }
+
+                VirtualDeviceConfigSpec controllerConfigSpec = new VirtualDeviceConfigSpec();
+                controllerConfigSpec.setDevice(controller);
+                controllerConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+                vmConfigSpec.getDeviceChange().add(controllerConfigSpec);
+
+                if (isSystemVm) {
+                    break;
+                }
+            }
         }
     }
 
     /**
      * Based on an instance's <code>rootDiskController</code> and <code>dataDiskController</code> details, returns a pair
-     * containing the disk controllers that should be used for root disk and the data disks, respectively.
-     *
-     * @param controllerInfo    pair containing the root disk and data disk controllers, respectively.
-     * @param vmMo              virtual machine to derive the recommended disk controllers from. If not null, <code>host</code> and <code>guestOsIdentifier</code> will be ignored.
-     * @param host              host to derive the recommended disk controllers from. Must be provided with <code>guestOsIdentifier</code>.
-     * @param guestOsIdentifier used to derive the recommended disk controllers from the host.
+     * containing the disk controller mappings that should be used for root disk and the data disks, respectively.
+     * @param isSystemVm if true, the root disk controller detail will be ignored, and the chosen root disk controller will be <code>lsilogic</code>.
      */
-    public static Pair<String, String> chooseRequiredDiskControllers(Pair<String, String> controllerInfo, VirtualMachineMO vmMo,
-                                                                     VmwareHypervisorHost host, String guestOsIdentifier) throws Exception {
-        String recommendedDiskControllerClassName = vmMo != null ? vmMo.getRecommendedDiskController(null) : host.getRecommendedDiskController(guestOsIdentifier);
-        String recommendedDiskController = DiskControllerType.getType(recommendedDiskControllerClassName).toString();
+    public static Pair<DiskControllerMappingVO, DiskControllerMappingVO> getDiskControllersFromVmSettings(String rootDiskControllerDetail,
+                                                                                                          String dataDiskControllerDetail,
+                                                                                                          boolean isSystemVm) {
+        String updatedRootDiskControllerDetail = isSystemVm ? DiskControllerType.lsilogic.toString() : ObjectUtils.defaultIfNull(rootDiskControllerDetail, DiskControllerType.osdefault.toString());
+        String updatedDataDiskControllerDetail = ObjectUtils.defaultIfNull(dataDiskControllerDetail, updatedRootDiskControllerDetail);
 
-        String convertedRootDiskController = controllerInfo.first();
+        DiskControllerMappingVO specifiedRootDiskController = getDiskControllerMapping(updatedRootDiskControllerDetail, null);
+        DiskControllerMappingVO specifiedDataDiskController = getDiskControllerMapping(updatedDataDiskControllerDetail, null);
+
+        return new Pair<>(specifiedRootDiskController, specifiedDataDiskController);
+    }
+
+    /**
+     * Based on an instance's <code>rootDiskController</code> and <code>dataDiskController</code> details, returns a pair
+     * containing the disk controllers that should be used for root disk and the data disks, respectively.
+     * @param controllerInfo pair containing the root disk and data disk controllers, respectively.
+     * @param vmMo virtual machine to derive the recommended disk controllers from. If not null, <code>host</code> and <code>guestOsIdentifier</code> will be ignored.
+     * @param host host to derive the recommended disk controllers from. Must be provided with <code>guestOsIdentifier</code>.
+     * @param guestOsIdentifier used to derive the recommended disk controllers from the host.
+     * @throws Exception if no disk controller mapping matching the recommended disk controller exists.
+     */
+    public static Pair<DiskControllerMappingVO, DiskControllerMappingVO> chooseDiskControllers(Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo,
+                                                                                               VirtualMachineMO vmMo,
+                                                                                               VmwareHypervisorHost host,
+                                                                                               String guestOsIdentifier) throws Exception {
+        String recommendedDiskControllerClassName = vmMo != null ? vmMo.getRecommendedDiskController(null) : host.getRecommendedDiskController(guestOsIdentifier);
+        DiskControllerMappingVO recommendedDiskController = getAllSupportedDiskControllerMappingsExceptOsDefault().stream()
+                .filter(c -> c.getControllerReference().contains(recommendedDiskControllerClassName))
+                .findFirst()
+                .orElseThrow(() -> new CloudRuntimeException("Recommended disk controller is not mapped."));
+
+        DiskControllerMappingVO convertedRootDiskController = controllerInfo.first();
         if (isControllerOsRecommended(convertedRootDiskController)) {
             convertedRootDiskController = recommendedDiskController;
         }
 
-        String convertedDataDiskController = controllerInfo.second();
+        DiskControllerMappingVO convertedDataDiskController = controllerInfo.second();
         if (isControllerOsRecommended(convertedDataDiskController)) {
             convertedDataDiskController = recommendedDiskController;
         }
 
-        if (diskControllersShareTheSameBusType(convertedRootDiskController, convertedDataDiskController)) {
+        if (convertedRootDiskController.getBusName().equals(convertedDataDiskController.getBusName())) {
             LOGGER.debug("Root and data disk controllers share the same bus type; therefore, we will only use the controllers specified for the root disk.");
             return new Pair<>(convertedRootDiskController, convertedRootDiskController);
         }
@@ -1115,28 +1219,40 @@ public class VmwareHelper {
         return new Pair<>(convertedRootDiskController, convertedDataDiskController);
     }
 
-    protected static boolean diskControllersShareTheSameBusType(String rootDiskController, String dataDiskController) {
-        DiskControllerType rootDiskControllerType = DiskControllerType.getType(rootDiskController);
-        DiskControllerType dataDiskControllerType = DiskControllerType.getType(dataDiskController);
-        if (rootDiskControllerType.equals(dataDiskControllerType)) {
-            return true;
-        }
-        List<DiskControllerType> scsiDiskControllers = List.of(DiskControllerType.scsi, DiskControllerType.lsilogic, DiskControllerType.lsisas1068,
-                DiskControllerType.buslogic ,DiskControllerType.pvscsi);
-        return scsiDiskControllers.contains(rootDiskControllerType) && scsiDiskControllers.contains(dataDiskControllerType);
-    }
-
     /**
      * Identifies whether the disk is a root or data disk, and returns the controller from the provided pair that should
      * be used for the disk.
      * @param controllerInfo pair containing the root disk and data disk controllers, respectively.
      */
-    public static String getControllerBasedOnDiskType(Pair<String, String> controllerInfo, DiskTO disk) {
+    public static DiskControllerMappingVO getControllerBasedOnDiskType(Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo,
+                                                                       DiskTO disk) {
         if (disk.getType() == Volume.Type.ROOT || disk.getDiskSeq() == 0) {
-            LOGGER.debug(String.format("Choosing disk controller [%s] for the root disk.", controllerInfo.first()));
+            LOGGER.debug("Choosing disk controller [{}] for the root disk.", controllerInfo.first());
             return controllerInfo.first();
         }
-        LOGGER.debug(String.format("Choosing disk controller [%s] for the data disks.", controllerInfo.second()));
+        LOGGER.debug("Choosing disk controller [{}] for the data disks.", controllerInfo.second());
         return controllerInfo.second();
+    }
+
+    public static void configureDiskControllerMappingsInVmwareBaseModule(List<DiskControllerMappingVO> mappings) {
+        List<DiskControllerMappingVO> validMappings = new ArrayList<>();
+
+        for (DiskControllerMappingVO mapping : mappings) {
+            try {
+                if (!DiskControllerType.osdefault.toString().equals(mapping.getName())) {
+                    Class.forName(mapping.getControllerReference());
+                }
+                LOGGER.debug("Adding disk controller mapping with name [{}] and controller reference [{}] to the list of available disk controllers.",
+                        mapping.getName(), mapping.getControllerReference());
+                validMappings.add(mapping);
+            } catch (ClassNotFoundException e) {
+                LOGGER.debug("Disk controller mapping with name [{}] and controller reference [{}] is invalid; ignoring it.",
+                        mapping.getName(), mapping.getControllerReference());
+            }
+        }
+
+        setSupportedDiskControllers(validMappings);
+        LOGGER.info("Configured the available disk controller mappings on the 'vmware-base' module. To add support for a new controller, " +
+                "it is necessary to restart the management servers.");
     }
 }
