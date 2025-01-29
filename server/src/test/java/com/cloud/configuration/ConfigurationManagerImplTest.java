@@ -46,14 +46,17 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
+import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -61,6 +64,9 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.junit.Assert;
 import org.junit.Before;
@@ -159,6 +165,10 @@ public class ConfigurationManagerImplTest {
     NetworkService networkService;
     @Mock
     NetworkModel networkModel;
+    @Mock
+    PrimaryDataStoreDao storagePoolDao;
+    @Mock
+    StoragePoolDetailsDao storagePoolDetailsDao;
 
     DeleteZoneCmd deleteZoneCmd;
     CreateNetworkOfferingCmd createNetworkOfferingCmd;
@@ -851,5 +861,27 @@ public class ConfigurationManagerImplTest {
     public void shouldValidateConfigRangeTestValueIsNotNullAndConfigHasRangeReturnTrue() {
         boolean result = configurationManagerImplSpy.shouldValidateConfigRange(Config.ConsoleProxySessionMax.name(), "test", Config.ConsoleProxyUrlDomain);
         Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testResetConfigurations() {
+        Long poolId = 1L;
+        ResetCfgCmd cmd = Mockito.mock(ResetCfgCmd.class);
+        Mockito.when(cmd.getCfgName()).thenReturn("pool.storage.capacity.disablethreshold");
+        Mockito.when(cmd.getStoragepoolId()).thenReturn(poolId);
+        Mockito.when(cmd.getZoneId()).thenReturn(null);
+        Mockito.when(cmd.getClusterId()).thenReturn(null);
+        Mockito.when(cmd.getAccountId()).thenReturn(null);
+        Mockito.when(cmd.getDomainId()).thenReturn(null);
+        Mockito.when(cmd.getImageStoreId()).thenReturn(null);
+
+        ConfigurationVO cfg = new ConfigurationVO("Advanced", "DEFAULT", "test", "pool.storage.capacity.disablethreshold", null, "description");
+        cfg.setScope(10);
+        cfg.setDefaultValue(".85");
+        Mockito.when(configDao.findByName("pool.storage.capacity.disablethreshold")).thenReturn(cfg);
+        Mockito.when(storagePoolDao.findById(poolId)).thenReturn(Mockito.mock(StoragePoolVO.class));
+
+        Pair<Configuration, String> result = configurationManagerImplSpy.resetConfiguration(cmd);
+        Assert.assertEquals(".85", result.second());
     }
 }

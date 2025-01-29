@@ -892,7 +892,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     protected UserVmDao _userVmDao;
     @Inject
-    private ConfigurationDao _configDao;
+    protected ConfigurationDao _configDao;
     @Inject
     private ConfigurationGroupDao _configGroupDao;
     @Inject
@@ -904,7 +904,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private DiskOfferingDao _diskOfferingDao;
     @Inject
-    private DomainDao _domainDao;
+    protected DomainDao _domainDao;
     @Inject
     private AccountDao _accountDao;
     @Inject
@@ -960,7 +960,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private HostTagsDao _hostTagsDao;
     @Inject
-    private ConfigDepot _configDepot;
+    protected ConfigDepot _configDepot;
     @Inject
     private UserVmManager _userVmMgr;
     @Inject
