@@ -796,6 +796,9 @@ public class EventTypes {
     // Resource Limit
     public static final String EVENT_RESOURCE_LIMIT_UPDATE = "RESOURCE.LIMIT.UPDATE";
 
+    // Management Server
+    public static final String EVENT_MANAGEMENT_SERVER_REMOVE = "MANAGEMENT.SERVER.REMOVE";
+
     public static final String VM_LEASE_EXPIRED = "VM.LEASE.EXPIRED";
     public static final String VM_LEASE_DISABLED = "VM.LEASE.DISABLED";
     public static final String VM_LEASE_CANCELLED = "VM.LEASE.CANCELLED";
@@ -1295,6 +1298,9 @@ public class EventTypes {
         entityEventDetails.put(EVENT_SHAREDFS_DESTROY, SharedFS.class);
         entityEventDetails.put(EVENT_SHAREDFS_EXPUNGE, SharedFS.class);
         entityEventDetails.put(EVENT_SHAREDFS_RECOVER, SharedFS.class);
+
+        // Management Server
+        entityEventDetails.put(EVENT_MANAGEMENT_SERVER_REMOVE, "ManagementServer");
 
         // VM Lease
         entityEventDetails.put(VM_LEASE_EXPIRED, VirtualMachine.class);

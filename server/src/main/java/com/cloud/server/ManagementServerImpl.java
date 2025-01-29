@@ -44,6 +44,8 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.api.query.dao.ManagementServerJoinDao;
+import com.cloud.api.query.vo.ManagementServerJoinVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -125,6 +127,7 @@ import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.iso.RegisterIsoCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.loadbalancer.ListLoadBalancerRuleInstancesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
+import org.apache.cloudstack.api.command.admin.management.RemoveMgmtCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
@@ -627,6 +630,7 @@ import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.resourcedetail.dao.GuestOsDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
@@ -1015,6 +1019,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     UserDataManager userDataManager;
     @Inject
     StoragePoolTagsDao storagePoolTagsDao;
+    @Inject
+    protected ManagementServerJoinDao _managementServerJoinDao;
 
     @Inject
     private PublicIpQuarantineDao publicIpQuarantineDao;
@@ -4041,6 +4047,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListTemplateDirectDownloadCertificatesCmd.class);
         cmdList.add(ProvisionTemplateDirectDownloadCertificateCmd.class);
         cmdList.add(ListMgmtsCmd.class);
+        cmdList.add(RemoveMgmtCmd.class);
         cmdList.add(GetUploadParamsForIsoCmd.class);
         cmdList.add(GetRouterHealthCheckResultsCmd.class);
         cmdList.add(StartRollingMaintenanceCmd.class);
@@ -5550,6 +5557,26 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     public void setLockControllerListener(final LockControllerListener lockControllerListener) {
         _lockControllerListener = lockControllerListener;
+    }
+
+    @Override
+    @DB
+    @ActionEvent(eventType = EventTypes.EVENT_MANAGEMENT_SERVER_REMOVE, eventDescription = "removing management server")
+    public boolean removeManagementServer(RemoveMgmtCmd cmd) {
+        final Long id = cmd.getId();
+        ManagementServerJoinVO managementServer = _managementServerJoinDao.findById(id);
+
+        if (managementServer == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find the management server for specified id [%s]", managementServer.getUuid()));
+        }
+
+        if (ManagementServerHost.State.Up.equals(managementServer.getState())) {
+            throw new InvalidParameterValueException(String.format("Unable to remove management server [%s], it is not in the right state, it can only be removed when state is [%s]", managementServer.getUuid(), ManagementServerHost.State.Down.name()));
+        }
+
+        managementServer.setRemoved(new Date());
+        return _managementServerJoinDao.update(id, managementServer);
+
     }
 
 }
