@@ -124,7 +124,9 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> UnmanagedApplianceSearch;
     protected SearchBuilder<HostVO> MaintenanceCountSearch;
     protected SearchBuilder<HostVO> HostTypeCountSearch;
-    protected SearchBuilder<HostVO> ResponsibleMsCountSearch;
+    protected SearchBuilder<HostVO> ResponsibleMsSearch;
+    protected SearchBuilder<HostVO> ResponsibleMsDcSearch;
+    protected GenericSearchBuilder<HostVO, String> ResponsibleMsIdSearch;
     protected SearchBuilder<HostVO> HostTypeZoneCountSearch;
     protected SearchBuilder<HostVO> ClusterStatusSearch;
     protected SearchBuilder<HostVO> TypeNameZoneSearch;
@@ -189,9 +191,19 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         HostTypeCountSearch.and("type", HostTypeCountSearch.entity().getType(), SearchCriteria.Op.EQ);
         HostTypeCountSearch.done();
 
-        ResponsibleMsCountSearch = createSearchBuilder();
-        ResponsibleMsCountSearch.and("managementServerId", ResponsibleMsCountSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
-        ResponsibleMsCountSearch.done();
+        ResponsibleMsSearch = createSearchBuilder();
+        ResponsibleMsSearch.and("managementServerId", ResponsibleMsSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
+        ResponsibleMsSearch.done();
+
+        ResponsibleMsDcSearch = createSearchBuilder();
+        ResponsibleMsDcSearch.and("managementServerId", ResponsibleMsDcSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
+        ResponsibleMsDcSearch.and("dcId", ResponsibleMsDcSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        ResponsibleMsDcSearch.done();
+
+        ResponsibleMsIdSearch = createSearchBuilder(String.class);
+        ResponsibleMsIdSearch.selectFields(ResponsibleMsIdSearch.entity().getUuid());
+        ResponsibleMsIdSearch.and("managementServerId", ResponsibleMsIdSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
+        ResponsibleMsIdSearch.done();
 
         HostTypeZoneCountSearch = createSearchBuilder();
         HostTypeZoneCountSearch.and("type", HostTypeZoneCountSearch.entity().getType(), SearchCriteria.Op.EQ);
@@ -1424,10 +1436,32 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public int countByMs(long msid) {
-        SearchCriteria<HostVO> sc = ResponsibleMsCountSearch.create();
-        sc.setParameters("managementServerId", msid);
+    public List<HostVO> listHostsByMsAndDc(long msId, long dcId) {
+        SearchCriteria<HostVO> sc = ResponsibleMsDcSearch.create();
+        sc.setParameters("managementServerId", msId);
+        sc.setParameters("dcId", dcId);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<HostVO> listHostsByMs(long msId) {
+        SearchCriteria<HostVO> sc = ResponsibleMsSearch.create();
+        sc.setParameters("managementServerId", msId);
+        return listBy(sc);
+    }
+
+    @Override
+    public int countByMs(long msId) {
+        SearchCriteria<HostVO> sc = ResponsibleMsSearch.create();
+        sc.setParameters("managementServerId", msId);
         return getCount(sc);
+    }
+
+    @Override
+    public List<String> listByMs(long msId) {
+        SearchCriteria<String> sc = ResponsibleMsIdSearch.create();
+        sc.addAnd("managementServerId", SearchCriteria.Op.EQ, msId);
+        return customSearch(sc, null);
     }
 
     @Override

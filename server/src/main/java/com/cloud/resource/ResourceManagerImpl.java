@@ -47,9 +47,9 @@ import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
-import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
-import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForHostMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
@@ -1284,7 +1284,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public Host cancelMaintenance(final CancelMaintenanceCmd cmd) {
+    public Host cancelMaintenance(final CancelHostMaintenanceCmd cmd) {
         final Long hostId = cmd.getId();
 
         // verify input parameters
@@ -1501,7 +1501,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public Host maintain(final PrepareForMaintenanceCmd cmd) {
+    public Host maintain(final PrepareForHostMaintenanceCmd cmd) {
         final Long hostId = cmd.getId();
         final HostVO host = _hostDao.findById(hostId);
 
@@ -2508,13 +2508,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     private Host createHostAndAgent(final ServerResource resource, final Map<String, String> details, final boolean old, final List<String> hostTags, final boolean forRebalance) {
+        return createHostAndAgent(resource, details, old, hostTags, forRebalance, false);
+    }
+
+    private Host createHostAndAgent(final ServerResource resource, final Map<String, String> details, final boolean old, final List<String> hostTags, final boolean forRebalance, final boolean isTransferredConnection) {
         HostVO host = null;
         StartupCommand[] cmds = null;
         boolean hostExists = false;
         boolean created = false;
 
         try {
-            cmds = resource.initialize();
+            cmds = resource.initialize(isTransferredConnection);
             if (cmds == null) {
                 logger.info("Unable to fully initialize the agent because no StartupCommands are returned");
                 return null;
@@ -2685,7 +2689,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host createHostAndAgent(final Long hostId, final ServerResource resource, final Map<String, String> details, final boolean old, final List<String> hostTags, final boolean forRebalance) {
-        final Host host = createHostAndAgent(resource, details, old, hostTags, forRebalance);
+        return createHostAndAgent(hostId, resource, details, old, hostTags, forRebalance, false);
+    }
+
+    @Override
+    public Host createHostAndAgent(final Long hostId, final ServerResource resource, final Map<String, String> details, final boolean old, final List<String> hostTags, final boolean forRebalance, boolean isTransferredConnection) {
+        final Host host = createHostAndAgent(resource, details, old, hostTags, forRebalance, isTransferredConnection);
         return host;
     }
 
