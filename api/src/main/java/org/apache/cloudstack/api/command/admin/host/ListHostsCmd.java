@@ -105,6 +105,9 @@ public class ListHostsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "hypervisor type of host: XenServer,KVM,VMware,Hyperv,BareMetal,Simulator")
     private String hypervisor;
 
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING, description = "CPU Arch of the host", since = "4.20.1")
+    private String arch;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -187,6 +190,10 @@ public class ListHostsCmd extends BaseListCmd {
 
     public String getHostOutOfBandManagementPowerState() {
         return outOfBandManagementPowerState;
+    }
+
+    public String getArch() {
+        return arch;
     }
 
     /////////////////////////////////////////////////////
