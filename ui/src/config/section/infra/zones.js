@@ -26,8 +26,8 @@ export default {
   permission: ['listZonesMetrics'],
   searchFilters: ['name', 'domainid', 'tags'],
   columns: () => {
-    const fields = ['name', 'allocationstate', 'type', 'networktype', 'clusters']
-    const metricsFields = ['cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal']
+    const fields = ['name', 'allocationstate', 'type', 'networktype']
+    const metricsFields = ['clusters', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
     }
