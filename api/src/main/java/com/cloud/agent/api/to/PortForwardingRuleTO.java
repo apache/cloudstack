@@ -21,8 +21,6 @@ import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.utils.net.NetUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.List;
-
 /**
  * PortForwardingRuleTO specifies one port forwarding rule.
  *
@@ -31,8 +29,6 @@ import java.util.List;
 public class PortForwardingRuleTO extends FirewallRuleTO {
     String dstIp;
     int[] dstPortRange;
-
-    List<String> sourceCidrList;
 
     protected PortForwardingRuleTO() {
         super();
