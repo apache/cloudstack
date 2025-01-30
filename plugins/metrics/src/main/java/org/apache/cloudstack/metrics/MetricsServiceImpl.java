@@ -851,7 +851,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         }
         for (final ManagementServerResponse managementServerResponse: managementServerResponses) {
             if(logger.isDebugEnabled()) {
-                logger.debug(String.format("Processing metrics for MS hosts %s.", managementServerResponse.getId()));
+                logger.debug("Processing metrics for MS host [id: {}, name: {}].", managementServerResponse.getId(), managementServerResponse.getName());
             }
             ManagementServerMetricsResponse metricsResponse = new ManagementServerMetricsResponse();
 
@@ -895,6 +895,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         metricsResponse.setDbLocal(status.isDbLocal());
         metricsResponse.setUsageLocal(status.isUsageLocal());
         metricsResponse.setAvailableProcessors(status.getAvailableProcessors());
+        metricsResponse.setLastAgents(status.getLastAgents());
+        metricsResponse.setAgents(status.getAgents());
         metricsResponse.setAgentCount(status.getAgentCount());
         metricsResponse.setCollectionTime(status.getCollectionTime());
         metricsResponse.setSessions(status.getSessions());

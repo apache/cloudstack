@@ -383,7 +383,7 @@ public class AgentProperties{
     /**
      * This param will set the CPU architecture for the domain to override what the management server would send.<br>
      * In case of arm64 (aarch64), this will change the machine type to 'virt' and add a SCSI and a USB controller in the domain XML.<br>
-     * Possible values: x86_64 | aarch64 <br>
+     * Possible values: x86_64 | aarch64 | s390x <br>
      * Data type: String.<br>
      * Default value: <code>null</code> (will set use the architecture of the VM's OS).
      */
@@ -516,6 +516,7 @@ public class AgentProperties{
     /**
      * The model of Watchdog timer to present to the Guest.<br>
      * For all models refer to the libvirt documentation.<br>
+     * PLEASE NOTE: to disable the watchdogs definitions, use value: none
      * Data type: String.<br>
      * Default value: <code>i6300esb</code>
      */

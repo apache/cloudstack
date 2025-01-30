@@ -85,6 +85,8 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, boolean forRebalance);
 
+    public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, boolean forRebalance, boolean isTransferredConnection);
+
     public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails);
 
     public HostVO createHostVOForConnectedAgent(StartupCommand[] cmds);
@@ -185,7 +187,7 @@ public interface ResourceManager extends ResourceService, Configurable {
      * @param vgpuType the VGPU type
      * @return true when the host has the capacity with given VGPU type
      */
-    boolean isGPUDeviceAvailable(long hostId, String groupName, String vgpuType);
+    boolean isGPUDeviceAvailable(Host host, String groupName, String vgpuType);
 
     /**
      * Get available GPU device

@@ -17,6 +17,7 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { i18n } from '@/locales'
 
 export default {
   name: 'accountuser',
@@ -26,13 +27,31 @@ export default {
   hidden: true,
   permission: ['listUsers'],
   searchFilters: () => {
-    var filters = []
+    const filters = ['usersource']
     if (store.getters.userInfo.roletype === 'Admin') {
       filters.push('apikeyaccess')
     }
     return filters
   },
-  columns: ['username', 'state', 'firstname', 'lastname', 'email', 'account', 'domain'],
+  columns: [
+    'username', 'state', 'firstname', 'lastname',
+    'email', 'account', 'domain',
+    {
+      field: 'userSource',
+      customTitle: 'userSource',
+      userSource: (record) => {
+        let { usersource: source } = record
+
+        if (source === 'saml2') {
+          source = 'saml'
+        } else if (source === 'saml2disabled') {
+          source = 'saml.disabled'
+        }
+
+        return i18n.global.t(`label.${source}`)
+      }
+    }
+  ],
   details: ['username', 'id', 'firstname', 'lastname', 'email', 'usersource', 'timezone', 'rolename', 'roletype', 'is2faenabled', 'account', 'domain', 'created'],
   tabs: [
     {

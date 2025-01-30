@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
+import com.cloud.user.Account;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.StoragePool;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
@@ -52,7 +53,7 @@ public interface SnapshotManager extends Configurable {
     public static final ConfigKey<Integer> BackupRetryInterval = new ConfigKey<Integer>(Integer.class, "backup.retry.interval", "Advanced", "300",
             "Time in seconds between retries in backing up snapshot to secondary", false, ConfigKey.Scope.Global, null);
 
-    public static final ConfigKey<Boolean> VmStorageSnapshotKvm = new ConfigKey<>(Boolean.class, "kvm.vmstoragesnapshot.enabled", "Snapshots", "false", "For live snapshot of virtual machine instance on KVM hypervisor without memory. Requieres qemu version 1.6+ (on NFS or Local file system) and qemu-guest-agent installed on guest VM", true, ConfigKey.Scope.Global, null);
+    public static final ConfigKey<Boolean> VmStorageSnapshotKvm = new ConfigKey<>(Boolean.class, "kvm.vmstoragesnapshot.enabled", "Snapshots", "false", "For live snapshot of virtual machine instance on KVM hypervisor without memory. Requires qemu version 1.6+ (on NFS or Local file system) and qemu-guest-agent installed on guest VM", true, ConfigKey.Scope.Global, null);
 
     ConfigKey<Boolean> kvmIncrementalSnapshot = new ConfigKey<>(Boolean.class, "kvm.incremental.snapshot", "Snapshots", "false", "Whether differential snapshots are enabled for" +
             " KVM or not. When this is enabled, all KVM snapshots will be incremental. Bear in mind that it will generate a new full snapshot when the snapshot chain reaches the limit defined in snapshot.delta.max.", true, ConfigKey.Scope.Cluster, null);
@@ -70,7 +71,7 @@ public interface SnapshotManager extends Configurable {
      * @param accountId
      *            The account which is to be deleted.
      */
-    boolean deleteSnapshotDirsForAccount(long accountId);
+    boolean deleteSnapshotDirsForAccount(Account account);
 
     boolean isHypervisorKvmAndFileBasedStorage(VolumeInfo volumeInfo, StoragePool storagePool);
 

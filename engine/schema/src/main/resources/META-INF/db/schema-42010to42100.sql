@@ -25,6 +25,16 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.console_session', 'console_endpoint_
 -- Add client_address column to cloud.console_session table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.console_session', 'client_address', 'VARCHAR(45)');
 
+-- Allow default roles to use quotaCreditsList
+INSERT INTO `cloud`.`role_permissions` (uuid, role_id, rule, permission, sort_order)
+SELECT uuid(), role_id, 'quotaCreditsList', permission, sort_order
+FROM `cloud`.`role_permissions` rp
+WHERE rp.rule = 'quotaStatement'
+AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaCreditsList');
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'last_mgmt_server_id', 'bigint unsigned DEFAULT NULL COMMENT "last management server this host is connected to" AFTER `mgmt_server_id`');
+
+
 --- KVM Incremental Snapshots
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'kvm_checkpoint_path', 'varchar(255)');

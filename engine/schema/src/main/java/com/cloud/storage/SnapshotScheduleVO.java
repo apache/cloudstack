@@ -29,8 +29,7 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import com.cloud.storage.snapshot.SnapshotSchedule;
-import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
-import org.apache.commons.lang3.builder.ToStringStyle;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "snapshot_schedule")
@@ -71,6 +70,13 @@ public class SnapshotScheduleVO implements SnapshotSchedule {
         this.scheduledTimestamp = scheduledTimestamp;
         this.snapshotId = null;
         this.asyncJobId = null;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("SnapshotSchedule %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "volumeId", "policyId"));
     }
 
     @Override
@@ -133,12 +139,5 @@ public class SnapshotScheduleVO implements SnapshotSchedule {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
-    }
-
-    @Override
-    public String toString() {
-        ReflectionToStringBuilder reflectionToStringBuilder = new ReflectionToStringBuilder(this, ToStringStyle.JSON_STYLE);
-        reflectionToStringBuilder.setExcludeFieldNames("id");
-        return reflectionToStringBuilder.toString();
     }
 }

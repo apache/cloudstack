@@ -43,6 +43,13 @@ public class NfsTO implements DataStoreTO {
     }
 
     @Override
+    public String toString() {
+        return String.format("NfsTO %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "uuid", "_url", "_role", "nfsVersion"));
+    }
+
+    @Override
     public String getUrl() {
         return _url;
     }

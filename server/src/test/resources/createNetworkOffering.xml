@@ -76,4 +76,5 @@
     <bean id="vlanDetailsDao" class="com.cloud.dc.dao.VlanDetailsDaoImpl" />
     <bean id="publicIpQuarantineDaoImpl" class="com.cloud.network.dao.PublicIpQuarantineDaoImpl" />
     <bean id="reservationDao" class="org.apache.cloudstack.reservation.dao.ReservationDaoImpl" />
+    <bean id="managementServerHostDao" class="com.cloud.cluster.dao.ManagementServerHostDaoImpl" />
 </beans>
