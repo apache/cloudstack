@@ -125,9 +125,7 @@ public interface AccountManager extends AccountService, Configurable {
 
     /**
      * Disables an account by accountName and domainId
-     * @param disabled
-     *            account if success
-     * @return true if disable was successful, false otherwise
+     * @return the disabled account
      */
     Account disableAccount(String accountName, Long domainId, Long accountId) throws ConcurrentOperationException, ResourceUnavailableException;
 
@@ -187,7 +185,7 @@ public interface AccountManager extends AccountService, Configurable {
 
     String MESSAGE_REMOVE_ACCOUNT_EVENT = "Message.RemoveAccount.Event";
 
-    ConfigKey<Boolean> UseSecretKeyInResponse = new ConfigKey<Boolean>("Advanced", Boolean.class, "use.secret.key.in.response", "false",
+    ConfigKey<Boolean> UseSecretKeyInResponse = new ConfigKey<>("Advanced", Boolean.class, "use.secret.key.in.response", "false",
             "This parameter allows the users to enable or disable of showing secret key as a part of response for various APIs. By default it is set to false.", true);
 
     boolean moveUser(long id, Long domainId, Account newAccount);
@@ -202,5 +200,7 @@ public interface AccountManager extends AccountService, Configurable {
 
     void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword, boolean skipCurrentPassValidation);
 
-  void checkApiAccess(Account caller, String command);
+    void checkApiAccess(Account caller, String command);
+
+    UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user);
 }

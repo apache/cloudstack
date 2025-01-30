@@ -1377,28 +1377,23 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      * if there is any permission under the requested role that is not permitted for the caller, refuse
      */
     private void checkRoleEscalation(Account caller, Account requested) {
-        if (logger.isDebugEnabled()) {
-            logger.debug(String.format("checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
-                    caller.getAccountName(),
-                    caller.getUuid(),
-                    caller.getRoleId(),
-                    requested.getAccountName(),
-                    requested.getUuid(),
-                    requested.getRoleId()));
-        }
+        logger.debug("checking if user of account {} [{}] with role-id [{}] can create an account of type {} [{}] with role-id [{}]",
+                caller.getAccountName(),
+                caller.getUuid(),
+                caller.getRoleId(),
+                requested.getAccountName(),
+                requested.getUuid(),
+                requested.getRoleId());
         List<APIChecker> apiCheckers = getEnabledApiCheckers();
         for (String command : apiNameList) {
             try {
                 checkApiAccess(apiCheckers, requested, command);
             } catch (PermissionDeniedException pde) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
-                            command,
-                            pde.getAccount().getAccountName(),
-                            pde.getAccount().getUuid(),
-                            pde.getEntitiesInViolation()
-                            ));
-                }
+                logger.trace("checking for permission to \"{}\" is irrelevant as it is not requested for {} [{}]",
+                        command,
+                        requested.getAccountName(),
+                        requested.getUuid()
+                );
                 continue;
             }
             // so requested can, now make sure caller can as well
@@ -3566,4 +3561,26 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return userTwoFactorAuthenticationProvidersMap.get(name.toLowerCase());
     }
 
+    @Override
+    public UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user) {
+        return Transaction.execute((TransactionCallback<UserAccount>) status -> {
+            if (!user.isUser2faEnabled() && StringUtils.isBlank(user.getUser2faProvider())) {
+                return user;
+            }
+            UserDetailVO userDetailVO = _userDetailsDao.findDetail(user.getId(), UserDetailVO.Setup2FADetail);
+            if (userDetailVO != null && UserAccountVO.Setup2FAstatus.VERIFIED.name().equals(userDetailVO.getValue())) {
+                return user;
+            }
+            logger.info("Clearing 2FA configurations for {} as it is still in setup on a new login request", user);
+            if (userDetailVO != null) {
+                _userDetailsDao.remove(userDetailVO.getId());
+            }
+            UserAccountVO userAccountVO = _userAccountDao.findById(user.getId());
+            userAccountVO.setUser2faEnabled(false);
+            userAccountVO.setUser2faProvider(null);
+            userAccountVO.setKeyFor2fa(null);
+            _userAccountDao.update(user.getId(), userAccountVO);
+            return userAccountVO;
+        });
+    }
 }

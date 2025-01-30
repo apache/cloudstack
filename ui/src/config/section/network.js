@@ -140,7 +140,14 @@ export default {
           icon: 'edit-outlined',
           label: 'label.update.network',
           dataView: true,
+<<<<<<< HEAD
           disabled: (record, user) => { return (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype)) },
+=======
+          disabled: (record, user) => {
+            return (!record.projectid && (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype))) ||
+              (record.type === 'Shared' && record.specifyvlan && !['Admin'].includes(user.userInfo.roletype))
+          },
+>>>>>>> 4.19
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/network/UpdateNetwork.vue')))
         },
@@ -150,7 +157,14 @@ export default {
           label: 'label.restart.network',
           message: 'message.restart.network',
           dataView: true,
+<<<<<<< HEAD
           disabled: (record, user) => { return (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype)) },
+=======
+          disabled: (record, user) => {
+            return (!record.projectid && (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype))) ||
+              (record.type === 'Shared' && record.specifyvlan && !['Admin'].includes(user.userInfo.roletype))
+          },
+>>>>>>> 4.19
           args: (record, store, isGroupAction) => {
             var fields = []
             if (isGroupAction || record.vpcid == null) {
@@ -189,7 +203,14 @@ export default {
           label: 'label.action.delete.network',
           message: 'message.action.delete.network',
           dataView: true,
+<<<<<<< HEAD
           disabled: (record, user) => { return (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype)) },
+=======
+          disabled: (record, user) => {
+            return (!record.projectid && (record.account !== user.userInfo.account && !['Admin', 'DomainAdmin'].includes(user.userInfo.roletype))) ||
+              (record.type === 'Shared' && record.specifyvlan && !['Admin'].includes(user.userInfo.roletype))
+          },
+>>>>>>> 4.19
           groupAction: true,
           popup: true,
           groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
