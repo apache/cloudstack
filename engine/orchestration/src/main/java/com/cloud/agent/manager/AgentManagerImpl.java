@@ -52,6 +52,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
@@ -569,27 +570,27 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             }
             for (int i = 0; i < cmd.length; i++) {
                 try {
-                    monitor.second().processConnect(host, cmd[i], forRebalance);
-                } catch (final Exception e) {
-                    if (e instanceof ConnectionException) {
-                        final ConnectionException ce = (ConnectionException)e;
-                        if (ce.isSetupError()) {
-                            s_logger.warn("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage());
-                            handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true, true);
-                            throw ce;
-                        } else {
-                            s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId + " due to " + e.getMessage());
-                            handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested, true, true);
-                            return attache;
-                        }
-                    } else if (e instanceof HypervisorVersionChangedException) {
-                        handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested, true, true);
-                        throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
-                    } else {
-                        s_logger.error("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage(), e);
-                        handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true, true);
-                        throw new CloudRuntimeException("Unable to connect " + attache.getId(), e);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("process connection to issue " + ReflectionToStringBuilderUtils.reflectCollection(cmd[i]) + " forRebalance == " + forRebalance);
                     }
+                    monitor.second().processConnect(host, cmd[i], forRebalance);
+                } catch (final ConnectionException ce) {
+                    if (ce.isSetupError()) {
+                        s_logger.warn("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + ce.getMessage());
+                        handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true, true);
+                        throw ce;
+                    } else {
+                        s_logger.info("Monitor " + monitor.second().getClass().getSimpleName() + " says not to continue the connect process for " + hostId + " due to " + ce.getMessage());
+                        handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested, true, true);
+                        return attache;
+                    }
+                } catch (final HypervisorVersionChangedException hvce) {
+                    handleDisconnectWithoutInvestigation(attache, Event.ShutdownRequested, true, true);
+                    throw new CloudRuntimeException("Unable to connect " + (attache == null ? "<unknown agent>" : attache.getId()), hvce);
+                } catch (final Exception e) {
+                    s_logger.error("Monitor " + monitor.second().getClass().getSimpleName() + " says there is an error in the connect process for " + hostId + " due to " + e.getMessage(), e);
+                    handleDisconnectWithoutInvestigation(attache, Event.AgentDisconnected, true, true);
+                    throw new CloudRuntimeException("Unable to connect " + (attache == null ? "<unknown agent>" : attache.getId()), e);
                 }
             }
         }

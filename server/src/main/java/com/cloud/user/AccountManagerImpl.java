@@ -74,6 +74,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.network.dao.NetworkPermissionDao;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.UserDetailsDao;
@@ -298,6 +299,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private SSHKeyPairDao _sshKeyPairDao;
     @Inject
     private UserDataDao userDataDao;
+    @Inject
+    private NetworkPermissionDao networkPermissionDao;
 
     private List<QuerySelector> _querySelectors;
 
@@ -870,6 +873,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // delete the account from project accounts
             _projectAccountDao.removeAccountFromProjects(accountId);
 
+            // Delete account's network permissions
+            networkPermissionDao.removeAccountPermissions(accountId);
+
             if (account.getType() != Account.Type.PROJECT) {
                 // delete the account from group
                 _messageBus.publish(_name, MESSAGE_REMOVE_ACCOUNT_EVENT, PublishScope.LOCAL, accountId);
@@ -1335,7 +1341,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      */
     private void checkRoleEscalation(Account caller, Account requested) {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
+            s_logger.debug(String.format("Checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
                     caller.getAccountName(),
                     caller.getUuid(),
                     caller.getRoleId(),
@@ -1349,12 +1355,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 checkApiAccess(apiCheckers, requested, command);
             } catch (PermissionDeniedException pde) {
                 if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format("checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
+                    s_logger.trace(String.format(
+                            "Checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
                             command,
-                            pde.getAccount().getAccountName(),
-                            pde.getAccount().getUuid(),
-                            pde.getEntitiesInViolation()
-                            ));
+                            requested.getAccountName(),
+                            requested.getUuid()
+                        )
+                    );
                 }
                 continue;
             }
@@ -1857,24 +1864,25 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // If the user is a System user, return an error. We do not allow this
         AccountVO account = _accountDao.findById(accountId);
 
-        if (! isDeleteNeeded(account, accountId, caller)) {
+        if (!isDeleteNeeded(account, accountId, caller)) {
             return true;
         }
 
-        // Account that manages project(s) can't be removed
-        List<Long> managedProjectIds = _projectAccountDao.listAdministratedProjectIds(accountId);
-        if (!managedProjectIds.isEmpty()) {
-            StringBuilder projectIds = new StringBuilder();
-            for (Long projectId : managedProjectIds) {
-                projectIds.append(projectId).append(", ");
-            }
-
-            throw new InvalidParameterValueException("The account id=" + accountId + " manages project(s) with ids " + projectIds + "and can't be removed");
-        }
+        checkIfAccountManagesProjects(accountId);
 
         CallContext.current().putContextParameter(Account.class, account.getUuid());
 
         return deleteAccount(account, callerUserId, caller);
+    }
+
+    protected void checkIfAccountManagesProjects(long accountId) {
+        List<Long> managedProjectIds = _projectAccountDao.listAdministratedProjectIds(accountId);
+        if (!CollectionUtils.isEmpty(managedProjectIds)) {
+            throw new InvalidParameterValueException(String.format(
+                    "Unable to delete account [%s], because it manages the following project(s): %s. Please, remove the account from these projects or demote it to a regular project role first.",
+                    accountId, managedProjectIds
+            ));
+        }
     }
 
     private boolean isDeleteNeeded(AccountVO account, long accountId, Account caller) {
@@ -3468,4 +3476,26 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return userTwoFactorAuthenticationProvidersMap.get(name.toLowerCase());
     }
 
+    @Override
+    public UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user) {
+        return Transaction.execute((TransactionCallback<UserAccount>) status -> {
+            if (!user.isUser2faEnabled() && StringUtils.isBlank(user.getUser2faProvider())) {
+                return user;
+            }
+            UserDetailVO userDetailVO = _userDetailsDao.findDetail(user.getId(), UserDetailVO.Setup2FADetail);
+            if (userDetailVO != null && UserAccountVO.Setup2FAstatus.VERIFIED.name().equals(userDetailVO.getValue())) {
+                return user;
+            }
+            s_logger.info(String.format("Clearing 2FA configurations for %s as it is still in setup on a new login request", user));
+            if (userDetailVO != null) {
+                _userDetailsDao.remove(userDetailVO.getId());
+            }
+            UserAccountVO userAccountVO = _userAccountDao.findById(user.getId());
+            userAccountVO.setUser2faEnabled(false);
+            userAccountVO.setUser2faProvider(null);
+            userAccountVO.setKeyFor2fa(null);
+            _userAccountDao.update(user.getId(), userAccountVO);
+            return userAccountVO;
+        });
+    }
 }
