@@ -492,6 +492,7 @@ public class PresetVariableHelper {
         value.setId(volumeVo.getUuid());
         value.setName(volumeVo.getName());
         value.setProvisioningType(volumeVo.getProvisioningType());
+        value.setVolumeType(volumeVo.getVolumeType());
 
         Long poolId = volumeVo.getPoolId();
         if (poolId == null) {
@@ -510,13 +511,25 @@ public class PresetVariableHelper {
         }
     }
 
-    protected GenericPresetVariable getPresetVariableValueDiskOffering(Long diskOfferingId) {
+    protected DiskOffering getPresetVariableValueDiskOffering(Long diskOfferingId) {
         DiskOfferingVO diskOfferingVo = diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
         validateIfObjectIsNull(diskOfferingVo, diskOfferingId, "disk offering");
 
-        GenericPresetVariable diskOffering = new GenericPresetVariable();
+        DiskOffering diskOffering = new DiskOffering();
         diskOffering.setId(diskOfferingVo.getUuid());
         diskOffering.setName(diskOfferingVo.getName());
+        diskOffering.setBytesReadRate(diskOfferingVo.getBytesReadRate());
+        diskOffering.setBytesReadBurst(diskOfferingVo.getBytesReadRateMax());
+        diskOffering.setBytesReadBurstLength(diskOfferingVo.getBytesReadRateMaxLength());
+        diskOffering.setBytesWriteRate(diskOfferingVo.getBytesWriteRate());
+        diskOffering.setBytesWriteBurst(diskOfferingVo.getBytesWriteRateMax());
+        diskOffering.setBytesWriteBurstLength(diskOfferingVo.getBytesWriteRateMaxLength());
+        diskOffering.setIopsReadRate(diskOfferingVo.getIopsReadRate());
+        diskOffering.setIopsReadBurst(diskOfferingVo.getIopsReadRateMax());
+        diskOffering.setIopsReadBurstLength(diskOfferingVo.getIopsReadRateMaxLength());
+        diskOffering.setIopsWriteRate(diskOfferingVo.getIopsWriteRate());
+        diskOffering.setIopsWriteBurst(diskOfferingVo.getIopsWriteRateMax());
+        diskOffering.setIopsWriteBurstLength(diskOfferingVo.getIopsWriteRateMaxLength());
 
         return diskOffering;
     }
