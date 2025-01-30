@@ -68,7 +68,7 @@ Requires: (openssh-clients or openssh)
 Requires: (nfs-utils or nfs-client)
 Requires: iproute
 Requires: wget
-Requires: mysql
+Requires: (mysql or mariadb)
 Requires: sudo
 Requires: /sbin/service
 Requires: /sbin/chkconfig
