@@ -1051,6 +1051,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     protected T findById(ID id, boolean removed, Boolean lock) {
+        if (id == null) {
+            return null;
+        }
+
         StringBuilder sql = new StringBuilder(_selectByIdSql);
         if (!removed && _removed != null) {
             sql.append(" AND ").append(_removed.first());
@@ -1242,13 +1246,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             logger.error("DB Exception on: " + pstmt, e);
             throw new CloudRuntimeException("Unable to expunge on DB, due to: " + e.getLocalizedMessage());
         }
-    }
-
-    // FIXME: Does not work for joins.
-    @Override
-    public int expunge(final SearchCriteria<T> sc, long limit) {
-        Filter filter = new Filter(limit);
-        return expunge(sc, filter);
     }
 
     @Override

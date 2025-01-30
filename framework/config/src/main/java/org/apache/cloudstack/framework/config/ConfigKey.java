@@ -34,6 +34,7 @@ public class ConfigKey<T> {
     public static final String CATEGORY_ADVANCED = "Advanced";
     public static final String CATEGORY_ALERT = "Alert";
     public static final String CATEGORY_NETWORK = "Network";
+    public static final String CATEGORY_SYSTEM = "System";
 
     public enum Scope {
         Global, Zone, Cluster, StoragePool, Account, ManagementServer, ImageStore, Domain

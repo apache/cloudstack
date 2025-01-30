@@ -17,6 +17,8 @@
 
 %define __os_install_post %{nil}
 %global debug_package %{nil}
+%global __requires_exclude libc\\.so\\..*
+%define _binaries_in_noarch_packages_terminate_build   0
 
 # DISABLE the post-percentinstall java repacking and line number stripping
 # we need to find a way to just disable the java repacking and line number stripping, but not the autodeps
@@ -35,6 +37,7 @@ Group:     System Environment/Libraries
 # FIXME do groups for every single one of the subpackages
 Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
+BuildArch: noarch
 
 BuildRequires: (java-11-openjdk-devel or java-17-openjdk-devel)
 #BuildRequires: ws-commons-util
@@ -117,7 +120,8 @@ Requires: qemu-kvm
 Requires: cryptsetup
 Requires: rng-tools
 Requires: (libgcrypt > 1.8.3 or libgcrypt20)
-Requires: (selinux-tools if qemu-tools)
+Requires: (selinux-tools if selinux-tools)
+Requires: sysstat
 Provides: cloud-agent
 Group: System Environment/Libraries
 %description agent
@@ -245,6 +249,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/lib
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/log/%{name}/management
 mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/%{name}/management
+mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/systemd/system/%{name}-management.service.d
 mkdir -p ${RPM_BUILD_ROOT}%{_localstatedir}/run
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-management/setup/wheel
 
@@ -294,6 +299,7 @@ install -D utils/target/cloud-utils-%{_maventag}-bundled.jar ${RPM_BUILD_ROOT}%{
 
 install -D packaging/el8/cloud-ipallocator.rc ${RPM_BUILD_ROOT}%{_initrddir}/%{name}-ipallocator
 install -D packaging/el8/cloud.limits ${RPM_BUILD_ROOT}%{_sysconfdir}/security/limits.d/cloud
+install -D packaging/el8/filelimit.conf ${RPM_BUILD_ROOT}%{_sysconfdir}/systemd/system/%{name}-management.service.d
 install -D packaging/systemd/cloudstack-management.service ${RPM_BUILD_ROOT}%{_unitdir}/%{name}-management.service
 install -D packaging/systemd/cloudstack-management.default ${RPM_BUILD_ROOT}%{_sysconfdir}/default/%{name}-management
 install -D server/target/conf/cloudstack-sudoers ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d/%{name}-management
@@ -575,6 +581,7 @@ pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %config(noreplace) %{_sysconfdir}/default/%{name}-management
 %config(noreplace) %{_sysconfdir}/sudoers.d/%{name}-management
 %config(noreplace) %{_sysconfdir}/security/limits.d/cloud
+%config(noreplace) %{_sysconfdir}/systemd/system/%{name}-management.service.d
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/db.properties
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/server.properties
 %config(noreplace) %attr(0640,root,cloud) %{_sysconfdir}/%{name}/management/config.json

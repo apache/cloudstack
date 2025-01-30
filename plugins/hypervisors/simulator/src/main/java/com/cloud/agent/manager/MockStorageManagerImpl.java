@@ -32,13 +32,14 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
 import org.apache.cloudstack.storage.command.UploadStatusCommand;
+import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -639,8 +640,11 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
                 if (totalUsed == null) {
                     totalUsed = 0L;
                 }
+                // Mock IOPS stats
+                long capacityIops = Math.min(Math.max(ByteScaleUtils.bytesToGibibytes(pool.getCapacity()), 1), 1000) * 1000L;
+                long usedIops = capacityIops / 2;
                 txn.commit();
-                return new GetStorageStatsAnswer(cmd, pool.getCapacity(), totalUsed);
+                return new GetStorageStatsAnswer(cmd, pool.getCapacity(), totalUsed, capacityIops, usedIops);
             }
         } catch (Exception ex) {
             txn.rollback();

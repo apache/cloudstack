@@ -29,6 +29,7 @@ import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEnti
 import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
 import org.apache.cloudstack.util.CPUArchConverter;
 import org.apache.cloudstack.util.HypervisorTypeConverter;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Convert;
@@ -263,5 +264,12 @@ public class EngineClusterVO implements EngineCluster, Identity {
     @Override
     public PartitionType partitionType() {
         return PartitionType.Cluster;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("EngineCluster %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name"));
     }
 }

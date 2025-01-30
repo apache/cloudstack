@@ -900,7 +900,7 @@ public class VolumeObject implements VolumeInfo {
                     volumeVO.setPassphraseId(null);
                     volumeDao.persist(volumeVO);
 
-                    logger.debug(String.format("Checking to see if we can delete passphrase id %s", passphraseId));
+                    logger.debug("Checking to see if we can delete passphrase id {} for volume {}", passphraseId, volumeVO);
                     List<VolumeVO> volumes = volumeDao.listVolumesByPassphraseId(passphraseId);
 
                     if (volumes != null && !volumes.isEmpty()) {
@@ -943,5 +943,12 @@ public class VolumeObject implements VolumeInfo {
     @Override
     public boolean isFollowRedirects() {
         return followRedirects;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("VolumeObject %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "volumeVO", "dataStore"));
     }
 }

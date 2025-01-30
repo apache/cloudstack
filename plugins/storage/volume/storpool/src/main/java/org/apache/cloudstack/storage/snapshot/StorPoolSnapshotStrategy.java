@@ -16,10 +16,19 @@
 // under the License.
 package org.apache.cloudstack.storage.snapshot;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.inject.Inject;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.dao.SnapshotZoneDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -40,23 +49,13 @@ import org.apache.cloudstack.storage.datastore.util.StorPoolUtil;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpApiResponse;
 import org.apache.cloudstack.storage.datastore.util.StorPoolUtil.SpConnectionDesc;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.hypervisor.kvm.storage.StorPoolStorageAdaptor;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.SnapshotDetailsDao;
-import com.cloud.storage.dao.SnapshotDetailsVO;
-import com.cloud.storage.dao.SnapshotZoneDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Component
@@ -117,11 +116,12 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                 if (resp.getError() != null) {
                     final String err = String.format("Failed to clean-up Storpool snapshot %s. Error: %s", name, resp.getError());
                     StorPoolUtil.spLog(err);
-                    markSnapshotAsDestroyedIfAlreadyRemoved(snapshotId, resp);
+                    markSnapshotAsDestroyedIfAlreadyRemoved(snapshotId, resp.getError().getName().equals(StorPoolUtil.OBJECT_DOES_NOT_EXIST));
                     throw new CloudRuntimeException(err);
                 } else {
                     res = deleteSnapshotFromDbIfNeeded(snapshotVO, zoneId);
-                    StorPoolUtil.spLog("StorpoolSnapshotStrategy.deleteSnapshot: executed successfully=%s, snapshot uuid=%s, name=%s", res, snapshotVO.getUuid(), name);
+                    markSnapshotAsDestroyedIfAlreadyRemoved(snapshotId,true);
+                    StorPoolUtil.spLog("StorpoolSnapshotStrategy.deleteSnapshot: executed successfully=%s, snapshot %s, name=%s", res, snapshotVO, name);
                 }
             } catch (Exception e) {
                 String errMsg = String.format("Cannot delete snapshot due to %s", e.getMessage());
@@ -129,22 +129,30 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
             }
         }
 
+        List<SnapshotDataStoreVO> snapshots = _snapshotStoreDao.listBySnapshotIdAndState(snapshotId, State.Ready);
+        if (res || CollectionUtils.isEmpty(snapshots)) {
+            updateSnapshotToDestroyed(snapshotVO);
+            return true;
+        }
         return res;
     }
 
-    private void markSnapshotAsDestroyedIfAlreadyRemoved(Long snapshotId, SpApiResponse resp) {
-        if (resp.getError().getName().equals("objectDoesNotExist")) {
-            SnapshotDataStoreVO snapshotOnPrimary = _snapshotStoreDao.findBySourceSnapshot(snapshotId, DataStoreRole.Primary);
-            if (snapshotOnPrimary != null) {
-                snapshotOnPrimary.setState(State.Destroyed);
-                _snapshotStoreDao.update(snapshotOnPrimary.getId(), snapshotOnPrimary);
+    private void markSnapshotAsDestroyedIfAlreadyRemoved(Long snapshotId, boolean isSnapshotDeleted) {
+        if (!isSnapshotDeleted) {
+            return;
+        }
+        List<SnapshotDataStoreVO> snapshotsOnStore = _snapshotStoreDao.listBySnapshotIdAndState(snapshotId, State.Ready);
+        for (SnapshotDataStoreVO snapshot : snapshotsOnStore) {
+            if (snapshot.getInstallPath() != null && snapshot.getInstallPath().contains(StorPoolUtil.SP_DEV_PATH)) {
+                snapshot.setState(State.Destroyed);
+                _snapshotStoreDao.update(snapshot.getId(), snapshot);
             }
         }
     }
 
     @Override
     public StrategyPriority canHandle(Snapshot snapshot, Long zoneId, SnapshotOperation op) {
-        logger.debug(String.format("StorpoolSnapshotStrategy.canHandle: snapshot=%s, uuid=%s, op=%s", snapshot.getName(), snapshot.getUuid(), op));
+        logger.debug("StorpoolSnapshotStrategy.canHandle: snapshot {}, op={}", snapshot, op);
 
         if (op != SnapshotOperation.DELETE) {
             return StrategyPriority.CANT_HANDLE;
@@ -173,7 +181,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
     }
 
     private boolean deleteSnapshotChain(SnapshotInfo snapshot) {
-        logger.debug("delete snapshot chain for snapshot: " + snapshot.getId());
+        logger.debug("delete snapshot chain for snapshot: {}", snapshot);
         final SnapshotInfo snapOnImage = snapshot;
         boolean result = false;
         boolean resultIsSet = false;
@@ -186,7 +194,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                     logger.debug("the snapshot has child, can't delete it on the storage");
                     break;
                 }
-                logger.debug("Snapshot: " + snapshot.getId() + " doesn't have children, so it's ok to delete it and its parents");
+                logger.debug("Snapshot: {} doesn't have children, so it's ok to delete it and its parents", snapshot);
                 SnapshotInfo parent = snapshot.getParent();
                 boolean deleted = false;
                 if (parent != null) {
@@ -208,7 +216,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                             if (r) {
                                 List<SnapshotInfo> cacheSnaps = snapshotDataFactory.listSnapshotOnCache(snapshot.getId());
                                 for (SnapshotInfo cacheSnap : cacheSnaps) {
-                                    logger.debug("Delete snapshot " + snapshot.getId() + " from image cache store: " + cacheSnap.getDataStore().getName());
+                                    logger.debug("Delete snapshot {} from image cache store: {}", snapshot, cacheSnap.getDataStore());
                                     cacheSnap.delete();
                                 }
                             }
@@ -327,7 +335,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
 
         if (!Snapshot.State.BackedUp.equals(snapshotVO.getState()) && !Snapshot.State.Error.equals(snapshotVO.getState()) &&
                 !Snapshot.State.Destroying.equals(snapshotVO.getState())) {
-            throw new InvalidParameterValueException("Can't delete snapshot " + snapshotId + " due to it is in " + snapshotVO.getState() + " Status");
+            throw new InvalidParameterValueException(String.format("Can't delete snapshot %s due to it is in %s Status", snapshotVO, snapshotVO.getState()));
         }
         List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.listReadyBySnapshot(snapshotId, DataStoreRole.Image);
         if (zoneId != null) {

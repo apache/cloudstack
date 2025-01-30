@@ -193,7 +193,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
         CopyCmdAnswer answer = null;
         String err = null;
         if (res.getError() != null) {
-            logger.debug(String.format("Could not create volume from snapshot with ID=%s", snapshot.getId()));
+            logger.debug("Could not create volume from snapshot [ID: {}, name: {}]", snapshot.getId(), snapshot.getName());
             StorPoolUtil.spLog("Volume create failed with error=%s", res.getError().getDescr());
             err = res.getError().getDescr();
         } else {
@@ -221,7 +221,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
                     if (answer != null && answer.getResult()) {
                         SpApiResponse resSnapshot = StorPoolUtil.volumeFreeze(volumeName, conn);
                         if (resSnapshot.getError() != null) {
-                            logger.debug(String.format("Could not snapshot volume with ID=%s", snapshot.getId()));
+                            logger.debug("Could not snapshot volume [id: {}, name: {}]", snapshot.getId(), snapshot.getName());
                             StorPoolUtil.spLog("Volume freeze failed with error=%s", resSnapshot.getError().getDescr());
                             err = resSnapshot.getError().getDescr();
                             StorPoolUtil.volumeDelete(volumeName, conn);
@@ -297,7 +297,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
             for (Map.Entry<VolumeInfo, DataStore> entry : volumeDataStoreMap.entrySet()) {
                 VolumeInfo srcVolumeInfo = entry.getKey();
                 if (srcVolumeInfo.getPassphraseId() != null) {
-                    throw new CloudRuntimeException(String.format("Cannot live migrate encrypted volume [%s] to StorPool", srcVolumeInfo.getName()));
+                    throw new CloudRuntimeException(String.format("Cannot live migrate encrypted volume [%s] to StorPool", srcVolumeInfo.getVolume()));
                 }
                 DataStore destDataStore = entry.getValue();
 
@@ -388,7 +388,7 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
 
             errMsg = String.format(
                     "Copy volume(s) of VM [%s] to storage(s) [%s] and VM to host [%s] failed in StorPoolDataMotionStrategy.copyAsync. Error message: [%s].",
-                    vmTO.getId(), srcHost.getId(), destHost.getId(), ex.getMessage());
+                    vmTO, srcHost, destHost, ex.getMessage());
             logger.error(errMsg, ex);
 
             throw new CloudRuntimeException(errMsg);
@@ -524,13 +524,13 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
     private String connectHostToVolume(Host host, long storagePoolId, String iqn) {
         ModifyTargetsCommand modifyTargetsCommand = getModifyTargetsCommand(storagePoolId, iqn, true);
 
-        return sendModifyTargetsCommand(modifyTargetsCommand, host.getId()).get(0);
+        return sendModifyTargetsCommand(modifyTargetsCommand, host).get(0);
     }
 
     private void disconnectHostFromVolume(Host host, long storagePoolId, String iqn) {
         ModifyTargetsCommand modifyTargetsCommand = getModifyTargetsCommand(storagePoolId, iqn, false);
 
-        sendModifyTargetsCommand(modifyTargetsCommand, host.getId());
+        sendModifyTargetsCommand(modifyTargetsCommand, host);
     }
 
     private ModifyTargetsCommand getModifyTargetsCommand(long storagePoolId, String iqn, boolean add) {
@@ -558,15 +558,15 @@ public class StorPoolDataMotionStrategy implements DataMotionStrategy {
         return cmd;
     }
 
-    private List<String> sendModifyTargetsCommand(ModifyTargetsCommand cmd, long hostId) {
-        ModifyTargetsAnswer modifyTargetsAnswer = (ModifyTargetsAnswer) _agentManager.easySend(hostId, cmd);
+    private List<String> sendModifyTargetsCommand(ModifyTargetsCommand cmd, Host host) {
+        ModifyTargetsAnswer modifyTargetsAnswer = (ModifyTargetsAnswer) _agentManager.easySend(host.getId(), cmd);
 
         if (modifyTargetsAnswer == null) {
             throw new CloudRuntimeException("Unable to get an answer to the modify targets command");
         }
 
         if (!modifyTargetsAnswer.getResult()) {
-            String msg = "Unable to modify targets on the following host: " + hostId;
+            String msg = String.format("Unable to modify targets on the following host: %s", host);
 
             throw new CloudRuntimeException(msg);
         }

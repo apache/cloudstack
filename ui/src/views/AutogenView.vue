@@ -920,6 +920,9 @@ export default {
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
+        if (['listNetworks'].includes(this.apiName) && 'displaynetwork' in this.$route.query) {
+          params.displaynetwork = this.$route.query.displaynetwork
+        }
         if (['listSSHKeyPairs'].includes(this.apiName)) {
           if (!this.$isValidUuid(params.id)) {
             delete params.id

@@ -132,7 +132,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
             network.setCidr(userSpecified.getCidr());
             network.setGateway(userSpecified.getGateway());
         }
-        logger.debug("Allocated network " + userSpecified.getName() + (network.getCidr() == null ? "" : " subnet: " + network.getCidr()));
+        logger.debug("Allocated network {}{}", userSpecified, network.getCidr() == null ? "" : " subnet: " + network.getCidr());
         return network;
     }
 
@@ -144,7 +144,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
     @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination destination, ReservationContext context)
             throws InsufficientVirtualNetworkCapacityException {
-        logger.debug("Implement network: " + network.getName() + ", traffic type: " + network.getTrafficType());
+        logger.debug("Implement network: {}, traffic type: {}", network, network.getTrafficType());
 
         VirtualNetworkModel vnModel = _manager.getDatabase().lookupVirtualNetwork(network.getUuid(), _manager.getCanonicalName(network), network.getTrafficType());
         if (vnModel == null) {
@@ -191,7 +191,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
     @Override
     public NicProfile allocate(Network network, NicProfile profile, VirtualMachineProfile vm) throws InsufficientVirtualNetworkCapacityException,
     InsufficientAddressCapacityException, ConcurrentOperationException {
-        logger.debug("allocate NicProfile on " + network.getName());
+        logger.debug(String.format("allocate NicProfile on %s", network));
 
         if (profile != null && profile.getRequestedIPv4() != null) {
             throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + profile);
@@ -218,8 +218,8 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void reserve(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context)
             throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException, ConcurrentOperationException {
-        logger.debug("reserve NicProfile on network id: " + network.getId() + " " + network.getName());
-        logger.debug("deviceId: " + nic.getDeviceId());
+        logger.debug("reserve NicProfile on network: " + network);
+        logger.debug(String.format("nic: %s deviceId: %d", nic, nic.getDeviceId()));
 
         NicVO nicVO = _nicDao.findById(nic.getId());
         assert nicVO != null;
@@ -275,7 +275,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
         if (nic.getMacAddress() == null) {
             MacAddressesType macs = vmi.getMacAddresses();
             if (macs == null) {
-                logger.debug("no mac address is allocated for Nic " + nicVO.getUuid());
+                logger.debug(String.format("no mac address is allocated for Nic %s", nicVO));
             } else {
                 logger.info("VMI " + _manager.getVifNameByVmUuid(vm.getUuid(), nicVO.getDeviceId()) + " got mac address: " + macs.getMacAddress().get(0));
                 nic.setMacAddress(macs.getMacAddress().get(0));
@@ -299,7 +299,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
     @Override
     public boolean release(NicProfile nic, VirtualMachineProfile vm, String reservationId) {
 
-        logger.debug("release NicProfile " + nic.getId());
+        logger.debug(String.format("release NicProfile %s", nic));
 
         return true;
     }
@@ -309,7 +309,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
      */
     @Override
     public void deallocate(Network network, NicProfile nic, VirtualMachineProfile vm) {
-        logger.debug("deallocate NicProfile " + nic.getId() + " on " + network.getName());
+        logger.debug(String.format("deallocate NicProfile %s on %s", nic, network.getName()));
         NicVO nicVO = _nicDao.findById(nic.getId());
         assert nicVO != null;
 
@@ -343,7 +343,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
     @Override
     public void updateNicProfile(NicProfile profile, Network network) {
         // TODO Auto-generated method stub
-        logger.debug("update NicProfile " + profile.getId() + " on " + network.getName());
+        logger.debug(String.format("update NicProfile %s on %s", profile, network));
     }
 
     @Override

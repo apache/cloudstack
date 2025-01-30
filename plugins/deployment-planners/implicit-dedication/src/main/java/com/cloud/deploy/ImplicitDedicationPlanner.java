@@ -156,13 +156,16 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
 
         for (VMInstanceVO vm : allVmsOnHost) {
             if (vm.getAccountId() != accountId) {
-                logger.info("Host " + vm.getHostId() + " found to be unsuitable for implicit dedication as it is " + "running instances of another account");
+                logger.info(String.format("Host %d for vm %s found to be unsuitable for " +
+                        "implicit dedication as it is running instances of another account",
+                        vm.getHostId(), vm));
                 suitable = false;
                 break;
             } else {
                 if (!isImplicitPlannerUsedByOffering(vm.getServiceOfferingId())) {
-                    logger.info("Host " + vm.getHostId() + " found to be unsuitable for implicit dedication as it " +
-                        "is running instances of this account which haven't been created using implicit dedication.");
+                    logger.info(String.format("Host %d for vm %s found to be unsuitable for " +
+                            "implicit dedication as it is running instances of this account which" +
+                            " haven't been created using implicit dedication.", vm.getHostId(), vm));
                     suitable = false;
                     break;
                 }
@@ -177,11 +180,11 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
             return false;
         for (VMInstanceVO vm : allVmsOnHost) {
             if (!isImplicitPlannerUsedByOffering(vm.getServiceOfferingId())) {
-                logger.info("Host " + vm.getHostId() + " found to be running a vm created by a planner other" + " than implicit.");
+                logger.info(String.format("Host %d found to be running a vm %s created by a planner other than implicit.", vm.getHostId(), vm));
                 createdByImplicitStrict = false;
                 break;
             } else if (isServiceOfferingUsingPlannerInPreferredMode(vm.getServiceOfferingId())) {
-                logger.info("Host " + vm.getHostId() + " found to be running a vm created by an implicit planner" + " in preferred mode.");
+                logger.info(String.format("Host %d found to be running a vm %s created by an implicit planner in preferred mode.", vm.getHostId(), vm));
                 createdByImplicitStrict = false;
                 break;
             }

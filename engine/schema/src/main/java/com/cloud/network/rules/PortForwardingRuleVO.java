@@ -25,6 +25,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.PrimaryKeyJoinColumn;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.cloud.utils.net.Ip;
 
@@ -47,21 +48,30 @@ public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardi
     @Column(name = "instance_id")
     private long virtualMachineId;
 
+    @Transient
+    List<String> sourceCidrs;
+
     public PortForwardingRuleVO() {
     }
 
     public PortForwardingRuleVO(String xId, long srcIpId, int srcPortStart, int srcPortEnd, Ip dstIp, int dstPortStart, int dstPortEnd, String protocol, long networkId,
-            long accountId, long domainId, long instanceId) {
-        super(xId, srcIpId, srcPortStart, srcPortEnd, protocol, networkId, accountId, domainId, Purpose.PortForwarding, null, null, null, null, null);
+                                long accountId, long domainId, long instanceId, List<String> sourceCidrs) {
+        super(xId, srcIpId, srcPortStart, srcPortEnd, protocol, networkId, accountId, domainId, Purpose.PortForwarding, sourceCidrs, null, null, null, null);
         this.destinationIpAddress = dstIp;
         this.virtualMachineId = instanceId;
         this.destinationPortStart = dstPortStart;
         this.destinationPortEnd = dstPortEnd;
+        this.sourceCidrs = sourceCidrs;
     }
 
-    public PortForwardingRuleVO(String xId, long srcIpId, int srcPort, Ip dstIp, int dstPort, String protocol, List<String> sourceCidrs, long networkId, long accountId,
-            long domainId, long instanceId) {
-        this(xId, srcIpId, srcPort, srcPort, dstIp, dstPort, dstPort, protocol.toLowerCase(), networkId, accountId, domainId, instanceId);
+    public PortForwardingRuleVO(String xId, long srcIpId, int srcPortStart, int srcPortEnd, Ip dstIp, int dstPortStart, int dstPortEnd, String protocol, long networkId,
+                                long accountId, long domainId, long instanceId) {
+        this(xId, srcIpId, srcPortStart, srcPortEnd, dstIp, dstPortStart, dstPortEnd, protocol.toLowerCase(), networkId, accountId, domainId, instanceId, null);
+    }
+
+    public PortForwardingRuleVO(String xId, long srcIpId, int srcPort, Ip dstIp, int dstPort, String protocol, long networkId, long accountId,
+                                long domainId, long instanceId) {
+        this(xId, srcIpId, srcPort, srcPort, dstIp, dstPort, dstPort, protocol.toLowerCase(), networkId, accountId, domainId, instanceId, null);
     }
 
     @Override
@@ -104,6 +114,15 @@ public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardi
     @Override
     public Long getRelated() {
         return null;
+    }
+
+    public void setSourceCidrList(List<String> sourceCidrs) {
+        this.sourceCidrs = sourceCidrs;
+    }
+
+    @Override
+    public List<String> getSourceCidrList() {
+        return sourceCidrs;
     }
 
 }
