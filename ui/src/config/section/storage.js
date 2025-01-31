@@ -515,12 +515,6 @@ export default {
           docHelp: 'installguide/configuration.html#create-bucket',
           label: 'label.create.bucket',
           listView: true,
-          show: () => {
-            if (!store.getters.zones || store.getters.zones.length === 0) {
-              return false
-            }
-            return true
-          },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateBucket.vue')))
         },
