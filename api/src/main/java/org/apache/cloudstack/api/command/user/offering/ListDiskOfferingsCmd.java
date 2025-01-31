@@ -28,7 +28,6 @@ import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.BaseCmd.CommandType;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 
@@ -77,6 +76,9 @@ public class ListDiskOfferingsCmd extends BaseListProjectAndAccountResourcesCmd 
                since = "4.19")
     private String diskOfferingState;
 
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "list disk offerings by tags", length = 4096)
+    private String tags;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -114,6 +116,10 @@ public class ListDiskOfferingsCmd extends BaseListProjectAndAccountResourcesCmd 
             throw new IllegalArgumentException("Invalid state value: " + diskOfferingState);
         }
         return state;
+    }
+
+    public String getTags() {
+        return tags;
     }
 
     /////////////////////////////////////////////////////
