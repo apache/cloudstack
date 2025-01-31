@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -24,11 +25,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
+
+import com.cloud.hypervisor.vmware.util.VmwareClientException;
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.utils.LogUtils;
+import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
+
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
+
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.AlreadyExistsFaultMsg;
 import com.vmware.vim25.ClusterDasConfigInfo;
@@ -58,6 +68,7 @@ import com.vmware.vim25.HostRuntimeInfo;
 import com.vmware.vim25.HostSystemConnectionState;
 import com.vmware.vim25.HostVirtualNic;
 import com.vmware.vim25.HostVirtualSwitch;
+import com.vmware.vim25.InvalidPropertyFaultMsg;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.NasDatastoreInfo;
 import com.vmware.vim25.ObjectContent;
@@ -65,13 +76,12 @@ import com.vmware.vim25.ObjectSpec;
 import com.vmware.vim25.OptionValue;
 import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
+import com.vmware.vim25.RetrieveOptions;
+import com.vmware.vim25.RetrieveResult;
+import com.vmware.vim25.RuntimeFaultFaultMsg;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualNicManagerNetConfig;
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.hypervisor.vmware.util.VmwareHelper;
-import com.cloud.utils.LogUtils;
-import com.cloud.utils.Pair;
 
 public class HostMO extends BaseMO implements VmwareHypervisorHost {
     private static final Logger s_logger = Logger.getLogger(HostMO.class);
@@ -535,18 +545,22 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         return null;
     }
 
-    public String getHostName() throws Exception {
+    public String getHostName() throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         return (String)_context.getVimClient().getDynamicProperty(_mor, "name");
     }
 
     @Override
-    public synchronized List<VirtualMachineMO> listVmsOnHyperHostWithHypervisorName(String vmName) throws Exception {
+    public synchronized List<VirtualMachineMO> listVmsOnHyperHostWithHypervisorName(String vmName) throws VmwareClientException {
         List<VirtualMachineMO> vms = new ArrayList<>();
-        if (StringUtils.isNotEmpty(vmName)) {
-            vms.add(findVmOnHyperHostWithHypervisorName(vmName));
-        } else {
-            loadVmCache();
-            vms.addAll(_vmCache.values());
+        try {
+            if (StringUtils.isNotEmpty(vmName)) {
+                vms.add(findVmOnHyperHostWithHypervisorName(vmName));
+            } else {
+                    loadVmCache();
+                vms.addAll(_vmCache.values());
+            }
+        } catch (InvalidPropertyFaultMsg | RuntimeFaultFaultMsg | InvocationTargetException | NoSuchMethodException | IllegalAccessException e) {
+            throw new VmwareClientException("problem loading vm cache.", e);
         }
         return vms;
     }
@@ -582,7 +596,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         }
     }
 
-    private void loadVmCache() throws Exception {
+    private void loadVmCache() throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         if (s_logger.isDebugEnabled())
             s_logger.debug("load VM cache on host");
 
@@ -704,11 +718,16 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
     }
 
     @Override
-    public ObjectContent[] getVmPropertiesOnHyperHost(String[] propertyPaths) throws Exception {
-        if (s_logger.isTraceEnabled())
+    public ObjectContent[] getVmPropertiesOnHyperHost(String[] propertyPaths) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
+        List<ObjectContent> properties = getVmProperties(propertyPaths, null, null).second();
+        return properties.toArray(new ObjectContent[properties.size()]);
+    }
+
+    public Pair<String, List<ObjectContent>> getVmProperties(String[] propertyPaths, Integer maxObjects) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
+        if (s_logger.isTraceEnabled()) {
             s_logger.trace("vCenter API trace - retrieveProperties() for VM properties. target MOR: " + _mor.getValue() + ", properties: " +
                     new Gson().toJson(propertyPaths));
-
+        }
         PropertySpec pSpec = new PropertySpec();
         pSpec.setType("VirtualMachine");
         pSpec.getPathSet().addAll(Arrays.asList(propertyPaths));
@@ -726,14 +745,19 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         PropertyFilterSpec pfSpec = new PropertyFilterSpec();
         pfSpec.getPropSet().add(pSpec);
         pfSpec.getObjectSet().add(oSpec);
-        List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
+        List<PropertyFilterSpec> pfSpecArr = new ArrayList<>();
         pfSpecArr.add(pfSpec);
 
-        List<ObjectContent> properties = _context.getService().retrieveProperties(_context.getPropertyCollector(), pfSpecArr);
+        RetrieveOptions ro = new RetrieveOptions();
+        if (maxObjects != null && maxObjects > 0) {
+            ro.setMaxObjects(maxObjects);
+        }
+
+        RetrieveResult result = _context.getService().retrievePropertiesEx(_context.getPropertyCollector(), pfSpecArr, ro);
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - retrieveProperties() done");
-        return properties.toArray(new ObjectContent[properties.size()]);
+        return createReturnObjectPair(result);
     }
 
     @Override
@@ -759,7 +783,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         PropertyFilterSpec pfSpec = new PropertyFilterSpec();
         pfSpec.getPropSet().add(pSpec);
         pfSpec.getObjectSet().add(oSpec);
-        List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
+        List<PropertyFilterSpec> pfSpecArr = new ArrayList<>();
         pfSpecArr.add(pfSpec);
 
         List<ObjectContent> properties = _context.getService().retrieveProperties(_context.getPropertyCollector(), pfSpecArr);
@@ -1318,7 +1342,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         return false;
     }
 
-    private synchronized VirtualMachineMO findVmOnHyperHostWithHypervisorName(String vmName) throws Exception {
+    private synchronized VirtualMachineMO findVmOnHyperHostWithHypervisorName(String vmName) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         if (s_logger.isDebugEnabled())
             s_logger.debug("find VM hypervisor name: " + vmName + " on host");
 
@@ -1350,4 +1374,29 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         return null;
     }
 
+    public Pair<String, List<UnmanagedInstanceTO>> getVms(Integer maxObjects, String token) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+        List<UnmanagedInstanceTO> vms = new ArrayList<>();
+        Pair<String, List<ObjectContent>> objectContents = getVmProperties(new String[] {"name"}, maxObjects, token);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("returning token %s for future retrievals, currently %d objects retrieved.", objectContents.first(), objectContents.second().size()));
+        }
+        Pair<String, List<UnmanagedInstanceTO>> retval = new Pair<>(objectContents.first(), vms);
+
+        objectContentToUnmanagedInstanceTO(objectContents, vms);
+
+        return retval;
+    }
+    public Pair<String, List<ObjectContent>> getVmProperties(String[] propertyPaths, Integer maxObjects, String tokenForPriorQuery) throws  InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
+        if(com.cloud.utils.StringUtils.isNotBlank(tokenForPriorQuery)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("running repeat query with token \'%s\'", tokenForPriorQuery));
+            }
+            return retrieveNextSetOfProperties(tokenForPriorQuery);
+        } else {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("running query for %d propertypaths and max %d objects", propertyPaths.length, maxObjects));
+            }
+            return getVmProperties(propertyPaths, maxObjects);
+        }
+    }
 }
