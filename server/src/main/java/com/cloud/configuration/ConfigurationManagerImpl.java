@@ -128,7 +128,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.userdata.UserDataManager;
-import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
+import org.apache.cloudstack.utils.jsinterpreter.GenericRuleHelper;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.commons.collections.CollectionUtils;
@@ -4345,7 +4345,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
                     if ((CollectionUtils.isNotEmpty(tagsAsString) && tagsAsString.containsAll(listOfTags)) ||
                         (tagsOnPool.size() == 1 && tagsOnPool.get(0).isTagARule() &&
-                        TagAsRuleHelper.interpretTagAsRule(tagsOnPool.get(0).getTag(), tags, VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value()))) {
+                        GenericRuleHelper.interpretTagAsRule(tagsOnPool.get(0).getTag(), tags, VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value(),
+                                VolumeApiServiceImpl.storageTagRuleExecutionTimeout.key()))) {
                         continue;
                     }
 
@@ -4388,7 +4389,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
                     if ((CollectionUtils.isNotEmpty(tagsAsString) && tagsAsString.containsAll(listOfHostTags)) ||
                         (tagsOnHost.size() == 1 && tagsOnHost.get(0).getIsTagARule() &&
-                        TagAsRuleHelper.interpretTagAsRule(tagsOnHost.get(0).getTag(), hostTags, HostTagsDao.hostTagRuleExecutionTimeout.value()))) {
+                        GenericRuleHelper.interpretTagAsRule(tagsOnHost.get(0).getTag(), hostTags, HostTagsDao.hostTagRuleExecutionTimeout.value(),
+                                HostTagsDao.hostTagRuleExecutionTimeout.key()))) {
                         continue;
                     }
 

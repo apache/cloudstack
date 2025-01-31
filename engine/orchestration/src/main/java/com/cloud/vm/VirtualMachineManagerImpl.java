@@ -3537,19 +3537,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     @Override
-    public boolean isVirtualMachineUpgradable(final VirtualMachine vm, final ServiceOffering offering) {
-        boolean isMachineUpgradable = true;
-        for (final HostAllocator allocator : hostAllocators) {
-            isMachineUpgradable = allocator.isVirtualMachineUpgradable(vm, offering);
-            if (!isMachineUpgradable) {
-                break;
-            }
-        }
-
-        return isMachineUpgradable;
-    }
-
-    @Override
     public void reboot(final String vmUuid, final Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException {
         try {
             advanceReboot(vmUuid, params);
@@ -3927,11 +3914,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         if (currentServiceOffering.isSystemUse() != newServiceOffering.isSystemUse()) {
             throw new InvalidParameterValueException("isSystem property is different for current service offering and new service offering");
-        }
-
-        if (!isVirtualMachineUpgradable(vmInstance, newServiceOffering)) {
-            throw new InvalidParameterValueException("Unable to upgrade virtual machine, not enough resources available " + "for an offering of " +
-                    newServiceOffering.getCpu() + " cpu(s) at " + newServiceOffering.getSpeed() + " Mhz, and " + newServiceOffering.getRamSize() + " MB of memory");
         }
 
         final List<String> currentTags = StringUtils.csvTagsToList(currentDiskOffering.getTags());
