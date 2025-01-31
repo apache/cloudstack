@@ -52,7 +52,7 @@
 <script>
 import store from '@/store'
 import { api } from '@/api'
-import _ from 'lodash'
+// import _ from 'lodash'
 
 export default {
   name: 'SamlDomainSwitcher',
@@ -88,7 +88,8 @@ export default {
             this.showSwitcher = false
             return
           }
-          this.samlAccounts = _.orderBy(samlAccounts, ['domainPath'], ['asc'])
+          this.samlAccounts = samlAccounts
+          // this.samlAccounts =_.orderBy(samlAccounts, ['domainPath'], ['asc'])
           const currentAccount = this.samlAccounts.filter(x => {
             return x.userId === store.getters.userInfo.id
           })[0]
@@ -109,6 +110,8 @@ export default {
           this.$message.success(`Switched to "${account.accountName} (${account.domainPath})"`)
           this.$router.go()
         })
+      }).else(error => {
+        console.log('error refreshing with new user context: ' + error)
       })
     }
   }
