@@ -203,7 +203,7 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
             retryCounter++;
             try {
                 Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port, getControlNodeLoginUser(),
-                        pkFile, null, String.format("sudo /opt/bin/kubectl drain %s --ignore-daemonsets --delete-local-data", hostName),
+                        pkFile, null, String.format("sudo /opt/bin/kubectl drain %s --ignore-daemonsets --delete-emptydir-data", hostName),
                         10000, 10000, 60000);
                 if (!result.first()) {
                     logger.warn("Draining node: {} on VM: {} in Kubernetes cluster: {} unsuccessful", hostName, userVm, kubernetesCluster);
