@@ -3393,6 +3393,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 RouterHealthChecksMaxMemoryUsageThreshold,
                 ExposeDnsAndBootpServer,
                 RouterLogrotateFrequency,
+                NetworkVirtualRouterServiceOffering,
                 RemoveControlIpOnStop
         };
     }
