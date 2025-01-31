@@ -118,7 +118,7 @@
         <module>outofbandmanagement-drivers/nested-cloudstack</module>
         <module>outofbandmanagement-drivers/redfish</module>
 
-        <module>shutdown</module>
+        <module>maintenance</module>
 
         <module>storage/sharedfs/storagevm</module>
         <module>storage/image/default</module>

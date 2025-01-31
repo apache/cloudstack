@@ -27,6 +27,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +41,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.MigrateAgentConnectionAnswer;
+import com.cloud.agent.api.MigrateAgentConnectionCommand;
 import com.cloud.resource.AgentStatusUpdater;
 import com.cloud.resource.ResourceStatusUpdater;
 import com.cloud.agent.api.PingAnswer;
@@ -313,7 +316,6 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         }
         _shell.updateConnectedHost();
         scavengeOldAgentObjects();
-
     }
 
     public void stop(final String reason, final String detail) {
@@ -477,6 +479,10 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     public void sendStartup(final Link link) {
+        sendStartup(link, false);
+    }
+
+    public void sendStartup(final Link link, boolean transfer) {
         final StartupCommand[] startup = _resource.initialize();
         if (startup != null) {
             final String msHostList = _shell.getPersistentProperty(null, "host");
@@ -484,6 +490,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             for (int i = 0; i < startup.length; i++) {
                 setupStartupCommand(startup[i]);
                 startup[i].setMSHostList(msHostList);
+                startup[i].setConnectionTransferred(transfer);
                 commands[i] = startup[i];
             }
             final Request request = new Request(_id != null ? _id : -1, -1, commands, false, false);
@@ -541,9 +548,14 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     protected void reconnect(final Link link) {
-        if (!_reconnectAllowed) {
+        reconnect(link, null, null, false);
+    }
+
+    protected void reconnect(final Link link, String preferredHost, List<String> avoidHostList, boolean forTransfer) {
+        if (!(forTransfer || _reconnectAllowed)) {
             return;
         }
+
         synchronized (this) {
             if (_startup != null) {
                 _startup.cancel();
@@ -575,22 +587,29 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             _shell.getBackoffAlgorithm().waitBeforeRetry();
         }
 
+        String host = preferredHost;
+        if (StringUtils.isEmpty(host)) {
+            host = _shell.getNextHost();
+        }
+
         do {
-            final String host = _shell.getNextHost();
-            _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), this);
-            logger.info("Reconnecting to host:{}", host);
-            try {
-                _connection.start();
-            } catch (final NioConnectionException e) {
-                logger.info("Attempted to re-connect to the server, but received an unexpected exception, trying again...", e);
-                _connection.stop();
+            if (CollectionUtils.isEmpty(avoidHostList) || !avoidHostList.contains(host)) {
+                _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), this);
+                logger.info("Reconnecting to host:{}", host);
                 try {
-                    _connection.cleanUp();
-                } catch (final IOException ex) {
-                    logger.warn("Fail to clean up old connection. {}", ex);
+                    _connection.start();
+                } catch (final NioConnectionException e) {
+                    logger.info("Attempted to re-connect to the server, but received an unexpected exception, trying again...", e);
+                    _connection.stop();
+                    try {
+                        _connection.cleanUp();
+                    } catch (final IOException ex) {
+                        logger.warn("Fail to clean up old connection. {}", ex);
+                    }
                 }
             }
             _shell.getBackoffAlgorithm().waitBeforeRetry();
+            host = _shell.getNextHost();
         } while (!_connection.isStartup());
         _shell.updateConnectedHost();
         logger.info("Connected to the host: {}", _shell.getConnectedHost());
@@ -703,6 +722,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                         }
                     } else if (cmd instanceof SetupMSListCommand) {
                         answer = setupManagementServerList((SetupMSListCommand) cmd);
+                    } else if (cmd instanceof MigrateAgentConnectionCommand) {
+                        answer = migrateAgentToOtherMS((MigrateAgentConnectionCommand) cmd);
                     } else {
                         if (cmd instanceof ReadyCommand) {
                             processReadyCommand(cmd);
@@ -856,6 +877,53 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     private Answer setupManagementServerList(final SetupMSListCommand cmd) {
         processManagementServerList(cmd.getMsList(), cmd.getLbAlgorithm(), cmd.getLbCheckInterval());
         return new SetupMSListAnswer(true);
+    }
+
+    private Answer migrateAgentToOtherMS(final MigrateAgentConnectionCommand cmd) {
+        try {
+            if (CollectionUtils.isNotEmpty(cmd.getMsList())) {
+                processManagementServerList(cmd.getMsList(), cmd.getLbAlgorithm(), cmd.getLbCheckInterval());
+            }
+            migrateAgentConnection(cmd.getAvoidMsList());
+        } catch (Exception e) {
+            String errMsg = "Migrate agent connection failed, due to " + e.getMessage();
+            logger.debug(errMsg, e);
+            return new MigrateAgentConnectionAnswer(errMsg);
+        }
+        return new MigrateAgentConnectionAnswer(true);
+    }
+
+    private void migrateAgentConnection(List<String> avoidMsList) {
+        final String[] msHosts = _shell.getHosts();
+        if (msHosts == null || msHosts.length < 1) {
+            throw new CloudRuntimeException("Management Server hosts empty, not properly configured in agent");
+        }
+
+        List<String> msHostsList = new ArrayList<>(Arrays.asList(msHosts));
+        msHostsList.removeAll(avoidMsList);
+        if (msHostsList.isEmpty() || StringUtils.isEmpty(msHostsList.get(0))) {
+            throw new CloudRuntimeException("No other Management Server hosts to migrate");
+        }
+
+        String preferredHost  = null;
+        for (String msHost : msHostsList) {
+            try (final Socket socket = new Socket()) {
+                socket.connect(new InetSocketAddress(msHost, _shell.getPort()), 5000);
+                preferredHost = msHost;
+                break;
+            } catch (final IOException e) {
+                throw new CloudRuntimeException("Management server host: " + msHost + " is not reachable, to migrate connection");
+            }
+        }
+
+        if (preferredHost == null) {
+            throw new CloudRuntimeException("Management server host(s) are not reachable, to migrate connection");
+        }
+
+        logger.debug("Management server host " + preferredHost + " is found to be reachable, trying to reconnect");
+        _shell.resetHostCounter();
+        _shell.setConnectionTransfer(true);
+        reconnect(_link, preferredHost, avoidMsList, true);
     }
 
     public void processResponse(final Response response, final Link link) {
@@ -1153,7 +1221,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             if (task.getType() == Task.Type.CONNECT) {
                 _shell.getBackoffAlgorithm().reset();
                 setLink(task.getLink());
-                sendStartup(task.getLink());
+                sendStartup(task.getLink(), _shell.isConnectionTransfer());
+                _shell.setConnectionTransfer(false);
             } else if (task.getType() == Task.Type.DATA) {
                 Request request;
                 try {
@@ -1178,6 +1247,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                     Thread.sleep(5000);
                 } catch (InterruptedException e) {
                 }
+                _shell.setConnectionTransfer(false);
                 reconnect(task.getLink());
                 return;
             } else if (task.getType() == Task.Type.OTHER) {
