@@ -99,6 +99,12 @@ export default {
           label: 'label.vm.add',
           docHelp: 'adminguide/virtual_machines.html#creating-vms',
           listView: true,
+          show: () => {
+            if (!store.getters.zones || store.getters.zones.length === 0) {
+              return false
+            }
+            return true
+          },
           component: () => import('@/views/compute/DeployVM.vue')
         },
         {
@@ -1026,12 +1032,6 @@ export default {
           label: 'label.add.affinity.group',
           docHelp: 'adminguide/virtual_machines.html#creating-a-new-affinity-group',
           listView: true,
-          show: () => {
-            if (!store.getters.zones || store.getters.zones.length === 0) {
-              return false
-            }
-            return true
-          },
           args: ['name', 'description', 'type'],
           mapping: {
             type: {
