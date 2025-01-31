@@ -41,6 +41,7 @@ import javax.persistence.SecondaryTables;
 import javax.persistence.Table;
 import javax.persistence.Transient;
 
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -199,28 +200,36 @@ public class DbUtil {
     public static boolean getGlobalLock(String name, int timeoutSeconds) {
         Connection conn = getConnectionForGlobalLocks(name, true);
         if (conn == null) {
-            LOGGER.error("Unable to acquire DB connection for global lock system");
+            LOGGER.error("Unable to acquire DB connection for distributed lock: " + name);
             return false;
         }
 
-        try (PreparedStatement pstmt = conn.prepareStatement("SELECT COALESCE(GET_LOCK(?, ?),0)");) {
-            pstmt.setString(1, name);
-            pstmt.setInt(2, timeoutSeconds);
-
-            try (ResultSet rs = pstmt.executeQuery();) {
-                if (rs != null && rs.first()) {
-                    if (rs.getInt(1) > 0) {
-                        return true;
-                    } else {
-                        if (LOGGER.isDebugEnabled())
-                            LOGGER.debug("GET_LOCK() timed out on lock : " + name);
-                    }
+        int remainingTime = timeoutSeconds;
+        while (remainingTime > 0) {
+            try (PreparedStatement pstmt = conn.prepareStatement(
+                    "INSERT INTO cloud.distributed_lock (name, thread, ms_id, pid, created) " +
+                    "VALUES (?, ?, ?, ?, now()) ON DUPLICATE KEY UPDATE name=name")) {
+                pstmt.setString(1, name);
+                pstmt.setString(2, Thread.currentThread().getName());
+                pstmt.setLong(3, ManagementServerNode.getManagementServerId());
+                pstmt.setLong(4, ProcessHandle.current().pid());
+                if (pstmt.executeUpdate() > 0) {
+                    return true;
                 }
+            } catch (SQLException e) {
+                LOGGER.error("Inserting to cloud.distributed_lock query threw exception ", e);
+            } catch (Throwable e) {
+                LOGGER.error("Inserting to cloud.distributed_lock query threw exception  ", e);
             }
-        } catch (SQLException e) {
-            LOGGER.error("GET_LOCK() throws exception ", e);
-        } catch (Throwable e) {
-            LOGGER.error("GET_LOCK() throws exception ", e);
+
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Waiting, cloud.distributed_lock already has the lock: " + name);
+            }
+            remainingTime = remainingTime - 1;
+            try {
+                Thread.sleep(1000L);
+            } catch (InterruptedException ignore) {
+            }
         }
 
         removeConnectionForGlobalLocks(name);
@@ -235,24 +244,20 @@ public class DbUtil {
     public static boolean releaseGlobalLock(String name) {
         try (Connection conn = getConnectionForGlobalLocks(name, false);) {
             if (conn == null) {
-                LOGGER.error("Unable to acquire DB connection for global lock system");
+                LOGGER.error("Unable to acquire DB connection for distributed lock: " + name);
                 assert (false);
                 return false;
             }
 
-            try (PreparedStatement pstmt = conn.prepareStatement("SELECT COALESCE(RELEASE_LOCK(?), 0)");) {
+            try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM cloud.distributed_lock WHERE name=?")) {
                 pstmt.setString(1, name);
-                try (ResultSet rs = pstmt.executeQuery();) {
-                    if (rs != null && rs.first()) {
-                        return rs.getInt(1) > 0;
-                    }
-                    LOGGER.error("releaseGlobalLock:RELEASE_LOCK() returns unexpected result");
+                if (pstmt.executeUpdate() > 0) {
+                    return true;
                 }
+                LOGGER.warn("releaseGlobalLock: failed to remove cloud.distributed_lock lock which does not exist: " + name);
             }
-        } catch (SQLException e) {
-            LOGGER.error("RELEASE_LOCK() throws exception ", e);
         } catch (Throwable e) {
-            LOGGER.error("RELEASE_LOCK() throws exception ", e);
+            LOGGER.error("Removing cloud.distributed_lock lock threw exception ", e);
         }
         return false;
     }
