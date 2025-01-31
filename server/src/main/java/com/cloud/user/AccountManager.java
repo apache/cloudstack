@@ -20,7 +20,6 @@ import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
@@ -31,6 +30,7 @@ import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
+import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -202,5 +202,8 @@ public interface AccountManager extends AccountService, Configurable {
 
     void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword, boolean skipCurrentPassValidation);
 
-  void checkApiAccess(Account caller, String command);
+    void checkApiAccess(Account caller, String command);
+
+    UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user);
+
 }
