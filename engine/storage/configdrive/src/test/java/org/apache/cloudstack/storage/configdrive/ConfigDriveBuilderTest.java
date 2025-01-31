@@ -134,7 +134,7 @@ public class ConfigDriveBuilderTest {
     @Test(expected = CloudRuntimeException.class)
     public void buildConfigDriveTestIoException() {
         try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class)) {
-            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVendorEmptyJsonFile(nullable(File.class))).thenThrow(CloudRuntimeException.class);
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVendorDataJsonFile(nullable(File.class))).thenThrow(CloudRuntimeException.class);
             Mockito.when(ConfigDriveBuilder.buildConfigDrive(null, new ArrayList<>(), "teste", "C:", null, supportedServices)).thenCallRealMethod();
             ConfigDriveBuilder.buildConfigDrive(null, new ArrayList<>(), "teste", "C:", null, supportedServices);
         }
@@ -144,7 +144,7 @@ public class ConfigDriveBuilderTest {
     public void buildConfigDriveTest() {
         try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class)) {
 
-            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVendorEmptyJsonFile(Mockito.any(File.class))).then(invocationOnMock -> null);
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVendorDataJsonFile(Mockito.any(File.class))).then(invocationOnMock -> null);
 
             configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVmMetadata(Mockito.anyList(), Mockito.anyString(), Mockito.any(File.class), anyMap())).then(invocationOnMock -> null);
 
@@ -163,7 +163,7 @@ public class ConfigDriveBuilderTest {
             Assert.assertEquals("mockIsoDataBase64", returnedIsoData);
 
             configDriveBuilderMocked.verify(() -> {
-                ConfigDriveBuilder.writeVendorEmptyJsonFile(Mockito.any(File.class));
+                ConfigDriveBuilder.writeVendorDataJsonFile(Mockito.any(File.class));
                 ConfigDriveBuilder.writeVmMetadata(Mockito.anyList(), Mockito.anyString(), Mockito.any(File.class), anyMap());
                 ConfigDriveBuilder.linkUserData(Mockito.anyString());
                 ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso(Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
@@ -172,23 +172,23 @@ public class ConfigDriveBuilderTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void writeVendorEmptyJsonFileTestCannotCreateOpenStackFolder() {
+    public void writeVendorDataJsonFileTestCannotCreateOpenStackFolder() {
         File folderFileMock = Mockito.mock(File.class);
         Mockito.doReturn(false).when(folderFileMock).mkdirs();
 
-        ConfigDriveBuilder.writeVendorEmptyJsonFile(folderFileMock);
+        ConfigDriveBuilder.writeVendorDataJsonFile(folderFileMock);
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void writeVendorEmptyJsonFileTest() {
+    public void writeVendorDataJsonFileTest() {
         File folderFileMock = Mockito.mock(File.class);
         Mockito.doReturn(false).when(folderFileMock).mkdirs();
 
-        ConfigDriveBuilder.writeVendorEmptyJsonFile(folderFileMock);
+        ConfigDriveBuilder.writeVendorDataJsonFile(folderFileMock);
     }
 
     @Test
-    public void writeVendorEmptyJsonFileTestCreatingFolder() {
+    public void writeVendorDataJsonFileTestCreatingFolder() {
         try (MockedStatic<ConfigDriveBuilder> configDriveBuilderMocked = Mockito.mockStatic(ConfigDriveBuilder.class)) {
 
             File folderFileMock = Mockito.mock(File.class);
@@ -196,9 +196,9 @@ public class ConfigDriveBuilderTest {
             Mockito.doReturn(true).when(folderFileMock).mkdirs();
 
             //force execution of real method
-            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVendorEmptyJsonFile(folderFileMock)).thenCallRealMethod();
+            configDriveBuilderMocked.when(() -> ConfigDriveBuilder.writeVendorDataJsonFile(folderFileMock)).thenCallRealMethod();
 
-            ConfigDriveBuilder.writeVendorEmptyJsonFile(folderFileMock);
+            ConfigDriveBuilder.writeVendorDataJsonFile(folderFileMock);
 
             Mockito.verify(folderFileMock).exists();
             Mockito.verify(folderFileMock).mkdirs();
