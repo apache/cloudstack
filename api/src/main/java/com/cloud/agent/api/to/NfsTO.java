@@ -88,9 +88,4 @@ public class NfsTO implements DataStoreTO {
     public void setNfsVersion(String nfsVersion) {
         this.nfsVersion = nfsVersion;
     }
-
-    @Override
-    public String toString() {
-        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "_role", "uuid", "url");
-    }
 }
