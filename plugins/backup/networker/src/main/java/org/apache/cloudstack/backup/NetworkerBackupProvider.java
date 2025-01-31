@@ -29,15 +29,11 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDaoImpl;
 import org.apache.cloudstack.backup.networker.NetworkerClient;
@@ -462,7 +458,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
-    public boolean takeBackup(VirtualMachine vm) {
+    public Pair<Boolean, Backup> takeBackup(VirtualMachine vm) {
         String networkerServer;
         String clusterName;
 
@@ -514,11 +510,11 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         if (backup != null) {
             backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
             backupDao.persist(backup);
-            return true;
+            return new Pair<>(true, backup);
         } else {
             LOG.error("Could not register backup for vm {} with saveset Time: {}", vm, saveTime);
             // We need to handle this rare situation where backup is successful but can't be registered properly.
-            return false;
+            return new Pair<>(false, null);
         }
     }
 
@@ -532,7 +528,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             LOG.debug("EMC Networker successfully deleted backup with id " + externalBackupId);
             return true;
         } else {
-            LOG.debug("There was an error removing the backup with id " + externalBackupId + " from EMC NEtworker");
+            LOG.debug("There was an error removing the backup with id " + externalBackupId + " from EMC Networker");
         }
         return false;
     }
@@ -550,12 +546,12 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
         for (final VirtualMachine vm : vms) {
             for ( Backup.VolumeInfo thisVMVol : vm.getBackupVolumeList()) {
-                vmBackupSize += (thisVMVol.getSize() / 1024L / 1024L);
+                vmBackupProtectedSize += (thisVMVol.getSize() / 1024L / 1024L);
             }
             final ArrayList<String> vmBackups = getClient(zoneId).getBackupsForVm(vm);
             for ( String vmBackup : vmBackups ) {
                 NetworkerBackup vmNwBackup = getClient(zoneId).getNetworkerBackupInfo(vmBackup);
-                vmBackupProtectedSize+= vmNwBackup.getSize().getValue() / 1024L;
+                vmBackupSize += vmNwBackup.getSize().getValue() / 1024L;
             }
             Backup.Metric vmBackupMetric = new Backup.Metric(vmBackupSize,vmBackupProtectedSize);
             LOG.debug(String.format("Metrics for VM [%s] is [backup size: %s, data size: %s].", vm, vmBackupMetric.getBackupSize(), vmBackupMetric.getDataSize()));
@@ -565,83 +561,53 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
-    public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
-        final Long zoneId = vm.getDataCenterId();
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                final List<Backup> backupsInDb = backupDao.listByVmId(null, vm.getId());
-                final ArrayList<String> backupsInNetworker = getClient(zoneId).getBackupsForVm(vm);
-                final List<Long> removeList = backupsInDb.stream().map(InternalIdentity::getId).collect(Collectors.toList());
-                for (final String networkerBackupId : backupsInNetworker ) {
-                    Long vmBackupSize=0L;
-                    boolean backupExists = false;
-                    for (final Backup backupInDb : backupsInDb) {
-                        LOG.debug(String.format("Checking if Backup %s with external ID %s for VM %s is valid", backupsInDb, backupInDb.getName(), vm));
-                        if ( networkerBackupId.equals(backupInDb.getExternalId()) ) {
-                            LOG.debug(String.format("Found Backup %s in both Database and Networker", backupInDb));
-                            backupExists = true;
-                            removeList.remove(backupInDb.getId());
-                            if (metric != null) {
-                                LOG.debug(String.format("Update backup [%s] from [size: %s, protected size: %s] to [size: %s, protected size: %s].",
-                                        backupInDb, backupInDb.getSize(), backupInDb.getProtectedSize(),
-                                        metric.getBackupSize(), metric.getDataSize()));
-                                ((BackupVO) backupInDb).setSize(metric.getBackupSize());
-                                ((BackupVO) backupInDb).setProtectedSize(metric.getDataSize());
-                                backupDao.update(backupInDb.getId(), ((BackupVO) backupInDb));
-                            }
-                            break;
-                        }
-                    }
-                    if (backupExists) {
-                        continue;
-                    }
-                    // Technically an administrator can manually create a backup for a VM by utilizing the KVM scripts
-                    // with the proper parameters. So we will register any backups taken on the Networker side from
-                    // outside Cloudstack. If ever Networker will support KVM out of the box this functionality also will
-                    // ensure that SLA like backups will be found and registered.
-                    NetworkerBackup strayNetworkerBackup = getClient(vm.getDataCenterId()).getNetworkerBackupInfo(networkerBackupId);
-                    // Since running backups are already present in Networker Server but not completed
-                    // make sure the backup is not in progress at this time.
-                    if ( strayNetworkerBackup.getCompletionTime() != null) {
-                        BackupVO strayBackup = new BackupVO();
-                        strayBackup.setVmId(vm.getId());
-                        strayBackup.setExternalId(strayNetworkerBackup.getId());
-                        strayBackup.setType(strayNetworkerBackup.getType());
-                        SimpleDateFormat formatterDateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-                        try {
-                            strayBackup.setDate(formatterDateTime.parse(strayNetworkerBackup.getSaveTime()));
-                        } catch (ParseException e) {
-                            String msg = String.format("Unable to parse date [%s].", strayNetworkerBackup.getSaveTime());
-                            LOG.error(msg, e);
-                            throw new CloudRuntimeException(msg, e);
-                        }
-                        strayBackup.setStatus(Backup.Status.BackedUp);
-                        for ( Backup.VolumeInfo thisVMVol : vm.getBackupVolumeList()) {
-                            vmBackupSize += (thisVMVol.getSize() / 1024L /1024L);
-                        }
-                        strayBackup.setSize(vmBackupSize);
-                        strayBackup.setProtectedSize(strayNetworkerBackup.getSize().getValue() / 1024L );
-                        strayBackup.setBackupOfferingId(vm.getBackupOfferingId());
-                        strayBackup.setAccountId(vm.getAccountId());
-                        strayBackup.setDomainId(vm.getDomainId());
-                        strayBackup.setZoneId(vm.getDataCenterId());
-                        LOG.debug(String.format("Creating a new entry in backups: [id: %s, uuid: %s, vm_id: %s, external_id: %s, type: %s, date: %s, backup_offering_id: %s, account_id: %s, "
-                                        + "domain_id: %s, zone_id: %s].", strayBackup.getId(), strayBackup.getUuid(), strayBackup.getVmId(), strayBackup.getExternalId(),
-                                strayBackup.getType(), strayBackup.getDate(), strayBackup.getBackupOfferingId(), strayBackup.getAccountId(),
-                                strayBackup.getDomainId(), strayBackup.getZoneId()));
-                        backupDao.persist(strayBackup);
-                        LOG.warn("Added backup found in provider [" + strayBackup + "]");
-                    } else {
-                        LOG.debug ("Backup is in progress, skipping addition for this run");
-                    }
-                }
-                for (final Long backupIdToRemove : removeList) {
-                    LOG.warn(String.format("Removing backup with ID: [%s].", backupIdToRemove));
-                    backupDao.remove(backupIdToRemove);
-                }
+    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric) {
+        // Technically an administrator can manually create a backup for a VM by utilizing the KVM scripts
+        // with the proper parameters. So we will register any backups taken on the Networker side from
+        // outside Cloudstack. If ever Networker will support KVM out of the box this functionality also will
+        // ensure that SLA like backups will be found and registered.
+        NetworkerBackup strayNetworkerBackup = getClient(vm.getDataCenterId()).getNetworkerBackupInfo(restorePoint.getId());
+
+        // Since running backups are already present in Networker Server but not completed
+        // make sure the backup is not in progress at this time.
+        if (strayNetworkerBackup.getCompletionTime() != null) {
+            BackupVO backup = new BackupVO();
+            backup.setVmId(vm.getId());
+            backup.setExternalId(strayNetworkerBackup.getId());
+            backup.setType(strayNetworkerBackup.getType());
+            SimpleDateFormat formatterDateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+            try {
+                backup.setDate(formatterDateTime.parse(strayNetworkerBackup.getSaveTime()));
+            } catch (ParseException e) {
+                String msg = String.format("Unable to parse date [%s].", strayNetworkerBackup.getSaveTime());
+                LOG.error(msg, e);
+                throw new CloudRuntimeException(msg, e);
             }
-        });
+            backup.setStatus(Backup.Status.BackedUp);
+            Long vmBackupProtectedSize=0L;
+            for (Backup.VolumeInfo thisVMVol : vm.getBackupVolumeList()) {
+                vmBackupProtectedSize += (thisVMVol.getSize() / 1024L / 1024L);
+            }
+            backup.setSize(strayNetworkerBackup.getSize().getValue() / 1024L);
+            backup.setProtectedSize(vmBackupProtectedSize);
+            backup.setBackupOfferingId(vm.getBackupOfferingId());
+            backup.setAccountId(vm.getAccountId());
+            backup.setDomainId(vm.getDomainId());
+            backup.setZoneId(vm.getDataCenterId());
+            backupDao.persist(backup);
+            return backup;
+        }
+        LOG.debug ("Backup is in progress, skipping addition for this run");
+        return null;
+    }
+
+    @Override
+    public List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
+        final Long zoneId = vm.getDataCenterId();
+        final ArrayList<String> backupIds = getClient(zoneId).getBackupsForVm(vm);
+        List<Backup.RestorePoint> restorePoints =
+            backupIds.stream().map(id -> new Backup.RestorePoint(id, null, null)).collect(Collectors.toList());
+        return restorePoints;
     }
 
     @Override
