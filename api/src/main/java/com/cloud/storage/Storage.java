@@ -135,34 +135,49 @@ public class Storage {
         ISODISK /* Template corresponding to a iso (non root disk) present in an OVA */
     }
 
+    public enum EncryptionSupport {
+        /**
+         * Encryption not supported.
+         */
+        Unsupported,
+        /**
+         * Will use hypervisor encryption driver (qemu -> luks)
+         */
+        Hypervisor,
+        /**
+         * Storage pool handles encryption and just provides an encrypted volume
+         */
+        Storage
+    }
+
     public static enum StoragePoolType {
-        Filesystem(false, true, true), // local directory
-        NetworkFilesystem(true, true, true), // NFS
-        IscsiLUN(true, false, false), // shared LUN, with a clusterfs overlay
-        Iscsi(true, false, false), // for e.g., ZFS Comstar
-        ISO(false, false, false), // for iso image
-        LVM(false, false, false), // XenServer local LVM SR
-        CLVM(true, false, false),
-        RBD(true, true, false), // http://libvirt.org/storage.html#StorageBackendRBD
-        SharedMountPoint(true, true, true),
-        VMFS(true, true, false), // VMware VMFS storage
-        PreSetup(true, true, false), // for XenServer, Storage Pool is set up by customers.
-        EXT(false, true, false), // XenServer local EXT SR
-        OCFS2(true, false, false),
-        SMB(true, false, false),
-        Gluster(true, false, false),
-        PowerFlex(true, true, true), // Dell EMC PowerFlex/ScaleIO (formerly VxFlexOS)
-        ManagedNFS(true, false, false),
-        Linstor(true, true, false),
-        DatastoreCluster(true, true, false), // for VMware, to abstract pool of clusters
-        StorPool(true, true, true),
-        FiberChannel(true, true, false); // Fiber Channel Pool for KVM hypervisors is used to find the volume by WWN value (/dev/disk/by-id/wwn-<wwnvalue>)
+        Filesystem(false, true, EncryptionSupport.Hypervisor), // local directory
+        NetworkFilesystem(true, true, EncryptionSupport.Hypervisor), // NFS
+        IscsiLUN(true, false, EncryptionSupport.Unsupported), // shared LUN, with a clusterfs overlay
+        Iscsi(true, false, EncryptionSupport.Unsupported), // for e.g., ZFS Comstar
+        ISO(false, false, EncryptionSupport.Unsupported), // for iso image
+        LVM(false, false, EncryptionSupport.Unsupported), // XenServer local LVM SR
+        CLVM(true, false, EncryptionSupport.Unsupported),
+        RBD(true, true, EncryptionSupport.Unsupported), // http://libvirt.org/storage.html#StorageBackendRBD
+        SharedMountPoint(true, true, EncryptionSupport.Hypervisor),
+        VMFS(true, true, EncryptionSupport.Unsupported), // VMware VMFS storage
+        PreSetup(true, true, EncryptionSupport.Unsupported), // for XenServer, Storage Pool is set up by customers.
+        EXT(false, true, EncryptionSupport.Unsupported), // XenServer local EXT SR
+        OCFS2(true, false, EncryptionSupport.Unsupported),
+        SMB(true, false, EncryptionSupport.Unsupported),
+        Gluster(true, false, EncryptionSupport.Unsupported),
+        PowerFlex(true, true, EncryptionSupport.Hypervisor), // Dell EMC PowerFlex/ScaleIO (formerly VxFlexOS)
+        ManagedNFS(true, false, EncryptionSupport.Unsupported),
+        Linstor(true, true, EncryptionSupport.Storage),
+        DatastoreCluster(true, true, EncryptionSupport.Unsupported), // for VMware, to abstract pool of clusters
+        StorPool(true, true, EncryptionSupport.Hypervisor),
+        FiberChannel(true, true, EncryptionSupport.Unsupported); // Fiber Channel Pool for KVM hypervisors is used to find the volume by WWN value (/dev/disk/by-id/wwn-<wwnvalue>)
 
         private final boolean shared;
         private final boolean overProvisioning;
-        private final boolean encryption;
+        private final EncryptionSupport encryption;
 
-        StoragePoolType(boolean shared, boolean overProvisioning, boolean encryption) {
+        StoragePoolType(boolean shared, boolean overProvisioning, EncryptionSupport encryption) {
             this.shared = shared;
             this.overProvisioning = overProvisioning;
             this.encryption = encryption;
@@ -177,6 +192,10 @@ public class Storage {
         }
 
         public boolean supportsEncryption() {
+            return encryption == EncryptionSupport.Hypervisor || encryption == EncryptionSupport.Storage;
+        }
+
+        public EncryptionSupport encryptionSupportMode() {
             return encryption;
         }
     }

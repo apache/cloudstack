@@ -3180,7 +3180,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setCacheMode(DiskDef.DiskCacheMode.valueOf(volumeObjectTO.getCacheMode().toString().toUpperCase()));
                 }
 
-                if (volumeObjectTO.requiresEncryption()) {
+                if (volumeObjectTO.requiresEncryption() &&
+                        pool.getType().encryptionSupportMode() == Storage.EncryptionSupport.Hypervisor ) {
                     String secretUuid = createLibvirtVolumeSecret(conn, volumeObjectTO.getPath(), volumeObjectTO.getPassphrase());
                     DiskDef.LibvirtDiskEncryptDetails encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(volumeObjectTO.getEncryptFormat()));
                     disk.setLibvirtDiskEncryptDetails(encryptDetails);
