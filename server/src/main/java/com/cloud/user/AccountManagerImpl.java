@@ -1341,7 +1341,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      */
     private void checkRoleEscalation(Account caller, Account requested) {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
+            s_logger.debug(String.format("Checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
                     caller.getAccountName(),
                     caller.getUuid(),
                     caller.getRoleId(),
@@ -1355,12 +1355,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 checkApiAccess(apiCheckers, requested, command);
             } catch (PermissionDeniedException pde) {
                 if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format("checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
+                    s_logger.trace(String.format(
+                            "Checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
                             command,
-                            pde.getAccount().getAccountName(),
-                            pde.getAccount().getUuid(),
-                            pde.getEntitiesInViolation()
-                            ));
+                            requested.getAccountName(),
+                            requested.getUuid()
+                        )
+                    );
                 }
                 continue;
             }
@@ -3475,4 +3476,26 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return userTwoFactorAuthenticationProvidersMap.get(name.toLowerCase());
     }
 
+    @Override
+    public UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user) {
+        return Transaction.execute((TransactionCallback<UserAccount>) status -> {
+            if (!user.isUser2faEnabled() && StringUtils.isBlank(user.getUser2faProvider())) {
+                return user;
+            }
+            UserDetailVO userDetailVO = _userDetailsDao.findDetail(user.getId(), UserDetailVO.Setup2FADetail);
+            if (userDetailVO != null && UserAccountVO.Setup2FAstatus.VERIFIED.name().equals(userDetailVO.getValue())) {
+                return user;
+            }
+            s_logger.info(String.format("Clearing 2FA configurations for %s as it is still in setup on a new login request", user));
+            if (userDetailVO != null) {
+                _userDetailsDao.remove(userDetailVO.getId());
+            }
+            UserAccountVO userAccountVO = _userAccountDao.findById(user.getId());
+            userAccountVO.setUser2faEnabled(false);
+            userAccountVO.setUser2faProvider(null);
+            userAccountVO.setKeyFor2fa(null);
+            _userAccountDao.update(user.getId(), userAccountVO);
+            return userAccountVO;
+        });
+    }
 }

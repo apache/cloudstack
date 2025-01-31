@@ -516,4 +516,9 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     public ConfigKey<?>[] getConfigKeys() {
         return null;
     }
+
+    @Override
+    public UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user) {
+        return null;
+    }
 }

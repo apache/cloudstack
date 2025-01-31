@@ -484,4 +484,8 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
         return null;
     }
 
+    @Override
+    public UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user) {
+        return null;
+    }
 }
