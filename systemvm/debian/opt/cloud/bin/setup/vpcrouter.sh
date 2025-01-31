@@ -115,6 +115,8 @@ setup_vpcrouter() {
   sed -i "s#^OnCalendar=.*#OnCalendar=$LOGROTATE_FREQUENCY#g" /usr/lib/systemd/system/logrotate.timer
   sed -i 's#^AccuracySec=.*#AccuracySec=5m#g' /usr/lib/systemd/system/logrotate.timer
 
+  sed -i 's/^#\(dhcp-leasefile=\/var\/lib\/misc\/dnsmasq.leases\)/\1/' /etc/dnsmasq.conf
+
   # reload daemon
   /usr/bin/systemctl daemon-reload
 
