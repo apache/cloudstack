@@ -484,6 +484,9 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
                     tableAlias = attr.table;
                 }
             }
+            if (op == Op.BINARY_OR) {
+                sql.append("(");
+            }
 
             sql.append(tableAlias).append(".").append(attr.columnName).append(op.toString());
             if (op == Op.IN && params.length == 1) {

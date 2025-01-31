@@ -182,6 +182,9 @@ public class ListCfgsByCmd extends BaseListCmd {
             return;
         }
         cfgResponse.setObjectName("configuration");
+        if (StringUtils.isNotBlank(cfgResponse.getScope())) {
+            return;
+        }
         if (getZoneId() != null) {
             cfgResponse.setScope("zone");
         }

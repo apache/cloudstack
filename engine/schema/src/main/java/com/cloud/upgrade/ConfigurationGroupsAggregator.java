@@ -32,6 +32,9 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -54,7 +57,12 @@ public class ConfigurationGroupsAggregator {
 
     public void updateConfigurationGroups() {
         LOG.debug("Updating configuration groups");
-        List<ConfigurationVO> configs =  configDao.listAllIncludingRemoved();
+        SearchBuilder<ConfigurationVO> sb = configDao.createSearchBuilder();
+        sb.select("name", SearchCriteria.Func.NATIVE, sb.entity().getName());
+        sb.select("groupId", SearchCriteria.Func.NATIVE, sb.entity().getGroupId());
+        sb.select("subGroupId", SearchCriteria.Func.NATIVE, sb.entity().getSubGroupId());
+        SearchCriteria<ConfigurationVO> sc = sb.create();
+        List<ConfigurationVO> configs =  configDao.searchIncludingRemoved(sc, null, null, false);
         if (CollectionUtils.isEmpty(configs)) {
             return;
         }

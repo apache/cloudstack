@@ -30,6 +30,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
+import com.cloud.utils.Pair;
+
 public class StoragePoolDetailsDaoImpl extends ResourceDetailsDaoBase<StoragePoolDetailVO> implements StoragePoolDetailsDao, ScopedConfigStorage {
 
     @Inject
@@ -56,5 +58,18 @@ public class StoragePoolDetailsDaoImpl extends ResourceDetailsDaoBase<StoragePoo
             super.addDetail(new StoragePoolDetailVO(childPool.getId(), key, value, display));
         }
         super.addDetail(new StoragePoolDetailVO(resourceId, key, value, display));
+    }
+
+    @Override
+    public Pair<Scope, Long> getParentScope(long id) {
+        StoragePoolVO pool = _storagePoolDao.findById(id);
+        if (pool != null) {
+            if (pool.getClusterId() != null) {
+                return new Pair<>(getScope().getParent(), pool.getClusterId());
+            } else {
+                return new Pair<>(ConfigKey.Scope.Zone, pool.getDataCenterId());
+            }
+        }
+        return null;
     }
 }
