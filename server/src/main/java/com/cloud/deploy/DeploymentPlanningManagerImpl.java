@@ -36,22 +36,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.cpu.CPU;
-import com.cloud.vm.UserVmManager;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.user.AccountVO;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.utils.db.Filter;
-import com.cloud.utils.fsm.StateMachine2;
-
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
@@ -64,6 +49,8 @@ import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMReservationDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
@@ -71,6 +58,9 @@ import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -85,6 +75,7 @@ import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
@@ -102,6 +93,7 @@ import com.cloud.deploy.dao.PlannerHostReservationDao;
 import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.gpu.GPU;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -122,15 +114,19 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.LogUtils;
 import com.cloud.utils.NumbersUtil;
@@ -138,13 +134,16 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.DiskProfile;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Event;
@@ -295,8 +294,9 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             return;
         }
         final Long lastHostClusterId = lastHost.getClusterId();
-        logger.warn("VM last host ID: {} belongs to zone ID: {} for which config - {} is false and storage migration would be needed for inter-cluster migration, therefore, adding all other clusters except ID: {} from this zone to avoid list", lastHost, vm.getDataCenterId(), ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS.key(), lastHostClusterId);
-        List<Long> clusterIds = _clusterDao.listAllClusters(lastHost.getDataCenterId());
+        logger.warn(String.format("VM last host ID: %d belongs to zone ID: %s for which config - %s is false and storage migration would be needed for inter-cluster migration, therefore, adding all other clusters except ID: %d from this zone to avoid list",
+                lastHost.getId(), vm.getDataCenterId(), ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS.key(), lastHostClusterId));
+        List<Long> clusterIds = _clusterDao.listAllClusterIds(lastHost.getDataCenterId());
         Set<Long> existingAvoidedClusters = avoids.getClustersToAvoid();
         clusterIds = clusterIds.stream().filter(x -> !Objects.equals(x, lastHostClusterId) && (existingAvoidedClusters == null || !existingAvoidedClusters.contains(x))).collect(Collectors.toList());
         avoids.addClusterList(clusterIds);
@@ -492,7 +492,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                 float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
 
                 boolean hostHasCpuCapability, hostHasCapacity = false;
-                hostHasCpuCapability = _capacityMgr.checkIfHostHasCpuCapability(host.getId(), offering.getCpu(), offering.getSpeed());
+                hostHasCpuCapability = _capacityMgr.checkIfHostHasCpuCapability(host, offering.getCpu(), offering.getSpeed());
 
                 if (hostHasCpuCapability) {
                     // first check from reserved capacity
@@ -736,12 +736,10 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
      * Adds disabled Hosts to the ExcludeList in order to avoid them at the deployment planner.
      */
     protected void avoidDisabledHosts(DataCenter dc, ExcludeList avoids) {
-        List<HostVO> disabledHosts = _hostDao.listDisabledByDataCenterId(dc.getId());
-        logger.debug("Adding hosts [{}] of datacenter [{}] to the avoid set, because these hosts are in the Disabled state.",
-                disabledHosts.stream().map(HostVO::getUuid).collect(Collectors.joining(", ")), dc);
-        for (HostVO host : disabledHosts) {
-            avoids.addHost(host.getId());
-        }
+        List<Long> disabledHostIds = _hostDao.listDisabledIdsByDataCenterId(dc.getId());
+        logger.debug("Adding hosts {} of datacenter [{}] to the avoid set, because these hosts are in the Disabled state.",
+                StringUtils.join(disabledHostIds), dc.getUuid());
+        disabledHostIds.forEach(avoids::addHost);
     }
 
     /**
@@ -860,7 +858,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
         List<Long> allDedicatedPods = _dedicatedDao.listAllPods();
         allPodsInDc.retainAll(allDedicatedPods);
 
-        List<Long> allClustersInDc = _clusterDao.listAllClusters(dc.getId());
+        List<Long> allClustersInDc = _clusterDao.listAllClusterIds(dc.getId());
         List<Long> allDedicatedClusters = _dedicatedDao.listAllClusters();
         allClustersInDc.retainAll(allDedicatedClusters);
 
@@ -1147,9 +1145,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
 
     private void checkHostReservations() {
         List<PlannerHostReservationVO> reservedHosts = _plannerHostReserveDao.listAllReservedHosts();
-
-        for (PlannerHostReservationVO hostReservation : reservedHosts) {
-            HostVO host = _hostDao.findById(hostReservation.getHostId());
+        List<HostVO> hosts = _hostDao.listByIds(reservedHosts
+                .stream()
+                .map(PlannerHostReservationVO::getHostId)
+                .collect(Collectors.toList()));
+        for (HostVO host : hosts) {
             if (host != null && host.getManagementServerId() != null && host.getManagementServerId() == _nodeId) {
                 checkHostReservationRelease(host);
             }
@@ -1338,7 +1338,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                         Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(suitableHosts, suitableVolumeStoragePools, avoid,
                                 resourceUsageRequired, readyAndReusedVolumes, plan.getPreferredHosts(), vmProfile.getVirtualMachine());
                         if (potentialResources != null) {
-                            Host host = _hostDao.findById(potentialResources.first().getId());
+                            Host host = potentialResources.first();
                             Map<Volume, StoragePool> storageVolMap = potentialResources.second();
                             // remove the reused vol<->pool from destination, since
                             // we don't have to prepare this volume.

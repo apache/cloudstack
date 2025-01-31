@@ -31,54 +31,56 @@ import org.apache.cloudstack.framework.ca.CAService;
 
 public class NioServer extends NioConnection {
 
-    protected InetSocketAddress _localAddr;
-    private ServerSocketChannel _serverSocket;
+    protected InetSocketAddress localAddress;
+    private ServerSocketChannel serverSocket;
 
-    protected WeakHashMap<InetSocketAddress, Link> _links;
+    protected WeakHashMap<InetSocketAddress, Link> links;
 
-    public NioServer(final String name, final int port, final int workers, final HandlerFactory factory, final CAService caService) {
-        super(name, port, workers, factory);
+    public NioServer(final String name, final int port, final int workers, final HandlerFactory factory,
+             final CAService caService, final Integer sslHandShakeTimeout) {
+        super(name, port, workers,factory);
         setCAService(caService);
-        _localAddr = null;
-        _links = new WeakHashMap<InetSocketAddress, Link>(1024);
+        setSslHandshakeTimeout(sslHandShakeTimeout);
+        localAddress = null;
+        links = new WeakHashMap<>(1024);
     }
 
     public int getPort() {
-        return _serverSocket.socket().getLocalPort();
+        return serverSocket.socket().getLocalPort();
     }
 
     @Override
     protected void init() throws IOException {
         _selector = SelectorProvider.provider().openSelector();
 
-        _serverSocket = ServerSocketChannel.open();
-        _serverSocket.configureBlocking(false);
+        serverSocket = ServerSocketChannel.open();
+        serverSocket.configureBlocking(false);
 
-        _localAddr = new InetSocketAddress(_port);
-        _serverSocket.socket().bind(_localAddr);
+        localAddress = new InetSocketAddress(_port);
+        serverSocket.socket().bind(localAddress);
 
-        _serverSocket.register(_selector, SelectionKey.OP_ACCEPT, null);
+        serverSocket.register(_selector, SelectionKey.OP_ACCEPT, null);
 
-        logger.info("NioServer started and listening on " + _serverSocket.socket().getLocalSocketAddress());
+        logger.info("NioServer started and listening on {}", serverSocket.socket().getLocalSocketAddress());
     }
 
     @Override
     public void cleanUp() throws IOException {
         super.cleanUp();
-        if (_serverSocket != null) {
-            _serverSocket.close();
+        if (serverSocket != null && serverSocket.isOpen()) {
+            serverSocket.close();
         }
-        logger.info("NioConnection stopped on " + _localAddr.toString());
+        logger.info("NioConnection stopped on {}",  localAddress.toString());
     }
 
     @Override
     protected void registerLink(final InetSocketAddress addr, final Link link) {
-        _links.put(addr, link);
+        links.put(addr, link);
     }
 
     @Override
     protected void unregisterLink(final InetSocketAddress saddr) {
-        _links.remove(saddr);
+        links.remove(saddr);
     }
 
     /**
@@ -91,7 +93,7 @@ public class NioServer extends NioConnection {
      * @return null if not sent.  attach object in link if sent.
      */
     public Object send(final InetSocketAddress saddr, final byte[] data) throws ClosedChannelException {
-        final Link link = _links.get(saddr);
+        final Link link = links.get(saddr);
         if (link == null) {
             return null;
         }

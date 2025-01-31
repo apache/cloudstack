@@ -30,7 +30,6 @@ import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -56,15 +55,13 @@ import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.Status;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.resource.ResourceManager;
-import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.StoragePoolAutomation;
@@ -73,7 +70,6 @@ import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.springframework.test.util.ReflectionTestUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ScaleIOPrimaryDataStoreLifeCycleTest {
@@ -84,8 +80,6 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     private StoragePoolDetailsDao storagePoolDetailsDao;
     @Mock
     private PrimaryDataStoreHelper dataStoreHelper;
-    @Mock
-    private ResourceManager resourceManager;
     @Mock
     private StoragePoolAutomation storagePoolAutomation;
     @Mock
@@ -100,6 +94,10 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     private PrimaryDataStore store;
     @Mock
     private TemplateManager templateMgr;
+    @Mock
+    HostDao hostDao;
+    @Mock
+    DataCenterDao dataCenterDao;
 
     @InjectMocks
     private StorageManager storageMgr = new StorageManagerImpl();
@@ -115,6 +113,7 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     public void setUp() {
         closeable = MockitoAnnotations.openMocks(this);
         ReflectionTestUtils.setField(scaleIOPrimaryDataStoreLifeCycleTest, "storageMgr", storageMgr);
+        when(dataCenterDao.findById(anyLong())).thenReturn(mock(DataCenterVO.class));
     }
 
     @After
@@ -137,17 +136,8 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
 
         final ZoneScope scope = new ZoneScope(1L);
 
-        List<HostVO> hostList = new ArrayList<HostVO>();
-        HostVO host1 = new HostVO(1L, "host01", Host.Type.Routing, "192.168.1.1", "255.255.255.0", null, null, null, null, null, null, null, null, null, null,
-                UUID.randomUUID().toString(), Status.Up, "1.0", null, null, 1L, null, 0, 0, "aa", 0, Storage.StoragePoolType.PowerFlex);
-        HostVO host2 = new HostVO(2L, "host02", Host.Type.Routing, "192.168.1.2", "255.255.255.0", null, null, null, null, null, null, null, null, null, null,
-                UUID.randomUUID().toString(), Status.Up, "1.0", null, null, 1L, null, 0, 0, "aa", 0, Storage.StoragePoolType.PowerFlex);
-
-        host1.setResourceState(ResourceState.Enabled);
-        host2.setResourceState(ResourceState.Enabled);
-        hostList.add(host1);
-        hostList.add(host2);
-        when(resourceManager.listAllUpAndEnabledHostsInOneZoneByHypervisor(Hypervisor.HypervisorType.KVM, 1L)).thenReturn(hostList);
+        when(hostDao.listIdsForUpEnabledByZoneAndHypervisor(scope.getScopeId(), Hypervisor.HypervisorType.KVM))
+                .thenReturn(List.of(1L, 2L));
 
         when(dataStoreMgr.getDataStore(anyLong(), eq(DataStoreRole.Primary))).thenReturn(store);
         when(store.isShared()).thenReturn(true);

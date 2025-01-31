@@ -571,14 +571,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         }
     }
 
-    public static class SumCount {
-        public long sum;
-        public long count;
-
-        public SumCount() {
-        }
-    }
-
     @Override
     public List<VolumeVO> listVolumesToBeDestroyed() {
         SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();

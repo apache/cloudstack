@@ -31,6 +31,7 @@ import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.xmlrpc.XmlRpcException;
@@ -144,8 +145,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             sc.and(sc.entity().getGuid(), Op.EQ, guid);
             List<ClusterVO> clusters = sc.list();
             ClusterVO clu = clusters.get(0);
-            List<HostVO> clusterHosts = _resourceMgr.listAllHostsInCluster(clu.getId());
-            if (clusterHosts == null || clusterHosts.size() == 0) {
+            List<Long> clusterHostIds = _hostDao.listIdsByClusterId(clu.getId());
+            if (CollectionUtils.isEmpty(clusterHostIds)) {
                 clu.setGuid(null);
                 _clusterDao.update(clu.getId(), clu);
                 _clusterDao.update(cluster.getId(), cluster);
@@ -245,8 +246,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             if (clu.getGuid() == null) {
                 setClusterGuid(clu, poolUuid);
             } else {
-                List<HostVO> clusterHosts = _resourceMgr.listAllHostsInCluster(clusterId);
-                if (clusterHosts != null && clusterHosts.size() > 0) {
+                List<Long> clusterHostIds = _hostDao.listIdsByClusterId(clusterId);
+                if (CollectionUtils.isNotEmpty(clusterHostIds)) {
                     if (!clu.getGuid().equals(poolUuid)) {
                         String msg = "Please join the host " +  hostIp + " to XS pool  "
                                 + clu.getGuid() + " through XC/XS before adding it through CS UI";

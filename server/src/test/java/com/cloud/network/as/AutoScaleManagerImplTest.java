@@ -16,6 +16,66 @@
 // under the License.
 package com.cloud.network.as;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.matches;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+
+import org.apache.cloudstack.affinity.AffinityGroupVO;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;
+import org.apache.cloudstack.api.command.user.autoscale.CreateConditionCmd;
+import org.apache.cloudstack.api.command.user.autoscale.ListCountersCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
+import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.userdata.UserDataManager;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.PerformanceMonitorAnswer;
 import com.cloud.agent.api.PerformanceMonitorCommand;
@@ -39,6 +99,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
@@ -106,65 +167,6 @@ import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.affinity.AffinityGroupVO;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.annotation.AnnotationService;
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
-import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScalePolicyCmd;
-import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmGroupCmd;
-import org.apache.cloudstack.api.command.user.autoscale.CreateAutoScaleVmProfileCmd;
-import org.apache.cloudstack.api.command.user.autoscale.CreateConditionCmd;
-import org.apache.cloudstack.api.command.user.autoscale.ListCountersCmd;
-import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmGroupCmd;
-import org.apache.cloudstack.api.command.user.autoscale.UpdateAutoScaleVmProfileCmd;
-import org.apache.cloudstack.api.command.user.autoscale.UpdateConditionCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
-import org.apache.cloudstack.config.ApiServiceConfiguration;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.userdata.UserDataManager;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ScheduledExecutorService;
-
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.matches;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AutoScaleManagerImplTest {
@@ -2256,32 +2258,31 @@ public class AutoScaleManagerImplTest {
     }
 
     @Test
-    public void getVmStatsByIdFromHost() {
-        List<Long> vmIds = Mockito.mock(ArrayList.class);
-
-        Map<Long, ? extends VmStats> result = autoScaleManagerImplSpy.getVmStatsByIdFromHost(-1L, vmIds);
-
+    public void getVmStatsByIdFromHostNullHost() {
+        Map<Long, ? extends VmStats> result = autoScaleManagerImplSpy.getVmStatsByIdFromHost(-1L, List.of(1L, 2L));
         Assert.assertEquals(0, result.size());
+        Mockito.verify(virtualMachineManager, never()).getVirtualMachineStatistics(Mockito.any(Host.class), anyList());
+    }
 
-        Mockito.verify(virtualMachineManager, never()).getVirtualMachineStatistics(anyLong(), anyString(), anyList());
+    @Test
+    public void getVmStatsByIdFromHostEmptyVmList() {
+        Mockito.when(hostDao.findById(1L)).thenReturn(hostMock);
+        Map<Long, ? extends VmStats> result = autoScaleManagerImplSpy.getVmStatsByIdFromHost(1L, Collections.emptyList());
+        Mockito.verify(virtualMachineManager).getVirtualMachineStatistics(hostMock, Collections.emptyList());
+        Assert.assertEquals(0, result.size());
     }
 
     @Test
     public void getVmStatsByIdFromHost2() {
-        List<Long> vmIds = Mockito.mock(ArrayList.class);
-        VmStatsEntry vmStats = new VmStatsEntry(2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, "vm");
+        List<Long> vmIds = List.of(virtualMachineId);
+        VmStatsEntry vmStats = new VmStatsEntry(virtualMachineId, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, "vm");
         HashMap<Long, VmStatsEntry> vmStatsById = new HashMap<>();
         vmStatsById.put(virtualMachineId, vmStats);
         when(hostDao.findById(hostId)).thenReturn(hostMock);
-        when(hostMock.getId()).thenReturn(hostId);
-        when(hostMock.getName()).thenReturn(hostName);
-        Mockito.doReturn(vmStatsById).when(virtualMachineManager).getVirtualMachineStatistics(anyLong(), anyString(), anyList());
-
+        Mockito.doReturn(vmStatsById).when(virtualMachineManager).getVirtualMachineStatistics(hostMock, vmIds);
         Map<Long, ? extends VmStats> result = autoScaleManagerImplSpy.getVmStatsByIdFromHost(hostId, vmIds);
-
         Assert.assertEquals(vmStatsById, result);
-
-        Mockito.verify(virtualMachineManager).getVirtualMachineStatistics(anyLong(), anyString(), anyList());
+        Mockito.verify(virtualMachineManager).getVirtualMachineStatistics(Mockito.any(Host.class), anyList());
     }
 
     @Test

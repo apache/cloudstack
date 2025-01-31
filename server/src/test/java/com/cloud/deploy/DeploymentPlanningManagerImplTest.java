@@ -889,7 +889,7 @@ public class DeploymentPlanningManagerImplTest {
         Pair<Host, Map<Volume, StoragePool>> potentialResources = new Pair<>(host, suitableVolumeStoragePoolMap);
 
         Mockito.when(capacityMgr.checkIfHostReachMaxGuestLimit(host)).thenReturn(false);
-        Mockito.when(capacityMgr.checkIfHostHasCpuCapability(ArgumentMatchers.anyLong(), ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt())).thenReturn(true);
+        Mockito.when(capacityMgr.checkIfHostHasCpuCapability(ArgumentMatchers.any(Host.class), ArgumentMatchers.anyInt(), ArgumentMatchers.anyInt())).thenReturn(true);
         Mockito.when(capacityMgr.checkIfHostHasCapacity(
             ArgumentMatchers.any(),
                 ArgumentMatchers.anyInt(),
@@ -1218,7 +1218,7 @@ public class DeploymentPlanningManagerImplTest {
             throw new RuntimeException(e);
         }
         List<Long> allClusters = List.of(101L, 102L, 103L, 104L);
-        Mockito.when(_clusterDao.listAllClusters(Mockito.anyLong())).thenReturn(allClusters);
+        Mockito.when(_clusterDao.listAllClusterIds(Mockito.anyLong())).thenReturn(allClusters);
         if (mockVolumes) {
             VolumeVO vol1 = Mockito.mock(VolumeVO.class);
             Mockito.when(vol1.getPoolId()).thenReturn(1L);
