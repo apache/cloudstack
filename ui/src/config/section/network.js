@@ -245,6 +245,12 @@ export default {
           icon: 'plus-outlined',
           label: 'label.add.vpc',
           docHelp: 'adminguide/networking_and_traffic.html#adding-a-virtual-private-cloud',
+          show: () => {
+            if (!store.getters.zones || store.getters.zones.length === 0) {
+              return false
+            }
+            return true
+          },
           listView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/network/CreateVpc.vue')))
@@ -394,6 +400,12 @@ export default {
           label: 'label.vnf.appliance.add',
           docHelp: 'adminguide/networking/vnf_templates_appliances.html#deploying-vnf-appliances',
           listView: true,
+          show: () => {
+            if (!store.getters.zones || store.getters.zones.length === 0) {
+              return false
+            }
+            return true
+          },
           component: () => import('@/views/compute/DeployVnfAppliance.vue')
         },
         {
@@ -941,6 +953,12 @@ export default {
           label: 'label.add.vpn.gateway',
           docHelp: 'adminguide/networking_and_traffic.html#creating-a-vpn-gateway-for-the-vpc',
           listView: true,
+          show: () => {
+            if (!store.getters.zones || store.getters.zones.length === 0) {
+              return false
+            }
+            return true
+          },
           args: ['vpcid']
         },
         {
@@ -1116,6 +1134,12 @@ export default {
           icon: 'plus-outlined',
           label: 'label.add.vpn.user',
           listView: true,
+          show: () => {
+            if (!store.getters.zones || store.getters.zones.length === 0) {
+              return false
+            }
+            return true
+          },
           args: (record, store) => {
             if (store.userInfo.roletype === 'User') {
               return ['username', 'password']
@@ -1195,6 +1219,12 @@ export default {
           docHelp: 'adminguide/networking_and_traffic.html#creating-and-updating-a-vpn-customer-gateway',
           listView: true,
           popup: true,
+          show: () => {
+            if (!store.getters.zones || store.getters.zones.length === 0) {
+              return false
+            }
+            return true
+          },
           component: shallowRef(defineAsyncComponent(() => import('@/views/network/CreateVpnCustomerGateway.vue')))
         },
         {
