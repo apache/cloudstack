@@ -33,7 +33,7 @@
         <a-menu>
           <a-menu-item v-for="(column, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(column)">
             <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(column))"/>
-            {{ $t('label.' + String(getColumTitle(column)).toLowerCase()) }}
+            {{ $t('label.' + String(getColumnTitle(column)).toLowerCase()) }}
           </a-menu-item>
         </a-menu>
       </div>
@@ -725,7 +725,7 @@ export default {
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
         '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', '/quotatariff', '/sharedfs',
-        '/ipv4subnets'].join('|'))
+        '/ipv4subnets', '/managementserver'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {
@@ -1005,16 +1005,16 @@ export default {
       return host.state
     },
     getColumnKey (name) {
-      if (typeof name === 'object') {
-        name = Object.keys(name).includes('field') ? name.field : name.customTitle
+      if (typeof name !== 'object' || name === null) {
+        return name
       }
-      return name
+      return name.field ?? name.customTitle ?? Object.keys(name)[0]
     },
-    getColumTitle (name) {
-      if (typeof name === 'object') {
-        name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
+    getColumnTitle (name) {
+      if (typeof name !== 'object' || name === null) {
+        return name
       }
-      return name
+      return name.customTitle ?? name.field ?? Object.keys(name)[0]
     },
     handleResizeColumn (w, col) {
       col.width = w

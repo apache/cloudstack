@@ -57,6 +57,8 @@ import javax.naming.ConfigurationException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountManagerImpl;
@@ -113,6 +115,7 @@ import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.user.UserPasswordResetManager;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.http.ConnectionClosedException;
@@ -221,6 +224,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private EntityManager entityMgr;
     @Inject
     private ProjectDao projectDao;
+    @Inject
+    private ManagementServerHostDao msHostDao;
     @Inject
     private UUIDManager uuidMgr;
     @Inject
@@ -471,7 +476,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 s_apiNameCmdClassMap.put(apiName, apiCmdList);
             }
             apiCmdList.add(cmdClass);
-
         }
 
         setEncodeApiResponse(EncodeApiResponse.value());
@@ -1172,6 +1176,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 if (ApiConstants.ISSUER_FOR_2FA.equalsIgnoreCase(attrName)) {
                     response.setIssuerFor2FA(attrObj.toString());
                 }
+                if (ApiConstants.MANAGEMENT_SERVER_ID.equalsIgnoreCase(attrName)) {
+                    response.setManagementServerId(attrObj.toString());
+                }
             }
         }
         response.setResponseName("loginresponse");
@@ -1190,7 +1197,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             domainId = userDomain.getId();
         }
 
-        final UserAccount userAcct = accountMgr.authenticateUser(username, password, domainId, loginIpAddress, requestParameters);
+        UserAccount userAcct = accountMgr.authenticateUser(username, password, domainId, loginIpAddress, requestParameters);
         if (userAcct != null) {
             final String timezone = userAcct.getTimezone();
             float offsetInHrs = 0f;
@@ -1235,6 +1242,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 session.setAttribute("timezoneoffset", Float.valueOf(offsetInHrs).toString());
             }
 
+            userAcct = accountMgr.clearUserTwoFactorAuthenticationInSetupStateOnLogin(userAcct);
             boolean is2faEnabled = false;
             if (userAcct.isUser2faEnabled() || (Boolean.TRUE.equals(AccountManagerImpl.enableUserTwoFactorAuthentication.valueIn(userAcct.getDomainId())) && Boolean.TRUE.equals(AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(userAcct.getDomainId())))) {
                 is2faEnabled = true;
@@ -1248,6 +1256,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
             session.setAttribute(ApiConstants.PROVIDER_FOR_2FA, userAcct.getUser2faProvider());
             session.setAttribute(ApiConstants.ISSUER_FOR_2FA, issuerFor2FA);
+
+            if (accountMgr.isRootAdmin(userAcct.getAccountId())) {
+                ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
+                if (msHost != null && msHost.getUuid() != null) {
+                    session.setAttribute(ApiConstants.MANAGEMENT_SERVER_ID, msHost.getUuid());
+                }
+            }
 
             // (bug 5483) generate a session key that the user must submit on every request to prevent CSRF, add that
             // to the login response so that session-based authenticators know to send the key back

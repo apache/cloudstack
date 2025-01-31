@@ -77,6 +77,7 @@ public class AgentShell implements IAgentShell, Daemon {
     private String hostToConnect;
     private String connectedHost;
     private Long preferredHostCheckInterval;
+    private boolean connectionTransfer = false;
     protected AgentProperties agentProperties = new AgentProperties();
 
     public AgentShell() {
@@ -213,6 +214,14 @@ public class AgentShell implements IAgentShell, Daemon {
             _storage.persist(prefix + "." + name, value);
         else
             _storage.persist(name, value);
+    }
+
+    public boolean isConnectionTransfer() {
+        return connectionTransfer;
+    }
+
+    public void setConnectionTransfer(boolean connectionTransfer) {
+        this.connectionTransfer = connectionTransfer;
     }
 
     void loadProperties() throws ConfigurationException {

@@ -680,6 +680,9 @@ export default {
         if (accountIndex > -1) {
           this.fields[accountIndex].loading = false
         }
+        if (hypervisorIndex > -1) {
+          this.fields[hypervisorIndex].loading = false
+        }
         if (imageStoreIndex > -1) {
           this.fields[imageStoreIndex].loading = false
         }
