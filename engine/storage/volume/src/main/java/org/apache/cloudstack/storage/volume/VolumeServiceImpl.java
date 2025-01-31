@@ -1035,7 +1035,7 @@ public class VolumeServiceImpl implements VolumeService {
             try {
                 grantAccess(templateOnPrimary, destHost, destPrimaryDataStore);
             } catch (Exception e) {
-                throw new StorageAccessException("Unable to grant access to template: " + templateOnPrimary.getId() + " on host: " + destHost.getId());
+                throw new StorageAccessException("Unable to grant access to template: " + templateOnPrimary.getId() + " on host: " + destHost.getId(), e);
             }
 
             templateOnPrimary.processEvent(Event.CopyingRequested);
@@ -1161,7 +1161,7 @@ public class VolumeServiceImpl implements VolumeService {
             try {
                 grantAccess(srcTemplateOnPrimary, destHost, destPrimaryDataStore);
             } catch (Exception e) {
-                throw new StorageAccessException("Unable to grant access to src template: " + srcTemplateOnPrimary.getId() + " on host: " + destHost.getId());
+                throw new StorageAccessException("Unable to grant access to src template: " + srcTemplateOnPrimary.getId() + " on host: " + destHost.getId(), e);
             }
 
             _volumeDetailsDao.addDetail(volumeInfo.getId(), volumeDetailKey, String.valueOf(templatePoolRef.getId()), false);
@@ -1406,7 +1406,7 @@ public class VolumeServiceImpl implements VolumeService {
                 try {
                     grantAccess(templateOnPrimary, destHost, destPrimaryDataStore);
                 } catch (Exception e) {
-                    throw new StorageAccessException("Unable to grant access to template: " + templateOnPrimary.getId() + " on host: " + destHost.getId());
+                    throw new StorageAccessException("Unable to grant access to template: " + templateOnPrimary.getId() + " on host: " + destHost.getId(), e);
                 }
 
                 templateOnPrimary.processEvent(Event.CopyingRequested);
