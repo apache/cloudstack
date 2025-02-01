@@ -2975,7 +2975,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         // 2) CIDR should be outside of link-local cidr
-        if (NetUtils.isNetworksOverlap(vpc.getCidr(), NetUtils.getLinkLocalCIDR())) {
+        if (NetUtils.isNetworksOverlap(cidr, NetUtils.getLinkLocalCIDR())) {
             throw new InvalidParameterValueException("CIDR should be outside of link local cidr " + NetUtils.getLinkLocalCIDR());
         }
 
@@ -3004,7 +3004,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     }
 
     protected boolean isCidrDenylisted(final String cidr, final long zoneId) {
-        final String routesStr = NetworkOrchestrationService.GuestDomainSuffix.valueIn(zoneId);
+        final String routesStr = NetworkOrchestrationService.DeniedRoutes.valueIn(zoneId);
         if (routesStr != null && !routesStr.isEmpty()) {
             final String[] cidrDenyList = routesStr.split(",");
 

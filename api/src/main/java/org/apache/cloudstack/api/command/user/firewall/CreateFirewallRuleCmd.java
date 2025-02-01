@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.firewall;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.collections.CollectionUtils;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -40,6 +41,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.user.Account;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = "createFirewallRule", description = "Creates a firewall rule for a given IP address", responseObject = FirewallResponse.class, entityType = {FirewallRule.class},
@@ -125,14 +127,13 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
 
     @Override
     public List<String> getSourceCidrList() {
-        if (cidrlist != null) {
+        if (CollectionUtils.isNotEmpty(cidrlist) && !(cidrlist.size() == 1 && StringUtils.isBlank(cidrlist.get(0)))) {
             return cidrlist;
         } else {
-            List<String> oneCidrList = new ArrayList<String>();
+            List<String> oneCidrList = new ArrayList<>();
             oneCidrList.add(NetUtils.ALL_IP4_CIDRS);
             return oneCidrList;
         }
-
     }
 
     // ///////////////////////////////////////////////////

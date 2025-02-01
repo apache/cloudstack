@@ -870,7 +870,7 @@ public class SystemVmTemplateRegistration {
             public void doInTransactionWithoutResult(final TransactionStatus status) {
                 Set<Hypervisor.HypervisorType> hypervisorsListInUse = new HashSet<Hypervisor.HypervisorType>();
                 try {
-                    hypervisorsListInUse = clusterDao.getDistictAvailableHypervisorsAcrossClusters();
+                    hypervisorsListInUse = clusterDao.getDistinctAvailableHypervisorsAcrossClusters();
 
                 } catch (final Exception e) {
                     LOGGER.error("updateSystemVmTemplates: Exception caught while getting hypervisor types from clusters: " + e.getMessage());
