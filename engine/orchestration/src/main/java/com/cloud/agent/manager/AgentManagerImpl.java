@@ -18,6 +18,7 @@ package com.cloud.agent.manager;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,23 +26,20 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.configuration.Config;
-import com.cloud.org.Cluster;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.db.GlobalLock;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -56,6 +54,8 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.MapUtils;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.ThreadContext;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -82,6 +82,7 @@ import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
 import com.cloud.configuration.ManagementServiceConfiguration;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -101,15 +102,18 @@ import com.cloud.host.Status.Event;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.org.Cluster;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
@@ -124,8 +128,6 @@ import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.time.InaccurateClock;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.ThreadContext;
 
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
@@ -143,7 +145,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected List<Long> _loadingAgents = new ArrayList<Long>();
     protected Map<String, Integer> _commandTimeouts = new HashMap<>();
     private int _monitorId = 0;
-    private final Lock _agentStatusLock = new ReentrantLock();
 
     @Inject
     protected CAManager caService;
@@ -189,6 +190,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     protected StateMachine2<Status, Status.Event, Host> _statusStateMachine = Status.getStateMachine();
     private final ConcurrentHashMap<Long, Long> _pingMap = new ConcurrentHashMap<Long, Long>(10007);
+    private int maxConcurrentNewAgentConnections;
+    private final ConcurrentHashMap<String, Long> newAgentConnections = new ConcurrentHashMap<>();
+    protected ScheduledExecutorService newAgentConnectionsMonitor;
 
     @Inject
     ResourceManager _resourceMgr;
@@ -198,6 +202,14 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected final ConfigKey<Integer> Workers = new ConfigKey<Integer>("Advanced", Integer.class, "workers", "5",
             "Number of worker threads handling remote agent connections.", false);
     protected final ConfigKey<Integer> Port = new ConfigKey<Integer>("Advanced", Integer.class, "port", "8250", "Port to listen on for remote agent connections.", false);
+    protected final ConfigKey<Integer> RemoteAgentSslHandshakeTimeout = new ConfigKey<>("Advanced",
+            Integer.class, "agent.ssl.handshake.timeout", "30",
+            "Seconds after which SSL handshake times out during remote agent connections.", false);
+    protected final ConfigKey<Integer> RemoteAgentMaxConcurrentNewConnections = new ConfigKey<>("Advanced",
+            Integer.class, "agent.max.concurrent.new.connections", "0",
+            "Number of maximum concurrent new connections server allows for remote agents. " +
+                    "If set to zero (default value) then no limit will be enforced on concurrent new connections",
+            false);
     protected final ConfigKey<Integer> AlertWait = new ConfigKey<Integer>("Advanced", Integer.class, "alert.wait", "1800",
             "Seconds to wait before alerting on a disconnected agent", true);
     protected final ConfigKey<Integer> DirectAgentLoadSize = new ConfigKey<Integer>("Advanced", Integer.class, "direct.agent.load.size", "16",
@@ -214,8 +226,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         logger.info("Ping Timeout is {}.", mgmtServiceConf.getPingTimeout());
 
-        final int threads = DirectAgentLoadSize.value();
-
         _nodeId = ManagementServerNode.getManagementServerId();
         logger.info("Configuring AgentManagerImpl. management server node id(msid): {}.", _nodeId);
 
@@ -226,23 +236,30 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         registerForHostEvents(new SetHostParamsListener(), true, true, false);
 
-        _executor = new ThreadPoolExecutor(threads, threads, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));
+        final int agentTaskThreads = DirectAgentLoadSize.value();
+        _executor = new ThreadPoolExecutor(agentTaskThreads, agentTaskThreads, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentTaskPool"));
 
         _connectExecutor = new ThreadPoolExecutor(100, 500, 60l, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory("AgentConnectTaskPool"));
         // allow core threads to time out even when there are no items in the queue
         _connectExecutor.allowCoreThreadTimeOut(true);
 
-        _connection = new NioServer("AgentManager", Port.value(), Workers.value() + 10, this, caService);
+        maxConcurrentNewAgentConnections = RemoteAgentMaxConcurrentNewConnections.value();
+
+        _connection = new NioServer("AgentManager", Port.value(), Workers.value() + 10,
+                this, caService, RemoteAgentSslHandshakeTimeout.value());
         logger.info("Listening on {} with {} workers.", Port.value(), Workers.value());
 
+        final int directAgentPoolSize = DirectAgentPoolSize.value();
         // executes all agent commands other than cron and ping
-        _directAgentExecutor = new ScheduledThreadPoolExecutor(DirectAgentPoolSize.value(), new NamedThreadFactory("DirectAgent"));
+        _directAgentExecutor = new ScheduledThreadPoolExecutor(directAgentPoolSize, new NamedThreadFactory("DirectAgent"));
         // executes cron and ping agent commands
-        _cronJobExecutor = new ScheduledThreadPoolExecutor(DirectAgentPoolSize.value(), new NamedThreadFactory("DirectAgentCronJob"));
-        logger.debug("Created DirectAgentAttache pool with size: {}.", DirectAgentPoolSize.value());
-        _directAgentThreadCap = Math.round(DirectAgentPoolSize.value() * DirectAgentThreadCap.value()) + 1; // add 1 to always make the value > 0
+        _cronJobExecutor = new ScheduledThreadPoolExecutor(directAgentPoolSize, new NamedThreadFactory("DirectAgentCronJob"));
+        logger.debug("Created DirectAgentAttache pool with size: {}.", directAgentPoolSize);
+        _directAgentThreadCap = Math.round(directAgentPoolSize * DirectAgentThreadCap.value()) + 1; // add 1 to always make the value > 0
 
         _monitorExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("AgentMonitor"));
+
+        newAgentConnectionsMonitor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NewAgentConnectionsMonitor"));
 
         initializeCommandTimeouts();
 
@@ -252,6 +269,28 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Override
     public Task create(final Task.Type type, final Link link, final byte[] data) {
         return new AgentHandler(type, link, data);
+    }
+
+    @Override
+    public int getMaxConcurrentNewConnectionsCount() {
+        return maxConcurrentNewAgentConnections;
+    }
+
+    @Override
+    public int getNewConnectionsCount() {
+        return newAgentConnections.size();
+    }
+
+    @Override
+    public void registerNewConnection(SocketAddress address) {
+        logger.trace(String.format("Adding new agent connection from %s", address.toString()));
+        newAgentConnections.putIfAbsent(address.toString(), System.currentTimeMillis());
+    }
+
+    @Override
+    public void unregisterNewConnection(SocketAddress address) {
+        logger.trace(String.format("Removing new agent connection for %s", address.toString()));
+        newAgentConnections.remove(address.toString());
     }
 
     @Override
@@ -687,6 +726,10 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), mgmtServiceConf.getPingInterval(), mgmtServiceConf.getPingInterval(), TimeUnit.SECONDS);
 
+        final int cleanupTime = Wait.value();
+        newAgentConnectionsMonitor.scheduleAtFixedRate(new AgentNewConnectionsMonitorTask(), cleanupTime,
+                cleanupTime, TimeUnit.MINUTES);
+
         return true;
     }
 
@@ -844,6 +887,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         _connectExecutor.shutdownNow();
         _monitorExecutor.shutdownNow();
+        newAgentConnectionsMonitor.shutdownNow();
         return true;
     }
 
@@ -1312,6 +1356,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             if (attache == null) {
                 logger.warn("Unable to create attache for agent: {}", _request);
             }
+            unregisterNewConnection(_link.getSocketAddress());
         }
     }
 
@@ -1594,21 +1639,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Override
     public boolean agentStatusTransitTo(final HostVO host, final Status.Event e, final long msId) {
-        try {
-            _agentStatusLock.lock();
-            logger.debug("[Resource state = {}, Agent event = , Host = {}]",
-                    host.getResourceState(), e.toString(), host);
+        logger.debug("[Resource state = {}, Agent event = , Host = {}]",
+                host.getResourceState(), e.toString(), host);
 
-            host.setManagementServerId(msId);
-            try {
-                return _statusStateMachine.transitTo(host, e, host.getId(), _hostDao);
-            } catch (final NoTransitionException e1) {
-                logger.debug("Cannot transit agent status with event {} for host {}, management server id is {}", e, host, msId);
-                throw new CloudRuntimeException(String.format(
-                        "Cannot transit agent status with event %s for host %s, management server id is %d, %s", e, host, msId, e1.getMessage()));
-            }
-        } finally {
-            _agentStatusLock.unlock();
+        host.setManagementServerId(msId);
+        try {
+            return _statusStateMachine.transitTo(host, e, host.getId(), _hostDao);
+        } catch (final NoTransitionException e1) {
+            logger.debug("Cannot transit agent status with event {} for host {}, management server id is {}", e, host, msId);
+            throw new CloudRuntimeException(String.format(
+                    "Cannot transit agent status with event %s for host %s, management server id is %d, %s", e, host, msId, e1.getMessage()));
         }
     }
 
@@ -1813,6 +1853,35 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
     }
 
+    protected class AgentNewConnectionsMonitorTask extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
+            logger.trace("Agent New Connections Monitor is started.");
+            final int cleanupTime = Wait.value();
+            Set<Map.Entry<String, Long>> entrySet = newAgentConnections.entrySet();
+            long cutOff = System.currentTimeMillis() - (cleanupTime * 60 * 1000L);
+            if (logger.isDebugEnabled()) {
+                List<String> expiredConnections = newAgentConnections.entrySet()
+                        .stream()
+                        .filter(e -> e.getValue() <= cutOff)
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toList());
+                logger.debug(String.format("Currently %d active new connections, of which %d have expired - %s",
+                        entrySet.size(),
+                        expiredConnections.size(),
+                        StringUtils.join(expiredConnections)));
+            }
+            for (Map.Entry<String, Long> entry : entrySet) {
+                if (entry.getValue() <= cutOff) {
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(String.format("Cleaning up new agent connection for %s", entry.getKey()));
+                    }
+                    newAgentConnections.remove(entry.getKey());
+                }
+            }
+        }
+    }
+
     protected class BehindOnPingListener implements Listener {
         @Override
         public boolean isRecurring() {
@@ -1888,7 +1957,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
-                DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait, GranularWaitTimeForCommands };
+                DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait,
+                GranularWaitTimeForCommands, RemoteAgentSslHandshakeTimeout, RemoteAgentMaxConcurrentNewConnections };
     }
 
     protected class SetHostParamsListener implements Listener {

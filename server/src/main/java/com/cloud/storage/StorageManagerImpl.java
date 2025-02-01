@@ -42,10 +42,14 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -86,6 +90,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
@@ -1555,6 +1560,82 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         sb.append("]");
 
         return sb.toString();
+    }
+
+    protected void cleanupConnectedHostConnectionForFailedStorage(DataStore primaryStore, List<Long> poolHostIds) {
+        List<HostVO> hosts = _hostDao.listByIds(poolHostIds);
+        StoragePool pool = _storagePoolDao.findById(primaryStore.getId());
+        for (HostVO host : hosts) {
+            try {
+                disconnectHostFromSharedPool(host, pool);
+            } catch (StorageUnavailableException | StorageConflictException e) {
+                logger.error("Error during cleaning up failed storage host connection", e);
+            }
+        }
+    }
+
+    @Override
+    public void connectHostsToPool(DataStore primaryStore, List<Long> hostIds, Scope scope,
+              boolean handleExceptionsPartially, boolean errorOnNoUpHost) throws CloudRuntimeException {
+        if (CollectionUtils.isEmpty(hostIds)) {
+            return;
+        }
+        CopyOnWriteArrayList<Long> poolHostIds = new CopyOnWriteArrayList<>();
+        ExecutorService executorService = Executors.newFixedThreadPool(Math.max(1, Math.min(hostIds.size(),
+                StoragePoolHostConnectWorkers.value())));
+        List<Future<Void>> futures = new ArrayList<>();
+        AtomicBoolean exceptionOccurred = new AtomicBoolean(false);
+        for (Long hostId : hostIds) {
+            futures.add(executorService.submit(() -> {
+                if (exceptionOccurred.get()) {
+                    return null;
+                }
+                HostVO host = _hostDao.findById(hostId);
+                try {
+                    connectHostToSharedPool(host, primaryStore.getId());
+                    poolHostIds.add(hostId);
+                } catch (Exception e) {
+                    if (handleExceptionsPartially && e.getCause() instanceof StorageConflictException) {
+                        exceptionOccurred.set(true);
+                        throw e;
+                    }
+                    logger.warn("Unable to establish a connection between {} and {}", host, primaryStore, e);
+                    String reason = getStoragePoolMountFailureReason(e.getMessage());
+                    if (handleExceptionsPartially && reason != null) {
+                        exceptionOccurred.set(true);
+                        throw new CloudRuntimeException(reason);
+                    }
+                }
+                return null;
+            }));
+        }
+        for (Future<Void> future : futures) {
+            try {
+                future.get();
+            } catch (Exception e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof StorageConflictException || cause instanceof CloudRuntimeException) {
+                    executorService.shutdown();
+                    cleanupConnectedHostConnectionForFailedStorage(primaryStore, poolHostIds);
+                    primaryStoreDao.expunge(primaryStore.getId());
+                    if (cause instanceof CloudRuntimeException) {
+                        throw (CloudRuntimeException)cause;
+                    }
+                    throw new CloudRuntimeException("Storage has already been added as local storage", e);
+                } else {
+                    logger.error("Error occurred while connecting host to shared pool", e);
+                }
+            }
+        }
+        executorService.shutdown();
+        if (poolHostIds.isEmpty()) {
+            logger.warn("No host can access storage pool {} in {}: {}.",
+                    primaryStore, scope.getScopeType(), scope.getScopeId());
+            if (errorOnNoUpHost) {
+                primaryStoreDao.expunge(primaryStore.getId());
+                throw new CloudRuntimeException("Failed to access storage pool");
+            }
+        }
     }
 
     @Override
@@ -4086,7 +4167,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 VmwareCreateCloneFull,
                 VmwareAllowParallelExecution,
                 DataStoreDownloadFollowRedirects,
-                AllowVolumeReSizeBeyondAllocation
+                AllowVolumeReSizeBeyondAllocation,
+                StoragePoolHostConnectWorkers
         };
     }
 

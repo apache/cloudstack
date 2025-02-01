@@ -869,11 +869,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     public boolean isZoneReady(Map<Long, ZoneHostInfo> zoneHostInfoMap, DataCenter dataCenter) {
-        List <HostVO> hosts = hostDao.listByDataCenterId(dataCenter.getId());
-        if (CollectionUtils.isEmpty(hosts)) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Zone {} has no host available which is enabled and in Up state", dataCenter);
-            }
+        Integer totalUpAndEnabledHosts = hostDao.countUpAndEnabledHostsInZone(dataCenter.getId());
+        if (totalUpAndEnabledHosts != null && totalUpAndEnabledHosts < 1) {
+            logger.debug("{} has no host available which is enabled and in Up state", dataCenter);
             return false;
         }
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenter.getId());
@@ -894,8 +892,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
             if (templateHostRef != null) {
                 Boolean useLocalStorage = BooleanUtils.toBoolean(ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenter.getId()));
-                List<Pair<Long, Integer>> l = consoleProxyDao.getDatacenterStoragePoolHostInfo(dataCenter.getId(), useLocalStorage);
-                if (CollectionUtils.isNotEmpty(l) && l.get(0).second() > 0) {
+                boolean hasDatacenterStoragePoolHostInfo = consoleProxyDao.hasDatacenterStoragePoolHostInfo(dataCenter.getId(), !useLocalStorage);
+                if (hasDatacenterStoragePoolHostInfo) {
                     return true;
                 } else {
                     if (logger.isDebugEnabled()) {
