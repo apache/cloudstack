@@ -2567,6 +2567,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setIsSystem(networkOffering.isSystemOnly());
             response.setNetworkOfferingAvailability(networkOffering.getAvailability().toString());
             response.setIsPersistent(networkOffering.isPersistent());
+            response.setSpecifyVlan(networkOffering.isSpecifyVlan());
             if (Network.GuestType.Isolated.equals(network.getGuestType()) && network.getVpcId() == null) {
                 response.setEgressDefaultPolicy(networkOffering.isEgressDefaultPolicy());
             }

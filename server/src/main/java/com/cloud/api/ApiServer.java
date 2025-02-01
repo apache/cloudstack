@@ -1197,7 +1197,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             domainId = userDomain.getId();
         }
 
-        final UserAccount userAcct = accountMgr.authenticateUser(username, password, domainId, loginIpAddress, requestParameters);
+        UserAccount userAcct = accountMgr.authenticateUser(username, password, domainId, loginIpAddress, requestParameters);
         if (userAcct != null) {
             final String timezone = userAcct.getTimezone();
             float offsetInHrs = 0f;
@@ -1242,6 +1242,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 session.setAttribute("timezoneoffset", Float.valueOf(offsetInHrs).toString());
             }
 
+            userAcct = accountMgr.clearUserTwoFactorAuthenticationInSetupStateOnLogin(userAcct);
             boolean is2faEnabled = false;
             if (userAcct.isUser2faEnabled() || (Boolean.TRUE.equals(AccountManagerImpl.enableUserTwoFactorAuthentication.valueIn(userAcct.getDomainId())) && Boolean.TRUE.equals(AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(userAcct.getDomainId())))) {
                 is2faEnabled = true;

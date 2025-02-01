@@ -109,7 +109,7 @@ public class AgentRoutingResource extends AgentStorageResource {
     public PingCommand getCurrentStatus(long id) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
         try {
-            MockConfigurationVO config = _simMgr.getMockConfigurationDao().findByNameBottomUP(agentHost.getDataCenterId(), agentHost.getPodId(), agentHost.getClusterId(), agentHost.getId(), "PingCommand");
+            MockConfigurationVO config = null;
             if (config != null) {
                 Map<String, String> configParameters = config.getParameters();
                 for (Map.Entry<String, String> entry : configParameters.entrySet()) {
@@ -122,7 +122,7 @@ public class AgentRoutingResource extends AgentStorageResource {
                 }
             }
 
-            config = _simMgr.getMockConfigurationDao().findByNameBottomUP(agentHost.getDataCenterId(), agentHost.getPodId(), agentHost.getClusterId(), agentHost.getId(), "PingRoutingWithNwGroupsCommand");
+            config = null;
             if (config != null) {
                 String message = config.getJsonResponse();
                 if (message != null) {

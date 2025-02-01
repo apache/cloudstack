@@ -18,12 +18,11 @@ package org.apache.cloudstack.agent.lb;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.EnumSet;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -34,6 +33,7 @@ import org.apache.cloudstack.agent.lb.algorithm.IndirectAgentLBStaticAlgorithm;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -41,6 +41,7 @@ import com.cloud.agent.api.MigrateAgentConnectionCommand;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -51,7 +52,6 @@ import com.cloud.utils.component.ComponentLifecycleBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 
 public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implements IndirectAgentLB, Configurable {
 
@@ -68,6 +68,10 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     private static Map<String, org.apache.cloudstack.agent.lb.IndirectAgentLBAlgorithm> algorithmMap = new HashMap<>();
 
     @Inject
+    private DataCenterDao dataCenterDao;
+    @Inject
+    private ClusterDao clusterDao;
+    @Inject
     private HostDao hostDao;
     @Inject
     private DataCenterDao dcDao;
@@ -75,6 +79,14 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     private ManagementServerHostDao mshostDao;
     @Inject
     private AgentManager agentManager;
+
+    private static final List<ResourceState> agentValidResourceStates = List.of(
+            ResourceState.Enabled, ResourceState.Maintenance, ResourceState.Disabled,
+            ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance);
+    private static final List<Host.Type> agentValidHostTypes = List.of(Host.Type.Routing, Host.Type.ConsoleProxy,
+            Host.Type.SecondaryStorage, Host.Type.SecondaryStorageVM);
+    private static final List<Hypervisor.HypervisorType> agentValidHypervisorTypes = List.of(
+            Hypervisor.HypervisorType.KVM, Hypervisor.HypervisorType.LXC);
 
     //////////////////////////////////////////////////////
     /////////////// Agent MSLB Methods ///////////////////
@@ -88,8 +100,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                     ApiServiceConfiguration.ManagementServerAddresses.key()));
         }
 
-        List<String> msList = new ArrayList<>(Arrays.asList(msServerAddresses.replace(" ", "").split(",")));
-        return msList;
+        return new ArrayList<>(Arrays.asList(msServerAddresses.replace(" ", "").split(",")));
     }
 
     @Override
@@ -105,30 +116,32 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                     ApiServiceConfiguration.ManagementServerAddresses.key()));
         }
 
+        final List<String> msList = Arrays.asList(msServerAddresses.replace(" ", "").split(","));
+        if (msList.size() == 1) {
+            return msList;
+        }
+
+        final org.apache.cloudstack.agent.lb.IndirectAgentLBAlgorithm algorithm = getAgentMSLBAlgorithm(lbAlgorithm);
         List<Long> hostIdList = orderedHostIdList;
         if (hostIdList == null) {
-            hostIdList = getOrderedHostIdList(dcId);
+            hostIdList = algorithm.isHostListNeeded() ? getOrderedHostIdList(dcId) : new ArrayList<>();
         }
 
         // just in case we have a host in creating state make sure it is in the list:
         if (null != hostId && ! hostIdList.contains(hostId)) {
-            if (logger.isTraceEnabled()) {
-                logger.trace("adding requested host to host list as it does not seem to be there; " + hostId);
-            }
+            logger.trace("adding requested host to host list as it does not seem to be there; {}", hostId);
             hostIdList.add(hostId);
         }
 
-        final org.apache.cloudstack.agent.lb.IndirectAgentLBAlgorithm algorithm = getAgentMSLBAlgorithm(lbAlgorithm);
-        final List<String> msList = Arrays.asList(msServerAddresses.replace(" ", "").split(","));
         return algorithm.sort(msList, hostIdList, hostId);
     }
 
     @Override
     public boolean compareManagementServerList(final Long hostId, final Long dcId, final List<String> receivedMSHosts, final String lbAlgorithm) {
-        if (receivedMSHosts == null || receivedMSHosts.size() < 1) {
+        if (receivedMSHosts == null || receivedMSHosts.isEmpty()) {
             return false;
         }
-        if (getLBAlgorithmName() != lbAlgorithm) {
+        if (!getLBAlgorithmName().equals(lbAlgorithm)) {
             return false;
         }
         final List<String> expectedMSList = getManagementServerList(hostId, dcId, null);
@@ -147,18 +160,8 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     }
 
     List<Long> getOrderedHostIdList(final Long dcId) {
-        final List<Long> hostIdList = new ArrayList<>();
-        for (final Host host : getAllAgentBasedHosts()) {
-            if (host.getDataCenterId() == dcId) {
-                hostIdList.add(host.getId());
-            }
-        }
-        Collections.sort(hostIdList, new Comparator<Long>() {
-            @Override
-            public int compare(Long x, Long y) {
-                return Long.compare(x,y);
-            }
-        });
+        final List<Long> hostIdList = getAllAgentBasedHostsFromDB(dcId, null);
+        hostIdList.sort(Comparator.comparingLong(x -> x));
         return hostIdList;
     }
 
@@ -232,7 +235,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         }
 
         if (host.getHypervisorType() != null
-                && ! (host.getHypervisorType() == Hypervisor.HypervisorType.KVM || host.getHypervisorType() == Hypervisor.HypervisorType.LXC)) {
+                && !(host.getHypervisorType() == Hypervisor.HypervisorType.KVM || host.getHypervisorType() == Hypervisor.HypervisorType.LXC)) {
 
             if (logger.isTraceEnabled()) {
                 logger.trace(String.format("hypervisor is not the right type, not adding to the host list, (host: %s, hypervisortype: %s)", host, host.getHypervisorType()));
@@ -241,6 +244,11 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         }
 
         agentBasedHosts.add(host);
+    }
+
+    private List<Long> getAllAgentBasedHostsFromDB(final Long zoneId, final Long clusterId) {
+        return hostDao.findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(zoneId, clusterId,
+                agentValidResourceStates, agentValidHostTypes, agentValidHypervisorTypes);
     }
 
     @Override
@@ -280,18 +288,28 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     public void propagateMSListToAgents() {
         logger.debug("Propagating management server list update to agents");
         final String lbAlgorithm = getLBAlgorithmName();
-        final Map<Long, List<Long>> dcOrderedHostsMap = new HashMap<>();
-        for (final Host host : getAllAgentBasedHosts()) {
-            final Long dcId = host.getDataCenterId();
-            if (!dcOrderedHostsMap.containsKey(dcId)) {
-                dcOrderedHostsMap.put(dcId, getOrderedHostIdList(dcId));
+        List<DataCenterVO> zones = dataCenterDao.listAll();
+        for (DataCenterVO zone : zones) {
+            List<Long> zoneHostIds = new ArrayList<>();
+            Map<Long, List<Long>> clusterHostIdsMap = new HashMap<>();
+            List<Long> clusterIds = clusterDao.listAllClusterIds(zone.getId());
+            for (Long clusterId : clusterIds) {
+                List<Long> hostIds = getAllAgentBasedHostsFromDB(zone.getId(), clusterId);
+                clusterHostIdsMap.put(clusterId, hostIds);
+                zoneHostIds.addAll(hostIds);
             }
-            final List<String> msList = getManagementServerList(host.getId(), host.getDataCenterId(), dcOrderedHostsMap.get(dcId));
-            final Long lbCheckInterval = getLBPreferredHostCheckInterval(host.getClusterId());
-            final SetupMSListCommand cmd = new SetupMSListCommand(msList, lbAlgorithm, lbCheckInterval);
-            final Answer answer = agentManager.easySend(host.getId(), cmd);
-            if (answer == null || !answer.getResult()) {
-                logger.warn(String.format("Failed to setup management servers list to the agent of %s", host));
+            zoneHostIds.sort(Comparator.comparingLong(x -> x));
+            for (Long clusterId : clusterIds) {
+                final Long lbCheckInterval = getLBPreferredHostCheckInterval(clusterId);
+                List<Long> hostIds = clusterHostIdsMap.get(clusterId);
+                for (Long hostId : hostIds) {
+                    final List<String> msList = getManagementServerList(hostId, zone.getId(), zoneHostIds);
+                    final SetupMSListCommand cmd = new SetupMSListCommand(msList, lbAlgorithm, lbCheckInterval);
+                    final Answer answer = agentManager.easySend(hostId, cmd);
+                    if (answer == null || !answer.getResult()) {
+                        logger.warn("Failed to setup management servers list to the agent of ID: {}", hostId);
+                    }
+                }
             }
         }
     }
@@ -330,7 +348,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             if (CollectionUtils.isEmpty(agentBasedHostsOfMsInDc)) {
                 continue;
             }
-            logger.debug(String.format("Migrating %d indirect agents from management server node %d (id: %s) of zone %s", agentBasedHostsOfMsInDc.size(), fromMsId, fromMsUuid, dc.toString()));
+            logger.debug(String.format("Migrating %d indirect agents from management server node %d (id: %s) of zone %s", agentBasedHostsOfMsInDc.size(), fromMsId, fromMsUuid, dc));
             for (final Host host : agentBasedHostsOfMsInDc) {
                 long migrationElapsedTimeInMs = System.currentTimeMillis() - migrationStartTime;
                 if (migrationElapsedTimeInMs >= timeoutDurationInMs) {
