@@ -17,7 +17,6 @@
 package com.cloud.capacity;
 
 import java.util.List;
-import java.util.Map;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
