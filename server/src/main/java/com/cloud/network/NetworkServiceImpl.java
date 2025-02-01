@@ -1774,6 +1774,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throwInvalidIdException("Network offering with specified id doesn't support adding multiple ip ranges", ntwkOff.getUuid(), NETWORK_OFFERING_ID);
         }
 
+        if (GuestType.Shared == ntwkOff.getGuestType() && !ntwkOff.isSpecifyVlan() && Objects.isNull(associatedNetworkId)) {
+            throw new CloudRuntimeException("Associated network must be provided when creating Shared networks when specifyVlan is false");
+        }
+
         Pair<Integer, Integer> interfaceMTUs = validateMtuConfig(publicMtu, privateMtu, zone.getId());
         mtuCheckForVpcNetwork(vpcId, interfaceMTUs, publicMtu, privateMtu);
 
