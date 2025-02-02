@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -1632,6 +1633,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         // Can add vlan range only to the network which allows it
         if (createVlan && !ntwkOff.isSpecifyIpRanges()) {
             throwInvalidIdException("Network offering with specified id doesn't support adding multiple ip ranges", ntwkOff.getUuid(), NETWORK_OFFERING_ID);
+        }
+
+        if (GuestType.Shared == ntwkOff.getGuestType() && !ntwkOff.isSpecifyVlan() && Objects.isNull(associatedNetworkId)) {
+            throw new CloudRuntimeException("Associated network must be provided when creating Shared networks when specifyVlan is false");
         }
 
         Pair<Integer, Integer> interfaceMTUs = validateMtuConfig(publicMtu, privateMtu, zone.getId());

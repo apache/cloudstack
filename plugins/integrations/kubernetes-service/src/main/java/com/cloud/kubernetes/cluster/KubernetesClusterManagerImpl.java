@@ -560,7 +560,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (template != null) {
             response.setTemplateId(template.getUuid());
         }
-        ServiceOfferingVO offering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
+        ServiceOfferingVO offering = serviceOfferingDao.findByIdIncludingRemoved(kubernetesCluster.getServiceOfferingId());
         if (offering != null) {
             response.setServiceOfferingId(offering.getUuid());
             response.setServiceOfferingName(offering.getName());
