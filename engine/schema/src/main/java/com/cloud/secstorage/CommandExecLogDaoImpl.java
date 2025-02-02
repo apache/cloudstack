@@ -55,8 +55,7 @@ public class CommandExecLogDaoImpl extends GenericDaoBase<CommandExecLogVO, Long
         SearchCriteria<CommandExecLogVO> sc = CommandSearch.create();
         sc.setParameters("host_id", id);
         sc.setParameters("command_name", "CopyCommand");
-        List<CommandExecLogVO> copyCmds = customSearch(sc, null);
-        return copyCmds.size();
+        return getCount(sc);
     }
 
     @Override
