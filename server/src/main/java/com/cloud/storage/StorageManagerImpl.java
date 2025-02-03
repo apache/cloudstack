@@ -42,10 +42,14 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -62,8 +66,8 @@ import org.apache.cloudstack.api.command.admin.storage.DeleteObjectStoragePoolCm
 import org.apache.cloudstack.api.command.admin.storage.DeletePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.SyncStoragePoolCmd;
-import org.apache.cloudstack.api.command.admin.storage.UpdateObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateImageStoreCmd;
+import org.apache.cloudstack.api.command.admin.storage.UpdateObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.UpdateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.heuristics.CreateSecondaryStorageSelectorCmd;
 import org.apache.cloudstack.api.command.admin.storage.heuristics.RemoveSecondaryStorageSelectorCmd;
@@ -86,6 +90,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
@@ -234,8 +239,8 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.UriUtils;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -499,8 +504,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public boolean isLocalStorageActiveOnHost(Long hostId) {
         List<StoragePoolHostVO> storagePoolHostRefs = _storagePoolHostDao.listByHostId(hostId);
         for (StoragePoolHostVO storagePoolHostRef : storagePoolHostRefs) {
-            StoragePoolVO PrimaryDataStoreVO = _storagePoolDao.findById(storagePoolHostRef.getPoolId());
-            if (PrimaryDataStoreVO.getPoolType() == StoragePoolType.LVM || PrimaryDataStoreVO.getPoolType() == StoragePoolType.EXT) {
+            StoragePoolVO primaryDataStoreVO = _storagePoolDao.findById(storagePoolHostRef.getPoolId());
+            if (primaryDataStoreVO != null && (primaryDataStoreVO.getPoolType() == StoragePoolType.LVM || primaryDataStoreVO.getPoolType() == StoragePoolType.EXT)) {
                 SearchBuilder<VolumeVO> volumeSB = volumeDao.createSearchBuilder();
                 volumeSB.and("poolId", volumeSB.entity().getPoolId(), SearchCriteria.Op.EQ);
                 volumeSB.and("removed", volumeSB.entity().getRemoved(), SearchCriteria.Op.NULL);
@@ -511,7 +516,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 volumeSB.join("activeVmSB", activeVmSB, volumeSB.entity().getInstanceId(), activeVmSB.entity().getId(), JoinBuilder.JoinType.INNER);
 
                 SearchCriteria<VolumeVO> volumeSC = volumeSB.create();
-                volumeSC.setParameters("poolId", PrimaryDataStoreVO.getId());
+                volumeSC.setParameters("poolId", primaryDataStoreVO.getId());
                 volumeSC.setParameters("state", Volume.State.Expunging, Volume.State.Destroy);
                 volumeSC.setJoinParameters("activeVmSB", "state", State.Starting, State.Running, State.Stopping, State.Migrating);
 
@@ -808,7 +813,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (!(dc.isLocalStorageEnabled() || useLocalStorageForSystemVM)) {
             return null;
         }
-        DataStore store;
+        DataStore store = null;
+        DataStoreProvider provider = _dataStoreProviderMgr.getDefaultPrimaryDataStoreProvider();
+        DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
         try {
             String hostAddress = pInfo.getHost();
             if (host.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
@@ -834,8 +841,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 }
             }
 
-            DataStoreProvider provider = _dataStoreProviderMgr.getDefaultPrimaryDataStoreProvider();
-            DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
             if (pool == null) {
                 Map<String, Object> params = new HashMap<>();
                 String name = pInfo.getName() != null ? pInfo.getName() : createLocalStoragePoolName(host, pInfo);
@@ -864,7 +869,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
 
         } catch (Exception e) {
-            logger.warn("Unable to setup the local storage pool for " + host, e);
+            logger.warn("Unable to setup the local storage pool for {}", host, e);
+            try {
+                if (store != null) {
+                    logger.debug("Trying to delete storage pool entry if exists {}", store);
+                    lifeCycle.deleteDataStore(store);
+                }
+            } catch (Exception ex) {
+                logger.debug("Failed to clean up local storage pool: {}", ex.getMessage());
+            }
             throw new ConnectionException(true, "Unable to setup the local storage pool for " + host, e);
         }
 
@@ -1549,6 +1562,82 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return sb.toString();
     }
 
+    protected void cleanupConnectedHostConnectionForFailedStorage(DataStore primaryStore, List<Long> poolHostIds) {
+        List<HostVO> hosts = _hostDao.listByIds(poolHostIds);
+        StoragePool pool = _storagePoolDao.findById(primaryStore.getId());
+        for (HostVO host : hosts) {
+            try {
+                disconnectHostFromSharedPool(host, pool);
+            } catch (StorageUnavailableException | StorageConflictException e) {
+                logger.error("Error during cleaning up failed storage host connection", e);
+            }
+        }
+    }
+
+    @Override
+    public void connectHostsToPool(DataStore primaryStore, List<Long> hostIds, Scope scope,
+              boolean handleExceptionsPartially, boolean errorOnNoUpHost) throws CloudRuntimeException {
+        if (CollectionUtils.isEmpty(hostIds)) {
+            return;
+        }
+        CopyOnWriteArrayList<Long> poolHostIds = new CopyOnWriteArrayList<>();
+        ExecutorService executorService = Executors.newFixedThreadPool(Math.max(1, Math.min(hostIds.size(),
+                StoragePoolHostConnectWorkers.value())));
+        List<Future<Void>> futures = new ArrayList<>();
+        AtomicBoolean exceptionOccurred = new AtomicBoolean(false);
+        for (Long hostId : hostIds) {
+            futures.add(executorService.submit(() -> {
+                if (exceptionOccurred.get()) {
+                    return null;
+                }
+                HostVO host = _hostDao.findById(hostId);
+                try {
+                    connectHostToSharedPool(host, primaryStore.getId());
+                    poolHostIds.add(hostId);
+                } catch (Exception e) {
+                    if (handleExceptionsPartially && e.getCause() instanceof StorageConflictException) {
+                        exceptionOccurred.set(true);
+                        throw e;
+                    }
+                    logger.warn("Unable to establish a connection between {} and {}", host, primaryStore, e);
+                    String reason = getStoragePoolMountFailureReason(e.getMessage());
+                    if (handleExceptionsPartially && reason != null) {
+                        exceptionOccurred.set(true);
+                        throw new CloudRuntimeException(reason);
+                    }
+                }
+                return null;
+            }));
+        }
+        for (Future<Void> future : futures) {
+            try {
+                future.get();
+            } catch (Exception e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof StorageConflictException || cause instanceof CloudRuntimeException) {
+                    executorService.shutdown();
+                    cleanupConnectedHostConnectionForFailedStorage(primaryStore, poolHostIds);
+                    primaryStoreDao.expunge(primaryStore.getId());
+                    if (cause instanceof CloudRuntimeException) {
+                        throw (CloudRuntimeException)cause;
+                    }
+                    throw new CloudRuntimeException("Storage has already been added as local storage", e);
+                } else {
+                    logger.error("Error occurred while connecting host to shared pool", e);
+                }
+            }
+        }
+        executorService.shutdown();
+        if (poolHostIds.isEmpty()) {
+            logger.warn("No host can access storage pool {} in {}: {}.",
+                    primaryStore, scope.getScopeType(), scope.getScopeId());
+            if (errorOnNoUpHost) {
+                primaryStoreDao.expunge(primaryStore.getId());
+                throw new CloudRuntimeException("Failed to access storage pool");
+            }
+        }
+    }
+
     @Override
     public boolean connectHostToSharedPool(Host host, long poolId) throws StorageUnavailableException, StorageConflictException {
         StoragePool pool = (StoragePool)_dataStoreMgr.getDataStore(poolId, DataStoreRole.Primary);
@@ -2163,9 +2252,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         // poolId is null only if volume is destroyed, which has been checked
         // before.
         assert poolId != null;
-        StoragePoolVO PrimaryDataStoreVO = _storagePoolDao.findById(poolId);
-        assert PrimaryDataStoreVO != null;
-        return PrimaryDataStoreVO.getUuid();
+        StoragePoolVO primaryDataStoreVO = _storagePoolDao.findById(poolId);
+        assert primaryDataStoreVO != null;
+        return primaryDataStoreVO.getUuid();
     }
 
     @Override
@@ -2716,8 +2805,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         CapacityVO capacity = new CapacityVO(poolId, zoneId, podId, clusterId, 0, 0, Capacity.CAPACITY_TYPE_STORAGE);
-        for (StoragePoolVO pool : pools) {
-            StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());
+        for (StoragePoolVO primaryDataStoreVO : pools) {
+            StorageStats stats = ApiDBUtils.getStoragePoolStatistics(primaryDataStoreVO.getId());
             if (stats == null) {
                 continue;
             }
@@ -4078,7 +4167,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 VmwareCreateCloneFull,
                 VmwareAllowParallelExecution,
                 DataStoreDownloadFollowRedirects,
-                AllowVolumeReSizeBeyondAllocation
+                AllowVolumeReSizeBeyondAllocation,
+                StoragePoolHostConnectWorkers
         };
     }
 

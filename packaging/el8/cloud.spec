@@ -17,6 +17,8 @@
 
 %define __os_install_post %{nil}
 %global debug_package %{nil}
+%global __requires_exclude libc\\.so\\..*
+%define _binaries_in_noarch_packages_terminate_build   0
 
 # DISABLE the post-percentinstall java repacking and line number stripping
 # we need to find a way to just disable the java repacking and line number stripping, but not the autodeps
@@ -35,6 +37,7 @@ Group:     System Environment/Libraries
 # FIXME do groups for every single one of the subpackages
 Source0:   %{name}-%{_maventag}.tgz
 BuildRoot: %{_tmppath}/%{name}-%{_maventag}-%{release}-build
+BuildArch: noarch
 
 BuildRequires: (java-11-openjdk-devel or java-17-openjdk-devel)
 #BuildRequires: ws-commons-util
@@ -68,7 +71,7 @@ Requires: (openssh-clients or openssh)
 Requires: (nfs-utils or nfs-client)
 Requires: iproute
 Requires: wget
-Requires: mysql
+Requires: (mysql or mariadb)
 Requires: sudo
 Requires: /sbin/service
 Requires: /sbin/chkconfig
@@ -117,7 +120,7 @@ Requires: qemu-kvm
 Requires: cryptsetup
 Requires: rng-tools
 Requires: (libgcrypt > 1.8.3 or libgcrypt20)
-Requires: (selinux-tools if qemu-tools)
+Requires: (selinux-tools if selinux-tools)
 Requires: sysstat
 Provides: cloud-agent
 Group: System Environment/Libraries

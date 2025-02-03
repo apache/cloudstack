@@ -26,6 +26,13 @@ body:
   attributes:
     label: problem
     value: The long description of your problem
+- type: markdown
+  attributes:
+    value: "## What versions of cloudstack and any infra components are you using"
+- type: textarea
+  attributes:
+    label: versions
+    value: The versions of ACS, hypervisors, storage, network etc..
 - type: textarea
   attributes:
     label: The steps to reproduce the bug

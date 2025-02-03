@@ -32,21 +32,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.alert.AlertManager;
-import com.cloud.cpu.CPU;
-import com.cloud.exception.StorageConflictException;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.ha.HighAvailabilityManagerImpl;
-import com.cloud.host.HostTagVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.hypervisor.HypervisorGuru;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -57,9 +48,9 @@ import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
-import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
-import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForHostMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
@@ -93,6 +84,7 @@ import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.transport.Request;
+import com.cloud.alert.AlertManager;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityState;
@@ -101,6 +93,7 @@ import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
@@ -134,6 +127,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.StorageConflictException;
+import com.cloud.exception.StorageUnavailableException;
 import com.cloud.gpu.GPU;
 import com.cloud.gpu.HostGpuGroupsVO;
 import com.cloud.gpu.VGPUTypesVO;
@@ -141,10 +136,12 @@ import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.gpu.dao.VGPUTypesDao;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
+import com.cloud.ha.HighAvailabilityManagerImpl;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
+import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
@@ -153,6 +150,7 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.kvm.discoverer.KvmDummyResourceBase;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -170,10 +168,13 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Ternary;
@@ -547,8 +548,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 details.put("ovm3pool", allParams.get("ovm3pool"));
                 details.put("ovm3cluster", allParams.get("ovm3cluster"));
             }
-            details.put("cpuOvercommitRatio", CapacityManager.CpuOverprovisioningFactor.value().toString());
-            details.put("memoryOvercommitRatio", CapacityManager.MemOverprovisioningFactor.value().toString());
+            details.put(VmDetailConstants.CPU_OVER_COMMIT_RATIO, CapacityManager.CpuOverprovisioningFactor.value().toString());
+            details.put(VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, CapacityManager.MemOverprovisioningFactor.value().toString());
             _clusterDetailsDao.persist(cluster.getId(), details);
             return result;
         }
@@ -558,8 +559,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         details.put("url", url);
         details.put("username", StringUtils.defaultString(username));
         details.put("password", StringUtils.defaultString(password));
-        details.put("cpuOvercommitRatio", CapacityManager.CpuOverprovisioningFactor.value().toString());
-        details.put("memoryOvercommitRatio", CapacityManager.MemOverprovisioningFactor.value().toString());
+        details.put(VmDetailConstants.CPU_OVER_COMMIT_RATIO, CapacityManager.CpuOverprovisioningFactor.value().toString());
+        details.put(VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, CapacityManager.MemOverprovisioningFactor.value().toString());
         _clusterDetailsDao.persist(cluster.getId(), details);
 
         boolean success = false;
@@ -643,8 +644,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 throw ex;
             } else {
                 if (cluster.getGuid() == null) {
-                    final List<HostVO> hosts = listAllHostsInCluster(clusterId);
-                    if (!hosts.isEmpty()) {
+                    final List<Long> hostIds = _hostDao.listIdsByClusterId(clusterId);
+                    if (!hostIds.isEmpty()) {
                         final CloudRuntimeException ex =
                                 new CloudRuntimeException("Guid is not updated for cluster with specified cluster id; need to wait for hosts in this cluster to come up");
                         ex.addProxyObject(cluster.getUuid(), "clusterId");
@@ -780,9 +781,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
             }
             clusterId = cluster.getId();
-            if (_clusterDetailsDao.findDetail(clusterId, "cpuOvercommitRatio") == null) {
-                final ClusterDetailsVO cluster_cpu_detail = new ClusterDetailsVO(clusterId, "cpuOvercommitRatio", "1");
-                final ClusterDetailsVO cluster_memory_detail = new ClusterDetailsVO(clusterId, "memoryOvercommitRatio", "1");
+            if (_clusterDetailsDao.findDetail(clusterId, VmDetailConstants.CPU_OVER_COMMIT_RATIO) == null) {
+                final ClusterDetailsVO cluster_cpu_detail = new ClusterDetailsVO(clusterId, VmDetailConstants.CPU_OVER_COMMIT_RATIO, "1");
+                final ClusterDetailsVO cluster_memory_detail = new ClusterDetailsVO(clusterId, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, "1");
                 _clusterDetailsDao.persist(cluster_cpu_detail);
                 _clusterDetailsDao.persist(cluster_memory_detail);
             }
@@ -964,8 +965,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 Host hostRemoved = _hostDao.findById(hostId);
                 _hostDao.remove(hostId);
                 if (clusterId != null) {
-                    final List<HostVO> hosts = listAllHostsInCluster(clusterId);
-                    if (hosts.size() == 0) {
+                    final List<Long> hostIds = _hostDao.listIdsByClusterId(clusterId);
+                    if (CollectionUtils.isEmpty(hostIds)) {
                         final ClusterVO cluster = _clusterDao.findById(clusterId);
                         cluster.setGuid(null);
                         _clusterDao.update(clusterId, cluster);
@@ -1089,21 +1090,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
                     final Hypervisor.HypervisorType hypervisorType = cluster.getHypervisorType();
 
-                    final List<HostVO> hosts = listAllHostsInCluster(cmd.getId());
-                    if (hosts.size() > 0) {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Cluster: {} still has hosts, can't remove", cluster);
-                        }
-                        throw new CloudRuntimeException(String.format("Cluster: %s cannot be removed. Cluster still has hosts", cluster));
+                    final List<Long> hostIds = _hostDao.listIdsByClusterId(cmd.getId());
+                    if (!hostIds.isEmpty()) {
+                        logger.debug("{} still has hosts, can't remove", cluster);
+                        throw new CloudRuntimeException("Cluster: " + cmd.getId() + " cannot be removed. Cluster still has hosts");
                     }
 
                     // don't allow to remove the cluster if it has non-removed storage
                     // pools
                     final List<StoragePoolVO> storagePools = _storagePoolDao.listPoolsByCluster(cmd.getId());
                     if (storagePools.size() > 0) {
-                        if (logger.isDebugEnabled()) {
-                            logger.debug("Cluster: {} still has storage pools, can't remove", cluster);
-                        }
+                        logger.debug("{} still has storage pools, can't remove", cluster);
                         throw new CloudRuntimeException(String.format("Cluster: %s cannot be removed. Cluster still has storage pools", cluster));
                     }
 
@@ -1284,7 +1281,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public Host cancelMaintenance(final CancelMaintenanceCmd cmd) {
+    public Host cancelMaintenance(final CancelHostMaintenanceCmd cmd) {
         final Long hostId = cmd.getId();
 
         // verify input parameters
@@ -1348,7 +1345,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())
                 || VirtualMachine.Type.ConsoleProxy.equals(vm.getType())) {
             logger.error("Maintenance: VM is of type {}. Destroying VM {} immediately instead of migration.", vm.getType(), vm);
-            _haMgr.scheduleDestroy(vm, host.getId());
+            _haMgr.scheduleDestroy(vm, host.getId(), HighAvailabilityManager.ReasonType.HostMaintenance);
             return;
         }
         logger.error("Maintenance: No hosts available for migrations. Scheduling shutdown for VM {} instead of migration.", vm);
@@ -1405,10 +1402,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     handleVmForLastHostOrWithVGpu(host, vm);
                 } else if (HypervisorType.LXC.equals(host.getHypervisorType()) && VirtualMachine.Type.User.equals(vm.getType())){
                     //Migration is not supported for LXC Vms. Schedule restart instead.
-                    _haMgr.scheduleRestart(vm, false);
+                    _haMgr.scheduleRestart(vm, false, HighAvailabilityManager.ReasonType.HostMaintenance);
                 } else if (userVmManager.isVMUsingLocalStorage(vm)) {
                     if (isMaintenanceLocalStrategyForceStop()) {
-                        _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop);
+                        _haMgr.scheduleStop(vm, hostId, WorkType.ForceStop, HighAvailabilityManager.ReasonType.HostMaintenance);
                     } else if (isMaintenanceLocalStrategyMigrate()) {
                         migrateAwayVmWithVolumes(host, vm);
                     } else if (!isMaintenanceLocalStrategyDefault()){
@@ -1421,7 +1418,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     }
                 } else {
                     logger.info("Maintenance: scheduling migration of VM {} from host {}", vm, host);
-                    _haMgr.scheduleMigration(vm);
+                    _haMgr.scheduleMigration(vm, HighAvailabilityManager.ReasonType.HostMaintenance);
                 }
             }
         }
@@ -1473,8 +1470,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offeringVO, null, null);
         plan.setMigrationPlan(true);
         DeployDestination dest = null;
+        DeploymentPlanner.ExcludeList avoids = new DeploymentPlanner.ExcludeList();
+        avoids.addHost(host.getId());
         try {
-            dest = deploymentManager.planDeployment(profile, plan, new DeploymentPlanner.ExcludeList(), null);
+            dest = deploymentManager.planDeployment(profile, plan, avoids, null);
         } catch (InsufficientServerCapacityException e) {
             throw new CloudRuntimeException(String.format("Maintenance failed, could not find deployment destination for VM: %s.", vm), e);
         }
@@ -1499,7 +1498,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public Host maintain(final PrepareForMaintenanceCmd cmd) {
+    public Host maintain(final PrepareForHostMaintenanceCmd cmd) {
         final Long hostId = cmd.getId();
         final HostVO host = _hostDao.findById(hostId);
 
@@ -1635,7 +1634,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         for (VMInstanceVO vm : allVmsOnHost) {
             State vmState = vm.getState();
             if (vmState == State.Starting || vmState == State.Running || vmState == State.Stopping) {
-                _haMgr.scheduleRestart(vm, false);
+                _haMgr.scheduleRestart(vm, false, HighAvailabilityManager.ReasonType.HostDegraded);
             }
         }
     }
@@ -2435,10 +2434,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         boolean clusterSupportsResigning = true;
 
-        List<HostVO> hostVOs = _hostDao.findByClusterId(host.getClusterId());
+        List<Long> hostIds = _hostDao.listIdsByClusterId(host.getClusterId());
 
-        for (HostVO hostVO : hostVOs) {
-            DetailVO hostDetailVO = _hostDetailsDao.findDetail(hostVO.getId(), name);
+        for (Long hostId : hostIds) {
+            DetailVO hostDetailVO = _hostDetailsDao.findDetail(hostId, name);
 
             if (hostDetailVO == null || Boolean.parseBoolean(hostDetailVO.getValue()) == false) {
                 clusterSupportsResigning = false;
@@ -2506,13 +2505,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     private Host createHostAndAgent(final ServerResource resource, final Map<String, String> details, final boolean old, final List<String> hostTags, final boolean forRebalance) {
+        return createHostAndAgent(resource, details, old, hostTags, forRebalance, false);
+    }
+
+    private Host createHostAndAgent(final ServerResource resource, final Map<String, String> details, final boolean old, final List<String> hostTags, final boolean forRebalance, final boolean isTransferredConnection) {
         HostVO host = null;
         StartupCommand[] cmds = null;
         boolean hostExists = false;
         boolean created = false;
 
         try {
-            cmds = resource.initialize();
+            cmds = resource.initialize(isTransferredConnection);
             if (cmds == null) {
                 logger.info("Unable to fully initialize the agent because no StartupCommands are returned");
                 return null;
@@ -2683,7 +2686,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host createHostAndAgent(final Long hostId, final ServerResource resource, final Map<String, String> details, final boolean old, final List<String> hostTags, final boolean forRebalance) {
-        final Host host = createHostAndAgent(resource, details, old, hostTags, forRebalance);
+        return createHostAndAgent(hostId, resource, details, old, hostTags, forRebalance, false);
+    }
+
+    @Override
+    public Host createHostAndAgent(final Long hostId, final ServerResource resource, final Map<String, String> details, final boolean old, final List<String> hostTags, final boolean forRebalance, boolean isTransferredConnection) {
+        final Host host = createHostAndAgent(resource, details, old, hostTags, forRebalance, isTransferredConnection);
         return host;
     }
 
@@ -3052,10 +3060,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     public boolean updateClusterPassword(final UpdateHostPasswordCmd command) {
         final boolean shouldUpdateHostPasswd = command.getUpdatePasswdOnHost();
         // get agents for the cluster
-        final List<HostVO> hosts = listAllHostsInCluster(command.getClusterId());
-        for (final HostVO host : hosts) {
+        final List<Long> hostIds = _hostDao.listIdsByClusterId(command.getClusterId());
+        for (final Long hostId : hostIds) {
             try {
-                final Boolean result = propagateResourceEvent(host.getId(), ResourceState.Event.UpdatePassword);
+                final Boolean result = propagateResourceEvent(hostId, ResourceState.Event.UpdatePassword);
                 if (result != null) {
                     return result;
                 }
@@ -3064,8 +3072,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
 
             if (shouldUpdateHostPasswd) {
-                final boolean isUpdated = doUpdateHostPassword(host.getId());
+                final boolean isUpdated = doUpdateHostPassword(hostId);
                 if (!isUpdated) {
+                    HostVO host = _hostDao.findById(hostId);
                     throw new CloudRuntimeException(
                             String.format("CloudStack failed to update the password of %s. Please make sure you are still able to connect to your hosts.", host));
                 }
@@ -3279,26 +3288,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public List<HypervisorType> listAvailHypervisorInZone(final Long hostId, final Long zoneId) {
-        final SearchCriteria<String> sc = _hypervisorsInDC.create();
-        if (zoneId != null) {
-            sc.setParameters("dataCenter", zoneId);
+    public List<HypervisorType> listAvailHypervisorInZone(final Long zoneId) {
+        List<VMTemplateVO> systemVMTemplates = _templateDao.listAllReadySystemVMTemplates(zoneId);
+        final Set<HypervisorType> hypervisors = new HashSet<>();
+        for (final VMTemplateVO systemVMTemplate : systemVMTemplates) {
+            hypervisors.add(systemVMTemplate.getHypervisorType());
         }
-        if (hostId != null) {
-            // exclude the given host, since we want to check what hypervisor is already handled
-            // in adding this new host
-            sc.setParameters("id", hostId);
-        }
-        sc.setParameters("type", Host.Type.Routing);
-
-        // The search is not able to return list of enums, so getting
-        // list of hypervisors as strings and then converting them to enum
-        final List<String> hvs = _hostDao.customSearch(sc, null);
-        final List<HypervisorType> hypervisors = new ArrayList<HypervisorType>();
-        for (final String hv : hvs) {
-            hypervisors.add(HypervisorType.getType(hv));
-        }
-        return hypervisors;
+        return new ArrayList<>(hypervisors);
     }
 
     @Override
@@ -3316,17 +3312,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public HostStats getHostStatistics(final long hostId) {
-        HostVO host = _hostDao.findById(hostId);
-        final Answer answer = _agentMgr.easySend(hostId, new GetHostStatsCommand(host.getGuid(), host.getName(), hostId));
+    public HostStats getHostStatistics(final Host host) {
+        final Answer answer = _agentMgr.easySend(host.getId(), new GetHostStatsCommand(host.getGuid(), host.getName(), host.getId()));
 
         if (answer != null && answer instanceof UnsupportedAnswer) {
             return null;
         }
 
         if (answer == null || !answer.getResult()) {
-            final String msg = String.format("Unable to obtain host %s statistics. ", host);
-            logger.warn(msg);
+            logger.warn("Unable to obtain {} statistics.", host);
             return null;
         } else {
 

@@ -143,6 +143,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateState;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementVO;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
@@ -613,6 +614,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Inject
     private ManagementServerHostPeerJoinDao mshostPeerJoinDao;
 
+    @Inject
+    private AsyncJobManager jobManager;
 
     private SearchCriteria<ServiceOfferingJoinVO> getMinimumCpuServiceOfferingJoinSearchCriteria(int cpu) {
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
@@ -1413,6 +1416,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (networkId != null || vpcId != null) {
             SearchBuilder<NicVO> nicSearch = nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), Op.EQ);
+            nicSearch.and("removed", nicSearch.entity().getRemoved(), Op.NULL);
             if (vpcId != null) {
                 SearchBuilder<NetworkVO> networkSearch = networkDao.createSearchBuilder();
                 networkSearch.and("vpcId", networkSearch.entity().getVpcId(), Op.EQ);
@@ -2352,6 +2356,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long startIndex = cmd.getStartIndex();
         Long pageSize = cmd.getPageSizeVal();
         Hypervisor.HypervisorType hypervisorType = cmd.getHypervisor();
+        Long msId = cmd.getManagementServerId();
 
         Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
@@ -2360,13 +2365,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // ids
         hostSearchBuilder.and("id", hostSearchBuilder.entity().getId(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("name", hostSearchBuilder.entity().getName(), SearchCriteria.Op.EQ);
-        hostSearchBuilder.and("type", hostSearchBuilder.entity().getType(), SearchCriteria.Op.LIKE);
+        hostSearchBuilder.and("type", hostSearchBuilder.entity().getType(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("status", hostSearchBuilder.entity().getStatus(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("dataCenterId", hostSearchBuilder.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("podId", hostSearchBuilder.entity().getPodId(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("clusterId", hostSearchBuilder.entity().getClusterId(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("resourceState", hostSearchBuilder.entity().getResourceState(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("hypervisor_type", hostSearchBuilder.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        hostSearchBuilder.and("mgmt_server_id", hostSearchBuilder.entity().getManagementServerId(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
             hostSearchBuilder.and().op("keywordName", hostSearchBuilder.entity().getName(), SearchCriteria.Op.LIKE);
@@ -2412,7 +2418,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("name", name);
         }
         if (type != null) {
-            sc.setParameters("type", "%" + type);
+            sc.setParameters("type", type);
         }
         if (state != null) {
             sc.setParameters("status", state);
@@ -2445,6 +2451,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (hypervisorType != HypervisorType.None && hypervisorType != HypervisorType.Any) {
             sc.setParameters("hypervisor_type", hypervisorType);
+        }
+
+        if (msId != null) {
+            ManagementServerHostVO msHost = msHostDao.findById(msId);
+            if (msHost != null) {
+                sc.setParameters("mgmt_server_id", msHost.getMsid());
+            }
         }
 
         Pair<List<HostVO>, Integer> uniqueHostPair = hostDao.searchAndCount(sc, searchFilter);
@@ -4563,7 +4576,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;
         if (!isIso) {
-            hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
+            hypers = _resourceMgr.listAvailHypervisorInZone(null);
             if (hypers == null || hypers.isEmpty()) {
                 return new Pair<List<TemplateJoinVO>, Integer>(new ArrayList<TemplateJoinVO>(), 0);
             }
@@ -5430,6 +5443,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 mgmtResponse.addPeer(createPeerManagementServerNodeResponse(peer));
             }
         }
+        mgmtResponse.setAgentsCount((long) hostDao.countByMs(mgmt.getMsid()));
+        mgmtResponse.setPendingJobsCount(jobManager.countPendingNonPseudoJobs(mgmt.getMsid()));
         mgmtResponse.setObjectName("managementserver");
         return mgmtResponse;
     }

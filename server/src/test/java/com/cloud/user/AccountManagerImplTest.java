@@ -26,8 +26,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.event.ActionEventUtils;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleService;
@@ -43,23 +41,25 @@ import org.apache.cloudstack.auth.UserAuthenticator.ActionOnFailedAuthentication
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.apache.cloudstack.webhook.WebhookHelper;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.acl.DomainChecker;
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
@@ -1337,5 +1337,73 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.when(roleService.findRole(1L)).thenReturn(accountRole);
         Mockito.when(roleService.findRole(2L)).thenReturn(callerRole);
         accountManagerImpl.validateRoleChange(account, newRole, caller);
+    }
+
+     @Test
+     public void checkIfAccountManagesProjectsTestNotThrowExceptionWhenTheAccountIsNotAProjectAdministrator() {
+        long accountId = 1L;
+        List<Long> managedProjectIds = new ArrayList<>();
+
+        Mockito.when(_projectAccountDao.listAdministratedProjectIds(accountId)).thenReturn(managedProjectIds);
+        accountManagerImpl.checkIfAccountManagesProjects(accountId);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void checkIfAccountManagesProjectsTestThrowExceptionWhenTheAccountIsAProjectAdministrator() {
+        long accountId = 1L;
+        List<Long> managedProjectIds = List.of(1L);
+
+        Mockito.when(_projectAccountDao.listAdministratedProjectIds(accountId)).thenReturn(managedProjectIds);
+        accountManagerImpl.checkIfAccountManagesProjects(accountId);
+    }
+
+    @Test
+    public void testClearUser2FA_When2FADisabled_NoChanges() {
+        UserAccount user = Mockito.mock(UserAccount.class);
+        Mockito.when(user.isUser2faEnabled()).thenReturn(false);
+        Mockito.when(user.getUser2faProvider()).thenReturn(null);
+        UserAccount result = accountManagerImpl.clearUserTwoFactorAuthenticationInSetupStateOnLogin(user);
+        Assert.assertSame(user, result);
+        Mockito.verifyNoInteractions(userDetailsDaoMock, userAccountDaoMock);
+    }
+
+    @Test
+    public void testClearUser2FA_When2FAInVerifiedState_NoChanges() {
+        UserAccount user = Mockito.mock(UserAccount.class);
+        Mockito.when(user.getId()).thenReturn(1L);
+        Mockito.when(user.isUser2faEnabled()).thenReturn(true);
+        UserDetailVO userDetail = new UserDetailVO();
+        userDetail.setValue(UserAccountVO.Setup2FAstatus.VERIFIED.name());
+        Mockito.when(userDetailsDaoMock.findDetail(1L, UserDetailVO.Setup2FADetail)).thenReturn(userDetail);
+        UserAccount result = accountManagerImpl.clearUserTwoFactorAuthenticationInSetupStateOnLogin(user);
+        Assert.assertSame(user, result);
+        Mockito.verify(userDetailsDaoMock).findDetail(1L, UserDetailVO.Setup2FADetail);
+        Mockito.verifyNoMoreInteractions(userDetailsDaoMock, userAccountDaoMock);
+    }
+
+    @Test
+    public void testClearUser2FA_When2FAInSetupState_Disable2FA() {
+        UserAccount user = Mockito.mock(UserAccount.class);
+        Mockito.when(user.getId()).thenReturn(1L);
+        Mockito.when(user.isUser2faEnabled()).thenReturn(true);
+        UserDetailVO userDetail = new UserDetailVO();
+        userDetail.setValue(UserAccountVO.Setup2FAstatus.ENABLED.name());
+        UserAccountVO userAccountVO = new UserAccountVO();
+        userAccountVO.setId(1L);
+        Mockito.when(userDetailsDaoMock.findDetail(1L, UserDetailVO.Setup2FADetail)).thenReturn(userDetail);
+        Mockito.when(userAccountDaoMock.findById(1L)).thenReturn(userAccountVO);
+        UserAccount result = accountManagerImpl.clearUserTwoFactorAuthenticationInSetupStateOnLogin(user);
+        Assert.assertNotNull(result);
+        Assert.assertFalse(result.isUser2faEnabled());
+        Assert.assertNull(result.getUser2faProvider());
+        Mockito.verify(userDetailsDaoMock).findDetail(1L, UserDetailVO.Setup2FADetail);
+        Mockito.verify(userDetailsDaoMock).remove(Mockito.anyLong());
+        Mockito.verify(userAccountDaoMock).findById(1L);
+        ArgumentCaptor<UserAccountVO> captor = ArgumentCaptor.forClass(UserAccountVO.class);
+        Mockito.verify(userAccountDaoMock).update(Mockito.eq(1L), captor.capture());
+        UserAccountVO updatedUser = captor.getValue();
+        Assert.assertFalse(updatedUser.isUser2faEnabled());
+        Assert.assertNull(updatedUser.getUser2faProvider());
+        Assert.assertNull(updatedUser.getKeyFor2fa());
     }
 }
