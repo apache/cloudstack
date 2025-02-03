@@ -248,7 +248,7 @@ public class DynamicRoleBasedAPIAccessCheckerTest extends TestCase {
         Mockito.doReturn(Collections.singletonList(permission)).when(roleServiceMock).findAllPermissionsBy(Mockito.anyLong());
 
         assertTrue(apiAccessCheckerSpy.checkAccess(getTestUser(), api, emptyPermissionArray));
-        Mockito.verify(roleServiceMock, Mockito.times(1)).findAllPermissionsBy(Mockito.anyLong());
+        Mockito.verify(roleServiceMock, Mockito.times(2)).findAllPermissionsBy(Mockito.anyLong());
     }
 
     @Test(expected = UnavailableCommandException.class)
