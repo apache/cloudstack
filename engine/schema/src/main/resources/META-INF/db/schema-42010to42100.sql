@@ -34,3 +34,5 @@ AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.r
 
 -- Increase the cache_mode column size from cloud.disk_offering table
 CALL `cloud`.`IDEMPOTENT_CHANGE_COLUMN`('cloud.disk_offering', 'cache_mode', 'cache_mode', 'varchar(18) DEFAULT "none" COMMENT "The disk cache mode to use for disks created with this offering"');
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'last_mgmt_server_id', 'bigint unsigned DEFAULT NULL COMMENT "last management server this host is connected to" AFTER `mgmt_server_id`');

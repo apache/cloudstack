@@ -21,6 +21,12 @@ import java.util.List;
 public interface IndirectAgentLB {
 
     /**
+     * Return list of management server addresses from host setting
+     * @return management servers string list
+     */
+    List<String> getManagementServerList();
+
+    /**
      * Return list of management server addresses after applying configured lb algorithm
      * for a host in a zone.
      * @param hostId host id (if present)
@@ -29,6 +35,17 @@ public interface IndirectAgentLB {
      * @return management servers string list
      */
     List<String> getManagementServerList(Long hostId, Long dcId, List<Long> orderedHostIdList);
+
+    /**
+     * Return list of management server addresses after applying the lb algorithm
+     * for a host in a zone.
+     * @param hostId host id (if present)
+     * @param dcId zone id
+     * @param orderedHostIdList (optional) list of ordered host id list
+     * @param lbAlgorithm lb algorithm
+     * @return management servers string list
+     */
+    List<String> getManagementServerList(Long hostId, Long dcId, List<Long> orderedHostIdList, String lbAlgorithm);
 
     /**
      * Compares received management server list against expected list for a host in a zone.
@@ -45,6 +62,8 @@ public interface IndirectAgentLB {
      */
     String getLBAlgorithmName();
 
+    void checkLBAlgorithmName(String lbAlgorithm);
+
     /**
      * Returns the configured LB preferred host check interval (if applicable at cluster scope)
      * @return returns interval in seconds
@@ -53,4 +72,7 @@ public interface IndirectAgentLB {
 
     void propagateMSListToAgents();
 
+    boolean haveAgentBasedHosts(long msId);
+
+    boolean migrateAgents(String fromMsUuid, long fromMsId, String lbAlgorithm, long timeoutDurationInMs);
 }

@@ -27,7 +27,7 @@ export default {
   searchFilters: ['name', 'zoneid', 'podid', 'clusterid', 'hypervisor'],
   resourceType: 'Host',
   filters: () => {
-    const filters = ['enabled', 'disabled', 'maintenance', 'up', 'down', 'alert']
+    const filters = ['enabled', 'disabled', 'maintenance', 'up', 'down', 'disconnected', 'alert']
     return filters
   },
   params: { type: 'routing' },
@@ -39,9 +39,10 @@ export default {
     }
     fields.push('clustername')
     fields.push('zonename')
+    fields.push('managementservername')
     return fields
   },
-  details: ['name', 'id', 'resourcestate', 'ipaddress', 'hypervisor', 'arch', 'type', 'clustername', 'podname', 'zonename', 'disconnected', 'created'],
+  details: ['name', 'id', 'resourcestate', 'ipaddress', 'hypervisor', 'arch', 'type', 'clustername', 'podname', 'zonename', 'managementservername', 'disconnected', 'created'],
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
