@@ -6972,6 +6972,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             } else {
                 sc.addAnd("tags", SearchCriteria.Op.EQ, tags);
             }
+        } else {
+            if (GuestType.Shared.name().equalsIgnoreCase(guestIpType)) {
+                sc.addAnd("tags", SearchCriteria.Op.NULL);
+            }
         }
 
         if (zoneId != null) {
