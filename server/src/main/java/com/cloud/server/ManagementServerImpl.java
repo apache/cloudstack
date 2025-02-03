@@ -1919,7 +1919,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final String haTag = _haMgr.getHaTag();
         SearchBuilder<HostTagVO> hostTagSearch = null;
-        if (haHosts != null && StringUtils.isNotEmpty(haTag)) {
+        if (haHosts != null && haTag != null && !haTag.isEmpty()) {
             hostTagSearch = _hostTagsDao.createSearchBuilder();
             if ((Boolean)haHosts) {
                 hostTagSearch.and().op("tag", hostTagSearch.entity().getTag(), SearchCriteria.Op.EQ);
@@ -1980,7 +1980,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             sc.setParameters("resourceState", resourceState);
         }
 
-        if (haHosts != null && StringUtils.isNotEmpty(haTag)) {
+        if (haHosts != null && haTag != null && !haTag.isEmpty()) {
             sc.setJoinParameters("hostTagSearch", "tag", haTag);
         }
 
