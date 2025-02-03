@@ -160,8 +160,11 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
             logger.info("Account for user id {} is Root Admin or Domain Admin, all APIs are allowed.", user.getUuid());
             return true;
         }
-        List<RolePermission> allPermissions = roleAndPermissions.second();
-        if (checkApiPermissionByRole(accountRole, commandName, allPermissions)) {
+
+        List<RolePermissionEntity> allRules = defineNewKeypairRules(accountRole, apiKeyPairPermissions);
+        boolean override = apiKeyPairPermissions.length != 0;
+
+        if (checkApiPermissionByRole(accountRole, commandName, allRules, override)) {
             return true;
         }
         throw new UnavailableCommandException(String.format("The API [%s] does not exist or is not available for the account for user id [%s].", commandName, user.getUuid()));
