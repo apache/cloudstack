@@ -45,7 +45,7 @@ public class StoragePoolDetailsDaoImpl extends ResourceDetailsDaoBase<StoragePoo
     @Override
     public String getConfigValue(long id, ConfigKey<?> key) {
         StoragePoolDetailVO vo = findDetail(id, key.key());
-        return vo == null ? null : vo.getValue();
+        return vo == null ? null : getActualValue(vo);
     }
 
     @Override

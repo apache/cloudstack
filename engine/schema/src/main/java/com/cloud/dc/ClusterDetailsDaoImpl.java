@@ -26,12 +26,13 @@ import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
-import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
-public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long> implements ClusterDetailsDao, ScopedConfigStorage {
+public class ClusterDetailsDaoImpl extends ResourceDetailsDaoBase<ClusterDetailsVO> implements ClusterDetailsDao, ScopedConfigStorage {
+
     protected final SearchBuilder<ClusterDetailsVO> ClusterSearch;
     protected final SearchBuilder<ClusterDetailsVO> DetailSearch;
 
@@ -42,11 +43,11 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
 
     protected ClusterDetailsDaoImpl() {
         ClusterSearch = createSearchBuilder();
-        ClusterSearch.and("clusterId", ClusterSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        ClusterSearch.and("clusterId", ClusterSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         ClusterSearch.done();
 
         DetailSearch = createSearchBuilder();
-        DetailSearch.and("clusterId", DetailSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        DetailSearch.and("clusterId", DetailSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         DetailSearch.and("name", DetailSearch.entity().getName(), SearchCriteria.Op.EQ);
         DetailSearch.done();
     }
@@ -64,6 +65,11 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
             detail.setValue(DBEncryptionUtil.decrypt(detail.getValue()));
         }
         return detail;
+    }
+
+    @Override
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new ClusterDetailsVO(resourceId, key, value));
     }
 
     @Override
@@ -138,7 +144,7 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
     @Override
     public String getConfigValue(long id, ConfigKey<?> key) {
         ClusterDetailsVO vo = findDetail(id, key.key());
-        return vo == null ? null : vo.getValue();
+        return vo == null ? null : getActualValue(vo);
     }
 
     @Override
