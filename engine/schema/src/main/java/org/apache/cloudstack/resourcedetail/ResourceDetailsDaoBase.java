@@ -19,6 +19,7 @@ package org.apache.cloudstack.resourcedetail;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.commons.collections.CollectionUtils;
@@ -89,6 +90,20 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
             details.put(result.getName(), result.getValue());
         }
         return details;
+    }
+
+    @Override
+    public Map<String, String> listDetailsKeyPairs(long resourceId, List<String> keys) {
+        SearchBuilder<R> sb = createSearchBuilder();
+        sb.and("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.IN);
+        sb.done();
+        SearchCriteria<R> sc = sb.create();
+        sc.setParameters("resourceId", resourceId);
+        sc.setParameters("name", keys.toArray());
+
+        List<R> results = search(sc, null);
+        return results.stream().collect(Collectors.toMap(R::getName, R::getValue));
     }
 
     public Map<String, Boolean> listDetailsVisibility(long resourceId) {

@@ -812,6 +812,13 @@ public class AgentProperties{
     public static final Property<String> HOST_TAGS = new Property<>("host.tags", null, String.class);
 
     /**
+     * Timeout for SSL handshake in seconds
+     * Data type: Integer.<br>
+     * Default value: <code>null</code>
+     */
+    public static final Property<Integer> SSL_HANDSHAKE_TIMEOUT = new Property<>("ssl.handshake.timeout", null, Integer.class);
+
+    /**
      * Timeout (in seconds) to wait for the incremental snapshot to complete.
      * */
     public static final Property<Integer> INCREMENTAL_SNAPSHOT_TIMEOUT = new Property<>("incremental.snapshot.timeout", 10800);
