@@ -205,7 +205,6 @@ public class SAMLUtils {
         authnRequest.setAssertionConsumerServiceURL(consumerUrl);
         authnRequest.setProviderName(spId);
         authnRequest.setIssuer(issuer);
-        //authnRequest.setRequestedAuthnContext(requestedAuthnContext);
 
         return authnRequest;
     }

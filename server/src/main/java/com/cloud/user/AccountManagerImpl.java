@@ -1447,9 +1447,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         List<UserVO> duplicatedUsers = _userDao.findUsersByName(userName);
         for (UserVO duplicatedUser : duplicatedUsers) {
             // users can't exist in same account
-            if (duplicatedUser.getAccountId() == account.getId()) {
-                throw new InvalidParameterValueException(String.format("Username [%s] already exists in account [id=%s,name=%s]", duplicatedUser.getUsername(), account.getUuid(), account.getAccountName()));
-            }
+            assertUserAlreadyInAccount(duplicatedUser, account);
         }
 
         UserVO user = null;
@@ -1592,15 +1590,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             // users can't exist in same account
-            if (duplicatedUser.getAccountId() == account.getId()) {
-                throw new InvalidParameterValueException(String.format("Username [%s] already exists in account [id=%s,name=%s]", duplicatedUser.getUsername(), account.getUuid(), account.getAccountName()));
-            }
-
-            /**Account duplicatedUserAccountWithUserThatHasTheSameUserName = _accountDao.findById(duplicatedUser.getAccountId());
-            if (duplicatedUserAccountWithUserThatHasTheSameUserName.getDomainId() == account.getDomainId()) {
-                DomainVO domain = _domainDao.findById(duplicatedUserAccountWithUserThatHasTheSameUserName.getDomainId());
-                throw new InvalidParameterValueException(String.format("Username [%s] already exists in domain [id=%s,name=%s]", duplicatedUser.getUsername(), domain.getUuid(), domain.getName()));
-            }*/
+            assertUserAlreadyInAccount(duplicatedUser, account);
         }
         user.setUsername(userName);
     }
@@ -3521,5 +3511,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             _userAccountDao.update(user.getId(), userAccountVO);
             return userAccountVO;
         });
+    }
+
+    private void assertUserAlreadyInAccount(User user, Account account) {
+       if (user.getAccountId() == account.getId()) {
+           throw new InvalidParameterValueException(String.format("Username [%s] already exists in account [id=%s,name=%s]", user.getUsername(), account.getUuid(), account.getAccountName()));
+       }
     }
 }

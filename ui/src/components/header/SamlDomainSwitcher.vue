@@ -52,7 +52,7 @@
 <script>
 import store from '@/store'
 import { api } from '@/api'
-// import _ from 'lodash'
+import _ from 'lodash'
 
 export default {
   name: 'SamlDomainSwitcher',
@@ -89,7 +89,7 @@ export default {
             return
           }
           this.samlAccounts = samlAccounts
-          // this.samlAccounts =_.orderBy(samlAccounts, ['domainPath'], ['asc'])
+          this.samlAccounts =_.orderBy(samlAccounts, ['domainPath'], ['asc'])
           const currentAccount = this.samlAccounts.filter(x => {
             return x.userId === store.getters.userInfo.id
           })[0]
