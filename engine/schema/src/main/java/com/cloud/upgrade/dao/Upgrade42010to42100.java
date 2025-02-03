@@ -90,7 +90,6 @@ public class Upgrade42010to42100 extends DbUpgradeAbstractImpl implements DbUpgr
 
     protected void migrateConfigurationScopeToBitmask(Connection conn) {
         String scopeDataType = DbUpgradeUtils.getTableColumnType(conn, "configuration", "scope");
-        System.out.println("------------------------" + scopeDataType);
         logger.info("------------------------{}", scopeDataType);
         if (!"varchar(255)".equals(scopeDataType)) {
             return;

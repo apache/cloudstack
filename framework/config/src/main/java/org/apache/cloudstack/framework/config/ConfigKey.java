@@ -338,7 +338,7 @@ public class ConfigKey<T> {
                 return valueInScope(s.first(), s.second());
             }
         } while (s != null);
-        logger.trace("Global value for config ({}}): {}", _name, _value);
+        logger.trace("Global value for config ({}): {}", _name, _value);
         return value();
     }
 
@@ -350,7 +350,7 @@ public class ConfigKey<T> {
         if (value == null) {
             return valueInGlobalOrAvailableParentScope(scope, id);
         }
-        logger.trace("Scope({}) value for config ({}}): {}", scope, _name, _value);
+        logger.trace("Scope({}) value for config ({}): {}", scope, _name, _value);
         return valueOf(value);
     }
 
