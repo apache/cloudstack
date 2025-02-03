@@ -367,11 +367,10 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     }
 
     @Test(expected = PermissionDeniedException.class)
-    public void testgetUserCmd() {
+    public void testGetUserCmd() {
         CallContext.register(callingUser, callingAccount); // Calling account is user account i.e normal account
         Mockito.when(_getkeyscmd.getId()).thenReturn(1L);
         Mockito.when(accountManagerImpl.getActiveUser(1L)).thenReturn(userVoMock);
-        Mockito.when(userAccountDaoMock.findById(1L)).thenReturn(userAccountVO);
 
         Mockito.lenient().when(callingUser.getAccountId()).thenReturn(1L);
         Mockito.lenient().when(_accountDao.findById(1L)).thenReturn(callingAccount);
@@ -387,9 +386,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         CallContext.register(callingUser, callingAccount);
         Mockito.when(_getkeyscmd.getId()).thenReturn(2L);
         Mockito.when(accountManagerImpl.getActiveUser(2L)).thenReturn(userVoMock);
-        Mockito.when(userAccountDaoMock.findById(2L)).thenReturn(userAccountVO);
-        Mockito.when(userAccountVO.getAccountId()).thenReturn(2L);
-        Mockito.when(userDetailsDaoMock.listDetailsKeyPairs(Mockito.anyLong())).thenReturn(null);
+        Mockito.when(userVoMock.getAccountId()).thenReturn(2L);
 
         // Queried account - admin account
         AccountVO adminAccountMock = Mockito.mock(AccountVO.class);
