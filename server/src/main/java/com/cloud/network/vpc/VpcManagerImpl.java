@@ -1640,13 +1640,14 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             try {
                 _ipAddrMgr.updateSourceNatIpAddress(requestedIp, userIps);
                 if (isVpcForProvider(Provider.Nsx, vpc) || isVpcForProvider(Provider.Netris, vpc)) {
-                    VpcProvider nsxElement = (VpcProvider) _ntwkModel.getElementImplementingProvider(Provider.Nsx.getName());
-                    if (nsxElement == null) {
-                        return true;
+                    boolean isForNsx = _vpcOffSvcMapDao.isProviderForVpcOffering(Provider.Nsx, vpc.getVpcOfferingId());
+                    String providerName = isForNsx ? Provider.Nsx.getName() : Provider.Netris.getName();
+                    VpcProvider providerElement = (VpcProvider) _ntwkModel.getElementImplementingProvider(providerName);
+                    if (Objects.nonNull(providerElement)) {
+                        providerElement.updateVpcSourceNatIp(vpc, requestedIp);
+                        return false;
                     }
-                    nsxElement.updateVpcSourceNatIp(vpc, requestedIp);
-                    // The NSX source NAT IP change does not require to update the VPC VR
-                    return false;
+                    return true;
                 }
             } catch (Exception e) { // pokemon exception from transaction
                 String msg = String.format("Update of source NAT ip to %s for network \"%s\"/%s failed due to %s",

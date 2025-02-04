@@ -438,7 +438,7 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
 
     @Override
     public boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address) {
-        return true;
+        return netrisService.updateVpcSourceNatIp(vpc, address);
     }
 
     @Override

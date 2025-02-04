@@ -292,7 +292,8 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
 
         logger.debug("Updating the source NAT IP for Netris VPC {} to IP: {}", vpc.getName(), address.getAddress().addr());
 
-        CreateOrUpdateNetrisNatCommand cmd = new CreateOrUpdateNetrisNatCommand(zoneId, accountId, domainId, vpcName, vpcId, null, null, true, address.getAddress().addr());
+        CreateOrUpdateNetrisNatCommand cmd = new CreateOrUpdateNetrisNatCommand(zoneId, accountId, domainId, vpcName, vpcId, null, null, true, vpc.getCidr());
+        cmd.setNatIp(address.getAddress().addr());
         cmd.setNatRuleType("SNAT");
         String snatRuleName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.SNAT, String.valueOf(vpcId));
         cmd.setNatRuleName(snatRuleName);
