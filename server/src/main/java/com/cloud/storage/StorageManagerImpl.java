@@ -3590,12 +3590,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(final TransactionStatus status) {
-                    List<ImageStoreVO> stores = _imageStoreDao.listAllStoresInZone(zoneId, providerName, DataStoreRole.Image);
-                    stores = stores.stream().filter(str -> str.getId() != store.getId()).collect(Collectors.toList());
-                    // Check if it's the only/first store in the zone
-                    if (stores.size() == 0) {
+                    List<ImageStoreVO> stores = _imageStoreDao.listAllStoresInZoneExceptId(zoneId, providerName,
+                            DataStoreRole.Image, store.getId());
+                    if (CollectionUtils.isEmpty(stores)) {
                         List<HypervisorType> hypervisorTypes = _clusterDao.getAvailableHypervisorInZone(zoneId);
-                        Set<HypervisorType> hypSet = new HashSet<>(hypervisorTypes);
+                        Set<HypervisorType> hypervisorTypeSet = new HashSet<>(hypervisorTypes);
                         TransactionLegacy txn = TransactionLegacy.open("AutomaticTemplateRegister");
                         SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration();
                         String filePath = null;
@@ -3606,24 +3605,22 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             }
                             Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
                             String nfsVersion = imageStoreDetailsUtil.getNfsVersion(store.getId());
-                            for (HypervisorType hypervisorType : hypSet) {
+                            for (HypervisorType hypervisorType : hypervisorTypeSet) {
                                 try {
                                     if (HypervisorType.Simulator == hypervisorType) {
                                         continue;
                                     }
                                     String templateName = getValidTemplateName(zoneId, hypervisorType);
-                                    Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName =
-                                            new Pair<>(hypervisorType, templateName);
-                                    Long templateId = systemVmTemplateRegistration.getRegisteredTemplateId(hypervisorAndTemplateName);
+                                    Long templateId = systemVmTemplateRegistration.getRegisteredTemplateId(templateName);
                                     VMTemplateVO vmTemplateVO = null;
-                                    TemplateDataStoreVO templateVO = null;
+                                    TemplateDataStoreVO templateDataStoreVO = null;
                                     if (templateId != null) {
                                         vmTemplateVO = _templateDao.findById(templateId);
-                                        templateVO = _templateStoreDao.findByStoreTemplate(store.getId(), templateId);
-                                        if (templateVO != null) {
+                                        templateDataStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), templateId);
+                                        if (templateDataStoreVO != null) {
                                             try {
-                                                if (systemVmTemplateRegistration.validateIfSeeded(
-                                                        templateVO, url, templateVO.getInstallPath(), nfsVersion)) {
+                                                if (systemVmTemplateRegistration.validateIfSeeded(templateDataStoreVO,
+                                                        url, templateDataStoreVO.getInstallPath(), nfsVersion)) {
                                                     continue;
                                                 }
                                             } catch (Exception e) {
@@ -3632,10 +3629,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                                         }
                                     }
                                     SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath, nfsVersion);
-                                    if (templateVO != null && vmTemplateVO != null) {
-                                        systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, vmTemplateVO, templateVO, filePath);
+                                    if (templateDataStoreVO != null && vmTemplateVO != null) {
+                                        systemVmTemplateRegistration.registerTemplate(hypervisorType, templateName, storeUrlAndId, vmTemplateVO, templateDataStoreVO, filePath);
                                     } else {
-                                        systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, filePath);
+                                        systemVmTemplateRegistration.registerTemplate(hypervisorType, templateName, storeUrlAndId, filePath);
                                     }
                                 } catch (CloudRuntimeException e) {
                                     SystemVmTemplateRegistration.unmountStore(filePath);

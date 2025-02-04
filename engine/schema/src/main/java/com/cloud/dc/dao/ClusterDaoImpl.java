@@ -39,6 +39,7 @@ import com.cloud.dc.HostPodVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.JoinBuilder;
@@ -180,6 +181,26 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     @Override
     public Set<HypervisorType> getDistinctAvailableHypervisorsAcrossClusters() {
         return new HashSet<>(getAvailableHypervisorInZone(null));
+    }
+
+    @Override
+    public List<Pair<HypervisorType, String>> getDistinctHypervisorsArchAcrossClusters() {
+        List<Pair<HypervisorType, String>> hypervisorArchList = new ArrayList<>();
+        String selectSql = "SELECT DISTINCT hypervisor_type, arch FROM cloud.cluster WHERE removed IS NULL";
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                HypervisorType hypervisorType = HypervisorType.valueOf(rs.getString("hypervisor_type"));
+                String arch = rs.getString("arch");
+                hypervisorArchList.add(new Pair<>(hypervisorType, arch));
+            }
+        } catch (SQLException ex) {
+            logger.error("DB exception {}", ex.getMessage(), ex);
+            return null;
+        }
+        return hypervisorArchList;
     }
 
     @Override
