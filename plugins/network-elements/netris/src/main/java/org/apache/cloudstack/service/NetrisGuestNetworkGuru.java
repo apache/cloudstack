@@ -286,6 +286,12 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
         }
         String vpcName = null;
         Long vpcId = null;
+        Boolean globalRouting = null;
+        long networkOfferingId = networkVO.getNetworkOfferingId();
+        NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(networkOfferingId);
+        if (NetworkOffering.NetworkMode.ROUTED.equals(networkOfferingVO.getNetworkMode())) {
+            globalRouting = true;
+        }
         if (nonNull(networkVO.getVpcId())) {
             VpcVO vpc = _vpcDao.findById(networkVO.getVpcId());
             if (isNull(vpc)) {
@@ -295,8 +301,6 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
             vpcId = vpc.getId();
         } else {
             logger.debug(String.format("Creating IPAM Allocation before creating IPAM Subnet", networkVO.getName()));
-            long networkOfferingId = networkVO.getNetworkOfferingId();
-            NetworkOfferingVO networkOfferingVO = networkOfferingDao.findById(networkOfferingId);
             boolean isSourceNatSupported = !NetworkOffering.NetworkMode.ROUTED.equals(networkOfferingVO.getNetworkMode()) &&
                     networkOfferingServiceMapDao.areServicesSupportedByNetworkOffering(networkVO.getNetworkOfferingId(), Network.Service.SourceNat);
             boolean result = netrisService.createVpcResource(zone.getId(), networkVO.getAccountId(), networkVO.getDomainId(),
@@ -307,7 +311,8 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
                 throw new CloudRuntimeException(msg);
             }
         }
-        boolean result = netrisService.createVnetResource(zone.getId(), account.getId(), domain.getId(), vpcName, vpcId, networkVO.getName(), networkVO.getId(), networkVO.getCidr());
+        boolean result = netrisService.createVnetResource(zone.getId(), account.getId(), domain.getId(), vpcName, vpcId,
+                networkVO.getName(), networkVO.getId(), networkVO.getCidr(), globalRouting);
         if (!result) {
             throw new CloudRuntimeException("Failed to create Netris vNet resource for network: " + networkVO.getName());
         }

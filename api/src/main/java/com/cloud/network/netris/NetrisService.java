@@ -30,7 +30,7 @@ public interface NetrisService {
 
     boolean deleteVpcResource(long zoneId, long accountId, long domainId, Vpc vpc);
 
-    boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr);
+    boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr, Boolean globalRouting);
 
     boolean deleteVnetResource(long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr);
 
