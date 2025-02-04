@@ -41,6 +41,7 @@ import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.SDNProviderNetworkRule;
 import com.cloud.network.SDNProviderOpObject;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -86,7 +87,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.StartupNetrisCommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.resource.NetrisNetworkRule;
+import com.cloud.network.netris.NetrisNetworkRule;
 import org.apache.cloudstack.resourcedetail.FirewallRuleDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.FirewallRuleDetailsDao;
 import org.apache.logging.log4j.LogManager;
@@ -95,6 +96,7 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -440,13 +442,93 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
     }
 
     @Override
-    public boolean applyNetworkACLs(Network config, List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
-        return true;
+    public boolean applyNetworkACLs(Network network, List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
+        if (!canHandle(network, Network.Service.NetworkACL)) {
+            return false;
+        }
+
+        List<NetrisNetworkRule> nsxDelNetworkRules = new ArrayList<>();
+        boolean success = true;
+        for (NetworkACLItem rule : rules) {
+            String privatePort = PortForwardingServiceProvider.getPrivatePortRangeForACLRule(rule);
+            NetrisNetworkRule networkRule = getNetrisNetworkRuleForAcl(rule, privatePort);
+            if (Arrays.asList(NetworkACLItem.State.Active, NetworkACLItem.State.Add).contains(rule.getState())) {
+                success = success && netrisService.addFirewallRules(network, List.of(networkRule));
+            } else if (NetworkACLItem.State.Revoke == rule.getState()) {
+                nsxDelNetworkRules.add(networkRule);
+            }
+        }
+
+        if (!nsxDelNetworkRules.isEmpty()) {
+            success = netrisService.deleteFirewallRules(network, nsxDelNetworkRules);
+            if (!success) {
+                logger.warn("Not all firewall rules were successfully deleted");
+            }
+        }
+        return success;
+    }
+
+    private NetrisNetworkRule getNetrisNetworkRuleForAcl(NetworkACLItem rule, String privatePort) {
+        SDNProviderNetworkRule baseNetworkRule = new SDNProviderNetworkRule.Builder()
+                .setRuleId(rule.getId())
+                .setSourceCidrList(Objects.nonNull(rule.getSourceCidrList()) ? transformCidrListValues(rule.getSourceCidrList()) : List.of("ANY"))
+                .setTrafficType(rule.getTrafficType().toString())
+                .setProtocol(rule.getProtocol().toUpperCase())
+                .setPublicPort(String.valueOf(rule.getSourcePortStart()))
+                .setPrivatePort(String.valueOf(privatePort))
+                .setIcmpCode(rule.getIcmpCode())
+                .setIcmpType(rule.getIcmpType())
+                .setService(Network.Service.NetworkACL)
+                .build();
+        return new NetrisNetworkRule.Builder()
+                .baseRule(baseNetworkRule)
+                .aclAction(transformActionValue(rule.getAction()))
+                        .reason(rule.getReason())
+                .build();
+    }
+
+    protected List<String> transformCidrListValues(List<String> sourceCidrList) {
+        List<String> list = new ArrayList<>();
+        if (org.apache.commons.collections.CollectionUtils.isNotEmpty(sourceCidrList)) {
+            for (String cidr : sourceCidrList) {
+                if (cidr.equals("0.0.0.0/0")) {
+                    list.add("ANY");
+                } else {
+                    list.add(cidr);
+                }
+            }
+        }
+        return list;
+    }
+
+    protected NetrisNetworkRule.NetrisRuleAction transformActionValue(NetworkACLItem.Action action) {
+        if (action == NetworkACLItem.Action.Allow) {
+            return NetrisNetworkRule.NetrisRuleAction.PERMIT;
+        } else if (action == NetworkACLItem.Action.Deny) {
+            return NetrisNetworkRule.NetrisRuleAction.DENY;
+        }
+        String err = String.format("Unsupported action %s", action.toString());
+        logger.error(err);
+        throw new CloudRuntimeException(err);
     }
 
     @Override
     public boolean reorderAclRules(Vpc vpc, List<? extends Network> networks, List<? extends NetworkACLItem> networkACLItems) {
-        return false;
+        List<NetrisNetworkRule> aclRulesList = new ArrayList<>();
+        for (NetworkACLItem rule : networkACLItems) {
+            String privatePort = PortForwardingServiceProvider.getPrivatePortRangeForACLRule(rule);
+            aclRulesList.add(getNetrisNetworkRuleForAcl(rule, privatePort));
+        }
+        for (Network network: networks) {
+            netrisService.deleteFirewallRules(network, aclRulesList);
+        }
+        boolean success = true;
+        for (Network network : networks) {
+            for (NetrisNetworkRule aclRule : aclRulesList) {
+                success = success && netrisService.addFirewallRules(network, List.of(aclRule));
+            }
+        }
+        return success;
     }
 
     @Override
@@ -470,12 +552,12 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
         Long networkId = netrisObject.getNetworkVO() != null ? netrisObject.getNetworkVO().getId() : null;
         String networkName = netrisObject.getNetworkVO() != null ? netrisObject.getNetworkVO().getName() : null;
         String vpcCidr = netrisObject.getVpcVO() != null ? netrisObject.getVpcVO().getCidr() : null;
-
+        SDNProviderNetworkRule baseNetRule = networkRule.getBaseRule();
         return create ?
-                netrisService.createPortForwardingRule(networkRule.getZoneId(), networkRule.getAccountId(), networkRule.getDomainId(),
-                        vpcName, vpcId, networkName, networkId, netrisObject.isVpcResource(), vpcCidr, networkRule) :
-                netrisService.deletePortForwardingRule(networkRule.getZoneId(), networkRule.getAccountId(), networkRule.getDomainId(),
-                        vpcName, vpcId, networkName, networkId, netrisObject.isVpcResource(), vpcCidr, networkRule);
+                netrisService.createPortForwardingRule(baseNetRule.getZoneId(), baseNetRule.getAccountId(), baseNetRule.getDomainId(),
+                        vpcName, vpcId, networkName, networkId, netrisObject.isVpcResource(), vpcCidr, baseNetRule) :
+                netrisService.deletePortForwardingRule(baseNetRule.getZoneId(), baseNetRule.getAccountId(), baseNetRule.getDomainId(),
+                        vpcName, vpcId, networkName, networkId, netrisObject.isVpcResource(), vpcCidr, baseNetRule);
     }
 
     private boolean applyPFRulesInternal(Network network, List<PortForwardingRule> rules) {
@@ -492,20 +574,23 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
                 String privatePort = PortForwardingServiceProvider.getPrivatePFPortRange(rule);
                 FirewallRuleDetailVO ruleDetail = firewallRuleDetailsDao.findDetail(rule.getId(), ApiConstants.NETRIS_DETAIL_KEY);
 
-                NetrisNetworkRule networkRule = new NetrisNetworkRule();
-                networkRule.setDomainId(netrisObject.getDomainId());
-                networkRule.setAccountId(netrisObject.getAccountId());
-                networkRule.setZoneId(netrisObject.getZoneId());
-                networkRule.setNetworkResourceId(netrisObject.getNetworkResourceId());
-                networkRule.setNetworkResourceName(netrisObject.getNetworkResourceName());
-                networkRule.setVpcResource(netrisObject.isVpcResource());
-                networkRule.setVmId(Objects.nonNull(vm) ? vm.getId() : 0);
-                networkRule.setVmIp(Objects.nonNull(vm) ? vm.getPrivateIpAddress() : null);
-                networkRule.setPublicIp(publicIp.getAddress().addr());
-                networkRule.setPrivatePort(privatePort);
-                networkRule.setPublicPort(publicPort);
-                networkRule.setRuleId(rule.getId());
-                networkRule.setProtocol(rule.getProtocol().toUpperCase(Locale.ROOT));
+                SDNProviderNetworkRule baseNetworkRule = new SDNProviderNetworkRule.Builder()
+                        .setDomainId(netrisObject.getDomainId())
+                .setAccountId(netrisObject.getAccountId())
+                .setZoneId(netrisObject.getZoneId())
+                .setNetworkResourceId(netrisObject.getNetworkResourceId())
+                .setNetworkResourceName(netrisObject.getNetworkResourceName())
+                .setVpcResource(netrisObject.isVpcResource())
+                .setVmId(Objects.nonNull(vm) ? vm.getId() : 0)
+                .setVmIp(Objects.nonNull(vm) ? vm.getPrivateIpAddress() : null)
+                .setPublicIp(publicIp.getAddress().addr())
+                .setPrivatePort(privatePort)
+                .setPublicPort(publicPort)
+                .setRuleId(rule.getId())
+                .setProtocol(rule.getProtocol().toUpperCase(Locale.ROOT))
+                        .build();
+
+                NetrisNetworkRule networkRule = new NetrisNetworkRule.Builder().baseRule(baseNetworkRule).build();
 
                 if (Arrays.asList(FirewallRule.State.Add, FirewallRule.State.Active).contains(rule.getState())) {
                     boolean pfRuleResult = addOrRemovePFRuleOnNetris(vm, rule, networkRule, netrisObject, true);

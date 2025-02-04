@@ -17,8 +17,11 @@
 package com.cloud.network.netris;
 
 import com.cloud.network.IpAddress;
+import com.cloud.network.Network;
 import com.cloud.network.SDNProviderNetworkRule;
 import com.cloud.network.vpc.Vpc;
+
+import java.util.List;
 
 public interface NetrisService {
     boolean createIPAMAllocationsForZoneLevelPublicRanges(long zoneId);
@@ -42,6 +45,9 @@ public interface NetrisService {
     boolean createStaticNatRule(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String vpcCidr, String staticNatIp, String vmIp);
 
     boolean deleteStaticNatRule(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String staticNatIp);
+
+    boolean addFirewallRules(Network network, List<NetrisNetworkRule> firewallRules);
+    boolean deleteFirewallRules(Network network, List<NetrisNetworkRule> firewallRules);
 
     boolean addOrUpdateStaticRoute(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String prefix, String nextHop, Long routeId, boolean updateRoute);
 

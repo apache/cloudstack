@@ -14,43 +14,33 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.resource;
-
-import com.cloud.network.SDNProviderNetworkRule;
+package org.apache.cloudstack.agent.api;
 
 import java.util.List;
 
-public class NsxNetworkRule {
-
-    public enum NsxRuleAction {
-        ALLOW, DROP
+public class DeleteNetrisACLCommand extends NetrisCommand {
+    Long vpcId;
+    String vpcName;
+    List<String> aclRuleNames;
+    public DeleteNetrisACLCommand(long zoneId, Long accountId, Long domainId, String name, Long id, boolean isVpc, Long vpcId, String vpcName) {
+        super(zoneId, accountId, domainId, name, id, isVpc);
+        this.vpcId = vpcId;
+        this.vpcName = vpcName;
     }
 
-    private SDNProviderNetworkRule baseRule;
-    private List<NsxLoadBalancerMember> memberList;
-    private NsxRuleAction aclAction;
-
-    public SDNProviderNetworkRule getBaseRule() {
-        return baseRule;
+    public Long getVpcId() {
+        return vpcId;
     }
 
-    public void setBaseRule(SDNProviderNetworkRule baseRule) {
-        this.baseRule = baseRule;
+    public String getVpcName() {
+        return vpcName;
     }
 
-    public List<NsxLoadBalancerMember> getMemberList() {
-        return memberList;
+    public List<String> getAclRuleNames() {
+        return aclRuleNames;
     }
 
-    public void setMemberList(List<NsxLoadBalancerMember> memberList) {
-        this.memberList = memberList;
-    }
-
-    public NsxRuleAction getAclAction() {
-        return aclAction;
-    }
-
-    public void setAclAction(NsxRuleAction aclAction) {
-        this.aclAction = aclAction;
+    public void setAclRuleNames(List<String> aclRuleNames) {
+        this.aclRuleNames = aclRuleNames;
     }
 }

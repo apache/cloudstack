@@ -16,7 +16,12 @@
 // under the License.
 package org.apache.cloudstack.resource;
 
-import com.cloud.network.SDNProviderNetworkRule;
+public class NetrisPortGroup {
+    private String ports;
 
-public class NetrisNetworkRule extends SDNProviderNetworkRule {
+    public NetrisPortGroup(String ports) {
+        this.ports = ports;
+    }
+
+    public String getPorts() { return ports; }
 }
