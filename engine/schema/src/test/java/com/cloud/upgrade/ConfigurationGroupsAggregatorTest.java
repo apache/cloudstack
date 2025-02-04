@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.upgrade;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
@@ -36,9 +33,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
-
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ConfigurationGroupsAggregatorTest {
@@ -64,13 +58,7 @@ public class ConfigurationGroupsAggregatorTest {
         config.setGroupId(1L);
         config.setSubGroupId(1L);
 
-        SearchBuilder<ConfigurationVO> sb = Mockito.mock(SearchBuilder.class);
-        when(configDao.createSearchBuilder()).thenReturn(sb);
-        Mockito.when(sb.select("name", SearchCriteria.Func.NATIVE, "test.config.name")).thenReturn(sb);
-        Mockito.when(sb.select("groupId", SearchCriteria.Func.NATIVE, 1L)).thenReturn(sb);
-        Mockito.when(sb.select("subGroupId", SearchCriteria.Func.NATIVE, 1L)).thenReturn(sb);
-        Mockito.when(sb.entity()).thenReturn(config);
-        when(configDao.searchIncludingRemoved(any(), isNull(), isNull(), eq(false))).thenReturn(Collections.singletonList(config));
+        when(configDao.searchPartialConfigurations()).thenReturn(Collections.singletonList(config));
 
         ConfigurationSubGroupVO configSubGroup = Mockito.mock(ConfigurationSubGroupVO.class);
         when(configSubGroupDao.findByName("name")).thenReturn(configSubGroup);
