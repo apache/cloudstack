@@ -50,6 +50,7 @@ import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
@@ -1452,7 +1453,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                     }
                 }
 
-                if (encryptDetails != null) {
+                if (encryptDetails != null &&
+                        attachingPool.getType().encryptionSupportMode() == Storage.EncryptionSupport.Hypervisor) {
                     diskdef.setLibvirtDiskEncryptDetails(encryptDetails);
                 }
 
