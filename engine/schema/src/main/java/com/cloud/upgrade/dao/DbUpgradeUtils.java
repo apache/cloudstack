@@ -70,7 +70,6 @@ public class DbUpgradeUtils {
 
     public static void changeTableColumnIfNotExist(Connection conn, String tableName, String oldColumnName, String newColumnName, String columnDefinition) {
         if (dao.columnExists(conn, tableName, oldColumnName)) {
-            System.out.println("column exists------------------------" + oldColumnName);
             dao.changeColumn(conn, tableName, oldColumnName, newColumnName, columnDefinition);
         }
     }
