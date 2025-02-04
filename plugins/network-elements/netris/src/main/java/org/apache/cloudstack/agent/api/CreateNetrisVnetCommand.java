@@ -24,6 +24,7 @@ public class CreateNetrisVnetCommand extends NetrisCommand {
     private String gateway;
     private String netrisTag;
     private String ipv6Cidr;
+    private Boolean globalRouting;
 
     public CreateNetrisVnetCommand(Long zoneId, Long accountId, Long domainId, String vpcName, Long vpcId, String vNetName, Long networkId, String cidr, String gateway, boolean isVpc) {
         super(zoneId, accountId, domainId, vNetName, networkId, isVpc);
@@ -72,5 +73,13 @@ public class CreateNetrisVnetCommand extends NetrisCommand {
 
     public void setIpv6Cidr(String ipv6Cidr) {
         this.ipv6Cidr = ipv6Cidr;
+    }
+
+    public Boolean isGlobalRouting() {
+        return globalRouting;
+    }
+
+    public void setGlobalRouting(Boolean globalRouting) {
+        this.globalRouting = globalRouting;
     }
 }

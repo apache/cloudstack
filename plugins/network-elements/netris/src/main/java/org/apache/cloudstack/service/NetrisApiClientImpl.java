@@ -716,6 +716,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String netrisGateway = cmd.getGateway() + "/" + netmask;
         String netrisV6Cidr = cmd.getIpv6Cidr();
         boolean isVpc = cmd.isVpc();
+        Boolean isGlobalRouting = cmd.isGlobalRouting();
 
         String netrisVpcName = getNetrisVpcName(cmd, vpcId, vpcName);
         VPCListing associatedVpc = getNetrisVpcResource(netrisVpcName);
@@ -733,7 +734,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String netrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, vNetName) ;
         String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, vnetCidr) ;
 
-        createIpamSubnetInternal(netrisSubnetName, vnetCidr, SubnetBody.PurposeEnum.COMMON, associatedVpc);
+        createIpamSubnetInternal(netrisSubnetName, vnetCidr, SubnetBody.PurposeEnum.COMMON, associatedVpc, isGlobalRouting);
         if (Objects.nonNull(netrisV6Cidr)) {
             String netrisV6IpamAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, netrisV6Cidr);
             String netrisV6SubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, netrisV6Cidr) ;
@@ -741,7 +742,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             if (Objects.isNull(createdIpamAllocation)) {
                 throw new CloudRuntimeException(String.format("Failed to create Netris IPAM Allocation %s for VPC %s", netrisV6IpamAllocationName, netrisVpcName));
             }
-            createIpamSubnetInternal(netrisV6SubnetName, netrisV6Cidr, SubnetBody.PurposeEnum.COMMON, associatedVpc);
+            createIpamSubnetInternal(netrisV6SubnetName, netrisV6Cidr, SubnetBody.PurposeEnum.COMMON, associatedVpc, isGlobalRouting);
         }
         logger.debug("Successfully created IPAM Subnet {} for network {} on Netris", netrisSubnetName, networkName);
 
@@ -851,7 +852,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             IpTreeSubnet exactSubnet = getIpamSubnetByAllocationAndPrefixAndPurposeAndVpc(ipamAllocationId, exactCidr, IpTreeSubnet.PurposeEnum.COMMON, systemVpc);
             if (exactSubnet == null) {
                 String ipamSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, exactCidr);
-                createIpamSubnetInternal(ipamSubnetName, exactCidr, SubnetBody.PurposeEnum.COMMON, systemVpc);
+                createIpamSubnetInternal(ipamSubnetName, exactCidr, SubnetBody.PurposeEnum.COMMON, systemVpc, null);
             }
         } catch (ApiException e) {
             String msg = String.format("Error setting up the Netris Public Range %s on super CIDR %s", exactCidr, superCidr);
@@ -1000,7 +1001,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             List<IpTreeSubnet> matchedSubnets = getSubnet(vpcFilter, netrisSubnetName);
             if (matchedSubnets.isEmpty()) {
                 VPCListing systemVpc = getSystemVpc();
-                createIpamSubnetInternal(natIp, natIp, SubnetBody.PurposeEnum.NAT, systemVpc);
+                createIpamSubnetInternal(natIp, natIp, SubnetBody.PurposeEnum.NAT, systemVpc, null);
                 return;
             }
             logger.debug("NAT subnet: {} already exists", natIp);
@@ -1191,7 +1192,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         }
     }
 
-    private InlineResponse2004Data createIpamSubnetInternal(String subnetName, String subnetPrefix, SubnetBody.PurposeEnum purpose, VPCListing vpc) {
+    private InlineResponse2004Data createIpamSubnetInternal(String subnetName, String subnetPrefix, SubnetBody.PurposeEnum purpose, VPCListing vpc, Boolean isGlobalRouting) {
         logger.debug("Creating Netris IPAM Subnet {} for VPC {}", subnetPrefix, vpc.getName());
         try {
 
@@ -1215,6 +1216,9 @@ public class NetrisApiClientImpl implements NetrisApiClient {
 
             subnetBody.setPurpose(purpose);
             subnetBody.setPrefix(subnetPrefix);
+            if (isGlobalRouting != null) {
+                subnetBody.setGlobalRouting(isGlobalRouting);
+            }
             IpamApi ipamApi = apiClient.getApiStubForMethod(IpamApi.class);
             InlineResponse2004 subnetResponse = ipamApi.apiV2IpamSubnetPost(subnetBody);
             if (subnetResponse == null || !subnetResponse.isIsSuccess()) {

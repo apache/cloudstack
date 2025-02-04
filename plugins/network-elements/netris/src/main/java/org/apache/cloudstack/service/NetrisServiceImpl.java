@@ -204,13 +204,14 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
     }
 
     @Override
-    public boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr) {
+    public boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr, Boolean globalRouting) {
         NetworkVO network = networkDao.findById(networkId);
         String vxlanId = Networks.BroadcastDomainType.getValue(network.getBroadcastUri());
         CreateNetrisVnetCommand cmd = new CreateNetrisVnetCommand(zoneId, accountId, domainId, vpcName, vpcId, networkName, networkId, cidr, network.getGateway(), !Objects.isNull(vpcId));
         cmd.setVxlanId(Integer.parseInt(vxlanId));
         NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(zoneId);
         cmd.setNetrisTag(netrisProvider.getNetrisTag());
+        cmd.setGlobalRouting(globalRouting);
         if (Objects.nonNull(networkId)) {
             Ipv6GuestPrefixSubnetNetworkMapVO ipv6PrefixNetworkMapVO = ipv6PrefixNetworkMapDao.findByNetworkId(networkId);
             if (Objects.nonNull(ipv6PrefixNetworkMapVO)) {
