@@ -28,10 +28,12 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.agent.api.CreateNetrisACLCommand;
 import org.apache.cloudstack.agent.api.AddOrUpdateNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisNatCommand;
+import org.apache.cloudstack.agent.api.DeleteNetrisACLCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
@@ -105,7 +107,11 @@ public class NetrisResource implements ServerResource {
         } else if (cmd instanceof DeleteNetrisNatRuleCommand) {
             return executeRequest((DeleteNetrisNatRuleCommand) cmd);
         } else if (cmd instanceof CreateOrUpdateNetrisNatCommand) {
-            return executeRequest((CreateOrUpdateNetrisNatCommand) cmd);
+          return executeRequest((CreateOrUpdateNetrisNatCommand) cmd);
+        } else if (cmd instanceof CreateNetrisACLCommand) {
+            return executeRequest((CreateNetrisACLCommand) cmd);
+        } else if (cmd instanceof DeleteNetrisACLCommand) {
+            return executeRequest((DeleteNetrisACLCommand) cmd);
         } else if (cmd instanceof DeleteNetrisStaticRouteCommand) {
             return executeRequest((DeleteNetrisStaticRouteCommand) cmd);
         } else if (cmd instanceof AddOrUpdateNetrisStaticRouteCommand) {
@@ -302,6 +308,22 @@ public class NetrisResource implements ServerResource {
         boolean result = netrisApiClient.deleteNatRule(cmd);
         if (!result) {
             return new NetrisAnswer(cmd, false, String.format("Netris NAT rule: %s deletion failed", cmd.getNatRuleName()));
+        }
+        return new NetrisAnswer(cmd, true, "OK");
+    }
+
+    private Answer executeRequest(CreateNetrisACLCommand cmd) {
+        boolean result = netrisApiClient.addAclRule(cmd);
+        if (!result) {
+            return new NetrisAnswer(cmd, false, String.format("Creation of Netris ACL rule: %s failed", cmd.getNetrisAclName()));
+        }
+        return new NetrisAnswer(cmd, true, "OK");
+    }
+
+    private Answer executeRequest(DeleteNetrisACLCommand cmd) {
+        boolean result = netrisApiClient.deleteAclRule(cmd);
+        if (!result) {
+            return new NetrisAnswer(cmd, false, String.format("Failed to delete Netris ACLs: %s", String.join("'", cmd.getAclRuleNames())));
         }
         return new NetrisAnswer(cmd, true, "OK");
     }

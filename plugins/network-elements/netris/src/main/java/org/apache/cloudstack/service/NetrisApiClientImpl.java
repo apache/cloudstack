@@ -21,6 +21,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import io.netris.ApiClient;
 import io.netris.ApiException;
 import io.netris.ApiResponse;
+import io.netris.api.v1.AclApi;
 import io.netris.api.v1.AuthenticationApi;
 import io.netris.api.v1.RoutesApi;
 import io.netris.api.v1.SitesApi;
@@ -29,6 +30,11 @@ import io.netris.api.v2.IpamApi;
 import io.netris.api.v2.NatApi;
 import io.netris.api.v2.VNetApi;
 import io.netris.api.v2.VpcApi;
+import io.netris.model.AclAddItem;
+import io.netris.model.AclBodyVpc;
+import io.netris.model.AclDeleteItem;
+import io.netris.model.AclGetBody;
+import io.netris.model.AclResponseGetOk;
 import io.netris.model.AllocationBody;
 import io.netris.model.AllocationBodyVpc;
 import io.netris.model.FilterBySites;
@@ -80,14 +86,17 @@ import io.netris.model.VnetsBody;
 import io.netris.model.response.AuthResponse;
 import io.netris.model.response.TenantResponse;
 import io.netris.model.response.TenantsResponse;
+import org.apache.cloudstack.agent.api.CreateNetrisACLCommand;
 import org.apache.cloudstack.agent.api.AddOrUpdateNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisNatCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.DeleteNetrisACLCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.NetrisCommand;
 import org.apache.cloudstack.agent.api.ReleaseNatIpCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
 import org.apache.cloudstack.resource.NetrisResourceObjectUtils;
@@ -98,14 +107,18 @@ import org.apache.logging.log4j.Logger;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class NetrisApiClientImpl implements NetrisApiClient {
 
     private final Logger logger = LogManager.getLogger(getClass());
+    private static final String ANY_IP = "0.0.0.0/0";
+    private static final String[] PROTOCOL_LIST = new String[]{"TCP", "UDP", "ICMP", "ALL"};
 
     private static ApiClient apiClient;
 
@@ -296,6 +309,120 @@ public class NetrisApiClientImpl implements NetrisApiClient {
     }
 
     @Override
+    public boolean addAclRule(CreateNetrisACLCommand cmd) {
+        String aclName = cmd.getNetrisAclName();
+        try {
+            AclApi aclApi = apiClient.getApiStubForMethod(AclApi.class);
+            AclAddItem aclAddItem = new AclAddItem();
+            aclAddItem.setAction(cmd.getAction());
+            aclAddItem.setComment(String.format("ACL rule: %s. %s", cmd.getNetrisAclName(), cmd.getReason()));
+            aclAddItem.setName(aclName);
+            String protocol = cmd.getProtocol();
+            if ("TCP".equals(protocol)) {
+                aclAddItem.setEstablished(new BigDecimal(1));
+            } else {
+                aclAddItem.setReverse("yes");
+            }
+            if (!Arrays.asList(PROTOCOL_LIST).contains(protocol)) {
+                aclAddItem.setProto("ip");
+                aclAddItem.setSrcPortTo(cmd.getIcmpType());
+                // TODO: set proto number: where should the protocol number be set - API sets the protocol number to Src-from & to and Dest-from & to fields
+            } else if ("ICMP".equals(protocol)) {
+                aclAddItem.setProto("icmp");
+                if (cmd.getIcmpType() != -1) {
+                    aclAddItem.setIcmpType(cmd.getIcmpType());
+                }
+            } else {
+                aclAddItem.setProto(protocol.toLowerCase(Locale.ROOT));
+            }
+
+            aclAddItem.setDstPortFrom(cmd.getDestPortStart());
+            aclAddItem.setDstPortTo(cmd.getDestPortEnd());
+            aclAddItem.setDstPrefix(cmd.getDestPrefix());
+            aclAddItem.setSrcPrefix(cmd.getSourcePrefix());
+            aclAddItem.setSrcPortFrom(1);
+            aclAddItem.setSrcPortTo(65535);
+            if (NatPutBody.ProtocolEnum.ICMP.name().equalsIgnoreCase(protocol)) {
+                aclAddItem.setIcmpType(cmd.getIcmpType());
+            }
+            String netrisVpcName = getNetrisVpcName(cmd, cmd.getVpcId(), cmd.getVpcName());
+            VPCListing vpcResource = getNetrisVpcResource(netrisVpcName);
+            if (Objects.isNull(vpcResource)) {
+                return false;
+            }
+            AclBodyVpc vpc = new AclBodyVpc().id(vpcResource.getId());
+            aclAddItem.setVpc(vpc);
+            List<String> aclNames = List.of(aclName);
+            Pair<Boolean, List<BigDecimal>> resultAndMatchingAclIds = getMatchingAclIds(aclNames, netrisVpcName);
+            if (!resultAndMatchingAclIds.second().isEmpty()) {
+                logger.debug("Netris ACL rule: {} already exists", aclName);
+                return true;
+            }
+            aclApi.apiAclPost(aclAddItem);
+        } catch (ApiException e) {
+            logAndThrowException(String.format("Failed to create Netris ACL: %s", cmd.getNetrisAclName()), e);
+        }
+        return true;
+    }
+
+    @Override
+    public boolean deleteAclRule(DeleteNetrisACLCommand cmd) {
+        List<String> aclNames = cmd.getAclRuleNames();
+        try {
+            AclApi aclApi = apiClient.getApiStubForMethod(AclApi.class);
+
+            String suffix = getNetrisVpcNameSuffix(cmd.getVpcId(), cmd.getVpcName(), cmd.getId(), cmd.getName(), cmd.isVpc());
+            String vpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, suffix);
+            Pair<Boolean, List<BigDecimal>> resultAndMatchingAclIds = getMatchingAclIds(aclNames, vpcName);
+            Boolean result = resultAndMatchingAclIds.first();
+            List<BigDecimal> matchingAclIds = resultAndMatchingAclIds.second();
+            if (!result) {
+                logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", vpcName, tenantId);
+                return false;
+            }
+            if (matchingAclIds.isEmpty()) {
+                logger.warn("There doesn't seem to be any ACLs on Netris matching {}", aclNames.size() > 1 ? String.join(",", aclNames) : aclNames);
+                return true;
+            }
+            AclDeleteItem aclDeleteItem = new AclDeleteItem();
+            aclDeleteItem.setId(matchingAclIds);
+            aclDeleteItem.setTenantsID(String.valueOf(tenantId));
+            aclApi.apiAclDelete(aclDeleteItem);
+        } catch (ApiException e) {
+            logAndThrowException(String.format("Failed to delete Netris ACLs: %s", String.join(",", cmd.getAclRuleNames())), e);
+        }
+        return true;
+    }
+
+    Pair<Boolean, List<BigDecimal>> getMatchingAclIds(List<String> aclNames, String vpcName) {
+        try {
+            AclApi aclApi = apiClient.getApiStubForMethod(AclApi.class);
+            VPCListing vpcResource = getVpcByNameAndTenant(vpcName);
+            if (vpcResource == null) {
+                logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", vpcName, tenantId);
+                return new Pair<>(false, Collections.emptyList());
+            }
+            FilterByVpc vpcFilter = new FilterByVpc();
+            vpcFilter.add(vpcResource.getId());
+            FilterBySites siteFilter = new FilterBySites();
+            siteFilter.add(siteId);
+            AclResponseGetOk aclGetResponse = aclApi.apiAclGet(siteFilter, vpcFilter);
+            if (aclGetResponse == null || !aclGetResponse.isIsSuccess()) {
+                logger.warn("No ACLs were found to be present for the specific Netris VPC resource {}." +
+                        " Netris ACLs may have been deleted out of band.", vpcName);
+                return new Pair<>(true, Collections.emptyList());
+            }
+            List<AclGetBody> aclList = aclGetResponse.getData();
+            return new Pair<>(true, aclList.stream()
+                    .filter(acl -> aclNames.contains(acl.getName()))
+                    .map(acl -> BigDecimal.valueOf(acl.getId()))
+                    .collect(Collectors.toList()));
+        } catch (ApiException e) {
+            logAndThrowException("Failed to retrieve Netris ACLs", e);
+        }
+        return new Pair<>(true, Collections.emptyList());
+    }
+
     public boolean addOrUpdateStaticRoute(AddOrUpdateNetrisStaticRouteCommand cmd) {
         String prefix = cmd.getPrefix();
         String nextHop = cmd.getNextHop();
@@ -491,13 +618,6 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return new Pair<>(false, null);
     }
 
-    private void deleteNatSubnet(Integer netrisVpcId, String natIp) {
-        FilterByVpc vpcFilter = new FilterByVpc();
-        vpcFilter.add(netrisVpcId);
-        String netrisSubnetName = natIp + "/32";
-        deleteSubnetInternal(vpcFilter, null, netrisSubnetName);
-    }
-
     public void deleteNatRule(String natRuleName, Integer snatRuleId, String netrisVpcName) {
         logger.debug("Deleting NAT rule on Netris: {} for VPC {}", natRuleName, netrisVpcName);
         try {
@@ -597,9 +717,8 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String netrisV6Cidr = cmd.getIpv6Cidr();
         boolean isVpc = cmd.isVpc();
 
-        String suffix = getNetrisVpcNameSuffix(vpcId, vpcName, networkId, networkName, isVpc);
-        String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, suffix);
-        VPCListing associatedVpc = getVpcByNameAndTenant(netrisVpcName);
+        String netrisVpcName = getNetrisVpcName(cmd, vpcId, vpcName);
+        VPCListing associatedVpc = getNetrisVpcResource(netrisVpcName);
         if (associatedVpc == null) {
             logger.error("Failed to find Netris VPC with name: {}, to create the corresponding vNet for network {}", netrisVpcName, networkName);
             return false;
@@ -644,9 +763,8 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         boolean isVpc = cmd.isVpc();
         String vnetCidr = cmd.getVNetCidr();
         try {
-            String suffix = getNetrisVpcNameSuffix(vpcId, vpcName, networkId, networkName, isVpc);
-            String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, suffix);
-            VPCListing associatedVpc = getVpcByNameAndTenant(netrisVpcName);
+            String netrisVpcName = getNetrisVpcName(cmd, vpcId, vpcName);
+            VPCListing associatedVpc = getNetrisVpcResource(netrisVpcName);
             if (associatedVpc == null) {
                 logger.error("Failed to find Netris VPC with name: {}, to create the corresponding vNet for network {}", netrisVpcName, networkName);
                 return false;
@@ -758,9 +876,8 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String vNetName = isVpc ?
                 String.format("V%s-N%s-%s", vpcId, networkId, networkName) :
                 String.format("N%s-%s", networkId, networkName);
-        String vpcSuffix = getNetrisVpcNameSuffix(vpcId, vpcName, networkId, networkName, isVpc);
-        String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, vpcSuffix);
-        VPCListing vpcResource = getVpcByNameAndTenant(netrisVpcName);
+        String netrisVpcName = getNetrisVpcName(cmd, vpcId, vpcName);
+        VPCListing vpcResource = getNetrisVpcResource(netrisVpcName);
         if (vpcResource == null) {
             logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", netrisVpcName, tenantId);
             return false;
@@ -781,9 +898,9 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         NatGetBody existingNatRule = netrisNatRuleExists(ruleName);
         boolean ruleExists = Objects.nonNull(existingNatRule);
         if (!ruleExists) {
-            String destinationAddress = action == NatPostBody.ActionEnum.SNAT ? "0.0.0.0/0" : cmd.getDestinationAddress() + "/32";
+            String destinationAddress = action == NatPostBody.ActionEnum.SNAT ? ANY_IP : cmd.getDestinationAddress() + "/32";
             String destinationPort = cmd.getDestinationPort();
-            String sourceAddress = action == NatPostBody.ActionEnum.SNAT ? vpcCidr : "0.0.0.0/0";
+            String sourceAddress = action == NatPostBody.ActionEnum.SNAT ? vpcCidr : ANY_IP;
             String sourcePort = "1-65535";
             String snatToIp = action == NatPostBody.ActionEnum.SNAT ? targetIpSubnet : null;
             String dnatToIp = action == NatPostBody.ActionEnum.DNAT ? cmd.getSourceAddress() + "/32" : null;
@@ -834,9 +951,8 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         boolean isVpc = cmd.isVpc();
 
         try {
-            String vpcSuffix = getNetrisVpcNameSuffix(vpcId, vpcName, networkId, networkName, isVpc);
-            String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, vpcSuffix);
-            VPCListing vpcResource = getVpcByNameAndTenant(netrisVpcName);
+            String netrisVpcName = getNetrisVpcName(cmd, vpcId, vpcName);
+            VPCListing vpcResource = getNetrisVpcResource(netrisVpcName);
             if (vpcResource == null) {
                 logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", netrisVpcName, tenantId);
                 return false;
@@ -856,7 +972,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             site.setId(siteId);
             site.setName(siteName);
             natBody.setSite(site);
-            natBody.setSourceAddress("0.0.0.0/0");
+            natBody.setSourceAddress(ANY_IP);
             natBody.setDnatToIP(vmIp);
 
             NatBodyVpcVpc vpc = new NatBodyVpcVpc();
@@ -981,17 +1097,13 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return true;
     }
 
-    private void updateNatRequest(NatPostBody natBody) {
-
-    }
-
     private boolean updateSnatRuleInternal(String snatRuleName, String snatIP, String netrisVpcName, String networkName,
                                            String vNetName, Integer netisSnatId, String vpcCidr) {
         try {
             NatApi natApi = apiClient.getApiStubForMethod(NatApi.class);
             NatPutBody natBody = new NatPutBody();
             natBody.setAction(NatPutBody.ActionEnum.SNAT);
-            natBody.setDestinationAddress("0.0.0.0/0");
+            natBody.setDestinationAddress(ANY_IP);
             natBody.setName(snatRuleName);
             natBody.setProtocol(NatPutBody.ProtocolEnum.ALL);
 
@@ -1213,5 +1325,25 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         } catch (ApiException e) {
             throw new CloudRuntimeException("Failed to list Netris NAT rules");
         }
+    }
+
+    private VPCListing getNetrisVpcResource(String netrisVpcName) {
+        VPCListing vpcResource = getVpcByNameAndTenant(netrisVpcName);
+        if (vpcResource == null) {
+            logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", netrisVpcName, tenantId);
+        }
+        return vpcResource;
+    }
+
+    private String getNetrisVpcName(NetrisCommand cmd, Long vpcId, String vpcName) {
+        String suffix = getNetrisVpcNameSuffix(vpcId, vpcName, cmd.getId(), cmd.getName(), cmd.isVpc());
+        return NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, suffix);
+    }
+
+    private void deleteNatSubnet(Integer netrisVpcId, String natIp) {
+        FilterByVpc vpcFilter = new FilterByVpc();
+        vpcFilter.add(netrisVpcId);
+        String netrisSubnetName = natIp + "/32";
+        deleteSubnetInternal(vpcFilter, null, netrisSubnetName);
     }
 }

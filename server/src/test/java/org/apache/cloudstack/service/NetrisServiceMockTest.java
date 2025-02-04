@@ -17,9 +17,13 @@
 package org.apache.cloudstack.service;
 
 import com.cloud.network.IpAddress;
+import com.cloud.network.Network;
 import com.cloud.network.SDNProviderNetworkRule;
+import com.cloud.network.netris.NetrisNetworkRule;
 import com.cloud.network.netris.NetrisService;
 import com.cloud.network.vpc.Vpc;
+
+import java.util.List;
 
 public class NetrisServiceMockTest implements NetrisService {
     @Override
@@ -74,6 +78,16 @@ public class NetrisServiceMockTest implements NetrisService {
 
     @Override
     public boolean deleteStaticNatRule(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String staticNatIp) {
+        return true;
+    }
+
+    @Override
+    public boolean addFirewallRules(Network network, List<NetrisNetworkRule> firewallRules) {
+        return true;
+    }
+
+    @Override
+    public boolean deleteFirewallRules(Network network, List<NetrisNetworkRule> firewallRules) {
         return true;
     }
 

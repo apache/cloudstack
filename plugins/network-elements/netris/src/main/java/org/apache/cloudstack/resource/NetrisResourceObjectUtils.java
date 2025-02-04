@@ -22,7 +22,7 @@ import org.apache.commons.lang3.ArrayUtils;
 public class NetrisResourceObjectUtils {
 
     public enum NetrisObjectType {
-        VPC, IPAM_ALLOCATION, IPAM_SUBNET, VNET, SNAT, STATICNAT, DNAT, STATICROUTE
+        VPC, IPAM_ALLOCATION, IPAM_SUBNET, VNET, SNAT, STATICNAT, DNAT, STATICROUTE, ACL
     }
 
     public static String retrieveNetrisResourceObjectName(NetrisCommand cmd, NetrisObjectType netrisObjectType, String... suffixes) {
@@ -77,6 +77,7 @@ public class NetrisResourceObjectUtils {
                 suffixes = new String[0];
                 break;
             case VNET:
+            case ACL:
                break;
             default:
                 stringBuilder.append(String.format("-%s", objectName));
