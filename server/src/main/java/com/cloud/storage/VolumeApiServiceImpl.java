@@ -2429,7 +2429,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     protected StoragePool getPoolForAllocatedOrUploadedVolumeForAttach(final VolumeInfo volumeToAttach, final UserVmVO vm) {
         DataCenter zone = _dcDao.findById(vm.getDataCenterId());
         Pair<Long, Long> clusterHostId = virtualMachineManager.findClusterAndHostIdForVm(vm, false);
-        long podId = vm.getPodIdToDeployIn();
+        Long podId = vm.getPodIdToDeployIn();
         if (clusterHostId.first() != null) {
             Cluster cluster = clusterDao.findById(clusterHostId.first());
             podId = cluster.getPodId();
