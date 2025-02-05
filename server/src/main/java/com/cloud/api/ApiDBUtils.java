@@ -2260,8 +2260,8 @@ public class ApiDBUtils {
         return s_resourceIconDao.findByResourceUuid(resourceUUID, resourceType);
     }
 
-    public static BackupResponse newBackupResponse(Backup backup) {
-        return s_backupDao.newBackupResponse(backup);
+    public static BackupResponse newBackupResponse(Backup backup, Boolean listVmDetails) {
+        return s_backupDao.newBackupResponse(backup, listVmDetails);
     }
 
     public static BackupScheduleResponse newBackupScheduleResponse(BackupSchedule schedule) {

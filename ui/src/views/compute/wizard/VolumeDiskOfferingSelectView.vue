@@ -33,7 +33,7 @@
           <span>
             <a-select
               @change="updateOfferingSelect($event, record.id)"
-              :defaultValue="getDefaultDiskOffering(record)"
+              :value="getDefaultDiskOffering(record)"
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
@@ -195,7 +195,7 @@ export default {
       this.loading = false
     },
     getDefaultDiskOffering (record) {
-      return this.diskOfferings.find(x => x.id === record.diskofferingid)?.id || this.diskOfferings[0]?.id
+      return this.diskOfferings.find(x => x.id === record?.diskofferingid) ? record.diskofferingid : null
     },
     setDefaultValues () {
       this.values = {}

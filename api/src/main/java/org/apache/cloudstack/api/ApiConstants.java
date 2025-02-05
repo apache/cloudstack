@@ -740,6 +740,7 @@ public class ApiConstants {
     public static final String LIST_ALL = "listall";
     public static final String LIST_ONLY_REMOVED = "listonlyremoved";
     public static final String LIST_SYSTEM_VMS = "listsystemvms";
+    public static final String LIST_VM_DETAILS = "listvmdetails";
     public static final String IP_RANGES = "ipranges";
     public static final String IPV4_ROUTING = "ip4routing";
     public static final String IPV4_ROUTES = "ip4routes";

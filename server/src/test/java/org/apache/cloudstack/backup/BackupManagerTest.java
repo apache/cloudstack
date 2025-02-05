@@ -25,6 +25,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -471,10 +472,12 @@ public class BackupManagerTest {
 
         DiskOfferingVO diskOffering1 = mock(DiskOfferingVO.class);
         when(diskOffering1.getUuid()).thenReturn("disk-offering-uuid-1");
+        when(diskOffering1.getState()).thenReturn(DiskOffering.State.Active);
         when(diskOffering1.isCustomizedIops()).thenReturn(true);
 
         DiskOfferingVO diskOffering2 = mock(DiskOfferingVO.class);
         when(diskOffering2.getUuid()).thenReturn("disk-offering-uuid-2");
+        when(diskOffering2.getState()).thenReturn(DiskOffering.State.Active);
         when(diskOffering2.isCustomizedIops()).thenReturn(true);
 
         when(diskOfferingDao.findByUuid("disk-offering-uuid-1")).thenReturn(diskOffering1);
@@ -509,6 +512,7 @@ public class BackupManagerTest {
         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
         when(diskOffering.getUuid()).thenReturn("disk-offering-uuid-1");
         when(diskOffering.isCustomizedIops()).thenReturn(true);
+        when(diskOffering.getState()).thenReturn(DiskOffering.State.Active);
 
         when(diskOfferingDao.findByUuid("disk-offering-uuid-1")).thenReturn(diskOffering);
 
@@ -535,6 +539,7 @@ public class BackupManagerTest {
 
         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
         when(diskOffering.isCustomizedIops()).thenReturn(true);
+        when(diskOffering.getState()).thenReturn(DiskOffering.State.Active);
 
         when(diskOfferingDao.findByUuid("disk-offering-uuid-1")).thenReturn(diskOffering);
         List<DiskOfferingInfo> diskOfferingInfoList = List.of(new DiskOfferingInfo(diskOffering, sizeInCmd, 1L, null, null));

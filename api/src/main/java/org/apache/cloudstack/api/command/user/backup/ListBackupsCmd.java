@@ -75,6 +75,12 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
             description = "list backups by zone id")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.LIST_VM_DETAILS,
+            type = CommandType.BOOLEAN,
+            since = "4.21.0",
+            description = "list backups with VM details")
+    private Boolean listVmDetails;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -91,6 +97,10 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
         return zoneId;
     }
 
+    public Boolean getListVmDetails() {
+        return listVmDetails;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -101,7 +111,7 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
             if (backup == null) {
                 continue;
             }
-            BackupResponse backupResponse = _responseGenerator.createBackupResponse(backup);
+            BackupResponse backupResponse = _responseGenerator.createBackupResponse(backup, this.getListVmDetails());
             responses.add(backupResponse);
         }
         final ListResponse<BackupResponse> response = new ListResponse<>();

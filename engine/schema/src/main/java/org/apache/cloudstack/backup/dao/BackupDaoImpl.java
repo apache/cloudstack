@@ -193,7 +193,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     }
 
     @Override
-    public BackupResponse newBackupResponse(Backup backup) {
+    public BackupResponse newBackupResponse(Backup backup, Boolean listVmDetails) {
         VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
         AccountVO account = accountDao.findByIdIncludingRemoved(vm.getAccountId());
         DomainVO domain = domainDao.findByIdIncludingRemoved(vm.getDomainId());
@@ -231,19 +231,21 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         response.setZoneId(zone.getUuid());
         response.setZone(zone.getName());
 
-        Map<String, String> details = backupDetailsDao.listDetailsKeyPairs(backup.getId(), true);
-        if (details != null) {
-            HashMap<String, String> vmDetails = new HashMap<>();
-            vmDetails.put(ApiConstants.HYPERVISOR, details.get(ApiConstants.HYPERVISOR));
-            vmDetails.put(ApiConstants.TEMPLATE_ID, details.get(ApiConstants.TEMPLATE_ID));
-            vmDetails.put(ApiConstants.SERVICE_OFFERING_ID, details.get(ApiConstants.SERVICE_OFFERING_ID));
-            vmDetails.put(ApiConstants.NETWORK_IDS, details.get(ApiConstants.NETWORK_IDS));
-            vmDetails.put(ApiConstants.DISK_OFFERING_IDS, details.get(ApiConstants.DISK_OFFERING_IDS));
-            vmDetails.put(ApiConstants.DEVICE_IDS, details.get(ApiConstants.DEVICE_IDS));
-            vmDetails.put(ApiConstants.DISK_SIZES, details.get(ApiConstants.DISK_SIZES));
-            vmDetails.put(ApiConstants.MIN_IOPS, details.get(ApiConstants.MIN_IOPS));
-            vmDetails.put(ApiConstants.MAX_IOPS, details.get(ApiConstants.MAX_IOPS));
-            response.setVmDetails(vmDetails);
+        if (Boolean.TRUE.equals(listVmDetails)) {
+            Map<String, String> details = backupDetailsDao.listDetailsKeyPairs(backup.getId(), true);
+            if (details != null) {
+                HashMap<String, String> vmDetails = new HashMap<>();
+                vmDetails.put(ApiConstants.HYPERVISOR, details.get(ApiConstants.HYPERVISOR));
+                vmDetails.put(ApiConstants.TEMPLATE_ID, details.get(ApiConstants.TEMPLATE_ID));
+                vmDetails.put(ApiConstants.SERVICE_OFFERING_ID, details.get(ApiConstants.SERVICE_OFFERING_ID));
+                vmDetails.put(ApiConstants.NETWORK_IDS, details.get(ApiConstants.NETWORK_IDS));
+                vmDetails.put(ApiConstants.DISK_OFFERING_IDS, details.get(ApiConstants.DISK_OFFERING_IDS));
+                vmDetails.put(ApiConstants.DEVICE_IDS, details.get(ApiConstants.DEVICE_IDS));
+                vmDetails.put(ApiConstants.DISK_SIZES, details.get(ApiConstants.DISK_SIZES));
+                vmDetails.put(ApiConstants.MIN_IOPS, details.get(ApiConstants.MIN_IOPS));
+                vmDetails.put(ApiConstants.MAX_IOPS, details.get(ApiConstants.MAX_IOPS));
+                response.setVmDetails(vmDetails);
+            }
         }
 
         response.setObjectName("backup");

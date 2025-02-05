@@ -29,10 +29,10 @@
         <a-button @click="closeAction">
           {{ $t('label.cancel') }}
         </a-button>
-        <a-button @click="setConfigure">
+        <a-button @click="setConfigure" :loading="loading">
           {{ $t('label.configure.instance') }}
         </a-button>
-        <a-button style="margin-left: 10px" type="primary" ref="submit" @click="handleSubmit">
+        <a-button style="margin-left: 10px" type="primary" ref="submit" :loading="loading" @click="handleSubmit">
           {{ $t('label.ok') }}
         </a-button>
       </div>
@@ -63,7 +63,9 @@ export default {
     return {
       configure: false,
       dataPreFill: {},
-      serviceOffering: {}
+      vmdetails: {},
+      serviceOffering: {},
+      loading: true
     }
   },
   props: {
@@ -73,14 +75,27 @@ export default {
     }
   },
   created () {
-    this.fetchServiceOffering()
+    this.fetchBackupVmDetails().then(() => {
+      this.fetchServiceOffering()
+      this.loading = false
+    })
   },
   methods: {
+    fetchBackupVmDetails () {
+      this.serviceOfferings = []
+      return api('listBackups', {
+        id: this.resource.id,
+        listvmdetails: true
+      }).then(response => {
+        const backups = response.listbackupsresponse.backup || []
+        this.vmdetails = backups[0].vmdetails
+      })
+    },
     fetchServiceOffering () {
       this.serviceOfferings = []
       api('listServiceOfferings', {
         zoneid: this.resource.zoneid,
-        id: this.resource.vmdetails.serviceofferingid,
+        id: this.vmdetails.serviceofferingid,
         listall: true
       }).then(response => {
         const serviceOfferings = response.listserviceofferingsresponse.serviceoffering || []
@@ -89,13 +104,13 @@ export default {
     },
     populatePreFillData () {
       this.dataPreFill.backupid = this.resource.id
-      this.dataPreFill.computeofferingid = this.resource.vmdetails.serviceofferingid
-      this.dataPreFill.templateid = this.resource.vmdetails.templateid
-      this.dataPreFill.networkids = (this.resource.vmdetails.networkids || '').split(',')
-      this.diskofferingids = (this.resource.vmdetails.diskofferingids || '').split(',')
-      this.miniops = (this.resource.vmdetails.miniops || '').split(',').map(item => item === 'null' ? '' : item)
-      this.maxiops = (this.resource.vmdetails.maxiops || '').split(',').map(item => item === 'null' ? '' : item)
-      this.deviceid = (this.resource.vmdetails.deviceids || '').split(',').map(item => item === 'null' ? '' : item)
+      this.dataPreFill.computeofferingid = this.vmdetails.serviceofferingid
+      this.dataPreFill.templateid = this.vmdetails.templateid
+      this.dataPreFill.networkids = (this.vmdetails.networkids || '').split(',')
+      this.diskofferingids = (this.vmdetails.diskofferingids || '').split(',')
+      this.miniops = (this.vmdetails.miniops || '').split(',').map(item => item === 'null' ? '' : item)
+      this.maxiops = (this.vmdetails.maxiops || '').split(',').map(item => item === 'null' ? '' : item)
+      this.deviceid = (this.vmdetails.deviceids || '').split(',').map(item => item === 'null' ? '' : item)
       const volumes = JSON.parse(this.resource.volumes)
       const disksdetails = volumes.map((volume, index) => ({
         name: volume.path,
