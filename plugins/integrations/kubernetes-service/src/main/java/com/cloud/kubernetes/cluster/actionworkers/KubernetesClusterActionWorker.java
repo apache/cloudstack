@@ -106,7 +106,6 @@ public class KubernetesClusterActionWorker {
     public static final int DEFAULT_SSH_PORT = 22;
     public static final int CLUSTER_NODES_DEFAULT_START_SSH_PORT = 2222;
     public static final int CLUSTER_NODES_DEFAULT_SSH_PORT_SG = DEFAULT_SSH_PORT;
-    public static final int MAX_PORT = 65535;
 
     public static final String CKS_CLUSTER_SECURITY_GROUP_NAME = "CKSSecurityGroup";
     public static final String CKS_SECURITY_GROUP_DESCRIPTION = "Security group for CKS nodes";

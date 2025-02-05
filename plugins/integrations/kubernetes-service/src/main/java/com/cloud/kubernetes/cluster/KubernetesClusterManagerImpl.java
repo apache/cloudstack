@@ -386,7 +386,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         List<FirewallRuleVO> rules = firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(ipId, purpose, NetUtils.TCP_PROTO);
         for (FirewallRuleVO rule : rules) {
             int startPort = ObjectUtils.defaultIfNull(rule.getSourcePortStart(), 1);
-            int endPort = ObjectUtils.defaultIfNull(rule.getSourcePortEnd(), KubernetesClusterActionWorker.MAX_PORT);
+            int endPort = ObjectUtils.defaultIfNull(rule.getSourcePortEnd(), NetUtils.PORT_RANGE_MAX);
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("Validating rule with purpose: %s for network: %s with ports: %d-%d", purpose.toString(), network.getUuid(), startPort, endPort));
             }
