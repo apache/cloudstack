@@ -87,6 +87,47 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDaoImpl;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.ini4j.Ini;
+
+import javax.inject.Inject;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.Date;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 public class SystemVmTemplateRegistration {
     protected static Logger LOGGER = LogManager.getLogger(SystemVmTemplateRegistration.class);
@@ -768,32 +809,32 @@ public class SystemVmTemplateRegistration {
         }
     }
 
-    private void validateTemplates1(Set<Hypervisor.HypervisorType> hypervisorsInUse) {
-        Set<String> hypervisors = hypervisorsInUse.stream().
-                map(Hypervisor.HypervisorType::name).map(name -> name.toLowerCase(Locale.ROOT)).map(this::getHypervisorName).collect(Collectors.toSet());
-        List<String> templates = new ArrayList<>();
-        for (Hypervisor.HypervisorType hypervisorType : hypervisorsInUse) {
-            templates.add(NewTemplateMap.get(hypervisorType).getFilename());
-        }
-
+    private void validateTemplates(List<Pair<Hypervisor.HypervisorType, String>> hypervisorsArchInUse) {
         boolean templatesFound = true;
-        for (String hypervisor : hypervisors) {
-            String matchedTemplate = templates.stream().filter(x -> x.contains(hypervisor)).findAny().orElse(null);
+        for (Pair<Hypervisor.HypervisorType, String> hypervisorArch : hypervisorsArchInUse) {
+            MetadataTemplateDetails matchedTemplate = NewTemplateMap.values()
+                    .stream()
+                    .filter(x -> x.getHypervisorType().equals(hypervisorArch.first()) &&
+                            Objects.equals(x.getArch(), hypervisorArch.second()))
+                    .findAny()
+                    .orElse(null);
             if (matchedTemplate == null) {
                 templatesFound = false;
                 break;
             }
-
-            File tempFile = new File(TEMPLATES_PATH + matchedTemplate);
+            if (CPU.archARM64Identifier.equals(matchedTemplate.getArch())) {
+                LOGGER.debug("Skipping checksum comparison for the template file and metadata as the arch for template is {}",
+                        matchedTemplate.getArch());
+            }
+            File tempFile = new File(TEMPLATES_PATH + matchedTemplate.getFilename());
             String templateChecksum = DigestHelper.calculateChecksum(tempFile);
-            String checksumFromMap = NewTemplateMap.get(getHypervisorType(hypervisor)).getChecksum();
-            if (!templateChecksum.equals(checksumFromMap)) {
-                LOGGER.error("Checksum mismatch: {} != {}", templateChecksum, checksumFromMap);
+            if (!templateChecksum.equals(matchedTemplate.getChecksum())) {
+                LOGGER.error("Checksum {} for file {}  does not match checksum {} from metadata",
+                        templateChecksum, matchedTemplate.getChecksum());
                 templatesFound = false;
                 break;
             }
         }
-
         if (!templatesFound) {
             String errMsg = "SystemVm template not found. Cannot upgrade system Vms";
             LOGGER.error(errMsg);
@@ -801,40 +842,35 @@ public class SystemVmTemplateRegistration {
         }
     }
 
-    private void validateTemplates(Set<Hypervisor.HypervisorType> hypervisorsInUse) {
-        Set<String> hypervisors = hypervisorsInUse.stream().
-                map(Hypervisor.HypervisorType::name).map(name -> name.toLowerCase(Locale.ROOT)).map(this::getHypervisorName).collect(Collectors.toSet());
-        List<String> templates = new ArrayList<>();
-        for (Hypervisor.HypervisorType hypervisorType : hypervisorsInUse) {
-            templates.add(NewTemplateMap.get(hypervisorType).getFilename());
-        }
-
-        boolean templatesFound = true;
-        for (String hypervisor : hypervisors) {
-            String matchedTemplate = templates.stream().filter(x -> x.contains(hypervisor)).findAny().orElse(null);
-            if (matchedTemplate == null) {
-                templatesFound = false;
-                break;
+    protected void registerTemplatesForZone(long zoneId) {
+        Pair<String, Long> storeUrlAndId = getNfsStoreInZone(zoneId);
+        String nfsVersion = getNfsVersion(storeUrlAndId.second());
+        mountStore(storeUrlAndId.first(), filePath, nfsVersion);
+        List<String> hypervisorList = fetchAllHypervisors(zoneId);
+        for (String hypervisor : hypervisorList) {
+            Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.getType(hypervisor);
+            MetadataTemplateDetails templateDetails = getMetadataTemplateDetails(hypervisorType, null);
+            Long templateId = getRegisteredTemplateId(templateDetails.getName());
+            if (templateId != null) {
+                VMTemplateVO templateVO = vmTemplateDao.findById(templateId);
+                TemplateDataStoreVO templateDataStoreVO = templateDataStoreDao.findByStoreTemplate(storeUrlAndId.second(), templateId);
+                if (templateDataStoreVO != null) {
+                    String installPath = templateDataStoreVO.getInstallPath();
+                    if (validateIfSeeded(storeUrlAndId.first(), installPath, nfsVersion)) {
+                        continue;
+                    }
+                }
+                if (templateVO != null) {
+                    registerTemplate(hypervisorType, templateDetails.getName(), storeUrlAndId, templateVO, templateDataStoreVO, filePath);
+                    updateRegisteredTemplateDetails(templateId, templateDetails);
+                    continue;
+                }
             }
-
-            File tempFile = new File(TEMPLATES_PATH + matchedTemplate);
-            String templateChecksum = DigestHelper.calculateChecksum(tempFile);
-            String checksumFromMap = NewTemplateMap.get(getHypervisorType(hypervisor)).getChecksum();
-            if (!templateChecksum.equals(checksumFromMap)) {
-                LOGGER.error("Checksum mismatch: {} != {}", templateChecksum, checksumFromMap);
-                templatesFound = false;
-                break;
-            }
-        }
-
-        if (!templatesFound) {
-            String errMsg = "SystemVm template not found. Cannot upgrade system Vms";
-            LOGGER.error(errMsg);
-            throw new CloudRuntimeException(errMsg);
+            registerTemplate(hypervisorType, templateDetails.getName(), storeUrlAndId, filePath);
         }
     }
 
-    public void registerTemplates(Set<Hypervisor.HypervisorType> hypervisorsInUse) {
+    public void registerTemplates(List<Pair<Hypervisor.HypervisorType, String>> hypervisorsArchInUse) {
         GlobalLock lock = GlobalLock.getInternLock("UpgradeDatabase-Lock");
         try {
             LOGGER.info("Grabbing lock to register templates.");
@@ -842,7 +878,7 @@ public class SystemVmTemplateRegistration {
                 throw new CloudRuntimeException("Unable to acquire lock to register SystemVM template.");
             }
             try {
-                validateTemplates(hypervisorsInUse);
+                validateTemplates(hypervisorsArchInUse);
                 // Perform Registration if templates not already registered
                 Transaction.execute(new TransactionCallbackNoReturn() {
                     @Override
@@ -855,31 +891,7 @@ public class SystemVmTemplateRegistration {
                                 if (filePath == null) {
                                     throw new CloudRuntimeException("Failed to create temporary file path to mount the store");
                                 }
-                                Pair<String, Long> storeUrlAndId = getNfsStoreInZone(zoneId);
-                                String nfsVersion = getNfsVersion(storeUrlAndId.second());
-                                mountStore(storeUrlAndId.first(), filePath, nfsVersion);
-                                List<String> hypervisorList = fetchAllHypervisors(zoneId);
-                                for (String hypervisor : hypervisorList) {
-                                    Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.getType(hypervisor);
-                                    MetadataTemplateDetails templateDetails = getMetadataTemplateDetails(hypervisorType, null);
-                                    Long templateId = getRegisteredTemplateId(templateDetails.getName());
-                                    if (templateId != null) {
-                                        VMTemplateVO templateVO = vmTemplateDao.findById(templateId);
-                                        TemplateDataStoreVO templateDataStoreVO = templateDataStoreDao.findByStoreTemplate(storeUrlAndId.second(), templateId);
-                                        if (templateDataStoreVO != null) {
-                                            String installPath = templateDataStoreVO.getInstallPath();
-                                            if (validateIfSeeded(templateDataStoreVO, storeUrlAndId.first(), installPath, nfsVersion)) {
-                                                continue;
-                                            }
-                                        }
-                                        if (templateVO != null) {
-                                            registerTemplate(hypervisorType, templateDetails.getName(), storeUrlAndId, templateVO, templateDataStoreVO, filePath);
-                                            updateRegisteredTemplateDetails(templateId, templateDetails);
-                                            continue;
-                                        }
-                                    }
-                                    registerTemplate(hypervisorType, templateDetails.getName(), storeUrlAndId, filePath);
-                                }
+                                registerTemplatesForZone(zoneId);
                                 unmountStore(filePath);
                             } catch (Exception e) {
                                 unmountStore(filePath);
@@ -947,7 +959,10 @@ public class SystemVmTemplateRegistration {
                         if (templateId != null) {
                             updateRegisteredTemplateDetails(templateId, templateDetails);
                         } else {
-                            if (hypervisorsInUse.stream().anyMatch().contains(templateDetails.getHypervisorType())) {
+                            boolean isHypervisorArchMatchMetadata = hypervisorsInUse.stream()
+                                    .anyMatch(p -> p.first().equals(templateDetails.getHypervisorType())
+                                            || Objects.equals(p.second(), templateDetails.getArch()));
+                            if (isHypervisorArchMatchMetadata) {
                                 try {
                                     registerTemplates(hypervisorsInUse);
                                     break;
