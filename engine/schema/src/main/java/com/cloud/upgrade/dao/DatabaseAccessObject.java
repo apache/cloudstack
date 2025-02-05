@@ -94,7 +94,7 @@ public class DatabaseAccessObject {
                 return rs.getString("Type");
             }
         } catch (SQLException e) {
-            logger.debug("Type for column {} can not be retrieved in {} ignoring exception: {}", columnName, tableName, e.getMessage());
+            logger.warn("Type for column {} can not be retrieved in {} ignoring exception: {}", columnName, tableName, e.getMessage());
         }
         return null;
     }
