@@ -34,11 +34,11 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = "removeManagementServer", description = "Removes a management server.", responseObject = SuccessResponse.class,
+@APICommand(name = "removeManagementServer", description = "Removes a Management Server.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = RoleType.Admin)
 public class RemoveMgmtCmd extends BaseCmd {
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, required = true, description = "the id of the management server")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, required = true, description = "the ID of the Management Server")
     private Long id;
 
     public Long getId() {
@@ -52,7 +52,7 @@ public class RemoveMgmtCmd extends BaseCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove management server");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove Management Server");
         }
     }
 

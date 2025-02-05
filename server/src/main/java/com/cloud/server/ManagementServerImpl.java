@@ -5561,17 +5561,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     @DB
-    @ActionEvent(eventType = EventTypes.EVENT_MANAGEMENT_SERVER_REMOVE, eventDescription = "removing management server")
+    @ActionEvent(eventType = EventTypes.EVENT_MANAGEMENT_SERVER_REMOVE, eventDescription = "removing Management Server")
     public boolean removeManagementServer(RemoveMgmtCmd cmd) {
         final Long id = cmd.getId();
         ManagementServerJoinVO managementServer = _managementServerJoinDao.findById(id);
 
         if (managementServer == null) {
-            throw new InvalidParameterValueException(String.format("Unable to find the management server for specified id [%s]", managementServer.getUuid()));
+            throw new InvalidParameterValueException(String.format("Unable to find a Management Server with ID equal to [%s]", managementServer.getUuid()));
         }
 
         if (ManagementServerHost.State.Up.equals(managementServer.getState())) {
-            throw new InvalidParameterValueException(String.format("Unable to remove management server [%s], it is not in the right state, it can only be removed when state is [%s]", managementServer.getUuid(), ManagementServerHost.State.Down.name()));
+            throw new InvalidParameterValueException(String.format("Unable to remove Management Server with ID [%s]. It can only be removed when it is in the [%s] state, however currently it is in the [%s] state", managementServer.getUuid(), ManagementServerHost.State.Down.name(), ManagementServerHost.State.Up.name()));
         }
 
         managementServer.setRemoved(new Date());
