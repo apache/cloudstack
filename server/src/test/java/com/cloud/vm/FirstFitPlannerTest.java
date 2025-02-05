@@ -304,7 +304,7 @@ public class FirstFitPlannerTest {
         clusterCapacityMap.put(6L, 2048D);
 
         Pair<List<Long>, Map<Long, Double>> clustersOrderedByCapacity = new Pair<List<Long>, Map<Long, Double>>(clustersWithEnoughCapacity, clusterCapacityMap);
-        when(capacityDao.orderClustersByAggregateCapacity(dataCenterId, 12L, Capacity.CAPACITY_TYPE_CPU, false, true)).thenReturn(clustersOrderedByCapacity);
+        when(capacityDao.orderClustersByAggregateCapacity(dataCenterId, 12L, Capacity.CAPACITY_TYPE_CPU, false, false,true)).thenReturn(clustersOrderedByCapacity);
 
         List<Long> disabledClusters = new ArrayList<Long>();
         List<Long> clustersWithDisabledPods = new ArrayList<Long>();
