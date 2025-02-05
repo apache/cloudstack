@@ -18,6 +18,8 @@ package org.apache.cloudstack.service;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+import inet.ipaddr.IPAddress;
+import inet.ipaddr.IPAddressString;
 import io.netris.ApiClient;
 import io.netris.ApiException;
 import io.netris.ApiResponse;
@@ -815,9 +817,17 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         filterByVpc.add(vpc.getId());
         IpTree ipamTree = ipamApi.apiV2IpamGet(filterBySites, filterByVpc);
         List<IpTreeAllocation> superCidrList = ipamTree.getData().stream()
-                .filter(x -> x.getPrefix().equals(superCidrPrefix))
+                .filter(x -> x.getPrefix().equals(superCidrPrefix) || isAllocationPartOfBiggerAllocation(x.getPrefix(), superCidrPrefix))
                 .collect(Collectors.toList());
         return CollectionUtils.isEmpty(superCidrList) ? null : superCidrList.get(0).getId();
+    }
+
+    private boolean isAllocationPartOfBiggerAllocation(String netrisAllocation, String providedAllocation) {
+        IPAddress biggerAllocation = new IPAddressString(netrisAllocation).getAddress();
+        IPAddress smallerAllocation = new IPAddressString(providedAllocation).getAddress();
+
+        return biggerAllocation.contains(smallerAllocation);
+
     }
 
     private IpTreeSubnet getIpamSubnetByAllocationAndPrefixAndPurposeAndVpc(BigDecimal ipamAllocationId, String exactCidr, IpTreeSubnet.PurposeEnum purpose, VPCListing vpc) throws ApiException {
