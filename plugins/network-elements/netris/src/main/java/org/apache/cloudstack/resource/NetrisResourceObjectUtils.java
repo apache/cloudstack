@@ -19,6 +19,8 @@ package org.apache.cloudstack.resource;
 import org.apache.cloudstack.agent.api.NetrisCommand;
 import org.apache.commons.lang3.ArrayUtils;
 
+import java.util.Objects;
+
 public class NetrisResourceObjectUtils {
 
     public enum NetrisObjectType {
@@ -57,7 +59,12 @@ public class NetrisResourceObjectUtils {
                 break;
             case IPAM_SUBNET:
                 if (!isZoneLevel) {
-                    stringBuilder.append(String.format("-N%s", objectId));
+                    if (Objects.nonNull(objectId) && Objects.nonNull(objectName)) {
+                        stringBuilder.append(String.format("-N%s", objectId));
+                    } else {
+                        stringBuilder.append(String.format("-V%s-%s", suffixes[0], suffixes[1]));
+                        return stringBuilder.toString();
+                    }
                 }
                 break;
             case SNAT:

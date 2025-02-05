@@ -299,7 +299,9 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             if (ruleExists) {
                 deleteNatRule(natRuleName, existingNatRule.getId(), vpcResource.getName());
                 if (cmd.getNatRuleType().equals("STATICNAT")) {
-                    deleteNatSubnet(vpcResource.getId(), cmd.getNatIp());
+                    String natIp = cmd.getNatIp();
+                    String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), natIp);
+                    deleteNatSubnet(netrisSubnetName, vpcResource.getId(), natIp);
                 }
             }
         } catch (Exception e) {
@@ -893,7 +895,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
 
         if (StringUtils.isNotBlank(targetIpSubnet) && existsDestinationSubnet(targetIpSubnet)) {
             logger.debug(String.format("Creating subnet with NAT purpose for %s", targetIpSubnet));
-            createNatSubnet(targetIpSubnet, vpcResource.getId());
+            createNatSubnet(cmd, targetIpSubnet, vpcResource.getId());
         }
 
         NatGetBody existingNatRule = netrisNatRuleExists(ruleName);
@@ -959,7 +961,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                 return false;
             }
             // Create a /32 subnet for the DNAT IP
-            createNatSubnet(natIP, vpcResource.getId());
+            createNatSubnet(cmd, natIP, vpcResource.getId());
             NatApi natApi = apiClient.getApiStubForMethod(NatApi.class);
             NatPostBody natBody = new NatPostBody();
             natBody.setAction(NatPostBody.ActionEnum.DNAT);
@@ -993,15 +995,15 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return true;
     }
 
-    private void createNatSubnet(String natIp, Integer netrisVpcId) {
+    private void createNatSubnet(NetrisCommand cmd, String natIp, Integer netrisVpcId) {
         try {
             FilterByVpc vpcFilter = new FilterByVpc();
             vpcFilter.add(netrisVpcId);
-            String netrisSubnetName = natIp;
+            String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(((CreateOrUpdateNetrisNatCommand)cmd).getVpcId()), natIp);
             List<IpTreeSubnet> matchedSubnets = getSubnet(vpcFilter, netrisSubnetName);
             if (matchedSubnets.isEmpty()) {
                 VPCListing systemVpc = getSystemVpc();
-                createIpamSubnetInternal(natIp, natIp, SubnetBody.PurposeEnum.NAT, systemVpc, null);
+                createIpamSubnetInternal(netrisSubnetName, natIp, SubnetBody.PurposeEnum.NAT, systemVpc, null);
                 return;
             }
             logger.debug("NAT subnet: {} already exists", natIp);
@@ -1344,10 +1346,9 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, suffix);
     }
 
-    private void deleteNatSubnet(Integer netrisVpcId, String natIp) {
+    private void deleteNatSubnet(String netrisSubnetName, Integer netrisVpcId, String natIp) {
         FilterByVpc vpcFilter = new FilterByVpc();
         vpcFilter.add(netrisVpcId);
-        String netrisSubnetName = natIp + "/32";
         deleteSubnetInternal(vpcFilter, null, netrisSubnetName);
     }
 }
