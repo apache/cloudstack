@@ -2426,7 +2426,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return existingVolumeOfVm;
     }
 
-    protected StoragePool getPoolForAllocatedOrUploadedVolumeForAttach(final VolumeInfo volumeToAttach, final UserVmVO vm) {
+    protected StoragePool getSuitablePoolForAllocatedOrUploadedVolumeForAttach(final VolumeInfo volumeToAttach, final UserVmVO vm) {
         DataCenter zone = _dcDao.findById(vm.getDataCenterId());
         Pair<Long, Long> clusterHostId = virtualMachineManager.findClusterAndHostIdForVm(vm, false);
         Long podId = vm.getPodIdToDeployIn();
@@ -2441,12 +2441,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 offering.isUseLocalStorage(), offering.isRecreatable(),
                 volumeToAttach.getTemplateId());
         diskProfile.setHyperType(vm.getHypervisorType());
-        StoragePool pool = _volumeMgr.findStoragePool(diskProfile, zone, pod, clusterHostId.first(),
+        return _volumeMgr.findStoragePool(diskProfile, zone, pod, clusterHostId.first(),
                 clusterHostId.second(), vm, Collections.emptySet());
-        if (pool == null) {
-            throw new CloudRuntimeException(String.format("Failed to find a primary storage for volume in state: %s", volumeToAttach.getState()));
-        }
-        return pool;
     }
 
     protected VolumeInfo createVolumeOnPrimaryForAttachIfNeeded(final VolumeInfo volumeToAttach, final UserVmVO vm, VolumeVO existingVolumeOfVm) {
@@ -2464,7 +2460,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
         if (destPrimaryStorage == null) {
-            destPrimaryStorage = getPoolForAllocatedOrUploadedVolumeForAttach(volumeToAttach, vm);
+            destPrimaryStorage = getSuitablePoolForAllocatedOrUploadedVolumeForAttach(volumeToAttach, vm);
+            if (destPrimaryStorage == null) {
+                if (Volume.State.Allocated.equals(volumeToAttach.getState()) && State.Stopped.equals(vm.getState())) {
+                    return newVolumeOnPrimaryStorage;
+                }
+                throw new CloudRuntimeException(String.format("Failed to find a primary storage for volume in state: %s", volumeToAttach.getState()));
+            }
         }
         try {
             if (volumeOnSecondary && Storage.StoragePoolType.PowerFlex.equals(destPrimaryStorage.getPoolType())) {
