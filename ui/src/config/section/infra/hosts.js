@@ -78,6 +78,14 @@ export default {
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostUpdate')))
     },
     {
+      api: 'updateHostPassword',
+      icon: 'key-outlined',
+      label: 'label.action.change.password',
+      dataView: true,
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ChangeHostPassword.vue')))
+    },
+    {
       api: 'provisionCertificate',
       icon: 'safety-certificate-outlined',
       label: 'label.action.secure.host',
