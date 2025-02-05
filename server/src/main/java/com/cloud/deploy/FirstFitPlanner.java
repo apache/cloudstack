@@ -562,7 +562,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
         logger.debug("CapacityType: {} is used for Cluster ordering", getCapacityTypeName(capacityType));
         if (capacityType >= 0) { // for capacityType other than COMBINED
-            return capacityDao.orderClustersByAggregateCapacity(id, vmId, capacityType, isVr, isZone);
+            return capacityDao.orderClustersByAggregateCapacity(id, vmId, capacityType, isVr, allowRoutersOnDedicatedResources.value(), isZone);
         }
 
         Long zoneId = isZone ? id : null;
@@ -695,6 +695,6 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ClusterCPUCapacityDisableThreshold, ClusterMemoryCapacityDisableThreshold, ClusterThresholdEnabled, VmAllocationAlgorithm};
+        return new ConfigKey<?>[] {ClusterCPUCapacityDisableThreshold, ClusterMemoryCapacityDisableThreshold, ClusterThresholdEnabled, VmAllocationAlgorithm, allowRoutersOnDedicatedResources};
     }
 }
