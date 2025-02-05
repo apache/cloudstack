@@ -1197,7 +1197,7 @@ public class ApiConstants {
     public static final String SHAREDFSVM_MIN_RAM_SIZE = "sharedfsvmminramsize";
 
     // Object Storage related
-    public static final String BUCKET_AVAILABLE = "bucketavaialable";
+    public static final String BUCKET_AVAILABLE = "bucketavailable";
     public static final String BUCKET_LIMIT = "bucketlimit";
     public static final String BUCKET_TOTAL = "buckettotal";
     public static final String OBJECT_STORAGE_ID = "objectstorageid";
