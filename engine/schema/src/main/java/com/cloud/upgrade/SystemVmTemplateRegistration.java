@@ -86,7 +86,7 @@ import java.util.stream.Collectors;
 
 public class SystemVmTemplateRegistration {
     private static final Logger LOGGER = Logger.getLogger(SystemVmTemplateRegistration.class);
-    private static final String UMOUNT_COMMAND = "umount %s";
+    private static final String UMOUNT_COMMAND = "sudo umount %s";
     private static final String RELATIVE_TEMPLATE_PATH = "./engine/schema/dist/systemvm-templates/";
     private static final String ABSOLUTE_TEMPLATE_PATH = "/usr/share/cloudstack-management/templates/systemvm/";
     private static final String TEMPLATES_PATH = fetchTemplatesPath();
@@ -147,7 +147,7 @@ public class SystemVmTemplateRegistration {
     }
 
     public static String getMountCommand(String nfsVersion, String device, String dir) {
-        String cmd = "mount -t nfs";
+        String cmd = "sudo mount -t nfs";
         if (StringUtils.isNotBlank(nfsVersion)) {
             cmd = String.format("%s -o vers=%s", cmd, nfsVersion);
         }
