@@ -26,8 +26,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
@@ -51,7 +49,7 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements CapacityDao, Configurable {
+public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements CapacityDao {
 
     private static final String ADD_ALLOCATED_SQL = "UPDATE `cloud`.`op_host_capacity` SET used_capacity = used_capacity + ? WHERE host_id = ? AND capacity_type = ?";
     private static final String SUBTRACT_ALLOCATED_SQL =
@@ -984,7 +982,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
-    public Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, long vmId, short capacityTypeForOrdering, boolean isVr,  boolean isZone) {
+    public Pair<List<Long>, Map<Long, Double>> orderClustersByAggregateCapacity(long id, long vmId, short capacityTypeForOrdering, boolean isVr, boolean allowRoutersOnDedicatedResources, boolean isZone) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
         List<Long> result = new ArrayList<Long>();
@@ -996,7 +994,7 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             sql.append(ORDER_CLUSTERS_BY_AGGREGATE_OVERCOMMIT_CAPACITY_PART1);
         }
 
-        if (isVr && allowRoutersOnDedicatedResources.value()) {
+        if (isVr && allowRoutersOnDedicatedResources) {
             sql.append(ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_INCLUDE_DEDICATED_TO_DOMAIN_JOIN_1);
         } else {
             sql.append(ORDER_CLUSTERS_BY_AGGREGATE_CAPACITY_JOIN_1);
@@ -1231,15 +1229,5 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
             logger.warn("Error checking cluster threshold", e);
         }
         return 0;
-    }
-
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {allowRoutersOnDedicatedResources};
-    }
-
-    @Override
-    public String getConfigComponentName() {
-        return CapacityDaoImpl.class.getSimpleName();
     }
 }

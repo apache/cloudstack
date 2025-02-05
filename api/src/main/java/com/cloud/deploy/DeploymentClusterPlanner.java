@@ -68,6 +68,14 @@ public interface DeploymentClusterPlanner extends DeploymentPlanner {
             ConfigKey.Kind.Select,
             "random,firstfit,userdispersing,userconcentratedpod_random,userconcentratedpod_firstfit,firstfitleastconsumed");
 
+    ConfigKey<Boolean> allowRoutersOnDedicatedResources = new ConfigKey<>(
+            "Advanced",
+            Boolean.class,
+            "allow.routers.on.dedicated.resources",
+            "false",
+            "Allow deploying virtual routers on dedicated Hosts, Clusters, Pods, and Zones",
+            true);
+
     /**
      * This is called to determine list of possible clusters where a virtual
      * machine can be deployed.
