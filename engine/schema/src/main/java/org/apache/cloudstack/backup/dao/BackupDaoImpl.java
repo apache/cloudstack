@@ -24,7 +24,6 @@ import java.util.Objects;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.storage.dao.VolumeDaoImpl.SumCount;
 import com.cloud.utils.db.GenericSearchBuilder;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.Backup;

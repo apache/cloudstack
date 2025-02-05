@@ -31,6 +31,12 @@ public class DbUpgradeUtils {
         }
     }
 
+    public static void renameIndexIfNeeded(Connection conn, String tableName, String oldName, String newName) {
+        if (!dao.indexExists(conn, tableName, oldName)) {
+            dao.renameIndex(conn, tableName, oldName, newName);
+        }
+    }
+
     public static void addForeignKey(Connection conn, String tableName, String tableColumn, String foreignTableName, String foreignColumnName) {
         dao.addForeignKey(conn, tableName, tableColumn, foreignTableName, foreignColumnName);
     }

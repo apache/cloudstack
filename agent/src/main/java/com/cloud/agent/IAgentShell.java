@@ -74,4 +74,6 @@ public interface IAgentShell {
     boolean isConnectionTransfer();
 
     void setConnectionTransfer(boolean connectionTransfer);
+
+    Integer getSslHandshakeTimeout();
 }
