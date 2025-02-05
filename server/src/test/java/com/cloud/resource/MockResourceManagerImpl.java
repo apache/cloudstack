@@ -46,9 +46,9 @@ import org.apache.cloudstack.api.command.admin.cluster.UpdateClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
-import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
-import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForHostMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
@@ -79,7 +79,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#cancelMaintenance(com.cloud.api.commands.CancelMaintenanceCmd)
      */
     @Override
-    public Host cancelMaintenance(final CancelMaintenanceCmd cmd) {
+    public Host cancelMaintenance(final CancelHostMaintenanceCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -142,7 +142,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceService#maintain(com.cloud.api.commands.PrepareForMaintenanceCmd)
      */
     @Override
-    public Host maintain(final PrepareForMaintenanceCmd cmd) {
+    public Host maintain(final PrepareForHostMaintenanceCmd cmd) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -246,6 +246,15 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      */
     @Override
     public Host createHostAndAgent(final Long hostId, final ServerResource resource, final Map<String, String> details, final boolean old, final List<String> hostTags, final boolean forRebalance) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.resource.ResourceManager#createHostAndAgent(java.lang.Long, com.cloud.resource.ServerResource, java.util.Map, boolean, java.util.List, boolean, boolean)
+     */
+    @Override
+    public Host createHostAndAgent(final Long hostId, final ServerResource resource, final Map<String, String> details, final boolean old, final List<String> hostTags, final boolean forRebalance, boolean isTransferredConnection) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -446,7 +455,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#listAvailHypervisorInZone(java.lang.Long, java.lang.Long)
      */
     @Override
-    public List<HypervisorType> listAvailHypervisorInZone(final Long hostId, final Long zoneId) {
+    public List<HypervisorType> listAvailHypervisorInZone(final Long zoneId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -473,7 +482,7 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
      * @see com.cloud.resource.ResourceManager#getHostStatistics(long)
      */
     @Override
-    public HostStats getHostStatistics(final long hostId) {
+    public HostStats getHostStatistics(final Host host) {
         // TODO Auto-generated method stub
         return null;
     }

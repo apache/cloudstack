@@ -375,11 +375,12 @@ public class PresetVariableHelperTest {
         Account account = getAccountForTests();
         Mockito.doReturn(account.getId()).when(accountVoMock).getUuid();
         Mockito.doReturn(account.getName()).when(accountVoMock).getName();
+        Mockito.doReturn(account.getCreated()).when(accountVoMock).getCreated();
 
         Account result = presetVariableHelperSpy.getPresetVariableAccount(1l);
 
         assertPresetVariableIdAndName(account, result);
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name"), result);
+        validateFieldNamesToIncludeInToString(Arrays.asList("created", "id", "name"), result);
     }
 
     @Test

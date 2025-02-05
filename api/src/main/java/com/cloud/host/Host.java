@@ -177,6 +177,8 @@ public interface Host extends StateObject<Status>, Identity, Partition, HAResour
      */
     Long getManagementServerId();
 
+    Long getLastManagementServerId();
+
     /*
      *@return removal date
      */
