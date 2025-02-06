@@ -565,8 +565,11 @@ class CsIP:
                         self.fw.append(["mangle", "",
                                         "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
                                         (self.dev, static_route['network'], static_route['ip_address'], self.dev)])
-                        self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
-                                (static_route['network'], self.dev, self.dev)])
+                        self.fw.append(["filter", "front", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
+                                        (static_route['network'], self.dev, self.dev)])
+                        self.fw.append(["filter", "front",
+                                        "-A FORWARD -d %s -o %s -m state --state RELATED,ESTABLISHED -j ACCEPT" %
+                                        (static_route['network'], self.dev)])
 
             if self.address["source_nat"]:
                 self.fw.append(["nat", "front",
