@@ -2460,9 +2460,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                 templatePath = template.getPath();
             }
             if (StringUtils.isEmpty(templatePath)) {
-                logger.warn(String.format("Skipped validation whether downloaded file is QCOW2 for template {}, due to downloaded template path is empty", template.getName()));
+                logger.warn("Skipped validation whether downloaded file is QCOW2 for template {}, due to downloaded template path is empty", template.getName());
             } else if (!new File(templatePath).exists()) {
-                logger.warn(String.format("Skipped validation whether downloaded file is QCOW2 for template {}, due to downloaded template path is not valid: {}", template.getName(), templatePath));
+                logger.warn("Skipped validation whether downloaded file is QCOW2 for template {}, due to downloaded template path is not valid: {}", template.getName(), templatePath);
             } else {
                 try {
                     Qcow2Inspector.validateQcow2File(templatePath);
