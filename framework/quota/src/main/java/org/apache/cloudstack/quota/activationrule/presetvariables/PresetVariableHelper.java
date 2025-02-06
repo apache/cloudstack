@@ -511,11 +511,11 @@ public class PresetVariableHelper {
         }
     }
 
-    protected DiskOffering getPresetVariableValueDiskOffering(Long diskOfferingId) {
+    protected DiskOfferingPresetVariables getPresetVariableValueDiskOffering(Long diskOfferingId) {
         DiskOfferingVO diskOfferingVo = diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
         validateIfObjectIsNull(diskOfferingVo, diskOfferingId, "disk offering");
 
-        DiskOffering diskOffering = new DiskOffering();
+        DiskOfferingPresetVariables diskOffering = new DiskOfferingPresetVariables();
         diskOffering.setId(diskOfferingVo.getUuid());
         diskOffering.setName(diskOfferingVo.getName());
         diskOffering.setBytesReadRate(diskOfferingVo.getBytesReadRate());

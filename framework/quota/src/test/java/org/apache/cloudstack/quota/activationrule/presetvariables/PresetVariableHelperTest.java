@@ -310,8 +310,8 @@ public class PresetVariableHelperTest {
         return backupOffering;
     }
 
-    private DiskOffering getDiskOfferingForTests() {
-        DiskOffering diskOffering = new DiskOffering();
+    private DiskOfferingPresetVariables getDiskOfferingForTests() {
+        DiskOfferingPresetVariables diskOffering = new DiskOfferingPresetVariables();
         diskOffering.setId("disk_offering_id");
         diskOffering.setName("disk_offering_name");
         return diskOffering;
@@ -785,7 +785,7 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(diskOfferingVoMock).when(diskOfferingDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
         mockMethodValidateIfObjectIsNull();
 
-        DiskOffering expected = getDiskOfferingForTests();
+        DiskOfferingPresetVariables expected = getDiskOfferingForTests();
         Mockito.doReturn(expected.getId()).when(diskOfferingVoMock).getUuid();
         Mockito.doReturn(expected.getName()).when(diskOfferingVoMock).getName();
 

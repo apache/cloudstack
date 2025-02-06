@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.quota.activationrule.presetvariables;
 
-public class DiskOffering extends GenericPresetVariable {
+public class DiskOfferingPresetVariables extends GenericPresetVariable {
 
     @PresetVariableDefinition(description = "A long informing the bytes read rate of the disk offering.")
     private Long bytesReadRate;
