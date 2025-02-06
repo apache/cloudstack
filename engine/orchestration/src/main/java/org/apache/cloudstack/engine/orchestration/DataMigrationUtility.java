@@ -299,10 +299,9 @@ public class DataMigrationUtility {
     /** Returns the count of active SSVMs - SSVM with agents in connected state, so as to dynamically increase the thread pool
      * size when SSVMs scale
      */
-    protected int activeSSVMCount(DataStore dataStore) {
-        long datacenterId = dataStore.getScope().getScopeId();
+    protected int activeSSVMCount(Long zoneId) {
         List<SecondaryStorageVmVO> ssvms =
-                secStorageVmDao.getSecStorageVmListInStates(null, datacenterId, VirtualMachine.State.Running, VirtualMachine.State.Migrating);
+                secStorageVmDao.getSecStorageVmListInStates(null, zoneId, VirtualMachine.State.Running, VirtualMachine.State.Migrating);
         int activeSSVMs = 0;
         for (SecondaryStorageVmVO vm : ssvms) {
             String name = "s-"+vm.getId()+"-VM";
