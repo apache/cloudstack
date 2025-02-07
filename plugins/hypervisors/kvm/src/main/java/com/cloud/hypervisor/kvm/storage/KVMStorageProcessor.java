@@ -273,8 +273,13 @@ public class KVMStorageProcessor implements StorageProcessor {
 
                 String path = derivePath(primaryStore, destData, details);
 
-                if (!storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details)) {
+                if (path == null) {
+                    path = destTempl.getUuid();
+                }
+
+                if (path != null && !storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details)) {
                     s_logger.warn("Failed to connect physical disk at path: " + path + ", in storage pool id: " + primaryStore.getUuid());
+                    return new PrimaryStorageDownloadAnswer("Failed to spool template disk at path: " + path + ", in storage pool id: " + primaryStore.getUuid());
                 }
 
                 primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, path != null ? path : destTempl.getUuid(), primaryPool, cmd.getWaitInMillSeconds());
@@ -338,6 +343,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         } else {
             path = details != null ? details.get("managedStoreTarget") : null;
         }
+
         return path;
     }
 
@@ -418,7 +424,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             if (primaryPool.getType() == StoragePoolType.CLVM) {
                 templatePath = ((NfsTO)imageStore).getUrl() + File.separator + templatePath;
                 vol = templateToPrimaryDownload(templatePath, primaryPool, volume.getUuid(), volume.getSize(), cmd.getWaitInMillSeconds());
-            } if (primaryPool.getType() == StoragePoolType.PowerFlex) {
+            } if (primaryPool.getType() == StoragePoolType.PowerFlex || primaryPool.getType() == StoragePoolType.FiberChannel) {
                 Map<String, String> details = primaryStore.getDetails();
                 String path = derivePath(primaryStore, destData, details);
 
@@ -772,15 +778,19 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         KVMStoragePool secondaryStorage = null;
 
+        String path = null;
         try {
             // look for options indicating an overridden path or IQN.  Used when snapshots have to be
             // temporarily copied on the manaaged storage device before the actual copy to target object
             Map<String, String> details = cmd.getOptions();
-            String path = details != null ? details.get(DiskTO.PATH) : null;
+            path = details != null ? details.get(DiskTO.PATH) : null;
             if (path == null) {
                 path = details != null ? details.get(DiskTO.IQN) : null;
                 if (path == null) {
-                    new CloudRuntimeException("The 'path' or 'iqn' field must be specified.");
+                    path = srcData.getPath();
+                    if (path == null) {
+                        new CloudRuntimeException("The 'path' or 'iqn' field must be specified.");
+                    }
                 }
             }
 
@@ -843,8 +853,6 @@ public class KVMStorageProcessor implements StorageProcessor {
             loc.addFormat(info);
             loc.save();
 
-            storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path);
-
             TemplateObjectTO newTemplate = new TemplateObjectTO();
 
             newTemplate.setPath(templateFolder + File.separator + templateName + ".qcow2");
@@ -864,6 +872,10 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             return new CopyCmdAnswer(ex.toString());
         } finally {
+            if (path != null) {
+                storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path);
+            }
+
             if (secondaryStorage != null) {
                 secondaryStorage.delete();
             }
@@ -1039,7 +1051,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                 command.add(NAME_OPTION, snapshotName);
                 command.add("-p", snapshotDestPath);
 
-                descName = UUID.randomUUID().toString();
+                if (isCreatedFromVmSnapshot) {
+                    descName = UUID.randomUUID().toString();
+                }
 
                 command.add("-t", descName);
                 final String result = command.execute();
