@@ -15,23 +15,11 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.api.query.dao;
+import store from '@/store'
 
-import java.util.List;
-
-import org.apache.cloudstack.api.ResponseObject;
-import org.apache.cloudstack.api.response.SnapshotResponse;
-
-import com.cloud.api.query.vo.SnapshotJoinVO;
-import com.cloud.utils.db.GenericDao;
-
-public interface SnapshotJoinDao extends GenericDao<SnapshotJoinVO, Long> {
-
-    SnapshotResponse newSnapshotResponse(ResponseObject.ResponseView view, boolean isShowUnique, SnapshotJoinVO snapshotJoinVO);
-
-    SnapshotResponse setSnapshotResponse(SnapshotResponse snapshotResponse, SnapshotJoinVO snapshot);
-
-    List<SnapshotJoinVO> searchBySnapshotStorePair(String... pairs);
-
-    List<SnapshotJoinVO> findByDistinctIds(Long zoneId, Long... ids);
+export function isZoneCreated () {
+  if (!store.getters.zones || store.getters.zones.length === 0) {
+    return false
+  }
+  return true
 }
