@@ -38,7 +38,7 @@ export default {
         }
       },
       columns: () => {
-        const fields = ['name', 'state', 'type', 'vmname', 'vmstate', 'sizegb']
+        const fields = ['name', 'state', 'sizegb', 'type', 'vmname', 'vmstate']
         const metricsFields = ['diskkbsread', 'diskkbswrite', 'diskiopstotal']
 
         if (store.getters.userInfo.roletype === 'Admin') {
