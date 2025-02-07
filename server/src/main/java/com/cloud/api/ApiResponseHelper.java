@@ -4963,8 +4963,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public BackupResponse createBackupResponse(Backup backup) {
-        return ApiDBUtils.newBackupResponse(backup);
+    public BackupResponse createBackupResponse(Backup backup, Boolean listVmDetails) {
+        return ApiDBUtils.newBackupResponse(backup, listVmDetails);
     }
 
     @Override

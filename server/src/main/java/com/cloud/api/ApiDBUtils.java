@@ -1102,7 +1102,7 @@ public class ApiDBUtils {
         return null;
     }
 
-    public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
+    public static DiskOfferingVO findNonComputeDiskOfferingById(Long diskOfferingId) {
         if (diskOfferingId == null) {
             return null;
         }
@@ -1111,6 +1111,14 @@ public class ApiDBUtils {
             return off;
         }
         return null;
+    }
+
+    public static DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
+        if (diskOfferingId == null) {
+            return null;
+        }
+        DiskOfferingVO off = s_diskOfferingDao.findByIdIncludingRemoved(diskOfferingId);
+        return off;
     }
 
     public static ServiceOfferingVO findServiceOfferingByComputeOnlyDiskOffering(Long diskOfferingId, boolean includingRemoved) {
@@ -2252,8 +2260,8 @@ public class ApiDBUtils {
         return s_resourceIconDao.findByResourceUuid(resourceUUID, resourceType);
     }
 
-    public static BackupResponse newBackupResponse(Backup backup) {
-        return s_backupDao.newBackupResponse(backup);
+    public static BackupResponse newBackupResponse(Backup backup, Boolean listVmDetails) {
+        return s_backupDao.newBackupResponse(backup, listVmDetails);
     }
 
     public static BackupScheduleResponse newBackupScheduleResponse(BackupSchedule schedule) {

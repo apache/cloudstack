@@ -453,6 +453,17 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RestoreAttachBackupVolume.vue')))
         },
         {
+          api: 'createVMFromBackup',
+          icon: 'caret-right-outlined',
+          docHelp: 'adminguide/virtual_machines.html#restoring-vm-backups',
+          label: 'label.create.instance.from.backup',
+          message: 'message.backup.restore',
+          dataView: true,
+          popup: true,
+          show: (record) => { return record.state !== 'Destroyed' },
+          component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateVMFromBackup.vue')))
+        },
+        {
           api: 'removeVirtualMachineFromBackupOffering',
           icon: 'scissor-outlined',
           label: 'label.backup.offering.remove',

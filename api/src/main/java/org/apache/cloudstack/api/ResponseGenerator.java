@@ -523,7 +523,7 @@ public interface ResponseGenerator {
 
     UserDataResponse createUserDataResponse(UserData userData);
 
-    BackupResponse createBackupResponse(Backup backup);
+    BackupResponse createBackupResponse(Backup backup, Boolean listVmDetails);
 
     BackupScheduleResponse createBackupScheduleResponse(BackupSchedule backup);
 
