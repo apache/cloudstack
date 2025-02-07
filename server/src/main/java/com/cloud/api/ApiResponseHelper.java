@@ -590,7 +590,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         resourceLimitResponse.setResourceType(limit.getType());
 
-        if ((limit.getType() == ResourceType.primary_storage || limit.getType() == ResourceType.secondary_storage) && limit.getMax() >= 0) {
+        if (ResourceType.isStorageType(limit.getType()) && limit.getMax() >= 0) {
             resourceLimitResponse.setMax((long)Math.ceil((double)limit.getMax() / ResourceType.bytesToGiB));
         } else {
             resourceLimitResponse.setMax(limit.getMax());
