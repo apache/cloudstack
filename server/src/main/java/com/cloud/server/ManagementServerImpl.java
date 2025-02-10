@@ -127,7 +127,7 @@ import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.iso.RegisterIsoCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.loadbalancer.ListLoadBalancerRuleInstancesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
-import org.apache.cloudstack.api.command.admin.management.RemoveMgmtCmd;
+import org.apache.cloudstack.api.command.admin.management.RemoveManagementServerCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
@@ -1020,7 +1020,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     StoragePoolTagsDao storagePoolTagsDao;
     @Inject
-    protected ManagementServerJoinDao _managementServerJoinDao;
+    protected ManagementServerJoinDao managementServerJoinDao;
 
     @Inject
     private PublicIpQuarantineDao publicIpQuarantineDao;
@@ -4047,7 +4047,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListTemplateDirectDownloadCertificatesCmd.class);
         cmdList.add(ProvisionTemplateDirectDownloadCertificateCmd.class);
         cmdList.add(ListMgmtsCmd.class);
-        cmdList.add(RemoveMgmtCmd.class);
+        cmdList.add(RemoveManagementServerCmd.class);
         cmdList.add(GetUploadParamsForIsoCmd.class);
         cmdList.add(GetRouterHealthCheckResultsCmd.class);
         cmdList.add(StartRollingMaintenanceCmd.class);
@@ -5562,20 +5562,20 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_MANAGEMENT_SERVER_REMOVE, eventDescription = "removing Management Server")
-    public boolean removeManagementServer(RemoveMgmtCmd cmd) {
+    public boolean removeManagementServer(RemoveManagementServerCmd cmd) {
         final Long id = cmd.getId();
-        ManagementServerJoinVO managementServer = _managementServerJoinDao.findById(id);
+        ManagementServerJoinVO managementServer = managementServerJoinDao.findById(id);
 
         if (managementServer == null) {
             throw new InvalidParameterValueException(String.format("Unable to find a Management Server with ID equal to [%s]", managementServer.getUuid()));
         }
 
-        if (ManagementServerHost.State.Up.equals(managementServer.getState())) {
+        if (!ManagementServerHost.State.Down.equals(managementServer.getState())) {
             throw new InvalidParameterValueException(String.format("Unable to remove Management Server with ID [%s]. It can only be removed when it is in the [%s] state, however currently it is in the [%s] state", managementServer.getUuid(), ManagementServerHost.State.Down.name(), ManagementServerHost.State.Up.name()));
         }
 
         managementServer.setRemoved(new Date());
-        return _managementServerJoinDao.update(id, managementServer);
+        return managementServerJoinDao.update(id, managementServer);
 
     }
 

@@ -35,7 +35,7 @@ import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsCmd;
 import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
-import org.apache.cloudstack.api.command.admin.management.RemoveMgmtCmd;
+import org.apache.cloudstack.api.command.admin.management.RemoveManagementServerCmd;
 import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
 import org.apache.cloudstack.api.command.admin.resource.ArchiveAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
@@ -482,6 +482,6 @@ public interface ManagementService {
 
     Pair<Boolean, String> patchSystemVM(PatchSystemVMCmd cmd);
 
-    boolean removeManagementServer(RemoveMgmtCmd cmd);
+    boolean removeManagementServer(RemoveManagementServerCmd cmd);
 
 }
