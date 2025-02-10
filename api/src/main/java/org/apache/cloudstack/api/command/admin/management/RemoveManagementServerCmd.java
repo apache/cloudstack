@@ -36,7 +36,7 @@ import com.cloud.exception.ResourceUnavailableException;
 
 @APICommand(name = "removeManagementServer", description = "Removes a Management Server.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = RoleType.Admin)
-public class RemoveMgmtCmd extends BaseCmd {
+public class RemoveManagementServerCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, required = true, description = "the ID of the Management Server")
     private Long id;
