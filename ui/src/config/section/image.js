@@ -111,7 +111,7 @@ export default {
           docHelp: 'adminguide/templates.html#uploading-templates-from-a-remote-http-server',
           listView: true,
           popup: true,
-          show: () => { isZoneCreated() },
+          show: isZoneCreated,
           component: shallowRef(defineAsyncComponent(() => import('@/views/image/RegisterOrUploadTemplate.vue')))
         },
         {
@@ -272,7 +272,7 @@ export default {
           docHelp: 'adminguide/templates.html#id10',
           listView: true,
           popup: true,
-          show: () => { isZoneCreated() },
+          show: isZoneCreated,
           component: shallowRef(defineAsyncComponent(() => import('@/views/image/RegisterOrUploadIso.vue')))
         },
         {
@@ -392,7 +392,7 @@ export default {
           label: 'label.kubernetes.version.add',
           listView: true,
           popup: true,
-          show: () => { isZoneCreated() },
+          show: isZoneCreated,
           component: shallowRef(defineAsyncComponent(() => import('@/views/image/AddKubernetesSupportedVersion.vue')))
         },
         {
