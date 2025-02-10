@@ -18,6 +18,7 @@ package com.cloud.storage.snapshot;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -738,12 +739,19 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             postCreateRecurringSnapshotForPolicy(userId, volumeId, snapshotId, policyId);
         }
 
-        if (HypervisorType.KVM.equals(snapshot.getHypervisorType()) && kvmIncrementalSnapshot.valueIn(clusterId)) {
-            endChainIfNeeded(snapshotId, snapshot.getDataCenterId());
+        if (HypervisorType.KVM.equals(snapshot.getHypervisorType())) {
+            if (kvmIncrementalSnapshot.valueIn(clusterId)){
+                endCurrentChainIfNeeded(snapshotId, snapshot.getDataCenterId());
+            } else {
+                endLastChainIfNeeded(clusterId, volumeId);
+            }
         }
     }
 
-    private void endChainIfNeeded(Long snapshotId, Long zoneId) {
+    /**
+     * Will mark this snapshot as the end of the chain if it has reached the value of snapshot.delta.max.
+     * */
+    private void endCurrentChainIfNeeded(Long snapshotId, Long zoneId) {
         SnapshotDataStoreVO snapshotDataStoreVo = _snapshotStoreDao.findOneBySnapshotId(snapshotId, zoneId);
         int chainSize = 1;
         while (snapshotDataStoreVo.getParentSnapshotId() > 0) {
@@ -755,6 +763,36 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             for (SnapshotDataStoreVO currentSnapStoreRef : currentSnapStoreRefs) {
                 currentSnapStoreRef.setEndOfChain(true);
                 _snapshotStoreDao.update(currentSnapStoreRef.getId(), currentSnapStoreRef);
+            }
+        }
+    }
+
+    /**
+     * This method ends the last snapshot chain if the current snapshot being taken is not incremental anymore.
+     * This is needed when a user has a chain of snapshots with kvm.incremental.snapshot = true, then sets the configuration as false and takes a new snapshot.
+     * Ending the last snapshot chain prevents future inconsistencies if the user sets kvm.incremental.snapshot = true again.
+     * <br></br>
+     * <b>This method should only be called when kvm.incremental.snapshot = false and for volumes in KVM</b>
+     * */
+    protected void endLastChainIfNeeded(long clusterId, long volumeId) {
+        if (kvmIncrementalSnapshot.valueIn(clusterId)) {
+            return;
+        }
+
+        List<SnapshotDataStoreVO> volumeSnapshots = _snapshotStoreDao.listReadyByVolumeId(volumeId);
+        volumeSnapshots.sort(Comparator.comparing(SnapshotDataStoreVO::getCreated));
+        Collections.reverse(volumeSnapshots);
+
+        SnapshotDataStoreVO snapshotDataStoreVO;
+        for (int i = 1; i < volumeSnapshots.size(); i++) {
+            snapshotDataStoreVO = volumeSnapshots.get(i);
+            if (snapshotDataStoreVO.getKvmCheckpointPath() != null) {
+                if (!snapshotDataStoreVO.isEndOfChain()) {
+                    logger.debug("Found snapshot reference [{}] that used to belong to a now dead snapshot chain. Will mark it as end of chain.", snapshotDataStoreVO);
+                    snapshotDataStoreVO.setEndOfChain(true);
+                    _snapshotStoreDao.update(snapshotDataStoreVO.getId(), snapshotDataStoreVO);
+                }
+                return;
             }
         }
     }
