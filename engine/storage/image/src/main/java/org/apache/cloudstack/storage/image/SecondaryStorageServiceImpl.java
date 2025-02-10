@@ -24,6 +24,8 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -118,26 +120,21 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
                 }
             } else if (srcDataObject instanceof TemplateInfo && templateChain != null && templateChain.containsKey(srcDataObject)) {
                 for (TemplateInfo templateInfo : templateChain.get(srcDataObject).first()) {
+                    if (templateIsOnDestination(templateInfo, destDatastore)) {
+                        res.setResult("Template already exists on destination.");
+                        res.setSuccess(true);
+                        logger.debug("Deleting template {} from source data store [{}].", srcDataObject.getTO().toString(),
+                                srcDataObject.getDataStore().getTO().toString());
+                        srcDataObject.getDataStore().delete(srcDataObject);
+                        future.complete(res);
+                        continue;
+                    }
                     destDataObject = destDatastore.create(templateInfo);
                     templateInfo.processEvent(ObjectInDataStoreStateMachine.Event.MigrateDataRequested);
                     destDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrateDataRequested);
                     migrateJob(future, templateInfo, destDataObject, destDatastore);
                 }
-            }
-            else {
-                // Check if template in destination store, if yes, do not proceed
-                if (srcDataObject instanceof TemplateInfo) {
-                    logger.debug("Checking if template present at destination");
-                    TemplateDataStoreVO templateStoreVO = templateStoreDao.findByStoreTemplate(destDatastore.getId(), srcDataObject.getId());
-                    if (templateStoreVO != null) {
-                        String msg = "Template already exists in destination store";
-                        logger.debug(msg);
-                        res.setResult(msg);
-                        res.setSuccess(true);
-                        future.complete(res);
-                        return future;
-                    }
-                }
+            } else {
                 destDataObject = destDatastore.create(srcDataObject);
                 srcDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrateDataRequested);
                 destDataObject.processEvent(ObjectInDataStoreStateMachine.Event.MigrateDataRequested);
@@ -158,6 +155,69 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
             future.complete(res);
         }
         return future;
+    }
+
+    /**
+     * Returns a boolean indicating whether a template is ready on the provided data store. If the template is being downloaded,
+     * waits until the download finishes.
+     * @param srcDataObject the template.
+     * @param destDatastore the data store.
+     */
+    protected boolean templateIsOnDestination(DataObject srcDataObject, DataStore destDatastore) {
+        if (!(srcDataObject instanceof TemplateInfo)) {
+            return false;
+        }
+
+        String templateAsString = srcDataObject.getTO().toString();
+        String destDatastoreAsString = destDatastore.getTO().toString();
+        TemplateDataStoreVO templateStoreVO;
+
+        long timer = getTemplateDownloadTimeoutInSeconds();
+        int secondsToSleep = 10;
+        int previousDownloadPercentage = -1;
+
+        while (true) {
+            templateStoreVO = templateStoreDao.findByStoreTemplate(destDatastore.getId(), srcDataObject.getId());
+            if (templateStoreVO == null) {
+                logger.debug("{} is not present at destination [{}].", templateAsString, destDatastoreAsString);
+                return false;
+            }
+            VMTemplateStorageResourceAssoc.Status downloadState = templateStoreVO.getDownloadState();
+            if (downloadState == null || !VMTemplateStorageResourceAssoc.PENDING_DOWNLOAD_STATES.contains(downloadState)) {
+                break;
+            }
+            if (previousDownloadPercentage == templateStoreVO.getDownloadPercent()) {
+                timer -= secondsToSleep;
+            } else {
+                timer = getTemplateDownloadTimeoutInSeconds();
+            }
+            if (timer <= 0) {
+                throw new CloudRuntimeException(String.format("Timeout while waiting for %s to be downloaded to image store [%s]. " +
+                        "The download percentage has not changed for %d seconds.", templateAsString, destDatastoreAsString, getTemplateDownloadTimeoutInSeconds()));
+            }
+            waitForTemplateDownload(secondsToSleep, templateAsString, destDatastoreAsString);
+        }
+
+        if (templateStoreVO.getState() == ObjectInDataStoreStateMachine.State.Ready) {
+            logger.debug("{} already exists on destination [{}].", templateAsString, destDatastoreAsString);
+            return true;
+        }
+        return false;
+    }
+
+    protected long getTemplateDownloadTimeoutInSeconds() {
+        return 1800L;
+    }
+
+    protected void waitForTemplateDownload(int secondsToSleep, String templateAsString, String destDatastoreAsString) {
+        logger.debug("{} is being downloaded to destination [{}]; we will verify in {} seconds if the download has finished.",
+                templateAsString, destDatastoreAsString, secondsToSleep);
+        try {
+            Thread.sleep(secondsToSleep * 1000L);
+        } catch (InterruptedException e) {
+            logger.warn("[ignored] interrupted while waiting for template {} download to finish before trying to migrate it to data store [{}].",
+                    templateAsString, destDatastoreAsString);
+        }
     }
 
     protected void migrateJob(AsyncCallFuture<DataObjectResult> future, DataObject srcDataObject, DataObject destDataObject, DataStore destDatastore) throws ExecutionException, InterruptedException {
