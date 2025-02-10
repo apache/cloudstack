@@ -91,7 +91,7 @@ public class Upgrade42010to42100 extends DbUpgradeAbstractImpl implements DbUpgr
 
                 preparedStatement.executeUpdate();
             }
-            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`user` DROP COLUMN IF EXISTS api_key, DROP COLUMN IF EXISTS secret_key;");
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`user` DROP COLUMN api_key, DROP COLUMN secret_key;");
             pstmt.executeUpdate();
             logger.info("Successfully performed keypair migration.");
         } catch (SQLException ex) {
