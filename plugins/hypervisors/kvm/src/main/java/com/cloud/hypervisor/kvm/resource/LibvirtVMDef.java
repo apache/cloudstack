@@ -639,7 +639,7 @@ public class LibvirtVMDef {
         }
 
         public enum DiskBus {
-            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML("uml"), FDC("fdc"), SATA("sata");
+            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML("uml"), FDC("fdc"), SATA("sata"), VIRTIOBLK("virtio-blk");
             String _bus;
 
             DiskBus(String bus) {
