@@ -151,11 +151,6 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         activeTmpltSearch.and("store_id", activeTmpltSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
         activeTmpltSearch.and("type", activeTmpltSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
         activeTmpltSearch.and("templateState", activeTmpltSearch.entity().getTemplateState(), SearchCriteria.Op.EQ);
-        activeTmpltSearch.and().op("public", activeTmpltSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
-        activeTmpltSearch.or().op("publicNoUrl", activeTmpltSearch.entity().isPublicTemplate(), SearchCriteria.Op.EQ);
-        activeTmpltSearch.and("url", activeTmpltSearch.entity().getUrl(), SearchCriteria.Op.NULL);
-        activeTmpltSearch.cp();
-        activeTmpltSearch.cp();
         activeTmpltSearch.done();
 
         publicTmpltSearch = createSearchBuilder();
@@ -687,8 +682,6 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         sc.setParameters("store_id", storeId);
         sc.setParameters("type", TemplateType.USER);
         sc.setParameters("templateState", VirtualMachineTemplate.State.Active);
-        sc.setParameters("public", Boolean.FALSE);
-        sc.setParameters("publicNoUrl",Boolean.TRUE);
         return searchIncludingRemoved(sc, null, null, false);
     }
 
