@@ -1384,7 +1384,15 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (owner == null || owner.getType() == Account.Type.PROJECT) {
             owner = CallContext.current().getCallingAccount();
         }
-        String username = owner.getAccountName() + "-" + KUBEADMIN_ACCOUNT_NAME;
+        
+        String projectId = "default";
+        Account account = ApiDBUtils.findAccountById(kubernetesCluster.getAccountId());
+        Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
+        if ( project != null ) {
+          projectId = project.getUuid();
+        }
+
+        String username = owner.getAccountName() + "-" + projectId + "-" + KUBEADMIN_ACCOUNT_NAME;
         UserAccount kubeadmin = accountService.getActiveUserAccount(username, owner.getDomainId());
         String[] keys = null;
         if (kubeadmin == null) {
