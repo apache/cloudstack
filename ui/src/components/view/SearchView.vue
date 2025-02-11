@@ -95,8 +95,8 @@
                             <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                           </span>
                           <block-outlined v-else style="margin-right: 5px" />
+                            {{ $t(opt.path || opt.name) }}
                         </span>
-                        {{ $t(opt.path || opt.name) }}
                       </div>
                     </a-select-option>
                   </a-select>
