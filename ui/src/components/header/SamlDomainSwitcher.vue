@@ -89,7 +89,7 @@ export default {
             return
           }
           this.samlAccounts = samlAccounts
-          this.samlAccounts =_.orderBy(samlAccounts, ['domainPath'], ['asc'])
+          this.samlAccounts = _.orderBy(samlAccounts, ['domainPath'], ['asc'])
           const currentAccount = this.samlAccounts.filter(x => {
             return x.userId === store.getters.userInfo.id
           })[0]
