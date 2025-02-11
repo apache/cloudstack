@@ -220,7 +220,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     @Override
     public boolean canEnableIndividualServices() {
-        return false;
+        return true;
     }
 
     private String getSshKey(VirtualMachineProfile profile) {
