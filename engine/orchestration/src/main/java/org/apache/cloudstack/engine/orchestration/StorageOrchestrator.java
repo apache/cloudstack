@@ -608,7 +608,7 @@ public class StorageOrchestrator extends ManagerBase implements StorageOrchestra
         }
     }
 
-    private class CopyTemplateTask implements Callable<TemplateService.TemplateApiResult> {
+    private class CopyTemplateTask implements Callable<TemplateApiResult> {
         private TemplateInfo sourceTmpl;
         private DataStore destStore;
 
