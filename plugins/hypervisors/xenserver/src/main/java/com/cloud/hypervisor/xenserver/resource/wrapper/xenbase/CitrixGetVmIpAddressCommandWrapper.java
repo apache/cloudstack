@@ -61,20 +61,19 @@ public final class CitrixGetVmIpAddressCommandWrapper extends CommandWrapper<Get
             }
 
             if (vmIp != null) {
-                logger.debug("VM " +vmName + " ip address got retrieved "+vmIp);
+                logger.debug("VM {} ip address got retrieved {}", vmName, vmIp);
                 result = true;
                 return new Answer(command, result, vmIp);
             }
 
-        }catch (Types.XenAPIException e) {
-            logger.debug("Got exception in GetVmIpAddressCommand "+ e.getMessage());
-            errorMsg = "Failed to retrived vm ip addr, exception: "+e.getMessage();
-        }catch (XmlRpcException e) {
-            logger.debug("Got exception in GetVmIpAddressCommand "+ e.getMessage());
-            errorMsg = "Failed to retrived vm ip addr, exception: "+e.getMessage();
+        } catch (Types.XenAPIException e) {
+            logger.debug("Got exception in GetVmIpAddressCommand " + e.getMessage());
+            errorMsg = "Failed to retrived vm ip addr, exception: " + e.getMessage();
+        } catch (XmlRpcException e) {
+            logger.debug("Got exception in GetVmIpAddressCommand " + e.getMessage());
+            errorMsg = "Failed to retrived vm ip addr, exception: " + e.getMessage();
         }
 
         return new Answer(command, result, errorMsg);
-
     }
 }

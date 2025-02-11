@@ -207,9 +207,10 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#virtual-machine-snapshots',
           dataView: true,
           popup: true,
-          show: (record) => {
-            return ((['Running'].includes(record.state) && record.hypervisor !== 'LXC') ||
-              (['Stopped'].includes(record.state) && !['KVM', 'LXC'].includes(record.hypervisor)))
+          show: (record, store) => {
+            return (record.hypervisor !== 'KVM') ||
+              ['Stopped', 'Destroyed'].includes(record.state) ||
+              store.features.kvmsnapshotenabled
           },
           disabled: (record) => { return record.hostcontrolstate === 'Offline' && record.hypervisor === 'KVM' },
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/CreateSnapshotWizard.vue')))
@@ -542,7 +543,7 @@ export default {
         if (store.listAllProjects) {
           fields.push('project')
         }
-        if (store.apis.scaleKubernetesCluster.params.filter(x => x.name === 'autoscalingenabled').length > 0) {
+        if (store.apis.scaleKubernetesCluster?.params?.filter(x => x.name === 'autoscalingenabled').length > 0) {
           fields.splice(2, 0, 'autoscalingenabled')
         }
         fields.push('zonename')

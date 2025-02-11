@@ -894,8 +894,8 @@ public class LibvirtVMDef {
             }
         }
 
-        public void defISODisk(String volPath) {
-            _diskType = DiskType.FILE;
+        public void defISODisk(String volPath, DiskType diskType) {
+            _diskType = diskType;
             _deviceType = DeviceType.CDROM;
             _sourcePath = volPath;
             _diskLabel = getDevLabel(3, DiskBus.IDE, true);
@@ -904,8 +904,8 @@ public class LibvirtVMDef {
             _bus = DiskBus.IDE;
         }
 
-        public void defISODisk(String volPath, boolean isUefiEnabled) {
-            _diskType = DiskType.FILE;
+        public void defISODisk(String volPath, boolean isUefiEnabled, DiskType diskType) {
+            _diskType = diskType;
             _deviceType = DeviceType.CDROM;
             _sourcePath = volPath;
             _bus = isUefiEnabled ? DiskBus.SATA : DiskBus.IDE;
@@ -914,18 +914,18 @@ public class LibvirtVMDef {
             _diskCacheMode = DiskCacheMode.NONE;
         }
 
-        public void defISODisk(String volPath, Integer devId) {
-            defISODisk(volPath, devId, null);
+        public void defISODisk(String volPath, Integer devId, DiskType diskType) {
+            defISODisk(volPath, devId, null, diskType);
         }
 
-        public void defISODisk(String volPath, Integer devId, String diskLabel) {
+        public void defISODisk(String volPath, Integer devId, String diskLabel, DiskType diskType) {
             if (devId == null && StringUtils.isBlank(diskLabel)) {
                 LOGGER.debug(String.format("No ID or label informed for volume [%s].", volPath));
-                defISODisk(volPath);
+                defISODisk(volPath, diskType);
                 return;
             }
 
-            _diskType = DiskType.FILE;
+            _diskType = diskType;
             _deviceType = DeviceType.CDROM;
             _sourcePath = volPath;
 
@@ -942,11 +942,11 @@ public class LibvirtVMDef {
             _bus = DiskBus.IDE;
         }
 
-        public void defISODisk(String volPath, Integer devId,boolean isSecure) {
+        public void defISODisk(String volPath, Integer devId, boolean isSecure, DiskType diskType) {
             if (!isSecure) {
-                defISODisk(volPath, devId);
+                defISODisk(volPath, devId, diskType);
             } else {
-                _diskType = DiskType.FILE;
+                _diskType = diskType;
                 _deviceType = DeviceType.CDROM;
                 _sourcePath = volPath;
                 _diskLabel = getDevLabel(devId, DiskBus.SATA, true);
@@ -2293,7 +2293,7 @@ public class LibvirtVMDef {
 
     public static class WatchDogDef {
         enum WatchDogModel {
-            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288"), ITCO("itco");
+            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288"), ITCO("itco"), NONE("none");
             String model;
 
             WatchDogModel(String model) {
@@ -2346,6 +2346,10 @@ public class LibvirtVMDef {
 
         @Override
         public String toString() {
+            if (WatchDogModel.NONE == model) {
+                // Do not add watchodogs when the model is set to none
+                return "";
+            }
             StringBuilder wacthDogBuilder = new StringBuilder();
             wacthDogBuilder.append("<watchdog model='" + model + "' action='" + action + "'/>\n");
             return wacthDogBuilder.toString();

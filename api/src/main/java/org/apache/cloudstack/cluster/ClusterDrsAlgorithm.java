@@ -21,6 +21,7 @@ package org.apache.cloudstack.cluster;
 
 import com.cloud.host.Host;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.org.Cluster;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.Adapter;
@@ -55,8 +56,8 @@ public interface ClusterDrsAlgorithm extends Adapter {
      * @throws ConfigurationException
      *         if there is an error in the configuration
      */
-    boolean needsDrs(long clusterId, List<Ternary<Long, Long, Long>> cpuList,
-            List<Ternary<Long, Long, Long>> memoryList) throws ConfigurationException;
+    boolean needsDrs(Cluster cluster, List<Ternary<Long, Long, Long>> cpuList,
+                     List<Ternary<Long, Long, Long>> memoryList) throws ConfigurationException;
 
 
     /**
@@ -79,7 +80,7 @@ public interface ClusterDrsAlgorithm extends Adapter {
      *
      * @return a ternary containing improvement, cost, benefit
      */
-    Ternary<Double, Double, Double> getMetrics(long clusterId, VirtualMachine vm, ServiceOffering serviceOffering,
+    Ternary<Double, Double, Double> getMetrics(Cluster cluster, VirtualMachine vm, ServiceOffering serviceOffering,
             Host destHost, Map<Long, Ternary<Long, Long, Long>> hostCpuMap,
             Map<Long, Ternary<Long, Long, Long>> hostMemoryMap,
             Boolean requiresStorageMotion) throws ConfigurationException;

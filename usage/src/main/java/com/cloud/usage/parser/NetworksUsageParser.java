@@ -53,7 +53,7 @@ public class NetworksUsageParser {
     }
 
     public static boolean parse(AccountVO account, Date startDate, Date endDate) {
-        LOGGER.debug(String.format("Parsing all networks usage events for account [%s].", account.getId()));
+        LOGGER.debug("Parsing all networks usage events for account {}", account);
         if ((endDate == null) || endDate.after(new Date())) {
             endDate = new Date();
         }
@@ -84,7 +84,7 @@ public class NetworksUsageParser {
             long networkId = usageNetwork.getNetworkId();
             long networkOfferingId = usageNetwork.getNetworkOfferingId();
             LOGGER.debug(String.format("Creating network usage record with id [%s], network offering [%s], usage [%s], startDate [%s], and endDate [%s], for account [%s].",
-                    networkId, networkOfferingId, usageDisplay, startDate, endDate, account.getId()));
+                    networkId, networkOfferingId, usageDisplay, startDate, endDate, account));
 
             String description = String.format("Network usage for network ID: %d, network offering: %d", usageNetwork.getNetworkId(), usageNetwork.getNetworkOfferingId());
             UsageVO usageRecord =

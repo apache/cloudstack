@@ -93,7 +93,6 @@ import com.cloud.projects.Project;
 import com.cloud.projects.ProjectAccount.Role;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
-import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
@@ -105,7 +104,6 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeDaoImpl.SumCount;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -118,6 +116,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GenericDaoBase.SumCount;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.JoinBuilder;
@@ -932,7 +931,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
             if ((caller.getAccountId() == accountId.longValue()) && (_accountMgr.isDomainAdmin(caller.getId()) || caller.getType() == Account.Type.RESOURCE_DOMAIN_ADMIN)) {
                 // If the admin is trying to update their own account, disallow.
-                throw new PermissionDeniedException("Unable to update resource limit for their own account " + accountId + ", permission denied");
+                throw new PermissionDeniedException(String.format("Unable to update resource limit for their own account %s, permission denied", account));
             }
 
             if (account.getType() == Account.Type.PROJECT) {
@@ -976,8 +975,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 DomainVO parentDomain = _domainDao.findById(parentDomainId);
                 long parentMaximum = findCorrectResourceLimitForDomain(parentDomain, resourceType, tag);
                 if ((parentMaximum >= 0) && (max.longValue() > parentMaximum)) {
-                    throw new InvalidParameterValueException("Domain " + domain.getName() + "(id: " + parentDomain.getId() + ") has maximum allowed resource limit " + parentMaximum + " for "
-                            + resourceType + ", please specify a value less than or equal to " + parentMaximum);
+                    throw new InvalidParameterValueException(String.format("Domain %s has maximum allowed resource limit %d for %s, please specify a value less than or equal to %d", parentDomain, parentMaximum, resourceType, parentMaximum));
                 }
             }
             ownerType = ResourceOwnerType.Domain;
@@ -1012,7 +1010,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                             "host tags: %s, storage tags: %s",
                     StringUtils.join(hostTags), StringUtils.join(storageTags));
             if (ObjectUtils.allNotNull(ownerId, ownerType)) {
-                msg = String.format("%s for %s ID: %d", msg, ownerType.getName().toLowerCase(), ownerId);
+                msg = String.format("%s for %s", msg, ownerType == ResourceOwnerType.Account ? _accountDao.findById(ownerId) : _domainDao.findById(ownerId));
             }
             logger.debug(msg);
         }
@@ -1291,16 +1289,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         if (StringUtils.isEmpty(tag)) {
             return _userVmJoinDao.listByAccountServiceOfferingTemplateAndNotInState(accountId, states, null, null);
         }
-        List<ServiceOfferingVO> offerings = serviceOfferingDao.listByHostTag(tag);
-        List<VMTemplateVO> templates = _vmTemplateDao.listByTemplateTag(tag);
+        List<Long> offerings = serviceOfferingDao.listIdsByHostTag(tag);
+        List<Long> templates = _vmTemplateDao.listIdsByTemplateTag(tag);
         if (CollectionUtils.isEmpty(offerings) && CollectionUtils.isEmpty(templates)) {
             return new ArrayList<>();
         }
 
         return  _userVmJoinDao.listByAccountServiceOfferingTemplateAndNotInState(accountId, states,
-                offerings.stream().map(ServiceOfferingVO::getId).collect(Collectors.toList()),
-                templates.stream().map(VMTemplateVO::getId).collect(Collectors.toList())
-        );
+                offerings, templates);
     }
 
     protected List<UserVmJoinVO> getVmsWithAccount(long accountId) {

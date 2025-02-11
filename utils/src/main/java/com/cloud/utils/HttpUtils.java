@@ -117,8 +117,8 @@ public class HttpUtils {
             return false;
         }
         final String jsessionidFromCookie = HttpUtils.findCookie(cookies, "JSESSIONID");
-        if (jsessionidFromCookie == null
-                || !(jsessionidFromCookie.startsWith(session.getId() + '.'))) {
+        if (jsessionidFromCookie != null
+                && !(jsessionidFromCookie.equals(session.getId()) || jsessionidFromCookie.startsWith(session.getId() + '.'))) {
             LOGGER.error("JSESSIONID from cookie is invalid.");
             return false;
         }

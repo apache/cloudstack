@@ -20,6 +20,7 @@ package com.cloud.capacity;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.host.Host;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.vm.VirtualMachine;
@@ -37,6 +38,7 @@ public class CapacityManagerTest {
     ServiceOfferingDao SOfferingDao = mock(ServiceOfferingDao.class);
     ClusterDetailsDao ClusterDetailsDao = mock(com.cloud.dc.ClusterDetailsDao.class);
     CapacityManagerImpl capMgr;
+    private Host host = mock(Host.class);
     private ServiceOfferingVO svo = mock(ServiceOfferingVO.class);
     private CapacityVO cvoCpu = mock(CapacityVO.class);
     private CapacityVO cvoRam = mock(CapacityVO.class);
@@ -71,7 +73,7 @@ public class CapacityManagerTest {
         when(clusterDetailRam.getValue()).thenReturn("1.5");
         when(clusterDetailCpu.getValue()).thenReturn("2");
         when(CDao.update(anyLong(), isA(CapacityVO.class))).thenReturn(true);
-        boolean hasCapacity = capMgr.checkIfHostHasCapacity(1l, 500, 1024 * 1024 * 1024, false, 2, 2, false);
+        boolean hasCapacity = capMgr.checkIfHostHasCapacity(host, 500, 1024 * 1024 * 1024, false, 2, 2, false);
         Assert.assertTrue(hasCapacity);
 
     }

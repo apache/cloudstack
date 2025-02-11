@@ -138,13 +138,13 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisors(List<HypervisorType> types, long dcId, long clusterId);
 
-    public List<HypervisorType> listAvailHypervisorInZone(Long hostId, Long zoneId);
+    public List<HypervisorType> listAvailHypervisorInZone(Long zoneId);
 
     public HostVO findHostByGuid(String guid);
 
     public HostVO findHostByName(String name);
 
-    HostStats getHostStatistics(long hostId);
+    HostStats getHostStatistics(Host host);
 
     Long getGuestOSCategoryId(long hostId);
 
@@ -185,7 +185,7 @@ public interface ResourceManager extends ResourceService, Configurable {
      * @param vgpuType the VGPU type
      * @return true when the host has the capacity with given VGPU type
      */
-    boolean isGPUDeviceAvailable(long hostId, String groupName, String vgpuType);
+    boolean isGPUDeviceAvailable(Host host, String groupName, String vgpuType);
 
     /**
      * Get available GPU device

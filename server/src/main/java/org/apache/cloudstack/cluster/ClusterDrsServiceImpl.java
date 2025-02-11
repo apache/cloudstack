@@ -210,7 +210,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             try {
                 updateDrsPlanMigrations(plan);
             } catch (Exception e) {
-                logger.error(String.format("Unable to update DRS plan details [id=%d]", plan.getId()), e);
+                logger.error("Unable to update DRS plan details {}", plan, e);
             }
         }
     }
@@ -228,7 +228,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             drsPlanDao.update(plan.getId(), plan);
             ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, Account.ACCOUNT_ID_SYSTEM, EventVO.LEVEL_INFO,
                     EventTypes.EVENT_CLUSTER_DRS, true,
-                    String.format("DRS execution task completed for cluster [id=%s]", plan.getClusterId()),
+                    String.format("DRS execution task completed for cluster %s", clusterDao.findById(plan.getClusterId())),
                     plan.getClusterId(), ApiCommandResourceType.Cluster.toString(), plan.getEventId());
             return;
         }
@@ -237,8 +237,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             try {
                 AsyncJobVO job = asyncJobManager.getAsyncJob(migration.getJobId());
                 if (job == null) {
-                    logger.warn(String.format("Unable to find async job [id=%d] for DRS plan migration [id=%d]",
-                            migration.getJobId(), migration.getId()));
+                    logger.warn("Unable to find async job [id={}] for DRS plan migration {}", migration.getJobId(), migration);
                     migration.setStatus(JobInfo.Status.FAILED);
                     drsPlanMigrationDao.update(migration.getId(), migration);
                     continue;
@@ -248,7 +247,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                     drsPlanMigrationDao.update(migration.getId(), migration);
                 }
             } catch (Exception e) {
-                logger.error(String.format("Unable to update DRS plan migration [id=%d]", migration.getId()), e);
+                logger.error("Unable to update DRS plan migration {}", migration, e);
             }
         }
     }
@@ -291,13 +290,9 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                                 ClusterDrsMaxMigrations.valueIn(cluster.getId()));
                         savePlan(cluster.getId(), plan, eventId, ClusterDrsPlan.Type.AUTOMATED,
                                 ClusterDrsPlan.Status.READY);
-                        logger.info(String.format("Generated DRS plan for cluster %s [id=%s]", cluster.getName(),
-                                cluster.getUuid()));
+                        logger.info("Generated DRS plan for cluster {}", cluster);
                     } catch (Exception e) {
-                        logger.error(
-                                String.format("Unable to generate DRS plans for cluster %s [id=%s]", cluster.getName(),
-                                        cluster.getUuid()),
-                                e);
+                        logger.error("Unable to generate DRS plans for cluster {}", cluster, e);
                     } finally {
                         clusterLock.unlock();
                     }
@@ -362,7 +357,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                     serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()));
         }
 
-        while (iteration < maxIterations && algorithm.needsDrs(cluster.getId(), new ArrayList<>(hostCpuMap.values()),
+        while (iteration < maxIterations && algorithm.needsDrs(cluster, new ArrayList<>(hostCpuMap.values()),
                 new ArrayList<>(hostMemoryMap.values()))) {
             Pair<VirtualMachine, Host> bestMigration = getBestMigration(cluster, algorithm, vmList,
                     vmIdServiceOfferingMap, hostCpuMap, hostMemoryMap);
@@ -372,8 +367,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 logger.debug("VM migrating to it's original host or no host found for migration");
                 break;
             }
-            logger.debug(String.format("Plan for VM %s to migrate from host %s to host %s", vm.getUuid(),
-                    hostMap.get(vm.getHostId()).getUuid(), destHost.getUuid()));
+            logger.debug("Plan for VM {} to migrate from host {} to host {}", vm, hostMap.get(vm.getHostId()), destHost);
 
             ServiceOffering serviceOffering = vmIdServiceOfferingMap.get(vm.getId());
             migrationPlan.add(new Ternary<>(vm, hostMap.get(vm.getHostId()), hostMap.get(destHost.getId())));
@@ -467,7 +461,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                 if (!suitableDestinationHosts.contains(destHost) || cluster.getId() != destHost.getClusterId()) {
                     continue;
                 }
-                Ternary<Double, Double, Double> metrics = algorithm.getMetrics(cluster.getId(), vm,
+                Ternary<Double, Double, Double> metrics = algorithm.getMetrics(cluster, vm,
                         vmIdServiceOfferingMap.get(vm.getId()), destHost, hostCpuCapacityMap, hostMemoryCapacityMap,
                         requiresStorageMotion.get(destHost));
 
@@ -528,7 +522,7 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
             try {
                 executeDrsPlan(plan);
             } catch (Exception e) {
-                logger.error(String.format("Unable to execute DRS plan [id=%d]", plan.getId()), e);
+                logger.error("Unable to execute DRS plan {}", plan, e);
             }
         }
     }
@@ -564,16 +558,14 @@ public class ClusterDrsServiceImpl extends ManagerBase implements ClusterDrsServ
                             migration.getDestHostId()));
                 }
 
-                logger.debug(
-                        String.format("Executing DRS plan %s for vm %s to host %s", plan.getId(), vm.getInstanceName(),
-                                host.getName()));
+                logger.debug("Executing DRS plan {} for vm {} to host {}", plan, vm, host);
                 long jobId = createMigrateVMAsyncJob(vm, host, plan.getEventId());
                 AsyncJobVO job = asyncJobManager.getAsyncJob(jobId);
                 migration.setJobId(jobId);
                 migration.setStatus(job.getStatus());
                 drsPlanMigrationDao.update(migration.getId(), migration);
             } catch (Exception e) {
-                logger.warn(String.format("Unable to execute DRS plan %s due to %s", plan.getUuid(), e.getMessage()));
+                logger.warn("Unable to execute DRS plan {} due to {}", plan, e.getMessage());
                 migration.setStatus(JobInfo.Status.FAILED);
                 drsPlanMigrationDao.update(migration.getId(), migration);
             }

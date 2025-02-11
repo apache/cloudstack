@@ -26,13 +26,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Pod;
+import com.cloud.org.Cluster;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -72,12 +78,11 @@ import com.cloud.event.AlertGenerator;
 import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.network.Ipv6Service;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
@@ -121,9 +126,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     @Inject
     protected ConfigDepot _configDepot;
     @Inject
-    ServiceOfferingDao _offeringsDao;
-    @Inject
     Ipv6Service ipv6Service;
+    @Inject
+    HostDao hostDao;
 
     private Timer _timer = null;
     private long _capacityCheckPeriod = 60L * 60L * 1000L; // One hour by default.
@@ -257,6 +262,66 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         }
     }
 
+    /**
+     * Recalculates the capacities of hosts, including CPU and RAM.
+     */
+    protected void recalculateHostCapacities() {
+        List<Long> hostIds = hostDao.listIdsByType(Host.Type.Routing);
+        if (hostIds.isEmpty()) {
+            return;
+        }
+        ConcurrentHashMap<Long, Future<Void>> futures = new ConcurrentHashMap<>();
+        ExecutorService executorService = Executors.newFixedThreadPool(Math.max(1,
+                Math.min(CapacityManager.CapacityCalculateWorkers.value(), hostIds.size())));
+        for (Long hostId : hostIds) {
+            futures.put(hostId, executorService.submit(() -> {
+                final HostVO host = hostDao.findById(hostId);
+                _capacityMgr.updateCapacityForHost(host);
+                return null;
+            }));
+        }
+        for (Map.Entry<Long, Future<Void>> entry: futures.entrySet()) {
+            try {
+                entry.getValue().get();
+            } catch (InterruptedException | ExecutionException e) {
+                logger.error(String.format("Error during capacity calculation for host: %d due to : %s",
+                        entry.getKey(), e.getMessage()), e);
+            }
+        }
+        executorService.shutdown();
+    }
+
+    protected void recalculateStorageCapacities() {
+        List<Long> storagePoolIds = _storagePoolDao.listAllIds();
+        if (storagePoolIds.isEmpty()) {
+            return;
+        }
+        ConcurrentHashMap<Long, Future<Void>> futures = new ConcurrentHashMap<>();
+        ExecutorService executorService = Executors.newFixedThreadPool(Math.max(1,
+                Math.min(CapacityManager.CapacityCalculateWorkers.value(), storagePoolIds.size())));
+        for (Long poolId: storagePoolIds) {
+            futures.put(poolId, executorService.submit(() -> {
+                final StoragePoolVO pool = _storagePoolDao.findById(poolId);
+                long disk = _capacityMgr.getAllocatedPoolCapacity(pool, null);
+                if (pool.isShared()) {
+                    _storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, disk);
+                } else {
+                    _storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, disk);
+                }
+                return null;
+            }));
+        }
+        for (Map.Entry<Long, Future<Void>> entry: futures.entrySet()) {
+            try {
+                entry.getValue().get();
+            } catch (InterruptedException | ExecutionException e) {
+                logger.error(String.format("Error during capacity calculation for storage pool: %d due to : %s",
+                        entry.getKey(), e.getMessage()), e);
+            }
+        }
+        executorService.shutdown();
+    }
+
     @Override
     public void recalculateCapacity() {
         // FIXME: the right way to do this is to register a listener (see RouterStatsListener, VMSyncListener)
@@ -272,36 +337,14 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 logger.debug("recalculating system capacity");
                 logger.debug("Executing cpu/ram capacity update");
             }
-
             // Calculate CPU and RAM capacities
-            //     get all hosts...even if they are not in 'UP' state
-            List<HostVO> hosts = _resourceMgr.listAllNotInMaintenanceHostsInOneZone(Host.Type.Routing, null);
-            if (hosts != null) {
-                // prepare the service offerings
-                List<ServiceOfferingVO> offerings = _offeringsDao.listAllIncludingRemoved();
-                Map<Long, ServiceOfferingVO> offeringsMap = new HashMap<Long, ServiceOfferingVO>();
-                for (ServiceOfferingVO offering : offerings) {
-                    offeringsMap.put(offering.getId(), offering);
-                }
-                for (HostVO host : hosts) {
-                    _capacityMgr.updateCapacityForHost(host, offeringsMap);
-                }
-            }
+            recalculateHostCapacities();
             if (logger.isDebugEnabled()) {
                 logger.debug("Done executing cpu/ram capacity update");
                 logger.debug("Executing storage capacity update");
             }
             // Calculate storage pool capacity
-            List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
-            for (StoragePoolVO pool : storagePools) {
-                long disk = _capacityMgr.getAllocatedPoolCapacity(pool, null);
-                if (pool.isShared()) {
-                    _storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, disk);
-                } else {
-                    _storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, disk);
-                }
-            }
-
+            recalculateStorageCapacities();
             if (logger.isDebugEnabled()) {
                 logger.debug("Done executing storage capacity update");
                 logger.debug("Executing capacity updates for public ip and Vlans");
@@ -672,7 +715,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 logger.debug(msgSubject);
                 logger.debug(msgContent);
             }
-            sendAlert(alertType, dc.getId(), podId, clusterId, msgSubject, msgContent);
+            sendAlert(alertType, dc, pod, cluster, msgSubject, msgContent);
         } catch (Exception ex) {
             logger.error("Exception in CapacityChecker", ex);
         }
@@ -723,15 +766,25 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
     public void sendAlert(AlertType alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content)
             throws MessagingException, UnsupportedEncodingException {
-        logger.warn(String.format("alertType=[%s] dataCenterId=[%s] podId=[%s] clusterId=[%s] message=[%s].", alertType, dataCenterId, podId, clusterId, subject));
+        DataCenterVO zone = _dcDao.findById(dataCenterId);
+        HostPodVO pod = podId == null ? null : _podDao.findById(podId);
+        ClusterVO cluster = clusterId == null ? null : _clusterDao.findById(clusterId);
+        sendAlert(alertType, zone, pod, cluster, subject, content);
+    }
+
+    public void sendAlert(AlertType alertType, DataCenter dataCenter, Pod pod, Cluster cluster, String subject, String content)
+            throws MessagingException, UnsupportedEncodingException {
+        logger.warn(String.format("alertType=[%s] dataCenter=[%s] pod=[%s] cluster=[%s] message=[%s].", alertType, dataCenter, pod, cluster, subject));
         AlertVO alert = null;
+        Long clusterId = cluster == null ? null : cluster.getId();
+        Long podId = pod == null ? null : pod.getId();
         if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) && (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM)
                 && (alertType != AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER) && (alertType != AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY)
                 && (alertType != AlertManager.AlertType.ALERT_TYPE_SSVM) && (alertType != AlertManager.AlertType.ALERT_TYPE_STORAGE_MISC)
                 && (alertType != AlertManager.AlertType.ALERT_TYPE_MANAGEMENT_NODE) && (alertType != AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED)
                 && (alertType != AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED) && (alertType != AlertManager.AlertType.ALERT_TYPE_OOBM_AUTH_ERROR)
                 && (alertType != AlertManager.AlertType.ALERT_TYPE_HA_ACTION) && (alertType != AlertManager.AlertType.ALERT_TYPE_CA_CERT)) {
-            alert = _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId, clusterId);
+            alert = _alertDao.getLastAlert(alertType.getType(), dataCenter.getId(), podId, clusterId);
         }
 
         if (alert == null) {
@@ -741,7 +794,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             newAlert.setContent(content);
             newAlert.setClusterId(clusterId);
             newAlert.setPodId(podId);
-            newAlert.setDataCenterId(dataCenterId);
+            newAlert.setDataCenterId(dataCenter.getId());
             newAlert.setSentCount(1);
             newAlert.setLastSent(new Date());
             newAlert.setName(alertType.getName());

@@ -38,6 +38,7 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -169,7 +170,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     }
 
     @Override
-    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, Storage.StoragePoolType type, Map<String, String> details) {
+    public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, Storage.StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage) {
         LOGGER.info(String.format("createStoragePool(uuid,host,port,path,type) called with args (%s, %s, %s, %s, %s)", uuid, host, ""+port, path, type));
         MultipathSCSIPool storagePool = new MultipathSCSIPool(uuid, host, port, path, type, details, this);
         MapStorageUuidToStoragePool.put(uuid, storagePool);
@@ -182,7 +183,7 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
     }
 
    @Override
-    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details) {
+    public boolean connectPhysicalDisk(String volumePath, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate) {
         LOGGER.info("connectPhysicalDisk called for [" + volumePath + "]");
 
         if (StringUtils.isEmpty(volumePath)) {
@@ -604,7 +605,9 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         }
 
         public String toString() {
-            return String.format("type=%s; address=%s; connid=%s", getType(), getAddress(), getConnectionId());
+            return String.format("AddressInfo %s",
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                            this, "type", "address", "connectionId"));
         }
     }
 

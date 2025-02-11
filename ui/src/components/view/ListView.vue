@@ -26,14 +26,14 @@
     :rowSelection="explicitlyAllowRowSelection || enableGroupAction() || $route.name === 'event' ? {selectedRowKeys: selectedRowKeys, onChange: onSelectChange, columnWidth: 30} : null"
     :rowClassName="getRowClassName"
     @resizeColumn="handleResizeColumn"
-    style="overflow-y: auto"
+    :style="{ 'overflow-y': this.$route.name === 'usage' ? 'hidden' : 'auto' }"
   >
     <template #customFilterDropdown>
       <div style="padding: 8px" class="filter-dropdown">
         <a-menu>
           <a-menu-item v-for="(column, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(column)">
             <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(column))"/>
-            {{ $t('label.' + String(getColumTitle(column)).toLowerCase()) }}
+            {{ $t('label.' + String(getColumnTitle(column)).toLowerCase()) }}
           </a-menu-item>
         </a-menu>
       </div>
@@ -44,7 +44,7 @@
           <span v-if="record.icon && record.icon.base64image">
             <resource-icon :image="record.icon.base64image" size="2x"/>
           </span>
-          <os-logo v-else :osId="record.ostypeid" :osName="record.osdisplayname" size="2x" />
+          <os-logo v-else :osId="record.ostypeid" :osName="record.osdisplayname" size="xl" />
         </span>
         <span style="min-width: 120px" >
           <QuickView
@@ -58,12 +58,12 @@
           </span>
           <span v-if="$showIcon() && !['vm', 'vnfapp'].includes($route.path.split('/')[1])" style="margin-right: 5px">
             <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="2x"/>
-            <os-logo v-else-if="record.ostypename" :osName="record.ostypename" size="2x" />
+            <os-logo v-else-if="record.ostypename" :osName="record.ostypename" size="xl" />
             <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 16px;" :icon="$route.meta.icon"/>
             <render-icon v-else style="font-size: 16px;" :svgIcon="$route.meta.icon" />
           </span>
           <span v-else :style="{ 'margin-right': record.ostypename ? '5px' : '0' }">
-            <os-logo v-if="record.ostypename" :osName="record.ostypename" size="1x" />
+            <os-logo v-if="record.ostypename" :osName="record.ostypename" size="xl" />
           </span>
 
           <span v-if="record.hasannotations">
@@ -86,6 +86,9 @@
             <router-link :to="{ path: $route.path + '/' + record.uuid, query: { zoneid: record.zoneid } }" v-if="record.uuid && record.zoneid">{{ $t(text.toLowerCase()) }}</router-link>
             <router-link :to="{ path: $route.path + '/' + record.uuid, query: { zoneid: $route.query.zoneid } }" v-else-if="record.uuid && $route.query.zoneid">{{ $t(text.toLowerCase()) }}</router-link>
             <router-link :to="{ path: $route.path }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
+          </span>
+          <span v-else-if="$route.path.startsWith('/guestnetwork') && record.id && record.displaynetwork === false">
+            <router-link :to="{ path: $route.path + '/' + record.id, query: { displaynetwork: false } }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
           </span>
           <span v-else>
             <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
@@ -231,6 +234,10 @@
       <template v-if="column.key === 'allocationstate'">
         <status :text="text ? text : ''" displayText />
       </template>
+      <template v-if="column.key === 'redundantstate'">
+        <status v-if="record && record.isredundantrouter" :text="text ? text : ''" displayText />
+        <status v-else :text="'N/A'" displayText :styles="{ 'min-width': '80px' }" />
+      </template>
       <template v-if="column.key === 'resourcestate'">
         <status :text="text ? text : ''" displayText />
       </template>
@@ -242,6 +249,9 @@
       </template>
       <template v-if="column.key === 'quotastate'">
         <status :text="text ? text : ''" displayText />
+      </template>
+      <template v-if="column.key === 'offerha'">
+        {{ text ? $t('state.enabled') : $t('state.disabled')}}
       </template>
       <template v-if="column.key === 'vlan'">
         <a href="javascript:;">
@@ -992,16 +1002,16 @@ export default {
       return host.state
     },
     getColumnKey (name) {
-      if (typeof name === 'object') {
-        name = Object.keys(name).includes('field') ? name.field : name.customTitle
+      if (typeof name !== 'object' || name === null) {
+        return name
       }
-      return name
+      return name.field ?? name.customTitle ?? Object.keys(name)[0]
     },
-    getColumTitle (name) {
-      if (typeof name === 'object') {
-        name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
+    getColumnTitle (name) {
+      if (typeof name !== 'object' || name === null) {
+        return name
       }
-      return name
+      return name.customTitle ?? name.field ?? Object.keys(name)[0]
     },
     handleResizeColumn (w, col) {
       col.width = w
