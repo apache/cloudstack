@@ -25,7 +25,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import java.util.List;
+import java.util.Arrays;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -143,9 +143,15 @@ public class CloudStackPrimaryDataStoreLifeCycleImplTest extends TestCase {
 
         storageMgr.registerHostListener("default", hostListener);
 
+        HostVO host1 = Mockito.mock(HostVO.class);
+        HostVO host2 = Mockito.mock(HostVO.class);
 
-        when(hostDao.listIdsForUpRouting(anyLong(), anyLong(), anyLong()))
-                .thenReturn(List.of(1L, 2L));
+        Mockito.when(host1.getId()).thenReturn(1L);
+        Mockito.when(host2.getId()).thenReturn(2L);
+
+        when(_resourceMgr.getEligibleUpHostsInClusterForStorageConnection(store))
+                .thenReturn(Arrays.asList(host1, host2));
+
         when(hostDao.findById(anyLong())).thenReturn(mock(HostVO.class));
         when(agentMgr.easySend(anyLong(), Mockito.any(ModifyStoragePoolCommand.class))).thenReturn(answer);
         when(answer.getResult()).thenReturn(true);
