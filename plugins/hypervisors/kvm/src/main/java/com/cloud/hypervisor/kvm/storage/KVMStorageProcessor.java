@@ -125,6 +125,7 @@ import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.storage.JavaStorageLayer;
 import com.cloud.storage.MigrationOptions;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageLayer;
@@ -161,7 +162,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     /**
      * Time interval before rechecking virsh commands
      */
-    private long waitDelayForVirshCommands = 1000l;
+    private final long waitDelayForVirshCommands = 1000L;
 
     public KVMStorageProcessor(final KVMStoragePoolManager storagePoolMgr, final LibvirtComputingResource resource) {
         this.storagePoolMgr = storagePoolMgr;
@@ -258,7 +259,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             logger.debug("Copying template to primary storage, template format is " + tmplVol.getFormat() );
             final KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
 
-            KVMPhysicalDisk primaryVol = null;
+            KVMPhysicalDisk primaryVol;
             if (destData instanceof VolumeObjectTO) {
                 final VolumeObjectTO volume = (VolumeObjectTO)destData;
                 // pass along volume's target size if it's bigger than template's size, for storage types that copy template rather than cloning on deploy
@@ -277,8 +278,13 @@ public class KVMStorageProcessor implements StorageProcessor {
 
                 String path = derivePath(primaryStore, destData, details);
 
-                if (!storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details)) {
+                if (path == null) {
+                    path = destTempl.getUuid();
+                }
+
+                if (path != null && !storagePoolMgr.connectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path, details)) {
                     logger.warn("Failed to connect physical disk at path: {}, in storage pool [id: {}, name: {}]", path, primaryStore.getUuid(), primaryStore.getName());
+                    return new PrimaryStorageDownloadAnswer("Failed to spool template disk at path: " + path + ", in storage pool id: " + primaryStore.getUuid());
                 }
 
                 primaryVol = storagePoolMgr.copyPhysicalDisk(tmplVol, path != null ? path : destTempl.getUuid(), primaryPool, cmd.getWaitInMillSeconds());
@@ -336,12 +342,13 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     private String derivePath(PrimaryDataStoreTO primaryStore, DataTO destData, Map<String, String> details) {
-        String path = null;
+        String path;
         if (primaryStore.getPoolType() == StoragePoolType.FiberChannel) {
             path = destData.getPath();
         } else {
             path = details != null ? details.get("managedStoreTarget") : null;
         }
+
         return path;
     }
 
@@ -390,8 +397,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                 logger.debug("Using templates disk size of " + toHumanReadableSize(templateVol.getVirtualSize()) + "since size passed was " + toHumanReadableSize(size));
             }
 
-            final KVMPhysicalDisk primaryVol = storagePoolMgr.copyPhysicalDisk(templateVol, volUuid, primaryPool, timeout);
-            return primaryVol;
+            return storagePoolMgr.copyPhysicalDisk(templateVol, volUuid, primaryPool, timeout);
         } catch (final CloudRuntimeException e) {
             logger.error("Failed to download template to primary storage", e);
             return null;
@@ -410,9 +416,9 @@ public class KVMStorageProcessor implements StorageProcessor {
         final DataStoreTO imageStore = template.getDataStore();
         final VolumeObjectTO volume = (VolumeObjectTO)destData;
         final PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)volume.getDataStore();
-        KVMPhysicalDisk BaseVol = null;
-        KVMStoragePool primaryPool = null;
-        KVMPhysicalDisk vol = null;
+        KVMPhysicalDisk BaseVol;
+        KVMStoragePool primaryPool;
+        KVMPhysicalDisk vol;
 
         try {
             primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
@@ -420,7 +426,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             String templatePath = template.getPath();
 
             if (primaryPool.getType() == StoragePoolType.CLVM) {
-                templatePath = ((NfsTO)imageStore).getUrl() + File.separator + templatePath;
+                templatePath = imageStore.getUrl() + File.separator + templatePath;
                 vol = templateToPrimaryDownload(templatePath, primaryPool, volume.getUuid(), volume.getSize(), cmd.getWaitInMillSeconds());
             } if (storagePoolMgr.supportsPhysicalDiskCopy(primaryPool.getType())) {
                 Map<String, String> details = primaryStore.getDetails();
@@ -778,15 +784,19 @@ public class KVMStorageProcessor implements StorageProcessor {
 
         KVMStoragePool secondaryStorage = null;
 
+        String path = null;
         try {
             // look for options indicating an overridden path or IQN.  Used when snapshots have to be
             // temporarily copied on the manaaged storage device before the actual copy to target object
             Map<String, String> details = cmd.getOptions();
-            String path = details != null ? details.get(DiskTO.PATH) : null;
+            path = details != null ? details.get(DiskTO.PATH) : null;
             if (path == null) {
                 path = details != null ? details.get(DiskTO.IQN) : null;
                 if (path == null) {
-                    new CloudRuntimeException("The 'path' or 'iqn' field must be specified.");
+                    path = srcData.getPath();
+                    if (path == null) {
+                        new CloudRuntimeException("The 'path' or 'iqn' field must be specified.");
+                    }
                 }
             }
 
@@ -849,8 +859,6 @@ public class KVMStorageProcessor implements StorageProcessor {
             loc.addFormat(info);
             loc.save();
 
-            storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path);
-
             TemplateObjectTO newTemplate = new TemplateObjectTO();
 
             newTemplate.setPath(templateFolder + File.separator + templateName + ".qcow2");
@@ -870,6 +878,10 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             return new CopyCmdAnswer(ex.toString());
         } finally {
+            if (path != null) {
+                storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path);
+            }
+
             if (secondaryStorage != null) {
                 secondaryStorage.delete();
             }
@@ -1045,7 +1057,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                 command.add(NAME_OPTION, snapshotName);
                 command.add("-p", snapshotDestPath);
 
-                descName = UUID.randomUUID().toString();
+                if (isCreatedFromVmSnapshot) {
+                    descName = UUID.randomUUID().toString();
+                }
 
                 command.add("-t", descName);
                 final String result = command.execute();
@@ -1415,12 +1429,14 @@ public class KVMStorageProcessor implements StorageProcessor {
                     if (disk.getDeviceType() == DeviceType.DISK) {
                         if (disk.getBusType() == DiskDef.DiskBus.SCSI) {
                             busT = DiskDef.DiskBus.SCSI;
+                        } else if (disk.getBusType() == DiskDef.DiskBus.VIRTIOBLK) {
+                            busT = DiskDef.DiskBus.VIRTIOBLK;
                         }
                         break;
                     }
                 }
                 diskdef = new DiskDef();
-                if (busT == DiskDef.DiskBus.SCSI) {
+                if (busT == DiskDef.DiskBus.SCSI || busT == DiskDef.DiskBus.VIRTIOBLK) {
                     diskdef.setQemuDriver(true);
                     diskdef.setDiscard(DiscardType.UNMAP);
                 }
@@ -1459,7 +1475,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                     }
                 }
 
-                if (encryptDetails != null) {
+                if (encryptDetails != null &&
+                        attachingPool.getType().encryptionSupportMode() == Storage.EncryptionSupport.Hypervisor) {
                     diskdef.setLibvirtDiskEncryptDetails(encryptDetails);
                 }
 

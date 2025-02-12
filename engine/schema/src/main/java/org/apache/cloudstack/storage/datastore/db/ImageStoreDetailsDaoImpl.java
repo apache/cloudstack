@@ -73,7 +73,7 @@ public class ImageStoreDetailsDaoImpl extends ResourceDetailsDaoBase<ImageStoreD
         sc.setParameters("store", storeId);
 
         List<ImageStoreDetailVO> details = listBy(sc);
-        Map<String, String> detailsMap = new HashMap<String, String>();
+        Map<String, String> detailsMap = new HashMap<>();
         for (ImageStoreDetailVO detail : details) {
             String name = detail.getName();
             String value = detail.getValue();
@@ -114,6 +114,12 @@ public class ImageStoreDetailsDaoImpl extends ResourceDetailsDaoBase<ImageStoreD
     public String getConfigValue(long id, String key) {
         ImageStoreDetailVO vo = findDetail(id, key);
         return vo == null ? null : vo.getValue();
+    }
+
+    @Override
+    public String getConfigValue(long id, ConfigKey<?> key) {
+        ImageStoreDetailVO vo = findDetail(id, key.key());
+        return vo == null ? null : getActualValue(vo);
     }
 
     @Override
