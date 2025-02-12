@@ -62,7 +62,7 @@ public class CreateStoragePoolCmd extends BaseCmd {
     private String tags;
 
     @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUPS, type = CommandType.STRING,
-            description = "comma separated list of storage access groups for connecting to hosts having those specific groups", since = "4.18.1")
+            description = "comma separated list of storage access groups for connecting to hosts having those specific groups", since = "4.21.0")
     private String storageAccessGroups;
 
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "the URL of the storage pool")
