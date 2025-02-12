@@ -248,7 +248,9 @@ public class LibvirtVMDef {
                         guestDef.append("<boot dev='" + bo + "'/>\n");
                     }
                 }
-                guestDef.append("<smbios mode='sysinfo'/>\n");
+                if (_arch == null || !_arch.equals("aarch64")) {
+                    guestDef.append("<smbios mode='sysinfo'/>\n");
+                }
                 guestDef.append("</os>\n");
                 if (iothreads) {
                     guestDef.append(String.format("<iothreads>%s</iothreads>", NUMBER_OF_IOTHREADS));
@@ -678,7 +680,7 @@ public class LibvirtVMDef {
         }
 
         public enum DiskBus {
-            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML("uml"), FDC("fdc"), SATA("sata");
+            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML("uml"), FDC("fdc"), SATA("sata"), VIRTIOBLK("virtio-blk");
             String _bus;
 
             DiskBus(String bus) {

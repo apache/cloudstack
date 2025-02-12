@@ -755,7 +755,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         if (keyword != null) {
             SearchCriteria<StoragePoolVO> ssc = createSearchCriteria();
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
-            ssc.addOr("poolType", SearchCriteria.Op.LIKE, new Storage.StoragePoolType("%" + keyword + "%"));
+            ssc.addOr("poolType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
 
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
         }

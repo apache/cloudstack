@@ -57,6 +57,7 @@ public class ApiConstants {
     public static final String BASE64_IMAGE = "base64image";
     public static final String BGP_PEERS = "bgppeers";
     public static final String BGP_PEER_IDS = "bgppeerids";
+    public static final String BATCH_SIZE = "batchsize";
     public static final String BITS = "bits";
     public static final String BOOTABLE = "bootable";
     public static final String BIND_DN = "binddn";
@@ -476,11 +477,12 @@ public class ApiConstants {
     public static final String STATE = "state";
     public static final String STATS = "stats";
     public static final String STATUS = "status";
-    public static final String STORAGE_TYPE = "storagetype";
-    public static final String STORAGE_POLICY = "storagepolicy";
-    public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
     public static final String STORAGE_CAPABILITIES = "storagecapabilities";
     public static final String STORAGE_CUSTOM_STATS = "storagecustomstats";
+    public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
+    public static final String STORAGE_POLICY = "storagepolicy";
+    public static final String STORAGE_POOL = "storagepool";
+    public static final String STORAGE_TYPE = "storagetype";
     public static final String SUBNET = "subnet";
     public static final String OWNER = "owner";
     public static final String SWAP_OWNER = "swapowner";
@@ -953,7 +955,6 @@ public class ApiConstants {
     public static final String AUTOSCALE_VMGROUP_NAME = "autoscalevmgroupname";
     public static final String BAREMETAL_DISCOVER_NAME = "baremetaldiscovername";
     public static final String BAREMETAL_RCT_URL = "baremetalrcturl";
-    public static final String BATCH_SIZE = "batchsize";
     public static final String UCS_DN = "ucsdn";
     public static final String GSLB_PROVIDER = "gslbprovider";
     public static final String EXCLUSIVE_GSLB_PROVIDER = "isexclusivegslbprovider";
@@ -1190,6 +1191,7 @@ public class ApiConstants {
             "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +
             "numeric value will be applied; if the result is neither a boolean nor a numeric value, the tariff will not be applied. If the rule is not informed, the tariff " +
             "value will be applied.";
+    public static final String VMWARE_DC = "vmwaredc";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.

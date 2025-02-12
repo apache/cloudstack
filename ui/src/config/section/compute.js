@@ -17,6 +17,7 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { isZoneCreated } from '@/utils/zone'
 
 export default {
   name: 'compute',
@@ -100,6 +101,7 @@ export default {
           label: 'label.vm.add',
           docHelp: 'adminguide/virtual_machines.html#creating-vms',
           listView: true,
+          show: isZoneCreated,
           component: () => import('@/views/compute/DeployVM.vue')
         },
         {
@@ -225,6 +227,10 @@ export default {
           args: ['virtualmachineid', 'backupofferingid'],
           show: (record) => { return !record.backupofferingid },
           mapping: {
+            backupofferingid: {
+              api: 'listBackupOfferings',
+              params: (record) => { return { zoneid: record.zoneid } }
+            },
             virtualmachineid: {
               value: (record, params) => { return record.id }
             }
@@ -569,6 +575,7 @@ export default {
           docHelp: 'plugins/cloudstack-kubernetes-service.html#creating-a-new-kubernetes-cluster',
           listView: true,
           popup: true,
+          show: isZoneCreated,
           component: shallowRef(defineAsyncComponent(() => import('@/views/compute/CreateKubernetesCluster.vue')))
         },
         {
@@ -697,6 +704,7 @@ export default {
           icon: 'plus-outlined',
           label: 'label.new.autoscale.vmgroup',
           listView: true,
+          show: isZoneCreated,
           component: () => import('@/views/compute/CreateAutoScaleVmGroup.vue')
         },
         {
@@ -787,6 +795,7 @@ export default {
           icon: 'plus-outlined',
           label: 'label.new.instance.group',
           listView: true,
+          show: isZoneCreated,
           args: ['name']
         },
         {
