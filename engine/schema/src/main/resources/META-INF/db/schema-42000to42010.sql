@@ -32,3 +32,5 @@ CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.mshost_peer', 'fk_mshost_peer__
 
 -- Add last_id to the volumes table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'last_id', 'bigint(20) unsigned DEFAULT NULL');
+
+UPDATE `cloud`.`configuration` set name = "kvm.host.auto.enable.disable" where name = "enable.kvm.host.auto.enable.disable";

@@ -28,7 +28,7 @@
     >
       <a-alert type="warning">
         <template #message>
-          <span v-html="$t('message.confirm.enable.host')" />
+          <span v-html="resourcestate === 'Disabled' ? $t('message.confirm.enable.host') : $t('message.confirm.disable.host') " />
         </template>
       </a-alert>
       <div v-show="kvmAutoEnableDisableSetting" class="reason">
@@ -36,7 +36,7 @@
           class="form__item"
           name="reason"
           ref="reason"
-          :label="'The setting \'enable.kvm.host.auto.enable.disable\' is enabled, ' +
+          :label="'The setting \'kvm.host.auto.enable.disable\' is enabled, ' +
             ' can specify a reason for ' + (resourcestate === 'Enabled' ? 'disabling' : 'enabling') + ' this host'">
           <a-textarea
             v-model:value="form.reason"
