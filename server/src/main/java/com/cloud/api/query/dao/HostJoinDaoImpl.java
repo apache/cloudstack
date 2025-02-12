@@ -314,6 +314,16 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     }
 
     @Override
+    public HostResponse newMinimalHostResponse(HostJoinVO host) {
+        HostResponse hostResponse = new HostResponse();
+        hostResponse.setId(host.getUuid());
+        hostResponse.setName(host.getName());
+        hostResponse.setObjectName("host");
+
+        return hostResponse;
+    }
+
+    @Override
     public HostResponse newHostResponse(HostJoinVO host, EnumSet<HostDetails> details) {
         HostResponse hostResponse = new HostResponse();
         setNewHostResponseBase(host, details, hostResponse);

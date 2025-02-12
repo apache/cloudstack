@@ -226,4 +226,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<CPU.CPUArch> listDistinctArchTypes(final Long clusterId);
 
     List<HostVO> listByIds(final List<Long> ids);
+
+    List<String> listDistinctStorageAccessGroups(String name, String keyword);
 }
