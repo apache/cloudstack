@@ -18,7 +18,6 @@
  */
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -26,6 +25,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -51,7 +51,6 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.StorageConflictException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -63,6 +62,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolAutomation;
 import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolWorkDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -129,6 +129,8 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
     StoragePoolAutomation storagePoolAutmation;
     @Inject
     protected HostDao _hostDao;
+    @Inject
+    private StoragePoolAndAccessGroupMapDao storagePoolAndAccessGroupMapDao;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -146,9 +148,11 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
         PrimaryDataStoreParameters parameters = new PrimaryDataStoreParameters();
 
         String tags = (String)dsInfos.get("tags");
+        String storageAccessGroups = (String)dsInfos.get(ApiConstants.STORAGE_ACCESS_GROUPS);
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
         parameters.setTags(tags);
+        parameters.setStorageAccessGroups(storageAccessGroups);
         parameters.setIsTagARule((Boolean)dsInfos.get("isTagARule"));
         parameters.setDetails(details);
 
@@ -386,17 +390,15 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
     }
 
     private Pair<List<Long>, Boolean> prepareOcfs2NodesIfNeeded(PrimaryDataStoreInfo primaryStore) {
+        List<HostVO> hostsToConnect = _resourceMgr.getEligibleUpHostsInClusterForStorageConnection(primaryStore);
+        logger.debug(String.format("Attaching the pool to each of the hosts %s in the cluster: %s", hostsToConnect, primaryStore.getClusterId()));
+        List<Long> hostIds = hostsToConnect.stream().map(HostVO::getId).collect(Collectors.toList());
+
         if (!StoragePoolType.OCFS2.equals(primaryStore.getPoolType())) {
-            return new Pair<>(_hostDao.listIdsForUpRouting(primaryStore.getDataCenterId(),
-                    primaryStore.getPodId(), primaryStore.getClusterId()), true);
+            return new Pair<>(hostIds, true);
         }
-        List<HostVO> allHosts = _resourceMgr.listAllUpHosts(Host.Type.Routing, primaryStore.getClusterId(),
-                primaryStore.getPodId(), primaryStore.getDataCenterId());
-        if (allHosts.isEmpty()) {
-            return new Pair<>(Collections.emptyList(), true);
-        }
-        List<Long> hostIds = allHosts.stream().map(HostVO::getId).collect(Collectors.toList());
-        if (!_ocfs2Mgr.prepareNodes(allHosts, primaryStore)) {
+
+        if (!_ocfs2Mgr.prepareNodes(hostsToConnect, primaryStore)) {
             return new Pair<>(hostIds, false);
         }
         return new Pair<>(hostIds, true);
@@ -432,8 +434,9 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
 
     @Override
     public boolean attachZone(DataStore store, ZoneScope scope, HypervisorType hypervisorType) {
-        List<Long> hostIds = _hostDao.listIdsForUpEnabledByZoneAndHypervisor(scope.getScopeId(), hypervisorType);
-        logger.debug("In createPool. Attaching the pool to each of the hosts.");
+        List<HostVO> hostsToConnect = _resourceMgr.getEligibleUpAndEnabledHostsInZoneForStorageConnection(store, scope.getScopeId(), hypervisorType);
+        logger.debug(String.format("In createPool. Attaching the pool to each of the hosts in %s.", hostsToConnect));
+        List<Long> hostIds = hostsToConnect.stream().map(HostVO::getId).collect(Collectors.toList());
         storageMgr.connectHostsToPool(store, hostIds, scope, true, true);
         dataStoreHelper.attachZone(store, hypervisorType);
         return true;

@@ -58,7 +58,7 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
      */
     void updateCapacityIops(long id, long capacityIops);
 
-    StoragePoolVO persist(StoragePoolVO pool, Map<String, String> details, List<String> tags, Boolean isTagARule);
+    StoragePoolVO persist(StoragePoolVO pool, Map<String, String> details, List<String> tags, Boolean isTagARule, List<String> storageAccessGroups);
 
     /**
      * Find pool by name.
@@ -82,7 +82,9 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
      */
     List<StoragePoolVO> findPoolsByDetails(long dcId, long podId, Long clusterId, Map<String, String> details, ScopeType scope);
 
-    List<StoragePoolVO> findPoolsByTags(long dcId, long podId, Long clusterId, String[] tags, boolean validateTagRule, long ruleExecuteTimeout);
+    List<StoragePoolVO> findPoolsByTags(long dcId, long podId, Long clusterId, ScopeType scope, String[] tags, boolean validateTagRule, long ruleExecuteTimeout);
+
+    List<StoragePoolVO> findPoolsByAccessGroupsForHostConnection(Long dcId, Long podId, Long clusterId, ScopeType scope, String[] storageAccessGroups);
 
     List<StoragePoolVO> findDisabledPoolsByScope(long dcId, Long podId, Long clusterId, ScopeType scope);
 
@@ -123,6 +125,10 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     List<StoragePoolVO> findZoneWideStoragePoolsByTags(long dcId, String[] tags, boolean validateTagRule);
 
+    List<StoragePoolVO> findZoneWideStoragePoolsByAccessGroupsForHostConnection(long dcId, String[] storageAccessGroups);
+
+    List<StoragePoolVO> findZoneWideStoragePoolsByAccessGroupsAndHypervisorTypeForHostConnection(long dcId, String[] storageAccessGroups, HypervisorType type);
+
     List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType);
 
     List<StoragePoolVO> findZoneWideStoragePoolsByHypervisor(long dataCenterId, HypervisorType hypervisorType, String keyword);
@@ -139,6 +145,8 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     void deletePoolTags(long poolId);
 
+    void deleteStoragePoolAccessGroups(long poolId);
+
     List<StoragePoolVO> listChildStoragePoolsInDatastoreCluster(long poolId);
 
     Integer countAll();
@@ -150,8 +158,10 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
     List<StoragePoolVO> listStoragePoolsWithActiveVolumesByOfferingId(long offeringid);
 
     Pair<List<Long>, Integer> searchForIdsAndCount(Long storagePoolId, String storagePoolName, Long zoneId,
-            String path, Long podId, Long clusterId, String address, ScopeType scopeType, StoragePoolStatus status,
+            String path, Long podId, Long clusterId, Long hostId, String address, ScopeType scopeType, StoragePoolStatus status,
             String keyword, Filter searchFilter);
 
     List<StoragePoolVO> listByIds(List<Long> ids);
+
+    List<StoragePoolVO> findStoragePoolsByEmptyStorageAccessGroups(Long dcId, Long podId, Long clusterId, ScopeType scope, HypervisorType hypervisorType);
 }

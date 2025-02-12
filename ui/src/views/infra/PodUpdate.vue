@@ -33,40 +33,23 @@
           v-model:value="form.name"
           v-focus="true" />
       </a-form-item>
-      <a-form-item name="hosttags" ref="hosttags">
+      <a-form-item name="netmask" ref="netmask">
         <template #label>
-          <tooltip-label :title="$t('label.hosttags')" :tooltip="$t('label.hosttags.explicit.description')"/>
+          <tooltip-label :title="$t('label.netmask')" :tooltip="$t('label.netmask.description')"/>
         </template>
-        <a-input v-model:value="form.hosttags" />
+        <a-input v-model:value="form.netmask" />
       </a-form-item>
-      <a-form-item name="istagarule" ref="istagarule">
+      <a-form-item name="gateway" ref="gateway">
         <template #label>
-          <tooltip-label :title="$t('label.istagarule')" :tooltip="apiParams.istagarule.description"/>
+          <tooltip-label :title="$t('label.gateway')" :tooltip="$t('label.gateway.description')"/>
         </template>
-        <a-switch v-model:checked="form.istagarule" />
+        <a-input v-model:value="form.gateway" />
       </a-form-item>
       <a-form-item name="storageaccessgroups" ref="storageaccessgroups">
         <template #label>
           <tooltip-label :title="$t('label.storageaccessgroups')" :tooltip="apiParamsConfigureStorageAccess.storageaccessgroups.description"/>
         </template>
         <a-input v-model:value="form.storageaccessgroups" />
-      </a-form-item>
-      <a-form-item name="oscategoryid" ref="oscategoryid">
-        <template #label>
-          <tooltip-label :title="$t('label.oscategoryid')" :tooltip="apiParams.oscategoryid.description"/>
-        </template>
-        <a-select
-          showSearch
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }"
-          :loading="osCategories.loading"
-          v-model:value="form.oscategoryid">
-          <a-select-option v-for="(osCategory) in osCategories.opts" :key="osCategory.id" :label="osCategory.name">
-            {{ osCategory.name }}
-          </a-select-option>
-        </a-select>
       </a-form-item>
 
       <div :span="24" class="action-button">
@@ -83,7 +66,7 @@ import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
-  name: 'EditVM',
+  name: 'PodUpdate',
   components: {
     TooltipLabel
   },
@@ -99,43 +82,26 @@ export default {
   },
   data () {
     return {
-      loading: false,
-      osCategories: {
-        loading: false,
-        opts: []
-      }
+      loading: false
     }
   },
   beforeCreate () {
-    this.apiParams = this.$getApiParams('updateHost')
+    this.apiParams = this.$getApiParams('updatePod')
     this.apiParamsConfigureStorageAccess = this.$getApiParams('configureStorageAccess')
   },
   created () {
     this.initForm()
-    this.fetchOsCategories()
   },
   methods: {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
         name: this.resource.name,
-        hosttags: this.resource.explicithosttags,
-        istagarule: this.resource.istagarule,
-        storageaccessgroups: this.resource.storageaccessgroups,
-        oscategoryid: this.resource.oscategoryid
+        netmask: this.resource.netmask,
+        gateway: this.resource.gateway,
+        storageaccessgroups: this.resource.storageaccessgroups
       })
       this.rules = reactive({})
-    },
-    fetchOsCategories () {
-      this.osCategories.loading = true
-      this.osCategories.opts = []
-      api('listOsCategories').then(json => {
-        this.osCategories.opts = json.listoscategoriesresponse.oscategory || []
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.osCategories.loading = false
-      })
     },
     handleSubmit () {
       this.formRef.value.validate().then(() => {
@@ -143,23 +109,21 @@ export default {
         console.log(values)
         const params = {}
         params.id = this.resource.id
+        params.netmask = values.netmask
+        params.gateway = values.gateway
         params.name = values.name
-        params.hosttags = values.hosttags
-        params.oscategoryid = values.oscategoryid
-        if (values.istagarule !== undefined) {
-          params.istagarule = values.istagarule
-        }
         this.loading = true
 
-        api('updateHost', params).then(json => {
+        api('updatePod', params).then(json => {
           this.$message.success({
-            content: `${this.$t('label.action.update.host')} - ${values.name}`,
+            content: `${this.$t('label.action.update.pod')} - ${values.name}`,
             duration: 2
           })
+
           params.storageaccessgroups = values.storageaccessgroups
           if (params.storageaccessgroups !== undefined && params.storageaccessgroups !== this.resource.storageaccessgroups) {
             api('configureStorageAccess', {
-              hostid: params.id,
+              podid: params.id,
               storageaccessgroups: params.storageaccessgroups
             }).then(response => {
               this.$pollJob({
@@ -174,13 +138,12 @@ export default {
               })
             })
           }
+
           this.$emit('refresh-data')
           this.onCloseAction()
         }).catch(error => {
           this.$notifyError(error)
-        }).finally(() => {
-          this.loading = false
-        })
+        }).finally(() => { this.loading = false })
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })

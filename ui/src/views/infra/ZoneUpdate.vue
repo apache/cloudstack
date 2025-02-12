@@ -25,48 +25,82 @@
       :rules="rules"
       v-ctrl-enter="handleSubmit"
       @finish="handleSubmit">
+
       <a-form-item name="name" ref="name">
         <template #label>
           <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
         </template>
-        <a-input
-          v-model:value="form.name"
-          v-focus="true" />
+        <a-input v-model:value="form.name" />
       </a-form-item>
-      <a-form-item name="hosttags" ref="hosttags">
+
+      <a-form-item name="dns1" ref="dns1">
         <template #label>
-          <tooltip-label :title="$t('label.hosttags')" :tooltip="$t('label.hosttags.explicit.description')"/>
+          <tooltip-label :title="$t('label.dns1')" :tooltip="apiParams.dns1.description"/>
         </template>
-        <a-input v-model:value="form.hosttags" />
+        <a-input v-model:value="form.dns1" />
       </a-form-item>
-      <a-form-item name="istagarule" ref="istagarule">
+
+      <a-form-item name="dns2" ref="dns2">
         <template #label>
-          <tooltip-label :title="$t('label.istagarule')" :tooltip="apiParams.istagarule.description"/>
+          <tooltip-label :title="$t('label.dns2')" :tooltip="apiParams.dns2.description"/>
         </template>
-        <a-switch v-model:checked="form.istagarule" />
+        <a-input v-model:value="form.dns2" />
       </a-form-item>
+
+      <a-form-item name="ip6dns1" ref="ip6dns1">
+        <template #label>
+          <tooltip-label :title="$t('label.ip6dns1')" :tooltip="apiParams.ip6dns1.description"/>
+        </template>
+        <a-input v-model:value="form.ip6dns1" />
+      </a-form-item>
+
+      <a-form-item name="ip6dns2" ref="ip6dns2">
+        <template #label>
+          <tooltip-label :title="$t('label.ip6dns2')" :tooltip="apiParams.ip6dns2.description"/>
+        </template>
+        <a-input v-model:value="form.ip6dns2" />
+      </a-form-item>
+
+      <a-form-item name="internaldns1" ref="internaldns1">
+        <template #label>
+          <tooltip-label :title="$t('label.internaldns1')" :tooltip="apiParams.internaldns1.description"/>
+        </template>
+        <a-input v-model:value="form.internaldns1" />
+      </a-form-item>
+
+      <a-form-item name="internaldns2" ref="internaldns2">
+        <template #label>
+          <tooltip-label :title="$t('label.internaldns2')" :tooltip="apiParams.internaldns2.description"/>
+        </template>
+        <a-input v-model:value="form.internaldns2" />
+      </a-form-item>
+
+      <a-form-item name="guestcidraddress" ref="guestcidraddress">
+        <template #label>
+          <tooltip-label :title="$t('label.guestcidraddress')" :tooltip="apiParams.guestcidraddress.description"/>
+        </template>
+        <a-input v-model:value="form.guestcidraddress" />
+      </a-form-item>
+
+      <a-form-item name="domain" ref="domain">
+        <template #label>
+          <tooltip-label :title="$t('label.domain')" :tooltip="apiParams.domain.description"/>
+        </template>
+        <a-input v-model:value="form.domain" />
+      </a-form-item>
+
+      <a-form-item name="localstorageenabled" ref="localstorageenabled">
+        <template #label>
+          <tooltip-label :title="$t('label.localstorageenabled')" :tooltip="apiParams.localstorageenabled.description"/>
+        </template>
+        <a-switch v-model:value="form.localstorageenabled" />
+      </a-form-item>
+
       <a-form-item name="storageaccessgroups" ref="storageaccessgroups">
         <template #label>
           <tooltip-label :title="$t('label.storageaccessgroups')" :tooltip="apiParamsConfigureStorageAccess.storageaccessgroups.description"/>
         </template>
         <a-input v-model:value="form.storageaccessgroups" />
-      </a-form-item>
-      <a-form-item name="oscategoryid" ref="oscategoryid">
-        <template #label>
-          <tooltip-label :title="$t('label.oscategoryid')" :tooltip="apiParams.oscategoryid.description"/>
-        </template>
-        <a-select
-          showSearch
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }"
-          :loading="osCategories.loading"
-          v-model:value="form.oscategoryid">
-          <a-select-option v-for="(osCategory) in osCategories.opts" :key="osCategory.id" :label="osCategory.name">
-            {{ osCategory.name }}
-          </a-select-option>
-        </a-select>
       </a-form-item>
 
       <div :span="24" class="action-button">
@@ -83,7 +117,7 @@ import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
-  name: 'EditVM',
+  name: 'ZoneUpdate',
   components: {
     TooltipLabel
   },
@@ -99,67 +133,51 @@ export default {
   },
   data () {
     return {
-      loading: false,
-      osCategories: {
-        loading: false,
-        opts: []
-      }
+      loading: false
     }
   },
   beforeCreate () {
-    this.apiParams = this.$getApiParams('updateHost')
+    this.apiParams = this.$getApiParams('updateZone')
     this.apiParamsConfigureStorageAccess = this.$getApiParams('configureStorageAccess')
   },
   created () {
     this.initForm()
-    this.fetchOsCategories()
   },
   methods: {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
         name: this.resource.name,
-        hosttags: this.resource.explicithosttags,
-        istagarule: this.resource.istagarule,
-        storageaccessgroups: this.resource.storageaccessgroups,
-        oscategoryid: this.resource.oscategoryid
+        dns1: this.resource.dns1,
+        dns2: this.resource.dns2,
+        ip6dns1: this.resource.ip6dns1,
+        ip6dns2: this.resource.ip6dns2,
+        internaldns1: this.resource.internaldns1,
+        internaldns2: this.resource.internaldns2,
+        guestcidraddress: this.resource.guestcidraddress,
+        domain: this.resource.domain,
+        localstorageenabled: this.resource.localstorageenabled,
+        storageaccessgroups: this.resource.storageaccessgroups
       })
       this.rules = reactive({})
-    },
-    fetchOsCategories () {
-      this.osCategories.loading = true
-      this.osCategories.opts = []
-      api('listOsCategories').then(json => {
-        this.osCategories.opts = json.listoscategoriesresponse.oscategory || []
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.osCategories.loading = false
-      })
     },
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-        console.log(values)
-        const params = {}
-        params.id = this.resource.id
-        params.name = values.name
-        params.hosttags = values.hosttags
-        params.oscategoryid = values.oscategoryid
-        if (values.istagarule !== undefined) {
-          params.istagarule = values.istagarule
-        }
+        const params = { id: this.resource.id, ...values }
+
         this.loading = true
 
-        api('updateHost', params).then(json => {
+        api('updateZone', params).then(json => {
           this.$message.success({
-            content: `${this.$t('label.action.update.host')} - ${values.name}`,
+            content: `${this.$t('label.action.update.zone')} - ${values.name}`,
             duration: 2
           })
+
           params.storageaccessgroups = values.storageaccessgroups
           if (params.storageaccessgroups !== undefined && params.storageaccessgroups !== this.resource.storageaccessgroups) {
             api('configureStorageAccess', {
-              hostid: params.id,
+              zoneid: params.id,
               storageaccessgroups: params.storageaccessgroups
             }).then(response => {
               this.$pollJob({
@@ -174,13 +192,12 @@ export default {
               })
             })
           }
+
           this.$emit('refresh-data')
           this.onCloseAction()
         }).catch(error => {
           this.$notifyError(error)
-        }).finally(() => {
-          this.loading = false
-        })
+        }).finally(() => { this.loading = false })
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })

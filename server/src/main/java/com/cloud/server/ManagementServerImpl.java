@@ -213,6 +213,7 @@ import org.apache.cloudstack.api.command.admin.storage.AddImageStoreS3CMD;
 import org.apache.cloudstack.api.command.admin.storage.AddObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
+import org.apache.cloudstack.api.command.admin.storage.ConfigureStorageAccessCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
@@ -3593,6 +3594,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(SyncStoragePoolCmd.class);
         cmdList.add(UpdateStorageCapabilitiesCmd.class);
         cmdList.add(UpdateImageStoreCmd.class);
+        cmdList.add(ConfigureStorageAccessCmd.class);
         cmdList.add(DestroySystemVmCmd.class);
         cmdList.add(ListSystemVMsCmd.class);
         cmdList.add(MigrateSystemVMCmd.class);
