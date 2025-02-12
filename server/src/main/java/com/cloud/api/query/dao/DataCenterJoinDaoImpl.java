@@ -75,6 +75,15 @@ public class DataCenterJoinDaoImpl extends GenericDaoBase<DataCenterJoinVO, Long
     }
 
     @Override
+    public ZoneResponse newMinimalDataCenterResponse(ResponseView view, DataCenterJoinVO dataCenter) {
+        ZoneResponse zoneResponse = new ZoneResponse(null);
+        zoneResponse.setId(dataCenter.getUuid());
+        zoneResponse.setName(dataCenter.getName());
+        zoneResponse.setObjectName("zone");
+        return zoneResponse;
+    }
+
+    @Override
     public ZoneResponse newDataCenterResponse(ResponseView view, DataCenterJoinVO dataCenter, Boolean showCapacities, Boolean showResourceImage) {
         ZoneResponse zoneResponse = new ZoneResponse();
         zoneResponse.setId(dataCenter.getUuid());
