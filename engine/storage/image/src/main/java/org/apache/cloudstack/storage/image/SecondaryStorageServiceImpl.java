@@ -25,6 +25,7 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.download.DownloadListener;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
@@ -172,8 +173,8 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
         String destDatastoreAsString = destDatastore.getTO().toString();
         TemplateDataStoreVO templateStoreVO;
 
-        long timer = getTemplateDownloadTimeoutInSeconds();
-        int secondsToSleep = 10;
+        long timer = getTemplateDownloadTimeout();
+        long msToSleep = 10000L;
         int previousDownloadPercentage = -1;
 
         while (true) {
@@ -187,15 +188,15 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
                 break;
             }
             if (previousDownloadPercentage == templateStoreVO.getDownloadPercent()) {
-                timer -= secondsToSleep;
+                timer -= msToSleep;
             } else {
-                timer = getTemplateDownloadTimeoutInSeconds();
+                timer = getTemplateDownloadTimeout();
             }
             if (timer <= 0) {
                 throw new CloudRuntimeException(String.format("Timeout while waiting for %s to be downloaded to image store [%s]. " +
-                        "The download percentage has not changed for %d seconds.", templateAsString, destDatastoreAsString, getTemplateDownloadTimeoutInSeconds()));
+                        "The download percentage has not changed for %d milliseconds.", templateAsString, destDatastoreAsString, getTemplateDownloadTimeout()));
             }
-            waitForTemplateDownload(secondsToSleep, templateAsString, destDatastoreAsString);
+            waitForTemplateDownload(msToSleep, templateAsString, destDatastoreAsString);
         }
 
         if (templateStoreVO.getState() == ObjectInDataStoreStateMachine.State.Ready) {
@@ -205,15 +206,15 @@ public class SecondaryStorageServiceImpl implements SecondaryStorageService {
         return false;
     }
 
-    protected long getTemplateDownloadTimeoutInSeconds() {
-        return 1800L;
+    protected long getTemplateDownloadTimeout() {
+        return DownloadListener.DOWNLOAD_TIMEOUT;
     }
 
-    protected void waitForTemplateDownload(int secondsToSleep, String templateAsString, String destDatastoreAsString) {
-        logger.debug("{} is being downloaded to destination [{}]; we will verify in {} seconds if the download has finished.",
-                templateAsString, destDatastoreAsString, secondsToSleep);
+    protected void waitForTemplateDownload(long msToSleep, String templateAsString, String destDatastoreAsString) {
+        logger.debug("{} is being downloaded to destination [{}]; we will verify in {} milliseconds if the download has finished.",
+                templateAsString, destDatastoreAsString, msToSleep);
         try {
-            Thread.sleep(secondsToSleep * 1000L);
+            Thread.sleep(msToSleep);
         } catch (InterruptedException e) {
             logger.warn("[ignored] interrupted while waiting for template {} download to finish before trying to migrate it to data store [{}].",
                     templateAsString, destDatastoreAsString);
