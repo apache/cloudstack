@@ -165,6 +165,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setClusterName(pool.getClusterName());
         poolResponse.setProvider(pool.getStorageProviderName());
         poolResponse.setTags(pool.getTag());
+        poolResponse.setStorageAccessGroups(pool.getStorageAccessGroup());
         poolResponse.setIsTagARule(pool.getIsTagARule());
         poolResponse.setOverProvisionFactor(Double.toString(CapacityManager.StorageOverprovisioningFactor.valueIn(pool.getId())));
         poolResponse.setManaged(storagePool.isManaged());
@@ -189,6 +190,14 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
                 response.setTags(response.getTags() + "," + tag);
             } else {
                 response.setTags(tag);
+            }
+        }
+        String storageAccessGroup = sp.getStorageAccessGroup();
+        if (storageAccessGroup != null) {
+            if (response.getStorageAccessGroups() != null && response.getStorageAccessGroups().length() > 0) {
+                response.setStorageAccessGroups(response.getStorageAccessGroups() + "," + storageAccessGroup);
+            } else {
+                response.setStorageAccessGroups(storageAccessGroup);
             }
         }
         if (response.hasAnnotation() == null) {
@@ -251,6 +260,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setClusterName(pool.getClusterName());
         poolResponse.setProvider(pool.getStorageProviderName());
         poolResponse.setTags(pool.getTag());
+        poolResponse.setStorageAccessGroups(pool.getStorageAccessGroup());
         poolResponse.setIsTagARule(pool.getIsTagARule());
 
         // set async job
@@ -269,6 +279,14 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
                 response.setTags(response.getTags() + "," + tag);
             } else {
                 response.setTags(tag);
+            }
+        }
+        String storageAccessGroup = sp.getStorageAccessGroup();
+        if (storageAccessGroup != null) {
+            if (response.getStorageAccessGroups() != null && response.getStorageAccessGroups().length() > 0) {
+                response.setStorageAccessGroups(response.getStorageAccessGroups() + "," + storageAccessGroup);
+            } else {
+                response.setStorageAccessGroups(storageAccessGroup);
             }
         }
         return response;

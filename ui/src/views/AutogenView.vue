@@ -1191,7 +1191,7 @@ export default {
       this.showAction = true
       const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
       for (const param of this.currentAction.paramFields) {
-        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
+        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'storageaccessgroups', 'files'].includes(param.name)) {
           param.type = 'string'
         }
         this.setRules(param)
@@ -1586,7 +1586,7 @@ export default {
               }
               break
             }
-            if (input === '' && !['tags', 'hosttags', 'storagetags', 'dns2', 'ip6dns1',
+            if (input === '' && !['tags', 'hosttags', 'storagetags', 'storageaccessgroups', 'dns2', 'ip6dns1',
               'ip6dns2', 'internaldns2', 'networkdomain', 'secretkey'].includes(key)) {
               break
             }

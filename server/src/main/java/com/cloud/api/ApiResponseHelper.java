@@ -1344,7 +1344,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         PodResponse podResponse = new PodResponse();
         podResponse.setId(pod.getUuid());
         podResponse.setName(pod.getName());
-        DataCenter zone = ApiDBUtils.findZoneById(pod.getDataCenterId());
+        DataCenterVO zone = ApiDBUtils.findZoneById(pod.getDataCenterId());
         if (zone != null) {
             podResponse.setZoneId(zone.getUuid());
             podResponse.setZoneName(zone.getName());
@@ -1357,6 +1357,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         podResponse.setVlanId(vlanIds);
         podResponse.setGateway(pod.getGateway());
         podResponse.setAllocationState(pod.getAllocationState().toString());
+        podResponse.setStorageAccessGroups(pod.getStorageAccessGroups());
+        podResponse.setZoneStorageAccessGroups(zone.getStorageAccessGroups());
         if (showCapacities != null && showCapacities) {
             List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(null, pod.getId(), null);
             Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
@@ -1516,7 +1518,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             clusterResponse.setPodId(pod.getUuid());
             clusterResponse.setPodName(pod.getName());
         }
-        DataCenter dc = ApiDBUtils.findZoneById(cluster.getDataCenterId());
+        DataCenterVO dc = ApiDBUtils.findZoneById(cluster.getDataCenterId());
         if (dc != null) {
             clusterResponse.setZoneId(dc.getUuid());
             clusterResponse.setZoneName(dc.getName());
@@ -1533,6 +1535,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (cluster.getArch() != null) {
             clusterResponse.setArch(cluster.getArch().getType());
         }
+
+        clusterResponse.setStorageAccessGroups(cluster.getStorageAccessGroups());
+        clusterResponse.setPodStorageAccessGroups(pod.getStorageAccessGroups());
+        clusterResponse.setZoneStorageAccessGroups(dc.getStorageAccessGroups());
 
         if (showCapacities != null && showCapacities) {
             List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(null, null, cluster.getId());
