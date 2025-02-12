@@ -298,7 +298,7 @@ public class NetworkerClient {
     public ArrayList<String> getBackupsForVm(VirtualMachine vm) {
         SimpleDateFormat formatterDateTime = new SimpleDateFormat("yyy-MM-dd'T'HH:mm:ss");
 
-        LOG.debug("Trying to list EMC Networker backups for VM " + vm.getName());
+        LOG.debug(String.format("Trying to list EMC Networker backups for VM %s", vm));
         try {
             final HttpResponse response = get("/global/backups/?q=name:" + vm.getName());
             checkResponseOK(response);
@@ -310,7 +310,7 @@ public class NetworkerClient {
                 return backupsTaken;
             }
             for (final NetworkerBackup backup : networkerBackups.getBackups()) {
-                LOG.debug("Found Backup " + backup.getId());
+                LOG.debug(String.format("Found Backup %s", backup));
                 // Backups that have expired on the EMC Networker but not removed yet will not be added
                 try {
                     Date backupRetentionTime = formatterDateTime.parse(backup.getRetentionTime());
@@ -345,7 +345,7 @@ public class NetworkerClient {
                 return policies;
             }
             for (final ProtectionPolicy protectionPolicy : protectionPolicies.getProtectionPolicies()) {
-                LOG.debug("Found Protection Policy:" + protectionPolicy.getName());
+                LOG.debug(String.format("Found Protection Policy: %s", protectionPolicy));
                 policies.add(new NetworkerBackupOffering(protectionPolicy.getName(), protectionPolicy.getResourceId().getId()));
             }
             return policies;

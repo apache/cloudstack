@@ -16,13 +16,17 @@
 // under the License.
 package org.apache.cloudstack.agent.lb;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.resource.ResourceState;
-import com.cloud.utils.exception.CloudRuntimeException;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -32,16 +36,17 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-
-import static org.mockito.Mockito.when;
+import com.cloud.agent.AgentManager;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.resource.ResourceState;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class IndirectAgentLBServiceImplTest {
 
@@ -85,6 +90,7 @@ public class IndirectAgentLBServiceImplTest {
     }
 
     private void configureMocks() throws NoSuchFieldException, IllegalAccessException {
+        List<HostVO> hosts = Arrays.asList(host1, host2, host3, host4);
         long id = 1;
         for (HostVO h : Arrays.asList(host1, host2, host3, host4)) {
             when(h.getId()).thenReturn(id);
@@ -98,7 +104,9 @@ public class IndirectAgentLBServiceImplTest {
         addField(agentMSLB, "hostDao", hostDao);
         addField(agentMSLB, "agentManager", agentManager);
 
-        when(hostDao.listAll()).thenReturn(Arrays.asList(host4, host2, host1, host3));
+        List<Long> hostIds = hosts.stream().map(HostVO::getId).collect(Collectors.toList());
+        doReturn(hostIds).when(hostDao).findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(Mockito.anyLong(),
+                Mockito.eq(null), Mockito.anyList(), Mockito.anyList(), Mockito.anyList());
     }
 
     @Before
@@ -193,21 +201,18 @@ public class IndirectAgentLBServiceImplTest {
     }
 
     @Test
-    public void testGetOrderedRunningHostIdsNullList() {
-        when(hostDao.listAll()).thenReturn(null);
-        Assert.assertTrue(agentMSLB.getOrderedHostIdList(DC_1_ID).size() == 0);
+    public void testGetOrderedRunningHostIdsEmptyList() {
+        doReturn(Collections.emptyList()).when(hostDao).findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(
+                Mockito.eq(DC_1_ID), Mockito.eq(null), Mockito.anyList(), Mockito.anyList(), Mockito.anyList());
+        Assert.assertTrue(agentMSLB.getOrderedHostIdList(DC_1_ID).isEmpty());
     }
 
     @Test
     public void testGetOrderedRunningHostIdsOrderList() {
-        when(hostDao.listAll()).thenReturn(Arrays.asList(host4, host2, host1, host3));
+        doReturn(Arrays.asList(host4.getId(), host2.getId(), host1.getId(), host3.getId())).when(hostDao)
+                .findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(Mockito.eq(DC_1_ID), Mockito.eq(null),
+                        Mockito.anyList(), Mockito.anyList(), Mockito.anyList());
         Assert.assertEquals(Arrays.asList(host1.getId(), host2.getId(), host3.getId(), host4.getId()),
                 agentMSLB.getOrderedHostIdList(DC_1_ID));
-    }
-
-    @Test
-    public void testGetHostsPerZoneNullHosts() {
-        when(hostDao.listAll()).thenReturn(null);
-        Assert.assertTrue(agentMSLB.getOrderedHostIdList(DC_2_ID).size() == 0);
     }
 }

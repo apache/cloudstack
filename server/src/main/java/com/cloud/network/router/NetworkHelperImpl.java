@@ -192,8 +192,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     @Override
     public boolean sendCommandsToRouter(final VirtualRouter router, final Commands cmds) throws AgentUnavailableException, ResourceUnavailableException {
         if (!checkRouterVersion(router)) {
-            logger.debug("Router requires upgrade. Unable to send command to router:" + router.getId() + ", router template version : " + router.getTemplateVersion()
-                    + ", minimal required version : " + NetworkOrchestrationService.MinVRVersion.valueIn(router.getDataCenterId()));
+            logger.debug("Router requires upgrade. Unable to send command to router: {}, router template version: {}, minimal required version: {}",
+                    router, router.getTemplateVersion(), NetworkOrchestrationService.MinVRVersion.valueIn(router.getDataCenterId()));
             throw new ResourceUnavailableException("Unable to send command. Router requires upgrade", VirtualRouter.class, router.getId());
         }
         Answer[] answers = null;
@@ -242,10 +242,10 @@ public class NetworkHelperImpl implements NetworkHelper {
         DomainRouterVO disconnectedRouter = (DomainRouterVO) disconnectedRouters.get(0);
 
         if (logger.isDebugEnabled()) {
-            logger.debug("About to stop the router " + disconnectedRouter.getInstanceName() + " due to: " + reason);
+            logger.debug("About to stop the router {} due to: {}", disconnectedRouter, reason);
         }
         final String title = "Virtual router " + disconnectedRouter.getInstanceName() + " would be stopped after connecting back, due to " + reason;
-        final String context = "Virtual router (name: " + disconnectedRouter.getInstanceName() + ", id: " + disconnectedRouter.getId()
+        final String context = "Virtual router (name: " + disconnectedRouter.getInstanceName() + ", id: " + disconnectedRouter.getUuid()
                 + ") would be stopped after connecting back, due to: " + reason;
         _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER, disconnectedRouter.getDataCenterId(), disconnectedRouter.getPodIdToDeployIn(), title, context);
         disconnectedRouter.setStopPending(true);
@@ -262,11 +262,10 @@ public class NetworkHelperImpl implements NetworkHelper {
     @Override
     public VirtualRouter destroyRouter(final long routerId, final Account caller, final Long callerUserId) throws ResourceUnavailableException, ConcurrentOperationException {
 
-        if (logger.isDebugEnabled()) {
-            logger.debug("Attempting to destroy router " + routerId);
-        }
-
         final DomainRouterVO router = _routerDao.findById(routerId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Attempting to destroy router {} with id {}", router, routerId);
+        }
         if (router == null) {
             return null;
         }
@@ -326,7 +325,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             throw new ResourceUnavailableException("Starting router " + router + " failed! " + e.toString(), DataCenter.class, router.getDataCenterId());
         }
         if (router.isStopPending()) {
-            logger.info("Clear the stop pending flag of router " + router.getHostName() + " after start router successfully!");
+            logger.info("Clear the stop pending flag of router {} after start router successfully!", router);
             router.setStopPending(false);
             router = _routerDao.persist(router);
         }
@@ -344,7 +343,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         DomainRouterVO vm = _routerDao.findById(router.getId());
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Router " + router.getInstanceName() + " is not fully up yet, we will wait");
+            logger.debug("Router {} is not fully up yet, we will wait", router);
         }
         while (vm.getState() == State.Starting) {
             try {
@@ -358,13 +357,13 @@ public class NetworkHelperImpl implements NetworkHelper {
 
         if (vm.getState() == State.Running) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Router " + router.getInstanceName() + " is now fully up");
+                logger.debug("Router {} is now fully up", router);
             }
 
             return router;
         }
 
-        logger.warn("Router " + router.getInstanceName() + " failed to start. current state: " + vm.getState());
+        logger.warn("Router {} failed to start. current state: {}", router, vm.getState());
         return null;
     }
 
@@ -404,7 +403,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         }
 
         if (router.getState() == State.Running) {
-            logger.debug("Redundant router " + router.getInstanceName() + " is already running!");
+            logger.debug("Redundant router {} is already running!", router);
             return router;
         }
 
@@ -433,9 +432,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             for (final DomainRouterVO rrouter : routerList) {
                 if (rrouter.getHostId() != null && rrouter.getIsRedundantRouter() && rrouter.getState() == State.Running) {
                     if (routerToBeAvoid != null) {
-                        throw new ResourceUnavailableException("Try to start router " + router.getInstanceName() + "(" + router.getId() + ")"
-                                + ", but there are already two redundant routers with IP " + router.getPublicIpAddress() + ", they are " + rrouter.getInstanceName() + "("
-                                + rrouter.getId() + ") and " + routerToBeAvoid.getInstanceName() + "(" + routerToBeAvoid.getId() + ")", DataCenter.class,
+                        throw new ResourceUnavailableException(String.format("Try to start router %s(%s), but there are already two redundant routers with IP %s, they are %s(%s) and %s(%s)", router.getInstanceName(), router, router.getPublicIpAddress(), rrouter.getInstanceName(), rrouter, routerToBeAvoid.getInstanceName(), routerToBeAvoid), DataCenter.class,
                                 rrouter.getDataCenterId());
                     }
                     routerToBeAvoid = rrouter;
@@ -464,7 +461,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
         for (int i = 0; i < retryIndex; i++) {
             if (logger.isTraceEnabled()) {
-                logger.trace("Try to deploy redundant virtual router:" + router.getHostName() + ", for " + i + " time");
+                logger.trace("Try to deploy redundant virtual router: {}, for {} time", router, i);
             }
             plan.setAvoids(avoids[i]);
             try {
@@ -664,7 +661,7 @@ public class NetworkHelperImpl implements NetworkHelper {
 
             for (final HostVO h : hosts) {
                 if (h.getState() == Status.Up) {
-                    logger.debug("Pick up host that has hypervisor type " + h.getHypervisorType() + " in cluster " + cv.getId() + " to start domain router for OVM");
+                    logger.debug("Pick up host that has hypervisor type {} in cluster {} to start domain router for OVM", h.getHypervisorType(), cv);
                     return h.getHypervisorType();
                 }
             }
@@ -790,8 +787,9 @@ public class NetworkHelperImpl implements NetworkHelper {
                                     && _ipAddressDao.findByIpAndSourceNetworkId(guestNetwork.getId(), startIp).getAllocatedTime() == null) {
                                 defaultNetworkStartIp = startIp;
                             } else if (logger.isDebugEnabled()) {
-                                logger.debug("First ipv4 " + startIp + " in network id=" + guestNetwork.getId()
-                                        + " is already allocated, can't use it for domain router; will get random ip address from the range");
+                                logger.debug("First ipv4 {} in network {} is already allocated, " +
+                                        "can't use it for domain router; will get random ip " +
+                                        "address from the range", startIp, guestNetwork);
                             }
                         }
                     }
@@ -812,8 +810,9 @@ public class NetworkHelperImpl implements NetworkHelper {
                             if (startIpv6 != null && _ipv6Dao.findByNetworkIdAndIp(guestNetwork.getId(), startIpv6) == null) {
                                 defaultNetworkStartIpv6 = startIpv6;
                             } else if (logger.isDebugEnabled()) {
-                                logger.debug("First ipv6 " + startIpv6 + " in network id=" + guestNetwork.getId()
-                                        + " is already allocated, can't use it for domain router; will get random ipv6 address from the range");
+                                logger.debug("First ipv6 {} in network {} is already allocated, " +
+                                        "can't use it for domain router; will get random ipv6 " +
+                                        "address from the range", startIpv6, guestNetwork);
                             }
                         }
                     }
@@ -901,10 +900,10 @@ public class NetworkHelperImpl implements NetworkHelper {
                     }
                 }
                 if (expire != null && !containsOnlyNumbers(expire, timeEndChar)) {
-                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: expire is not in timeformat: " + expire);
+                    throw new InvalidParameterValueException(String.format("Failed LB in validation rule: %s Cause: expire is not in timeformat: %s", rule.getLb(), expire));
                 }
                 if (tablesize != null && !containsOnlyNumbers(tablesize, "kmg")) {
-                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: tablesize is not in size format: " + tablesize);
+                    throw new InvalidParameterValueException(String.format("Failed LB in validation rule: %s Cause: tablesize is not in size format: %s", rule.getLb(), tablesize));
 
                 }
             } else if (LbStickinessMethod.StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
@@ -923,10 +922,10 @@ public class NetworkHelperImpl implements NetworkHelper {
                 }
 
                 if (length != null && !containsOnlyNumbers(length, null)) {
-                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: length is not a number: " + length);
+                    throw new InvalidParameterValueException(String.format("Failed LB in validation rule id: %s Cause: length is not a number: %s", rule.getLb(), length));
                 }
                 if (holdTime != null && !containsOnlyNumbers(holdTime, timeEndChar) && !containsOnlyNumbers(holdTime, null)) {
-                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: holdtime is not in timeformat: " + holdTime);
+                    throw new InvalidParameterValueException(String.format("Failed LB in validation rule id: %s Cause: holdtime is not in timeformat: %s", rule.getLb(), holdTime));
                 }
             }
         }

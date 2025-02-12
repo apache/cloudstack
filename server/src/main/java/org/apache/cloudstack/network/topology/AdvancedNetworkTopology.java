@@ -107,7 +107,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
                 result = result && routesRules.accept(_advancedVisitor, router);
 
             } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
-                logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending StaticRoute command to the backend");
+                logger.debug("Router {} is in {}, so not sending StaticRoute command to the backend", router, router.getState());
             } else {
                 logger.warn("Unable to apply StaticRoute, virtual router is not in the right state " + router.getState());
 
@@ -193,7 +193,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
             throws ResourceUnavailableException {
 
         if (ipAddresses == null || ipAddresses.isEmpty()) {
-            logger.debug("No ip association rules to be applied for network " + network.getId());
+            logger.debug("No ip association rules to be applied for network {}", network);
             return true;
         }
 
@@ -216,7 +216,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
 
         if (result) {
             if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
-                logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending NicPlugInOutRules command to the backend");
+                logger.debug("Router {} is in {}, so not sending NicPlugInOutRules command to the backend", router, router.getState());
             } else {
                 _advancedVisitor.visit(nicPlugInOutRules);
             }
@@ -230,7 +230,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
             throws ResourceUnavailableException {
 
         if (rules == null || rules.isEmpty()) {
-            logger.debug("No network ACLs to be applied for network " + network.getId());
+            logger.debug("No network ACLs to be applied for network {}", network);
             return true;
         }
 
@@ -261,7 +261,7 @@ public class AdvancedNetworkTopology extends BasicNetworkTopology {
         if (router.getState() == State.Running) {
             result = bgpPeersRules.accept(_advancedVisitor, router);
         } else if (router.getState() == State.Stopped || router.getState() == State.Stopping) {
-            logger.debug("Router " + router.getInstanceName() + " is in " + router.getState() + ", so not sending BgpPeer command to the backend");
+            logger.debug("Router {} is in {}, so not sending BgpPeer command to the backend", router, router.getState());
         } else {
             logger.warn("Unable to apply BgpPeer, virtual router is not in the right state " + router.getState());
             throw new ResourceUnavailableException("Unable to apply BgpPeer on the backend," + " virtual router is not in the right state", DataCenter.class,
