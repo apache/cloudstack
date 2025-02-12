@@ -1589,7 +1589,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 continue;
             }
 
-            // users can't exist in same account
+            // duplicate usernames cannot exist in same domain unless explicitly configured
+            if (!userAllowMultipleAccounts.valueInDomain(account.getDomainId())) {
+                Account duplicatedUserAccountWithUserThatHasTheSameUserName = _accountDao.findById(duplicatedUser.getAccountId());
+                if (duplicatedUserAccountWithUserThatHasTheSameUserName.getDomainId() == account.getDomainId()) {
+                    DomainVO domain = _domainDao.findById(duplicatedUserAccountWithUserThatHasTheSameUserName.getDomainId());
+                    throw new InvalidParameterValueException(String.format("Username [%s] already exists in domain [id=%s,name=%s]", duplicatedUser.getUsername(), domain.getUuid(), domain.getName()));
+                }
+            }
+
+            // can't rename a username to an existing one in the same account
             assertUserAlreadyInAccount(duplicatedUser, account);
         }
         user.setUsername(userName);
