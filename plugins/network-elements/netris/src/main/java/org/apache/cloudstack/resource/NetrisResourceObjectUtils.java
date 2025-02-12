@@ -24,7 +24,7 @@ import java.util.Objects;
 public class NetrisResourceObjectUtils {
 
     public enum NetrisObjectType {
-        VPC, IPAM_ALLOCATION, IPAM_SUBNET, VNET, SNAT, STATICNAT, DNAT, STATICROUTE, ACL
+        VPC, IPAM_ALLOCATION, IPAM_SUBNET, VNET, SNAT, STATICNAT, DNAT, STATICROUTE, ACL, LB
     }
 
     public static String retrieveNetrisResourceObjectName(NetrisCommand cmd, NetrisObjectType netrisObjectType, String... suffixes) {
@@ -59,7 +59,7 @@ public class NetrisResourceObjectUtils {
                 break;
             case IPAM_SUBNET:
                 if (!isZoneLevel) {
-                    if (Objects.nonNull(objectId) && Objects.nonNull(objectName)) {
+                    if (Objects.nonNull(objectId) && Objects.nonNull(objectName) && !isVpc) {
                         stringBuilder.append(String.format("-N%s", objectId));
                     } else {
                         stringBuilder.append(String.format("-V%s-%s", suffixes[0], suffixes[1]));
@@ -86,6 +86,9 @@ public class NetrisResourceObjectUtils {
             case VNET:
             case ACL:
                break;
+            case LB:
+                stringBuilder.append(String.format("%s%s", prefix, objectId));
+                break;
             default:
                 stringBuilder.append(String.format("-%s", objectName));
                 break;

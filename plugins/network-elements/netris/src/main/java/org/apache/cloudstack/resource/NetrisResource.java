@@ -32,8 +32,10 @@ import org.apache.cloudstack.agent.api.CreateNetrisACLCommand;
 import org.apache.cloudstack.agent.api.AddOrUpdateNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisNatCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisACLCommand;
+import org.apache.cloudstack.agent.api.DeleteNetrisLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
@@ -118,6 +120,10 @@ public class NetrisResource implements ServerResource {
             return executeRequest((AddOrUpdateNetrisStaticRouteCommand) cmd);
         } else if (cmd instanceof ReleaseNatIpCommand) {
           return executeRequest((ReleaseNatIpCommand) cmd);
+        } else if (cmd instanceof CreateOrUpdateNetrisLoadBalancerRuleCommand) {
+            return executeRequest((CreateOrUpdateNetrisLoadBalancerRuleCommand) cmd);
+        } else if (cmd instanceof DeleteNetrisLoadBalancerRuleCommand) {
+          return executeRequest((DeleteNetrisLoadBalancerRuleCommand) cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
@@ -350,6 +356,31 @@ public class NetrisResource implements ServerResource {
             return new NetrisAnswer(cmd, false, String.format("Failed to release NAT IP: %s", cmd.getNatIp()));
         }
         return new NetrisAnswer(cmd, true, "OK");
+    }
+
+    private Answer executeRequest(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd) {
+        boolean result = netrisApiClient.createLbRule(cmd);
+        if (!result) {
+            return new NetrisAnswer(cmd, false, String.format("Failed to create Netris LB rule for %s: %s, " +
+                    "for private port: %s and public port: %s", getNetworkType(cmd.isVpc()), cmd.getName(), cmd.getPrivatePort(), cmd.getPublicPort(), cmd.getPublicPort()));
+        }
+        return new NetrisAnswer(cmd, true, "OK");
+    }
+
+    private Answer executeRequest(DeleteNetrisLoadBalancerRuleCommand cmd) {
+        boolean result = netrisApiClient.deleteLbRule(cmd);
+        if (!result) {
+            return new NetrisAnswer(cmd, false, String.format("Failed to delete Netris LB rule for %s: %s, " +
+                    "for private port: %s and public port: %s", getNetworkType(cmd.isVpc()), cmd.getName()));
+        }
+        return new NetrisAnswer(cmd, true, "OK");
+    }
+
+    private String getNetworkType(Boolean isVpc) {
+        if (isVpc) {
+            return "VPC";
+        }
+        return "Network";
     }
 
     @Override

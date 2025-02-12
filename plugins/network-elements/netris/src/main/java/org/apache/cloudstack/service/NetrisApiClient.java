@@ -24,8 +24,10 @@ import org.apache.cloudstack.agent.api.CreateNetrisACLCommand;
 import org.apache.cloudstack.agent.api.AddOrUpdateNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisNatCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisACLCommand;
+import org.apache.cloudstack.agent.api.DeleteNetrisLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
@@ -84,4 +86,6 @@ public interface NetrisApiClient {
     boolean addOrUpdateStaticRoute(AddOrUpdateNetrisStaticRouteCommand cmd);
     boolean deleteStaticRoute(DeleteNetrisStaticRouteCommand cmd);
     boolean releaseNatIp(ReleaseNatIpCommand cmd);
+    boolean createLbRule(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd);
+    boolean deleteLbRule(DeleteNetrisLoadBalancerRuleCommand cmd);
 }
