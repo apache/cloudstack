@@ -105,4 +105,14 @@ public class NetrisServiceMockTest implements NetrisService {
     public boolean releaseNatIp(long zoneId, String publicIp) {
         return true;
     }
+
+    @Override
+    public boolean createLbRule(NetrisNetworkRule rule) {
+        return true;
+    }
+
+    @Override
+    public boolean deleteLbRule(NetrisNetworkRule rule) {
+        return true;
+    }
 }

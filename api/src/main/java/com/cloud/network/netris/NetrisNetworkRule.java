@@ -19,6 +19,8 @@ package com.cloud.network.netris;
 import com.cloud.network.SDNProviderNetworkRule;
 
 
+import java.util.List;
+
 public class NetrisNetworkRule {
     public enum NetrisRuleAction {
         PERMIT, DENY
@@ -26,16 +28,22 @@ public class NetrisNetworkRule {
 
     private SDNProviderNetworkRule baseRule;
     private NetrisRuleAction aclAction;
+    private List<NetrisLbBackend> lbBackends;
     private String reason;
 
     public NetrisNetworkRule(Builder builder) {
         this.baseRule = builder.baseRule;
         this.aclAction = builder.aclAction;
+        this.lbBackends = builder.lbBackends;
         this.reason = builder.reason;
     }
 
     public NetrisRuleAction getAclAction() {
         return aclAction;
+    }
+
+    public List<NetrisLbBackend> getLbBackends() {
+        return lbBackends;
     }
 
     public String getReason() {
@@ -50,6 +58,7 @@ public class NetrisNetworkRule {
     public static class Builder {
         private SDNProviderNetworkRule baseRule;
         private NetrisRuleAction aclAction;
+        private List<NetrisLbBackend> lbBackends;
         private String reason;
 
         public Builder baseRule(SDNProviderNetworkRule baseRule) {
@@ -59,6 +68,11 @@ public class NetrisNetworkRule {
 
         public Builder aclAction(NetrisRuleAction aclAction) {
             this.aclAction = aclAction;
+            return this;
+        }
+
+        public Builder lbBackends(List<NetrisLbBackend> lbBackends) {
+            this.lbBackends = lbBackends;
             return this;
         }
 

@@ -23,6 +23,7 @@ import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -45,16 +46,21 @@ import com.cloud.network.SDNProviderNetworkRule;
 import com.cloud.network.SDNProviderOpObject;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.LoadBalancerVMMapVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.DhcpServiceProvider;
 import com.cloud.network.element.DnsServiceProvider;
 import com.cloud.network.element.IpDeployer;
+import com.cloud.network.element.LoadBalancingServiceProvider;
 import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.PortForwardingServiceProvider;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.VirtualRouterElement;
 import com.cloud.network.element.VpcProvider;
+import com.cloud.network.lb.LoadBalancingRule;
+import com.cloud.network.netris.NetrisLbBackend;
 import com.cloud.network.netris.NetrisService;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.LoadBalancerContainer;
@@ -107,7 +113,8 @@ import java.util.Set;
 
 @Component
 public class NetrisElement extends AdapterBase implements DhcpServiceProvider, DnsServiceProvider, VpcProvider,
-        StaticNatServiceProvider, IpDeployer, PortForwardingServiceProvider, NetworkACLServiceProvider, ResourceStateAdapter, Listener {
+        StaticNatServiceProvider, IpDeployer, PortForwardingServiceProvider, NetworkACLServiceProvider,
+        LoadBalancingServiceProvider, ResourceStateAdapter, Listener {
 
     @Inject
     NetworkModel networkModel;
@@ -133,6 +140,8 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
     private IPAddressDao ipAddressDao;
     @Inject
     private VMInstanceDao vmInstanceDao;
+    @Inject
+    LoadBalancerVMMapDao lbVmMapDao;
 
     protected Logger logger = LogManager.getLogger(getClass());
 
@@ -692,5 +701,86 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
             default:
                 return 0;
         }
+    }
+
+    private SDNProviderOpObject getNetrisObject(Network network) {
+        Pair<VpcVO, NetworkVO> vpcOrNetwork = getVpcOrNetwork(network.getVpcId(), network.getId());
+        VpcVO vpc = vpcOrNetwork.first();
+        NetworkVO networkVO = vpcOrNetwork.second();
+        long domainId = getResourceId("domain", vpc, networkVO);
+        long accountId = getResourceId("account", vpc, networkVO);
+        long zoneId = getResourceId("zone", vpc, networkVO);
+
+        return new SDNProviderOpObject.Builder()
+                .vpcVO(vpc)
+                .networkVO(networkVO)
+                .domainId(domainId)
+                .accountId(accountId)
+                .zoneId(zoneId)
+                .build();
+    }
+
+    @Override
+    public boolean applyLBRules(Network network, List<LoadBalancingRule> rules) throws ResourceUnavailableException {
+        boolean result = true;
+        for (LoadBalancingRule loadBalancingRule : rules) {
+            IPAddressVO publicIp = ipAddressDao.findByIpAndDcId(network.getDataCenterId(),
+                    loadBalancingRule.getSourceIp().addr());
+
+            List<NetrisLbBackend> lbBackends = getLoadBalancerBackends(loadBalancingRule);
+            SDNProviderOpObject netrisObject = getNetrisObject(network);
+            SDNProviderNetworkRule baseNetworkRule = new SDNProviderNetworkRule.Builder()
+                    .setDomainId(netrisObject.getDomainId())
+                    .setAccountId(netrisObject.getAccountId())
+                    .setZoneId(netrisObject.getZoneId())
+                    .setNetworkResourceId(netrisObject.getNetworkResourceId())
+                    .setNetworkResourceName(netrisObject.getNetworkResourceName())
+                    .setVpcResource(netrisObject.isVpcResource())
+                    .setPublicIp(LoadBalancerContainer.Scheme.Public == loadBalancingRule.getScheme() ?
+                            publicIp.getAddress().addr() : loadBalancingRule.getSourceIp().addr())
+                    .setPrivatePort(String.valueOf(loadBalancingRule.getDefaultPortStart()))
+                    .setPublicPort(String.valueOf(loadBalancingRule.getSourcePortStart()))
+                    .setRuleId(loadBalancingRule.getId())
+                    .setProtocol(loadBalancingRule.getProtocol().toUpperCase(Locale.ROOT))
+                    .setAlgorithm(loadBalancingRule.getAlgorithm())
+                    .build();
+
+            NetrisNetworkRule networkRule = new NetrisNetworkRule.Builder()
+                    .baseRule(baseNetworkRule)
+                    .lbBackends(lbBackends)
+                    .build();
+            if (Arrays.asList(FirewallRule.State.Add, FirewallRule.State.Active).contains(loadBalancingRule.getState())) {
+                result &= netrisService.createLbRule(networkRule);
+            } else if (loadBalancingRule.getState() == FirewallRule.State.Revoke) {
+                result &= netrisService.deleteLbRule(networkRule);
+            }
+        }
+        return result;
+    }
+
+    private List<NetrisLbBackend> getLoadBalancerBackends(LoadBalancingRule lbRule) {
+        List<LoadBalancerVMMapVO> lbVms = lbVmMapDao.listByLoadBalancerId(lbRule.getId(), false);
+        List<NetrisLbBackend> lbMembers = new ArrayList<>();
+
+        for (LoadBalancerVMMapVO lbVm : lbVms) {
+            NetrisLbBackend member = new NetrisLbBackend(lbVm.getInstanceId(), lbVm.getInstanceIp(), lbRule.getDefaultPortStart());
+            lbMembers.add(member);
+        }
+        return lbMembers;
+    }
+
+    @Override
+    public boolean validateLBRule(Network network, LoadBalancingRule rule) {
+        return true;
+    }
+
+    @Override
+    public List<LoadBalancerTO> updateHealthChecks(Network network, List<LoadBalancingRule> lbrules) {
+        return List.of();
+    }
+
+    @Override
+    public boolean handlesOnlyRulesInTransitionState() {
+        return false;
     }
 }

@@ -44,10 +44,12 @@ import com.cloud.utils.net.NetUtils;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
 import org.apache.cloudstack.agent.api.AddOrUpdateNetrisStaticRouteCommand;
+import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisNatCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisACLCommand;
+import org.apache.cloudstack.agent.api.DeleteNetrisLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
@@ -452,6 +454,27 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
     public boolean releaseNatIp(long zoneId, String publicIp) {
         ReleaseNatIpCommand cmd = new ReleaseNatIpCommand(zoneId, null, null, null, null, false, publicIp);
         NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
+        return answer.getResult();
+    }
+
+    @Override
+    public boolean createLbRule(NetrisNetworkRule rule) {
+        SDNProviderNetworkRule baseRule = rule.getBaseRule();
+        CreateOrUpdateNetrisLoadBalancerRuleCommand cmd = new CreateOrUpdateNetrisLoadBalancerRuleCommand(baseRule.getZoneId(), baseRule.getAccountId(),
+                baseRule.getDomainId(), baseRule.getNetworkResourceName(), baseRule.getNetworkResourceId(), baseRule.isVpcResource(),
+                rule.getLbBackends(), baseRule.getRuleId(), baseRule.getPublicIp(), baseRule.getPublicPort(),
+                baseRule.getPrivatePort(), baseRule.getAlgorithm(), baseRule.getProtocol());
+        NetrisAnswer answer = sendNetrisCommand(cmd, baseRule.getZoneId());
+        return answer.getResult();
+    }
+
+    @Override
+    public boolean deleteLbRule(NetrisNetworkRule rule) {
+        SDNProviderNetworkRule baseRule = rule.getBaseRule();
+        DeleteNetrisLoadBalancerRuleCommand cmd = new DeleteNetrisLoadBalancerRuleCommand(baseRule.getZoneId(), baseRule.getAccountId(),
+                baseRule.getDomainId(), baseRule.getNetworkResourceName(), baseRule.getNetworkResourceId(), baseRule.isVpcResource(),
+                baseRule.getRuleId());
+        NetrisAnswer answer = sendNetrisCommand(cmd, baseRule.getZoneId());
         return answer.getResult();
     }
 

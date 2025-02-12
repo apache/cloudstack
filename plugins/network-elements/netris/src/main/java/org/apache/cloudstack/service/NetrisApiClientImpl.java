@@ -16,8 +16,10 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import com.cloud.network.netris.NetrisLbBackend;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import inet.ipaddr.IPAddress;
 import inet.ipaddr.IPAddressString;
 import io.netris.ApiClient;
@@ -29,6 +31,7 @@ import io.netris.api.v1.RoutesApi;
 import io.netris.api.v1.SitesApi;
 import io.netris.api.v1.TenantsApi;
 import io.netris.api.v2.IpamApi;
+import io.netris.api.v2.L4LoadBalancerApi;
 import io.netris.api.v2.NatApi;
 import io.netris.api.v2.VNetApi;
 import io.netris.api.v2.VpcApi;
@@ -52,12 +55,20 @@ import io.netris.model.IpTreeAllocation;
 import io.netris.model.IpTreeAllocationTenant;
 import io.netris.model.IpTreeSubnet;
 import io.netris.model.IpTreeSubnetSites;
+import io.netris.model.L4LBSite;
+import io.netris.model.L4LbTenant;
+import io.netris.model.L4LbVpc;
+import io.netris.model.L4LoadBalancerBackendItem;
+import io.netris.model.L4LoadBalancerItem;
+import io.netris.model.L4lbAddItem;
+import io.netris.model.L4lbresBody;
 import io.netris.model.NatBodySiteSite;
 import io.netris.model.NatBodyVpcVpc;
 import io.netris.model.NatGetBody;
 import io.netris.model.NatPostBody;
 import io.netris.model.NatPutBody;
 import io.netris.model.NatResponseGetOk;
+import io.netris.model.ResAddEditBody;
 import io.netris.model.RoutesBody;
 import io.netris.model.RoutesBodyId;
 import io.netris.model.RoutesBodyVpcVpc;
@@ -90,10 +101,12 @@ import io.netris.model.response.TenantResponse;
 import io.netris.model.response.TenantsResponse;
 import org.apache.cloudstack.agent.api.CreateNetrisACLCommand;
 import org.apache.cloudstack.agent.api.AddOrUpdateNetrisStaticRouteCommand;
+import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisNatCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisACLCommand;
+import org.apache.cloudstack.agent.api.DeleteNetrisLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
@@ -598,6 +611,169 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return true;
     }
 
+    @Override
+    public boolean createLbRule(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd) {
+        boolean isVpc = cmd.isVpc();
+        Long networkResourceId = cmd.getId();
+        String networkResourceName = cmd.getName();
+        Long domainId = cmd.getDomainId();
+        Long accountId = cmd.getAccountId();
+        Long zoneId = cmd.getZoneId();
+        Long lbId = cmd.getLbId();
+        String publicIp = cmd.getPublicIp();
+        List<NetrisLbBackend> lbBackends = cmd.getLbBackends();
+
+        try {
+            String resourcePrefix = isVpc ? "V" : "N";
+            String netrisResourceName = String.format("D%s-A%s-Z%s-%s%s-%s", domainId, accountId, zoneId, resourcePrefix, networkResourceId, networkResourceName);
+            VPCListing vpcResource = getNetrisVpcResource(netrisResourceName);
+            if (vpcResource == null) {
+                logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", netrisResourceName, tenantId);
+                return false;
+            }
+            createLBSubnet(cmd, publicIp + "/32", vpcResource.getId());
+
+            String suffix = String.format("LB%s", lbId);
+            String lbName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.LB, suffix);
+            Pair<Boolean, List<BigDecimal>> resultAndMatchingLbId = getMatchingLbRule(lbName, vpcResource.getName());
+            Boolean result = resultAndMatchingLbId.first();
+            List<BigDecimal> matchingLbId = resultAndMatchingLbId.second();
+            if (Boolean.FALSE.equals(result)) {
+                logger.warn("Could not find the Netris LB rule with name {}", lbName);
+            }
+            if (!matchingLbId.isEmpty()) {
+                logger.warn("LB rule by name: {} already exists", lbName);
+                return true;
+            }
+
+            L4lbAddItem l4lbAddItem = getL4LbRule(cmd, vpcResource, lbName, publicIp, lbBackends);
+            L4LoadBalancerApi loadBalancerApi = apiClient.getApiStubForMethod(L4LoadBalancerApi.class);
+            ResAddEditBody response = loadBalancerApi.apiV2L4lbPost(l4lbAddItem);
+            if (Objects.isNull(response) || Boolean.FALSE.equals(response.isIsSuccess())) {
+                throw new CloudRuntimeException("Failed to create Netris LB rule");
+            }
+        } catch (ApiException e) {
+            logAndThrowException("Failed to create Netris load balancer rule", e);
+        }
+        return true;
+    }
+
+    private L4lbAddItem getL4LbRule(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd, VPCListing vpcResource, String lbName,
+                             String publicIp, List<NetrisLbBackend> lbBackends) {
+        L4lbAddItem l4lbAddItem = new L4lbAddItem();
+        try {
+            l4lbAddItem.setName(lbName);
+
+            String protocol = cmd.getProtocol().toUpperCase(Locale.ROOT);
+            if (!Arrays.asList("TCP", "UDP").contains(protocol)) {
+                throw new CloudRuntimeException("Invalid protocol " + protocol);
+            }
+            l4lbAddItem.setProtocol(cmd.getProtocol().toUpperCase(Locale.ROOT));
+            L4LBSite site = new L4LBSite();
+            site.setId(siteId);
+            site.setName(siteName);
+            l4lbAddItem.setSite(site);
+            l4lbAddItem.setSiteID(new BigDecimal(siteId));
+
+            L4LbTenant tenant = new L4LbTenant();
+            tenant.setId(tenantId);
+            tenant.setName(tenantName);
+            l4lbAddItem.setTenant(tenant);
+
+            L4LbVpc vpc = new L4LbVpc();
+            vpc.setId(vpcResource.getId());
+            l4lbAddItem.setVpc(vpc);
+
+            l4lbAddItem.setAutomatic(false);
+            l4lbAddItem.setIpFamily(NetUtils.isIpv4(publicIp) ? L4lbAddItem.IpFamilyEnum.IPv4 : L4lbAddItem.IpFamilyEnum.IPv6);
+            l4lbAddItem.setIp(publicIp);
+            l4lbAddItem.setStatus("enable");
+
+            List<L4LoadBalancerBackendItem> backends = new ArrayList<>();
+            for (NetrisLbBackend backend : lbBackends) {
+                L4LoadBalancerBackendItem backendItem = new L4LoadBalancerBackendItem();
+                backendItem.setIp(backend.getVmIp());
+                backendItem.setPort(backend.getPort());
+                backends.add(backendItem);
+            }
+            l4lbAddItem.setBackend(backends);
+            l4lbAddItem.setPort(Integer.valueOf(cmd.getPublicPort()));
+            l4lbAddItem.setHealthCheck(L4lbAddItem.HealthCheckEnum.NONE);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Failed to create Netris load balancer rule", e);
+        }
+        return  l4lbAddItem;
+    }
+
+    @Override
+    public boolean deleteLbRule(DeleteNetrisLoadBalancerRuleCommand cmd) {
+        boolean isVpc = cmd.isVpc();
+        String vpcName = null;
+        String networkName = null;
+        Long vpcId = null;
+        Long networkId = null;
+        if (isVpc) {
+            vpcName = cmd.getName();
+            vpcId = cmd.getId();
+        } else {
+            networkName = cmd.getName();
+            networkId = cmd.getId();
+        }
+        Long lbId = cmd.getLbId();
+        try {
+            String suffix = getNetrisVpcNameSuffix(vpcId, vpcName, networkId, networkName, isVpc);
+            String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, suffix);
+            suffix = String.format("LB%s", lbId);
+            String lbName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.LB, suffix);
+            Pair<Boolean, List<BigDecimal>> resultAndMatchingLbId = getMatchingLbRule(lbName, netrisVpcName);
+            Boolean result = resultAndMatchingLbId.first();
+            List<BigDecimal> matchingLbId = resultAndMatchingLbId.second();
+            if (!result) {
+                logger.error("Could not find the Netris LB rule with name {}", lbName);
+                return false;
+            }
+            if (matchingLbId.isEmpty()) {
+                logger.warn("There doesn't seem to be any LB rule on Netris matching {}", lbName);
+                return true;
+            }
+
+            L4LoadBalancerApi lbApi = apiClient.getApiStubForMethod(L4LoadBalancerApi.class);
+            lbApi.apiV2L4lbIdDelete(matchingLbId.get(0).intValue());
+        } catch (ApiException e) {
+            logAndThrowException("Failed to delete Netris load balancer rule", e);
+        }
+        return true;
+    }
+
+    private Pair<Boolean, List<BigDecimal>> getMatchingLbRule(String lbName, String vpcName) {
+        try {
+            VPCListing vpcResource = getVpcByNameAndTenant(vpcName);
+            if (vpcResource == null) {
+                logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", vpcName, tenantId);
+                return new Pair<>(false, Collections.emptyList());
+            }
+            FilterByVpc vpcFilter = new FilterByVpc();
+            vpcFilter.add(vpcResource.getId());
+            FilterBySites siteFilter = new FilterBySites();
+            siteFilter.add(siteId);
+            L4LoadBalancerApi lbApi = apiClient.getApiStubForMethod(L4LoadBalancerApi.class);
+            L4lbresBody lbGetResponse = lbApi.apiV2L4lbGet(siteFilter, vpcFilter);
+            if (lbGetResponse == null || !lbGetResponse.isIsSuccess()) {
+                logger.warn("No LB rules were found to be present for the specific Netris VPC resource {}." +
+                        " Netris LB rules may have been deleted out of band.", vpcName);
+                return new Pair<>(true, Collections.emptyList());
+            }
+            List<L4LoadBalancerItem> lbList = lbGetResponse.getData();
+            return new Pair<>(true, lbList.stream()
+                    .filter(lb -> lbName.equals(lb.getName()))
+                    .map(acl -> BigDecimal.valueOf(acl.getId()))
+                    .collect(Collectors.toList()));
+        } catch (ApiException e) {
+            logAndThrowException("Failed to retrieve Netris LB rules", e);
+        }
+        return new Pair<>(true, Collections.emptyList());
+    }
+
     private Pair<Boolean, RoutesGetBody> staticRouteExists(Integer netrisVpcId, String prefix, String nextHop, String description) {
         try {
             FilterByVpc vpcFilter = new FilterByVpc();
@@ -904,7 +1080,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         }
 
         if (StringUtils.isNotBlank(targetIpSubnet) && existsDestinationSubnet(targetIpSubnet)) {
-            logger.debug(String.format("Creating subnet with NAT purpose for %s", targetIpSubnet));
+            logger.debug("Creating subnet with NAT purpose for {}}", targetIpSubnet);
             createNatSubnet(cmd, targetIpSubnet, vpcResource.getId());
         }
 
@@ -1019,6 +1195,27 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             logger.debug("NAT subnet: {} already exists", natIp);
         } catch (ApiException e) {
             throw new CloudRuntimeException(String.format("Failed to create subnet for %s with NAT purpose", natIp));
+        }
+    }
+
+    private void createLBSubnet(NetrisCommand cmd, String lbIp, Integer netrisVpcId) {
+        try {
+            FilterByVpc vpcFilter = new FilterByVpc();
+            vpcFilter.add(netrisVpcId);
+            String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd,
+                    NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET,
+                    String.valueOf(cmd.getId()), lbIp);
+            List<IpTreeSubnet> matchedSubnets = getSubnet(vpcFilter, netrisSubnetName);
+            VPCListing systemVpc = getSystemVpc();
+            if (matchedSubnets.isEmpty()) {
+                createIpamSubnetInternal(netrisSubnetName, lbIp, SubnetBody.PurposeEnum.LOAD_BALANCER, systemVpc, null);
+            } else if (IpTreeSubnet.PurposeEnum.LOAD_BALANCER != matchedSubnets.get(0).getPurpose()){
+                logger.debug("Updating existing NAT subnet {} to have load balancer purpose", netrisSubnetName);
+                updateIpamSubnetInternal(matchedSubnets.get(0).getId().intValue(), netrisSubnetName, lbIp, SubnetBody.PurposeEnum.LOAD_BALANCER, systemVpc, null);
+            }
+            logger.debug("LB subnet: {} already exists", netrisSubnetName);
+        } catch (ApiException e) {
+            throw new CloudRuntimeException(String.format("Failed to create subnet for %s with LB purpose", lbIp));
         }
     }
 
@@ -1204,33 +1401,38 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         }
     }
 
+    private SubnetBody getIpamSubnetBody(VPCListing vpc, SubnetBody.PurposeEnum purpose, String subnetName, String subnetPrefix, Boolean isGlobalRouting) {
+        SubnetBody subnetBody = new SubnetBody();
+        subnetBody.setName(subnetName);
+
+        AllocationBodyVpc vpcAllocationBody = new AllocationBodyVpc();
+        vpcAllocationBody.setName(vpc.getName());
+        vpcAllocationBody.setId(vpc.getId());
+        subnetBody.setVpc(vpcAllocationBody);
+
+        IpTreeAllocationTenant allocationTenant = new IpTreeAllocationTenant();
+        allocationTenant.setId(new BigDecimal(tenantId));
+        allocationTenant.setName(tenantName);
+        subnetBody.setTenant(allocationTenant);
+
+        IpTreeSubnetSites subnetSites = new IpTreeSubnetSites();
+        subnetSites.setId(new BigDecimal(siteId));
+        subnetSites.setName(siteName);
+        subnetBody.setSites(List.of(subnetSites));
+
+        subnetBody.setPurpose(purpose);
+        subnetBody.setPrefix(subnetPrefix);
+        if (isGlobalRouting != null) {
+            subnetBody.setGlobalRouting(isGlobalRouting);
+        }
+        return subnetBody;
+    }
+
     private InlineResponse2004Data createIpamSubnetInternal(String subnetName, String subnetPrefix, SubnetBody.PurposeEnum purpose, VPCListing vpc, Boolean isGlobalRouting) {
         logger.debug("Creating Netris IPAM Subnet {} for VPC {}", subnetPrefix, vpc.getName());
         try {
 
-            SubnetBody subnetBody = new SubnetBody();
-            subnetBody.setName(subnetName);
-
-            AllocationBodyVpc vpcAllocationBody = new AllocationBodyVpc();
-            vpcAllocationBody.setName(vpc.getName());
-            vpcAllocationBody.setId(vpc.getId());
-            subnetBody.setVpc(vpcAllocationBody);
-
-            IpTreeAllocationTenant allocationTenant = new IpTreeAllocationTenant();
-            allocationTenant.setId(new BigDecimal(tenantId));
-            allocationTenant.setName(tenantName);
-            subnetBody.setTenant(allocationTenant);
-
-            IpTreeSubnetSites subnetSites = new IpTreeSubnetSites();
-            subnetSites.setId(new BigDecimal(siteId));
-            subnetSites.setName(siteName);
-            subnetBody.setSites(List.of(subnetSites));
-
-            subnetBody.setPurpose(purpose);
-            subnetBody.setPrefix(subnetPrefix);
-            if (isGlobalRouting != null) {
-                subnetBody.setGlobalRouting(isGlobalRouting);
-            }
+            SubnetBody subnetBody = getIpamSubnetBody(vpc, purpose, subnetName, subnetPrefix, isGlobalRouting);
             IpamApi ipamApi = apiClient.getApiStubForMethod(IpamApi.class);
             InlineResponse2004 subnetResponse = ipamApi.apiV2IpamSubnetPost(subnetBody);
             if (subnetResponse == null || !subnetResponse.isIsSuccess()) {
@@ -1241,6 +1443,25 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             return subnetResponse.getData();
         } catch (ApiException e) {
             logAndThrowException(String.format("Error creating Netris IPAM Subnet %s for VPC %s", subnetPrefix, vpc.getName()), e);
+            return null;
+        }
+    }
+
+    private InlineResponse2004Data updateIpamSubnetInternal(Integer netrisSubnetId, String subnetName, String subnetPrefix, SubnetBody.PurposeEnum purpose, VPCListing vpc, Boolean isGlobalRouting) {
+        logger.debug("Updating Netris IPAM Subnet {} for VPC {}", subnetPrefix, vpc.getName());
+        try {
+
+            SubnetBody subnetBody = getIpamSubnetBody(vpc, purpose, subnetName, subnetPrefix, isGlobalRouting);
+            IpamApi ipamApi = apiClient.getApiStubForMethod(IpamApi.class);
+            InlineResponse2004 subnetResponse = ipamApi.apiV2IpamSubnetIdPut(subnetBody, netrisSubnetId);
+            if (subnetResponse == null || !subnetResponse.isIsSuccess()) {
+                String reason = subnetResponse == null ? "Empty response" : "Operation failed on Netris";
+                logger.debug("The Netris IPAM Subnet {} update failed: {}", subnetName, reason);
+                throw new CloudRuntimeException(reason);
+            }
+            return subnetResponse.getData();
+        } catch (ApiException e) {
+            logAndThrowException(String.format("Error Updating Netris IPAM Subnet %s for VPC %s", subnetPrefix, vpc.getName()), e);
             return null;
         }
     }
