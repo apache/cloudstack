@@ -69,6 +69,11 @@
           </a-drawer>
         </template>
 
+        <LogsConsole
+          :visible="showLogsConsole"
+          :filters="logsConsoleFilters"
+          @close="showLogsConsole = false" />
+
         <drawer :visible="showSetting" placement="right" v-if="isAdmin && (isDevelopmentMode || allowSettingTheme)">
           <template #handler>
             <a-button type="primary" size="large">
@@ -131,6 +136,8 @@ import { isAdmin } from '@/role'
 import { api } from '@/api'
 import Drawer from '@/components/widgets/Drawer'
 import Setting from '@/components/view/Setting.vue'
+import LogsConsole from '@/components/view/LogsConsole.vue'
+import eventBus from '@/config/eventBus'
 
 export default {
   name: 'GlobalLayout',
@@ -139,7 +146,8 @@ export default {
     GlobalHeader,
     GlobalFooter,
     Drawer,
-    Setting
+    Setting,
+    LogsConsole
   },
   mixins: [mixin, mixinDevice],
   data () {
@@ -147,7 +155,9 @@ export default {
       collapsed: false,
       menus: [],
       showSetting: false,
-      showClear: false
+      showClear: false,
+      showLogsConsole: false,
+      logsConsoleFilters: null
     }
   },
   computed: {
@@ -206,6 +216,9 @@ export default {
       const readyForShutdownPollingJob = setInterval(this.checkShutdown, 5000)
       this.$store.commit('SET_READY_FOR_SHUTDOWN_POLLING_JOB', readyForShutdownPollingJob)
     }
+    eventBus.on('view-logs', (contextIds) => {
+      this.openLogsConsole(contextIds)
+    })
   },
   mounted () {
     const layoutMode = this.$config.theme['@layout-mode'] || 'light'
@@ -264,6 +277,12 @@ export default {
         this.$store.dispatch('SetShutdownTriggered', json.readyforshutdownresponse.readyforshutdown.shutdowntriggered || false)
         this.$store.dispatch('SetMaintenanceInitiated', json.readyforshutdownresponse.readyforshutdown.maintenanceinitiated || false)
       })
+    },
+    openLogsConsole (filters) {
+      this.logsConsoleFilters = filters
+      if (filters && filters.length > 0) {
+        this.showLogsConsole = true
+      }
     }
   }
 }

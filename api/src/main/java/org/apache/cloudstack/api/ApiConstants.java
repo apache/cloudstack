@@ -90,6 +90,7 @@ public class ApiConstants {
     public static final String CONVERT_INSTANCE_HOST_ID = "convertinstancehostid";
     public static final String CONVERT_INSTANCE_STORAGE_POOL_ID = "convertinstancepoolid";
     public static final String ENABLED_REVOCATION_CHECK = "enabledrevocationcheck";
+    public static final String CONTEXT_ID = "contextid";
     public static final String CONTROLLER = "controller";
     public static final String CONTROLLER_UNIT = "controllerunit";
     public static final String COPY_IMAGE_TAGS = "copyimagetags";
@@ -119,12 +120,15 @@ public class ApiConstants {
     public static final String CN = "cn";
     public static final String COMMAND = "command";
     public static final String CMD_EVENT_TYPE = "cmdeventtype";
+    public static final String CLIENT_ADDRESS = "clientaddress";
     public static final String COMPONENT = "component";
+    public static final String CONNECTED = "connected";
     public static final String CPU_CORE_PER_SOCKET = "cpucorepersocket";
     public static final String CPU_NUMBER = "cpunumber";
     public static final String CPU_SPEED = "cpuspeed";
     public static final String CPU_LOAD_AVERAGE = "cpuloadaverage";
     public static final String CREATED = "created";
+    public static final String CREATOR_ADDRESS = "creatoraddress";
     public static final String CTX_ACCOUNT_ID = "ctxaccountid";
     public static final String CTX_DETAILS = "ctxDetails";
     public static final String CTX_USER_ID = "ctxuserid";
@@ -140,6 +144,7 @@ public class ApiConstants {
     public static final String ENCRYPT_FORMAT = "encryptformat";
     public static final String ENCRYPT_ROOT = "encryptroot";
     public static final String ENCRYPTION_SUPPORTED = "encryptionsupported";
+    public static final String FILTERS = "filters";
     public static final String MIN_IOPS = "miniops";
     public static final String MAX_IOPS = "maxiops";
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
@@ -1191,6 +1196,8 @@ public class ApiConstants {
     public static final String WEBHOOK_ID = "webhookid";
     public static final String WEBHOOK_NAME = "webhookname";
 
+    public static final String WEBSOCKET = "websocket";
+
     public static final String NFS_MOUNT_OPTIONS = "nfsmountopts";
     public static final String MOUNT_OPTIONS = "mountopts";
 
@@ -1206,6 +1213,8 @@ public class ApiConstants {
     public static final String OBJECT_STORAGE_AVAILABLE = "objectstorageavailable";
     public static final String OBJECT_STORAGE_LIMIT = "objectstoragelimit";
     public static final String OBJECT_STORAGE_TOTAL = "objectstoragetotal";
+
+    public static final String LOGS_WEB_SERVER_ENABLED = "logswebserverenabled";
 
     public static final String PARAMETER_DESCRIPTION_ACTIVATION_RULE = "Quota tariff's activation rule. It can receive a JS script that results in either " +
             "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +

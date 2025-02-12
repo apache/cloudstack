@@ -4471,6 +4471,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final boolean kubernetesServiceEnabled = Boolean.parseBoolean(_configDao.getValue("cloud.kubernetes.service.enabled"));
         final boolean kubernetesClusterExperimentalFeaturesEnabled = Boolean.parseBoolean(_configDao.getValue("cloud.kubernetes.cluster.experimental.features.enabled"));
+        final boolean logsWebServerEnabled = Boolean.parseBoolean(_configDao.getValue("logs.web.server.enabled"));
 
         // check if region-wide secondary storage is used
         boolean regionSecondaryEnabled = false;
@@ -4511,6 +4512,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         capabilities.put(ApiConstants.SHAREDFSVM_MIN_CPU_COUNT, fsVmMinCpu);
         capabilities.put(ApiConstants.SHAREDFSVM_MIN_RAM_SIZE, fsVmMinRam);
+        capabilities.put(ApiConstants.LOGS_WEB_SERVER_ENABLED, logsWebServerEnabled);
 
         return capabilities;
     }

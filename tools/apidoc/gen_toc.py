@@ -257,6 +257,8 @@ known_categories = {
     'deleteASNRange': 'AS Number Range',
     'listASNumbers': 'AS Number',
     'releaseASNumber': 'AS Number',
+    'LogsWebSession': 'Logs Web Session',
+    'LogsWebSessions': 'Logs Web Session',
 }
 
 

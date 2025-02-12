@@ -98,6 +98,8 @@
         <module>integrations/prometheus</module>
         <module>integrations/kubernetes-service</module>
 
+        <module>logs-web-server</module>
+
         <module>metrics</module>
 
         <module>network-elements/bigswitch</module>

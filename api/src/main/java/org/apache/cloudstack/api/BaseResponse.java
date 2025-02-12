@@ -32,6 +32,10 @@ public abstract class BaseResponse implements ResponseObject {
     @Param(description = "the current status of the latest async job acting on this object")
     private Integer jobStatus;
 
+    @SerializedName(ApiConstants.CONTEXT_ID)
+    @Param(description = "the ID of the executing context")
+    private String contextId;
+
     public BaseResponse() {
     }
 
@@ -82,5 +86,15 @@ public abstract class BaseResponse implements ResponseObject {
     @Override
     public void setJobStatus(Integer jobStatus) {
         this.jobStatus = jobStatus;
+    }
+
+    @Override
+    public String getContextId() {
+        return contextId;
+    }
+
+    @Override
+    public void setContextId(String contextId) {
+        this.contextId = contextId;
     }
 }

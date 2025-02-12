@@ -72,6 +72,7 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setInstancesDisksStatsRetentionTime((Integer) capabilities.get(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_TIME));
         response.setSharedFsVmMinCpuCount((Integer)capabilities.get(ApiConstants.SHAREDFSVM_MIN_CPU_COUNT));
         response.setSharedFsVmMinRamSize((Integer)capabilities.get(ApiConstants.SHAREDFSVM_MIN_RAM_SIZE));
+        response.setLogsWebServerEnabled((Boolean)capabilities.get(ApiConstants.LOGS_WEB_SERVER_ENABLED));
         response.setObjectName("capability");
         response.setResponseName(getCommandName());
         this.setResponseObject(response);

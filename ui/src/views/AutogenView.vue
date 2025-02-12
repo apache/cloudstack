@@ -1337,7 +1337,7 @@ export default {
         param.loading = false
       })
     },
-    pollActionCompletion (jobId, action, resourceName, resource, showLoading = true) {
+    pollActionCompletion (jobId, action, resourceName, resource, showLoading = true, contextId = null) {
       if (this.shouldNavigateBack(action)) {
         action.isFetchData = false
       }
@@ -1394,7 +1394,8 @@ export default {
           catchMessage: this.$t('error.fetching.async.job.result'),
           action,
           bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal,
-          resourceId: resource
+          resourceId: resource,
+          contextId: contextId
         })
       })
     },
@@ -1496,6 +1497,7 @@ export default {
     handleResponse (response, resourceName, resource, action, showLoading = true) {
       return new Promise(resolve => {
         let jobId = null
+        let contextId = null
         for (const obj in response) {
           if (obj.includes('response')) {
             if (response[obj].jobid) {
@@ -1531,6 +1533,9 @@ export default {
               }
               break
             }
+            if (response[obj].contextid) {
+              contextId = response[obj].contextid
+            }
           }
         }
         if (['addLdapConfiguration', 'deleteLdapConfiguration'].includes(action.api)) {
@@ -1538,7 +1543,7 @@ export default {
         }
         if (jobId) {
           eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource, state: 'InProgress', jobid: jobId })
-          resolve(this.pollActionCompletion(jobId, action, resourceName, resource, showLoading))
+          resolve(this.pollActionCompletion(jobId, action, resourceName, resource, showLoading, contextId))
         }
         resolve(false)
       })

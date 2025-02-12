@@ -78,6 +78,7 @@ public class ApiServlet extends HttpServlet {
     private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + ApiServlet.class.getName());
     private static final String REPLACEMENT = "_";
     private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
+    public static final String CLIENT_INET_ADDRESS_KEY = "client-inet-address";
 
     @Inject
     ApiServerService apiServer;
