@@ -45,7 +45,6 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.cpu.CPU;
-import com.cloud.utils.security.CertificateHelper;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -1617,8 +1616,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // Only list hosts of the same architecture as the source Host in a multi-arch zone
         List<CPU.CPUArch> clusterArchs = ApiDBUtils.listZoneClustersArchs(vm.getDataCenterId());
         if (CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1) {
-            CPU.CPUArch hostArch = srcHost.getArch();
-            suitableHosts = suitableHosts.stream().filter(h -> h.getArch() == hostArch).collect(Collectors.toList());
+            suitableHosts = suitableHosts.stream().filter(h -> h.getArch() == srcHost.getArch()).collect(Collectors.toList());
         }
 
         return new Ternary<>(otherHosts, suitableHosts, requiresStorageMotion);
