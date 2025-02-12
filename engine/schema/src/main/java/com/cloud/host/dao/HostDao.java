@@ -229,4 +229,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<HostVO> listByIds(final List<Long> ids);
 
     Long findClusterIdByVolumeInfo(VolumeInfo volumeInfo);
+
+    List<String> listDistinctStorageAccessGroups(String name, String keyword);
 }

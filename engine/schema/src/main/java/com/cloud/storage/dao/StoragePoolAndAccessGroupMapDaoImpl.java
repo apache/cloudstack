@@ -22,6 +22,7 @@ import java.util.List;
 import com.cloud.storage.StoragePoolAndAccessGroupMapVO;
 
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
@@ -29,6 +30,7 @@ import com.cloud.utils.db.TransactionLegacy;
 public class StoragePoolAndAccessGroupMapDaoImpl extends GenericDaoBase<StoragePoolAndAccessGroupMapVO, Long> implements StoragePoolAndAccessGroupMapDao {
 
     protected final SearchBuilder<StoragePoolAndAccessGroupMapVO> StoragePoolAccessGroupSearch;
+
     public StoragePoolAndAccessGroupMapDaoImpl() {
         StoragePoolAccessGroupSearch = createSearchBuilder();
         StoragePoolAccessGroupSearch.and("poolId", StoragePoolAccessGroupSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
@@ -77,4 +79,27 @@ public class StoragePoolAndAccessGroupMapDaoImpl extends GenericDaoBase<StorageP
         expunge(sc);
         txn.commit();
     }
+
+    @Override
+    public List<String> listDistinctStorageAccessGroups(String name, String keyword) {
+        GenericSearchBuilder<StoragePoolAndAccessGroupMapVO, String> searchBuilder = createSearchBuilder(String.class);
+
+        searchBuilder.select(null, SearchCriteria.Func.DISTINCT, searchBuilder.entity().getStorageAccessGroup());
+        searchBuilder.and("name", searchBuilder.entity().getStorageAccessGroup(), SearchCriteria.Op.EQ);
+        searchBuilder.and("keyword", searchBuilder.entity().getStorageAccessGroup(), SearchCriteria.Op.LIKE);
+        searchBuilder.done();
+
+        SearchCriteria<String> sc = searchBuilder.create();
+
+        if (name != null) {
+            sc.setParameters("name", name);
+        }
+
+        if (keyword != null) {
+            sc.setParameters("keyword", "%" + keyword + "%");
+        }
+
+        return customSearch(sc, null);
+    }
+
 }

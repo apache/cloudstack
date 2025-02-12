@@ -898,8 +898,9 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     @Override
     public Pair<List<Long>, Integer> searchForIdsAndCount(Long storagePoolId, String storagePoolName, Long zoneId,
             String path, Long podId, Long clusterId, Long hostId, String address, ScopeType scopeType, StoragePoolStatus status,
-            String keyword, Filter searchFilter) {
-        SearchCriteria<StoragePoolVO> sc = createStoragePoolSearchCriteria(storagePoolId, storagePoolName, zoneId, path, podId, clusterId, hostId, address, scopeType, status, keyword);
+            String keyword, String storageAccessGroup, Filter searchFilter) {
+        SearchCriteria<StoragePoolVO> sc = createStoragePoolSearchCriteria(storagePoolId, storagePoolName, zoneId, path, podId, clusterId,
+                hostId, address, scopeType, status, keyword, storageAccessGroup);
         Pair<List<StoragePoolVO>, Integer> uniquePair = searchAndCount(sc, searchFilter);
         List<Long> idList = uniquePair.first().stream().map(StoragePoolVO::getId).collect(Collectors.toList());
         return new Pair<>(idList, uniquePair.second());
@@ -917,7 +918,7 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
     private SearchCriteria<StoragePoolVO> createStoragePoolSearchCriteria(Long storagePoolId, String storagePoolName,
                                                                           Long zoneId, String path, Long podId, Long clusterId, Long hostId, String address, ScopeType scopeType,
-                                                                          StoragePoolStatus status, String keyword) {
+                                                                          StoragePoolStatus status, String keyword, String storageAccessGroup) {
         SearchBuilder<StoragePoolVO> sb = createSearchBuilder();
         sb.select(null, SearchCriteria.Func.DISTINCT, sb.entity().getId()); // select distinct
         // ids
@@ -936,6 +937,12 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
             SearchBuilder<StoragePoolHostVO> hostJoin = _hostDao.createSearchBuilder();
             hostJoin.and("hostId", hostJoin.entity().getHostId(), SearchCriteria.Op.EQ);
             sb.join("poolHostJoin", hostJoin, sb.entity().getId(), hostJoin.entity().getPoolId(), JoinBuilder.JoinType.INNER);
+        }
+
+        if (storageAccessGroup != null) {
+            SearchBuilder<StoragePoolAndAccessGroupMapVO> storageAccessGroupJoin = _storagePoolAccessGroupMapDao.createSearchBuilder();
+            storageAccessGroupJoin.and("storageAccessGroup", storageAccessGroupJoin.entity().getStorageAccessGroup(), SearchCriteria.Op.EQ);
+            sb.join("poolStorageAccessGroupJoin", storageAccessGroupJoin, sb.entity().getId(), storageAccessGroupJoin.entity().getPoolId(), JoinBuilder.JoinType.INNER);
         }
 
         SearchCriteria<StoragePoolVO> sc = sb.create();
@@ -989,6 +996,10 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
         if (hostId != null) {
             sc.setJoinParameters("poolHostJoin", "hostId", hostId);
+        }
+
+        if (storageAccessGroup != null) {
+            sc.setJoinParameters("poolStorageAccessGroupJoin", "storageAccessGroup", storageAccessGroup);
         }
 
         return sc;

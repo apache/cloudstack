@@ -78,7 +78,7 @@ public class AddHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUPS,
             type = CommandType.LIST, collectionType = CommandType.STRING,
             description = "comma separated list of storage access groups for the host",
-            since = "4.18.1")
+            since = "4.21.0")
     private List<String> storageAccessGroups;
 
     /////////////////////////////////////////////////////

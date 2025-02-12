@@ -1302,6 +1302,15 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
+    public PodResponse createMinimalPodResponse(Pod pod) {
+        PodResponse podResponse = new PodResponse();
+        podResponse.setId(pod.getUuid());
+        podResponse.setName(pod.getName());
+        podResponse.setObjectName("pod");
+        return podResponse;
+    }
+
+    @Override
     public PodResponse createPodResponse(Pod pod, Boolean showCapacities) {
         String[] ipRange = new String[2];
         List<String> startIps = new ArrayList<String>();
@@ -1506,6 +1515,15 @@ public class ApiResponseHelper implements ResponseGenerator {
         List<StoragePoolResponse> listPools = ViewResponseHelper.createStoragePoolForMigrationResponse(viewPools.toArray(new StoragePoolJoinVO[viewPools.size()]));
         assert listPools != null && listPools.size() == 1 : "There should be one storage pool returned";
         return listPools.get(0);
+    }
+
+    @Override
+    public ClusterResponse createMinimalClusterResponse(Cluster cluster) {
+        ClusterResponse clusterResponse = new ClusterResponse();
+        clusterResponse.setId(cluster.getUuid());
+        clusterResponse.setName(cluster.getName());
+        clusterResponse.setObjectName("cluster");
+        return clusterResponse;
     }
 
     @Override

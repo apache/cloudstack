@@ -310,6 +310,8 @@ public interface ResponseGenerator {
 
     PodResponse createPodResponse(Pod pod, Boolean showCapacities);
 
+    PodResponse createMinimalPodResponse(Pod pod);
+
     ZoneResponse createZoneResponse(ResponseView view, DataCenter dataCenter, Boolean showCapacities, Boolean showResourceIcon);
 
     DataCenterGuestIpv6PrefixResponse createDataCenterGuestIpv6PrefixResponse(DataCenterGuestIpv6Prefix prefix);
@@ -323,6 +325,8 @@ public interface ResponseGenerator {
     StoragePoolResponse createStoragePoolForMigrationResponse(StoragePool pool);
 
     ClusterResponse createClusterResponse(Cluster cluster, Boolean showCapacities);
+
+    ClusterResponse createMinimalClusterResponse(Cluster cluster);
 
     FirewallRuleResponse createPortForwardingRuleResponse(PortForwardingRule fwRule);
 

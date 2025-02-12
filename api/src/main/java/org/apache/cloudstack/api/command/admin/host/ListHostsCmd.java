@@ -113,6 +113,9 @@ public class ListHostsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING, description = "CPU Arch of the host", since = "4.20.1")
     private String arch;
 
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUP, type = CommandType.STRING, description = "the name of the storage access group")
+    private String storageAccessGroup;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -203,6 +206,18 @@ public class ListHostsCmd extends BaseListCmd {
 
     public CPU.CPUArch getArch() {
         return StringUtils.isBlank(arch) ? null : CPU.CPUArch.fromType(arch);
+    }
+
+    public String getStorageAccessGroup() {
+        return storageAccessGroup;
+    }
+
+    public ListHostsCmd() {
+
+    }
+
+    public ListHostsCmd(String storageAccessGroup) {
+        this.storageAccessGroup = storageAccessGroup;
     }
 
     /////////////////////////////////////////////////////

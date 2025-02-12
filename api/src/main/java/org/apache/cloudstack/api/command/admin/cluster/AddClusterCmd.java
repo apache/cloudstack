@@ -121,7 +121,7 @@ public class AddClusterCmd extends BaseCmd {
     @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUPS,
             type = CommandType.LIST, collectionType = CommandType.STRING,
             description = "comma separated list of storage access groups for the hosts in the cluster",
-            since = "4.18.1")
+            since = "4.21.0")
     private List<String> storageAccessGroups;
 
     public String getOvm3Pool() {

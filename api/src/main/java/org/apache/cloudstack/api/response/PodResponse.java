@@ -86,11 +86,11 @@ public class PodResponse extends BaseResponseWithAnnotations {
     private List<CapacityResponse> capacities;
 
     @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
-    @Param(description = "comma-separated list of storage access groups for the pod", since = "4.18.1")
+    @Param(description = "comma-separated list of storage access groups for the pod", since = "4.21.0")
     private String storageAccessGroups;
 
     @SerializedName("zonestorageaccessgroups")
-    @Param(description = "comma-separated list of storage access groups on the zone", since = "4.18.1")
+    @Param(description = "comma-separated list of storage access groups on the zone", since = "4.21.0")
     private String zoneStorageAccessGroups;
 
     public String getId() {

@@ -36,7 +36,7 @@ import org.apache.cloudstack.api.ServerApiException;
 
 import com.cloud.user.Account;
 
-@APICommand(name = "configureStorageAccess", description = "Configure the storage access groups on zone/pod/cluster/host and storage, accordingly connections to the storage pools", responseObject = SuccessResponse.class, since = "4.18.1",
+@APICommand(name = "configureStorageAccess", description = "Configure the storage access groups on zone/pod/cluster/host and storage, accordingly connections to the storage pools", responseObject = SuccessResponse.class, since = "4.21.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ConfigureStorageAccessCmd extends BaseAsyncCmd {
 

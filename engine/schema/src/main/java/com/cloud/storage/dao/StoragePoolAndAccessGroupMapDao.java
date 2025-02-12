@@ -27,4 +27,5 @@ public interface StoragePoolAndAccessGroupMapDao extends GenericDao<StoragePoolA
     void persist(long poolId, List<String> storageAccessGroups);
     List<String> getStorageAccessGroups(long poolId);
     void deleteStorageAccessGroups(long poolId);
+    List<String> listDistinctStorageAccessGroups(String name, String keyword);
 }

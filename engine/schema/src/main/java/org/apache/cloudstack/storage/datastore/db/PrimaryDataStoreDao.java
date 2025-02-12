@@ -163,7 +163,7 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     Pair<List<Long>, Integer> searchForIdsAndCount(Long storagePoolId, String storagePoolName, Long zoneId,
             String path, Long podId, Long clusterId, Long hostId, String address, ScopeType scopeType, StoragePoolStatus status,
-            String keyword, Filter searchFilter);
+            String keyword, String storageAccessGroup, Filter searchFilter);
 
     List<StoragePoolVO> listByIds(List<Long> ids);
 

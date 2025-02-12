@@ -88,7 +88,20 @@
           <template #label>
             <tooltip-label :title="$t('label.storageaccessgroups')" :tooltip="apiParamsConfigureStorageAccess.storageaccessgroups.description"/>
           </template>
-          <a-input v-model:value="form.storageaccessgroups" />
+          <a-select
+            mode="tags"
+            v-model:value="form.storageaccessgroups"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="storageAccessGroupsLoading"
+            :placeholder="apiParamsConfigureStorageAccess.storageaccessgroups.description">
+            <a-select-option v-for="(opt) in storageAccessGroups" :key="opt">
+              {{ opt }}
+            </a-select-option>
+          </a-select>
         </a-form-item>
 
         <div :span="24" class="action-button">
@@ -121,7 +134,9 @@ export default {
   },
   data () {
     return {
-      loading: false
+      loading: false,
+      storageAccessGroups: [],
+      storageAccessGroupsLoading: false
     }
   },
   beforeCreate () {
@@ -130,6 +145,7 @@ export default {
   },
   created () {
     this.initForm()
+    this.fetchStorageAccessGroupsData()
   },
   computed: {
     canUpdateNFSMountOpts () {
@@ -152,11 +168,28 @@ export default {
         capacityIOPS: this.resource.capacityiops,
         nfsMountOpts: this.resource.nfsmountopts
         storageaccessgroups: this.resource.storageaccessgroups
+          ? this.resource.storageaccessgroups.split(',')
+          : []
       })
       this.rules = reactive({ })
     },
     isAdmin () {
       return isAdmin()
+    },
+    fetchStorageAccessGroupsData () {
+      const params = {}
+      this.storageAccessGroupsLoading = true
+      api('listStorageAccessGroups', params).then(json => {
+        const sags = json.liststorageaccessgroupsresponse.storageaccessgroup || []
+        for (const sag of sags) {
+          if (!this.storageAccessGroups.includes(sag.name)) {
+            this.storageAccessGroups.push(sag.name)
+          }
+        }
+      }).finally(() => {
+        this.storageAccessGroupsLoading = false
+      })
+      this.rules = reactive({})
     },
     handleSubmit (e) {
       if (this.loading) return
@@ -187,7 +220,14 @@ export default {
     updateStoragePool (args) {
       api('updateStoragePool', args).then(json => {
         this.$message.success(`${this.$t('message.success.edit.primary.storage')}: ${this.resource.name}`)
-        if (params.storageaccessgroups !== undefined && params.storageaccessgroups !== this.resource.storageaccessgroups) {
+
+        if (values.storageaccessgroups != null && values.storageaccessgroups.length > 0) {
+          params.storageaccessgroups = values.storageaccessgroups.join(',')
+        } else {
+          params.storageaccessgroups = ''
+        }
+
+        if (params.storageaccessgroups !== undefined && (this.resource.storageaccessgroups ? this.resource.storageaccessgroups.split(',').join(',') : '') !== params.storageaccessgroups) {
           api('configureStorageAccess', {
             storageid: params.id,
             storageaccessgroups: params.storageaccessgroups
@@ -204,6 +244,7 @@ export default {
             })
           })
         }
+
         this.$emit('refresh-data')
         this.closeAction()
       }).catch(error => {

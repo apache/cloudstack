@@ -49,7 +49,20 @@
         <template #label>
           <tooltip-label :title="$t('label.storageaccessgroups')" :tooltip="apiParamsConfigureStorageAccess.storageaccessgroups.description"/>
         </template>
-        <a-input v-model:value="form.storageaccessgroups" />
+        <a-select
+          mode="tags"
+          v-model:value="form.storageaccessgroups"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }"
+          :loading="storageAccessGroupsLoading"
+          :placeholder="apiParamsConfigureStorageAccess.storageaccessgroups.description">
+          <a-select-option v-for="(opt) in storageAccessGroups" :key="opt">
+            {{ opt }}
+          </a-select-option>
+        </a-select>
       </a-form-item>
       <a-form-item name="oscategoryid" ref="oscategoryid">
         <template #label>
@@ -100,6 +113,8 @@ export default {
   data () {
     return {
       loading: false,
+      storageAccessGroups: [],
+      storageAccessGroupsLoading: false,
       osCategories: {
         loading: false,
         opts: []
@@ -113,6 +128,7 @@ export default {
   created () {
     this.initForm()
     this.fetchOsCategories()
+    this.fetchStorageAccessGroupsData()
   },
   methods: {
     initForm () {
@@ -121,8 +137,25 @@ export default {
         name: this.resource.name,
         hosttags: this.resource.explicithosttags,
         istagarule: this.resource.istagarule,
-        storageaccessgroups: this.resource.storageaccessgroups,
+        storageaccessgroups: this.resource.storageaccessgroups
+          ? this.resource.storageaccessgroups.split(',')
+          : [],
         oscategoryid: this.resource.oscategoryid
+      })
+      this.rules = reactive({})
+    },
+    fetchStorageAccessGroupsData () {
+      const params = {}
+      this.storageAccessGroupsLoading = true
+      api('listStorageAccessGroups', params).then(json => {
+        const sags = json.liststorageaccessgroupsresponse.storageaccessgroup || []
+        for (const sag of sags) {
+          if (!this.storageAccessGroups.includes(sag.name)) {
+            this.storageAccessGroups.push(sag.name)
+          }
+        }
+      }).finally(() => {
+        this.storageAccessGroupsLoading = false
       })
       this.rules = reactive({})
     },
@@ -156,8 +189,13 @@ export default {
             content: `${this.$t('label.action.update.host')} - ${values.name}`,
             duration: 2
           })
-          params.storageaccessgroups = values.storageaccessgroups
-          if (params.storageaccessgroups !== undefined && params.storageaccessgroups !== this.resource.storageaccessgroups) {
+          if (values.storageaccessgroups != null && values.storageaccessgroups.length > 0) {
+            params.storageaccessgroups = values.storageaccessgroups.join(',')
+          } else {
+            params.storageaccessgroups = ''
+          }
+
+          if (params.storageaccessgroups !== undefined && (this.resource.storageaccessgroups ? this.resource.storageaccessgroups.split(',').join(',') : '') !== params.storageaccessgroups) {
             api('configureStorageAccess', {
               hostid: params.id,
               storageaccessgroups: params.storageaccessgroups

@@ -95,7 +95,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     @SerializedName("securitygroupsenabled")
     @Param(description = "true if security groups support is enabled, false otherwise")
-    private boolean securityGroupsEnabled;
+    private Boolean securityGroupsEnabled;
 
     @SerializedName("allocationstate")
     @Param(description = "the allocation state of the cluster")
@@ -115,7 +115,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     @SerializedName(ApiConstants.LOCAL_STORAGE_ENABLED)
     @Param(description = "true if local storage offering enabled, false otherwise")
-    private boolean localStorageEnabled;
+    private Boolean localStorageEnabled;
 
     @SerializedName(ApiConstants.TAGS)
     @Param(description = "the list of resource tags associated with zone.", responseObject = ResourceTagResponse.class, since = "4.3")
@@ -168,6 +168,10 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public ZoneResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
+    }
+
+    public ZoneResponse(Set<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 
     public void setId(String id) {
