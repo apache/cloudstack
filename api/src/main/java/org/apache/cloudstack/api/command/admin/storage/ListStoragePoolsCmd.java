@@ -41,7 +41,7 @@ public class ListStoragePoolsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.CLUSTER_ID,
                type = CommandType.UUID,
                entityType = ClusterResponse.class,
-               description = "list storage pools belongig to the specific cluster")
+               description = "list storage pools belonging to the specific cluster")
     private Long clusterId;
 
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "the IP address for the storage pool")

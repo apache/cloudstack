@@ -14,35 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.dc;
+package com.cloud.storage.dao;
 
-import org.apache.cloudstack.acl.InfrastructureEntity;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import java.util.List;
 
-import com.cloud.org.Grouping;
+import com.cloud.storage.StoragePoolAndAccessGroupMapVO;
 
-/**
- * Represents one pod in the cloud stack.
- *
- */
-public interface Pod extends InfrastructureEntity, Grouping, Identity, InternalIdentity {
+import com.cloud.utils.db.GenericDao;
 
-    String getCidrAddress();
+public interface StoragePoolAndAccessGroupMapDao extends GenericDao<StoragePoolAndAccessGroupMapVO, Long> {
 
-    int getCidrSize();
-
-    String getGateway();
-
-    long getDataCenterId();
-
-    String getDescription();
-
-    String getName();
-
-    AllocationState getAllocationState();
-
-    boolean getExternalDhcp();
-
-    String getStorageAccessGroups();
+    void persist(long poolId, List<String> storageAccessGroups);
+    List<String> getStorageAccessGroups(long poolId);
+    void deleteStorageAccessGroups(long poolId);
 }

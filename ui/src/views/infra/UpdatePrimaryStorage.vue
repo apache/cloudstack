@@ -83,6 +83,14 @@
             :placeholder="$t('message.nfs.mount.options.description')"
             v-focus="true" />
         </a-form-item>
+
+        <a-form-item name="storageaccessgroups" ref="storageaccessgroups">
+          <template #label>
+            <tooltip-label :title="$t('label.storageaccessgroups')" :tooltip="apiParamsConfigureStorageAccess.storageaccessgroups.description"/>
+          </template>
+          <a-input v-model:value="form.storageaccessgroups" />
+        </a-form-item>
+
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -118,6 +126,7 @@ export default {
   },
   beforeCreate () {
     this.apiParams = this.$getApiParams('updateStoragePool')
+    this.apiParamsConfigureStorageAccess = this.$getApiParams('configureStorageAccess')
   },
   created () {
     this.initForm()
@@ -142,6 +151,7 @@ export default {
         capacityBytes: this.resource.disksizetotal,
         capacityIOPS: this.resource.capacityiops,
         nfsMountOpts: this.resource.nfsmountopts
+        storageaccessgroups: this.resource.storageaccessgroups
       })
       this.rules = reactive({ })
     },
@@ -177,6 +187,23 @@ export default {
     updateStoragePool (args) {
       api('updateStoragePool', args).then(json => {
         this.$message.success(`${this.$t('message.success.edit.primary.storage')}: ${this.resource.name}`)
+        if (params.storageaccessgroups !== undefined && params.storageaccessgroups !== this.resource.storageaccessgroups) {
+          api('configureStorageAccess', {
+            storageid: params.id,
+            storageaccessgroups: params.storageaccessgroups
+          }).then(response => {
+            this.$pollJob({
+              jobId: response.configurestorageaccessresponse.jobid,
+              successMethod: () => {
+                this.$message.success({
+                  content: this.$t('label.action.configure.storage.access.group'),
+                  duration: 2
+                })
+              },
+              errorMessage: this.$t('message.configuring.storage.access.failed')
+            })
+          })
+        }
         this.$emit('refresh-data')
         this.closeAction()
       }).catch(error => {

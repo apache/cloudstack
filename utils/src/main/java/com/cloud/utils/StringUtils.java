@@ -394,4 +394,19 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
 
         return result.toString();
     }
+
+    public static String[] splitCommaSeparatedStrings(String... tags) {
+        StringBuilder sb = new StringBuilder();
+        for (String tag : tags) {
+            if (tag != null && !tag.isEmpty()) {
+                if (sb.length() > 0) {
+                    sb.append(",");
+                }
+                sb.append(tag);
+            }
+        }
+        String appendedTags = sb.toString();
+        String[] finalMergedTagsArray = appendedTags.split(",");
+        return finalMergedTagsArray;
+    }
 }

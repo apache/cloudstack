@@ -27,46 +27,36 @@
       @finish="handleSubmit">
       <a-form-item name="name" ref="name">
         <template #label>
-          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.clustername.description"/>
         </template>
         <a-input
           v-model:value="form.name"
           v-focus="true" />
       </a-form-item>
-      <a-form-item name="hosttags" ref="hosttags">
+      <a-form-item
+        name="arch"
+        ref="arch">
         <template #label>
-          <tooltip-label :title="$t('label.hosttags')" :tooltip="$t('label.hosttags.explicit.description')"/>
+          <tooltip-label :title="$t('label.arch')" :tooltip="apiParams.arch.description"/>
         </template>
-        <a-input v-model:value="form.hosttags" />
-      </a-form-item>
-      <a-form-item name="istagarule" ref="istagarule">
-        <template #label>
-          <tooltip-label :title="$t('label.istagarule')" :tooltip="apiParams.istagarule.description"/>
-        </template>
-        <a-switch v-model:checked="form.istagarule" />
+        <a-select
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }"
+          v-model:value="form.arch"
+          :placeholder="apiParams.arch.description">
+          <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+            {{ opt.name || opt.description }}
+          </a-select-option>
+        </a-select>
       </a-form-item>
       <a-form-item name="storageaccessgroups" ref="storageaccessgroups">
         <template #label>
           <tooltip-label :title="$t('label.storageaccessgroups')" :tooltip="apiParamsConfigureStorageAccess.storageaccessgroups.description"/>
         </template>
         <a-input v-model:value="form.storageaccessgroups" />
-      </a-form-item>
-      <a-form-item name="oscategoryid" ref="oscategoryid">
-        <template #label>
-          <tooltip-label :title="$t('label.oscategoryid')" :tooltip="apiParams.oscategoryid.description"/>
-        </template>
-        <a-select
-          showSearch
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }"
-          :loading="osCategories.loading"
-          v-model:value="form.oscategoryid">
-          <a-select-option v-for="(osCategory) in osCategories.opts" :key="osCategory.id" :label="osCategory.name">
-            {{ osCategory.name }}
-          </a-select-option>
-        </a-select>
       </a-form-item>
 
       <div :span="24" class="action-button">
@@ -83,7 +73,7 @@ import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
-  name: 'EditVM',
+  name: 'ClusterUpdate',
   components: {
     TooltipLabel
   },
@@ -100,42 +90,41 @@ export default {
   data () {
     return {
       loading: false,
-      osCategories: {
-        loading: false,
-        opts: []
-      }
+      architectureTypes: {}
     }
   },
   beforeCreate () {
-    this.apiParams = this.$getApiParams('updateHost')
+    this.apiParams = this.$getApiParams('updateCluster')
     this.apiParamsConfigureStorageAccess = this.$getApiParams('configureStorageAccess')
   },
   created () {
     this.initForm()
-    this.fetchOsCategories()
+    this.fetchData()
   },
   methods: {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
         name: this.resource.name,
-        hosttags: this.resource.explicithosttags,
-        istagarule: this.resource.istagarule,
-        storageaccessgroups: this.resource.storageaccessgroups,
-        oscategoryid: this.resource.oscategoryid
+        storageaccessgroups: this.resource.storageaccessgroups
       })
       this.rules = reactive({})
     },
-    fetchOsCategories () {
-      this.osCategories.loading = true
-      this.osCategories.opts = []
-      api('listOsCategories').then(json => {
-        this.osCategories.opts = json.listoscategoriesresponse.oscategory || []
-      }).catch(error => {
-        this.$notifyError(error)
-      }).finally(() => {
-        this.osCategories.loading = false
+    fetchData() {
+      this.fetchArchitectureTypes()
+    },
+    fetchArchitectureTypes () {
+      this.architectureTypes.opts = []
+      const typesList = []
+      typesList.push({
+        id: 'x86_64',
+        description: 'AMD 64 bits (x86_64)'
       })
+      typesList.push({
+        id: 'aarch64',
+        description: 'ARM 64 bits (aarch64)'
+      })
+      this.architectureTypes.opts = typesList
     },
     handleSubmit () {
       this.formRef.value.validate().then(() => {
@@ -143,23 +132,19 @@ export default {
         console.log(values)
         const params = {}
         params.id = this.resource.id
-        params.name = values.name
-        params.hosttags = values.hosttags
-        params.oscategoryid = values.oscategoryid
-        if (values.istagarule !== undefined) {
-          params.istagarule = values.istagarule
-        }
+        params.clustername = values.name
         this.loading = true
 
-        api('updateHost', params).then(json => {
+        api('updateCluster', params).then(json => {
           this.$message.success({
-            content: `${this.$t('label.action.update.host')} - ${values.name}`,
+            content: `${this.$t('label.action.update.cluster')} - ${values.name}`,
             duration: 2
           })
+
           params.storageaccessgroups = values.storageaccessgroups
           if (params.storageaccessgroups !== undefined && params.storageaccessgroups !== this.resource.storageaccessgroups) {
             api('configureStorageAccess', {
-              hostid: params.id,
+              clusterid: params.id,
               storageaccessgroups: params.storageaccessgroups
             }).then(response => {
               this.$pollJob({
@@ -174,13 +159,12 @@ export default {
               })
             })
           }
+
           this.$emit('refresh-data')
           this.onCloseAction()
         }).catch(error => {
           this.$notifyError(error)
-        }).finally(() => {
-          this.loading = false
-        })
+        }).finally(() => { this.loading = false })
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })

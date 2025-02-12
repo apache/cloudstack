@@ -3216,6 +3216,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String path = cmd.getPath();
         Long pod = cmd.getPodId();
         Long cluster = cmd.getClusterId();
+        Long host = cmd.getHostId();
         String address = cmd.getIpAddress();
         String keyword = cmd.getKeyword();
 
@@ -3225,7 +3226,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Filter searchFilter = new Filter(StoragePoolVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
         Pair<List<Long>, Integer> uniquePoolPair = storagePoolDao.searchForIdsAndCount(id, name, zoneId, path, pod,
-                cluster, address, scopeType, status, keyword, searchFilter);
+                cluster, host, address, scopeType, status, keyword, searchFilter);
 
         List<StoragePoolJoinVO> storagePools = _poolJoinDao.searchByIds(uniquePoolPair.first().toArray(new Long[0]));
 

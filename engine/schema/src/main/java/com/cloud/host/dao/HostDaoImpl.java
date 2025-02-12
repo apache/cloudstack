@@ -107,7 +107,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> IdStatusSearch;
     protected SearchBuilder<HostVO> TypeDcSearch;
     protected SearchBuilder<HostVO> TypeDcStatusSearch;
-    protected SearchBuilder<HostVO> TypeClusterStatusSearch;
+    protected SearchBuilder<HostVO> TypeStatusStateSearch;
     protected SearchBuilder<HostVO> MsStatusSearch;
     protected SearchBuilder<HostVO> DcPrivateIpAddressSearch;
     protected SearchBuilder<HostVO> DcStorageIpAddressSearch;
@@ -266,12 +266,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         TypeDcStatusSearch.and("resourceState", TypeDcStatusSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
         TypeDcStatusSearch.done();
 
-        TypeClusterStatusSearch = createSearchBuilder();
-        TypeClusterStatusSearch.and("type", TypeClusterStatusSearch.entity().getType(), SearchCriteria.Op.EQ);
-        TypeClusterStatusSearch.and("cluster", TypeClusterStatusSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
-        TypeClusterStatusSearch.and("status", TypeClusterStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
-        TypeClusterStatusSearch.and("resourceState", TypeClusterStatusSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
-        TypeClusterStatusSearch.done();
+        TypeStatusStateSearch = createSearchBuilder();
+        TypeStatusStateSearch.and("type", TypeStatusStateSearch.entity().getType(), SearchCriteria.Op.EQ);
+        TypeStatusStateSearch.and("cluster", TypeStatusStateSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        TypeStatusStateSearch.and("pod", TypeStatusStateSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+        TypeStatusStateSearch.and("zone", TypeStatusStateSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        TypeStatusStateSearch.and("status", TypeStatusStateSearch.entity().getStatus(), SearchCriteria.Op.EQ);
+        TypeStatusStateSearch.and("resourceState", TypeStatusStateSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
+        TypeStatusStateSearch.done();
 
         IdsSearch = createSearchBuilder();
         IdsSearch.and("id", IdsSearch.entity().getId(), SearchCriteria.Op.IN);
@@ -328,10 +330,12 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
         PodSearch = createSearchBuilder();
         PodSearch.and("podId", PodSearch.entity().getPodId(), SearchCriteria.Op.EQ);
+        PodSearch.and("type", PodSearch.entity().getType(), Op.EQ);
         PodSearch.done();
 
         ClusterSearch = createSearchBuilder();
         ClusterSearch.and("clusterId", ClusterSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        ClusterSearch.and("type", ClusterSearch.entity().getType(), Op.EQ);
         ClusterSearch.done();
 
         TypeSearch = createSearchBuilder();
@@ -1238,8 +1242,16 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<HostVO> findByPodId(Long podId) {
+        return findByPodId(podId, null);
+    }
+
+    @Override
+    public List<HostVO> findByPodId(Long podId, Type type) {
         SearchCriteria<HostVO> sc = PodSearch.create();
         sc.setParameters("podId", podId);
+        if (type != null) {
+            sc.setParameters("type", Type.Routing);
+        }
         return listBy(sc);
     }
 
@@ -1250,8 +1262,16 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<HostVO> findByClusterId(Long clusterId) {
+        return findByClusterId(clusterId, null);
+    }
+
+    @Override
+    public List<HostVO> findByClusterId(Long clusterId, Type type) {
         SearchCriteria<HostVO> sc = ClusterSearch.create();
         sc.setParameters("clusterId", clusterId);
+        if (type != null) {
+            sc.setParameters("type", Type.Routing);
+        }
         return listBy(sc);
     }
 
@@ -1355,7 +1375,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<HostVO> findHypervisorHostInCluster(long clusterId) {
-        SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
+        SearchCriteria<HostVO> sc = TypeStatusStateSearch.create();
         sc.setParameters("type", Host.Type.Routing);
         sc.setParameters("cluster", clusterId);
         sc.setParameters("status", Status.Up);
@@ -1365,8 +1385,30 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public List<HostVO> findHypervisorHostInZone(long zoneId) {
+        SearchCriteria<HostVO> sc = TypeStatusStateSearch.create();
+        sc.setParameters("type", Host.Type.Routing);
+        sc.setParameters("zone", zoneId);
+        sc.setParameters("status", Status.Up);
+        sc.setParameters("resourceState", ResourceState.Enabled);
+
+        return listBy(sc);
+    }
+
+    @Override
+    public List<HostVO> findHypervisorHostInPod(long podId) {
+        SearchCriteria<HostVO> sc = TypeStatusStateSearch.create();
+        sc.setParameters("type", Host.Type.Routing);
+        sc.setParameters("pod", podId);
+        sc.setParameters("status", Status.Up);
+        sc.setParameters("resourceState", ResourceState.Enabled);
+
+        return listBy(sc);
+    }
+
+    @Override
     public HostVO findAnyStateHypervisorHostInCluster(long clusterId) {
-        SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
+        SearchCriteria<HostVO> sc = TypeStatusStateSearch.create();
         sc.setParameters("type", Host.Type.Routing);
         sc.setParameters("cluster", clusterId);
         List<HostVO> list = listBy(sc, new Filter(1));
@@ -1375,7 +1417,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public HostVO findOldestExistentHypervisorHostInCluster(long clusterId) {
-        SearchCriteria<HostVO> sc = TypeClusterStatusSearch.create();
+        SearchCriteria<HostVO> sc = TypeStatusStateSearch.create();
         sc.setParameters("type", Host.Type.Routing);
         sc.setParameters("cluster", clusterId);
         sc.setParameters("status", Status.Up);

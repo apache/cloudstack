@@ -161,6 +161,10 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     @Param(description = "true, if routed network/vpc is enabled", since = "4.20.1")
     private boolean routedModeEnabled = false;
 
+    @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups for the zone", since = "4.20.1")
+    private String storageAccessGroups;
+
 
     public ZoneResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -400,6 +404,14 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public String getType() {
         return type;
+    }
+
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
     }
 
     public void setNsxEnabled(boolean nsxEnabled) {

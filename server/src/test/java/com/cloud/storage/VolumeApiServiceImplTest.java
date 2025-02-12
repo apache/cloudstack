@@ -1679,6 +1679,8 @@ public class VolumeApiServiceImplTest {
             Mockito.when(primaryDataStoreDaoMock.findById(1L)).thenReturn(srcStoragePoolVOMock);
             Mockito.when(srcStoragePoolVOMock.getPoolType()).thenReturn(Storage.StoragePoolType.PowerFlex);
             Mockito.when(dataStoreMgr.getDataStore(2L, DataStoreRole.Primary)).thenReturn( dataStore);
+            Pair<Boolean, String> checkResult = new Pair<>(true, "success");
+            Mockito.doReturn(checkResult).when(storageMgr).checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(any(), any());
 
             volumeApiServiceImpl.migrateVolume(migrateVolumeCmd);
         } catch (InvalidParameterValueException e) {

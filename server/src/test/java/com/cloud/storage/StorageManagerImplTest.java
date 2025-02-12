@@ -23,8 +23,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.resource.ResourceManager;
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
+import org.apache.cloudstack.api.command.admin.storage.ConfigureStorageAccessCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -74,6 +81,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.mockito.Mockito.doReturn;
 
 @RunWith(MockitoJUnitRunner.class)
 public class StorageManagerImplTest {
@@ -125,6 +136,18 @@ public class StorageManagerImplTest {
     @Mock
     private VMInstanceVO vmInstanceVOMock;
 
+    @Mock
+    private HostDao hostDao;
+    @Mock
+    private HostPodDao podDao;
+
+    @Mock
+    private StoragePoolAndAccessGroupMapDao storagePoolAccessGroupMapDao;
+
+    @Mock
+    private ResourceManager resourceMgr;
+
+
     @Test
     public void createLocalStoragePoolName() {
         String hostMockName = "host1";
@@ -149,7 +172,7 @@ public class StorageManagerImplTest {
         Mockito.when(storagePoolInfoMock.getUuid()).thenReturn(firstBlockUuid + "-213151-df21ef333d-2d33f1");
 
         String localStoragePoolName = storageManagerImpl.createLocalStoragePoolName(hostMock, storagePoolInfoMock);
-        Assert.assertEquals(expectedLocalStorageName, localStoragePoolName);
+        assertEquals(expectedLocalStorageName, localStoragePoolName);
     }
 
     private VolumeVO mockVolumeForIsVolumeSuspectedDestroyDuplicateTest() {
@@ -837,6 +860,66 @@ public class StorageManagerImplTest {
     }
 
     @Test
+    public void testGetStorageAccessGroupsOnHostAllSAGsPresent() {
+        long hostId = 1L;
+
+        HostVO host = Mockito.mock(HostVO.class);
+        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+        HostPodVO pod = Mockito.mock(HostPodVO.class);
+        DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+
+        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+        Mockito.when(host.getClusterId()).thenReturn(2L);
+        Mockito.when(clusterDao.findById(2L)).thenReturn(cluster);
+        Mockito.when(cluster.getPodId()).thenReturn(3L);
+        Mockito.when(podDao.findById(3L)).thenReturn(pod);
+        Mockito.when(pod.getDataCenterId()).thenReturn(4L);
+        Mockito.when(dataCenterDao.findById(4L)).thenReturn(zone);
+
+        Mockito.when(host.getStorageAccessGroups()).thenReturn("sag1");
+        Mockito.when(cluster.getStorageAccessGroups()).thenReturn("sag2");
+        Mockito.when(pod.getStorageAccessGroups()).thenReturn("sag3");
+        Mockito.when(zone.getStorageAccessGroups()).thenReturn("sag4");
+
+        String[] sags = storageManagerImpl.getStorageAccessGroups(null, null, null, hostId);
+
+        assertNotNull(sags);
+        assertEquals(4, sags.length);
+        assertEquals("sag1", sags[0]);
+        assertEquals("sag2", sags[1]);
+        assertEquals("sag3", sags[2]);
+        assertEquals("sag4", sags[3]);
+    }
+
+    @Test
+    public void testGetSingleStorageAccessGroupOnHost() {
+        long hostId = 1L;
+
+        HostVO host = Mockito.mock(HostVO.class);
+        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+        HostPodVO pod = Mockito.mock(HostPodVO.class);
+        DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+
+        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+        Mockito.when(host.getClusterId()).thenReturn(2L);
+        Mockito.when(clusterDao.findById(2L)).thenReturn(cluster);
+        Mockito.when(cluster.getPodId()).thenReturn(3L);
+        Mockito.when(podDao.findById(3L)).thenReturn(pod);
+        Mockito.when(pod.getDataCenterId()).thenReturn(4L);
+        Mockito.when(dataCenterDao.findById(4L)).thenReturn(zone);
+
+        Mockito.when(host.getStorageAccessGroups()).thenReturn("");
+        Mockito.when(cluster.getStorageAccessGroups()).thenReturn("sag2");
+        Mockito.when(pod.getStorageAccessGroups()).thenReturn(null);
+
+        String[] sags = storageManagerImpl.getStorageAccessGroups(null, null, null, hostId);
+
+        assertNotNull(sags);
+        assertEquals(1, sags.length);
+        assertEquals("sag2", sags[0]);
+    }
+
+    @Test
     public void testGetStoragePoolIopsStats_ReturnsDriverResultWhenNotNull() {
         StoragePool pool = Mockito.mock(StoragePool.class);
         PrimaryDataStoreDriver primaryStoreDriver = Mockito.mock(PrimaryDataStoreDriver.class);
@@ -893,5 +976,385 @@ public class StorageManagerImplTest {
         Assert.assertNotNull(result);
         Assert.assertEquals("Capacity IOPS should match pool's capacity IOPS", 1000L, result.first().longValue());
         Assert.assertNull("Used IOPS should be null when usedIops <= 0", result.second());
+    }
+
+
+    @Test
+    public void testNoStorageAccessGroupsOnHostAndStoragePool() {
+        HostVO host = Mockito.mock(HostVO.class);
+        StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+        long hostId = 1L;
+        long poolId = 2L;
+
+        Mockito.when(host.getId()).thenReturn(hostId);
+        doReturn(new String[0]).when(storageManagerImpl).getStorageAccessGroups(null, null, null, hostId);
+
+        Mockito.when(storagePool.getId()).thenReturn(poolId);
+        storageManagerImpl._storagePoolAccessGroupMapDao = storagePoolAccessGroupMapDao;
+        Mockito.when(storagePoolAccessGroupMapDao.getStorageAccessGroups(poolId))
+                .thenReturn(new ArrayList<>());
+
+        boolean result = storageManagerImpl.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, storagePool);
+
+        Assert.assertTrue("Host without storage access groups should connect to a storage pool without storage access groups.", result);
+    }
+
+    @Test
+    public void testHostWithStorageAccessGroupsAndStoragePoolWithoutStorageAccessGroups() {
+        HostVO host = Mockito.mock(HostVO.class);
+        StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+        long hostId = 1L;
+        long poolId = 2L;
+
+        Mockito.when(host.getId()).thenReturn(hostId);
+        doReturn(new String[]{"StorageAccessGroup1"}).when(storageManagerImpl).getStorageAccessGroups(null, null, null, hostId);
+
+        Mockito.when(storagePool.getId()).thenReturn(poolId);
+        storageManagerImpl._storagePoolAccessGroupMapDao = storagePoolAccessGroupMapDao;
+        Mockito.when(storagePoolAccessGroupMapDao.getStorageAccessGroups(poolId))
+                .thenReturn(new ArrayList<>());
+
+        boolean result = storageManagerImpl.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, storagePool);
+
+        Assert.assertTrue("Host with storage access groups should connect to a storage pool without storage access groups.", result);
+    }
+
+    @Test
+    public void testHostWithStorageAccessGroupsAndStoragePoolWithDifferentStorageAccessGroups() {
+        HostVO host = Mockito.mock(HostVO.class);
+        StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+        long hostId = 1L;
+        long poolId = 2L;
+
+        Mockito.when(host.getId()).thenReturn(hostId);
+        doReturn(new String[]{"StorageAccessGroup1"}).when(storageManagerImpl).getStorageAccessGroups(null, null, null, hostId);
+
+        Mockito.when(storagePool.getId()).thenReturn(poolId);
+        storageManagerImpl._storagePoolAccessGroupMapDao = storagePoolAccessGroupMapDao;
+        Mockito.when(storagePoolAccessGroupMapDao.getStorageAccessGroups(poolId))
+                .thenReturn(Arrays.asList("StorageAccessGroup2", "StorageAccessGroup3"));
+
+        boolean result = storageManagerImpl.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, storagePool);
+
+        Assert.assertFalse("Host with storage access groups should not connect to a storage pool with different storage access groups.", result);
+    }
+
+    @Test
+    public void testHostWithStorageAccessGroupsAndStoragePoolWithMatchingStorageAccessGroups() {
+        HostVO host = Mockito.mock(HostVO.class);
+        StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+        long hostId = 1L;
+        long poolId = 2L;
+
+        Mockito.when(host.getId()).thenReturn(hostId);
+        doReturn(new String[]{"StorageAccessGroup1"}).when(storageManagerImpl).getStorageAccessGroups(null, null, null, hostId);
+
+        Mockito.when(storagePool.getId()).thenReturn(poolId);
+        storageManagerImpl._storagePoolAccessGroupMapDao = storagePoolAccessGroupMapDao;
+        Mockito.when(storagePoolAccessGroupMapDao.getStorageAccessGroups(poolId))
+                .thenReturn(Arrays.asList("StorageAccessGroup1", "StorageAccessGroup2"));
+
+        boolean result = storageManagerImpl.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, storagePool);
+
+        Assert.assertTrue("Host with matching storage access groups should connect to a storage pool with matching storage access groups.", result);
+    }
+
+    @Test
+    public void testHostWithEmptySAGsOnHost() {
+        HostVO host = Mockito.mock(HostVO.class);
+        StoragePoolVO storagePool = Mockito.mock(StoragePoolVO.class);
+        long hostId = 1L;
+        long poolId = 2L;
+
+        Mockito.when(host.getId()).thenReturn(hostId);
+        doReturn(new String[0]).when(storageManagerImpl).getStorageAccessGroups(null, null, null, hostId);
+
+        Mockito.when(storagePool.getId()).thenReturn(poolId);
+        storageManagerImpl._storagePoolAccessGroupMapDao = storagePoolAccessGroupMapDao;
+        Mockito.when(storagePoolAccessGroupMapDao.getStorageAccessGroups(poolId))
+                .thenReturn(Arrays.asList("StorageAccessGroup1", "StorageAccessGroup2"));
+
+        boolean result = storageManagerImpl.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, storagePool);
+
+        Assert.assertFalse("Host with matching storage access groups should connect to a storage pool with matching storage access groups.", result);
+    }
+
+    @Test
+    public void testVolumeReadyNoVMOrVMStoppedAndPoolsWithMatchingStorageAccessGroups() {
+        StoragePoolVO destPool = Mockito.mock(StoragePoolVO.class);
+        Volume volume = Mockito.mock(Volume.class);
+        long srcPoolId = 2L;
+        long destPoolId = 3L;
+
+        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
+        Mockito.when(volume.getInstanceId()).thenReturn(null);
+        Mockito.when(volume.getPoolId()).thenReturn(srcPoolId);
+
+        Mockito.when(destPool.getId()).thenReturn(destPoolId);
+
+        List<String> srcStorageAccessGroups = Arrays.asList("StorageAccessGroup1", "StorageAccessGroup2");
+        List<String> destStorageAccessGroups = Arrays.asList("StorageAccessGroup1", "StorageAccessGroup2");
+
+        doReturn(srcStorageAccessGroups).when(storagePoolAccessGroupMapDao).getStorageAccessGroups(srcPoolId);
+        doReturn(destStorageAccessGroups).when(storagePoolAccessGroupMapDao).getStorageAccessGroups(destPoolId);
+
+        Pair<Boolean, String> result = storageManagerImpl.checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(destPool, volume);
+
+        Assert.assertTrue("Volume in Ready state and no VM or VM stopped should migrate if both pools have matching storage access groups.", result.first());
+    }
+
+    @Test
+    public void testVolumeReadyNoVMOrVMStoppedAndPoolsWithEmptyStorageAccessGroups() {
+        StoragePoolVO destPool = Mockito.mock(StoragePoolVO.class);
+        Volume volume = Mockito.mock(Volume.class);
+        long srcPoolId = 2L;
+        long destPoolId = 3L;
+
+        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
+        Mockito.when(volume.getInstanceId()).thenReturn(null);
+        Mockito.when(volume.getPoolId()).thenReturn(srcPoolId);
+
+        Mockito.when(destPool.getId()).thenReturn(destPoolId);
+
+        List<String> srcStorageAccessGroups = new ArrayList<>();
+        List<String> destStorageAccessGroups = new ArrayList<>();
+
+        doReturn(srcStorageAccessGroups).when(storagePoolAccessGroupMapDao).getStorageAccessGroups(srcPoolId);
+        doReturn(destStorageAccessGroups).when(storagePoolAccessGroupMapDao).getStorageAccessGroups(destPoolId);
+
+        Pair<Boolean, String> result = storageManagerImpl.checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(destPool, volume);
+
+        Assert.assertTrue("Volume with empty storage access groups should be able to fit in the destination pool.", result.first());
+    }
+
+    @Test
+    public void testVolumeReadyVMRunningAndHostHasCommonSAGsForBothPools() {
+        StoragePoolVO destPool = Mockito.mock(StoragePoolVO.class);
+        Volume volume = Mockito.mock(Volume.class);
+        long vmId = 10L;
+        long srcPoolId = 2L;
+        long destPoolId = 3L;
+
+        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
+        Mockito.when(volume.getInstanceId()).thenReturn(vmId);
+        Mockito.when(volume.getPoolId()).thenReturn(srcPoolId);
+
+        Mockito.when(destPool.getId()).thenReturn(destPoolId);
+
+        List<String> srcStorageAccessGroups = Arrays.asList("StorageAccessGroup1", "StorageAccessGroup2");
+        List<String> destStorageAccessGroups = Arrays.asList("StorageAccessGroup2", "StorageAccessGroup3");
+
+        doReturn(srcStorageAccessGroups).when(storagePoolAccessGroupMapDao).getStorageAccessGroups(srcPoolId);
+        doReturn(destStorageAccessGroups).when(storagePoolAccessGroupMapDao).getStorageAccessGroups(destPoolId);
+
+        Pair<Boolean, String> result = storageManagerImpl.checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(destPool, volume);
+
+        Assert.assertTrue("Volume with host having common storage access groups should fit in both source and destination pools.", result.first());
+    }
+
+    @Test
+    public void testVolumeReadyVMRunningAndHostHasCommonSAGForSourcePoolButNotDestinationPool() {
+        StoragePoolVO destPool = Mockito.mock(StoragePoolVO.class);
+        Volume volume = Mockito.mock(Volume.class);
+        StoragePoolVO srcPool = Mockito.mock(StoragePoolVO.class);
+        long vmId = 10L;
+        long srcPoolId = 2L;
+        long destPoolId = 3L;
+
+        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
+        Mockito.when(volume.getInstanceId()).thenReturn(vmId);
+        Mockito.when(volume.getPoolId()).thenReturn(srcPoolId);
+
+        Mockito.when(destPool.getId()).thenReturn(destPoolId);
+        Mockito.when(srcPool.getId()).thenReturn(destPoolId);
+        Mockito.doReturn(srcPool).when(storagePoolDao).findById(srcPoolId);
+
+        List<String> srcStorageAccessGroups = Arrays.asList("StorageAccessGroup1", "StorageAccessGroup2");
+        List<String> destStorageAccessGroups = Arrays.asList("StorageAccessGroup3", "StorageAccessGroup4");
+
+        doReturn(srcStorageAccessGroups).when(storagePoolAccessGroupMapDao).getStorageAccessGroups(srcPoolId);
+        doReturn(destStorageAccessGroups).when(storagePoolAccessGroupMapDao).getStorageAccessGroups(destPoolId);
+        List<Long> poolIds = new ArrayList<>();
+        poolIds.add(srcPool.getId());
+        poolIds.add(destPool.getId());
+        Mockito.doReturn(null).when(storageManagerImpl).findUpAndEnabledHostWithAccessToStoragePools(poolIds);
+
+        Pair<Boolean, String> result = storageManagerImpl.checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(destPool, volume);
+
+        Assert.assertFalse("Volume with host having common storage access group for source pool but not destination pool should not fit.", result.first());
+    }
+
+    @Test
+    public void testNoCommonHostConnected() {
+        StoragePoolVO destPool = Mockito.mock(StoragePoolVO.class);
+        StoragePoolVO srcPool = Mockito.mock(StoragePoolVO.class);
+        Volume volume = Mockito.mock(Volume.class);
+        long vmId = 10L;
+        long srcPoolId = 2L;
+        long destPoolId = 3L;
+
+        Mockito.when(volume.getState()).thenReturn(Volume.State.Ready);
+        Mockito.when(volume.getInstanceId()).thenReturn(vmId);
+        Mockito.when(volume.getPoolId()).thenReturn(srcPoolId);
+
+        Mockito.when(destPool.getId()).thenReturn(destPoolId);
+        Mockito.when(srcPool.getId()).thenReturn(destPoolId);
+        Mockito.doReturn(srcPool).when(storagePoolDao).findById(srcPoolId);
+        List<String> srcStorageAccessGroups = Arrays.asList("StorageAccessGroup3", "StorageAccessGroup4");
+        List<String> destStorageAccessGroups = Arrays.asList("StorageAccessGroup1", "StorageAccessGroup2");
+
+        Mockito.doReturn(srcStorageAccessGroups).when(storagePoolAccessGroupMapDao).getStorageAccessGroups(srcPoolId);
+        Mockito.doReturn(destStorageAccessGroups).when(storagePoolAccessGroupMapDao).getStorageAccessGroups(destPoolId);
+        List<Long> poolIds = new ArrayList<>();
+        poolIds.add(srcPool.getId());
+        poolIds.add(destPool.getId());
+        Mockito.doReturn(null).when(storageManagerImpl).findUpAndEnabledHostWithAccessToStoragePools(poolIds);
+        Pair<Boolean, String> result = storageManagerImpl.checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(destPool, volume);
+
+        Assert.assertFalse("Volume with host having common storage access group for destination pool but not source pool should not fit.", result.first());
+        Assert.assertEquals("No common host connected to source and destination storages", result.second());
+    }
+
+    @Test
+    public void testConfigureStorageAccess_SkipUpdateForZone() {
+        Long zoneId = 1L;
+        List<String> storageAccessGroups = Arrays.asList("sag1", "sag2");
+
+        ConfigureStorageAccessCmd cmd = Mockito.mock(ConfigureStorageAccessCmd.class);
+        Mockito.when(cmd.getZoneId()).thenReturn(zoneId);
+        Mockito.when(cmd.getPodId()).thenReturn(null);
+        Mockito.when(cmd.getClusterId()).thenReturn(null);
+        Mockito.when(cmd.getHostId()).thenReturn(null);
+        Mockito.when(cmd.getStorageId()).thenReturn(null);
+        Mockito.when(cmd.getStorageAccessGroups()).thenReturn(storageAccessGroups);
+
+        DataCenterVO zone = Mockito.mock(DataCenterVO.class);
+        Mockito.when(zone.getStorageAccessGroups()).thenReturn("sag2,sag1");
+        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zone);
+
+        boolean result = storageManagerImpl.configureStorageAccess(cmd);
+
+        Mockito.verify(resourceMgr, Mockito.never()).updateZoneStorageAccessGroups(Mockito.anyLong(), Mockito.anyList());
+        Mockito.verify(dataCenterDao, Mockito.never()).update(Mockito.eq(zoneId), Mockito.any(DataCenterVO.class));
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testConfigureStorageAccess_SkipUpdateForPod() {
+        Long podId = 1L;
+        List<String> storageAccessGroups = Arrays.asList("sag1", "sag2");
+
+        ConfigureStorageAccessCmd cmd = Mockito.mock(ConfigureStorageAccessCmd.class);
+        Mockito.when(cmd.getZoneId()).thenReturn(null);
+        Mockito.when(cmd.getPodId()).thenReturn(podId);
+        Mockito.when(cmd.getClusterId()).thenReturn(null);
+        Mockito.when(cmd.getHostId()).thenReturn(null);
+        Mockito.when(cmd.getStorageId()).thenReturn(null);
+        Mockito.when(cmd.getStorageAccessGroups()).thenReturn(storageAccessGroups);
+
+        HostPodVO pod = Mockito.mock(HostPodVO.class);
+        Mockito.when(pod.getDataCenterId()).thenReturn(1L);
+        Mockito.when(pod.getStorageAccessGroups()).thenReturn("sag1,sag2");
+        Mockito.when(podDao.findById(podId)).thenReturn(pod);
+        Mockito.doNothing().when(storageManagerImpl).checkIfStorageAccessGroupsExistsOnZone(1L, storageAccessGroups);
+
+        boolean result = storageManagerImpl.configureStorageAccess(cmd);
+
+        Mockito.verify(resourceMgr, Mockito.never()).updatePodStorageAccessGroups(Mockito.anyLong(), Mockito.anyList());
+        Mockito.verify(podDao, Mockito.never()).update(Mockito.eq(podId), Mockito.any(HostPodVO.class));
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testConfigureStorageAccess_SkipUpdateForCluster() {
+        Long clusterId = 1L;
+        List<String> storageAccessGroups = Arrays.asList("sag1", "sag2");
+
+        ConfigureStorageAccessCmd cmd = Mockito.mock(ConfigureStorageAccessCmd.class);
+        Mockito.when(cmd.getZoneId()).thenReturn(null);
+        Mockito.when(cmd.getPodId()).thenReturn(null);
+        Mockito.when(cmd.getClusterId()).thenReturn(clusterId);
+        Mockito.when(cmd.getHostId()).thenReturn(null);
+        Mockito.when(cmd.getStorageId()).thenReturn(null);
+        Mockito.when(cmd.getStorageAccessGroups()).thenReturn(storageAccessGroups);
+
+        ClusterVO cluster = Mockito.mock(ClusterVO.class);
+        Mockito.when(cluster.getPodId()).thenReturn(1L);
+        Mockito.when(cluster.getStorageAccessGroups()).thenReturn("sag1,sag2");
+        Mockito.when(clusterDao.findById(clusterId)).thenReturn(cluster);
+        Mockito.doNothing().when(storageManagerImpl).checkIfStorageAccessGroupsExistsOnPod(1L, storageAccessGroups);
+
+        boolean result = storageManagerImpl.configureStorageAccess(cmd);
+
+        Mockito.verify(resourceMgr, Mockito.never()).updateClusterStorageAccessGroups(Mockito.anyLong(), Mockito.anyList());
+        Mockito.verify(clusterDao, Mockito.never()).update(Mockito.eq(clusterId), Mockito.any(ClusterVO.class));
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testConfigureStorageAccess_SkipUpdateForHost() {
+        Long hostId = 1L;
+        List<String> storageAccessGroups = Arrays.asList("sag1", "sag2");
+
+        ConfigureStorageAccessCmd cmd = Mockito.mock(ConfigureStorageAccessCmd.class);
+        Mockito.when(cmd.getZoneId()).thenReturn(null);
+        Mockito.when(cmd.getPodId()).thenReturn(null);
+        Mockito.when(cmd.getClusterId()).thenReturn(null);
+        Mockito.when(cmd.getHostId()).thenReturn(hostId);
+        Mockito.when(cmd.getStorageId()).thenReturn(null);
+        Mockito.when(cmd.getStorageAccessGroups()).thenReturn(storageAccessGroups);
+
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getClusterId()).thenReturn(1L);
+        Mockito.when(host.getStorageAccessGroups()).thenReturn("sag1,sag2");
+        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+        Mockito.doNothing().when(storageManagerImpl).checkIfStorageAccessGroupsExistsOnCluster(1L, storageAccessGroups);
+
+        boolean result = storageManagerImpl.configureStorageAccess(cmd);
+
+        Mockito.verify(resourceMgr, Mockito.never()).updateHostStorageAccessGroups(Mockito.anyLong(), Mockito.anyList());
+        Mockito.verify(hostDao, Mockito.never()).update(Mockito.eq(hostId), Mockito.any(HostVO.class));
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testConfigureStorageAccess_InvalidNonNullCount() {
+        ConfigureStorageAccessCmd cmd = Mockito.mock(ConfigureStorageAccessCmd.class);
+
+        Mockito.when(cmd.getZoneId()).thenReturn(1L);
+        Mockito.when(cmd.getPodId()).thenReturn(1L);
+        Mockito.when(cmd.getClusterId()).thenReturn(null);
+        Mockito.when(cmd.getHostId()).thenReturn(null);
+        Mockito.when(cmd.getStorageId()).thenReturn(null);
+
+        try {
+            storageManagerImpl.configureStorageAccess(cmd);
+            Assert.fail("Expected IllegalArgumentException to be thrown due to nonNullCount validation");
+        } catch (IllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage().contains("Exactly one of zoneid, podid, clusterid, hostid or storagepoolid is required"));
+        }
+    }
+
+    @Test
+    public void testConfigureStorageAccess_MissingStorageAccessGroups() {
+        ConfigureStorageAccessCmd cmd = Mockito.mock(ConfigureStorageAccessCmd.class);
+
+        Mockito.when(cmd.getZoneId()).thenReturn(1L);
+        Mockito.when(cmd.getPodId()).thenReturn(null);
+        Mockito.when(cmd.getClusterId()).thenReturn(null);
+        Mockito.when(cmd.getHostId()).thenReturn(null);
+        Mockito.when(cmd.getStorageId()).thenReturn(null);
+        Mockito.when(cmd.getStorageAccessGroups()).thenReturn(null);
+
+        try {
+            storageManagerImpl.configureStorageAccess(cmd);
+            Assert.fail("Expected InvalidParameterValueException to be thrown due to missing storageAccessGroups");
+        } catch (InvalidParameterValueException e) {
+            Assert.assertTrue(e.getMessage().contains("storageaccessgroups parameter is required"));
+        }
     }
 }
