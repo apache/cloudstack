@@ -1615,7 +1615,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         // Only list hosts of the same architecture as the source Host in a multi-arch zone
         List<CPU.CPUArch> clusterArchs = ApiDBUtils.listZoneClustersArchs(vm.getDataCenterId());
-        if (CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1) {
+        if (CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1 && !suitableHosts.isEmpty()) {
             suitableHosts = suitableHosts.stream().filter(h -> h.getArch() == srcHost.getArch()).collect(Collectors.toList());
         }
 
