@@ -5571,7 +5571,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (!ManagementServerHost.State.Down.equals(managementServer.getState())) {
-            throw new InvalidParameterValueException(String.format("Unable to remove Management Server with ID [%s]. It can only be removed when it is in the [%s] state, however currently it is in the [%s] state", managementServer.getUuid(), ManagementServerHost.State.Down.name(), ManagementServerHost.State.Up.name()));
+            throw new InvalidParameterValueException(String.format("Unable to remove Management Server with ID [%s]. It can only be removed when it is in the [%s] state, however currently it is in the [%s] state", managementServer.getUuid(), ManagementServerHost.State.Down.name(), managementServer.getState().name()));
         }
 
         managementServer.setRemoved(new Date());
