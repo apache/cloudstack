@@ -42,8 +42,6 @@ CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.mshost_peer', 'fk_mshost_peer__
 -- Add last_id to the volumes table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'last_id', 'bigint(20) unsigned DEFAULT NULL');
 
-UPDATE `cloud`.`configuration` set name = "kvm.host.auto.enable.disable" where name = "enable.kvm.host.auto.enable.disable";
-
 -- Add used_iops column to support IOPS data in storage stats
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.storage_pool', 'used_iops', 'bigint unsigned DEFAULT NULL COMMENT "IOPS currently in use for this storage pool" ');
 

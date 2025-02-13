@@ -1840,9 +1840,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 _hostDetailsDao.update(hostDetail.getId(), hostDetail);
             } else if (!isUpdateFromHostHealthCheck && hostDetail != null &&
                     Boolean.parseBoolean(hostDetail.getValue()) && resourceEvent == ResourceState.Event.Disable) {
-                logger.info(String.format("The setting %s is enabled but the host %s is manually set into %s state," +
+                logger.info("The setting {} is enabled but the host {} is manually set into {} state," +
                                 "ignoring future auto enabling of the host based on health check results",
-                        AgentManager.KVMAutoEnableDisable.key(), host.getName(), resourceEvent));
+                        AgentManager.EnableKVMAutoEnableDisable.key(), host.getName(), resourceEvent);
                 hostDetail.setValue(Boolean.FALSE.toString());
                 _hostDetailsDao.update(hostDetail.getId(), hostDetail);
             } else if (hostDetail == null) {
@@ -1854,7 +1854,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
     private boolean updateHostAllocationState(HostVO host, String allocationState,
                                            boolean isUpdateFromHostHealthCheck) throws NoTransitionException {
-        boolean autoEnableDisableKVMSetting = AgentManager.KVMAutoEnableDisable.valueIn(host.getClusterId()) &&
+        boolean autoEnableDisableKVMSetting = AgentManager.EnableKVMAutoEnableDisable.valueIn(host.getClusterId()) &&
                 host.getHypervisorType() == HypervisorType.KVM;
         ResourceState.Event resourceEvent = getResourceEventFromAllocationStateString(allocationState);
         DetailVO hostDetail = _hostDetailsDao.findDetail(host.getId(), ApiConstants.AUTO_ENABLE_KVM_HOST);
@@ -1868,7 +1868,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         if (isAutoEnableAttemptForADisabledHost(autoEnableDisableKVMSetting, isUpdateFromHostHealthCheck, hostDetail, resourceEvent)) {
             logger.debug(String.format("The setting '%s' is enabled and the health check succeeds on the host, " +
                             "but the host has been manually disabled previously, ignoring auto enabling",
-                    AgentManager.KVMAutoEnableDisable.key()));
+                    AgentManager.EnableKVMAutoEnableDisable.key()));
             return false;
         }
 
@@ -1982,7 +1982,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                                                                           boolean isUpdateFromHostHealthCheck,
                                                                           boolean isUpdateHostAllocation, String annotation) {
         boolean isAutoEnableDisableKVMSettingEnabled = host.getHypervisorType() == HypervisorType.KVM &&
-                AgentManager.KVMAutoEnableDisable.valueIn(host.getClusterId());
+                AgentManager.EnableKVMAutoEnableDisable.valueIn(host.getClusterId());
         if (!isAutoEnableDisableKVMSettingEnabled) {
             if (StringUtils.isNotBlank(annotation)) {
                 annotationService.addAnnotation(annotation, AnnotationService.EntityType.HOST, host.getUuid(), true);
@@ -2006,7 +2006,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     host.getPodId(), msg, msg);
         } else {
             msg += String.format("is %s despite the setting '%s' is enabled for the cluster %s",
-                    isEventEnable ? "enabled" : "disabled", AgentManager.KVMAutoEnableDisable.key(),
+                    isEventEnable ? "enabled" : "disabled", AgentManager.EnableKVMAutoEnableDisable.key(),
                     host.getClusterId());
             if (StringUtils.isNotBlank(annotation)) {
                 msg += String.format(", reason: %s", annotation);

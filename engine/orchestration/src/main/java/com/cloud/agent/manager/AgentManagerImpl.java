@@ -1398,9 +1398,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 return;
             }
 
-            if (!BooleanUtils.toBoolean(KVMAutoEnableDisable.valueIn(host.getClusterId()))) {
+            if (!BooleanUtils.toBoolean(EnableKVMAutoEnableDisable.valueIn(host.getClusterId()))) {
                 logger.debug("{} is disabled for the cluster {}, cannot process the health check result " +
-                        "received for the host %s", KVMAutoEnableDisable.key(), host.getClusterId(), host.getName());
+                        "received for the host %s", EnableKVMAutoEnableDisable.key(), host.getClusterId(), host.getName());
                 return;
             }
 
@@ -1958,7 +1958,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
-                DirectAgentPoolSize, DirectAgentThreadCap, KVMAutoEnableDisable, ReadyCommandWait,
+                DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait,
                 GranularWaitTimeForCommands, RemoteAgentSslHandshakeTimeout, RemoteAgentMaxConcurrentNewConnections };
     }
 

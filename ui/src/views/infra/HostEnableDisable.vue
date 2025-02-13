@@ -36,7 +36,7 @@
           class="form__item"
           name="reason"
           ref="reason"
-          :label="'The setting \'kvm.host.auto.enable.disable\' is enabled, ' +
+          :label="'The Auto Enable/Disable KVM Hosts functionality is enabled, ' +
             ' can specify a reason for ' + (resourcestate === 'Enabled' ? 'disabling' : 'enabling') + ' this host'">
           <a-textarea
             v-model:value="form.reason"
