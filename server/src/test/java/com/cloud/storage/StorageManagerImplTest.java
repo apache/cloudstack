@@ -84,6 +84,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.doReturn;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -226,7 +228,7 @@ public class StorageManagerImplTest {
         Mockito.when(volumeVO.getPoolId()).thenReturn(poolId);
         Mockito.when(volumeVO.getPath()).thenReturn(path);
         Mockito.when(_volumeDao.findUsableVolumesForInstance(1L)).thenReturn(List.of(volumeVO, Mockito.mock(VolumeVO.class)));
-        Assert.assertTrue(storageManagerImpl.isVolumeSuspectedDestroyDuplicateOfVmVolume(volume));
+        assertTrue(storageManagerImpl.isVolumeSuspectedDestroyDuplicateOfVmVolume(volume));
     }
 
     @Test
@@ -253,7 +255,7 @@ public class StorageManagerImplTest {
         volume.setState(Volume.State.Allocated);
         PrimaryDataStoreDao storagePoolDao = Mockito.mock(PrimaryDataStoreDao.class);
         storageManagerImpl._storagePoolDao = storagePoolDao;
-        Assert.assertTrue(storageManagerImpl.storagePoolCompatibleWithVolumePool(storagePool, volume));
+        assertTrue(storageManagerImpl.storagePoolCompatibleWithVolumePool(storagePool, volume));
 
     }
 
@@ -263,7 +265,7 @@ public class StorageManagerImplTest {
                 "clusterAdminPassword=password;clusterDefaultMinIops=1000;" +
                 "clusterDefaultMaxIops=2000;clusterDefaultBurstIopsPercentOfMaxIops=2";
         Map<String,String> uriParams = storageManagerImpl.extractUriParamsAsMap(sfUrl);
-        Assert.assertTrue(MapUtils.isEmpty(uriParams));
+        assertTrue(MapUtils.isEmpty(uriParams));
     }
 
     @Test
@@ -273,7 +275,7 @@ public class StorageManagerImplTest {
         String path = "/PATH";
         String sfUrl = String.format("%s://%s%s", scheme, host, path);
         Map<String,String> uriParams = storageManagerImpl.extractUriParamsAsMap(sfUrl);
-        Assert.assertTrue(MapUtils.isNotEmpty(uriParams));
+        assertTrue(MapUtils.isNotEmpty(uriParams));
         Assert.assertEquals(scheme, uriParams.get("scheme"));
         Assert.assertEquals(host, uriParams.get("host"));
         Assert.assertEquals(path, uriParams.get("hostPath"));
@@ -307,7 +309,7 @@ public class StorageManagerImplTest {
         StoragePool pool = Mockito.mock(StoragePool.class);
         Mockito.when(pool.getCapacityIops()).thenReturn(null);
         List<Pair<Volume, DiskProfile>> list = List.of(new Pair<>(Mockito.mock(Volume.class), Mockito.mock(DiskProfile.class)));
-        Assert.assertTrue(storageManagerImpl.storagePoolHasEnoughIops(100L, list, pool, false));
+        assertTrue(storageManagerImpl.storagePoolHasEnoughIops(100L, list, pool, false));
     }
 
     @Test
@@ -318,7 +320,7 @@ public class StorageManagerImplTest {
         Mockito.when(storagePoolDao.findById(1L)).thenReturn(pool);
         Mockito.when(capacityManager.getUsedIops(pool)).thenReturn(500L);
         List<Pair<Volume, DiskProfile>> list = List.of(new Pair<>(Mockito.mock(Volume.class), Mockito.mock(DiskProfile.class)));
-        Assert.assertTrue(storageManagerImpl.storagePoolHasEnoughIops(100L, list, pool, true));
+        assertTrue(storageManagerImpl.storagePoolHasEnoughIops(100L, list, pool, true));
     }
 
     @Test
@@ -342,7 +344,7 @@ public class StorageManagerImplTest {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         List<Long> iopsList = Arrays.asList(null, 0L);
         for (Long iops : iopsList) {
-            Assert.assertTrue(storageManagerImpl.storagePoolHasEnoughIops(iops, pool));
+            assertTrue(storageManagerImpl.storagePoolHasEnoughIops(iops, pool));
         }
     }
 
@@ -351,7 +353,7 @@ public class StorageManagerImplTest {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         Mockito.doReturn(true).when(storageManagerImpl).storagePoolHasEnoughIops(
                 Mockito.eq(100L), Mockito.anyList(), Mockito.eq(pool), Mockito.eq(false));
-        Assert.assertTrue(storageManagerImpl.storagePoolHasEnoughIops(100L, pool));
+        assertTrue(storageManagerImpl.storagePoolHasEnoughIops(100L, pool));
     }
 
     @Test
@@ -369,7 +371,7 @@ public class StorageManagerImplTest {
                 new Pair<>(Mockito.mock(Volume.class), Mockito.mock(DiskProfile.class)));
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         Mockito.when(pool.getCapacityIops()).thenReturn(null);
-        Assert.assertTrue(storageManagerImpl.storagePoolHasEnoughIops(list, pool));
+        assertTrue(storageManagerImpl.storagePoolHasEnoughIops(list, pool));
     }
 
     @Test
@@ -383,7 +385,7 @@ public class StorageManagerImplTest {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         Mockito.doReturn(true).when(storageManagerImpl)
                 .storagePoolHasEnoughIops(100L, list, pool, true);
-        Assert.assertTrue(storageManagerImpl.storagePoolHasEnoughIops(list, pool));
+        assertTrue(storageManagerImpl.storagePoolHasEnoughIops(list, pool));
 
         Mockito.when(profile.getDiskOfferingId()).thenReturn(2L);
         Mockito.when(profile.getMinIops()).thenReturn(200L);
@@ -397,7 +399,7 @@ public class StorageManagerImplTest {
         StoragePoolVO pool = Mockito.mock(StoragePoolVO.class);
         List<Long> sizeList = Arrays.asList(null, 0L);
         for (Long size : sizeList) {
-            Assert.assertTrue(storageManagerImpl.storagePoolHasEnoughSpace(size, pool));
+            assertTrue(storageManagerImpl.storagePoolHasEnoughSpace(size, pool));
         }
     }
 
@@ -413,7 +415,7 @@ public class StorageManagerImplTest {
             return total > asking;
         }).when(storageManagerImpl).checkPoolforSpace(Mockito.any(StoragePool.class),
                 Mockito.anyLong(), Mockito.anyLong());
-        Assert.assertTrue(storageManagerImpl.storagePoolHasEnoughSpace(1000L, pool));
+        assertTrue(storageManagerImpl.storagePoolHasEnoughSpace(1000L, pool));
         Assert.assertFalse(storageManagerImpl.storagePoolHasEnoughSpace(2200L, pool));
     }
 
@@ -425,7 +427,7 @@ public class StorageManagerImplTest {
         try {
             Mockito.doReturn(null)
                     .when(storageManagerImpl).getCheckDatastorePolicyComplianceAnswer("policy", pool);
-            Assert.assertTrue(storageManagerImpl.isStoragePoolCompliantWithStoragePolicy(1L, pool));
+            assertTrue(storageManagerImpl.isStoragePoolCompliantWithStoragePolicy(1L, pool));
         } catch (StorageUnavailableException e) {
             Assert.fail(e.getMessage());
         }
@@ -433,7 +435,7 @@ public class StorageManagerImplTest {
             Mockito.doReturn(new com.cloud.agent.api.Answer(
                     Mockito.mock(CheckDataStoreStoragePolicyComplainceCommand.class)))
                     .when(storageManagerImpl).getCheckDatastorePolicyComplianceAnswer("policy", pool);
-            Assert.assertTrue(storageManagerImpl.isStoragePoolCompliantWithStoragePolicy(1L, pool));
+            assertTrue(storageManagerImpl.isStoragePoolCompliantWithStoragePolicy(1L, pool));
         } catch (StorageUnavailableException e) {
             Assert.fail(e.getMessage());
         }
@@ -519,7 +521,7 @@ public class StorageManagerImplTest {
         }
         com.cloud.agent.api.Answer answer =
                 storageManagerImpl.getCheckDatastorePolicyComplianceAnswer("1", pool);
-        Assert.assertTrue(answer.getResult());
+        assertTrue(answer.getResult());
     }
 
     @Test
@@ -648,7 +650,7 @@ public class StorageManagerImplTest {
     public void testCheckNFSMountOptionsForCreateNotKVM() {
         Map<String, String> details = new HashMap<>();
         details.put(ApiConstants.NFS_MOUNT_OPTIONS, "vers=4.1");
-        InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+        InvalidParameterValueException exception = assertThrows(InvalidParameterValueException.class,
                 () -> storageManagerImpl.checkNFSMountOptionsForCreate(details, HypervisorType.XenServer, ""));
         Assert.assertEquals(exception.getMessage(), "NFS options can not be set for the hypervisor type " + HypervisorType.XenServer);
     }
@@ -657,7 +659,7 @@ public class StorageManagerImplTest {
     public void testCheckNFSMountOptionsForCreateNotNFS() {
         Map<String, String> details = new HashMap<>();
         details.put(ApiConstants.NFS_MOUNT_OPTIONS, "vers=4.1");
-        InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+        InvalidParameterValueException exception = assertThrows(InvalidParameterValueException.class,
                 () -> storageManagerImpl.checkNFSMountOptionsForCreate(details, HypervisorType.KVM, ""));
         Assert.assertEquals(exception.getMessage(), "NFS options can only be set on pool type " + Storage.StoragePoolType.NetworkFilesystem);
     }
@@ -681,7 +683,7 @@ public class StorageManagerImplTest {
         Long accountId = 1L;
         details.put(ApiConstants.NFS_MOUNT_OPTIONS, "vers=4.1");
         Mockito.when(accountMgr.isRootAdmin(accountId)).thenReturn(false);
-        PermissionDeniedException exception = Assert.assertThrows(PermissionDeniedException.class,
+        PermissionDeniedException exception = assertThrows(PermissionDeniedException.class,
                 () -> storageManagerImpl.checkNFSMountOptionsForUpdate(details, pool, accountId));
         Assert.assertEquals(exception.getMessage(), "Only root admin can modify nfs options");
     }
@@ -694,7 +696,7 @@ public class StorageManagerImplTest {
         details.put(ApiConstants.NFS_MOUNT_OPTIONS, "vers=4.1");
         Mockito.when(accountMgr.isRootAdmin(accountId)).thenReturn(true);
         pool.setHypervisor(HypervisorType.XenServer);
-        InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+        InvalidParameterValueException exception = assertThrows(InvalidParameterValueException.class,
                 () -> storageManagerImpl.checkNFSMountOptionsForUpdate(details, pool, accountId));
         Assert.assertEquals(exception.getMessage(), "NFS options can only be set for the hypervisor type " + HypervisorType.KVM);
     }
@@ -708,7 +710,7 @@ public class StorageManagerImplTest {
         Mockito.when(accountMgr.isRootAdmin(accountId)).thenReturn(true);
         pool.setHypervisor(HypervisorType.KVM);
         pool.setPoolType(Storage.StoragePoolType.FiberChannel);
-        InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+        InvalidParameterValueException exception = assertThrows(InvalidParameterValueException.class,
                 () -> storageManagerImpl.checkNFSMountOptionsForUpdate(details, pool, accountId));
         Assert.assertEquals(exception.getMessage(), "NFS options can only be set on pool type " + Storage.StoragePoolType.NetworkFilesystem);
     }
@@ -723,7 +725,7 @@ public class StorageManagerImplTest {
         pool.setHypervisor(HypervisorType.KVM);
         pool.setPoolType(Storage.StoragePoolType.NetworkFilesystem);
         pool.setStatus(StoragePoolStatus.Up);
-        InvalidParameterValueException exception = Assert.assertThrows(InvalidParameterValueException.class,
+        InvalidParameterValueException exception = assertThrows(InvalidParameterValueException.class,
                 () -> storageManagerImpl.checkNFSMountOptionsForUpdate(details, pool, accountId));
         Assert.assertEquals(exception.getMessage(), "The storage pool should be in maintenance mode to edit nfs options");
     }
@@ -856,7 +858,7 @@ public class StorageManagerImplTest {
         overrideDefaultConfigValue(StorageManagerImpl.AllowVolumeReSizeBeyondAllocation, "_defaultValue", "true");
 
         boolean result = storageManagerImpl.checkPoolforSpace(pool, allocatedSizeWithTemplate, totalAskingSize, true);
-        Assert.assertTrue(result);
+        assertTrue(result);
     }
 
     @Test
@@ -996,7 +998,7 @@ public class StorageManagerImplTest {
 
         boolean result = storageManagerImpl.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, storagePool);
 
-        Assert.assertTrue("Host without storage access groups should connect to a storage pool without storage access groups.", result);
+        assertTrue("Host without storage access groups should connect to a storage pool without storage access groups.", result);
     }
 
     @Test
@@ -1016,7 +1018,7 @@ public class StorageManagerImplTest {
 
         boolean result = storageManagerImpl.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, storagePool);
 
-        Assert.assertTrue("Host with storage access groups should connect to a storage pool without storage access groups.", result);
+        assertTrue("Host with storage access groups should connect to a storage pool without storage access groups.", result);
     }
 
     @Test
@@ -1056,7 +1058,7 @@ public class StorageManagerImplTest {
 
         boolean result = storageManagerImpl.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, storagePool);
 
-        Assert.assertTrue("Host with matching storage access groups should connect to a storage pool with matching storage access groups.", result);
+        assertTrue("Host with matching storage access groups should connect to a storage pool with matching storage access groups.", result);
     }
 
     @Test
@@ -1100,7 +1102,7 @@ public class StorageManagerImplTest {
 
         Pair<Boolean, String> result = storageManagerImpl.checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(destPool, volume);
 
-        Assert.assertTrue("Volume in Ready state and no VM or VM stopped should migrate if both pools have matching storage access groups.", result.first());
+        assertTrue("Volume in Ready state and no VM or VM stopped should migrate if both pools have matching storage access groups.", result.first());
     }
 
     @Test
@@ -1124,7 +1126,7 @@ public class StorageManagerImplTest {
 
         Pair<Boolean, String> result = storageManagerImpl.checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(destPool, volume);
 
-        Assert.assertTrue("Volume with empty storage access groups should be able to fit in the destination pool.", result.first());
+        assertTrue("Volume with empty storage access groups should be able to fit in the destination pool.", result.first());
     }
 
     @Test
@@ -1149,7 +1151,7 @@ public class StorageManagerImplTest {
 
         Pair<Boolean, String> result = storageManagerImpl.checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(destPool, volume);
 
-        Assert.assertTrue("Volume with host having common storage access groups should fit in both source and destination pools.", result.first());
+        assertTrue("Volume with host having common storage access groups should fit in both source and destination pools.", result.first());
     }
 
     @Test
@@ -1237,7 +1239,7 @@ public class StorageManagerImplTest {
         Mockito.verify(resourceMgr, Mockito.never()).updateZoneStorageAccessGroups(Mockito.anyLong(), Mockito.anyList());
         Mockito.verify(dataCenterDao, Mockito.never()).update(Mockito.eq(zoneId), Mockito.any(DataCenterVO.class));
 
-        Assert.assertTrue(result);
+        assertTrue(result);
     }
 
     @Test
@@ -1264,7 +1266,7 @@ public class StorageManagerImplTest {
         Mockito.verify(resourceMgr, Mockito.never()).updatePodStorageAccessGroups(Mockito.anyLong(), Mockito.anyList());
         Mockito.verify(podDao, Mockito.never()).update(Mockito.eq(podId), Mockito.any(HostPodVO.class));
 
-        Assert.assertTrue(result);
+        assertTrue(result);
     }
 
     @Test
@@ -1291,7 +1293,7 @@ public class StorageManagerImplTest {
         Mockito.verify(resourceMgr, Mockito.never()).updateClusterStorageAccessGroups(Mockito.anyLong(), Mockito.anyList());
         Mockito.verify(clusterDao, Mockito.never()).update(Mockito.eq(clusterId), Mockito.any(ClusterVO.class));
 
-        Assert.assertTrue(result);
+        assertTrue(result);
     }
 
     @Test
@@ -1318,7 +1320,7 @@ public class StorageManagerImplTest {
         Mockito.verify(resourceMgr, Mockito.never()).updateHostStorageAccessGroups(Mockito.anyLong(), Mockito.anyList());
         Mockito.verify(hostDao, Mockito.never()).update(Mockito.eq(hostId), Mockito.any(HostVO.class));
 
-        Assert.assertTrue(result);
+        assertTrue(result);
     }
 
     @Test
@@ -1335,7 +1337,7 @@ public class StorageManagerImplTest {
             storageManagerImpl.configureStorageAccess(cmd);
             Assert.fail("Expected IllegalArgumentException to be thrown due to nonNullCount validation");
         } catch (IllegalArgumentException e) {
-            Assert.assertTrue(e.getMessage().contains("Exactly one of zoneid, podid, clusterid, hostid or storagepoolid is required"));
+            assertTrue(e.getMessage().contains("Exactly one of zoneid, podid, clusterid, hostid or storagepoolid is required"));
         }
     }
 
@@ -1354,7 +1356,135 @@ public class StorageManagerImplTest {
             storageManagerImpl.configureStorageAccess(cmd);
             Assert.fail("Expected InvalidParameterValueException to be thrown due to missing storageAccessGroups");
         } catch (InvalidParameterValueException e) {
-            Assert.assertTrue(e.getMessage().contains("storageaccessgroups parameter is required"));
+            assertTrue(e.getMessage().contains("storageaccessgroups parameter is required"));
         }
+    }
+
+    @Test
+    public void testCheckIfStorageAccessGroupsExistsOnZone_NoException() {
+        long zoneId = 1L;
+        List<String> newStorageAccessGroups = Arrays.asList("group1", "group2");
+
+        DataCenterVO zoneVO = Mockito.mock(DataCenterVO.class);
+        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zoneVO);
+        Mockito.when(zoneVO.getStorageAccessGroups()).thenReturn("group3,group4");
+
+        storageManagerImpl.checkIfStorageAccessGroupsExistsOnZone(zoneId, newStorageAccessGroups);
+    }
+
+    @Test
+    public void testCheckIfStorageAccessGroupsExistsOnZone_ThrowsException() {
+        long zoneId = 1L;
+        List<String> newStorageAccessGroups = Arrays.asList("group1", "group2", "group3");
+
+        DataCenterVO zoneVO = Mockito.mock(DataCenterVO.class);
+        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zoneVO);
+        Mockito.when(zoneVO.getStorageAccessGroups()).thenReturn("group3,group4");
+
+        CloudRuntimeException thrownException = assertThrows(CloudRuntimeException.class, () -> {
+            storageManagerImpl.checkIfStorageAccessGroupsExistsOnZone(zoneId, newStorageAccessGroups);
+        });
+
+        assertTrue(thrownException.getMessage().contains("access groups already exist on the zone: [group3]"));
+    }
+
+    @Test
+    public void testCheckIfStorageAccessGroupsExistsOnPod_NoException() {
+        long podId = 1L;
+        long zoneId = 2L;
+        List<String> newStorageAccessGroups = Arrays.asList("group1", "group2");
+
+        HostPodVO podVO = Mockito.mock(HostPodVO.class);
+        DataCenterVO zoneVO = Mockito.mock(DataCenterVO.class);
+
+        Mockito.when(podVO.getDataCenterId()).thenReturn(zoneId);
+        Mockito.when(podVO.getStorageAccessGroups()).thenReturn("group3,group4");
+
+        Mockito.when(zoneVO.getStorageAccessGroups()).thenReturn("group5,group6");
+
+        Mockito.when(podDao.findById(podId)).thenReturn(podVO);
+        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zoneVO);
+
+        storageManagerImpl.checkIfStorageAccessGroupsExistsOnPod(podId, newStorageAccessGroups);
+    }
+
+    @Test
+    public void testCheckIfStorageAccessGroupsExistsOnPod_ThrowsException() {
+        long podId = 1L;
+        long zoneId = 2L;
+        List<String> newStorageAccessGroups = Arrays.asList("group1", "group2", "group3");
+
+        HostPodVO podVO = Mockito.mock(HostPodVO.class);
+        DataCenterVO zoneVO = Mockito.mock(DataCenterVO.class);
+
+        Mockito.when(podVO.getDataCenterId()).thenReturn(zoneId);
+        Mockito.when(podVO.getStorageAccessGroups()).thenReturn("group3,group4");
+
+        Mockito.when(zoneVO.getStorageAccessGroups()).thenReturn("group5,group6");
+
+        Mockito.when(podDao.findById(podId)).thenReturn(podVO);
+        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zoneVO);
+
+        CloudRuntimeException thrownException = assertThrows(CloudRuntimeException.class, () -> {
+            storageManagerImpl.checkIfStorageAccessGroupsExistsOnPod(podId, newStorageAccessGroups);
+        });
+
+        assertTrue(thrownException.getMessage().contains("access groups already exist on the pod: [group3]"));
+    }
+
+    @Test
+    public void testCheckIfStorageAccessGroupsExistsOnCluster_NoException() {
+        long clusterId = 1L;
+        long podId = 2L;
+        long zoneId = 3L;
+        List<String> newStorageAccessGroups = Arrays.asList("group1", "group2");
+
+        ClusterVO clusterVO = Mockito.mock(ClusterVO.class);
+        HostPodVO podVO = Mockito.mock(HostPodVO.class);
+        DataCenterVO zoneVO = Mockito.mock(DataCenterVO.class);
+
+        Mockito.when(clusterVO.getPodId()).thenReturn(podId);
+        Mockito.when(clusterVO.getStorageAccessGroups()).thenReturn("group4,group5");
+
+        Mockito.when(podVO.getDataCenterId()).thenReturn(zoneId);
+        Mockito.when(podVO.getStorageAccessGroups()).thenReturn("group6,group7");
+
+        Mockito.when(zoneVO.getStorageAccessGroups()).thenReturn("group8,group9");
+
+        Mockito.when(clusterDao.findById(clusterId)).thenReturn(clusterVO);
+        Mockito.when(podDao.findById(podId)).thenReturn(podVO);
+        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zoneVO);
+
+        storageManagerImpl.checkIfStorageAccessGroupsExistsOnCluster(clusterId, newStorageAccessGroups);
+    }
+
+    @Test
+    public void testCheckIfStorageAccessGroupsExistsOnCluster_ThrowsException() {
+        long clusterId = 1L;
+        long podId = 2L;
+        long zoneId = 3L;
+        List<String> newStorageAccessGroups = Arrays.asList("group1", "group2", "group4");
+
+        ClusterVO clusterVO = Mockito.mock(ClusterVO.class);
+        HostPodVO podVO = Mockito.mock(HostPodVO.class);
+        DataCenterVO zoneVO = Mockito.mock(DataCenterVO.class);
+
+        Mockito.when(clusterVO.getPodId()).thenReturn(podId);
+        Mockito.when(clusterVO.getStorageAccessGroups()).thenReturn("group4,group5");
+
+        Mockito.when(podVO.getDataCenterId()).thenReturn(zoneId);
+        Mockito.when(podVO.getStorageAccessGroups()).thenReturn("group6,group7");
+
+        Mockito.when(zoneVO.getStorageAccessGroups()).thenReturn("group8,group9");
+
+        Mockito.when(clusterDao.findById(clusterId)).thenReturn(clusterVO);
+        Mockito.when(podDao.findById(podId)).thenReturn(podVO);
+        Mockito.when(dataCenterDao.findById(zoneId)).thenReturn(zoneVO);
+
+        CloudRuntimeException thrownException = assertThrows(CloudRuntimeException.class, () -> {
+            storageManagerImpl.checkIfStorageAccessGroupsExistsOnCluster(clusterId, newStorageAccessGroups);
+        });
+
+        assertTrue(thrownException.getMessage().contains("access groups already exist on the cluster: [group4]"));
     }
 }
