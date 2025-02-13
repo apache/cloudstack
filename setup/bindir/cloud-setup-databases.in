@@ -229,6 +229,10 @@ for full help
             "GRANT ALL ON cloud_usage.* to cloud@`%`;",
             "GRANT process ON *.* TO cloud@`localhost`;",
             "GRANT process ON *.* TO cloud@`%`;",
+            "IF foo > 0 THEN",
+            "DROP USER 'cloud'@'localhost' ;",
+            "END IF;",
+            "DROP USER 'cloud'@'%' ;"
         )
 
         scriptsToRun = ["create-database","create-schema", "create-database-premium","create-schema-premium"]
