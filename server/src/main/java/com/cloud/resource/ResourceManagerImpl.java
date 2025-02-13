@@ -2324,12 +2324,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             return;
         }
 
-        List<Long> hostIdsUsingStorageTags = listOfHostIdsUsingTheStorageAccessGroups(sagsToDelete, clusterId, podId, zoneId);
+        List<Long> hostIdsUsingStorageAccessGroups = listOfHostIdsUsingTheStorageAccessGroups(sagsToDelete, clusterId, podId, zoneId);
 
         // Check for zone level hosts
         if (zoneId != null) {
             List<HostVO> hostsInZone = _hostDao.findByDataCenterId(zoneId);
-            Set<Long> hostIdsInUseSet = hostIdsUsingStorageTags.stream().collect(Collectors.toSet());
+            Set<Long> hostIdsInUseSet = hostIdsUsingStorageAccessGroups.stream().collect(Collectors.toSet());
 
             boolean allInUseZone = hostsInZone.stream()
                     .map(HostVO::getId)
@@ -2343,7 +2343,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // Check for cluster level hosts
         if (clusterId != null) {
             List<HostVO> hostsInCluster = _hostDao.findByClusterId(clusterId, Type.Routing);
-            Set<Long> hostIdsInUseSet = hostIdsUsingStorageTags.stream().collect(Collectors.toSet());
+            Set<Long> hostIdsInUseSet = hostIdsUsingStorageAccessGroups.stream().collect(Collectors.toSet());
 
             boolean allInUseCluster = hostsInCluster.stream()
                     .map(HostVO::getId)
@@ -2357,7 +2357,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // Check for pod level hosts
         if (podId != null) {
             List<HostVO> hostsInPod = _hostDao.findByPodId(podId, Type.Routing);
-            Set<Long> hostIdsInUseSet = hostIdsUsingStorageTags.stream().collect(Collectors.toSet());
+            Set<Long> hostIdsInUseSet = hostIdsUsingStorageAccessGroups.stream().collect(Collectors.toSet());
 
             boolean allInUsePod = hostsInPod.stream()
                     .map(HostVO::getId)
@@ -2464,11 +2464,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         Map<HostVO, List<String>> hostsAndStorageAccessGroupsMap = new HashMap<>();
         for (HostVO host : hostsInCluster) {
             String[] existingSAGs = _storageMgr.getStorageAccessGroups(null, null, null, host.getId());
-            List<String> existingSAGsList = new ArrayList<>(Arrays.asList(existingSAGs));
-            existingSAGsList.removeAll(sagsToDelete);
-            List<String> combinedSAGs = new ArrayList<>(sagsToAdd);
-            combinedSAGs.addAll(existingSAGsList);
-            hostsAndStorageAccessGroupsMap.put(host, combinedSAGs);
+            Set<String> existingSAGsSet = new HashSet<>(Arrays.asList(existingSAGs));
+            existingSAGsSet.removeAll(sagsToDelete);
+            List<String> existingSAGsList = new ArrayList<>(existingSAGsSet);
+            Set<String> combinedSAGsSet = new HashSet<>(sagsToAdd);
+            combinedSAGsSet.addAll(existingSAGsList);
+
+            hostsAndStorageAccessGroupsMap.put(host, new ArrayList<>(combinedSAGsSet));
         }
 
         updateConnectionsBetweenHostsAndStoragePools(hostsAndStorageAccessGroupsMap);
@@ -2533,7 +2535,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
     }
 
-    private void updateConnectionsBetweenHostsAndStoragePools(Map<HostVO, List<String>> hostsAndStorageAccessGroupsMap) {
+    protected void updateConnectionsBetweenHostsAndStoragePools(Map<HostVO, List<String>> hostsAndStorageAccessGroupsMap) {
         List<HostVO> hostsList = new ArrayList<>(hostsAndStorageAccessGroupsMap.keySet());
         Map<HostVO, List<StoragePoolVO>> hostStoragePoolsMapBefore = getHostStoragePoolsBefore(hostsList);
 

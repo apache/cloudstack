@@ -21,6 +21,12 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.ha.HighAvailabilityManager;
@@ -34,6 +40,7 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Ternary;
@@ -48,6 +55,8 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.trilead.ssh2.Connection;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -102,6 +111,12 @@ public class ResourceManagerImplTest {
     @Mock
     private HostDao hostDao;
     @Mock
+    private ClusterDao clusterDao;
+    @Mock
+    private HostPodDao podDao;
+    @Mock
+    private DataCenterDao dcDao;
+    @Mock
     private VMInstanceDao vmInstanceDao;
     @Mock
     private ConfigurationDao configurationDao;
@@ -136,6 +151,9 @@ public class ResourceManagerImplTest {
 
     @Mock
     private Connection sshConnection;
+
+    @Mock
+    private StoragePoolAndAccessGroupMapDao storagePoolAccessGroupMapDao;
 
     private static long hostId = 1L;
     private static final String hostUsername = "user";
@@ -954,4 +972,206 @@ public class ResourceManagerImplTest {
         }
     }
 
+    @Test(expected = CloudRuntimeException.class)
+    public void testNoUpHostsThrowsException() {
+        PrimaryDataStoreInfo primaryStore = Mockito.mock(PrimaryDataStoreInfo.class);
+        Mockito.when(primaryStore.getClusterId()).thenReturn(1L);
+        Mockito.doReturn(Collections.emptyList()).when(resourceManager).listAllUpHosts(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.anyLong());
+        resourceManager.getEligibleUpHostsInClusterForStorageConnection(primaryStore);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testNoUpAndEnabledHostsThrowsException() {
+        PrimaryDataStoreInfo primaryStore = Mockito.mock(PrimaryDataStoreInfo.class);
+        Mockito.when(primaryStore.getClusterId()).thenReturn(1L);
+        Mockito.doReturn(Collections.emptyList()).when(resourceManager).listAllUpAndEnabledHosts(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.anyLong());
+        resourceManager.getEligibleUpAndEnabledHostsInClusterForStorageConnection(primaryStore);
+    }
+
+    @Test
+    public void testEligibleHostsMatchingStorageAccessGroups() {
+        PrimaryDataStoreInfo primaryStore = Mockito.mock(PrimaryDataStoreInfo.class);
+        DataStore dataStore = Mockito.mock(DataStore.class);
+        Mockito.when(primaryStore.getId()).thenReturn(1L);
+        Mockito.when(dataStore.getId()).thenReturn(1L);
+        Mockito.when(primaryStore.getClusterId()).thenReturn(1L);
+
+        HostVO host1 = Mockito.mock(HostVO.class);
+        HostVO host2 = Mockito.mock(HostVO.class);
+        List<HostVO> allHosts = Arrays.asList(host1, host2);
+
+        Mockito.when(host1.getId()).thenReturn(1L);
+        Mockito.when(host2.getId()).thenReturn(2L);
+
+        Mockito.doReturn(allHosts).when(resourceManager).listAllUpHosts(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.anyLong());
+        Mockito.doReturn(allHosts).when(resourceManager).listAllUpAndEnabledHosts(Mockito.any(), Mockito.anyLong(), Mockito.any(), Mockito.anyLong());
+        Mockito.doReturn(allHosts).when(resourceManager).listAllUpAndEnabledHostsInOneZoneByHypervisor(Mockito.any(), Mockito.anyLong());
+        Mockito.doReturn(Arrays.asList("group1", "group2")).when(storagePoolAccessGroupMapDao).getStorageAccessGroups(1L);
+
+        Mockito.doReturn(new String[]{"group1"})
+                .when(storageManager).getStorageAccessGroups(null, null, null, 1L);
+        Mockito.doReturn(new String[]{"group3"})
+                .when(storageManager).getStorageAccessGroups(null, null, null, 2L);
+
+        List<HostVO> hostsToConnect = resourceManager.getEligibleUpHostsInClusterForStorageConnection(primaryStore);
+
+        Assert.assertEquals("Only one host should match the storage access groups.", 1, hostsToConnect.size());
+        Assert.assertTrue("Host1 should be included as it matches the storage access group.", hostsToConnect.contains(host1));
+        Assert.assertFalse("Host2 should not be included as it does not match any storage access group.", hostsToConnect.contains(host2));
+
+        hostsToConnect = resourceManager.getEligibleUpAndEnabledHostsInClusterForStorageConnection(primaryStore);
+
+        Assert.assertEquals("Only one host should match the storage access groups.", 1, hostsToConnect.size());
+        Assert.assertTrue("Host1 should be included as it matches the storage access group.", hostsToConnect.contains(host1));
+        Assert.assertFalse("Host2 should not be included as it does not match any storage access group.", hostsToConnect.contains(host2));
+
+        hostsToConnect = resourceManager.getEligibleUpAndEnabledHostsInZoneForStorageConnection(dataStore, 1L, Hypervisor.HypervisorType.KVM);
+
+        Assert.assertEquals("Only one host should match the storage access groups.", 1, hostsToConnect.size());
+        Assert.assertTrue("Host1 should be included as it matches the storage access group.", hostsToConnect.contains(host1));
+        Assert.assertFalse("Host2 should not be included as it does not match any storage access group.", hostsToConnect.contains(host2));
+    }
+
+    @Test
+    public void testUpdateZoneStorageAccessGroups() {
+        long zoneId = 1L;
+        long podId = 2L;
+        long clusterId = 3L;
+        long host1Id = 1L;
+        long host2Id = 2L;
+        List<String> newStorageAccessGroups = Arrays.asList("group1", "group2");
+
+        DataCenterVO zoneVO = Mockito.mock(DataCenterVO.class);
+        Mockito.when(dcDao.findById(zoneId)).thenReturn(zoneVO);
+        Mockito.when(zoneVO.getId()).thenReturn(zoneId);
+        Mockito.when(zoneVO.getStorageAccessGroups()).thenReturn("group1,group3");
+
+        HostVO host1 = Mockito.mock(HostVO.class);
+        HostVO host2 = Mockito.mock(HostVO.class);
+        Mockito.when(host1.getId()).thenReturn(host1Id);
+        Mockito.when(host2.getId()).thenReturn(host2Id);
+
+        HostPodVO pod1 = Mockito.mock(HostPodVO.class);
+        ClusterVO cluster1 = Mockito.mock(ClusterVO.class);
+        Mockito.when(pod1.getId()).thenReturn(podId);
+        Mockito.when(cluster1.getId()).thenReturn(clusterId);
+        Mockito.when(podDao.findById(podId)).thenReturn(pod1);
+        Mockito.when(clusterDao.findById(clusterId)).thenReturn(cluster1);
+        Mockito.when(podDao.listByDataCenterId(zoneId)).thenReturn(Collections.singletonList(pod1));
+        Mockito.when(clusterDao.listByPodId(podId)).thenReturn(Collections.singletonList(cluster1));
+        Mockito.when(hostDao.findHypervisorHostInPod(podId)).thenReturn(Arrays.asList(host1, host2));
+        Mockito.when(hostDao.findByDataCenterId(zoneId)).thenReturn(Arrays.asList(host1, host2));
+        Mockito.when(hostDao.findByClusterId(clusterId)).thenReturn(Arrays.asList(host1, host2));
+
+        List<Long> hostIdsUsingStorageTags = Arrays.asList(host1Id);
+        Mockito.doReturn(hostIdsUsingStorageTags).when(resourceManager).listOfHostIdsUsingTheStorageAccessGroups(any(), any(), any(), any());
+
+        Mockito.doReturn(new String[]{"group1", "group3"}).when(storageManager).getStorageAccessGroups(null, null, null, host1Id);
+        Mockito.doReturn(new String[]{"group2", "group4"}).when(storageManager).getStorageAccessGroups(null, null, null, host2Id);
+
+        resourceManager.updateZoneStorageAccessGroups(zoneId, newStorageAccessGroups);
+
+        Mockito.verify(hostDao, Mockito.times(2)).update(host1Id, host1);
+        Mockito.verify(hostDao, Mockito.times(1)).update(host2Id, host2);
+    }
+
+    @Test
+    public void testUpdatePodStorageAccessGroups() {
+        long podId = 2L;
+        long clusterId = 3L;
+        long host1Id = 1L;
+        long host2Id = 2L;
+        List<String> newStorageAccessGroups = Arrays.asList("group1", "group2");
+
+        HostVO host1 = Mockito.mock(HostVO.class);
+        HostVO host2 = Mockito.mock(HostVO.class);
+        Mockito.when(host1.getId()).thenReturn(host1Id);
+        Mockito.when(host2.getId()).thenReturn(host2Id);
+
+        HostPodVO pod1 = Mockito.mock(HostPodVO.class);
+        ClusterVO cluster1 = Mockito.mock(ClusterVO.class);
+        Mockito.when(pod1.getStorageAccessGroups()).thenReturn("group1,group3");
+        Mockito.when(cluster1.getId()).thenReturn(clusterId);
+        Mockito.when(podDao.findById(podId)).thenReturn(pod1);
+        Mockito.when(clusterDao.findById(clusterId)).thenReturn(cluster1);
+        Mockito.when(clusterDao.listByPodId(podId)).thenReturn(Collections.singletonList(cluster1));
+        Mockito.when(hostDao.findHypervisorHostInPod(podId)).thenReturn(Arrays.asList(host1, host2));
+        Mockito.when(hostDao.findByPodId(podId, Host.Type.Routing)).thenReturn(Arrays.asList(host1, host2));
+        Mockito.when(hostDao.findByClusterId(clusterId)).thenReturn(Arrays.asList(host1, host2));
+
+        List<Long> hostIdsUsingStorageTags = Arrays.asList(host1Id);
+        Mockito.doReturn(hostIdsUsingStorageTags).when(resourceManager).listOfHostIdsUsingTheStorageAccessGroups(any(), any(), any(), any());
+
+        Mockito.doReturn(new String[]{"group1", "group3"}).when(storageManager).getStorageAccessGroups(null, null, null, host1Id);
+        Mockito.doReturn(new String[]{"group2", "group4"}).when(storageManager).getStorageAccessGroups(null, null, null, host2Id);
+
+        resourceManager.updatePodStorageAccessGroups(podId, newStorageAccessGroups);
+
+        Mockito.verify(hostDao, Mockito.times(2)).update(host1Id, host1);
+        Mockito.verify(hostDao, Mockito.times(1)).update(host2Id, host2);
+    }
+
+    @Test
+    public void testUpdateClusterStorageAccessGroups() {
+        long clusterId = 3L;
+        long host1Id = 1L;
+        long host2Id = 2L;
+        List<String> newStorageAccessGroups = Arrays.asList("group1", "group2");
+
+        HostVO host1 = Mockito.mock(HostVO.class);
+        HostVO host2 = Mockito.mock(HostVO.class);
+        Mockito.when(host1.getId()).thenReturn(host1Id);
+        Mockito.when(host2.getId()).thenReturn(host2Id);
+
+        ClusterVO cluster1 = Mockito.mock(ClusterVO.class);
+        Mockito.when(cluster1.getStorageAccessGroups()).thenReturn("group1,group3");
+        Mockito.when(cluster1.getId()).thenReturn(clusterId);
+        Mockito.when(clusterDao.findById(clusterId)).thenReturn(cluster1);
+        Mockito.when(hostDao.findHypervisorHostInCluster(clusterId)).thenReturn(Arrays.asList(host1, host2));
+        Mockito.when(hostDao.findByClusterId(clusterId)).thenReturn(Arrays.asList(host1, host2));
+        Mockito.when(hostDao.findByClusterId(clusterId, Host.Type.Routing)).thenReturn(Arrays.asList(host1, host2));
+
+        List<Long> hostIdsUsingStorageTags = Arrays.asList(host1Id);
+        Mockito.doReturn(hostIdsUsingStorageTags).when(resourceManager).listOfHostIdsUsingTheStorageAccessGroups(any(), any(), any(), any());
+
+        Mockito.doReturn(new String[]{"group1", "group3"}).when(storageManager).getStorageAccessGroups(null, null, null, host1Id);
+        Mockito.doReturn(new String[]{"group2", "group4"}).when(storageManager).getStorageAccessGroups(null, null, null, host2Id);
+
+        resourceManager.updateClusterStorageAccessGroups(clusterId, newStorageAccessGroups);
+
+        Mockito.verify(hostDao, Mockito.times(2)).update(host1Id, host1);
+        Mockito.verify(hostDao, Mockito.times(1)).update(host2Id, host2);
+    }
+
+    @Test
+    public void testUpdateHostStorageAccessGroups() {
+        long hostId = 1L;
+        long clusterId = 2L;
+        List<String> newStorageAccessGroups = Arrays.asList("group1", "group2");
+
+        HostVO host = Mockito.mock(HostVO.class);
+        Mockito.when(host.getId()).thenReturn(hostId);
+        Mockito.when(host.getClusterId()).thenReturn(clusterId);
+        Mockito.when(host.getStorageAccessGroups()).thenReturn("group1,group3");
+
+        Mockito.when(hostDao.findById(hostId)).thenReturn(host);
+        Mockito.when(storageManager.getStorageAccessGroups(null, null, clusterId, null))
+                .thenReturn(new String[]{"group3", "group4"});
+
+        Mockito.doNothing().when(resourceManager).checkIfAnyVolumesInUse(any(), any(), any());
+        Mockito.doNothing().when(resourceManager).updateConnectionsBetweenHostsAndStoragePools(any());
+
+        resourceManager.updateHostStorageAccessGroups(hostId, newStorageAccessGroups);
+
+        Mockito.verify(resourceManager).checkIfAnyVolumesInUse(eq(Arrays.asList("group1", "group2", "group3", "group4")),
+                eq(Arrays.asList("group3")),
+                eq(host));
+
+        Mockito.verify(resourceManager).updateConnectionsBetweenHostsAndStoragePools(
+                eq(Collections.singletonMap(host, Arrays.asList("group1", "group2", "group3", "group4")))
+        );
+
+        Mockito.verify(host).setStorageAccessGroups("group1,group2");
+        Mockito.verify(hostDao).update(hostId, host);
+    }
 }
