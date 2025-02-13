@@ -1397,7 +1397,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 logger.error("Unable to find host with ID: {}", hostId);
                 return;
             }
-
             if (!BooleanUtils.toBoolean(EnableKVMAutoEnableDisable.valueIn(host.getClusterId()))) {
                 logger.debug("{} is disabled for the cluster {}, cannot process the health check result " +
                         "received for the host {}", EnableKVMAutoEnableDisable.key(), host.getClusterId(), host.getName());
