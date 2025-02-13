@@ -26,8 +26,10 @@ import com.cloud.dc.dao.HostPodDao;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
 import org.apache.logging.log4j.Logger;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -37,6 +39,12 @@ import org.mockito.junit.MockitoJUnitRunner;
 import javax.mail.MessagingException;
 import java.io.UnsupportedEncodingException;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+
 @RunWith(MockitoJUnitRunner.class)
 public class AlertManagerImplTest {
 
@@ -45,7 +53,7 @@ public class AlertManagerImplTest {
     AlertManagerImpl alertManagerImplMock;
 
     @Mock
-    AlertDao alertDaoMock;
+    AlertDao _alertDao;
 
     @Mock
     private DataCenterDao _dcDao;
@@ -65,7 +73,16 @@ public class AlertManagerImplTest {
     @Mock
     SMTPMailSender mailSenderMock;
 
-    private void sendMessage (){
+    private final String[] recipients = new String[]{"test@test.com"};
+    private final String senderAddress = "sender@test.com";
+
+    @Before
+    public void setUp() {
+        alertManagerImplMock.recipients = recipients;
+        alertManagerImplMock.senderAddress = senderAddress;
+    }
+
+    private void sendMessage() {
         try {
             DataCenterVO zone = Mockito.mock(DataCenterVO.class);
             Mockito.when(zone.getId()).thenReturn(0L);
@@ -77,7 +94,7 @@ public class AlertManagerImplTest {
             Mockito.when(cluster.getId()).thenReturn(1L);
             Mockito.when(_clusterDao.findById(1L)).thenReturn(cluster);
 
-            alertManagerImplMock.sendAlert(AlertManager.AlertType.ALERT_TYPE_CPU, 0, 1l, 1l, "", "");
+            alertManagerImplMock.sendAlert(AlertManager.AlertType.ALERT_TYPE_CPU, 0, 1L, 1L, "", "");
         } catch (UnsupportedEncodingException | MessagingException e) {
             Assert.fail();
         }
@@ -85,38 +102,70 @@ public class AlertManagerImplTest {
 
     @Test
     public void sendAlertTestSendMail() {
-        Mockito.doReturn(null).when(alertDaoMock).getLastAlert(Mockito.anyShort(), Mockito.anyLong(),
+        Mockito.doReturn(null).when(_alertDao).getLastAlert(Mockito.anyShort(), Mockito.anyLong(),
                 Mockito.anyLong(), Mockito.anyLong());
-        Mockito.doReturn(null).when(alertDaoMock).persist(Mockito.any());
-        alertManagerImplMock.recipients = new String [] {""};
+        Mockito.doReturn(null).when(_alertDao).persist(any());
+        alertManagerImplMock.recipients = new String[]{""};
 
         sendMessage();
 
-        Mockito.verify(alertManagerImplMock).sendMessage(Mockito.any());
+        Mockito.verify(alertManagerImplMock).sendMessage(any());
     }
 
     @Test
     public void sendAlertTestDebugLogging() {
         Mockito.doReturn(0).when(alertVOMock).getSentCount();
-        Mockito.doReturn(alertVOMock).when(alertDaoMock).getLastAlert(Mockito.anyShort(), Mockito.anyLong(),
+        Mockito.doReturn(alertVOMock).when(_alertDao).getLastAlert(Mockito.anyShort(), Mockito.anyLong(),
                 Mockito.anyLong(), Mockito.anyLong());
 
         sendMessage();
 
         Mockito.verify(alertManagerImplMock.logger).debug(Mockito.anyString());
-        Mockito.verify(alertManagerImplMock, Mockito.never()).sendMessage(Mockito.any());
+        Mockito.verify(alertManagerImplMock, Mockito.never()).sendMessage(any());
     }
 
     @Test
     public void sendAlertTestWarnLogging() {
-        Mockito.doReturn(null).when(alertDaoMock).getLastAlert(Mockito.anyShort(), Mockito.anyLong(),
+        Mockito.doReturn(null).when(_alertDao).getLastAlert(Mockito.anyShort(), Mockito.anyLong(),
                 Mockito.anyLong(), Mockito.anyLong());
-        Mockito.doReturn(null).when(alertDaoMock).persist(Mockito.any());
+        Mockito.doReturn(null).when(_alertDao).persist(Mockito.any());
         alertManagerImplMock.recipients = null;
 
         sendMessage();
 
         Mockito.verify(alertManagerImplMock.logger, Mockito.times(2)).warn(Mockito.anyString());
-        Mockito.verify(alertManagerImplMock, Mockito.never()).sendMessage(Mockito.any());
+        Mockito.verify(alertManagerImplMock, Mockito.never()).sendMessage(any());
+    }
+
+
+    @Test
+    public void testSendAlertWithNullParameters() throws MessagingException, UnsupportedEncodingException {
+        // Given
+        String subject = "Test Subject";
+        String content = "Test Content";
+        AlertManager.AlertType alertType = AlertManager.AlertType.ALERT_TYPE_MEMORY;
+
+        // When
+        alertManagerImplMock.sendAlert(alertType, null, null, null, subject, content);
+
+        // Then
+        ArgumentCaptor<AlertVO> alertCaptor = ArgumentCaptor.forClass(AlertVO.class);
+        verify(_alertDao).persist(alertCaptor.capture());
+
+        AlertVO capturedAlert = alertCaptor.getValue();
+        assertNotNull("Captured alert should not be null", capturedAlert);
+        assertEquals(0L, capturedAlert.getDataCenterId());
+        assertNull(capturedAlert.getPodId());
+        assertNull(capturedAlert.getClusterId());
+        assertEquals(subject, capturedAlert.getSubject());
+        assertEquals(content, capturedAlert.getContent());
+        assertEquals(alertType.getType(), capturedAlert.getType());
+    }
+
+
+    @Test(expected = NullPointerException.class)
+    public void testSendAlertWithNullAlertType() throws MessagingException, UnsupportedEncodingException {
+        // When
+        alertManagerImplMock.sendAlert(null, 0, 1L, 1L, "subject", "content");
     }
 }
