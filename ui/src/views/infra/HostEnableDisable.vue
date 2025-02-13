@@ -90,7 +90,7 @@ export default {
       if (this.resource.hypervisor !== 'KVM') {
         return
       }
-      api('listConfigurations', { name: 'kvm.host.auto.enable.disable', clusterid: this.resource.clusterid }).then(json => {
+      api('listConfigurations', { name: 'enable.kvm.host.auto.enable.disable', clusterid: this.resource.clusterid }).then(json => {
         if (json.listconfigurationsresponse.configuration?.[0]) {
           this.kvmAutoEnableDisableSetting = json?.listconfigurationsresponse?.configuration?.[0]?.value || false
         }
