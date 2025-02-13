@@ -56,11 +56,13 @@ import io.netris.model.IpTreeAllocationTenant;
 import io.netris.model.IpTreeSubnet;
 import io.netris.model.IpTreeSubnetSites;
 import io.netris.model.L4LBSite;
+import io.netris.model.L4LbAddItem;
+import io.netris.model.L4LbEditItem;
 import io.netris.model.L4LbTenant;
 import io.netris.model.L4LbVpc;
 import io.netris.model.L4LoadBalancerBackendItem;
 import io.netris.model.L4LoadBalancerItem;
-import io.netris.model.L4lbAddItem;
+import io.netris.model.L4lbAddOrUpdateItem;
 import io.netris.model.L4lbresBody;
 import io.netris.model.NatBodySiteSite;
 import io.netris.model.NatBodyVpcVpc;
@@ -97,6 +99,7 @@ import io.netris.model.VnetResDeleteBody;
 import io.netris.model.VnetResListBody;
 import io.netris.model.VnetsBody;
 import io.netris.model.response.AuthResponse;
+import io.netris.model.response.L4LbEditResponse;
 import io.netris.model.response.TenantResponse;
 import io.netris.model.response.TenantsResponse;
 import org.apache.cloudstack.agent.api.CreateNetrisACLCommand;
@@ -116,6 +119,7 @@ import org.apache.cloudstack.agent.api.ReleaseNatIpCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
 import org.apache.cloudstack.resource.NetrisResourceObjectUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -612,7 +616,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
     }
 
     @Override
-    public boolean createLbRule(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd) {
+    public boolean createOrUpdateLbRule(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd) {
         boolean isVpc = cmd.isVpc();
         Long networkResourceId = cmd.getId();
         String networkResourceName = cmd.getName();
@@ -641,16 +645,21 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             if (Boolean.FALSE.equals(result)) {
                 logger.warn("Could not find the Netris LB rule with name {}", lbName);
             }
-            if (!matchingLbId.isEmpty()) {
-                logger.warn("LB rule by name: {} already exists", lbName);
-                return true;
-            }
-
-            L4lbAddItem l4lbAddItem = getL4LbRule(cmd, vpcResource, lbName, publicIp, lbBackends);
+            boolean updateRule = !matchingLbId.isEmpty();
+            L4lbAddOrUpdateItem l4lbAddItem = getL4LbRule(cmd, vpcResource, lbName, publicIp, lbBackends, updateRule);
             L4LoadBalancerApi loadBalancerApi = apiClient.getApiStubForMethod(L4LoadBalancerApi.class);
-            ResAddEditBody response = loadBalancerApi.apiV2L4lbPost(l4lbAddItem);
-            if (Objects.isNull(response) || Boolean.FALSE.equals(response.isIsSuccess())) {
-                throw new CloudRuntimeException("Failed to create Netris LB rule");
+            boolean success;
+            L4LbEditResponse editResponse = null;
+            ResAddEditBody createResponse = null;
+            if (updateRule) {
+                editResponse = loadBalancerApi.apiV2L4lbIdPut((L4LbEditItem) l4lbAddItem, matchingLbId.get(0).intValue());
+                success = editResponse.isIsSuccess();
+            } else {
+                createResponse = loadBalancerApi.apiV2L4lbPost((L4LbAddItem) l4lbAddItem);
+                success = createResponse.isIsSuccess();
+            }
+            if (ObjectUtils.allNull(editResponse, createResponse) || Boolean.FALSE.equals(success)) {
+                throw new CloudRuntimeException(String.format("Failed to %s Netris LB rule", updateRule ? "update" : "create"));
             }
         } catch (ApiException e) {
             logAndThrowException("Failed to create Netris load balancer rule", e);
@@ -658,9 +667,9 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return true;
     }
 
-    private L4lbAddItem getL4LbRule(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd, VPCListing vpcResource, String lbName,
-                             String publicIp, List<NetrisLbBackend> lbBackends) {
-        L4lbAddItem l4lbAddItem = new L4lbAddItem();
+    private L4lbAddOrUpdateItem getL4LbRule(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd, VPCListing vpcResource, String lbName,
+                                            String publicIp, List<NetrisLbBackend> lbBackends, boolean updateRule) {
+        L4lbAddOrUpdateItem l4lbAddItem = updateRule ? new L4LbEditItem() : new L4LbAddItem();
         try {
             l4lbAddItem.setName(lbName);
 
@@ -685,7 +694,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             l4lbAddItem.setVpc(vpc);
 
             l4lbAddItem.setAutomatic(false);
-            l4lbAddItem.setIpFamily(NetUtils.isIpv4(publicIp) ? L4lbAddItem.IpFamilyEnum.IPv4 : L4lbAddItem.IpFamilyEnum.IPv6);
+            l4lbAddItem.setIpFamily(NetUtils.isIpv4(publicIp) ? L4lbAddOrUpdateItem.IpFamilyEnum.IPv4 : L4lbAddOrUpdateItem.IpFamilyEnum.IPv6);
             l4lbAddItem.setIp(publicIp);
             l4lbAddItem.setStatus("enable");
 
@@ -698,7 +707,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             }
             l4lbAddItem.setBackend(backends);
             l4lbAddItem.setPort(Integer.valueOf(cmd.getPublicPort()));
-            l4lbAddItem.setHealthCheck(L4lbAddItem.HealthCheckEnum.NONE);
+            l4lbAddItem.setHealthCheck(L4lbAddOrUpdateItem.HealthCheckEnum.NONE);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to create Netris load balancer rule", e);
         }

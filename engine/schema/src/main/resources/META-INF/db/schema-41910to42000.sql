@@ -459,3 +459,7 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.static_routes', 'next_hop', 'varchar
 
 -- Add `for_router` to `user_ip_address` table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user_ip_address', 'for_router', 'tinyint(1) DEFAULT 0 COMMENT "True if the ip address is used by Domain Router to expose services"');
+
+-- Add Netris Autoscaling rules
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'Netris', 'cpu', 'VM CPU - average percentage', 'vm.cpu.average.percentage', NOW());
+INSERT IGNORE INTO `cloud`.`counter` (uuid, provider, source, name, value, created) VALUES (UUID(), 'Netris', 'memory', 'VM Memory - average percentage', 'vm.memory.average.percentage', NOW());

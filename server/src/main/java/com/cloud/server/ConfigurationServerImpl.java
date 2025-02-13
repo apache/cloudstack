@@ -1199,51 +1199,52 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
 
                 // Offering #9 - network offering for NSX provider - NATTED mode
                 createAndPersistDefaultProviderOffering(NetworkOffering.DEFAULT_NAT_NSX_OFFERING, "Offering for NSX enabled networks - NAT mode",
-                        NetworkOffering.NetworkMode.NATTED, false, true, Provider.Nsx);
+                        NetworkOffering.NetworkMode.NATTED, false, true, false, Provider.Nsx);
 
                 // Offering #10 - network offering for NSX provider - ROUTED mode
                 createAndPersistDefaultProviderOffering(NetworkOffering.DEFAULT_ROUTED_NSX_OFFERING, "Offering for NSX enabled networks - ROUTED mode",
-                        NetworkOffering.NetworkMode.ROUTED, false, true, Provider.Nsx);
+                        NetworkOffering.NetworkMode.ROUTED, false, true, false, Provider.Nsx);
 
                 // Offering #11 - network offering for NSX provider for VPCs - NATTED mode
                 createAndPersistDefaultProviderOffering(NetworkOffering.DEFAULT_NAT_NSX_OFFERING_FOR_VPC, "Offering for NSX enabled networks on VPCs - NAT mode",
-                        NetworkOffering.NetworkMode.NATTED, true, true, Provider.Nsx);
+                        NetworkOffering.NetworkMode.NATTED, true, true, false, Provider.Nsx);
 
                 // Offering #12 - network offering for NSX provider for VPCs - ROUTED mode
                 createAndPersistDefaultProviderOffering(NetworkOffering.DEFAULT_ROUTED_NSX_OFFERING_FOR_VPC, "Offering for NSX enabled networks on VPCs - ROUTED mode",
-                        NetworkOffering.NetworkMode.ROUTED, true, true, Provider.Nsx);
+                        NetworkOffering.NetworkMode.ROUTED, true, true, false, Provider.Nsx);
 
                 // Offering #13 - network offering for NSX provider for VPCs with Internal LB - NATTED mode
                 createAndPersistDefaultProviderOffering(NetworkOffering.DEFAULT_NAT_NSX_OFFERING_FOR_VPC_WITH_ILB, "Offering for NSX enabled networks on VPCs with internal LB - NAT mode",
-                        NetworkOffering.NetworkMode.NATTED, true, false, Provider.Nsx);
+                        NetworkOffering.NetworkMode.NATTED, true, false, false, Provider.Nsx);
 
                 // Offering #14 - network offering for Netris provider for VPCs - ROUTED mode
                 createAndPersistDefaultProviderOffering(NetworkOffering.DEFAULT_ROUTED_NETRIS_OFFERING_FOR_VPC, "Offering for Netris enabled networks on VPCs - ROUTED mode",
-                        NetworkOffering.NetworkMode.ROUTED, true, true, Provider.Netris);
+                        NetworkOffering.NetworkMode.ROUTED, true, true, false, Provider.Netris);
 
                 // Offering #15 - network offering for Netris provider for VPCs - NATTED mode
                 createAndPersistDefaultProviderOffering(NetworkOffering.DEFAULT_NAT_NETRIS_OFFERING_FOR_VPC, "Offering for Netris enabled networks on VPCs - NAT mode",
-                        NetworkOffering.NetworkMode.NATTED, true, true, Provider.Netris);
+                        NetworkOffering.NetworkMode.NATTED, true, true, true, Provider.Netris);
             }
         });
     }
 
     private void createAndPersistDefaultProviderOffering(String name, String displayText, NetworkOffering.NetworkMode networkMode,
-                                                    boolean forVpc, boolean publicLB, Provider provider) {
-        NetworkOfferingVO defaultNatProviderNetworkOffering =
+                                                    boolean forVpc, boolean publicLB, boolean supportVmAutoscaling, Provider provider) {
+        NetworkOfferingVO providerNetworkOffering =
                 new NetworkOfferingVO(name, displayText, TrafficType.Guest, false, false, null,
                         null, true, Availability.Optional, null, GuestType.Isolated, false,
                         false, false, false, false, forVpc);
-        defaultNatProviderNetworkOffering.setPublicLb(publicLB);
-        defaultNatProviderNetworkOffering.setInternalLb(!publicLB);
-        defaultNatProviderNetworkOffering.setNetworkMode(networkMode);
-        defaultNatProviderNetworkOffering.setState(NetworkOffering.State.Enabled);
-        defaultNatProviderNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNatProviderNetworkOffering);
+        providerNetworkOffering.setPublicLb(publicLB);
+        providerNetworkOffering.setInternalLb(!publicLB);
+        providerNetworkOffering.setNetworkMode(networkMode);
+        providerNetworkOffering.setState(NetworkOffering.State.Enabled);
+        providerNetworkOffering.setSupportsVmAutoScaling(supportVmAutoscaling);
+        providerNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(providerNetworkOffering);
 
         Map<Service, Provider> serviceProviderMap = getServicesAndProvidersForProviderNetwork(networkMode, forVpc, provider);
         for (Map.Entry<Network.Service, Network.Provider> service : serviceProviderMap.entrySet()) {
             NetworkOfferingServiceMapVO offService =
-                    new NetworkOfferingServiceMapVO(defaultNatProviderNetworkOffering.getId(), service.getKey(), service.getValue());
+                    new NetworkOfferingServiceMapVO(providerNetworkOffering.getId(), service.getKey(), service.getValue());
             _ntwkOfferingServiceMapDao.persist(offService);
             logger.trace("Added service for the network offering: " + offService);
         }

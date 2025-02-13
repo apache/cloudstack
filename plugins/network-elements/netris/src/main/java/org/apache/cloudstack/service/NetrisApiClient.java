@@ -86,6 +86,6 @@ public interface NetrisApiClient {
     boolean addOrUpdateStaticRoute(AddOrUpdateNetrisStaticRouteCommand cmd);
     boolean deleteStaticRoute(DeleteNetrisStaticRouteCommand cmd);
     boolean releaseNatIp(ReleaseNatIpCommand cmd);
-    boolean createLbRule(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd);
+    boolean createOrUpdateLbRule(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd);
     boolean deleteLbRule(DeleteNetrisLoadBalancerRuleCommand cmd);
 }

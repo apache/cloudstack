@@ -44,6 +44,7 @@ import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.SDNProviderNetworkRule;
 import com.cloud.network.SDNProviderOpObject;
+import com.cloud.network.as.AutoScaleCounter;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
@@ -91,6 +92,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.gson.Gson;
 import org.apache.cloudstack.StartupNetrisCommand;
 import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.network.netris.NetrisNetworkRule;
@@ -147,6 +149,16 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
 
     private final Map<Network.Service, Map<Network.Capability, String>> capabilities = initCapabilities();
 
+    protected static List<AutoScaleCounter> getNetrisAutoScaleCounters() {
+        AutoScaleCounter counter;
+        final List<AutoScaleCounter> counterList = new ArrayList<>();
+        counter = new AutoScaleCounter(AutoScaleCounter.AutoScaleCounterType.Cpu);
+        counterList.add(counter);
+        counter = new AutoScaleCounter(AutoScaleCounter.AutoScaleCounterType.Memory);
+        counterList.add(counter);
+        return counterList;
+    }
+
     private static Map<Network.Service, Map<Network.Capability, String>> initCapabilities() {
         Map<Network.Service, Map<Network.Capability, String>> capabilities = new HashMap<>();
 
@@ -166,6 +178,10 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
         lbCapabilities.put(Network.Capability.SupportedProtocols, "tcp, udp");
         lbCapabilities.put(Network.Capability.SupportedStickinessMethods, VirtualRouterElement.getHAProxyStickinessCapability());
         lbCapabilities.put(Network.Capability.LbSchemes, String.join(",", LoadBalancerContainer.Scheme.Internal.name(), LoadBalancerContainer.Scheme.Public.name()));
+        final Gson gson = new Gson();
+        final String autoScaleCounterList = gson.toJson(getNetrisAutoScaleCounters());
+        lbCapabilities.put(Network.Capability.AutoScaleCounters, autoScaleCounterList);
+        lbCapabilities.put(Network.Capability.VmAutoScaling, "true");
 
         capabilities.put(Network.Service.Lb, lbCapabilities);
         capabilities.put(Network.Service.PortForwarding, null);
@@ -750,7 +766,7 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
                     .lbBackends(lbBackends)
                     .build();
             if (Arrays.asList(FirewallRule.State.Add, FirewallRule.State.Active).contains(loadBalancingRule.getState())) {
-                result &= netrisService.createLbRule(networkRule);
+                result &= netrisService.createOrUpdateLbRule(networkRule);
             } else if (loadBalancingRule.getState() == FirewallRule.State.Revoke) {
                 result &= netrisService.deleteLbRule(networkRule);
             }

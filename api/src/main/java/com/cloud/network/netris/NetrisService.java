@@ -55,6 +55,6 @@ public interface NetrisService {
 
     boolean releaseNatIp(long zoneId, String publicIp);
 
-    boolean createLbRule(NetrisNetworkRule rule);
+    boolean createOrUpdateLbRule(NetrisNetworkRule rule);
     boolean deleteLbRule(NetrisNetworkRule rule);
 }
