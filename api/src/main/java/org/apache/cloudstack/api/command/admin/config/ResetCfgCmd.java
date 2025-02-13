@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
@@ -84,6 +85,13 @@ public class ResetCfgCmd extends BaseCmd {
             description = "the ID of the Image Store to reset the parameter value for corresponding image store")
     private Long imageStoreId;
 
+    @Parameter(name = ApiConstants.NETWORK_ID,
+               type = CommandType.UUID,
+               entityType = NetworkResponse.class,
+               description = "the ID of the Network to reset the parameter value for corresponding network",
+               since = "4.18.0")
+    private Long networkId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -114,6 +122,10 @@ public class ResetCfgCmd extends BaseCmd {
 
     public Long getImageStoreId() {
         return imageStoreId;
+    }
+
+    public Long getNetworkId() {
+        return networkId;
     }
 
     /////////////////////////////////////////////////////
@@ -148,6 +160,9 @@ public class ResetCfgCmd extends BaseCmd {
             }
             if (getImageStoreId() != null) {
                 response.setScope(ConfigKey.Scope.ImageStore.name());
+            }
+            if (getNetworkId() != null) {
+                response.setScope(ConfigKey.Scope.Network.name());
             }
             response.setValue(cfg.second());
             this.setResponseObject(response);
