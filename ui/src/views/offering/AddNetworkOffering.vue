@@ -854,7 +854,7 @@ export default {
       params.systemvmtype = 'domainrouter'
       this.serviceOfferingLoading = true
       api('listServiceOfferings', params).then(json => {
-        this.serviceOfferings = json.listserviceofferingsresponse.serviceoffering || []
+        this.serviceOfferings = json?.listserviceofferingsresponse?.serviceoffering || []
       }).finally(() => {
         this.serviceOfferingLoading = false
       })
