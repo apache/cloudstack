@@ -166,7 +166,7 @@ export default {
         isTagARule: this.resource.istagarule,
         capacityBytes: this.resource.disksizetotal,
         capacityIOPS: this.resource.capacityiops,
-        nfsMountOpts: this.resource.nfsmountopts
+        nfsMountOpts: this.resource.nfsmountopts,
         storageaccessgroups: this.resource.storageaccessgroups
           ? this.resource.storageaccessgroups.split(',')
           : []
@@ -209,7 +209,7 @@ export default {
           params['details[0].nfsmountopts'] = values.nfsMountOpts
         }
 
-        this.updateStoragePool(params)
+        this.updateStoragePool(params, values)
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })
@@ -217,20 +217,20 @@ export default {
     closeAction () {
       this.$emit('close-action')
     },
-    updateStoragePool (args) {
+    updateStoragePool (args, values) {
       api('updateStoragePool', args).then(json => {
         this.$message.success(`${this.$t('message.success.edit.primary.storage')}: ${this.resource.name}`)
 
         if (values.storageaccessgroups != null && values.storageaccessgroups.length > 0) {
-          params.storageaccessgroups = values.storageaccessgroups.join(',')
+          args.storageaccessgroups = values.storageaccessgroups.join(',')
         } else {
-          params.storageaccessgroups = ''
+          args.storageaccessgroups = ''
         }
 
-        if (params.storageaccessgroups !== undefined && (this.resource.storageaccessgroups ? this.resource.storageaccessgroups.split(',').join(',') : '') !== params.storageaccessgroups) {
+        if (args.storageaccessgroups !== undefined && (this.resource.storageaccessgroups ? this.resource.storageaccessgroups.split(',').join(',') : '') !== args.storageaccessgroups) {
           api('configureStorageAccess', {
-            storageid: params.id,
-            storageaccessgroups: params.storageaccessgroups
+            storageid: args.id,
+            storageaccessgroups: args.storageaccessgroups
           }).then(response => {
             this.$pollJob({
               jobId: response.configurestorageaccessresponse.jobid,
