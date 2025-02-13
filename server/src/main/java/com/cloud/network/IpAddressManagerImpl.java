@@ -827,14 +827,12 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 providers = servicesMap.stream().map(VpcOfferingServiceMapVO::getProvider).collect(Collectors.toList());
             }
 
-            if (providers.isEmpty()) {
-                throw new InvalidParameterValueException("Unable to find the provider for this network");
-            }
-
-            String provider = providers.get(0);
-            NetworkElement element = _networkModel.getElementImplementingProvider(provider);
-            if (element != null) {
-                element.releaseIp(ipToBeDisassociated);
+            if (!providers.isEmpty()) {
+                String provider = providers.get(0);
+                NetworkElement element = _networkModel.getElementImplementingProvider(provider);
+                if (element != null) {
+                    element.releaseIp(ipToBeDisassociated);
+                }
             }
         } finally {
             _ipAddressDao.releaseFromLockTable(addrId);
