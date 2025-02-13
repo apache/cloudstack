@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`api_keypair` (
     CONSTRAINT `fk_api_keypair__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `cloud`.`domain`(`id`)
     );
 
-CREATE TABLE IF NOT EXISTS `cloud`.`keypair_permissions` (
+CREATE TABLE IF NOT EXISTS `cloud`.`api_keypair_permissions` (
                                                              `id` bigint(20) unsigned NOT NULL auto_increment,
     `uuid` varchar(40) UNIQUE,
     `sort_order` bigint(20) unsigned NOT NULL DEFAULT 0,

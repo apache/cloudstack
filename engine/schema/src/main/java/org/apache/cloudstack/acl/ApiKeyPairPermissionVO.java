@@ -23,7 +23,7 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "keypair_permissions")
+@Table(name = "api_keypair_permissions")
 public class ApiKeyPairPermissionVO extends RolePermissionBaseVO implements ApiKeyPairPermission {
     @Column(name = "api_keypair_id")
     private long apiKeyPairId;
