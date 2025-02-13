@@ -142,7 +142,7 @@ export default {
       })
       this.rules = reactive({})
     },
-    fetchData() {
+    fetchData () {
       this.fetchArchitectureTypes()
       this.fetchStorageAccessGroupsData()
     },
