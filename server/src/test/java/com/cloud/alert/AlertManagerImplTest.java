@@ -137,7 +137,6 @@ public class AlertManagerImplTest {
         Mockito.verify(alertManagerImplMock, Mockito.never()).sendMessage(any());
     }
 
-
     @Test
     public void testSendAlertWithNullParameters() throws MessagingException, UnsupportedEncodingException {
         // Given
@@ -161,7 +160,6 @@ public class AlertManagerImplTest {
         assertEquals(content, capturedAlert.getContent());
         assertEquals(alertType.getType(), capturedAlert.getType());
     }
-
 
     @Test(expected = NullPointerException.class)
     public void testSendAlertWithNullAlertType() throws MessagingException, UnsupportedEncodingException {
