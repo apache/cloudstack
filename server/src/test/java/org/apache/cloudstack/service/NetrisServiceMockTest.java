@@ -107,7 +107,7 @@ public class NetrisServiceMockTest implements NetrisService {
     }
 
     @Override
-    public boolean createLbRule(NetrisNetworkRule rule) {
+    public boolean createOrUpdateLbRule(NetrisNetworkRule rule) {
         return true;
     }
 

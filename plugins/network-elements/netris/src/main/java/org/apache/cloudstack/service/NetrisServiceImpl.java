@@ -458,7 +458,7 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
     }
 
     @Override
-    public boolean createLbRule(NetrisNetworkRule rule) {
+    public boolean createOrUpdateLbRule(NetrisNetworkRule rule) {
         SDNProviderNetworkRule baseRule = rule.getBaseRule();
         CreateOrUpdateNetrisLoadBalancerRuleCommand cmd = new CreateOrUpdateNetrisLoadBalancerRuleCommand(baseRule.getZoneId(), baseRule.getAccountId(),
                 baseRule.getDomainId(), baseRule.getNetworkResourceName(), baseRule.getNetworkResourceId(), baseRule.isVpcResource(),

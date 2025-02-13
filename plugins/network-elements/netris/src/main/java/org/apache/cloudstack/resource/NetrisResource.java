@@ -359,7 +359,7 @@ public class NetrisResource implements ServerResource {
     }
 
     private Answer executeRequest(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd) {
-        boolean result = netrisApiClient.createLbRule(cmd);
+        boolean result = netrisApiClient.createOrUpdateLbRule(cmd);
         if (!result) {
             return new NetrisAnswer(cmd, false, String.format("Failed to create Netris LB rule for %s: %s, " +
                     "for private port: %s and public port: %s", getNetworkType(cmd.isVpc()), cmd.getName(), cmd.getPrivatePort(), cmd.getPublicPort(), cmd.getPublicPort()));
