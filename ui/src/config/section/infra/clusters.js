@@ -73,7 +73,7 @@ export default {
       api: 'addCluster',
       icon: 'plus-outlined',
       label: 'label.add.cluster',
-      docHelp: 'adminguide/installguide/configuration.html#adding-a-cluster',
+      docHelp: 'installguide/configuration.html#adding-a-cluster',
       listView: true,
       popup: true,
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ClusterAdd.vue')))
