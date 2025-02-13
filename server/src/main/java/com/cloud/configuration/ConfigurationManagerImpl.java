@@ -7225,15 +7225,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
 
-        if (tags != null) {
-            sc.addAnd("tags", SearchCriteria.Op.EQ, tags);
-        }
-
         if (isTagged != null) {
             if (isTagged) {
                 sc.addAnd("tags", SearchCriteria.Op.NNULL);
             } else {
                 sc.addAnd("tags", SearchCriteria.Op.NULL);
+            }
+        }
+
+        if (tags != null) {
+            if (GuestType.Shared.name().equalsIgnoreCase(guestIpType)) {
+                SearchCriteria<NetworkOfferingJoinVO> tagsSc = networkOfferingJoinDao.createSearchCriteria();
+                tagsSc.addAnd("tags", SearchCriteria.Op.EQ, tags);
+                tagsSc.addOr("isDefault", SearchCriteria.Op.EQ, true);
+                sc.addAnd("tags", SearchCriteria.Op.SC, tagsSc);
+            } else {
+                sc.addAnd("tags", SearchCriteria.Op.EQ, tags);
             }
         }
 
@@ -7297,7 +7304,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 boolean addOffering = true;
                 List<Service> checkForProviders = new ArrayList<Service>();
 
-                if (checkForTags && ! checkNetworkOfferingTags(pNtwkTags, allowNullTag, offering.getTags())) {
+                if (checkForTags && !checkNetworkOfferingTags(pNtwkTags, allowNullTag, offering.getTags())) {
                     continue;
                 }
 

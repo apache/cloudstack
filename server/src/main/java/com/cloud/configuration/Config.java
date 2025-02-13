@@ -505,7 +505,7 @@ public enum Config {
             "300",
             "The time interval in seconds when the management server polls for snapshots to be scheduled.",
             null),
-    KVMSnapshotEnabled("Hidden", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "whether snapshot is enabled for KVM hosts", null),
+    KVMSnapshotEnabled("Hidden", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "Whether volume snapshot is enabled on running instances on a KVM host", null),
 
     // Advanced
     EventPurgeInterval(
@@ -664,8 +664,8 @@ public enum Config {
             ManagementServer.class,
             String.class,
             "hypervisor.list",
-            HypervisorType.Hyperv + "," + HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VMware + "," + HypervisorType.BareMetal + "," +
-                    HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3,
+            HypervisorType.KVM + "," + HypervisorType.VMware + "," + HypervisorType.XenServer + "," + HypervisorType.Hyperv + "," +
+                    HypervisorType.BareMetal + "," + HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3,
                     "The list of hypervisors that this deployment will use.",
             "hypervisorList",
             ConfigKey.Kind.CSV,
@@ -1364,7 +1364,7 @@ public enum Config {
             "200",
             "The default maximum primary storage space (in GiB) that can be used for an account",
             null),
-DefaultMaxAccountProjects(
+    DefaultMaxAccountProjects(
                 "Account Defaults",
                 ManagementServer.class,
                 Long.class,

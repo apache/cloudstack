@@ -142,7 +142,7 @@ export default {
       permission: ['listServiceOfferings', 'listInfrastructure'],
       searchFilters: ['name', 'zoneid', 'domainid', 'cpunumber', 'cpuspeed', 'memory'],
       params: { issystem: 'true', isrecursive: 'true' },
-      columns: ['name', 'state', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'order'],
+      columns: ['name', 'state', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'offerha', 'order'],
       filters: ['active', 'inactive'],
       details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'storagetags', 'hosttags', 'tags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness'],
       resourceType: 'ServiceOffering',

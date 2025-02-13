@@ -640,7 +640,7 @@ public class VolumeServiceImpl implements VolumeService {
             try {
                 Thread.sleep(sleepTime * 1000);
             } catch (InterruptedException e) {
-                logger.debug("waiting for template download been interrupted: " + e.toString());
+                logger.debug("waiting for template download been interrupted: " + e);
             }
             tries--;
         }
@@ -709,7 +709,6 @@ public class VolumeServiceImpl implements VolumeService {
             }
             _tmpltPoolDao.releaseFromLockTable(templatePoolRefId);
         }
-        return;
     }
 
     protected Void managedCopyBaseImageCallback(AsyncCallbackDispatcher<VolumeServiceImpl, CopyCommandResult> callback, ManagedCreateBaseImageContext<VolumeApiResult> context) {
@@ -1057,7 +1056,7 @@ public class VolumeServiceImpl implements VolumeService {
             try {
                 grantAccess(templateOnPrimary, destHost, destPrimaryDataStore);
             } catch (Exception e) {
-                throw new StorageAccessException(String.format("Unable to grant access to template: %s on host: %s", templateOnPrimary.getImage(), destHost));
+                throw new StorageAccessException(String.format("Unable to grant access to template: %s on host: %s", templateOnPrimary.getImage(), destHost), e);
             }
 
             templateOnPrimary.processEvent(Event.CopyingRequested);
@@ -1179,7 +1178,7 @@ public class VolumeServiceImpl implements VolumeService {
             try {
                 grantAccess(srcTemplateOnPrimary, destHost, destPrimaryDataStore);
             } catch (Exception e) {
-                throw new StorageAccessException(String.format("Unable to grant access to src template: %s on host: %s", srcTemplateOnPrimary, destHost));
+                throw new StorageAccessException(String.format("Unable to grant access to src template: %s on host: %s", srcTemplateOnPrimary, destHost), e);
             }
 
             _volumeDetailsDao.addDetail(volumeInfo.getId(), volumeDetailKey, String.valueOf(templatePoolRef.getId()), false);
@@ -1426,7 +1425,7 @@ public class VolumeServiceImpl implements VolumeService {
                 try {
                     grantAccess(templateOnPrimary, destHost, destPrimaryDataStore);
                 } catch (Exception e) {
-                    throw new StorageAccessException(String.format("Unable to grant access to template: %s on host: %s", templateOnPrimary, destHost));
+                    throw new StorageAccessException(String.format("Unable to grant access to template: %s on host: %s", templateOnPrimary, destHost), e);
                 }
 
                 templateOnPrimary.processEvent(Event.CopyingRequested);

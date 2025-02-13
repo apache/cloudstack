@@ -1817,7 +1817,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     try {
                         volService.grantAccess(volFactory.getVolume(newVol.getId()), host, destPool);
                     } catch (Exception e) {
-                        throw new StorageAccessException(String.format("Unable to grant access to the volume [%s] on host [%s].", newVolToString, host));
+                        throw new StorageAccessException(String.format("Unable to grant access to the volume [%s] on host [%s].", newVolToString, host), e);
                     }
                 }
 
@@ -1857,7 +1857,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         try {
             volService.grantAccess(volFactory.getVolume(volumeId), host, volumeStore);
         } catch (Exception e) {
-            throw new StorageAccessException(String.format("Unable to grant access to volume [%s] on host [%s].", volToString, host));
+            throw new StorageAccessException(String.format("Unable to grant access to volume [%s] on host [%s].", volToString, host), e);
         }
     }
 
@@ -1938,7 +1938,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                         try {
                             volService.grantAccess(volFactory.getVolume(vol.getId()), host, store);
                         } catch (Exception e) {
-                            throw new StorageAccessException(String.format("Unable to grant access to volume [%s] on host [%s].", volToString, host));
+                            throw new StorageAccessException(String.format("Unable to grant access to volume [%s] on host [%s].", volToString, host), e);
                         }
                     } else {
                         grantVolumeAccessToHostIfNeeded(store, vol.getId(), host, volToString);

@@ -6545,6 +6545,16 @@ public class LibvirtComputingResourceTest {
     }
 
     @Test
+    public void testGetDiskModelFromVMDetailVirtioBlk() {
+        VirtualMachineTO virtualMachineTO = Mockito.mock(VirtualMachineTO.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "virtio-blk");
+        Mockito.when(virtualMachineTO.getDetails()).thenReturn(details);
+        DiskDef.DiskBus diskBus = libvirtComputingResourceSpy.getDiskModelFromVMDetail(virtualMachineTO);
+        assertEquals(DiskDef.DiskBus.VIRTIOBLK, diskBus);
+    }
+
+    @Test
     public void recreateCheckpointsOnVmTestVersionIsNotSufficient() {
         Mockito.doThrow(new CloudRuntimeException("")).when(libvirtComputingResourceSpy).validateLibvirtAndQemuVersionForIncrementalSnapshots();
 

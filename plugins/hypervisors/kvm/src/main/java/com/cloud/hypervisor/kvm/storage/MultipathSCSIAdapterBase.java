@@ -162,6 +162,13 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         KVMPhysicalDisk disk = new KVMPhysicalDisk(address.getPath(), address.toString(), pool);
         disk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
 
+        // validate we have a connection, if not we need to connect first.
+        if (!isConnected(address.getPath())) {
+            if (!connectPhysicalDisk(address, pool, null)) {
+                throw new CloudRuntimeException("Unable to connect to volume " + address.getPath());
+            }
+        }
+
         long diskSize = getPhysicalDiskSize(address.getPath());
         disk.setSize(diskSize);
         disk.setVirtualSize(diskSize);
@@ -199,6 +206,10 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         // we expect WWN values in the volumePath so need to convert it to an actual physical path
         AddressInfo address = this.parseAndValidatePath(volumePath);
 
+        return connectPhysicalDisk(address, pool, details);
+    }
+
+    private boolean connectPhysicalDisk(AddressInfo address, KVMStoragePool pool, Map<String, String> details) {
         // validate we have a connection id - we can't proceed without that
         if (address.getConnectionId() == null) {
             LOGGER.error("Unable to connect volume with address [" + address.getPath() + "] of the storage pool: " + pool.getUuid() + " - connection id is not set in provided path");
@@ -507,6 +518,18 @@ public abstract class MultipathSCSIAdapterBase implements StorageAdaptor {
         }
 
         LOGGER.debug("Unable to find the volume with id: " + address.getPath() + " of the storage pool: " + pool.getUuid());
+        return false;
+    }
+
+    boolean isConnected(String path) {
+        // run a command to test if this is a binary device at this path
+        Script blockTest = new Script("/bin/test", LOGGER);
+        blockTest.add("-b", path);
+        blockTest.execute();
+        int rc = blockTest.getExitValue();
+        if (rc == 0) {
+            return true;
+        }
         return false;
     }
 

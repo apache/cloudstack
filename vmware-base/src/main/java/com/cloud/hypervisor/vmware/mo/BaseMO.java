@@ -19,14 +19,25 @@ package com.cloud.hypervisor.vmware.mo;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.utils.Pair;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
+
 import com.vmware.vim25.CustomFieldDef;
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.InvalidPropertyFaultMsg;
+import com.vmware.vim25.RuntimeFaultFaultMsg;
+import com.vmware.vim25.ObjectContent;
+import com.vmware.vim25.RetrieveResult;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
+import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 
 public class BaseMO {
-    protected Logger logger = LogManager.getLogger(getClass());
+    protected static Logger logger = LogManager.getLogger(BaseMO.class);
 
     protected VmwareContext _context;
     protected ManagedObjectReference _mor;
@@ -51,6 +62,15 @@ public class BaseMO {
         _mor.setValue(morValue);
     }
 
+    protected static Pair<String, List<ObjectContent>> createReturnObjectPair(RetrieveResult result) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("vmware result : {} ", ReflectionToStringBuilderUtils.reflectCollection(result));
+        }
+        String tokenForRetrievingNewResults = result.getToken();
+        List<ObjectContent> listOfObjects = result.getObjects();
+        return new Pair<>(tokenForRetrievingNewResults, listOfObjects);
+    }
+
     public VmwareContext getContext() {
         return _context;
     }
@@ -61,12 +81,12 @@ public class BaseMO {
     }
 
     public ManagedObjectReference getParentMor() throws Exception {
-        return (ManagedObjectReference)_context.getVimClient().getDynamicProperty(_mor, "parent");
+        return _context.getVimClient().getDynamicProperty(_mor, "parent");
     }
 
     public String getName() throws Exception {
         if (_name == null)
-            _name = (String)_context.getVimClient().getDynamicProperty(_mor, "name");
+            _name = _context.getVimClient().getDynamicProperty(_mor, "name");
 
         return _name;
     }
@@ -83,7 +103,7 @@ public class BaseMO {
             _context.waitForTaskProgressDone(morTask);
             return true;
         } else {
-            logger.error("VMware destroy_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            logger.error("VMware destroy_Task failed due to {}", TaskMO.getTaskFailureInfo(_context, morTask));
         }
         return false;
     }
@@ -100,7 +120,7 @@ public class BaseMO {
             _context.waitForTaskProgressDone(morTask);
             return true;
         } else {
-            logger.error("VMware rename_Task failed due to " + TaskMO.getTaskFailureInfo(_context, morTask));
+            logger.error("VMware rename_Task failed due to {}", TaskMO.getTaskFailureInfo(_context, morTask));
         }
         return false;
     }
@@ -131,18 +151,18 @@ public class BaseMO {
         if (key == 0)
             return null;
 
-        CustomFieldStringValue cfValue = (CustomFieldStringValue)_context.getVimClient().getDynamicProperty(getMor(), String.format("value[%d]", key));
+        CustomFieldStringValue cfValue = _context.getVimClient().getDynamicProperty(getMor(), String.format("value[%d]", key));
         if (cfValue != null)
             return cfValue.getValue();
 
         return null;
     }
 
-    public int getCustomFieldKey(String fieldName) throws Exception {
+    public int getCustomFieldKey(String fieldName) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         return getCustomFieldKey(getMor().getType(), fieldName);
     }
 
-    public int getCustomFieldKey(String morType, String fieldName) throws Exception {
+    public int getCustomFieldKey(String morType, String fieldName) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         assert (morType != null);
 
         ManagedObjectReference cfmMor = _context.getServiceContent().getCustomFieldsManager();
@@ -153,5 +173,31 @@ public class BaseMO {
         CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(_context, cfmMor);
 
         return cfmMo.getCustomFieldKey(morType, fieldName);
+    }
+
+    protected Pair<String, List<ObjectContent>> retrieveNextSetOfProperties(String tokenForPriorQuery) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
+        RetrieveResult result = _context.getService().continueRetrievePropertiesEx(_context.getPropertyCollector(), tokenForPriorQuery);
+        return BaseMO.createReturnObjectPair(result);
+    }
+
+    protected void objectContentToUnmanagedInstanceTO(Pair<String, List<ObjectContent>> objectContents, List<UnmanagedInstanceTO> vms) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+        List<ObjectContent> ocs = objectContents.second();
+        if (ocs != null) {
+            for (ObjectContent oc : ocs) {
+                ManagedObjectReference vmMor = oc.getObj();
+                if (vmMor != null) {
+                    VirtualMachineMO vmMo = new VirtualMachineMO(_context, vmMor);
+                    try {
+                        if (!vmMo.isTemplate()) {
+                            HostMO hostMO = vmMo.getRunningHost();
+                            UnmanagedInstanceTO unmanagedInstance = VmwareHelper.getUnmanagedInstance(hostMO, vmMo);
+                            vms.add(unmanagedInstance);
+                        }
+                    } catch (Exception e) {
+                        logger.debug("Unexpected error checking unmanaged instance {}, excluding it: {}", vmMo.getVmName(), e.getMessage(), e);
+                    }
+                }
+            }
+        }
     }
 }
