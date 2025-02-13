@@ -507,7 +507,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
 
             // if there is only one template-for property left for templates, the template isn't needed anymore
             // or if it isn't a template anyway, it will not have this Aux property
-            // _cs-template-for- poperties work like a ref-count.
+            // _cs-template-for- properties work like a ref-count.
             if (rd.getProps().keySet().stream()
                     .filter(key -> key.startsWith("Aux/" + LinstorUtil.CS_TEMPLATE_FOR_PREFIX))
                     .count() == expectedProps) {
