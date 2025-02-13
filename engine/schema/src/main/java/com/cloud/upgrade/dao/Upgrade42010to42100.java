@@ -18,7 +18,12 @@ package com.cloud.upgrade.dao;
 
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.exception.CloudRuntimeException;
-
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.util.UUID;
 import java.io.InputStream;
 import java.sql.Connection;
 
@@ -51,8 +56,51 @@ public class Upgrade42010to42100 extends DbUpgradeAbstractImpl implements DbUpgr
         return new InputStream[] {script};
     }
 
+    private void performKeyPairMigration(Connection conn) throws SQLException {
+        try {
+            logger.debug("Performing keypair migration from user table to api_keypair table.");
+            PreparedStatement pstmt = conn.prepareStatement("SELECT u.id, u.api_key, u.secret_key, a.domain_id, u.id FROM `cloud`.`user` AS u JOIN `cloud`.`account` AS a " +
+                    "ON u.account_id = a.id WHERE u.api_key IS NOT NULL AND u.secret_key IS NOT NULL");
+            ResultSet resultSet = pstmt.executeQuery();
+
+            while (resultSet.next()) {
+                long id = resultSet.getLong(1);
+                String apiKey = resultSet.getString(2);
+                String secretKey = resultSet.getString(3);
+                Long domainId = resultSet.getLong(4);
+                Long accountId = resultSet.getLong(5);
+                Date timestamp = Date.valueOf(LocalDate.now());
+
+                PreparedStatement preparedStatement = conn.prepareStatement("INSERT IGNORE INTO `cloud`.`api_keypair` (uuid, user_id, domain_id, account_id, api_key, secret_key, created, name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                String uuid = UUID.randomUUID().toString();
+                preparedStatement.setString(1, uuid);
+                preparedStatement.setLong(2, id);
+                preparedStatement.setLong(3, domainId);
+                preparedStatement.setLong(4, accountId);
+
+                preparedStatement.setString(5, apiKey);
+                preparedStatement.setString(6, secretKey);
+                preparedStatement.setDate(7, timestamp);
+                preparedStatement.setString(8, uuid);
+
+                preparedStatement.executeUpdate();
+            }
+            pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`user` DROP COLUMN api_key, DROP COLUMN secret_key;");
+            pstmt.executeUpdate();
+            logger.info("Successfully performed keypair migration.");
+        } catch (SQLException ex) {
+            logger.info("Unexpected exception in user keypair migration", ex);
+            throw ex;
+        }
+    }
+
     @Override
     public void performDataMigration(Connection conn) {
+        try {
+            performKeyPairMigration(conn);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
