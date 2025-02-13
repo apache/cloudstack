@@ -779,7 +779,7 @@ export default {
           params.domainid = this.form.domainid
         }
         api('listAccounts', params).then(json => {
-          var account = json.listaccountsresponse.account
+          let account = json?.listaccountsresponse?.account || []
           if (this.form.domainid) {
             account = account.filter(a => a.domainid === this.form.domainid)
           }
