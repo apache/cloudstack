@@ -1400,7 +1400,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
             if (!BooleanUtils.toBoolean(EnableKVMAutoEnableDisable.valueIn(host.getClusterId()))) {
                 logger.debug("{} is disabled for the cluster {}, cannot process the health check result " +
-                        "received for the host %s", EnableKVMAutoEnableDisable.key(), host.getClusterId(), host.getName());
+                        "received for the host {}", EnableKVMAutoEnableDisable.key(), host.getClusterId(), host.getName());
                 return;
             }
 
