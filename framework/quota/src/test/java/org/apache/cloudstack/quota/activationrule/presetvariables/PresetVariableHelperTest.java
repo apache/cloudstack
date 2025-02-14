@@ -76,6 +76,7 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
@@ -208,7 +209,7 @@ public class PresetVariableHelperTest {
         value.setComputeOffering(getComputeOfferingForTests());
         value.setTags(Collections.singletonMap("tag1", "value1"));
         value.setTemplate(getGenericPresetVariableForTests());
-        value.setDiskOffering(getGenericPresetVariableForTests());
+        value.setDiskOffering(getDiskOfferingForTests());
         value.setProvisioningType(ProvisioningType.THIN);
         value.setStorage(getStorageForTests());
         value.setSize(ByteScaleUtils.GiB);
@@ -216,6 +217,7 @@ public class PresetVariableHelperTest {
         value.setTag("tag_test");
         value.setVmSnapshotType(VMSnapshot.Type.Disk);
         value.setComputingResources(getComputingResourcesForTests());
+        value.setVolumeType(Volume.Type.DATADISK);
         return value;
     }
 
@@ -306,6 +308,13 @@ public class PresetVariableHelperTest {
         backupOffering.setName("backup_offering_name");
         backupOffering.setExternalId("backup_offering_external_id");
         return backupOffering;
+    }
+
+    private DiskOfferingPresetVariables getDiskOfferingForTests() {
+        DiskOfferingPresetVariables diskOffering = new DiskOfferingPresetVariables();
+        diskOffering.setId("disk_offering_id");
+        diskOffering.setName("disk_offering_name");
+        return diskOffering;
     }
 
     private void mockMethodValidateIfObjectIsNull() {
@@ -698,6 +707,7 @@ public class PresetVariableHelperTest {
             Mockito.doReturn(expected.getName()).when(volumeVoMock).getName();
             Mockito.doReturn(expected.getDiskOffering()).when(presetVariableHelperSpy).getPresetVariableValueDiskOffering(Mockito.anyLong());
             Mockito.doReturn(expected.getProvisioningType()).when(volumeVoMock).getProvisioningType();
+            Mockito.doReturn(expected.getVolumeType()).when(volumeVoMock).getVolumeType();
             Mockito.doReturn(expected.getStorage()).when(presetVariableHelperSpy).getPresetVariableValueStorage(Mockito.anyLong(), Mockito.anyInt());
             Mockito.doReturn(expected.getTags()).when(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.any(ResourceObjectType.class));
             Mockito.doReturn(expected.getSize()).when(volumeVoMock).getSize();
@@ -713,12 +723,13 @@ public class PresetVariableHelperTest {
             assertPresetVariableIdAndName(expected, result);
             Assert.assertEquals(expected.getDiskOffering(), result.getDiskOffering());
             Assert.assertEquals(expected.getProvisioningType(), result.getProvisioningType());
+            Assert.assertEquals(expected.getVolumeType(), result.getVolumeType());
             Assert.assertEquals(expected.getStorage(), result.getStorage());
             Assert.assertEquals(expected.getTags(), result.getTags());
             Assert.assertEquals(expectedSize, result.getSize());
             Assert.assertEquals(imageFormat.name(), result.getVolumeFormat());
 
-            validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "diskOffering", "provisioningType", "storage", "tags", "size", "volumeFormat"), result);
+            validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "diskOffering", "provisioningType", "volumeType", "storage", "tags", "size", "volumeFormat"), result);
         }
 
         Mockito.verify(presetVariableHelperSpy, Mockito.times(ImageFormat.values().length)).getPresetVariableValueResourceTags(Mockito.anyLong(),
@@ -740,6 +751,7 @@ public class PresetVariableHelperTest {
             Mockito.doReturn(expected.getName()).when(volumeVoMock).getName();
             Mockito.doReturn(expected.getDiskOffering()).when(presetVariableHelperSpy).getPresetVariableValueDiskOffering(Mockito.anyLong());
             Mockito.doReturn(expected.getProvisioningType()).when(volumeVoMock).getProvisioningType();
+            Mockito.doReturn(expected.getVolumeType()).when(volumeVoMock).getVolumeType();
             Mockito.doReturn(expected.getTags()).when(presetVariableHelperSpy).getPresetVariableValueResourceTags(Mockito.anyLong(), Mockito.any(ResourceObjectType.class));
             Mockito.doReturn(expected.getSize()).when(volumeVoMock).getSize();
             Mockito.doReturn(imageFormat).when(volumeVoMock).getFormat();
@@ -754,12 +766,13 @@ public class PresetVariableHelperTest {
             assertPresetVariableIdAndName(expected, result);
             Assert.assertEquals(expected.getDiskOffering(), result.getDiskOffering());
             Assert.assertEquals(expected.getProvisioningType(), result.getProvisioningType());
+            Assert.assertEquals(expected.getVolumeType(), result.getVolumeType());
             Assert.assertNull(result.getStorage());
             Assert.assertEquals(expected.getTags(), result.getTags());
             Assert.assertEquals(expectedSize, result.getSize());
             Assert.assertEquals(imageFormat.name(), result.getVolumeFormat());
 
-            validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "diskOffering", "provisioningType", "tags", "size", "volumeFormat"), result);
+            validateFieldNamesToIncludeInToString(Arrays.asList("id", "name", "diskOffering", "provisioningType", "volumeType", "tags", "size", "volumeFormat"), result);
         }
 
         Mockito.verify(presetVariableHelperSpy, Mockito.times(ImageFormat.values().length)).getPresetVariableValueResourceTags(Mockito.anyLong(),
@@ -772,14 +785,15 @@ public class PresetVariableHelperTest {
         Mockito.doReturn(diskOfferingVoMock).when(diskOfferingDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
         mockMethodValidateIfObjectIsNull();
 
-        GenericPresetVariable expected = getGenericPresetVariableForTests();
+        DiskOfferingPresetVariables expected = getDiskOfferingForTests();
         Mockito.doReturn(expected.getId()).when(diskOfferingVoMock).getUuid();
         Mockito.doReturn(expected.getName()).when(diskOfferingVoMock).getName();
 
         GenericPresetVariable result = presetVariableHelperSpy.getPresetVariableValueDiskOffering(1l);
 
         assertPresetVariableIdAndName(expected, result);
-        validateFieldNamesToIncludeInToString(Arrays.asList("id", "name"), result);
+        validateFieldNamesToIncludeInToString(Arrays.asList("bytesReadBurst", "bytesReadBurstLength", "bytesReadRate", "bytesWriteBurst", "bytesWriteBurstLength", "bytesWriteRate",
+                "id", "iopsReadBurst", "iopsReadBurstLength", "iopsReadRate", "iopsWriteBurst", "iopsWriteBurstLength", "iopsWriteRate", "name"), result);
     }
 
     @Test
