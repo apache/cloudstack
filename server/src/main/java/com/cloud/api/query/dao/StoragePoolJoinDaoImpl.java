@@ -17,6 +17,7 @@
 package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -196,16 +197,24 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
     public StoragePoolResponse setStoragePoolResponse(StoragePoolResponse response, StoragePoolJoinVO sp) {
         String tag = sp.getTag();
         if (tag != null) {
-            if (response.getTags() != null && response.getTags().length() > 0) {
-                response.setTags(response.getTags() + "," + tag);
+            if (response.getTags() != null && !response.getTags().isEmpty()) {
+                List<String> tagsList = new ArrayList<>(Arrays.asList(response.getTags().split(",")));
+                if (!tagsList.contains(tag)) {
+                    tagsList.add(tag);
+                }
+                response.setTags(String.join(",", tagsList));
             } else {
                 response.setTags(tag);
             }
         }
         String storageAccessGroup = sp.getStorageAccessGroup();
         if (storageAccessGroup != null) {
-            if (response.getStorageAccessGroups() != null && response.getStorageAccessGroups().length() > 0) {
-                response.setStorageAccessGroups(response.getStorageAccessGroups() + "," + storageAccessGroup);
+            if (response.getStorageAccessGroups() != null && !response.getStorageAccessGroups().isEmpty()) {
+                List<String> groupList = new ArrayList<>(Arrays.asList(response.getStorageAccessGroups().split(",")));
+                if (!groupList.contains(storageAccessGroup)) {
+                    groupList.add(storageAccessGroup);
+                }
+                response.setStorageAccessGroups(String.join(",", groupList));
             } else {
                 response.setStorageAccessGroups(storageAccessGroup);
             }
