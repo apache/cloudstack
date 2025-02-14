@@ -79,6 +79,7 @@ class TestHAKVM(cloudstackTestCase):
             self.apiclient,
             self.services["service_offerings"]["hasmall"]
         )
+        self.cleanup = [self.service_offering]
 
         self.template = get_test_template(
             self.apiclient,
@@ -87,7 +88,6 @@ class TestHAKVM(cloudstackTestCase):
         )
 
         self.configureAndDisableHostHa()
-        self.cleanup = [self.service_offering]
 
     def updateConfiguration(self, name, value):
         cmd = updateConfiguration.updateConfigurationCmd()
@@ -116,9 +116,10 @@ class TestHAKVM(cloudstackTestCase):
             self.dbclient.execute("delete from mshost where runid=%s" % self.getFakeMsRunId())
             self.dbclient.execute("delete from cluster_details where name='outOfBandManagementEnabled'")
             self.dbclient.execute("delete from data_center_details where name='outOfBandManagementEnabled'")
-            cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
+        finally:
+            super(TestHAKVM, self).tearDown()
 
     def getHostHaEnableCmd(self):
         cmd = enableHAForHost.enableHAForHostCmd()
@@ -292,7 +293,6 @@ class TestHAKVM(cloudstackTestCase):
         # Enable HA
         self.configureAndEnableHostHa()
 
-
         # Prepare for maintenance Host
         self.setHostToMaintanance(self.host.id)
 
@@ -340,7 +340,6 @@ class TestHAKVM(cloudstackTestCase):
             Tests HA Provider should be possible to be removed when HA is enabled
         """
         self.logger.debug("Starting test_remove_ha_provider_not_possible")
-
 
         # Enable HA
         self.apiclient.configureHAForHost(self.getHostHaConfigCmd())
@@ -392,7 +391,6 @@ class TestHAKVM(cloudstackTestCase):
 
         self.startAgent()
         self.waitUntilHostInState("Available")
-
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_hostha_kvm_host_recovering(self):
@@ -581,7 +579,6 @@ class TestHAKVM(cloudstackTestCase):
         return s.getsockname()[0]
 
     def get_non_configured_ha_host(self):
-
         response = list_hosts(
             self.apiclient,
             type='Routing'
