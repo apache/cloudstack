@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.usage.dao;
 
-import com.cloud.network.Network;
 import com.cloud.usage.UsageNetworksVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;
@@ -70,11 +69,10 @@ public class UsageNetworksDaoImpl extends GenericDaoBase<UsageNetworksVO, Long> 
             SearchCriteria<UsageNetworksVO> sc = this.createSearchCriteria();
             sc.addAnd("networkId", SearchCriteria.Op.EQ, networkId);
             sc.addAnd("removed", SearchCriteria.Op.NULL);
-            UsageNetworksVO vo = findOneBy(sc);
-            if (vo != null) {
-                vo.setRemoved(removed);
-                vo.setState(Network.State.Destroy.name());
-                update(vo.getId(), vo);
+            List<UsageNetworksVO> usageNetworksVOs = listBy(sc);
+            for (UsageNetworksVO entry : usageNetworksVOs) {
+                entry.setRemoved(removed);
+                update(entry.getId(), entry);
             }
         } catch (final Exception e) {
             txn.rollback();
