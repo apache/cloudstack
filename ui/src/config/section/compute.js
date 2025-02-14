@@ -29,8 +29,7 @@ export default {
       title: 'label.instances',
       icon: 'cloud-server-outlined',
       docHelp: 'adminguide/virtual_machines.html',
-      permission: ['listVirtualMachines', 'listVirtualMachinesMetrics'],
-      getApiToCall: () => store.getters.metrics ? 'listVirtualMachinesMetrics' : 'listVirtualMachines',
+      permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
       params: () => {
         var params = { details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff' }
