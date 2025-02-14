@@ -40,7 +40,7 @@ import org.apache.commons.lang3.StringUtils;
 import javax.inject.Inject;
 
 @APICommand(name = "getUploadParamsForKubernetesSupportedVersion",
-        description = "Add a supported Kubernetes version",
+        description = "Upload a supported Kubernetes version",
         responseObject = KubernetesSupportedVersionResponse.class,
         responseView = ResponseObject.ResponseView.Full,
         entityType = {KubernetesSupportedVersion.class},

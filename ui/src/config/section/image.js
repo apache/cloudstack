@@ -396,11 +396,12 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/image/AddKubernetesSupportedVersion.vue')))
         },
         {
-          api: 'addKubernetesSupportedVersion',
+          api: 'getUploadParamsForKubernetesSupportedVersion',
           icon: 'cloud-upload-outlined',
           label: 'label.kubernetes.version.add.from.local',
           listView: true,
           popup: true,
+          show: isZoneCreated,
           component: shallowRef(defineAsyncComponent(() => import('@/views/image/AddKubernetesSupportedVersion.vue')))
         },
         {
