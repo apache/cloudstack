@@ -38,7 +38,7 @@ public class SearchCriteria<K> {
                 " NOT BETWEEN ? AND ? ",
                 2), IN(" IN () ", -1), NOTIN(" NOT IN () ", -1), LIKE(" LIKE ? ", 1), NLIKE(" NOT LIKE ? ", 1), NIN(" NOT IN () ", -1), NULL(" IS NULL ", 0), NNULL(
                 " IS NOT NULL ",
-                0), SC(" () ", 1), TEXT("  () ", 1), RP("", 0), AND(" AND ", 0), OR(" OR ", 0), NOT(" NOT ", 0), FIND_IN_SET(" ) ", 1);
+                0), SC(" () ", 1), TEXT("  () ", 1), RP("", 0), AND(" AND ", 0), OR(" OR ", 0), NOT(" NOT ", 0), FIND_IN_SET(" ) ", 1), BINARY_OR(" & ?) > 0", 1);
 
         private final String op;
         int params;
