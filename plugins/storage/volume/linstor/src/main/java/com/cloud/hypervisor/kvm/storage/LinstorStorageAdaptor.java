@@ -61,6 +61,11 @@ import com.linbit.linstor.api.model.Volume;
 import com.linbit.linstor.api.model.VolumeDefinition;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class LinstorStorageAdaptor implements StorageAdaptor {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -202,10 +207,10 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         final DevelopersApi api = getLinstorAPI(pool);
 
         try {
-            List<ResourceDefinition> definitionList = api.resourceDefinitionList(
-                Collections.singletonList(rscName), null, null, null);
+            ResourceDefinition resourceDefinition = LinstorUtil.findResourceDefinition(
+                    api, rscName, lpool.getResourceGroup());
 
-            if (definitionList.isEmpty()) {
+            if (resourceDefinition == null) {
                 ResourceGroupSpawn rgSpawn = new ResourceGroupSpawn();
                 rgSpawn.setResourceDefinitionName(rscName);
                 rgSpawn.addVolumeSizesItem(size / 1024); // linstor uses KiB
@@ -215,22 +220,28 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 handleLinstorApiAnswers(answers, "Linstor: Unable to spawn resource.");
             }
 
+            String foundRscName = resourceDefinition != null ? resourceDefinition.getName() : rscName;
+
             // query linstor for the device path
             List<ResourceWithVolumes> resources = api.viewResources(
                 Collections.emptyList(),
-                Collections.singletonList(rscName),
+                Collections.singletonList(foundRscName),
                 Collections.emptyList(),
                 null,
                 null,
                 null);
 
-            makeResourceAvailable(api, rscName, false);
+            makeResourceAvailable(api, foundRscName, false);
 
             if (!resources.isEmpty() && !resources.get(0).getVolumes().isEmpty()) {
                 final String devPath = resources.get(0).getVolumes().get(0).getDevicePath();
                 logger.info("Linstor: Created drbd device: " + devPath);
                 final KVMPhysicalDisk kvmDisk = new KVMPhysicalDisk(devPath, name, pool);
                 kvmDisk.setFormat(QemuImg.PhysicalDiskFormat.RAW);
+                long allocatedKib = resources.get(0).getVolumes().get(0).getAllocatedSizeKib() != null ?
+                        resources.get(0).getVolumes().get(0).getAllocatedSizeKib() : 0;
+                kvmDisk.setSize(allocatedKib >= 0 ? allocatedKib * 1024 : 0);
+                kvmDisk.setVirtualSize(size);
                 return kvmDisk;
             } else {
                 logger.error("Linstor: viewResources didn't return resources or volumes.");
@@ -410,7 +421,7 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
                 if (rsc.getFlags() != null &&
                         rsc.getFlags().contains(ApiConsts.FLAG_DRBD_DISKLESS) &&
                         !rsc.getFlags().contains(ApiConsts.FLAG_TIE_BREAKER)) {
-                    ApiCallRcList delAnswers = api.resourceDelete(rsc.getName(), localNodeName);
+                    ApiCallRcList delAnswers = api.resourceDelete(rsc.getName(), localNodeName, true);
                     logLinstorAnswers(delAnswers);
                 }
             } catch (ApiException apiEx) {
@@ -473,21 +484,56 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         return false;
     }
 
+    /**
+     * Decrements the aux property key for template resource and deletes or just deletes if not template resource.
+     * @param api
+     * @param rscName
+     * @param rscGrpName
+     * @return
+     * @throws ApiException
+     */
+    private boolean deRefOrDeleteResource(DevelopersApi api, String rscName, String rscGrpName) throws ApiException {
+        boolean deleted = false;
+        List<ResourceDefinition> existingRDs = LinstorUtil.getRDListStartingWith(api, rscName);
+        for (ResourceDefinition rd : existingRDs) {
+            int expectedProps = 0; // if it is a non template resource, we don't expect any _cs-template-for- prop
+            String propKey = LinstorUtil.getTemplateForAuxPropKey(rscGrpName);
+            if (rd.getProps().containsKey(propKey)) {
+                ResourceDefinitionModify rdm = new ResourceDefinitionModify();
+                rdm.deleteProps(Collections.singletonList(propKey));
+                api.resourceDefinitionModify(rd.getName(), rdm);
+                expectedProps = 1;
+            }
+
+            // if there is only one template-for property left for templates, the template isn't needed anymore
+            // or if it isn't a template anyway, it will not have this Aux property
+            // _cs-template-for- properties work like a ref-count.
+            if (rd.getProps().keySet().stream()
+                    .filter(key -> key.startsWith("Aux/" + LinstorUtil.CS_TEMPLATE_FOR_PREFIX))
+                    .count() == expectedProps) {
+                ApiCallRcList answers = api.resourceDefinitionDelete(rd.getName());
+                checkLinstorAnswersThrow(answers);
+                deleted = true;
+            }
+        }
+        return deleted;
+    }
+
     @Override
     public boolean deletePhysicalDisk(String name, KVMStoragePool pool, Storage.ImageFormat format)
     {
         logger.debug("Linstor: deletePhysicalDisk " + name);
         final DevelopersApi api = getLinstorAPI(pool);
+        final String rscName = getLinstorRscName(name);
+        final LinstorStoragePool linstorPool = (LinstorStoragePool) pool;
+        String rscGrpName = linstorPool.getResourceGroup();
 
         try {
-            final String rscName = getLinstorRscName(name);
-            logger.debug("Linstor: delete resource definition " + rscName);
-            ApiCallRcList answers = api.resourceDefinitionDelete(rscName);
-            handleLinstorApiAnswers(answers, "Linstor: Unable to delete resource definition " + rscName);
+            return deRefOrDeleteResource(api, rscName, rscGrpName);
         } catch (ApiException apiEx) {
+            logger.error("Linstor: ApiEx - " + apiEx.getMessage());
             throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
         }
-        return true;
     }
 
     @Override
@@ -561,6 +607,56 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
         return false;
     }
 
+    /**
+     * Checks if the given disk is the SystemVM template, by checking its properties file in the same directory.
+     * The initial systemvm template resource isn't created on the management server, but
+     * we now need to know if the systemvm template is used, while copying.
+     * @param disk
+     * @return True if it is the systemvm template disk, else false.
+     */
+    private static boolean isSystemTemplate(KVMPhysicalDisk disk) {
+        Path diskPath = Paths.get(disk.getPath());
+        Path propFile = diskPath.getParent().resolve("template.properties");
+        if (Files.exists(propFile)) {
+            java.util.Properties templateProps = new java.util.Properties();
+            try {
+                templateProps.load(new FileInputStream(propFile.toFile()));
+                String desc = templateProps.getProperty("description");
+                if (desc.startsWith("SystemVM Template")) {
+                    return true;
+                }
+            } catch (IOException e) {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Conditionally sets the correct aux properties for templates or basic resources.
+     * @param api
+     * @param srcDisk
+     * @param destPool
+     * @param name
+     */
+    private void setRscDfnAuxProperties(
+            DevelopersApi api, KVMPhysicalDisk srcDisk, KVMStoragePool destPool, String name) {
+        // if it is the initial systemvm disk copy, we need to apply the _cs-template-for property.
+        if (isSystemTemplate(srcDisk)) {
+            applyAuxProps(api, name, "SystemVM Template", null);
+            LinstorStoragePool linPool = (LinstorStoragePool) destPool;
+            final String rscName = getLinstorRscName(name);
+            try {
+                LinstorUtil.setAuxTemplateForProperty(api, rscName, linPool.getResourceGroup());
+            } catch (ApiException apiExc) {
+                logger.error("Error setting aux template for property for {}", rscName);
+                logLinstorAnswers(apiExc.getApiCallRcList());
+            }
+        } else {
+            applyAuxProps(api, name, srcDisk.getDispName(), srcDisk.getVmName());
+        }
+    }
+
     @Override
     public KVMPhysicalDisk copyPhysicalDisk(KVMPhysicalDisk disk, String name, KVMStoragePool destPools, int timeout, byte[] srcPassphrase, byte[] destPassphrase, Storage.ProvisioningType provisioningType)
     {
@@ -574,15 +670,14 @@ public class LinstorStorageAdaptor implements StorageAdaptor {
             name, QemuImg.PhysicalDiskFormat.RAW, provisioningType, disk.getVirtualSize(), null);
 
         final DevelopersApi api = getLinstorAPI(destPools);
-        applyAuxProps(api, name, disk.getDispName(), disk.getVmName());
+        setRscDfnAuxProperties(api, disk, destPools, name);
 
         logger.debug("Linstor.copyPhysicalDisk: dstPath: {}", dstDisk.getPath());
         final QemuImgFile destFile = new QemuImgFile(dstDisk.getPath());
         destFile.setFormat(dstDisk.getFormat());
         destFile.setSize(disk.getVirtualSize());
 
-        boolean zeroedDevice = resourceSupportZeroBlocks(destPools, LinstorUtil.RSC_PREFIX + name);
-
+        boolean zeroedDevice = resourceSupportZeroBlocks(destPools, getLinstorRscName(name));
         try {
             final QemuImg qemu = new QemuImg(timeout, zeroedDevice, true);
             qemu.convert(srcFile, destFile);

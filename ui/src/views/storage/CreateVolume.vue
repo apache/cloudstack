@@ -116,6 +116,48 @@
             :placeholder="apiParams.maxiops.description"/>
         </a-form-item>
       </span>
+      <a-form-item name="attachVolume" ref="attachVolume" v-if="!createVolumeFromVM">
+        <template #label>
+          <tooltip-label :title="$t('label.action.attach.to.instance')" :tooltip="$t('label.attach.vol.to.instance')" />
+        </template>
+        <a-switch v-model:checked="form.attachVolume" :checked="attachVolume" @change="zone => onChangeAttachToVM(zone.id)" />
+      </a-form-item>
+      <span v-if="attachVolume">
+        <a-form-item :label="$t('label.virtualmachineid')" name="virtualmachineid" ref="virtualmachineid">
+          <a-select
+            v-focus="true"
+            v-model:value="form.virtualmachineid"
+            :placeholder="attachVolumeApiParams.virtualmachineid.description"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="vm in virtualmachines" :key="vm.id" :label="vm.name || vm.displayname">
+              {{ vm.name || vm.displayname }}
+            </a-select-option>
+          </a-select>
+        </a-form-item >
+        <a-form-item :label="$t('label.deviceid')">
+          <div style="margin-bottom: 10px">
+            <a-collapse>
+              <a-collapse-panel header="More information about deviceID">
+                <a-alert type="warning">
+                  <template #message>
+                    <span v-html="attachVolumeApiParams.deviceid.description" />
+                  </template>
+                </a-alert>
+              </a-collapse-panel>
+            </a-collapse>
+          </div>
+          <a-input-number
+            v-model:value="form.deviceid"
+            style="width: 100%;"
+            :min="0"
+            :placeholder="$t('label.deviceid')"
+          />
+        </a-form-item>
+      </span>
       <div :span="24" class="action-button">
         <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
         <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -159,7 +201,10 @@ export default {
       offerings: [],
       customDiskOffering: false,
       loading: false,
-      isCustomizedDiskIOps: false
+      isCustomizedDiskIOps: false,
+      virtualmachines: [],
+      attachVolume: false,
+      vmidtoattach: null
     }
   },
   computed: {
@@ -204,6 +249,10 @@ export default {
           }
         }]
       })
+      if (this.attachVolume) {
+        this.rules.virtualmachineid = [{ required: true, message: this.$t('message.error.select') }]
+        this.rules.deviceid = [{ required: true, message: this.$t('message.error.select') }]
+      }
       if (!this.createVolumeFromSnapshot) {
         this.rules.name = [{ required: true, message: this.$t('message.error.volume.name') }]
         this.rules.diskofferingid = [{ required: true, message: this.$t('message.error.select') }]
@@ -248,6 +297,9 @@ export default {
         this.zones = json.listzonesresponse.zone || []
         this.form.zoneid = this.zones[0].id || ''
         this.fetchDiskOfferings(this.form.zoneid)
+        if (this.attachVolume) {
+          this.fetchVirtualMachines(this.form.zoneid)
+        }
       }).finally(() => {
         this.loading = false
       })
@@ -301,6 +353,31 @@ export default {
         this.loading = false
       })
     },
+    fetchVirtualMachines (zoneId) {
+      var params = {
+        zoneid: zoneId,
+        details: 'min'
+      }
+      if (this.owner.projectid) {
+        params.projectid = this.owner.projectid
+      } else {
+        params.account = this.owner.account
+        params.domainid = this.owner.domainid
+      }
+
+      this.loading = true
+      var vmStates = ['Running', 'Stopped']
+      vmStates.forEach((state) => {
+        params.state = state
+        api('listVirtualMachines', params).then(response => {
+          this.virtualmachines = this.virtualmachines.concat(response.listvirtualmachinesresponse.virtualmachine || [])
+        }).catch(error => {
+          this.$notifyError(error)
+        }).finally(() => {
+          this.loading = false
+        })
+      })
+    },
     handleSubmit (e) {
       if (this.loading) return
       this.formRef.value.validate().then(() => {
@@ -314,6 +391,10 @@ export default {
         }
         if (this.createVolumeFromSnapshot) {
           values.snapshotid = this.resource.id
+        }
+        if (this.attachVolume) {
+          this.vmidtoattach = values.virtualmachineid
+          values.virtualmachineid = null
         }
         values.domainid = this.owner.domainid
         if (this.owner.projectid) {
@@ -330,10 +411,15 @@ export default {
             successMessage: this.$t('message.success.create.volume'),
             successMethod: (result) => {
               this.closeModal()
-              if (this.createVolumeFromVM) {
+              if (this.createVolumeFromVM || this.attachVolume) {
                 const params = {}
                 params.id = result.jobresult.volume.id
-                params.virtualmachineid = this.resource.id
+                if (this.createVolumeFromVM) {
+                  params.virtualmachineid = this.resource.id
+                } else {
+                  params.virtualmachineid = this.vmidtoattach
+                  params.deviceid = values.deviceid
+                }
                 api('attachVolume', params).then(response => {
                   this.$pollJob({
                     jobId: response.attachvolumeresponse.jobid,
@@ -368,6 +454,14 @@ export default {
       const offering = this.offerings.filter(x => x.id === id)
       this.customDiskOffering = offering[0]?.iscustomized || false
       this.isCustomizedDiskIOps = offering[0]?.iscustomizediops || false
+    },
+    onChangeAttachToVM (zone) {
+      this.attachVolume = !this.attachVolume
+      this.virtualmachines = []
+      if (this.attachVolume) {
+        this.attachVolumeApiParams = this.$getApiParams('attachVolume')
+        this.fetchVirtualMachines(this.form.zoneid)
+      }
     }
   }
 }

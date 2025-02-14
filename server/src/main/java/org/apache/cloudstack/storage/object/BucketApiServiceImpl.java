@@ -19,9 +19,12 @@ package org.apache.cloudstack.storage.object;
 import com.amazonaws.services.s3.internal.BucketNameUtils;
 import com.amazonaws.services.s3.model.IllegalBucketNameException;
 import com.cloud.agent.api.to.BucketTO;
+import com.cloud.configuration.Resource;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.resourcelimit.ResourceLimitManagerImpl;
 import com.cloud.storage.BucketVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.dao.BucketDao;
@@ -60,6 +63,8 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
     private BucketDao _bucketDao;
     @Inject
     private AccountManager _accountMgr;
+    @Inject
+    private ResourceLimitManagerImpl resourceLimitManager;
 
     @Inject
     private BucketStatisticsDao _bucketStatisticsDao;
@@ -98,12 +103,18 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {
+                DefaultMaxAccountBuckets,
+                DefaultMaxAccountObjectStorage,
+                DefaultMaxProjectBuckets,
+                DefaultMaxProjectObjectStorage,
+                DefaultMaxDomainBuckets,
+                DefaultMaxDomainObjectStorage
         };
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_BUCKET_CREATE, eventDescription = "creating bucket", create = true)
-    public Bucket allocBucket(CreateBucketCmd cmd) {
+    public Bucket allocBucket(CreateBucketCmd cmd) throws ResourceAllocationException {
         try {
             BucketNameUtils.validateBucketName(cmd.getBucketName());
         } catch (IllegalBucketNameException e) {
@@ -124,6 +135,9 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
             logger.error("Error while checking object store user.", e);
             return null;
         }
+
+        resourceLimitManager.checkResourceLimit(owner, Resource.ResourceType.bucket);
+        resourceLimitManager.checkResourceLimit(owner, Resource.ResourceType.object_storage, (cmd.getQuota() * Resource.ResourceType.bytesToGiB));
 
         BucketVO bucket = new BucketVO(ownerId, owner.getDomainId(), cmd.getObjectStoragePoolId(), cmd.getBucketName(), cmd.getQuota(),
                                     cmd.isVersioning(), cmd.isEncryption(), cmd.isObjectLocking(), cmd.getPolicy());
@@ -146,6 +160,7 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         try {
             bucketTO = new BucketTO(objectStore.createBucket(bucket, objectLock));
             bucketCreated = true;
+            resourceLimitManager.incrementResourceCount(bucket.getAccountId(), Resource.ResourceType.bucket);
 
             if (cmd.isVersioning()) {
                 objectStore.setBucketVersioning(bucketTO);
@@ -157,6 +172,7 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
 
             if (cmd.getQuota() != null) {
                 objectStore.setQuota(bucketTO, cmd.getQuota());
+                resourceLimitManager.incrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, (cmd.getQuota() * Resource.ResourceType.bytesToGiB));
             }
 
             if (cmd.getPolicy() != null) {
@@ -188,6 +204,8 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
         if (objectStore.deleteBucket(bucketTO)) {
+            resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.bucket);
+            resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, (bucket.getQuota() * Resource.ResourceType.bytesToGiB));
             return _bucketDao.remove(bucketId);
         }
         return false;
@@ -195,7 +213,7 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_BUCKET_UPDATE, eventDescription = "updating bucket")
-    public boolean updateBucket(UpdateBucketCmd cmd, Account caller) {
+    public boolean updateBucket(UpdateBucketCmd cmd, Account caller) throws ResourceAllocationException {
         BucketVO bucket = _bucketDao.findById(cmd.getId());
         BucketTO bucketTO = new BucketTO(bucket);
         if (bucket == null) {
@@ -204,6 +222,17 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
         _accountMgr.checkAccess(caller, null, true, bucket);
         ObjectStoreVO objectStoreVO = _objectStoreDao.findById(bucket.getObjectStoreId());
         ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
+        Integer quota = cmd.getQuota();
+        Integer quotaDelta = null;
+
+        if (quota != null) {
+            quotaDelta = quota - bucket.getQuota();
+            if (quotaDelta > 0) {
+                Account owner = _accountMgr.getActiveAccountById(bucket.getAccountId());
+                resourceLimitManager.checkResourceLimit(owner, Resource.ResourceType.object_storage, (quotaDelta * Resource.ResourceType.bytesToGiB));
+            }
+        }
+
         try {
             if (cmd.getEncryption() != null) {
                 if (cmd.getEncryption()) {
@@ -231,6 +260,11 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
             if (cmd.getQuota() != null) {
                 objectStore.setQuota(bucketTO, cmd.getQuota());
                 bucket.setQuota(cmd.getQuota());
+                if (quotaDelta > 0) {
+                    resourceLimitManager.incrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, (quotaDelta * Resource.ResourceType.bytesToGiB));
+                } else {
+                    resourceLimitManager.decrementResourceCount(bucket.getAccountId(), Resource.ResourceType.object_storage, ((-quotaDelta) * Resource.ResourceType.bytesToGiB));
+                }
             }
             _bucketDao.update(bucket.getId(), bucket);
         } catch (Exception e) {

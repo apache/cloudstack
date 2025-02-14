@@ -68,7 +68,7 @@ public class ListVsphereStoragePolicyCompatiblePoolsCmd extends BaseListCmd {
         List<StoragePoolResponse> poolResponses = new ArrayList<>();
         for (StoragePool pool : pools) {
             StoragePoolResponse poolResponse = _responseGenerator.createStoragePoolForMigrationResponse(pool);
-            poolResponse.setObjectName("storagepool");
+            poolResponse.setObjectName(ApiConstants.STORAGE_POOL);
             poolResponses.add(poolResponse);
         }
         response.setResponses(poolResponses);

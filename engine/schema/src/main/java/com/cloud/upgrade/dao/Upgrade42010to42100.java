@@ -17,10 +17,16 @@
 package com.cloud.upgrade.dao;
 
 import com.cloud.upgrade.SystemVmTemplateRegistration;
+import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.List;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 public class Upgrade42010to42100 extends DbUpgradeAbstractImpl implements DbUpgrade, DbUpgradeSystemVmTemplate {
     private SystemVmTemplateRegistration systemVmTemplateRegistration;
@@ -53,6 +59,7 @@ public class Upgrade42010to42100 extends DbUpgradeAbstractImpl implements DbUpgr
 
     @Override
     public void performDataMigration(Connection conn) {
+        migrateConfigurationScopeToBitmask(conn);
     }
 
     @Override
@@ -78,6 +85,37 @@ public class Upgrade42010to42100 extends DbUpgradeAbstractImpl implements DbUpgr
             systemVmTemplateRegistration.updateSystemVmTemplates(conn);
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
+        }
+    }
+
+    protected void migrateConfigurationScopeToBitmask(Connection conn) {
+        String scopeDataType = DbUpgradeUtils.getTableColumnType(conn, "configuration", "scope");
+        logger.info("Data type of the column scope of table configuration is {}", scopeDataType);
+        if (!"varchar(255)".equals(scopeDataType)) {
+            return;
+        }
+        DbUpgradeUtils.addTableColumnIfNotExist(conn, "configuration", "new_scope", "BIGINT DEFAULT 0");
+        migrateExistingConfigurationScopeValues(conn);
+        DbUpgradeUtils.dropTableColumnsIfExist(conn, "configuration", List.of("scope"));
+        DbUpgradeUtils.changeTableColumnIfNotExist(conn, "configuration", "new_scope", "scope", "BIGINT NOT NULL DEFAULT 0 COMMENT 'Bitmask for scope(s) of this parameter'");
+    }
+
+    protected void migrateExistingConfigurationScopeValues(Connection conn) {
+        StringBuilder sql = new StringBuilder("UPDATE configuration\n" +
+                "SET new_scope = " +
+                "    CASE ");
+        for (ConfigKey.Scope scope : ConfigKey.Scope.values()) {
+            sql.append("        WHEN scope = '").append(scope.name()).append("' THEN ").append(scope.getBitValue()).append(" ");
+        }
+        sql.append("        ELSE 0 " +
+                "    END " +
+                "WHERE scope IS NOT NULL;");
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try (PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql.toString())) {
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            logger.error("Failed to migrate existing configuration scope values to bitmask", e);
+            throw new CloudRuntimeException(String.format("Failed to migrate existing configuration scope values to bitmask due to: %s", e.getMessage()));
         }
     }
 }

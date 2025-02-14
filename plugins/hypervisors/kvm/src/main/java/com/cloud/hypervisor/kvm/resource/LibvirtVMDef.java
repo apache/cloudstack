@@ -248,7 +248,7 @@ public class LibvirtVMDef {
                         guestDef.append("<boot dev='" + bo + "'/>\n");
                     }
                 }
-                if (!(_arch != null && _arch.equals("s390x"))) {
+                if (_arch == null || ! (_arch.equals("aarch64") || _arch.equals("s390x"))) { // simplification of (as ref.) (!(_arch != null && _arch.equals("s390x")) || (_arch == null || !_arch.equals("aarch64")))
                     guestDef.append("<smbios mode='sysinfo'/>\n");
                 }
                 guestDef.append("</os>\n");
@@ -680,7 +680,7 @@ public class LibvirtVMDef {
         }
 
         public enum DiskBus {
-            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML("uml"), FDC("fdc"), SATA("sata");
+            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML("uml"), FDC("fdc"), SATA("sata"), VIRTIOBLK("virtio-blk");
             String _bus;
 
             DiskBus(String bus) {

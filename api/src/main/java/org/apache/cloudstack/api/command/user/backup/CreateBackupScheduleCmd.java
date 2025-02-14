@@ -75,6 +75,12 @@ public class CreateBackupScheduleCmd extends BaseCmd {
             description = "Specifies a timezone for this command. For more information on the timezone parameter, see TimeZone Format.")
     private String timezone;
 
+    @Parameter(name = ApiConstants.MAX_BACKUPS,
+            type = CommandType.INTEGER,
+            description = "maximum number of backups to retain",
+            since = "4.21.0")
+    private Integer maxBackups;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -93,6 +99,10 @@ public class CreateBackupScheduleCmd extends BaseCmd {
 
     public String getTimezone() {
         return timezone;
+    }
+
+    public Integer getMaxBackups() {
+        return maxBackups;
     }
 
     /////////////////////////////////////////////////////
