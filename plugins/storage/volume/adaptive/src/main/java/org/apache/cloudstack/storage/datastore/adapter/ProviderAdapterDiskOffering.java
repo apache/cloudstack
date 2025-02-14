@@ -166,7 +166,7 @@ public class ProviderAdapterDiskOffering {
     }
 
     enum DiskCacheMode {
-        HYPERVISOR_DEFAULT("hypervisor_default"), NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough");
+        NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough"), HYPERVISOR_DEFAULT("hypervisor_default");
 
         private final String _diskCacheMode;
 
