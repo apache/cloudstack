@@ -125,7 +125,7 @@
       </div>
       <div
         v-if="selectedExistingVcenterId || (vcenterSelectedOption === 'new')">
-        <a-form-item :label="$t('label.vcenter.host')" ref="host" name="host" v-if="hosts.length > 0">
+        <a-form-item :label="$t('label.esx.host')" ref="host" name="host" v-if="hosts.length > 0">
           <a-select
             v-model:value="form.host"
             :loading="loading"
@@ -133,7 +133,7 @@
             :filterOption="(input, option) => {
               return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            :placeholder="$t('label.vcenter.host')"
+            :placeholder="$t('label.esx.host')"
             @change="onSelectExistingVmwareHost">
             <a-select-option key="" label="">{{ }}</a-select-option>
             <a-select-option v-for="opt in hosts" :key="opt.name">
