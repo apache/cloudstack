@@ -303,6 +303,7 @@ export default {
         if (doNotify) {
           this.$notifyError(error)
         }
+        this.hosts = []
         return false
       }).finally(() => {
         this.loading = false
