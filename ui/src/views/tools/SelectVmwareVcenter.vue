@@ -135,6 +135,7 @@
             }"
             :placeholder="$t('label.vcenter.host')"
             @change="onSelectExistingVmwareHost">
+            <a-select-option key="" label="">{{ }}</a-select-option>
             <a-select-option v-for="opt in hosts" :key="opt.name">
                 {{ 'ESXi: ' + opt.name }}
             </a-select-option>
@@ -283,7 +284,7 @@ export default {
         this.loading = false
       })
     },
-    listZoneVmwareDcHosts () {
+    listZoneVmwareDcHosts (doNotify) {
       this.loading = true
       const params = {}
       if (this.vcenterSelectedOption === 'new') {
@@ -299,18 +300,22 @@ export default {
           this.hosts = response.listvmwaredchostsresponse.host
         }
       }).catch(error => {
-        this.$notifyError(error)
+        if (doNotify) {
+          this.$notifyError(error)
+        }
+        return false
       }).finally(() => {
         this.loading = false
+        return true
       })
     },
     onSelectExistingVmwareDatacenter (value) {
       this.selectedExistingVcenterId = value
-      this.listZoneVmwareDcHosts()
+      this.listZoneVmwareDcHosts(true)
     },
     onSelectExternalVmwareDatacenter (value) {
       if (this.vcenterSelectedOption === 'new' && !(this.vcenter === '' || this.datacentername === '' || this.username === '' || this.password === '')) {
-        this.listZoneVmwareDcHosts()
+        this.listZoneVmwareDcHosts(false)
       }
     },
     onSelectExistingVmwareHost (value) {
