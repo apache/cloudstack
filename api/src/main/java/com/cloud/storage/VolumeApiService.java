@@ -133,13 +133,13 @@ public interface VolumeApiService {
     Snapshot allocSnapshotForVm(Long vmId, Long volumeId, String snapshotName) throws ResourceAllocationException;
 
     /**
-     *  Checks if the target storage supports the disk offering.
+     *  Checks if the storage pool supports the disk offering tags.
      *  This validation is consistent with the mechanism used to select a storage pool to deploy a volume when a virtual machine is deployed or when a data disk is allocated.
      *
      *  The scenarios when this method returns true or false is presented in the following table.
      *   <table border="1">
      *      <tr>
-     *          <th>#</th><th>Disk offering tags</th><th>Storage tags</th><th>Does the storage support the disk offering?</th>
+     *          <th>#</th><th>Disk offering diskOfferingTags</th><th>Storage diskOfferingTags</th><th>Does the storage support the disk offering?</th>
      *      </tr>
      *      <body>
      *      <tr>
@@ -163,7 +163,7 @@ public interface VolumeApiService {
      *      </body>
      *   </table>
      */
-    boolean doesTargetStorageSupportDiskOffering(StoragePool destPool, String diskOfferingTags);
+    boolean doesStoragePoolSupportDiskOfferingTags(StoragePool destPool, String diskOfferingTags);
 
     Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge);
 

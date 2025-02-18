@@ -205,7 +205,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         if (diskOffering.isCustomized()) {
             volumeApiService.validateCustomDiskOfferingSizeRange(volume.getVirtualSize() / ByteScaleUtils.GiB);
         }
-        if (!volumeApiService.doesTargetStorageSupportDiskOffering(pool, diskOffering.getTags())) {
+        if (!volumeApiService.doesStoragePoolSupportDiskOfferingTags(pool, diskOffering.getTags())) {
             logFailureAndThrowException(String.format("Disk offering: %s storage tags are not compatible with selected storage pool: %s", diskOffering.getUuid(), pool.getUuid()));
         }
 
