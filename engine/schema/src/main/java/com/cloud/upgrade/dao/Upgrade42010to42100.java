@@ -27,8 +27,6 @@ import java.time.LocalDate;
 import java.util.UUID;
 import java.io.InputStream;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.List;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -62,7 +60,7 @@ public class Upgrade42010to42100 extends DbUpgradeAbstractImpl implements DbUpgr
         return new InputStream[] {script};
     }
 
-    private void performKeyPairMigration(Connection conn) throws SQLException {
+    protected void performKeyPairMigration(Connection conn) throws SQLException {
         try {
             logger.debug("Performing keypair migration from user table to api_keypair table.");
             PreparedStatement pstmt = conn.prepareStatement("SELECT u.id, u.api_key, u.secret_key, a.domain_id, u.id FROM `cloud`.`user` AS u JOIN `cloud`.`account` AS a " +
