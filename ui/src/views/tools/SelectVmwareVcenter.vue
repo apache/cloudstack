@@ -119,7 +119,7 @@
           <a-input-password
             v-model:value="password"
             :placeholder="apiParams.password.description"
-            @change="onSelectExternalVmwareDatacenter"
+            @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
       </div>
