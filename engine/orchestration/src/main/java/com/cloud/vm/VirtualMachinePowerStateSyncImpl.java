@@ -77,8 +77,8 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
         processReport(hostId, translatedInfo, force);
     }
 
-    private void updateAndPublishVmPowerStates(long hostId, Map<Long, VirtualMachine.PowerState> instancePowerStates,
-           Date updateTime) {
+    protected void updateAndPublishVmPowerStates(long hostId, Map<Long, VirtualMachine.PowerState> instancePowerStates,
+               Date updateTime) {
         if (instancePowerStates.isEmpty()) {
             return;
         }
