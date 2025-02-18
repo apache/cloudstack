@@ -752,7 +752,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         if (cmdObj instanceof BaseAsyncCmd) {
             if (!asyncMgr.isAsyncJobsEnabled()) {
                 String msg = "Maintenance or Shutdown has been initiated on this management server. Can not accept new jobs";
-                s_logger.warn(msg);
+                logger.warn(msg);
                 throw new ServerApiException(ApiErrorCode.SERVICE_UNAVAILABLE, msg);
             }
             Long objectId = null;
