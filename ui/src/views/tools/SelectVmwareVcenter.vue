@@ -284,7 +284,7 @@ export default {
         this.loading = false
       })
     },
-    listZoneVmwareDcHosts (doNotify) {
+    loadZoneVmwareDcHosts (doNotify) {
       this.loading = true
       const params = {}
       if (this.vcenterSelectedOption === 'new') {
@@ -312,11 +312,11 @@ export default {
     },
     onSelectExistingVmwareDatacenter (value) {
       this.selectedExistingVcenterId = value
-      this.listZoneVmwareDcHosts(true)
+      this.loadZoneVmwareDcHosts(true)
     },
     onSelectExternalVmwareDatacenter (value) {
       if (this.vcenterSelectedOption === 'new' && !(this.vcenter === '' || this.datacentername === '' || this.username === '' || this.password === '')) {
-        this.listZoneVmwareDcHosts(false)
+        this.loadZoneVmwareDcHosts(false)
       }
     },
     onSelectExistingVmwareHost (value) {
