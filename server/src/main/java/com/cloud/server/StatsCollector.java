@@ -837,8 +837,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             newEntry.setLastAgents(_agentMgr.getLastAgents());
             List<String> agents = _hostDao.listByMs(msid);
             newEntry.setAgents(agents);
-            int count = _hostDao.countByMs(msid);
-            newEntry.setAgentCount(count);
+            newEntry.setAgentCount(agents.size());
         }
 
         private void getMemoryData(@NotNull ManagementServerHostStatsEntry newEntry) {
