@@ -304,10 +304,9 @@ export default {
           this.$notifyError(error)
         }
         this.hosts = []
-        return false
+        return
       }).finally(() => {
         this.loading = false
-        return true
       })
     },
     onSelectExistingVmwareDatacenter (value) {
