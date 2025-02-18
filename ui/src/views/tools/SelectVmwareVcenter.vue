@@ -89,7 +89,8 @@
           <a-input
             v-model:value="vcenter"
             :placeholder="apiParams.vcenter.description"
-            @change="onSelectExternalVmwareDatacenter"
+            @blur="onSelectExternalVmwareDatacenter"
+            @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
         <a-form-item ref="datacenter" name="datacenter">
@@ -99,7 +100,8 @@
           <a-input
             v-model:value="datacenter"
             :placeholder="apiParams.datacentername.description"
-            @change="onSelectExternalVmwareDatacenter"
+            @blur="onSelectExternalVmwareDatacenter"
+            @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
         <a-form-item ref="username" name="username">
@@ -109,16 +111,20 @@
           <a-input
             v-model:value="username"
             :placeholder="apiParams.username.description"
-            @change="onSelectExternalVmwareDatacenter"
+            @blur="onSelectExternalVmwareDatacenter"
+            @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
         <a-form-item ref="password" name="password">
           <template #label>
             <tooltip-label :title="$t('label.vcenter.password')" :tooltip="apiParams.password.description"/>
+            &nbsp;
+            <tooltip-label :title="'press enter when done.'"/>
           </template>
           <a-input-password
             v-model:value="password"
             :placeholder="apiParams.password.description"
+            @blur="onSelectExternalVmwareDatacenter"
             @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
