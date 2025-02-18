@@ -53,6 +53,8 @@ import com.cloud.agent.api.Command;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.host.dao.HostDao;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.StringUtils;
@@ -284,6 +286,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_MS_SHUTDOWN_PREPARE, eventDescription = "preparing for shutdown")
     public ManagementServerMaintenanceResponse prepareForShutdown(PrepareForShutdownCmd cmd) {
         ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
         if (msHost == null) {
@@ -303,6 +306,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_MS_SHUTDOWN, eventDescription = "triggering shutdown")
     public ManagementServerMaintenanceResponse triggerShutdown(TriggerShutdownCmd cmd) {
         ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
         if (msHost == null) {
@@ -327,6 +331,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_MS_SHUTDOWN_CANCEL, eventDescription = "cancelling shutdown")
     public ManagementServerMaintenanceResponse cancelShutdown(CancelShutdownCmd cmd) {
         ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
         if (msHost == null) {
@@ -346,6 +351,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_MS_MAINTENANCE_PREPARE, eventDescription = "preparing for maintenance")
     public ManagementServerMaintenanceResponse prepareForMaintenance(PrepareForMaintenanceCmd cmd) {
         if (StringUtils.isNotBlank(cmd.getAlgorithm())) {
             indirectAgentLB.checkLBAlgorithmName(cmd.getAlgorithm());
@@ -396,6 +402,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_MS_MAINTENANCE_CANCEL, eventDescription = "cancelling maintenance")
     public ManagementServerMaintenanceResponse cancelMaintenance(CancelMaintenanceCmd cmd) {
         ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
         if (msHost == null) {
