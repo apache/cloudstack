@@ -48,8 +48,8 @@ public class VirtualMachinePowerStateSyncImplTest {
 
     @Before
     public void setup() {
-        Mockito.when(instanceDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(VMInstanceVO.class));
-        Mockito.when(hostDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(HostVO.class));
+        Mockito.lenient().when(instanceDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(VMInstanceVO.class));
+        Mockito.lenient().when(hostDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(HostVO.class));
     }
 
     @Test
