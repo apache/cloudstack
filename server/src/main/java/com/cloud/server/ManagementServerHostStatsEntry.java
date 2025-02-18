@@ -19,11 +19,13 @@
 package com.cloud.server;
 
 import java.util.Date;
+import java.util.List;
 
 public class ManagementServerHostStatsEntry implements ManagementServerHostStats {
 
     private long managementServerHostId;
     private String managementServerHostUuid;
+    private long managementServerRunId;
 
     private Date collectionTime;
     private long sessions;
@@ -44,6 +46,8 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     private String jvmVendor;
     private String jvmVersion;
     private String osDistribution;
+    private List<String> lastAgents;
+    private List<String> agents;
     private int agentCount;
 
     private long heapMemoryUsed;
@@ -92,6 +96,15 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
 
     public void setManagementServerHostUuid(String managementServerHostUuid) {
         this.managementServerHostUuid = managementServerHostUuid;
+    }
+
+    @Override
+    public long getManagementServerRunId() {
+        return managementServerRunId;
+    }
+
+    public void setManagementServerRunId(long managementServerRunId) {
+        this.managementServerRunId = managementServerRunId;
     }
 
     @Override
@@ -190,6 +203,16 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
     }
 
     @Override
+    public List<String> getLastAgents() {
+        return lastAgents;
+    }
+
+    @Override
+    public List<String> getAgents() {
+        return agents;
+    }
+
+    @Override
     public int getAgentCount() {
         return agentCount;
     }
@@ -278,6 +301,14 @@ public class ManagementServerHostStatsEntry implements ManagementServerHostStats
 
     public void setOsDistribution(String osDistribution) {
         this.osDistribution = osDistribution;
+    }
+
+    public void setLastAgents(List<String> lastAgents) {
+        this.lastAgents = lastAgents;
+    }
+
+    public void setAgents(List<String> agents) {
+        this.agents = agents;
     }
 
     public void setAgentCount(int agentCount) {

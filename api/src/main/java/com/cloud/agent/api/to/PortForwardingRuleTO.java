@@ -19,6 +19,9 @@ package com.cloud.agent.api.to;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.PortForwardingRule;
 import com.cloud.utils.net.NetUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.List;
 
 /**
  * PortForwardingRuleTO specifies one port forwarding rule.
@@ -29,6 +32,8 @@ public class PortForwardingRuleTO extends FirewallRuleTO {
     String dstIp;
     int[] dstPortRange;
 
+    List<String> sourceCidrList;
+
     protected PortForwardingRuleTO() {
         super();
     }
@@ -37,6 +42,7 @@ public class PortForwardingRuleTO extends FirewallRuleTO {
         super(rule, srcVlanTag, srcIp);
         this.dstIp = rule.getDestinationIpAddress().addr();
         this.dstPortRange = new int[] {rule.getDestinationPortStart(), rule.getDestinationPortEnd()};
+        this.sourceCidrList = rule.getSourceCidrList();
     }
 
     public PortForwardingRuleTO(long id, String srcIp, int srcPortStart, int srcPortEnd, String dstIp, int dstPortStart, int dstPortEnd, String protocol,
@@ -56,6 +62,13 @@ public class PortForwardingRuleTO extends FirewallRuleTO {
 
     public String getStringDstPortRange() {
         return NetUtils.portRangeToString(dstPortRange);
+    }
+
+    public String getSourceCidrListAsString() {
+        if (sourceCidrList != null) {
+            return StringUtils.join(sourceCidrList, ",");
+        }
+        return null;
     }
 
 }

@@ -27,6 +27,7 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
+import com.cloud.network.dao.PhysicalNetworkDao;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -123,6 +124,8 @@ public class LoadBalanceRuleHandler {
     private final DataCenterDao _dcDao = null;
     @Inject
     private IpAddressManager _ipAddrMgr;
+    @Inject
+    private PhysicalNetworkDao physicalNetworkDao;
     @Inject
     protected NetworkDao _networkDao;
     @Inject
@@ -230,7 +233,7 @@ public class LoadBalanceRuleHandler {
         guestNetwork = _networkDao.acquireInLockTable(guestNetworkId);
 
         if (guestNetwork == null) {
-            throw new ConcurrentOperationException("Unable to acquire network lock: " + guestNetworkId);
+            throw new ConcurrentOperationException(String.format("Unable to acquire lock for the network: %s", guestNetwork));
         }
 
         try {
@@ -272,11 +275,12 @@ public class LoadBalanceRuleHandler {
                 final Long physicalNetworkId = _networkModel.getPhysicalNetworkId(guestNetwork);
                 final PhysicalNetworkServiceProvider provider = _physicalProviderDao.findByServiceProvider(physicalNetworkId, typeString);
                 if (provider == null) {
-                    throw new CloudRuntimeException("Cannot find service provider " + typeString + " in physical network " + physicalNetworkId);
+                    throw new CloudRuntimeException(String.format("Cannot find service provider %s in physical network %s with id %d",
+                            typeString, physicalNetworkDao.findById(physicalNetworkId), physicalNetworkId));
                 }
                 final VirtualRouterProvider vrProvider = _vrProviderDao.findByNspIdAndType(provider.getId(), Type.ElasticLoadBalancerVm);
                 if (vrProvider == null) {
-                    throw new CloudRuntimeException("Cannot find virtual router provider " + typeString + " as service provider " + provider.getId());
+                    throw new CloudRuntimeException(String.format("Cannot find virtual router provider %s as service provider %s", typeString, provider));
                 }
 
                 long userId = CallContext.current().getCallingUserId();
@@ -314,7 +318,7 @@ public class LoadBalanceRuleHandler {
         final IPAddressVO ipvo = _ipAddressDao.findById(ipId);
         ipvo.setAssociatedWithNetworkId(null);
         _ipAddressDao.update(ipvo.getId(), ipvo);
-        _ipAddrMgr.disassociatePublicIpAddress(ipId, userId, caller);
+        _ipAddrMgr.disassociatePublicIpAddress(ipvo, userId, caller);
         _ipAddressDao.unassignIpAddress(ipId);
     }
 

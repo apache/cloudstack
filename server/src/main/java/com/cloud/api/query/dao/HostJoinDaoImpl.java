@@ -58,6 +58,8 @@ import com.cloud.storage.StorageStats;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements HostJoinDao {
@@ -72,6 +74,8 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     private OutOfBandManagementDao outOfBandManagementDao;
     @Inject
     private ManagementServerHostDao managementServerHostDao;
+    @Inject
+    private VMInstanceDao virtualMachineDao;
     @Inject
     private AnnotationDao annotationDao;
     @Inject
@@ -113,9 +117,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         return result;
     }
 
-    @Override
-    public HostResponse newHostResponse(HostJoinVO host, EnumSet<HostDetails> details) {
-        HostResponse hostResponse = new HostResponse();
+    private void setNewHostResponseBase(HostJoinVO host, EnumSet<HostDetails> details, HostResponse hostResponse) {
         hostResponse.setId(host.getUuid());
         hostResponse.setCapabilities(host.getCapabilities());
         hostResponse.setClusterId(host.getClusterUuid());
@@ -128,12 +130,19 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             hostResponse.setHypervisor(hypervisorType);
         }
         hostResponse.setHostType(host.getType());
+        if (host.getType().equals(Host.Type.ConsoleProxy) || host.getType().equals(Host.Type.SecondaryStorageVM)) {
+            VMInstanceVO vm = virtualMachineDao.findVMByInstanceNameIncludingRemoved(host.getName());
+            if (vm != null) {
+                hostResponse.setVirtualMachineId(vm.getUuid());
+            }
+        }
         hostResponse.setLastPinged(new Date(host.getLastPinged()));
         Long mshostId = host.getManagementServerId();
         if (mshostId != null) {
             ManagementServerHostVO managementServer = managementServerHostDao.findByMsid(host.getManagementServerId());
             if (managementServer != null) {
                 hostResponse.setManagementServerId(managementServer.getUuid());
+                hostResponse.setManagementServerName(managementServer.getName());
             }
         }
         hostResponse.setName(host.getName());
@@ -187,7 +196,6 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         DecimalFormat decimalFormat = new DecimalFormat("#.##");
         if (host.getType() == Host.Type.Routing) {
             float cpuOverprovisioningFactor = ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId());
-            hostResponse.setCpuNumber((int)(host.getCpus() * cpuOverprovisioningFactor));
             if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity)) {
                 // set allocated capacities
                 Long mem = host.getMemReservedCapacity() + host.getMemUsedCapacity();
@@ -298,124 +306,19 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         hostResponse.setUsername(host.getUsername());
 
         hostResponse.setObjectName("host");
+    }
 
+    @Override
+    public HostResponse newHostResponse(HostJoinVO host, EnumSet<HostDetails> details) {
+        HostResponse hostResponse = new HostResponse();
+        setNewHostResponseBase(host, details, hostResponse);
         return hostResponse;
     }
 
     @Override
     public HostForMigrationResponse newHostForMigrationResponse(HostJoinVO host, EnumSet<HostDetails> details) {
         HostForMigrationResponse hostResponse = new HostForMigrationResponse();
-        hostResponse.setId(host.getUuid());
-        hostResponse.setCapabilities(host.getCapabilities());
-        hostResponse.setClusterId(host.getClusterUuid());
-        hostResponse.setCpuNumber(host.getCpus());
-        hostResponse.setZoneId(host.getZoneUuid());
-        hostResponse.setDisconnectedOn(host.getDisconnectedOn());
-        hostResponse.setHypervisor(host.getHypervisorType().getHypervisorDisplayName());
-        hostResponse.setHostType(host.getType());
-        hostResponse.setLastPinged(new Date(host.getLastPinged()));
-        hostResponse.setManagementServerId(host.getManagementServerId());
-        hostResponse.setName(host.getName());
-        hostResponse.setPodId(host.getPodUuid());
-        hostResponse.setRemoved(host.getRemoved());
-        hostResponse.setCpuSpeed(host.getSpeed());
-        hostResponse.setState(host.getStatus());
-        hostResponse.setIpAddress(host.getPrivateIpAddress());
-        hostResponse.setVersion(host.getVersion());
-        hostResponse.setCreated(host.getCreated());
-
-        if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity) || details.contains(HostDetails.stats) || details.contains(HostDetails.events)) {
-
-            hostResponse.setOsCategoryId(host.getOsCategoryUuid());
-            hostResponse.setOsCategoryName(host.getOsCategoryName());
-            hostResponse.setZoneName(host.getZoneName());
-            hostResponse.setPodName(host.getPodName());
-            if (host.getClusterId() > 0) {
-                hostResponse.setClusterName(host.getClusterName());
-                hostResponse.setClusterType(host.getClusterType().toString());
-            }
-        }
-
-        DecimalFormat decimalFormat = new DecimalFormat("#.##");
-        if (host.getType() == Host.Type.Routing) {
-            if (details.contains(HostDetails.all) || details.contains(HostDetails.capacity)) {
-                // set allocated capacities
-                Long mem = host.getMemReservedCapacity() + host.getMemUsedCapacity();
-                Long cpu = host.getCpuReservedCapacity() + host.getCpuUsedCapacity();
-
-                hostResponse.setMemoryTotal(host.getTotalMemory());
-                Float memWithOverprovisioning = host.getTotalMemory() * ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId());
-                hostResponse.setMemWithOverprovisioning(decimalFormat.format(memWithOverprovisioning));
-                String memoryAllocatedPercentage = decimalFormat.format((float) mem / memWithOverprovisioning * 100.0f) +"%";
-                hostResponse.setMemoryAllocated(memoryAllocatedPercentage);
-                hostResponse.setMemoryAllocatedPercentage(memoryAllocatedPercentage);
-                hostResponse.setMemoryAllocatedBytes(mem);
-
-                String hostTags = host.getTag();
-                hostResponse.setHostTags(hostTags);
-                hostResponse.setHaHost(containsHostHATag(hostTags));
-                hostResponse.setImplicitHostTags(host.getImplicitTag());
-
-                hostResponse.setHypervisorVersion(host.getHypervisorVersion());
-
-                hostResponse.setCpuAllocatedValue(cpu);
-                String cpuAlloc = decimalFormat.format(((float)cpu / (float)(host.getCpus() * host.getSpeed())) * 100f) + "%";
-                hostResponse.setCpuAllocated(cpuAlloc);
-                hostResponse.setCpuAllocatedPercentage(cpuAlloc);
-                float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId());
-                hostResponse.setCpuAllocatedWithOverprovisioning(calculateResourceAllocatedPercentage(cpu, cpuWithOverprovisioning));
-                hostResponse.setCpuWithOverprovisioning(decimalFormat.format(cpuWithOverprovisioning));
-            }
-
-            if (details.contains(HostDetails.all) || details.contains(HostDetails.stats)) {
-                // set CPU/RAM/Network stats
-                String cpuUsed = null;
-                HostStats hostStats = ApiDBUtils.getHostStatistics(host.getId());
-                if (hostStats != null) {
-                    float cpuUtil = (float)hostStats.getCpuUtilization();
-                    cpuUsed = decimalFormat.format(cpuUtil) + "%";
-                    hostResponse.setCpuUsed(cpuUsed);
-                    hostResponse.setMemoryUsed((new Double(hostStats.getUsedMemory())).longValue());
-                    hostResponse.setNetworkKbsRead((new Double(hostStats.getNetworkReadKBs())).longValue());
-                    hostResponse.setNetworkKbsWrite((new Double(hostStats.getNetworkWriteKBs())).longValue());
-
-                }
-            }
-
-        } else if (host.getType() == Host.Type.SecondaryStorage) {
-            StorageStats secStorageStats = ApiDBUtils.getSecondaryStorageStatistics(host.getId());
-            if (secStorageStats != null) {
-                hostResponse.setDiskSizeTotal(secStorageStats.getCapacityBytes());
-                hostResponse.setDiskSizeAllocated(secStorageStats.getByteUsed());
-            }
-        }
-
-        hostResponse.setLocalStorageActive(ApiDBUtils.isLocalStorageActiveOnHost(host.getId()));
-
-        if (details.contains(HostDetails.all) || details.contains(HostDetails.events)) {
-            Set<com.cloud.host.Status.Event> possibleEvents = host.getStatus().getPossibleEvents();
-            if ((possibleEvents != null) && !possibleEvents.isEmpty()) {
-                String events = "";
-                Iterator<com.cloud.host.Status.Event> iter = possibleEvents.iterator();
-                while (iter.hasNext()) {
-                    com.cloud.host.Status.Event event = iter.next();
-                    events += event.toString();
-                    if (iter.hasNext()) {
-                        events += "; ";
-                    }
-                }
-                hostResponse.setEvents(events);
-            }
-        }
-
-        hostResponse.setResourceState(host.getResourceState().toString());
-
-        // set async job
-        hostResponse.setJobId(host.getJobUuid());
-        hostResponse.setJobStatus(host.getJobStatus());
-
-        hostResponse.setObjectName("host");
-
+        setNewHostResponseBase(host, details, hostResponse);
         return hostResponse;
     }
 

@@ -33,6 +33,7 @@ import javax.persistence.TemporalType;
 import com.cloud.network.IpAddress;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.net.Ip;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 /**
  * A bean representing a public IP Address
@@ -268,7 +269,9 @@ public class IPAddressVO implements IpAddress {
 
     @Override
     public String toString() {
-        return new StringBuilder("Ip[").append(address).append("-").append(dataCenterId).append("]").toString();
+        return String.format("IPAddress %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "dataCenterId", "address"));
     }
 
     @Override

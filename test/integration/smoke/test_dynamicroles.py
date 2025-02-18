@@ -18,7 +18,7 @@
 from marvin.cloudstackAPI import *
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackException import CloudstackAPIException
-from marvin.lib.base import Account, Role, RolePermission
+from marvin.lib.base import Account, Role, RolePermission, Configurations
 from marvin.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
 from random import shuffle
@@ -26,6 +26,7 @@ from random import shuffle
 import copy
 import random
 import re
+import time
 
 
 class TestData(object):
@@ -73,6 +74,7 @@ class TestData(object):
                 "listApis": "allow",
                 "listAccounts": "allow",
                 "listClusters": "deny",
+                "*VmwareDc*": "allow",
                 "*VM*": "allow",
                 "*Host*": "deny"
             }
@@ -109,6 +111,14 @@ class TestDynamicRoles(cloudstackTestCase):
             self.testdata["account"],
             roleid=self.role.id
         )
+
+        cache_period_config = Configurations.list(
+            self.apiclient,
+            name='dynamic.apichecker.cache.period'
+        )[0]
+
+        self.cache_period = int(cache_period_config.value)
+
         self.cleanup = [
             self.account,
             self.rolepermission,
@@ -623,6 +633,8 @@ class TestDynamicRoles(cloudstackTestCase):
                 testdata
             )
 
+        time.sleep(self.cache_period + 5)
+
         userApiClient = self.getUserApiClient(self.account.name, domain=self.account.domain, role_type=self.account.roletype)
 
         # Perform listApis check
@@ -644,6 +656,8 @@ class TestDynamicRoles(cloudstackTestCase):
         for rule, perm in list(apiConfig.items()):
             self.dbclient.execute("insert into role_permissions (uuid, role_id, rule, permission, sort_order) values (UUID(), %d, '%s', '%s', %d)" % (roleId, rule, perm.upper(), sortOrder))
             sortOrder += 1
+
+        time.sleep(self.cache_period + 5)
 
         userApiClient = self.getUserApiClient(self.account.name, domain=self.account.domain, role_type=self.account.roletype)
 

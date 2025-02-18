@@ -19,14 +19,15 @@ import logging
 from netaddr import IPAddress, IPNetwork
 import subprocess
 import time
+
 from . import CsHelper
 from .CsDatabag import CsDataBag
 from .CsApp import CsApache, CsDnsmasq, CsPasswdSvc
 from .CsRoute import CsRoute
 from .CsRule import CsRule
+from .CsStaticRoutes import CsStaticRoutes
 
 VRRP_TYPES = ['guest']
-
 
 class CsAddress(CsDataBag):
 
@@ -556,8 +557,10 @@ class CsIP:
                             (self.dev, guestNetworkCidr, self.address['gateway'], self.dev)])
 
         if self.is_private_gateway():
-            self.fw.append(["filter", "", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
+            self.fw.append(["filter", "front", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
                             (self.address['network'], self.dev, self.dev)])
+            self.fw.append(["filter", "front", "-A FORWARD -d %s -o %s -m state --state RELATED,ESTABLISHED -j ACCEPT" %
+                            (self.address['network'], self.dev)])
             self.fw.append(["filter", "", "-A ACL_INBOUND_%s -j DROP" % self.dev])
             self.fw.append(["mangle", "",
                             "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
@@ -565,6 +568,23 @@ class CsIP:
             self.fw.append(["mangle", "front",
                             "-A PREROUTING -s %s -d %s -m state --state NEW -j MARK --set-xmark %s/0xffffffff" %
                             (self.cl.get_vpccidr(), self.address['network'], hex(100 + int(self.dev[3:])))])
+
+            static_routes = CsStaticRoutes("staticroutes", self.config)
+            if static_routes:
+                for item in static_routes.get_bag():
+                    if item == "id":
+                        continue
+                    static_route = static_routes.get_bag()[item]
+                    if static_route['ip_address'] == self.address['public_ip'] and not static_route['revoke']:
+                        self.fw.append(["mangle", "",
+                                        "-A PREROUTING -m state --state NEW -i %s -s %s ! -d %s/32 -j ACL_OUTBOUND_%s" %
+                                        (self.dev, static_route['network'], static_route['ip_address'], self.dev)])
+                        self.fw.append(["filter", "front", "-A FORWARD -d %s -o %s -j ACL_INBOUND_%s" %
+                                        (static_route['network'], self.dev, self.dev)])
+                        self.fw.append(["filter", "front",
+                                        "-A FORWARD -d %s -o %s -m state --state RELATED,ESTABLISHED -j ACCEPT" %
+                                        (static_route['network'], self.dev)])
+
             if self.address["source_nat"]:
                 self.fw.append(["nat", "front",
                                 "-A POSTROUTING -o %s -j SNAT --to-source %s" %

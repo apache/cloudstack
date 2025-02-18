@@ -44,7 +44,7 @@ public interface ConsoleAccessManager extends Manager, Configurable {
 
     void removeSessions(String[] sessionUuids);
 
-    void acquireSession(String sessionUuid);
+    void acquireSession(String sessionUuid, String clientAddress);
 
     String genAccessTicket(String host, String port, String sid, String tag, String sessionUuid);
     String genAccessTicket(String host, String port, String sid, String tag, Date normalizedHashTime, String sessionUuid);

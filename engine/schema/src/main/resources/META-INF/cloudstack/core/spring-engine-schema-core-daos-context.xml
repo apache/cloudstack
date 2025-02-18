@@ -117,6 +117,7 @@
   <bean id="loadBalancerCertMapDaoImpl" class="com.cloud.network.dao.LoadBalancerCertMapDaoImpl" />
   <bean id="managementServerHostDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostDaoImpl" />
   <bean id="managementServerHostPeerDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostPeerDaoImpl" />
+  <bean id="managementServerHostPeerJoinDaoImpl" class="com.cloud.cluster.dao.ManagementServerHostPeerJoinDaoImpl" />
   <bean id="managementServerStatusDaoImpl" class="com.cloud.cluster.dao.ManagementServerStatusDaoImpl" />
   <bean id="networkAccountDaoImpl" class="com.cloud.network.dao.NetworkAccountDaoImpl" />
   <bean id="networkACLDaoImpl" class="com.cloud.network.vpc.dao.NetworkACLDaoImpl" />

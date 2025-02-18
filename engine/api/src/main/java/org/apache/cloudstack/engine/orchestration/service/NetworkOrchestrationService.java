@@ -82,6 +82,9 @@ public interface NetworkOrchestrationService {
     ConfigKey<Integer> NetworkLockTimeout = new ConfigKey<Integer>(Integer.class, NetworkLockTimeoutCK, "Network", "600",
         "Lock wait timeout (seconds) while implementing network", true, Scope.Global, null);
 
+    ConfigKey<String> DeniedRoutes = new ConfigKey<String>(String.class, "denied.routes", "Network", "",
+            "Routes that are denied, can not be used for Static Routes creation for the VPC Private Gateway", true, ConfigKey.Scope.Zone, null);
+
     ConfigKey<String> GuestDomainSuffix = new ConfigKey<String>(String.class, GuestDomainSuffixCK, "Network", "cloud.internal",
         "Default domain name for vms inside virtualized networks fronted by router", true, ConfigKey.Scope.Zone, null);
 

@@ -212,6 +212,42 @@ public class DomainJoinDaoImpl extends GenericDaoBase<DomainJoinVO, Long> implem
         response.setSecondaryStorageLimit(secondaryStorageLimitDisplay);
         response.setSecondaryStorageTotal(secondaryStorageTotal);
         response.setSecondaryStorageAvailable(secondaryStorageAvail);
+
+        //get resource limits for backups
+        long backupLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getBackupLimit(), ResourceType.backup, domain.getId());
+        String backupLimitDisplay = (fullView || snapshotLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupLimit);
+        long backupTotal = (domain.getBackupTotal() == null) ? 0 : domain.getBackupTotal();
+        String backupAvail = (fullView || snapshotLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupLimit - backupTotal);
+        response.setBackupLimit(backupLimitDisplay);
+        response.setBackupTotal(backupTotal);
+        response.setBackupAvailable(backupAvail);
+
+        //get resource limits for backup storage space and convert it from Bytes to GiB
+        long backupStorageLimit = ApiDBUtils.findCorrectResourceLimitForDomain(domain.getBackupStorageLimit(), ResourceType.backup_storage, domain.getId());
+        String backupStorageLimitDisplay = (fullView || backupLimit == -1) ? Resource.UNLIMITED : String.valueOf(backupStorageLimit / ResourceType.bytesToGiB);
+        long backupStorageTotal = (domain.getBackupStorageTotal() == null) ? 0 : (domain.getBackupStorageTotal() / ResourceType.bytesToGiB);
+        String backupStorageAvail = (fullView || backupStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf((backupStorageLimit / ResourceType.bytesToGiB) - backupStorageTotal);
+        response.setBackupStorageLimit(backupStorageLimitDisplay);
+        response.setBackupStorageTotal(backupStorageTotal);
+        response.setBackupStorageAvailable(backupStorageAvail);
+
+        //get resource limits for buckets
+        long bucketLimit = ApiDBUtils.findCorrectResourceLimit(domain.getBucketLimit(), domain.getId(), ResourceType.bucket);
+        String bucketLimitDisplay = (fullView || bucketLimit == -1) ? Resource.UNLIMITED : String.valueOf(bucketLimit);
+        long bucketTotal = (domain.getBucketTotal() == null) ? 0 : domain.getBucketTotal();
+        String bucketAvail = (fullView || bucketLimit == -1) ? Resource.UNLIMITED : String.valueOf(bucketLimit - bucketTotal);
+        response.setBucketLimit(bucketLimitDisplay);
+        response.setBucketTotal(bucketTotal);
+        response.setBucketAvailable(bucketAvail);
+
+        //get resource limits for object storage space and convert it from Bytes to GiB
+        long objectStorageLimit = ApiDBUtils.findCorrectResourceLimit(domain.getObjectStorageLimit(), domain.getId(), ResourceType.object_storage);
+        String objectStorageLimitDisplay = (fullView || objectStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf(objectStorageLimit / ResourceType.bytesToGiB);
+        long objectStorageTotal = (domain.getObjectStorageTotal() == null) ? 0 : (domain.getObjectStorageTotal() / ResourceType.bytesToGiB);
+        String objectStorageAvail = (fullView || objectStorageLimit == -1) ? Resource.UNLIMITED : String.valueOf((objectStorageLimit / ResourceType.bytesToGiB) - objectStorageTotal);
+        response.setObjectStorageLimit(objectStorageLimitDisplay);
+        response.setObjectStorageTotal(objectStorageTotal);
+        response.setObjectStorageAvailable(objectStorageAvail);
     }
 
     @Override

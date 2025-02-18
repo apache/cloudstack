@@ -63,6 +63,10 @@ public class LoadBalancingRule {
         return lb.getId();
     }
 
+    public LoadBalancer getLb() {
+        return lb;
+    }
+
     public String getName() {
         return lb.getName();
     }

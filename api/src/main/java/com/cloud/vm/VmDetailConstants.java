@@ -74,6 +74,7 @@ public interface VmDetailConstants {
     String ENCRYPTED_PASSWORD = "Encrypted.Password";
 
     String CONFIG_DRIVE_LOCATION = "configDriveLocation";
+    String LAST_CONFIG_DRIVE_LOCATION = "lastConfigDriveLocation";
 
     String SKIP_DRS = "skipFromDRS";
 

@@ -51,8 +51,8 @@ public class DirectAgentAttache extends AgentAttache {
     AtomicInteger _outstandingTaskCount;
     AtomicInteger _outstandingCronTaskCount;
 
-    public DirectAgentAttache(AgentManagerImpl agentMgr, long id, String name, ServerResource resource, boolean maintenance) {
-        super(agentMgr, id, name, maintenance);
+    public DirectAgentAttache(AgentManagerImpl agentMgr, long id, String uuid,String name, ServerResource resource, boolean maintenance) {
+        super(agentMgr, id, uuid, name, maintenance);
         _resource = resource;
         _outstandingTaskCount = new AtomicInteger(0);
         _outstandingCronTaskCount = new AtomicInteger(0);
@@ -60,7 +60,7 @@ public class DirectAgentAttache extends AgentAttache {
 
     @Override
     public void disconnect(Status state) {
-        logger.debug("Processing disconnect {}({})", _id, _name);
+        logger.debug("Processing disconnect [id: {}, uuid: {}, name: {}]", _id, _uuid, _name);
 
         for (ScheduledFuture<?> future : _futures) {
             future.cancel(false);
@@ -115,7 +115,7 @@ public class DirectAgentAttache extends AgentAttache {
         if (answers != null && answers[0] instanceof StartupAnswer) {
             StartupAnswer startup = (StartupAnswer)answers[0];
             int interval = startup.getPingInterval();
-            logger.info("StartupAnswer received {} Interval = {}", startup.getHostId(), interval);
+            logger.info("StartupAnswer received [id: {}, uuid: {}, name: {}, interval: {}]", startup.getHostId(), startup.getHostUuid(), startup.getHostName(), interval);
             _futures.add(_agentMgr.getCronJobPool().scheduleAtFixedRate(new PingTask(), interval, interval, TimeUnit.SECONDS));
         }
     }
@@ -126,7 +126,7 @@ public class DirectAgentAttache extends AgentAttache {
             assert _resource == null : "Come on now....If you're going to dabble in agent code, you better know how to close out our resources. Ever considered why there's a method called disconnect()?";
             synchronized (this) {
                 if (_resource != null) {
-                    logger.warn("Lost attache for {}({})", _id, _name);
+                    logger.warn("Lost attache for [id: {}, uuid: {}, name: {}]", _id, _uuid, _name);
                     disconnect(Status.Alert);
                 }
             }
@@ -140,7 +140,8 @@ public class DirectAgentAttache extends AgentAttache {
     }
 
     private synchronized void scheduleFromQueue() {
-        logger.trace("Agent attache={}, task queue size={}, outstanding tasks={}", _id, tasks.size(), _outstandingTaskCount.get());
+        logger.trace("Agent attache [id: {}, uuid: {}, name: {}], task queue size={}, outstanding tasks={}",
+                _id, _uuid, _name, tasks.size(), _outstandingTaskCount.get());
         while (!tasks.isEmpty() && _outstandingTaskCount.get() < _agentMgr.getDirectAgentThreadCap()) {
             _outstandingTaskCount.incrementAndGet();
             _agentMgr.getDirectAgentPool().execute(tasks.remove());
@@ -152,7 +153,9 @@ public class DirectAgentAttache extends AgentAttache {
         protected synchronized void runInContext() {
             try {
                 if (_outstandingCronTaskCount.incrementAndGet() >= _agentMgr.getDirectAgentThreadCap()) {
-                    logger.warn("PingTask execution for direct attache({}) has reached maximum outstanding limit({}), bailing out", _id, _agentMgr.getDirectAgentThreadCap());
+                    logger.warn(
+                            "PingTask execution for direct attache [id: {}, uuid: {}, name: {}] has reached maximum outstanding limit({}), bailing out",
+                            _id, _uuid, _name, _agentMgr.getDirectAgentThreadCap());
                     return;
                 }
 
@@ -167,21 +170,21 @@ public class DirectAgentAttache extends AgentAttache {
                     }
 
                     if (cmd == null) {
-                        logger.warn("Unable to get current status on {}({})", _id, _name);
+                        logger.warn("Unable to get current status on [id: {}, uuid: {}, name: {}]", _id, _uuid, _name);
                         return;
                     }
 
                     if (cmd.getContextParam("logid") != null) {
                         ThreadContext.put("logcontextid", cmd.getContextParam("logid"));
                     }
-                    logger.debug("Ping from {}({})", _id, _name);
+                    logger.debug("Ping from [id: {}, uuid: {}, name: {}]", _id, _uuid, _name);
                     long seq = _seq++;
 
                     logger.trace("SeqA {}-{}: {}", _id, seq, new Request(_id, -1, cmd, false).toString());
 
                     _agentMgr.handleCommands(DirectAgentAttache.this, seq, new Command[] {cmd});
                 } else {
-                    logger.debug("Unable to send ping because agent is disconnected {}", _id, _name);
+                    logger.debug("Unable to send ping because agent is disconnected [id: {}, uuid: {}, name: {}]", _id, _uuid, _name);
                 }
             } catch (Exception e) {
                 logger.warn("Unable to complete the ping task", e);
@@ -219,7 +222,9 @@ public class DirectAgentAttache extends AgentAttache {
             long seq = _req.getSequence();
             try {
                 if (_outstandingCronTaskCount.incrementAndGet() >= _agentMgr.getDirectAgentThreadCap()) {
-                    logger.warn("CronTask execution for direct attache({}) has reached maximum outstanding limit({}), bailing out", _id, _agentMgr.getDirectAgentThreadCap());
+                    logger.warn(
+                            "CronTask execution for direct attache [id: {}, uuid: {}, name: {}] has reached maximum outstanding limit({}), bailing out",
+                            _id, _uuid, _name, _agentMgr.getDirectAgentThreadCap());
                     bailout();
                     return;
                 }

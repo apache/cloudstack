@@ -213,7 +213,7 @@
               @change="updateMtu()"/>
               <div style="color: red" v-if="errorPrivateMtu" v-html="errorPrivateMtu.replace('%x', privateMtuMax)"></div>
           </a-form-item>
-          <a-form-item v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan">
+          <a-form-item ref="vlan" name="vlan" v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan">
             <template #label>
               <tooltip-label :title="$t('label.vlan')" :tooltip="$t('label.vlan')"/>
             </template>

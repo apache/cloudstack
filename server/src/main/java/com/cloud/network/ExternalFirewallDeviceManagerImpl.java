@@ -206,11 +206,9 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         final PhysicalNetworkServiceProviderVO ntwkSvcProvider =
             _physicalNetworkServiceProviderDao.findByServiceProvider(pNetwork.getId(), ntwkDevice.getNetworkServiceProvder());
         if (ntwkSvcProvider == null) {
-            throw new CloudRuntimeException("Network Service Provider: " + ntwkDevice.getNetworkServiceProvder() + " is not enabled in the physical network: " +
-                physicalNetworkId + "to add this device");
+            throw new CloudRuntimeException(String.format("Network Service Provider: %s is not enabled in the physical network: %s to add this device", ntwkDevice.getNetworkServiceProvder(), pNetwork));
         } else if (ntwkSvcProvider.getState() == PhysicalNetworkServiceProvider.State.Shutdown) {
-            throw new CloudRuntimeException("Network Service Provider: " + ntwkSvcProvider.getProviderName() +
-                " is not added or in shutdown state in the physical network: " + physicalNetworkId + "to add this device");
+            throw new CloudRuntimeException(String.format("Network Service Provider: %s is not added or in shutdown state in the physical network: %s to add this device", ntwkSvcProvider.getProviderName(), pNetwork));
         }
 
         URI uri;
@@ -386,7 +384,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
                         _networkExternalFirewallDao.remove(fwDeviceForNetwork.getId());
                     }
                 } catch (Exception exception) {
-                    logger.error("Failed to release firewall device for the network" + network.getId() + " due to " + exception.getMessage());
+                    logger.error("Failed to release firewall device for the network {} due to {}", network, exception.getMessage());
                     return false;
                 } finally {
                     deviceMapLock.unlock();
@@ -551,8 +549,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         }
 
         String action = add ? "implemented" : "shut down";
-        logger.debug("External firewall has " + action + " the guest network for account " + account.getAccountName() + "(id = " + account.getAccountId() +
-            ") with VLAN tag " + guestVlanTag);
+        logger.debug("External firewall has {} the guest network for account {} with VLAN tag {}", action, account, guestVlanTag);
 
         return true;
     }
@@ -572,8 +569,8 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         assert (externalFirewall != null);
 
         if (network.getState() == Network.State.Allocated) {
-            logger.debug("External firewall was asked to apply firewall rules for network with ID " + network.getId() +
-                "; this network is not implemented. Skipping backend commands.");
+            logger.debug("External firewall was asked to apply firewall rules for network {}; " +
+                    "this network is not implemented. Skipping backend commands.", network);
             return true;
         }
 
@@ -615,8 +612,8 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         assert (externalFirewall != null);
 
         if (network.getState() == Network.State.Allocated) {
-            logger.debug("External firewall was asked to apply firewall rules for network with ID " + network.getId() +
-                "; this network is not implemented. Skipping backend commands.");
+            logger.debug("External firewall was asked to apply firewall rules for network {}; " +
+                    "this network is not implemented. Skipping backend commands.", network);
             return true;
         }
 
@@ -761,7 +758,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         }
 
         if (pNetwork.getVnet() == null) {
-            throw new CloudRuntimeException("Could not find vlan range for physical Network " + physicalNetworkId + ".");
+            throw new CloudRuntimeException("Could not find vlan range for physical Network " + pNetwork + ".");
         }
         Integer lowestVlanTag = null;
         List<Pair<Integer, Integer>> vnetList = pNetwork.getVnet();
@@ -820,8 +817,8 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         assert (externalFirewall != null);
 
         if (network.getState() == Network.State.Allocated) {
-            logger.debug("External firewall was asked to apply firewall rules for network with ID " + network.getId() +
-                "; this network is not implemented. Skipping backend commands.");
+            logger.debug("External firewall was asked to apply firewall rules for network {}; " +
+                    "this network is not implemented. Skipping backend commands.", network);
             return true;
         }
 

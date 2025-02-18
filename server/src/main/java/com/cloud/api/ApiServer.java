@@ -33,6 +33,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -47,6 +48,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -55,6 +57,8 @@ import javax.naming.ConfigurationException;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountManagerImpl;
@@ -111,6 +115,7 @@ import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.user.UserPasswordResetManager;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.http.ConnectionClosedException;
@@ -169,6 +174,8 @@ import com.cloud.storage.VolumeApiService;
 import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.HttpUtils;
+import com.cloud.utils.HttpUtils.ApiSessionKeySameSite;
+import com.cloud.utils.HttpUtils.ApiSessionKeyCheckOption;
 import com.cloud.utils.Pair;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.StringUtils;
@@ -184,6 +191,7 @@ import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.utils.net.NetUtils;
 import com.google.gson.reflect.TypeToken;
 
+import static com.cloud.user.AccountManagerImpl.apiKeyAccess;
 import static org.apache.cloudstack.user.UserPasswordResetManager.UserPasswordResetEnabled;
 
 @Component
@@ -216,6 +224,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private EntityManager entityMgr;
     @Inject
     private ProjectDao projectDao;
+    @Inject
+    private ManagementServerHostDao msHostDao;
     @Inject
     private UUIDManager uuidMgr;
     @Inject
@@ -309,6 +319,24 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             , "a list of cidrs for which \"proxy.header.names\" are honoured if the \"Remote_Addr\" is in this list."
             , true
             , ConfigKey.Scope.Global);
+
+    static final ConfigKey<String> ApiSessionKeyCookieSameSiteSetting = new ConfigKey<>(String.class
+            , "api.sessionkey.cookie.samesite"
+            , ConfigKey.CATEGORY_ADVANCED
+            , ApiSessionKeySameSite.Lax.name()
+            , "The SameSite attribute of cookie 'sessionkey'. Valid options are: Lax (default), Strict, NoneAndSecure and Null."
+            , true
+            , ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select,
+            EnumSet.allOf(ApiSessionKeySameSite.class).stream().map(Enum::toString).collect(Collectors.joining(", ")));
+
+    public static final ConfigKey<String> ApiSessionKeyCheckLocations = new ConfigKey<>(String.class
+            , "api.sessionkey.check.locations"
+            , ConfigKey.CATEGORY_ADVANCED
+            , ApiSessionKeyCheckOption.CookieAndParameter.name()
+            , "The locations of 'sessionkey' during the validation of the API requests. Valid options are: CookieOrParameter, ParameterOnly, CookieAndParameter (default)."
+            , true
+            , ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select,
+            EnumSet.allOf(ApiSessionKeyCheckOption.class).stream().map(Enum::toString).collect(Collectors.joining(", ")));
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -448,7 +476,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 s_apiNameCmdClassMap.put(apiName, apiCmdList);
             }
             apiCmdList.add(cmdClass);
-
         }
 
         setEncodeApiResponse(EncodeApiResponse.value());
@@ -874,6 +901,34 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
     }
 
+    protected boolean verifyApiKeyAccessAllowed(User user, Account account) {
+        Boolean apiKeyAccessEnabled = user.getApiKeyAccess();
+        if (apiKeyAccessEnabled != null) {
+            if (Boolean.TRUE.equals(apiKeyAccessEnabled)) {
+                return true;
+            } else {
+                logger.info("Api-Key access is disabled for the User " + user.toString());
+                return false;
+            }
+        }
+        apiKeyAccessEnabled = account.getApiKeyAccess();
+        if (apiKeyAccessEnabled != null) {
+            if (Boolean.TRUE.equals(apiKeyAccessEnabled)) {
+                return true;
+            } else {
+                logger.info("Api-Key access is disabled for the Account " + account.toString());
+                return false;
+            }
+        }
+        apiKeyAccessEnabled = apiKeyAccess.valueIn(account.getDomainId());
+        if (Boolean.TRUE.equals(apiKeyAccessEnabled)) {
+                return true;
+        } else {
+            logger.info("Api-Key access is disabled by the Domain level setting api.key.access");
+        }
+        return false;
+    }
+
     @Override
     public boolean verifyRequest(final Map<String, Object[]> requestParameters, final Long userId, InetAddress remoteAddress) throws ServerApiException {
         try {
@@ -985,8 +1040,12 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final Account account = userAcctPair.second();
 
             if (user.getState() != Account.State.ENABLED || !account.getState().equals(Account.State.ENABLED)) {
-                logger.info("disabled or locked user accessing the api, userid = " + user.getId() + "; name = " + user.getUsername() + "; state: " + user.getState() +
-                        "; accountState: " + account.getState());
+                logger.info("disabled or locked user accessing the api, user = {} (state: {}); " +
+                        "account: {} (state: {})", user, user.getState(), account, account.getState());
+                return false;
+            }
+
+            if (!verifyApiKeyAccessAllowed(user, account)) {
                 return false;
             }
 
@@ -997,7 +1056,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             // verify secret key exists
             secretKey = user.getSecretKey();
             if (secretKey == null) {
-                logger.info("User does not have a secret key associated with the account -- ignoring request, username: " + user.getUsername());
+                logger.info("User does not have a secret key associated with the account -- ignoring request, username: {}", user);
                 return false;
             }
 
@@ -1042,7 +1101,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             throw new ServerApiException(ApiErrorCode.UNAUTHORIZED , errorMessage);
         } catch (final OriginDeniedException ex) {
             // in this case we can remove the session with extreme prejudice
-            final String errorMessage = "The user '" + user.getUsername() + "' is not allowed to execute commands from ip address '" + remoteAddress.getHostName() + "'.";
+            final String errorMessage = String.format("The user '%s' is not allowed to execute commands from ip address '%s'.", user, remoteAddress.getHostName());
             logger.debug(errorMessage);
             return false;
         }
@@ -1117,6 +1176,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 if (ApiConstants.ISSUER_FOR_2FA.equalsIgnoreCase(attrName)) {
                     response.setIssuerFor2FA(attrObj.toString());
                 }
+                if (ApiConstants.MANAGEMENT_SERVER_ID.equalsIgnoreCase(attrName)) {
+                    response.setManagementServerId(attrObj.toString());
+                }
             }
         }
         response.setResponseName("loginresponse");
@@ -1135,7 +1197,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             domainId = userDomain.getId();
         }
 
-        final UserAccount userAcct = accountMgr.authenticateUser(username, password, domainId, loginIpAddress, requestParameters);
+        UserAccount userAcct = accountMgr.authenticateUser(username, password, domainId, loginIpAddress, requestParameters);
         if (userAcct != null) {
             final String timezone = userAcct.getTimezone();
             float offsetInHrs = 0f;
@@ -1180,6 +1242,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 session.setAttribute("timezoneoffset", Float.valueOf(offsetInHrs).toString());
             }
 
+            userAcct = accountMgr.clearUserTwoFactorAuthenticationInSetupStateOnLogin(userAcct);
             boolean is2faEnabled = false;
             if (userAcct.isUser2faEnabled() || (Boolean.TRUE.equals(AccountManagerImpl.enableUserTwoFactorAuthentication.valueIn(userAcct.getDomainId())) && Boolean.TRUE.equals(AccountManagerImpl.mandateUserTwoFactorAuthentication.valueIn(userAcct.getDomainId())))) {
                 is2faEnabled = true;
@@ -1193,6 +1256,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             }
             session.setAttribute(ApiConstants.PROVIDER_FOR_2FA, userAcct.getUser2faProvider());
             session.setAttribute(ApiConstants.ISSUER_FOR_2FA, issuerFor2FA);
+
+            if (accountMgr.isRootAdmin(userAcct.getAccountId())) {
+                ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
+                if (msHost != null && msHost.getUuid() != null) {
+                    session.setAttribute(ApiConstants.MANAGEMENT_SERVER_ID, msHost.getUuid());
+                }
+            }
 
             // (bug 5483) generate a session key that the user must submit on every request to prevent CSRF, add that
             // to the login response so that session-based authenticators know to send the key back
@@ -1223,7 +1293,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
         if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.ENABLED) || (account == null) ||
                 !account.getState().equals(Account.State.ENABLED)) {
-            logger.warn("Deleted/Disabled/Locked user with id=" + userId + " attempting to access public API");
+            logger.warn("Deleted/Disabled/Locked user [{} account={}] with id={} attempting to access public API", user, account, userId);
             return false;
         }
         return true;
@@ -1582,7 +1652,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                 JSONDefaultContentType,
                 proxyForwardList,
                 useForwardHeader,
-                listOfForwardHeaders
+                listOfForwardHeaders,
+                ApiSessionKeyCookieSameSiteSetting,
+                ApiSessionKeyCheckLocations
         };
     }
 }

@@ -1,4 +1,4 @@
-﻿// Licensed to the Apache Software Foundation (ASF) under one
+// Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -32,62 +32,62 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
     // Datetime conversion functions ToDateTime and ToDmtfDateTime are added to the class to convert DMTF datetime to System.DateTime and vice-versa.
     // An Early Bound class generated for the WMI class.Msvm_MigrationJob
     public class MigrationJob : System.ComponentModel.Component {
-        
+
         // Private property to hold the WMI namespace in which the class resides.
         private static string CreatedWmiNamespace = "ROOT\\virtualization\\v2";
-        
+
         // Private property to hold the name of WMI class which created this class.
         public static string CreatedClassName = "Msvm_MigrationJob";
-        
+
         // Private member variable to hold the ManagementScope which is used by the various methods.
         private static System.Management.ManagementScope statMgmtScope = null;
-        
+
         private ManagementSystemProperties PrivateSystemProperties;
-        
+
         // Underlying lateBound WMI object.
         private System.Management.ManagementObject PrivateLateBoundObject;
-        
+
         // Member variable to store the 'automatic commit' behavior for the class.
         private bool AutoCommitProp;
-        
+
         // Private variable to hold the embedded property representing the instance.
         private System.Management.ManagementBaseObject embeddedObj;
-        
+
         // The current WMI object used
         private System.Management.ManagementBaseObject curObj;
-        
+
         // Flag to indicate if the instance is an embedded object.
         private bool isEmbedded;
-        
+
         // Below are different overloads of constructors to initialize an instance of the class with a WMI object.
         public MigrationJob() {
             this.InitializeObject(null, null, null);
         }
-        
+
         public MigrationJob(string keyInstanceID) {
             this.InitializeObject(null, new System.Management.ManagementPath(MigrationJob.ConstructPath(keyInstanceID)), null);
         }
-        
+
         public MigrationJob(System.Management.ManagementScope mgmtScope, string keyInstanceID) {
             this.InitializeObject(((System.Management.ManagementScope)(mgmtScope)), new System.Management.ManagementPath(MigrationJob.ConstructPath(keyInstanceID)), null);
         }
-        
+
         public MigrationJob(System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(null, path, getOptions);
         }
-        
+
         public MigrationJob(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path) {
             this.InitializeObject(mgmtScope, path, null);
         }
-        
+
         public MigrationJob(System.Management.ManagementPath path) {
             this.InitializeObject(null, path, null);
         }
-        
+
         public MigrationJob(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             this.InitializeObject(mgmtScope, path, getOptions);
         }
-        
+
         public MigrationJob(System.Management.ManagementObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
@@ -99,7 +99,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 throw new System.ArgumentException("Class name does not match.");
             }
         }
-        
+
         public MigrationJob(System.Management.ManagementBaseObject theObject) {
             Initialize();
             if ((CheckIfProperClass(theObject) == true)) {
@@ -112,7 +112,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 throw new System.ArgumentException("Class name does not match.");
             }
         }
-        
+
         // Property returns the namespace of the WMI class.
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -121,7 +121,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return "ROOT\\virtualization\\v2";
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string ManagementClassName {
@@ -130,7 +130,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 if ((curObj != null)) {
                     if ((curObj.ClassPath != null)) {
                         strRet = ((string)(curObj["__CLASS"]));
-                        if (((strRet == null) 
+                        if (((strRet == null)
                                     || (strRet == string.Empty))) {
                             strRet = CreatedClassName;
                         }
@@ -139,7 +139,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return strRet;
             }
         }
-        
+
         // Property pointing to an embedded object to get System properties of the WMI object.
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -148,7 +148,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return PrivateSystemProperties;
             }
         }
-        
+
         // Property returning the underlying lateBound object.
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -157,7 +157,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return curObj;
             }
         }
-        
+
         // ManagementScope of the object.
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -176,7 +176,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         // Property to show the commit behavior for the WMI object. If true, WMI object will be automatically saved after each property modification.(ie. Put() is called after modification of a property).
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -188,7 +188,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 AutoCommitProp = value;
             }
         }
-        
+
         // The ManagementPath of the underlying WMI object.
         [Browsable(true)]
         public System.Management.ManagementPath Path {
@@ -209,7 +209,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         // Public static scope property which is used by the various methods.
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
@@ -221,7 +221,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 statMgmtScope = value;
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsCancellableNull {
@@ -234,7 +234,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Indicates whether the job can be cancelled. The value of this property does not g" +
@@ -248,7 +248,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((bool)(curObj["Cancellable"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string Caption {
@@ -256,7 +256,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["Caption"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsCommunicationStatusNull {
@@ -269,7 +269,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -281,7 +281,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["CommunicationStatus"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsDeleteOnCompletionNull {
@@ -294,7 +294,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -306,7 +306,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((bool)(curObj["DeleteOnCompletion"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string Description {
@@ -314,7 +314,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["Description"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Hostname the destination virtualization platform where the virtual system is migr" +
@@ -324,7 +324,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["DestinationHost"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsDetailedStatusNull {
@@ -337,7 +337,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -349,7 +349,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["DetailedStatus"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsElapsedTimeNull {
@@ -362,7 +362,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -376,7 +376,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string ElementName {
@@ -384,7 +384,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["ElementName"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsErrorCodeNull {
@@ -397,7 +397,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -409,7 +409,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["ErrorCode"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string ErrorDescription {
@@ -417,7 +417,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["ErrorDescription"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string ErrorSummaryDescription {
@@ -425,7 +425,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["ErrorSummaryDescription"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsHealthStateNull {
@@ -438,7 +438,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -450,7 +450,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["HealthState"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsInstallDateNull {
@@ -463,7 +463,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -477,7 +477,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string InstanceID {
@@ -485,7 +485,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["InstanceID"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsJobRunTimesNull {
@@ -498,7 +498,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -510,7 +510,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((uint)(curObj["JobRunTimes"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsJobStateNull {
@@ -523,7 +523,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -535,7 +535,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["JobState"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string JobStatus {
@@ -543,7 +543,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["JobStatus"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsJobTypeNull {
@@ -556,7 +556,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("Indicates the type of Job being tracked by this object.")]
@@ -569,7 +569,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((JobTypeValues)(System.Convert.ToInt32(curObj["JobType"])));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsLocalOrUtcTimeNull {
@@ -582,7 +582,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -594,7 +594,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["LocalOrUtcTime"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsMigrationTypeNull {
@@ -607,7 +607,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("The migration type as defined in Msvm_VirtualSystemMigrationSettingData.Migration" +
@@ -621,7 +621,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["MigrationType"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string Name {
@@ -629,7 +629,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["Name"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description(@"For Live Migration this must be set to NULL. For Storage Migration, it will specify the virtual machine's virtual hard drives which moved and where they moved. If not NULL, NewResourceSettingData will contain an array of embedded instances of resource allocation setting data (RASD) which represent VHDs. Destination location will be provided using Connection property of RASD.")]
@@ -638,7 +638,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string[])(curObj["NewResourceSettingData"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description(@"For Live Migration this will be set to NULL. For Storage Migration, it will indicate the new path for virtual machine data (ExternalDataRoot, SnapshotDataRoot and SwapFileDataRoot).  This being NULL indicates that virtual machine's data roots are not moving.  Otherwise NewSystemSettingData will be instance of Msvm_VirtualSystemGlobalSettingData containing properties ExternalDataRoot, SnapshotDataRoot and SwapFileDataRoot. If not NULL, ExternalDataRoot property will specify new location of virtual machine's current configuration and saved state. If not NULL, SnapshotDataRoot property will specify new location for snapshots data. If not NULL, SwapFileDataRoot property will specify new location of virtual machine's smart paging files ")]
@@ -647,7 +647,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["NewSystemSettingData"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string Notify {
@@ -655,7 +655,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["Notify"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsOperatingStatusNull {
@@ -668,7 +668,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -680,7 +680,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["OperatingStatus"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public ushort[] OperationalStatus {
@@ -688,7 +688,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort[])(curObj["OperationalStatus"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string OtherRecoveryAction {
@@ -696,7 +696,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["OtherRecoveryAction"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string Owner {
@@ -704,7 +704,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["Owner"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsPercentCompleteNull {
@@ -717,7 +717,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -729,7 +729,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["PercentComplete"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsPrimaryStatusNull {
@@ -742,7 +742,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -754,7 +754,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["PrimaryStatus"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsPriorityNull {
@@ -767,7 +767,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -779,7 +779,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((uint)(curObj["Priority"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsRecoveryActionNull {
@@ -792,7 +792,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -804,7 +804,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((ushort)(curObj["RecoveryAction"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsRunDayNull {
@@ -817,7 +817,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -829,7 +829,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((sbyte)(curObj["RunDay"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsRunDayOfWeekNull {
@@ -842,7 +842,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -854,7 +854,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((sbyte)(curObj["RunDayOfWeek"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsRunMonthNull {
@@ -867,7 +867,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -879,7 +879,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((byte)(curObj["RunMonth"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsRunStartIntervalNull {
@@ -892,7 +892,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -906,7 +906,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsScheduledStartTimeNull {
@@ -919,7 +919,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -933,7 +933,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsStartTimeNull {
@@ -946,7 +946,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -960,7 +960,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string Status {
@@ -968,7 +968,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["Status"]));
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public string[] StatusDescriptions {
@@ -976,7 +976,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string[])(curObj["StatusDescriptions"]));
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsTimeBeforeRemovalNull {
@@ -989,7 +989,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -1003,7 +1003,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsTimeOfLastStateChangeNull {
@@ -1016,7 +1016,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -1030,7 +1030,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsTimeSubmittedNull {
@@ -1043,7 +1043,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -1057,7 +1057,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool IsUntilTimeNull {
@@ -1070,7 +1070,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [TypeConverter(typeof(WMIValueTypeConverter))]
@@ -1084,7 +1084,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 }
             }
         }
-        
+
         [Browsable(true)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Description("GUID of the affected virtual system.")]
@@ -1093,9 +1093,9 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return ((string)(curObj["VirtualSystemName"]));
             }
         }
-        
+
         private bool CheckIfProperClass(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions OptionsParam) {
-            if (((path != null) 
+            if (((path != null)
                         && (string.Compare(path.ClassName, this.ManagementClassName, true, System.Globalization.CultureInfo.InvariantCulture) == 0))) {
                 return true;
             }
@@ -1103,9 +1103,9 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return CheckIfProperClass(new System.Management.ManagementObject(mgmtScope, path, OptionsParam));
             }
         }
-        
+
         private bool CheckIfProperClass(System.Management.ManagementBaseObject theObj) {
-            if (((theObj != null) 
+            if (((theObj != null)
                         && (string.Compare(((string)(theObj["__CLASS"])), this.ManagementClassName, true, System.Globalization.CultureInfo.InvariantCulture) == 0))) {
                 return true;
             }
@@ -1122,35 +1122,35 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
             }
             return false;
         }
-        
+
         private bool ShouldSerializeCancellable() {
             if ((this.IsCancellableNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeCommunicationStatus() {
             if ((this.IsCommunicationStatusNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeDeleteOnCompletion() {
             if ((this.IsDeleteOnCompletionNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeDetailedStatus() {
             if ((this.IsDetailedStatusNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         // Converts a given datetime in DMTF format to System.DateTime object.
         static System.DateTime ToDateTime(string dmtfDate) {
             System.DateTime initializer = System.DateTime.MinValue;
@@ -1202,13 +1202,13 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 if (("******" != tempString)) {
                     ticks = (long.Parse(tempString) * ((long)((System.TimeSpan.TicksPerMillisecond / 1000))));
                 }
-                if (((((((((year < 0) 
-                            || (month < 0)) 
-                            || (day < 0)) 
-                            || (hour < 0)) 
-                            || (minute < 0)) 
-                            || (minute < 0)) 
-                            || (second < 0)) 
+                if (((((((((year < 0)
+                            || (month < 0))
+                            || (day < 0))
+                            || (hour < 0))
+                            || (minute < 0))
+                            || (minute < 0))
+                            || (second < 0))
                             || (ticks < 0))) {
                     throw new System.ArgumentOutOfRangeException();
                 }
@@ -1236,7 +1236,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
             }
             return datetime;
         }
-        
+
         // Converts a given System.DateTime object to DMTF datetime format.
         static string ToDmtfDateTime(System.DateTime date) {
             string utcString = string.Empty;
@@ -1263,8 +1263,8 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
             dmtfDateTime = string.Concat(dmtfDateTime, ((int)(date.Second)).ToString().PadLeft(2, '0'));
             dmtfDateTime = string.Concat(dmtfDateTime, ".");
             System.DateTime dtTemp = new System.DateTime(date.Year, date.Month, date.Day, date.Hour, date.Minute, date.Second, 0);
-            long microsec = ((long)((((date.Ticks - dtTemp.Ticks) 
-                        * 1000) 
+            long microsec = ((long)((((date.Ticks - dtTemp.Ticks)
+                        * 1000)
                         / System.TimeSpan.TicksPerMillisecond)));
             string strMicrosec = ((long)(microsec)).ToString();
             if ((strMicrosec.Length > 6)) {
@@ -1274,200 +1274,200 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
             dmtfDateTime = string.Concat(dmtfDateTime, utcString);
             return dmtfDateTime;
         }
-        
+
         private bool ShouldSerializeElapsedTime() {
             if ((this.IsElapsedTimeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeErrorCode() {
             if ((this.IsErrorCodeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeHealthState() {
             if ((this.IsHealthStateNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeInstallDate() {
             if ((this.IsInstallDateNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeJobRunTimes() {
             if ((this.IsJobRunTimesNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeJobState() {
             if ((this.IsJobStateNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeJobType() {
             if ((this.IsJobTypeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeLocalOrUtcTime() {
             if ((this.IsLocalOrUtcTimeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeMigrationType() {
             if ((this.IsMigrationTypeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeOperatingStatus() {
             if ((this.IsOperatingStatusNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializePercentComplete() {
             if ((this.IsPercentCompleteNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializePrimaryStatus() {
             if ((this.IsPrimaryStatusNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializePriority() {
             if ((this.IsPriorityNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeRecoveryAction() {
             if ((this.IsRecoveryActionNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeRunDay() {
             if ((this.IsRunDayNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeRunDayOfWeek() {
             if ((this.IsRunDayOfWeekNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeRunMonth() {
             if ((this.IsRunMonthNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeRunStartInterval() {
             if ((this.IsRunStartIntervalNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeScheduledStartTime() {
             if ((this.IsScheduledStartTimeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeStartTime() {
             if ((this.IsStartTimeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeTimeBeforeRemoval() {
             if ((this.IsTimeBeforeRemovalNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeTimeOfLastStateChange() {
             if ((this.IsTimeOfLastStateChangeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeTimeSubmitted() {
             if ((this.IsTimeSubmittedNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         private bool ShouldSerializeUntilTime() {
             if ((this.IsUntilTimeNull == false)) {
                 return true;
             }
             return false;
         }
-        
+
         [Browsable(true)]
         public void CommitObject() {
             if ((isEmbedded == false)) {
                 PrivateLateBoundObject.Put();
             }
         }
-        
+
         [Browsable(true)]
         public void CommitObject(System.Management.PutOptions putOptions) {
             if ((isEmbedded == false)) {
                 PrivateLateBoundObject.Put(putOptions);
             }
         }
-        
+
         private void Initialize() {
             AutoCommitProp = true;
             isEmbedded = false;
         }
-        
+
         private static string ConstructPath(string keyInstanceID) {
             string strPath = "ROOT\\virtualization\\v2:Msvm_MigrationJob";
             strPath = string.Concat(strPath, string.Concat(".InstanceID=", string.Concat("\"", string.Concat(keyInstanceID, "\""))));
             return strPath;
         }
-        
+
         private void InitializeObject(System.Management.ManagementScope mgmtScope, System.Management.ManagementPath path, System.Management.ObjectGetOptions getOptions) {
             Initialize();
             if ((path != null)) {
@@ -1479,24 +1479,24 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
             PrivateSystemProperties = new ManagementSystemProperties(PrivateLateBoundObject);
             curObj = PrivateLateBoundObject;
         }
-        
+
         // Different overloads of GetInstances() help in enumerating instances of the WMI class.
         public static MigrationJobCollection GetInstances() {
             return GetInstances(null, null, null);
         }
-        
+
         public static MigrationJobCollection GetInstances(string condition) {
             return GetInstances(null, condition, null);
         }
-        
+
         public static MigrationJobCollection GetInstances(string[] selectedProperties) {
             return GetInstances(null, null, selectedProperties);
         }
-        
+
         public static MigrationJobCollection GetInstances(string condition, string[] selectedProperties) {
             return GetInstances(null, condition, selectedProperties);
         }
-        
+
         public static MigrationJobCollection GetInstances(System.Management.ManagementScope mgmtScope, System.Management.EnumerationOptions enumOptions) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
@@ -1517,15 +1517,15 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
             }
             return new MigrationJobCollection(clsObject.GetInstances(enumOptions));
         }
-        
+
         public static MigrationJobCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition) {
             return GetInstances(mgmtScope, condition, null);
         }
-        
+
         public static MigrationJobCollection GetInstances(System.Management.ManagementScope mgmtScope, string[] selectedProperties) {
             return GetInstances(mgmtScope, null, selectedProperties);
         }
-        
+
         public static MigrationJobCollection GetInstances(System.Management.ManagementScope mgmtScope, string condition, string[] selectedProperties) {
             if ((mgmtScope == null)) {
                 if ((statMgmtScope == null)) {
@@ -1542,7 +1542,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
             ObjectSearcher.Options = enumOptions;
             return new MigrationJobCollection(ObjectSearcher.Get());
         }
-        
+
         [Browsable(true)]
         public static MigrationJob CreateInstance() {
             System.Management.ManagementScope mgmtScope = null;
@@ -1557,12 +1557,12 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
             System.Management.ManagementClass tmpMgmtClass = new System.Management.ManagementClass(mgmtScope, mgmtPath, null);
             return new MigrationJob(tmpMgmtClass.CreateInstance());
         }
-        
+
         [Browsable(true)]
         public void Delete() {
             PrivateLateBoundObject.Delete();
         }
-        
+
         public uint GetError(out string Error) {
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
@@ -1575,7 +1575,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return System.Convert.ToUInt32(0);
             }
         }
-        
+
         public uint GetErrorEx(out string[] Errors) {
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
@@ -1588,7 +1588,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return System.Convert.ToUInt32(0);
             }
         }
-        
+
         public uint KillJob(bool DeleteOnKill) {
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
@@ -1601,7 +1601,7 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return System.Convert.ToUInt32(0);
             }
         }
-        
+
         public uint RequestStateChange(ushort RequestedState, System.DateTime TimeoutPeriod) {
             if ((isEmbedded == false)) {
                 System.Management.ManagementBaseObject inParams = null;
@@ -1615,57 +1615,57 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                 return System.Convert.ToUInt32(0);
             }
         }
-        
+
         public enum JobTypeValues {
-            
+
             Unknown0 = 0,
-            
+
             Creating_Remote_Virtual_Machine = 300,
-            
+
             Checking_Virtual_Machine_Compatibility = 301,
-            
+
             Checking_Virtual_Machine_and_Storage_Compatibility = 302,
-            
+
             Checking_Storage_Compatibility = 303,
-            
+
             Checking_Storage_Migration = 304,
-            
+
             Moving_Virtual_Machine = 305,
-            
+
             Moving_Virtual_Machine_and_Storage = 306,
-            
+
             Moving_Storage = 307,
-            
+
             NULL_ENUM_VALUE = 308,
         }
-        
+
         // Enumerator implementation for enumerating instances of the class.
         public class MigrationJobCollection : object, ICollection {
-            
+
             private ManagementObjectCollection privColObj;
-            
+
             public MigrationJobCollection(ManagementObjectCollection objCollection) {
                 privColObj = objCollection;
             }
-            
+
             public virtual int Count {
                 get {
                     return privColObj.Count;
                 }
             }
-            
+
             public virtual bool IsSynchronized {
                 get {
                     return privColObj.IsSynchronized;
                 }
             }
-            
+
             public virtual object SyncRoot {
                 get {
                     return this;
                 }
             }
-            
+
             public virtual void CopyTo(System.Array array, int index) {
                 privColObj.CopyTo(array, index);
                 int nCtr;
@@ -1673,189 +1673,189 @@ namespace CloudStack.Plugin.WmiWrappers.ROOT.VIRTUALIZATION.V2 {
                     array.SetValue(new MigrationJob(((System.Management.ManagementObject)(array.GetValue(nCtr)))), nCtr);
                 }
             }
-            
+
             public virtual System.Collections.IEnumerator GetEnumerator() {
                 return new MigrationJobEnumerator(privColObj.GetEnumerator());
             }
-            
+
             public class MigrationJobEnumerator : object, System.Collections.IEnumerator {
-                
+
                 private ManagementObjectCollection.ManagementObjectEnumerator privObjEnum;
-                
+
                 public MigrationJobEnumerator(ManagementObjectCollection.ManagementObjectEnumerator objEnum) {
                     privObjEnum = objEnum;
                 }
-                
+
                 public virtual object Current {
                     get {
                         return new MigrationJob(((System.Management.ManagementObject)(privObjEnum.Current)));
                     }
                 }
-                
+
                 public virtual bool MoveNext() {
                     return privObjEnum.MoveNext();
                 }
-                
+
                 public virtual void Reset() {
                     privObjEnum.Reset();
                 }
             }
         }
-        
+
         // TypeConverter to handle null values for ValueType properties
         public class WMIValueTypeConverter : TypeConverter {
-            
+
             private TypeConverter baseConverter;
-            
+
             private System.Type baseType;
-            
+
             public WMIValueTypeConverter(System.Type inBaseType) {
                 baseConverter = TypeDescriptor.GetConverter(inBaseType);
                 baseType = inBaseType;
             }
-            
+
             public override bool CanConvertFrom(System.ComponentModel.ITypeDescriptorContext context, System.Type srcType) {
                 return baseConverter.CanConvertFrom(context, srcType);
             }
-            
+
             public override bool CanConvertTo(System.ComponentModel.ITypeDescriptorContext context, System.Type destinationType) {
                 return baseConverter.CanConvertTo(context, destinationType);
             }
-            
+
             public override object ConvertFrom(System.ComponentModel.ITypeDescriptorContext context, System.Globalization.CultureInfo culture, object value) {
                 return baseConverter.ConvertFrom(context, culture, value);
             }
-            
+
             public override object CreateInstance(System.ComponentModel.ITypeDescriptorContext context, System.Collections.IDictionary dictionary) {
                 return baseConverter.CreateInstance(context, dictionary);
             }
-            
+
             public override bool GetCreateInstanceSupported(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetCreateInstanceSupported(context);
             }
-            
+
             public override PropertyDescriptorCollection GetProperties(System.ComponentModel.ITypeDescriptorContext context, object value, System.Attribute[] attributeVar) {
                 return baseConverter.GetProperties(context, value, attributeVar);
             }
-            
+
             public override bool GetPropertiesSupported(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetPropertiesSupported(context);
             }
-            
+
             public override System.ComponentModel.TypeConverter.StandardValuesCollection GetStandardValues(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetStandardValues(context);
             }
-            
+
             public override bool GetStandardValuesExclusive(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetStandardValuesExclusive(context);
             }
-            
+
             public override bool GetStandardValuesSupported(System.ComponentModel.ITypeDescriptorContext context) {
                 return baseConverter.GetStandardValuesSupported(context);
             }
-            
+
             public override object ConvertTo(System.ComponentModel.ITypeDescriptorContext context, System.Globalization.CultureInfo culture, object value, System.Type destinationType) {
                 if ((baseType.BaseType == typeof(System.Enum))) {
                     if ((value.GetType() == destinationType)) {
                         return value;
                     }
-                    if ((((value == null) 
-                                && (context != null)) 
+                    if ((((value == null)
+                                && (context != null))
                                 && (context.PropertyDescriptor.ShouldSerializeValue(context.Instance) == false))) {
                         return  "NULL_ENUM_VALUE" ;
                     }
                     return baseConverter.ConvertTo(context, culture, value, destinationType);
                 }
-                if (((baseType == typeof(bool)) 
+                if (((baseType == typeof(bool))
                             && (baseType.BaseType == typeof(System.ValueType)))) {
-                    if ((((value == null) 
-                                && (context != null)) 
+                    if ((((value == null)
+                                && (context != null))
                                 && (context.PropertyDescriptor.ShouldSerializeValue(context.Instance) == false))) {
                         return "";
                     }
                     return baseConverter.ConvertTo(context, culture, value, destinationType);
                 }
-                if (((context != null) 
+                if (((context != null)
                             && (context.PropertyDescriptor.ShouldSerializeValue(context.Instance) == false))) {
                     return "";
                 }
                 return baseConverter.ConvertTo(context, culture, value, destinationType);
             }
         }
-        
+
         // Embedded class to represent WMI system Properties.
         [TypeConverter(typeof(System.ComponentModel.ExpandableObjectConverter))]
         public class ManagementSystemProperties {
-            
+
             private System.Management.ManagementBaseObject PrivateLateBoundObject;
-            
+
             public ManagementSystemProperties(System.Management.ManagementBaseObject ManagedObject) {
                 PrivateLateBoundObject = ManagedObject;
             }
-            
+
             [Browsable(true)]
             public int GENUS {
                 get {
                     return ((int)(PrivateLateBoundObject["__GENUS"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string CLASS {
                 get {
                     return ((string)(PrivateLateBoundObject["__CLASS"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string SUPERCLASS {
                 get {
                     return ((string)(PrivateLateBoundObject["__SUPERCLASS"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string DYNASTY {
                 get {
                     return ((string)(PrivateLateBoundObject["__DYNASTY"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string RELPATH {
                 get {
                     return ((string)(PrivateLateBoundObject["__RELPATH"]));
                 }
             }
-            
+
             [Browsable(true)]
             public int PROPERTY_COUNT {
                 get {
                     return ((int)(PrivateLateBoundObject["__PROPERTY_COUNT"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string[] DERIVATION {
                 get {
                     return ((string[])(PrivateLateBoundObject["__DERIVATION"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string SERVER {
                 get {
                     return ((string)(PrivateLateBoundObject["__SERVER"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string NAMESPACE {
                 get {
                     return ((string)(PrivateLateBoundObject["__NAMESPACE"]));
                 }
             }
-            
+
             [Browsable(true)]
             public string PATH {
                 get {

@@ -67,6 +67,8 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     public List<VMTemplateVO> userIsoSearch(boolean listRemoved);
 
+    List<VMTemplateVO> listAllReadySystemVMTemplates(Long zoneId);
+
     VMTemplateVO findSystemVMTemplate(long zoneId);
 
     VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType);
@@ -91,6 +93,5 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     List<VMTemplateVO> listByIds(List<Long> ids);
 
-    List<VMTemplateVO> listByTemplateTag(String tag);
-
+    List<Long> listIdsByTemplateTag(String tag);
 }

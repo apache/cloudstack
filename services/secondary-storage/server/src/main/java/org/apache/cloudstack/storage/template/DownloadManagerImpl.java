@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.template;
 
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
-
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -51,9 +49,10 @@ import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType
 import org.apache.cloudstack.storage.resource.IpTablesHelper;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
+import org.apache.cloudstack.storage.formatinspector.Qcow2HeaderField;
+import org.apache.cloudstack.storage.formatinspector.Qcow2Inspector;
 import org.apache.cloudstack.utils.security.ChecksumValue;
 import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -89,10 +88,13 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Proxy;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.script.Script;
-import com.cloud.utils.storage.QCOW2Utils;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class DownloadManagerImpl extends ManagerBase implements DownloadManager {
     protected static Logger LOGGER = LogManager.getLogger(DownloadManagerImpl.class);
@@ -366,11 +368,17 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             // The QCOW2 is the only format with a header,
             // and as such can be easily read.
 
-            try (InputStream inputStream = td.getS3ObjectInputStream();) {
-                dnld.setTemplatesize(QCOW2Utils.getVirtualSize(inputStream, false));
-            }
-            catch (IOException e) {
-                result = "Couldn't read QCOW2 virtual size. Error: " + e.getMessage();
+            try (InputStream inputStream = td.getS3ObjectInputStream()) {
+                Map<String, byte[]> qcow2HeaderFieldsAndValues = Qcow2Inspector.unravelQcow2Header(inputStream, td.getDownloadUrl());
+                Qcow2Inspector.validateQcow2HeaderFields(qcow2HeaderFieldsAndValues, td.getDownloadUrl());
+
+                dnld.setTemplatesize(NumbersUtil.bytesToLong(qcow2HeaderFieldsAndValues.get(Qcow2HeaderField.SIZE.name())));
+            } catch (IOException ex) {
+                result = String.format("Unable to read QCOW2 metadata. Error: %s", ex.getMessage());
+                LOGGER.error(result, ex);
+            } catch (SecurityException ex) {
+                result = String.format("[%s] is not a valid QCOW2:", td.getDownloadUrl());
+                LOGGER.error(result, ex);
             }
 
         }
@@ -516,8 +524,19 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             return result;
         }
 
+        String finalFilename = resourcePath + "/" + templateFilename;
+
+        if (ImageFormat.QCOW2.equals(dnld.getFormat())) {
+            try {
+                Qcow2Inspector.validateQcow2File(finalFilename);
+            } catch (RuntimeException e) {
+                LOGGER.error(String.format("The downloaded file [%s] is not a valid QCOW2.", finalFilename), e);
+                return "The downloaded file is not a valid QCOW2. Ask the administrator to check the logs for more details.";
+            }
+        }
+
         // Set permissions for the downloaded template
-        File downloadedTemplate = new File(resourcePath + "/" + templateFilename);
+        File downloadedTemplate = new File(finalFilename);
 
         _storage.setWorldReadableAndWriteable(downloadedTemplate);
         setPermissionsForTheDownloadedTemplate(resourcePath, resourceType);

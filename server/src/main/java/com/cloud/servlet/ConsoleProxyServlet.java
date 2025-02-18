@@ -209,14 +209,14 @@ public class ConsoleProxyServlet extends HttpServlet {
         }
 
         if (vm.getHostId() == null) {
-            LOGGER.warn("VM " + vmId + " lost host info, sending blank response for thumbnail request");
+            LOGGER.warn("VM {} lost host info, sending blank response for thumbnail request", vm);
             sendResponse(resp, "");
             return;
         }
 
         HostVO host = _ms.getHostBy(vm.getHostId());
         if (host == null) {
-            LOGGER.warn("VM " + vmId + "'s host does not exist, sending blank response for thumbnail request");
+            LOGGER.warn("VM {}'s host does not exist, sending blank response for thumbnail request", vm);
             sendResponse(resp, "");
             return;
         }
@@ -263,14 +263,14 @@ public class ConsoleProxyServlet extends HttpServlet {
         }
 
         if (vm.getHostId() == null) {
-            LOGGER.warn("VM " + vmId + " lost host info, failed response for authentication request from console proxy");
+            LOGGER.warn("VM {} lost host info, failed response for authentication request from console proxy", vm);
             sendResponse(resp, "failed");
             return;
         }
 
         HostVO host = _ms.getHostBy(vm.getHostId());
         if (host == null) {
-            LOGGER.warn("VM " + vmId + "'s host does not exist, sending failed response for authentication request from console proxy");
+            LOGGER.warn("VM {}'s host does not exist, sending failed response for authentication request from console proxy", vm);
             sendResponse(resp, "failed");
             return;
         }
@@ -434,14 +434,17 @@ public class ConsoleProxyServlet extends HttpServlet {
             } catch (PermissionDeniedException ex) {
                 if (_accountMgr.isNormalUser(accountObj.getId())) {
                     if (LOGGER.isDebugEnabled()) {
-                            LOGGER.debug("VM access is denied. VM owner account " + vm.getAccountId() + " does not match the account id in session " +
-                                accountObj.getId() + " and caller is a normal user");
+                        LOGGER.debug("VM access is denied. VM owner account {} does not " +
+                                "match the account id in session {} and caller is a normal user",
+                                _accountMgr.getAccount(vm.getAccountId()), accountObj);
                     }
                 } else if (_accountMgr.isDomainAdmin(accountObj.getId())
                         || accountObj.getType() == Account.Type.READ_ONLY_ADMIN) {
                     if(LOGGER.isDebugEnabled()) {
-                        LOGGER.debug("VM access is denied. VM owner account " + vm.getAccountId()
-                                + " does not match the account id in session " + accountObj.getId() + " and the domain-admin caller does not manage the target domain");
+                        LOGGER.debug("VM access is denied. VM owner account {} does not " +
+                                "match the account id in session {} and the domain-admin caller " +
+                                "does not manage the target domain",
+                                _accountMgr.getAccount(vm.getAccountId()), accountObj);
                     }
                 }
                 return false;
@@ -479,7 +482,7 @@ public class ConsoleProxyServlet extends HttpServlet {
 
         if ((user == null) || (user.getRemoved() != null) || !user.getState().equals(Account.State.ENABLED) || (account == null) ||
             !account.getState().equals(Account.State.ENABLED)) {
-            LOGGER.warn("Deleted/Disabled/Locked user with id=" + userId + " attempting to access public API");
+            LOGGER.warn("Deleted/Disabled/Locked user ({}) with id={} attempting to access public API", user, userId);
             return false;
         }
         return true;
@@ -545,15 +548,14 @@ public class ConsoleProxyServlet extends HttpServlet {
             Account account = userAcctPair.second();
 
             if (!user.getState().equals(Account.State.ENABLED) || !account.getState().equals(Account.State.ENABLED)) {
-                LOGGER.debug("disabled or locked user accessing the api, userid = " + user.getId() + "; name = " + user.getUsername() + "; state: " + user.getState() +
-                    "; accountState: " + account.getState());
+                LOGGER.debug("disabled or locked user accessing the api, user: {}; state: {}; accountState: {}", user, user.getState(), account.getState());
                 return false;
             }
 
             // verify secret key exists
             secretKey = user.getSecretKey();
             if (secretKey == null) {
-                LOGGER.debug("User does not have a secret key associated with the account -- ignoring request, username: " + user.getUsername());
+                LOGGER.debug("User does not have a secret key associated with the account -- ignoring request, user: {}", user);
                 return false;
             }
 

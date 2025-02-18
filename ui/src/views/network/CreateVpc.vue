@@ -62,6 +62,7 @@
             </a-select-option>
           </a-select>
         </a-form-item>
+        <ownership-selection v-if="isAdminOrDomainAdmin()" @fetch-owner="fetchOwnerOptions"/>
         <a-form-item name="cidr" ref="cidr" v-if="selectedVpcOffering && (selectedVpcOffering.networkmode !== 'ROUTED' || isAdmin())">
           <template #label>
             <tooltip-label :title="$t('label.cidr')" :tooltip="apiParams.cidr.description"/>
@@ -210,13 +211,15 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
-import { isAdmin } from '@/role'
+import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
 
 export default {
   name: 'CreateVpc',
   components: {
+    OwnershipSelection,
     ResourceIcon,
     TooltipLabel
   },
@@ -267,6 +270,7 @@ export default {
     }
   },
   methods: {
+    isAdminOrDomainAdmin,
     initForm () {
       this.formRef = ref()
       this.form = reactive({
@@ -345,6 +349,10 @@ export default {
       this.loadingOffering = true
       api('listVPCOfferings', { zoneid: this.form.zoneid, state: 'Enabled' }).then((response) => {
         this.vpcOfferings = response.listvpcofferingsresponse.vpcoffering
+        this.vpcOfferings = this.vpcOfferings.filter(offering => offering.fornsx === this.selectedZone.isnsxenabled)
+        if (!this.selectedZone.routedmodeenabled) {
+          this.vpcOfferings = this.vpcOfferings.filter(offering => offering.networkmode !== 'ROUTED')
+        }
         this.form.vpcofferingid = this.vpcOfferings[0].id || ''
         this.selectedVpcOffering = this.vpcOfferings[0] || {}
       }).finally(() => {
@@ -354,6 +362,28 @@ export default {
           this.handleVpcOfferingChange(this.vpcOfferings[0].id)
         }
       })
+    },
+    fetchOwnerOptions (OwnerOptions) {
+      this.owner = {
+        projectid: null,
+        domainid: this.$store.getters.userInfo.domainid,
+        account: this.$store.getters.userInfo.account
+      }
+      if (OwnerOptions.selectedAccountType === 'Account') {
+        if (!OwnerOptions.selectedAccount) {
+          return
+        }
+        this.owner.account = OwnerOptions.selectedAccount
+        this.owner.domainid = OwnerOptions.selectedDomain
+        this.owner.projectid = null
+      } else if (OwnerOptions.selectedAccountType === 'Project') {
+        if (!OwnerOptions.selectedProject) {
+          return
+        }
+        this.owner.account = null
+        this.owner.domainid = null
+        this.owner.projectid = OwnerOptions.selectedProject
+      }
     },
     handleVpcOfferingChange (value) {
       this.selectedVpcOffering = {}
@@ -394,7 +424,14 @@ export default {
       if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-        const params = {}
+        var params = {}
+        if (this.owner?.account) {
+          params.account = this.owner.account
+          params.domainid = this.owner.domainid
+        } else if (this.owner?.projectid) {
+          params.domainid = this.owner.domainid
+          params.projectid = this.owner.projectid
+        }
         for (const key in values) {
           const input = values[key]
           if (input === '' || input === null || input === undefined) {

@@ -124,6 +124,9 @@ patch_systemvm() {
     echo "Restored keystore file and certs using backup" >> $logfile 2>&1
   fi
 
+  # Import global cacerts into 'cloud' service's keystore
+  keytool -importkeystore -srckeystore /etc/ssl/certs/java/cacerts -destkeystore /usr/local/cloud/systemvm/certs/realhostip.keystore -srcstorepass changeit -deststorepass vmops.com -noprompt || true
+
   update_checksum $newpath/cloud-scripts.tgz
 
   if [ -f /opt/cloud/bin/setup/patch.sh ];then

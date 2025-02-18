@@ -292,6 +292,7 @@ public class EventTypes {
 
     //register for user API and secret keys
     public static final String EVENT_REGISTER_FOR_SECRET_API_KEY = "REGISTER.USER.KEY";
+    public static final String API_KEY_ACCESS_UPDATE = "API.KEY.ACCESS.UPDATE";
 
     // Template Events
     public static final String EVENT_TEMPLATE_CREATE = "TEMPLATE.CREATE";
@@ -783,6 +784,9 @@ public class EventTypes {
     public static final String EVENT_SHAREDFS_DESTROY = "SHAREDFS.DESTROY";
     public static final String EVENT_SHAREDFS_EXPUNGE = "SHAREDFS.EXPUNGE";
     public static final String EVENT_SHAREDFS_RECOVER = "SHAREDFS.RECOVER";
+
+    // Resource Limit
+    public static final String EVENT_RESOURCE_LIMIT_UPDATE = "RESOURCE.LIMIT.UPDATE";
 
     static {
 

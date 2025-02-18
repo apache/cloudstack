@@ -334,7 +334,7 @@ public class SystemVmTemplateRegistration {
         }
     };
 
-    public static boolean validateIfSeeded(String url, String path, String nfsVersion) {
+    public boolean validateIfSeeded(TemplateDataStoreVO templDataStoreVO, String url, String path, String nfsVersion) {
         String filePath = null;
         try {
             filePath = Files.createTempDirectory(TEMPORARY_SECONDARY_STORE).toString();
@@ -347,6 +347,9 @@ public class SystemVmTemplateRegistration {
             String templatePath = filePath + File.separator + partialDirPath;
             File templateProps = new File(templatePath + "/template.properties");
             if (templateProps.exists()) {
+                Pair<Long, Long> templateSizes = readTemplatePropertiesSizes(templatePath + "/template.properties");
+                updateSeededTemplateDetails(templDataStoreVO.getTemplateId(), templDataStoreVO.getDataStoreId(),
+                        templateSizes.first(), templateSizes.second());
                 LOGGER.info("SystemVM template already seeded, skipping registration");
                 return true;
             }
@@ -542,6 +545,21 @@ public class SystemVmTemplateRegistration {
         }
     }
 
+    public void updateSeededTemplateDetails(long templateId, long storeId, long size, long physicalSize) {
+        VMTemplateVO template = vmTemplateDao.findById(templateId);
+        template.setSize(size);
+        vmTemplateDao.update(template.getId(), template);
+
+        TemplateDataStoreVO templateDataStoreVO = templateDataStoreDao.findByStoreTemplate(storeId, template.getId());
+        templateDataStoreVO.setSize(size);
+        templateDataStoreVO.setPhysicalSize(physicalSize);
+        templateDataStoreVO.setLastUpdated(new Date(DateUtil.currentGMTTime().getTime()));
+        boolean updated = templateDataStoreDao.update(templateDataStoreVO.getId(), templateDataStoreVO);
+        if (!updated) {
+            throw new CloudRuntimeException("Failed to update template_store_ref entry for seeded systemVM template");
+        }
+    }
+
     public void updateSystemVMEntries(Long templateId, Hypervisor.HypervisorType hypervisorType) {
         vmInstanceDao.updateSystemVmTemplateId(templateId, hypervisorType);
     }
@@ -555,7 +573,7 @@ public class SystemVmTemplateRegistration {
         }
     }
 
-    private static void readTemplateProperties(String path, SystemVMTemplateDetails details) {
+    private static Pair<Long, Long> readTemplatePropertiesSizes(String path) {
         File tmpFile = new File(path);
         Long size = null;
         Long physicalSize = 0L;
@@ -574,8 +592,13 @@ public class SystemVmTemplateRegistration {
         } catch (IOException ex) {
             LOGGER.warn("Failed to read from template.properties", ex);
         }
-        details.setSize(size);
-        details.setPhysicalSize(physicalSize);
+        return new Pair<>(size, physicalSize);
+    }
+
+    public static void readTemplateProperties(String path, SystemVMTemplateDetails details) {
+        Pair<Long, Long> templateSizes = readTemplatePropertiesSizes(path);
+        details.setSize(templateSizes.first());
+        details.setPhysicalSize(templateSizes.second());
     }
 
     private void updateTemplateTablesOnFailure(long templateId) {
@@ -796,12 +819,16 @@ public class SystemVmTemplateRegistration {
                                     Long templateId = getRegisteredTemplateId(hypervisorAndTemplateName);
                                     if (templateId != null) {
                                         VMTemplateVO templateVO = vmTemplateDao.findById(templateId);
-                                        TemplateDataStoreVO templateDataStoreVO = templateDataStoreDao.findByTemplate(templateId, DataStoreRole.Image);
-                                        String installPath = templateDataStoreVO.getInstallPath();
-                                        if (validateIfSeeded(storeUrlAndId.first(), installPath, nfsVersion)) {
-                                            continue;
-                                        } else if (templateVO != null) {
+                                        TemplateDataStoreVO templateDataStoreVO = templateDataStoreDao.findByStoreTemplate(storeUrlAndId.second(), templateId);
+                                        if (templateDataStoreVO != null) {
+                                            String installPath = templateDataStoreVO.getInstallPath();
+                                            if (validateIfSeeded(templateDataStoreVO, storeUrlAndId.first(), installPath, nfsVersion)) {
+                                                continue;
+                                            }
+                                        }
+                                        if (templateVO != null) {
                                             registerTemplate(hypervisorAndTemplateName, storeUrlAndId, templateVO, templateDataStoreVO, filePath);
+                                            updateRegisteredTemplateDetails(templateId, hypervisorAndTemplateName);
                                             continue;
                                         }
                                     }
@@ -825,6 +852,11 @@ public class SystemVmTemplateRegistration {
     }
 
     private void updateRegisteredTemplateDetails(Long templateId, Map.Entry<Hypervisor.HypervisorType, String> hypervisorAndTemplateName) {
+        Pair<Hypervisor.HypervisorType, String> entry = new Pair<>(hypervisorAndTemplateName.getKey(), hypervisorAndTemplateName.getValue());
+        updateRegisteredTemplateDetails(templateId, entry);
+    }
+
+    private void updateRegisteredTemplateDetails(Long templateId, Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName) {
         VMTemplateVO templateVO = vmTemplateDao.findById(templateId);
         templateVO.setTemplateType(Storage.TemplateType.SYSTEM);
         boolean updated = vmTemplateDao.update(templateVO.getId(), templateVO);
@@ -834,11 +866,11 @@ public class SystemVmTemplateRegistration {
             throw new CloudRuntimeException(errMsg);
         }
 
-        updateSystemVMEntries(templateId, hypervisorAndTemplateName.getKey());
+        updateSystemVMEntries(templateId, hypervisorAndTemplateName.first());
 
         // Change value of global configuration parameter router.template.* for the corresponding hypervisor and minreq.sysvmtemplate.version for the ACS version
         Map<String, String> configParams = new HashMap<>();
-        configParams.put(RouterTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()), hypervisorAndTemplateName.getValue());
+        configParams.put(RouterTemplateConfigurationNames.get(hypervisorAndTemplateName.first()), hypervisorAndTemplateName.second());
         configParams.put("minreq.sysvmtemplate.version", getSystemVmTemplateVersion());
         updateConfigurationParams(configParams);
     }
@@ -861,7 +893,7 @@ public class SystemVmTemplateRegistration {
             public void doInTransactionWithoutResult(final TransactionStatus status) {
                 Set<Hypervisor.HypervisorType> hypervisorsListInUse = new HashSet<Hypervisor.HypervisorType>();
                 try {
-                    hypervisorsListInUse = clusterDao.getDistictAvailableHypervisorsAcrossClusters();
+                    hypervisorsListInUse = clusterDao.getDistinctAvailableHypervisorsAcrossClusters();
 
                 } catch (final Exception e) {
                     LOGGER.error("updateSystemVmTemplates: Exception caught while getting hypervisor types from clusters: " + e.getMessage());

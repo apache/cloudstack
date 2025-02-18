@@ -31,6 +31,7 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.MemBalloonDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
 import org.apache.cloudstack.utils.qemu.QemuObject;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
@@ -535,6 +536,16 @@ public class LibvirtVMDefTest extends TestCase {
         LibvirtVMDef.WatchDogDef def = new LibvirtVMDef.WatchDogDef(action, model);
         assertEquals(model, def.getModel());
         assertEquals(action, def.getAction());
+    }
+
+    @Test
+    public void testWatchDofDefNone() {
+        LibvirtVMDef.WatchDogDef.WatchDogModel model = LibvirtVMDef.WatchDogDef.WatchDogModel.NONE;
+        LibvirtVMDef.WatchDogDef.WatchDogAction action = LibvirtVMDef.WatchDogDef.WatchDogAction.RESET;
+        LibvirtVMDef.WatchDogDef def = new LibvirtVMDef.WatchDogDef(action, model);
+        String result = def.toString();
+        assertNotNull(result);
+        assertTrue(StringUtils.isBlank(result));
     }
 
     @Test

@@ -24,6 +24,7 @@ import com.cloud.dc.dao.ASNumberRangeDao;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
@@ -54,6 +55,7 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.user.bgp.ListASNumbersCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.network.BgpPeer;
 import org.apache.cloudstack.network.BgpPeerVO;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.cloudstack.network.dao.BgpPeerDao;
@@ -116,6 +118,9 @@ public class BGPServiceImpl implements BGPService {
             LOGGER.error(msg);
             throw new InvalidParameterException(msg);
         }
+        if (!routedIpv4Manager.isRoutedNetworkVpcEnabled(zoneId)) {
+            throw new InvalidParameterValueException("Cannot create ASN range as Routed networks and VPCs are not enabled for the zone.");
+        }
         if (startASNumber > endASNumber) {
             String msg = "Please specify a valid AS Number range";
             LOGGER.error(msg);
@@ -132,19 +137,19 @@ public class BGPServiceImpl implements BGPService {
 
         try {
             return Transaction.execute((TransactionCallback<ASNumberRange>) status -> {
-                LOGGER.debug(String.format("Persisting AS Number Range %s-%s for the zone %s", startASNumber, endASNumber, zone.getName()));
+                LOGGER.debug("Persisting AS Number Range {}-{} for the zone {}", startASNumber, endASNumber, zone);
                 ASNumberRangeVO asNumberRangeVO = new ASNumberRangeVO(zoneId, startASNumber, endASNumber);
                 asNumberRangeDao.persist(asNumberRangeVO);
 
                 for (long asn = startASNumber; asn <= endASNumber; asn++) {
-                    LOGGER.debug(String.format("Persisting AS Number %s for zone %s", asn, zone.getName()));
+                    LOGGER.debug("Persisting AS Number {} for zone {}", asn, zone);
                     ASNumberVO asNumber = new ASNumberVO(asn, asNumberRangeVO.getId(), zoneId);
                     asNumberDao.persist(asNumber);
                 }
                 return asNumberRangeVO;
             });
         } catch (Exception e) {
-            String err = String.format("Error creating AS Number range %s-%s for zone %s: %s", startASNumber, endASNumber, zone.getName(), e.getMessage());
+            String err = String.format("Error creating AS Number range %s-%s for zone %s: %s", startASNumber, endASNumber, zone, e.getMessage());
             LOGGER.error(err, e);
             throw new CloudRuntimeException(err);
         }
@@ -202,8 +207,8 @@ public class BGPServiceImpl implements BGPService {
                 throw new InvalidParameterException(String.format("Failed to find network with ID: %s", networkId));
             }
             if (network.getVpcId() != null) {
-                LOGGER.debug(String.format("The network %s is a VPC tier, searching for the AS number on the VPC with ID %s",
-                        network.getName(), network.getVpcId()));
+                LOGGER.debug("The network {} is a VPC tier, searching for the AS number on the VPC {}",
+                        network::toString, () -> vpcDao.findById(network.getVpcId()));
                 networkSearchId = null;
                 vpcSerchId = network.getVpcId();
             }
@@ -221,15 +226,17 @@ public class BGPServiceImpl implements BGPService {
                 asNumberDao.findOneByAllocationStateAndZone(zoneId, false);
         if (asNumberVO == null || asNumberVO.getDataCenterId() != zoneId) {
             if (asNumber != null) {
-                LOGGER.error(String.format("Cannot find AS number %s in zone with ID %s", asNumber, zoneId));
+                LOGGER.error("Cannot find AS number {} in zone {} with id {}", asNumber, dataCenterDao.findById(zoneId), zoneId);
                 return false;
             }
             throw new CloudRuntimeException(String.format("Cannot allocate AS number in zone with ID %s", zoneId));
         }
         long accountId, domainId;
         String netName;
+        VpcVO vpc = null;
+        NetworkVO network = null;
         if (Objects.nonNull(vpcId)) {
-            VpcVO vpc = vpcDao.findById(vpcId);
+            vpc = vpcDao.findById(vpcId);
             if (vpc == null) {
                 LOGGER.error(String.format("Cannot find VPC with ID %s", vpcId));
                 return false;
@@ -238,7 +245,7 @@ public class BGPServiceImpl implements BGPService {
             domainId = vpc.getDomainId();
             netName = vpc.getName();
         } else {
-            NetworkVO network = networkDao.findById(networkId);
+            network = networkDao.findById(networkId);
             if (network == null) {
                 LOGGER.error(String.format("Cannot find network with ID %s", networkId));
                 return false;
@@ -248,8 +255,9 @@ public class BGPServiceImpl implements BGPService {
             netName = network.getName();
         }
 
-        LOGGER.debug(String.format("Allocating the AS Number %s to %s %s on zone %s", asNumber,
-                (Objects.nonNull(vpcId) ? "VPC" : "network"), netName, zoneId));
+        LOGGER.debug("Allocating the AS Number {} to {} on zone {}", asNumber::toString,
+                (Objects.nonNull(vpcId) ? "VPC " + vpc : "network " + network)::toString,
+                () -> dataCenterDao.findById(zoneId));
         asNumberVO.setAllocated(true);
         asNumberVO.setAllocatedTime(new Date());
         if (Objects.nonNull(vpcId)) {
@@ -286,11 +294,12 @@ public class BGPServiceImpl implements BGPService {
     @ActionEvent(eventType = EventTypes.EVENT_AS_NUMBER_RELEASE, eventDescription = "Releasing AS Number")
     public Pair<Boolean, String> releaseASNumber(long zoneId, long asNumber, boolean isDestroyNetworkOperation) {
         ASNumberVO asNumberVO = asNumberDao.findByAsNumber(asNumber);
+        DataCenterVO zone = dataCenterDao.findById(zoneId);
         if (asNumberVO == null) {
-            return logAndReturnErrorMessage(String.format("Cannot find AS Number %s on zone %s", asNumber, zoneId));
+            return logAndReturnErrorMessage(String.format("Cannot find AS Number %s on zone %s", asNumber, zone));
         }
         if (!asNumberVO.isAllocated()) {
-            LOGGER.debug(String.format("The AS Number %s is not allocated to any network on zone %s, ignoring release", asNumber, zoneId));
+            LOGGER.debug("The AS Number {} is not allocated to any network on zone {}, ignoring release", asNumber, zone);
             return new Pair<>(true, "");
         }
         Long networkId = asNumberVO.getNetworkId();
@@ -301,7 +310,7 @@ public class BGPServiceImpl implements BGPService {
                 return checksResult;
             }
         }
-        LOGGER.debug(String.format("Releasing AS Number %s on zone %s from previous allocation", asNumber, zoneId));
+        LOGGER.debug("Releasing AS Number {} on zone {} from previous allocation", asNumber, zone);
         asNumberVO.setAllocated(false);
         asNumberVO.setAllocatedTime(null);
         asNumberVO.setDomainId(null);
@@ -356,6 +365,7 @@ public class BGPServiceImpl implements BGPService {
         long startASNumber = asRange.getStartASNumber();
         long endASNumber = asRange.getEndASNumber();
         long zoneId = asRange.getDataCenterId();
+        DataCenterVO zone = dataCenterDao.findById(zoneId);
         List<ASNumberVO> allocatedAsNumbers = asNumberDao.listAllocatedByASRange(asRange.getId());
         if (Objects.nonNull(allocatedAsNumbers) && !allocatedAsNumbers.isEmpty()) {
             throw new CloudRuntimeException(String.format("There are %s AS numbers in use from the range %s-%s, cannot remove the range",
@@ -369,13 +379,12 @@ public class BGPServiceImpl implements BGPService {
                     LOGGER.debug(String.format("Removed %s AS numbers from the range %s-%s", removedASNumbers,
                             startASNumber, endASNumber));
                     asNumberRangeDao.remove(id);
-                    LOGGER.debug(String.format("Removing the AS Number Range %s-%s for the zone %s", startASNumber,
-                            endASNumber, zoneId));
+                    LOGGER.debug("Removing the AS Number Range {}-{} for the zone {}", startASNumber, endASNumber, zone);
                 }
             });
         } catch (Exception e) {
             String err = String.format("Error removing AS Number range %s-%s for zone %s: %s",
-                    startASNumber, endASNumber, zoneId, e.getMessage());
+                    startASNumber, endASNumber, zone, e.getMessage());
             LOGGER.error(err, e);
             throw new CloudRuntimeException(err);
         }
@@ -391,19 +400,7 @@ public class BGPServiceImpl implements BGPService {
         if (gatewayProviderStr != null) {
             NetworkElement provider = networkModel.getElementImplementingProvider(gatewayProviderStr);
             if (provider != null && provider instanceof BgpServiceProvider) {
-                List<BgpPeerVO> bgpPeers;
-                if (network.getVpcId() != null) {
-                    bgpPeers = bgpPeerDao.listNonRevokeByVpcId(network.getVpcId());
-                } else {
-                    bgpPeers = bgpPeerDao.listNonRevokeByNetworkId(network.getId());
-                }
-                if (CollectionUtils.isEmpty(bgpPeers)) {
-                    Account owner = accountDao.findByIdIncludingRemoved(network.getAccountId());
-                    List<Long> bgpPeerIds = routedIpv4Manager.getBgpPeerIdsForAccount(owner, network.getDataCenterId());
-                    bgpPeers = bgpPeerIds.stream()
-                            .map(bgpPeerId -> bgpPeerDao.findById(bgpPeerId))
-                            .collect(Collectors.toList());
-                }
+                List<? extends BgpPeer> bgpPeers = getBgpPeersForNetwork(network);
                 LOGGER.debug(String.format("Applying BPG Peers for network [%s]: [%s]", network, bgpPeers));
                 return ((BgpServiceProvider) provider).applyBgpPeers(null, network, bgpPeers);
             }
@@ -420,19 +417,43 @@ public class BGPServiceImpl implements BGPService {
         if (gatewayProviderStr != null) {
             NetworkElement provider = networkModel.getElementImplementingProvider(gatewayProviderStr);
             if (provider != null && provider instanceof BgpServiceProvider) {
-                List<BgpPeerVO> bgpPeers = bgpPeerDao.listNonRevokeByVpcId(vpc.getId());
-                if (CollectionUtils.isEmpty(bgpPeers)) {
-                    Account owner = accountDao.findByIdIncludingRemoved(vpc.getAccountId());
-                    List<Long> bgpPeerIds = routedIpv4Manager.getBgpPeerIdsForAccount(owner, vpc.getZoneId());
-                    bgpPeers = bgpPeerIds.stream()
-                            .map(bgpPeerId -> bgpPeerDao.findById(bgpPeerId))
-                            .collect(Collectors.toList());
-                }
+                List<? extends BgpPeer> bgpPeers = getBgpPeersForVpc(vpc);
                 LOGGER.debug(String.format("Applying BPG Peers for VPC [%s]: [%s]", vpc, bgpPeers));
                 return ((BgpServiceProvider) provider).applyBgpPeers(vpc, null, bgpPeers);
 
             }
         }
         return true;
+    }
+
+    @Override
+    public List<? extends BgpPeer> getBgpPeersForNetwork(Network network) {
+        List<BgpPeerVO> bgpPeers;
+        if (network.getVpcId() != null) {
+            bgpPeers = bgpPeerDao.listNonRevokeByVpcId(network.getVpcId());
+        } else {
+            bgpPeers = bgpPeerDao.listNonRevokeByNetworkId(network.getId());
+        }
+        if (CollectionUtils.isEmpty(bgpPeers)) {
+            Account owner = accountDao.findByIdIncludingRemoved(network.getAccountId());
+            List<Long> bgpPeerIds = routedIpv4Manager.getBgpPeerIdsForAccount(owner, network.getDataCenterId());
+            bgpPeers = bgpPeerIds.stream()
+                    .map(bgpPeerId -> bgpPeerDao.findById(bgpPeerId))
+                    .collect(Collectors.toList());
+        }
+        return bgpPeers;
+    }
+
+    @Override
+    public List<? extends BgpPeer> getBgpPeersForVpc(Vpc vpc) {
+        List<BgpPeerVO> bgpPeers = bgpPeerDao.listNonRevokeByVpcId(vpc.getId());
+        if (CollectionUtils.isEmpty(bgpPeers)) {
+            Account owner = accountDao.findByIdIncludingRemoved(vpc.getAccountId());
+            List<Long> bgpPeerIds = routedIpv4Manager.getBgpPeerIdsForAccount(owner, vpc.getZoneId());
+            bgpPeers = bgpPeerIds.stream()
+                    .map(bgpPeerId -> bgpPeerDao.findById(bgpPeerId))
+                    .collect(Collectors.toList());
+        }
+        return bgpPeers;
     }
 }

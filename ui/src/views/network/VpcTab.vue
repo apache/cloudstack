@@ -727,8 +727,7 @@ export default {
           break
         case 'networkAcl':
           this.rules = {
-            name: [{ required: true, message: this.$t('label.required') }],
-            description: [{ required: true, message: this.$t('label.required') }]
+            name: [{ required: true, message: this.$t('label.required') }]
           }
           this.modals.networkAcl = true
           break
@@ -800,12 +799,12 @@ export default {
 
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-
-        api('createVpnConnection', {
-          s2svpngatewayid: this.vpnGateways[0].id,
+        const params = {
+          s2svpngatewayid: this.vpnGateways[0] ? this.vpnGateways[0].id : null,
           s2scustomergatewayid: values.vpncustomergateway,
           passive: values.passive ? values.passive : false
-        }).then(response => {
+        }
+        api('createVpnConnection', params).then(response => {
           this.$pollJob({
             jobId: response.createvpnconnectionresponse.jobid,
             title: this.$t('label.vpn.connection'),

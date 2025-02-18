@@ -329,8 +329,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         }catch (ResourceUnavailableException ex) {
             vpn.setState(prevState);
             _remoteAccessVpnDao.update(vpn.getId(), vpn);
-            logger.debug("Failed to stop the vpn " + vpn.getId() + " , so reverted state to "+
-                    RemoteAccessVpn.State.Running);
+            logger.debug("Failed to stop the vpn {}, so reverted state to {}", vpn, RemoteAccessVpn.State.Running);
             success = false;
         } finally {
             if (success|| forceCleanup) {
@@ -435,10 +434,10 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
     @DB
     @Override
-    public boolean removeVpnUser(long vpnOwnerId, String username, Account caller) {
-        final VpnUserVO user = _vpnUsersDao.findByAccountAndUsername(vpnOwnerId, username);
+    public boolean removeVpnUser(Account vpnOwner, String username, Account caller) {
+        final VpnUserVO user = _vpnUsersDao.findByAccountAndUsername(vpnOwner.getId(), username);
         if (user == null) {
-            String errorMessage = String.format("Could not find VPN user=[%s]. VPN owner id=[%s]", username, vpnOwnerId);
+            String errorMessage = String.format("Could not find VPN user=[%s]. VPN owner=[%s]", username, vpnOwner);
             logger.debug(errorMessage);
             throw new InvalidParameterValueException(errorMessage);
         }
@@ -521,14 +520,14 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
     }
 
     @DB
-    private boolean removeVpnUserWithoutRemoteAccessVpn(long vpnOwnerId, String userName) {
-        VpnUserVO vpnUser = _vpnUsersDao.findByAccountAndUsername(vpnOwnerId, userName);
+    private boolean removeVpnUserWithoutRemoteAccessVpn(Account vpnOwner, String userName) {
+        VpnUserVO vpnUser = _vpnUsersDao.findByAccountAndUsername(vpnOwner.getId(), userName);
         if (vpnUser == null) {
-            logger.error(String.format("VPN user not found with ownerId: %d and username: %s", vpnOwnerId, userName));
+            logger.error("VPN user not found with owner: {} and username: {}", vpnOwner, userName);
             return false;
         }
         if (!State.Revoke.equals(vpnUser.getState())) {
-            logger.error(String.format("VPN user with ownerId: %d and username: %s is not in revoked state, current state: %s", vpnOwnerId, userName, vpnUser.getState()));
+            logger.error("VPN user with owner: {} and username: {} is not in revoked state, current state: {}", vpnOwner, userName, vpnUser.getState());
             return false;
         }
         return _vpnUsersDao.remove(vpnUser.getId());
@@ -546,7 +545,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         if (CollectionUtils.isEmpty(vpns)) {
             if (forRemove) {
-                return removeVpnUserWithoutRemoteAccessVpn(vpnOwnerId, userName);
+                return removeVpnUserWithoutRemoteAccessVpn(owner, userName);
             }
             logger.warn(String.format("Unable to apply VPN user due to there are no remote access VPNs configured on %s to apply VPN user.", owner.toString()));
             return true;
@@ -578,7 +577,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                             if (indexUser == users.size()) {
                                 indexUser = 0;
                             }
-                            logger.debug("VPN User " + users.get(indexUser) + (result == null ? " is set on " : (" couldn't be set due to " + result) + " on ") + vpn.getUuid());
+                            logger.debug("VPN User {}{}{}", users.get(indexUser), result == null ? " is set on " : (" couldn't be set due to " + result) + " on ", vpn);
                             if (result == null) {
                                 if (finals[indexUser] == null) {
                                     finals[indexUser] = true;

@@ -313,12 +313,13 @@ export default {
         }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
-          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'networkid', 'usagetype', 'restartrequired'].includes(item)
+          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'networkid',
+          'usagetype', 'restartrequired', 'displaynetwork', 'guestiptype', 'usersource'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
           type = 'tag'
-        } else if (item === 'resourcetype') {
+        } else if (['resourcetype', 'apikeyaccess'].includes(item)) {
           type = 'autocomplete'
         } else if (item === 'isencrypted') {
           type = 'boolean'
@@ -335,9 +336,15 @@ export default {
       return arrayField
     },
     fetchStaticFieldData (arrayField) {
-      if (arrayField.includes('type')) {
-        if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
-          const typeIndex = this.fields.findIndex(item => item.name === 'type')
+      if (arrayField.includes('displaynetwork')) {
+        const typeIndex = this.fields.findIndex(item => item.name === 'displaynetwork')
+        this.fields[typeIndex].loading = true
+        this.fields[typeIndex].opts = this.fetchBoolean()
+        this.fields[typeIndex].loading = false
+      }
+      if (arrayField.includes('type') || arrayField.includes('guestiptype')) {
+        if (this.$route.path.includes('/guestnetwork') || this.$route.path.includes('/networkoffering')) {
+          const typeIndex = this.fields.findIndex(item => ['type', 'guestiptype'].includes(item.name))
           this.fields[typeIndex].loading = true
           this.fields[typeIndex].opts = this.fetchGuestNetworkTypes()
           this.fields[typeIndex].loading = false
@@ -430,6 +437,17 @@ export default {
           { value: 'QuotaTariff' }
         ]
         this.fields[resourceTypeIndex].loading = false
+      }
+
+      if (arrayField.includes('apikeyaccess')) {
+        const apiKeyAccessIndex = this.fields.findIndex(item => item.name === 'apikeyaccess')
+        this.fields[apiKeyAccessIndex].loading = true
+        this.fields[apiKeyAccessIndex].opts = [
+          { value: 'Disabled' },
+          { value: 'Enabled' },
+          { value: 'Inherit' }
+        ]
+        this.fields[apiKeyAccessIndex].loading = false
       }
     },
     async fetchDynamicFieldData (arrayField, searchKeyword) {
@@ -661,6 +679,9 @@ export default {
         }
         if (accountIndex > -1) {
           this.fields[accountIndex].loading = false
+        }
+        if (hypervisorIndex > -1) {
+          this.fields[hypervisorIndex].loading = false
         }
         if (imageStoreIndex > -1) {
           this.fields[imageStoreIndex].loading = false

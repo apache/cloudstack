@@ -133,7 +133,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         //check if datacenter is in avoid set
         if (avoid.shouldAvoid(dc)) {
             if (logger.isDebugEnabled()) {
-                logger.debug("DataCenter id = '" + dc.getId() + "' provided is in avoid set, DeploymentPlanner cannot allocate the VM, returning.");
+                logger.debug("DataCenter {} provided is in avoid set, DeploymentPlanner cannot allocate the VM, returning.", dc);
             }
             return null;
         }
@@ -141,8 +141,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         List<Long> clusterList = new ArrayList<>();
         if (plan.getClusterId() != null) {
             Long clusterIdSpecified = plan.getClusterId();
-            logger.debug("Searching resources only under specified Cluster: " + clusterIdSpecified);
             ClusterVO cluster = clusterDao.findById(plan.getClusterId());
+            logger.debug("Searching resources only under specified Cluster: {}", cluster != null ? cluster : clusterIdSpecified);
             if (cluster != null) {
                 if (avoid.shouldAvoid(cluster)) {
                     logger.debug("The specified cluster is in avoid set, returning.");
@@ -158,9 +158,9 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         } else if (plan.getPodId() != null) {
             //consider clusters under this pod only
             Long podIdSpecified = plan.getPodId();
-            logger.debug("Searching resources only under specified Pod: " + podIdSpecified);
 
             HostPodVO pod = podDao.findById(podIdSpecified);
+            logger.debug("Searching resources only under specified Pod: {}", pod != null ? pod : podIdSpecified);
             if (pod != null) {
                 if (avoid.shouldAvoid(pod)) {
                     logger.debug("The specified pod is in avoid set, returning.");
@@ -176,7 +176,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
                 return null;
             }
         } else {
-            logger.debug("Searching all possible resources under this Zone: " + plan.getDataCenterId());
+            logger.debug("Searching all possible resources under this Zone: {}", dcDao.findById(plan.getDataCenterId()));
 
             boolean applyAllocationAtPods = Boolean.parseBoolean(configDao.getValue(Config.ApplyAllocationAlgorithmToPods.key()));
             if (applyAllocationAtPods) {

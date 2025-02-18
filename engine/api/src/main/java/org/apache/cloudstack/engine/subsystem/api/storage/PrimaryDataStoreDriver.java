@@ -112,6 +112,14 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     Pair<Long, Long> getStorageStats(StoragePool storagePool);
 
     /**
+     * Intended for managed storage
+     * returns the capacity and used IOPS or null if not supported
+     */
+    default Pair<Long, Long> getStorageIopsStats(StoragePool storagePool) {
+        return null;
+    }
+
+    /**
      * intended for managed storage
      * returns true if the storage can provide the volume stats (physical and virtual size)
      */

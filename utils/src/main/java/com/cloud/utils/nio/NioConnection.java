@@ -32,7 +32,9 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -41,6 +43,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -48,8 +52,8 @@ import javax.net.ssl.SSLEngine;
 
 import org.apache.cloudstack.framework.ca.CAService;
 import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.NioConnectionException;
@@ -60,6 +64,7 @@ import com.cloud.utils.exception.NioConnectionException;
  */
 public abstract class NioConnection implements Callable<Boolean> {
     protected Logger logger = LogManager.getLogger(getClass());
+    public static final String SERVER_BUSY_MESSAGE = "Server is busy.";
 
     protected Selector _selector;
     protected ExecutorService _threadExecutor;
@@ -68,21 +73,36 @@ public abstract class NioConnection implements Callable<Boolean> {
     protected boolean _isRunning;
     protected boolean _isStartup;
     protected int _port;
+    protected int _workers;
     protected List<ChangeRequest> _todos;
     protected HandlerFactory _factory;
     protected String _name;
     protected ExecutorService _executor;
     protected ExecutorService _sslHandshakeExecutor;
     protected CAService caService;
+    protected Set<SocketChannel> socketChannels = new HashSet<>();
+    protected Integer sslHandshakeTimeout = null;
+    private final int factoryMaxNewConnectionsCount;
 
     public NioConnection(final String name, final int port, final int workers, final HandlerFactory factory) {
         _name = name;
         _isRunning = false;
         _selector = null;
         _port = port;
+        _workers = workers;
         _factory = factory;
-        _executor = new ThreadPoolExecutor(workers, 5 * workers, 1, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(name + "-Handler"));
-        _sslHandshakeExecutor = Executors.newCachedThreadPool(new NamedThreadFactory(name + "-SSLHandshakeHandler"));
+        this.factoryMaxNewConnectionsCount = factory.getMaxConcurrentNewConnectionsCount();
+        _executor = new ThreadPoolExecutor(workers, 5 * workers, 1, TimeUnit.DAYS,
+                new LinkedBlockingQueue<>(5 * workers), new NamedThreadFactory(name + "-Handler"),
+                new ThreadPoolExecutor.AbortPolicy());
+        String sslHandshakeHandlerName = name + "-SSLHandshakeHandler";
+        if (factoryMaxNewConnectionsCount > 0) {
+            _sslHandshakeExecutor = new ThreadPoolExecutor(0, this.factoryMaxNewConnectionsCount, 30,
+                    TimeUnit.MINUTES, new SynchronousQueue<>(), new NamedThreadFactory(sslHandshakeHandlerName),
+                    new ThreadPoolExecutor.AbortPolicy());
+        } else {
+            _sslHandshakeExecutor = Executors.newCachedThreadPool(new NamedThreadFactory(sslHandshakeHandlerName));
+        }
     }
 
     public void setCAService(final CAService caService) {
@@ -90,13 +110,13 @@ public abstract class NioConnection implements Callable<Boolean> {
     }
 
     public void start() throws NioConnectionException {
-        _todos = new ArrayList<ChangeRequest>();
+        _todos = new ArrayList<>();
 
         try {
             init();
         } catch (final ConnectException e) {
-            logger.warn("Unable to connect to remote: is there a server running on port " + _port);
-            return;
+            logger.warn("Unable to connect to remote: is there a server running on port {}?", _port, e);
+            throw new NioConnectionException(e.getMessage(), e);
         } catch (final IOException e) {
             logger.error("Unable to initialize the threads.", e);
             throw new NioConnectionException(e.getMessage(), e);
@@ -106,6 +126,9 @@ public abstract class NioConnection implements Callable<Boolean> {
         }
         _isStartup = true;
 
+        if (_executor.isShutdown()) {
+            _executor = new ThreadPoolExecutor(_workers, 5 * _workers, 1, TimeUnit.DAYS, new LinkedBlockingQueue<>(), new NamedThreadFactory(_name + "-Handler"));
+        }
         _threadExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory(this._name + "-NioConnectionHandler"));
         _isRunning = true;
         _futureTask = _threadExecutor.submit(this);
@@ -113,6 +136,7 @@ public abstract class NioConnection implements Callable<Boolean> {
 
     public void stop() {
         _executor.shutdown();
+        _sslHandshakeExecutor.shutdown();
         _isRunning = false;
         if (_threadExecutor != null) {
             _futureTask.cancel(false);
@@ -138,18 +162,14 @@ public abstract class NioConnection implements Callable<Boolean> {
                 final Set<SelectionKey> readyKeys = _selector.selectedKeys();
                 final Iterator<SelectionKey> i = readyKeys.iterator();
 
-                if (logger.isTraceEnabled()) {
-                    logger.trace("Keys Processing: " + readyKeys.size());
-                }
+                logger.trace("Keys Processing: {}", readyKeys.size());
                 // Walk through the ready keys collection.
                 while (i.hasNext()) {
                     final SelectionKey sk = i.next();
                     i.remove();
 
                     if (!sk.isValid()) {
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("Selection Key is invalid: " + sk.toString());
-                        }
+                        logger.trace("Selection Key is invalid: {}", sk);
                         final Link link = (Link)sk.attachment();
                         if (link != null) {
                             link.terminated();
@@ -190,73 +210,80 @@ public abstract class NioConnection implements Callable<Boolean> {
 
     abstract void unregisterLink(InetSocketAddress saddr);
 
+    protected boolean rejectConnectionIfBusy(final SocketChannel socketChannel) throws IOException {
+        if (factoryMaxNewConnectionsCount <= 0  || _factory.getNewConnectionsCount() < factoryMaxNewConnectionsCount) {
+            return false;
+        }
+        // Reject new connection if the server is busy
+        logger.warn("{} Rejecting new connection. {} active connections currently",
+                SERVER_BUSY_MESSAGE, factoryMaxNewConnectionsCount);
+        socketChannel.close();
+        _selector.wakeup();
+        return true;
+    }
+
+
     protected void accept(final SelectionKey key) throws IOException {
         final ServerSocketChannel serverSocketChannel = (ServerSocketChannel)key.channel();
         final SocketChannel socketChannel = serverSocketChannel.accept();
+        if (rejectConnectionIfBusy(socketChannel)) {
+            return;
+        }
         socketChannel.configureBlocking(false);
 
         final Socket socket = socketChannel.socket();
         socket.setKeepAlive(true);
 
-        if (logger.isTraceEnabled()) {
-            logger.trace("Connection accepted for " + socket);
-        }
+        logger.trace("Connection accepted for {}", socket);
 
-        final SSLEngine sslEngine;
         try {
-            sslEngine = Link.initServerSSLEngine(caService, socketChannel.getRemoteAddress().toString());
-            sslEngine.setUseClientMode(false);
-            sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
             final NioConnection nioConnection = this;
-            _sslHandshakeExecutor.submit(new Runnable() {
-                @Override
-                public void run() {
-                    _selector.wakeup();
-                    try {
-                        sslEngine.beginHandshake();
-                        if (!Link.doHandshake(socketChannel, sslEngine)) {
-                            throw new IOException("SSL handshake timed out with " + socketChannel.getRemoteAddress());
-                        }
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("SSL: Handshake done");
-                        }
-                        final InetSocketAddress saddr = (InetSocketAddress)socket.getRemoteSocketAddress();
-                        final Link link = new Link(saddr, nioConnection);
-                        link.setSSLEngine(sslEngine);
-                        link.setKey(socketChannel.register(key.selector(), SelectionKey.OP_READ, link));
-                        final Task task = _factory.create(Task.Type.CONNECT, link, null);
-                        registerLink(saddr, link);
-                        _executor.submit(task);
-                    } catch (IOException e) {
-                        if (logger.isTraceEnabled()) {
-                            logger.trace("Connection closed due to failure: " + e.getMessage());
-                        }
-                        closeAutoCloseable(socket, "accepting socket");
-                        closeAutoCloseable(socketChannel, "accepting socketChannel");
-                    } finally {
-                        _selector.wakeup();
+            _sslHandshakeExecutor.submit(() -> {
+                final InetSocketAddress socketAddress = (InetSocketAddress)socket.getRemoteSocketAddress();
+                _factory.registerNewConnection(socketAddress);
+                _selector.wakeup();
+                try {
+                    final SSLEngine sslEngine = Link.initServerSSLEngine(caService, socketChannel.getRemoteAddress().toString());
+                    sslEngine.setUseClientMode(false);
+                    sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
+                    sslEngine.beginHandshake();
+                    if (!Link.doHandshake(socketChannel, sslEngine, getSslHandshakeTimeout())) {
+                        throw new IOException("SSL handshake timed out with " + socketAddress);
                     }
+                    logger.trace("SSL: Handshake done");
+                    final Link link = new Link(socketAddress, nioConnection);
+                    link.setSSLEngine(sslEngine);
+                    link.setKey(socketChannel.register(key.selector(), SelectionKey.OP_READ, link));
+                    final Task task = _factory.create(Task.Type.CONNECT, link, null);
+                    registerLink(socketAddress, link);
+                    _executor.submit(task);
+                } catch (final GeneralSecurityException | IOException e) {
+                    _factory.unregisterNewConnection(socketAddress);
+                    logger.trace("Connection closed with {} due to failure: {}", socket.getRemoteSocketAddress(), e.getMessage());
+                    closeAutoCloseable(socket, "accepting socket");
+                    closeAutoCloseable(socketChannel, "accepting socketChannel");
+                } finally {
+                    _selector.wakeup();
                 }
             });
-        } catch (final Exception e) {
-            if (logger.isTraceEnabled()) {
-                logger.trace("Connection closed due to failure: " + e.getMessage());
-            }
-            closeAutoCloseable(socket, "accepting socket");
-            closeAutoCloseable(socketChannel, "accepting socketChannel");
+        } catch (final RejectedExecutionException e) {
+            logger.trace("{} Accept Task rejected: {}", socket.getRemoteSocketAddress(), e.getMessage());
+            closeAutoCloseable(socket, "Rejecting connection - accepting socket");
+            closeAutoCloseable(socketChannel, "Rejecting connection - accepting socketChannel");
         } finally {
             _selector.wakeup();
         }
     }
 
-    protected void terminate(final SelectionKey key) {
+    protected void terminate(final SelectionKey key, String msg) {
         final Link link = (Link)key.attachment();
         closeConnection(key);
         if (link != null) {
+            logger.trace("Will terminate connection due to: {}", msg);
             link.terminated();
             final Task task = _factory.create(Task.Type.DISCONNECT, link, null);
             unregisterLink(link.getSocketAddress());
-
+            _factory.unregisterNewConnection(link.getSocketAddress());
             try {
                 _executor.submit(task);
             } catch (final Exception e) {
@@ -269,14 +296,10 @@ public abstract class NioConnection implements Callable<Boolean> {
         final Link link = (Link)key.attachment();
         try {
             final SocketChannel socketChannel = (SocketChannel)key.channel();
-            if (logger.isTraceEnabled()) {
-                logger.trace("Reading from: " + socketChannel.socket().toString());
-            }
+            logger.trace("Reading from: {}", socketChannel.socket().toString());
             final byte[] data = link.read(socketChannel);
             if (data == null) {
-                if (logger.isTraceEnabled()) {
-                    logger.trace("Packet is incomplete.  Waiting for more.");
-                }
+                logger.trace("Packet is incomplete.  Waiting for more.");
                 return;
             }
             final Task task = _factory.create(Task.Type.DATA, link, data);
@@ -288,7 +311,7 @@ public abstract class NioConnection implements Callable<Boolean> {
             }
         } catch (final Exception e) {
             logDebug(e, key, 1);
-            terminate(key);
+            terminate(key, e.getMessage());
         }
     }
 
@@ -322,18 +345,17 @@ public abstract class NioConnection implements Callable<Boolean> {
 
     protected void processTodos() {
         List<ChangeRequest> todos;
-        if (_todos.size() == 0) {
+        if (_todos.isEmpty()) {
             return;             // Nothing to do.
         }
 
         synchronized (this) {
             todos = _todos;
-            _todos = new ArrayList<ChangeRequest>();
+            _todos = new ArrayList<>();
         }
 
-        if (logger.isTraceEnabled()) {
-            logger.trace("Todos Processing: " + todos.size());
-        }
+        logger.trace("Todos Processing: {}", todos.size());
+
         SelectionKey key;
         for (final ChangeRequest todo : todos) {
             switch (todo.type) {
@@ -360,7 +382,7 @@ public abstract class NioConnection implements Callable<Boolean> {
                         link.setKey(key);
                     }
                 } catch (final ClosedChannelException e) {
-                    logger.warn("Couldn't register socket: " + todo.key);
+                    logger.warn("Couldn't register socket: {}", todo.key);
                     try {
                         ((SocketChannel)todo.key).close();
                     } catch (final IOException ignore) {
@@ -372,9 +394,7 @@ public abstract class NioConnection implements Callable<Boolean> {
                 }
                 break;
             case ChangeRequest.CLOSE:
-                if (logger.isTraceEnabled()) {
-                    logger.trace("Trying to close " + todo.key);
-                }
+                logger.trace("Trying to close {}", todo.key);
                 key = (SelectionKey)todo.key;
                 closeConnection(key);
                 if (key != null) {
@@ -402,9 +422,7 @@ public abstract class NioConnection implements Callable<Boolean> {
             if (!socket.getKeepAlive()) {
                 socket.setKeepAlive(true);
             }
-            if (logger.isDebugEnabled()) {
-                logger.debug("Connected to " + socket);
-            }
+            logger.debug("Connected to {}", socket);
             final Link link = new Link((InetSocketAddress)socket.getRemoteSocketAddress(), this);
             link.setKey(key);
             key.attach(link);
@@ -413,11 +431,11 @@ public abstract class NioConnection implements Callable<Boolean> {
             try {
                 _executor.submit(task);
             } catch (final Exception e) {
-                logger.warn("Exception occurred when submitting the task", e);
+                logger.warn("Exception occurred when submitting the task for connect: {}", socket, e);
             }
         } catch (final IOException e) {
             logTrace(e, key, 2);
-            terminate(key);
+            terminate(key, e.getMessage());
         }
     }
 
@@ -432,9 +450,7 @@ public abstract class NioConnection implements Callable<Boolean> {
     protected void write(final SelectionKey key) throws IOException {
         final Link link = (Link)key.attachment();
         try {
-            if (logger.isTraceEnabled()) {
-                logger.trace("Writing to " + link.getSocketAddress().toString());
-            }
+            logger.trace("Writing to {}", link.getSocketAddress().toString());
             final boolean close = link.write((SocketChannel)key.channel());
             if (close) {
                 closeConnection(key);
@@ -444,7 +460,7 @@ public abstract class NioConnection implements Callable<Boolean> {
             }
         } catch (final Exception e) {
             logDebug(e, key, 3);
-            terminate(key);
+            terminate(key, e.getMessage());
         }
     }
 
@@ -454,9 +470,7 @@ public abstract class NioConnection implements Callable<Boolean> {
             key.cancel();
             try {
                 if (channel != null) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Closing socket " + channel.socket());
-                    }
+                    logger.debug("Closing socket {}", channel.socket());
                     channel.close();
                 }
             } catch (final IOException ignore) {
@@ -491,6 +505,16 @@ public abstract class NioConnection implements Callable<Boolean> {
 
     /* Release the resource used by the instance */
     public void cleanUp() throws IOException {
+        for (SocketChannel channel : socketChannels) {
+            if (channel != null && channel.isOpen()) {
+                try {
+                    logger.info("Closing connection: {}", channel.getRemoteAddress());
+                    channel.close();
+                } catch (IOException e) {
+                    logger.warn("Unable to close connection due to {}", e.getMessage());
+                }
+            }
+        }
         if (_selector != null) {
             _selector.close();
         }
@@ -512,5 +536,13 @@ public abstract class NioConnection implements Callable<Boolean> {
             this.ops = ops;
             this.att = att;
         }
+    }
+
+    public Integer getSslHandshakeTimeout() {
+        return sslHandshakeTimeout;
+    }
+
+    public void setSslHandshakeTimeout(Integer sslHandshakeTimeout) {
+        this.sslHandshakeTimeout = sslHandshakeTimeout;
     }
 }

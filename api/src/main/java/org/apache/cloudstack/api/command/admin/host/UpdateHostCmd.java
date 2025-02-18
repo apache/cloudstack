@@ -125,8 +125,9 @@ public class UpdateHostCmd extends BaseCmd {
             hostResponse.setResponseName(getCommandName());
             this.setResponseObject(hostResponse);
         } catch (Exception e) {
-            logger.debug("Failed to update host:" + getId(), e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update host:" + getId() + "," + e.getMessage());
+            Host host = _entityMgr.findById(Host.class, getId());
+            logger.debug("Failed to update host: {} with id {}", host, getId(), e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to update host: %s with id %d, %s", host, getId(), e.getMessage()));
         }
     }
 }

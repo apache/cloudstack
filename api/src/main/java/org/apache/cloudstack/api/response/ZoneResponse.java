@@ -157,6 +157,11 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     @Param(description = "AS Number Range")
     private String asnRange;
 
+    @SerializedName(ApiConstants.ROUTED_MODE_ENABLED)
+    @Param(description = "true, if routed network/vpc is enabled", since = "4.20.1")
+    private boolean routedModeEnabled = false;
+
+
     public ZoneResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
@@ -411,5 +416,13 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
 
     public String getAsnRange() {
         return asnRange;
+    }
+
+    public boolean isRoutedModeEnabled() {
+        return routedModeEnabled;
+    }
+
+    public void setRoutedModeEnabled(boolean routedModeEnabled) {
+        this.routedModeEnabled = routedModeEnabled;
     }
 }

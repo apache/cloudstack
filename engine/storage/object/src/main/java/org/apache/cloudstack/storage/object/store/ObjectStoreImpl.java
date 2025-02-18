@@ -30,6 +30,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreVO;
 import org.apache.cloudstack.storage.object.ObjectStoreDriver;
 import org.apache.cloudstack.storage.object.ObjectStoreEntity;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import java.util.Date;
 import java.util.List;
@@ -55,6 +56,13 @@ public class ObjectStoreImpl implements ObjectStoreEntity {
         ObjectStoreImpl instance = ComponentContext.inject(ObjectStoreImpl.class);
         instance.configure(objectStoreVO, objectStoreDriver, provider);
         return instance;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("ObjectStoreImpl %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "objectStoreVO", "provider"));
     }
 
     @Override

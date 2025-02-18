@@ -71,6 +71,7 @@ import org.apache.cloudstack.storage.command.UploadStatusCommand;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
+import org.apache.cloudstack.storage.formatinspector.Qcow2Inspector;
 import org.apache.cloudstack.storage.template.DownloadManager;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
 import org.apache.cloudstack.storage.template.UploadEntity;
@@ -3482,8 +3483,19 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return result;
         }
 
+        String finalFilename = resourcePath + "/" + templateFilename;
+
+        if (ImageStoreUtil.isCorrectExtension(finalFilename, "qcow2")) {
+            try {
+                Qcow2Inspector.validateQcow2File(finalFilename);
+            } catch (RuntimeException e) {
+                logger.error(String.format("Uploaded file [%s] is not a valid QCOW2.", finalFilename), e);
+                return "The uploaded file is not a valid QCOW2. Ask the administrator to check the logs for more details.";
+            }
+        }
+
         // Set permissions for the downloaded template
-        File downloadedTemplate = new File(resourcePath + "/" + templateFilename);
+        File downloadedTemplate = new File(finalFilename);
         _storage.setWorldReadableAndWriteable(downloadedTemplate);
 
         // Set permissions for template/volume.properties

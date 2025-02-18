@@ -196,6 +196,10 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
     @Param(description = "true network requires restart")
     private Boolean restartRequired;
 
+    @SerializedName(ApiConstants.SPECIFY_VLAN)
+    @Param(description = "true if network supports specifying vlan, false otherwise")
+    private Boolean specifyVlan;
+
     @SerializedName(ApiConstants.SPECIFY_IP_RANGES)
     @Param(description = "true if network supports specifying ip ranges, false otherwise")
     private Boolean specifyIpRanges;
@@ -514,6 +518,10 @@ public class NetworkResponse extends BaseResponseWithAssociatedNetwork implement
 
     public void setRestartRequired(Boolean restartRequired) {
         this.restartRequired = restartRequired;
+    }
+
+    public void setSpecifyVlan(Boolean specifyVlan) {
+        this.specifyVlan = specifyVlan;
     }
 
     public void setSpecifyIpRanges(Boolean specifyIpRanges) {

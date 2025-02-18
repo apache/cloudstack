@@ -162,7 +162,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             }
             ep.sendMessageAsync(ucmd, new UploadListener.Callback(ep.getId(), ul));
         } catch (Exception e) {
-            logger.warn("Unable to start upload of volume " + volume.getName() + " from " + secStore.getName() + " to " + url, e);
+            logger.warn("Unable to start upload of volume {} from {} to {}", volume, secStore, url, e);
             ul.setDisconnected();
             ul.scheduleStatusCheck(RequestType.GET_OR_RESTART);
         }
@@ -199,7 +199,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
                 }
                 ep.sendMessageAsync(ucmd, new UploadListener.Callback(ep.getId(), ul));
             } catch (Exception e) {
-                logger.warn("Unable to start upload of " + template.getUniqueName() + " from " + secStore.getName() + " to " + url, e);
+                logger.warn("Unable to start upload of {} from {} to {}", template, secStore, url, e);
                 ul.setDisconnected();
                 ul.scheduleStatusCheck(RequestType.GET_OR_RESTART);
             }
@@ -262,7 +262,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             CreateEntityDownloadURLCommand cmd = new CreateEntityDownloadURLCommand(((ImageStoreEntity)store).getMountPoint(), path, uuid, null, null);
             Answer ans = ep.sendMessage(cmd);
             if (ans == null || !ans.getResult()) {
-                errorString = "Unable to create a link for " + type + " id:" + template.getId() + "," + (ans == null ? "" : ans.getDetails());
+                errorString = String.format("Unable to create a link for %s [%s]: %s", type, template, ans == null ? "" : ans.getDetails());
                 logger.error(errorString);
                 throw new CloudRuntimeException(errorString);
             }
@@ -428,7 +428,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
             logger.warn("Huh? Agent id " + sserverId + " does not correspond to a row in hosts table?");
             return;
         }
-        logger.debug("Handling upload sserverId " + sserverId);
+        logger.debug("Handling upload sserver {}", storageHost);
         List<UploadVO> uploadsInProgress = new ArrayList<UploadVO>();
         uploadsInProgress.addAll(_uploadDao.listByHostAndUploadStatus(sserverId, UploadVO.Status.UPLOAD_IN_PROGRESS));
         uploadsInProgress.addAll(_uploadDao.listByHostAndUploadStatus(sserverId, UploadVO.Status.COPY_IN_PROGRESS));
@@ -494,7 +494,7 @@ public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
                     new DeleteEntityDownloadURLCommand(path, extractJob.getType(), extractJob.getUploadUrl(), ((ImageStoreVO)secStore).getParent());
                 EndPoint ep = _epSelector.select(secStore);
                 if (ep == null) {
-                    logger.warn("UploadMonitor cleanup: There is no secondary storage VM for secondary storage host " + extractJob.getDataStoreId());
+                    logger.warn("UploadMonitor cleanup: There is no secondary storage VM for secondary storage host {}", secStore);
                     continue; //TODO: why continue? why not break?
                 }
                 if (logger.isDebugEnabled()) {

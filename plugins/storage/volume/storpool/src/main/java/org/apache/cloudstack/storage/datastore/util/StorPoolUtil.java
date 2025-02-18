@@ -138,6 +138,8 @@ public class StorPoolUtil {
 
     public static final String SP_TIER = "SP_QOSCLASS";
 
+    public static final String OBJECT_DOES_NOT_EXIST = "objectDoesNotExist";
+
     public static enum StorpoolRights {
         RO("ro"), RW("rw"), DETACH("detach");
 
@@ -458,7 +460,7 @@ public class StorPoolUtil {
     }
 
     private static boolean objectExists(SpApiError err) {
-        if (!err.getName().equals("objectDoesNotExist")) {
+        if (!err.getName().equals(OBJECT_DOES_NOT_EXIST)) {
             throw new CloudRuntimeException(err.getDescr());
         }
         return false;

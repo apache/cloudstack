@@ -159,4 +159,33 @@ public class DbUpgradeUtilsTest {
         verify(daoMock, times(1)).columnExists(conn, tableName, column3);
         verify(daoMock, times(1)).dropColumn(conn, tableName, column3);
     }
+
+    @Test
+    public void testAddTableColumnIfNotExist() throws Exception {
+        Connection conn = connectionMock;
+        String tableName = "tableName";
+        String columnName = "columnName";
+        String columnDefinition = "columnDefinition";
+        when(daoMock.columnExists(conn, tableName, columnName)).thenReturn(false);
+
+        DbUpgradeUtils.addTableColumnIfNotExist(conn, tableName, columnName, columnDefinition);
+
+        verify(daoMock, times(1)).columnExists(conn, tableName, columnName);
+        verify(daoMock, times(1)).addColumn(conn, tableName, columnName, columnDefinition);
+    }
+
+    @Test
+    public void testChangeTableColumnIfNotExist() throws Exception {
+        Connection conn = connectionMock;
+        String tableName = "tableName";
+        String oldColumnName = "oldColumnName";
+        String newColumnName = "newColumnName";
+        String columnDefinition = "columnDefinition";
+        when(daoMock.columnExists(conn, tableName, oldColumnName)).thenReturn(true);
+
+        DbUpgradeUtils.changeTableColumnIfNotExist(conn, tableName, oldColumnName, newColumnName, columnDefinition);
+
+        verify(daoMock, times(1)).columnExists(conn, tableName, oldColumnName);
+        verify(daoMock, times(1)).changeColumn(conn, tableName, oldColumnName, newColumnName, columnDefinition);
+    }
 }

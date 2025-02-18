@@ -219,8 +219,6 @@ public class FirstFitPlannerTest {
     }
 
     private List<Long> initializeForClusterListBasedOnHostTag(ServiceOffering offering) {
-
-
         when(offering.getHostTag()).thenReturn("hosttag1");
         initializeForClusterThresholdDisabled();
         List<Long> matchingClusters = new ArrayList<>();

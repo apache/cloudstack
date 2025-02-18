@@ -38,6 +38,8 @@ public class GenericHeuristicPresetVariable {
 
     @Override
     public String toString() {
-        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, fieldNamesToIncludeInToString.toArray(new String[0]));
+        return String.format("GenericHeuristicPresetVariable %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, fieldNamesToIncludeInToString.toArray(new String[0])));
     }
 }

@@ -117,7 +117,7 @@ public class LdapImportUsersCmd extends BaseListCmd {
                 _accountService.createUser(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, domain.getId(),
                         UUID.randomUUID().toString(), User.Source.LDAP);
             } else {
-                logger.debug("Account [name=%s] and user [name=%s] already exist in CloudStack. Executing the user update.");
+                logger.debug("Account [name={}] and user [name={}] already exist in CloudStack. Executing the user update.", account, csuser);
 
                 UpdateUserCmd updateUserCmd = new UpdateUserCmd();
                 updateUserCmd.setId(csuser.getId());

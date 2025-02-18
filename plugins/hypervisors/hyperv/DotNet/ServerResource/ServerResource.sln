@@ -1,4 +1,4 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerResource.Tests", "ServerResource.Tests\ServerResource.Tests.csproj", "{925FD1DE-6211-4E10-9949-3751B8ABDF59}"

@@ -18,6 +18,7 @@ package org.apache.cloudstack.storage.datastore.provider;
 
 import com.cloud.exception.StorageConflictException;
 import com.cloud.host.HostVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 public class LinstorHostListener extends DefaultHostListener {
     @Override
@@ -27,6 +28,7 @@ public class LinstorHostListener extends DefaultHostListener {
             host.setParent(host.getName());
             hostDao.update(host.getId(), host);
         }
-        return super.hostConnect(hostId, poolId);
+        StoragePoolVO pool = primaryStoreDao.findById(poolId);
+        return super.hostConnect(host, pool);
     }
 }

@@ -457,6 +457,9 @@ export default {
     addRule () {
       if (this.loading) return
       this.loading = true
+      if (this.newRule.cidrlist == null || this.newRule.cidrlist.trim?.() === '') {
+        delete this.newRule.cidrlist
+      }
       api('createFirewallRule', { ...this.newRule }).then(response => {
         this.$pollJob({
           jobId: response.createfirewallruleresponse.jobid,

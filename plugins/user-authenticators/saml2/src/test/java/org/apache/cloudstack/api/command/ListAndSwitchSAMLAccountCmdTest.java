@@ -27,6 +27,7 @@ import java.net.InetAddress;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -88,6 +89,9 @@ public class ListAndSwitchSAMLAccountCmdTest extends TestCase {
     @Mock
     HttpServletRequest req;
 
+    final String sessionId = "node0xxxxxxxxxxxxx";
+    Cookie[] cookies;
+
     @Test
     public void testListAndSwitchSAMLAccountCmd() throws Exception {
         // Setup
@@ -95,6 +99,7 @@ public class ListAndSwitchSAMLAccountCmdTest extends TestCase {
         final String sessionKeyValue = "someSessionIDValue";
         Mockito.when(session.getAttribute(ApiConstants.SESSIONKEY)).thenReturn(sessionKeyValue);
         Mockito.when(session.getAttribute("userid")).thenReturn(2L);
+        Mockito.when(session.getId()).thenReturn(sessionId);
         params.put(ApiConstants.USER_ID, new String[]{"2"});
         params.put(ApiConstants.DOMAIN_ID, new String[]{"1"});
         Mockito.when(userDao.findByUuid(anyString())).thenReturn(new UserVO(2L));
@@ -146,7 +151,25 @@ public class ListAndSwitchSAMLAccountCmdTest extends TestCase {
             Mockito.verify(accountService, Mockito.times(0)).getUserAccountById(Mockito.anyLong());
         }
 
-        // valid sessionkey value test
+        // valid sessionkey value and invalid JSESSIONID test
+        cookies = new Cookie[2];
+        cookies[0] = new Cookie(ApiConstants.SESSIONKEY, sessionKeyValue);
+        cookies[1] = new Cookie("JSESSIONID", "invalid-JSESSIONID");
+        Mockito.when(req.getCookies()).thenReturn(cookies);
+        params.put(ApiConstants.SESSIONKEY, new String[]{sessionKeyValue});
+        try {
+            cmd.authenticate("command", params, session, null, HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);
+        } catch (ServerApiException exception) {
+            assertEquals(exception.getErrorCode(), ApiErrorCode.UNAUTHORIZED);
+        } finally {
+            Mockito.verify(accountService, Mockito.times(0)).getUserAccountById(Mockito.anyLong());
+        }
+
+        // valid sessionkey value and valid JSESSIONID test
+        cookies = new Cookie[2];
+        cookies[0] = new Cookie(ApiConstants.SESSIONKEY, sessionKeyValue);
+        cookies[1] = new Cookie("JSESSIONID", sessionId + ".node0");
+        Mockito.when(req.getCookies()).thenReturn(cookies);
         params.put(ApiConstants.SESSIONKEY, new String[]{sessionKeyValue});
         try {
             cmd.authenticate("command", params, session, null, HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);

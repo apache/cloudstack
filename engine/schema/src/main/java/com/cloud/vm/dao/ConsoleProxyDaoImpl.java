@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-
 import org.springframework.stereotype.Component;
 
 import com.cloud.info.ConsoleProxyLoadInfo;
@@ -76,11 +75,11 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
 
     private static final String GET_PROXY_ACTIVE_LOAD = "SELECT active_session AS count" + " FROM console_proxy" + " WHERE id=?";
 
-    private static final String STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) " + " FROM storage_pool p, storage_pool_host_ref ph "
-        + " WHERE p.id = ph.pool_id AND p.data_center_id = ? " + " GROUP by p.data_center_id";
+    protected static final String STORAGE_POOL_HOST_INFO = "SELECT (SELECT id FROM storage_pool_host_ref ph WHERE " +
+            "ph.pool_id=p.id limit 1) AS sphr FROM storage_pool p WHERE p.data_center_id = ?";
 
-    private static final String SHARED_STORAGE_POOL_HOST_INFO = "SELECT p.data_center_id,  count(ph.host_id) " + " FROM storage_pool p, storage_pool_host_ref ph "
-        + " WHERE p.pool_type <> 'LVM' AND p.id = ph.pool_id AND p.data_center_id = ? " + " GROUP by p.data_center_id";
+    protected static final String SHARED_STORAGE_POOL_HOST_INFO = "SELECT (SELECT id FROM storage_pool_host_ref ph " +
+            "WHERE ph.pool_id=p.id limit 1) AS sphr FROM storage_pool p WHERE p.data_center_id = ? AND p.pool_type NOT IN ('LVM', 'Filesystem')";
 
     protected SearchBuilder<ConsoleProxyVO> DataCenterStatusSearch;
     protected SearchBuilder<ConsoleProxyVO> StateSearch;
@@ -219,28 +218,23 @@ public class ConsoleProxyDaoImpl extends GenericDaoBase<ConsoleProxyVO, Long> im
     }
 
     @Override
-    public List<Pair<Long, Integer>> getDatacenterStoragePoolHostInfo(long dcId, boolean countAllPoolTypes) {
-        ArrayList<Pair<Long, Integer>> l = new ArrayList<Pair<Long, Integer>>();
-
+    public boolean hasDatacenterStoragePoolHostInfo(long dcId, boolean sharedOnly) {
+        Long poolCount = 0L;
+        String sql = sharedOnly ? SHARED_STORAGE_POOL_HOST_INFO : STORAGE_POOL_HOST_INFO;
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        ;
-        PreparedStatement pstmt = null;
-        try {
-            if (countAllPoolTypes) {
-                pstmt = txn.prepareAutoCloseStatement(STORAGE_POOL_HOST_INFO);
-            } else {
-                pstmt = txn.prepareAutoCloseStatement(SHARED_STORAGE_POOL_HOST_INFO);
-            }
+        try (PreparedStatement pstmt = txn.prepareAutoCloseStatement(sql)) {
             pstmt.setLong(1, dcId);
-
             ResultSet rs = pstmt.executeQuery();
             while (rs.next()) {
-                l.add(new Pair<Long, Integer>(rs.getLong(1), rs.getInt(2)));
+                poolCount = rs.getLong(1);
+                if (poolCount > 0) {
+                    return true;
+                }
             }
         } catch (SQLException e) {
             logger.debug("Caught SQLException: ", e);
         }
-        return l;
+        return false;
     }
 
     @Override

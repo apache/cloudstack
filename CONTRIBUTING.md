@@ -51,10 +51,8 @@ $ git fetch upstream
 $ git rebase upstream/main
 ```
 
-
 Making changes
 --------------
-
 
 It is important that you create a new branch to make changes on and that you do not change the `main` branch (other than to rebase in changes from `upstream/main`).  In this example I will assume you will be making your changes to a branch called `feature_x`.  This `feature_x` branch will be created on your local repository and will be pushed to your forked repository on GitHub.  Once this branch is on your fork you will create a Pull Request for the changes to be added to the ACS project.
 
@@ -69,7 +67,6 @@ $ git commit -a -m "descriptive commit message for your changes"
 ```
 
 > The `-b` specifies that you want to create a new branch called `feature_x`.  You only specify `-b` the first time you checkout because you are creating a new branch.  Once the `feature_x` branch exists, you can later switch to it with only `git checkout feature_x`.
-
 
 Rebase `feature_x` to include updates from `upstream/main`
 ------------------------------------------------------------
@@ -92,7 +89,6 @@ $ git rebase main
 
 > Now your `feature_x` branch is up-to-date with all the code in `upstream/main`.
 
-
 Make a GitHub Pull Request to contribute your changes
 -----------------------------------------------------
 
@@ -107,7 +103,7 @@ $ git push origin main
 $ git push origin feature_x
 ```
 
-Now that the `feature_x` branch has been pushed to your GitHub repository, you can initiate the pull request.  
+Now that the `feature_x` branch has been pushed to your GitHub repository, you can initiate the pull request.
 
 To initiate the pull request, do the following:
 
@@ -117,7 +113,6 @@ To initiate the pull request, do the following:
 4. Enter a detailed description of the work you have done and then click '**Send pull request**'
 
 If you are requested to make modifications to your proposed changes, make the changes locally on your `feature_x` branch, re-push the `feature_x` branch to your fork.  The existing pull request should automatically pick up the change and update accordingly.
-
 
 Cleaning up after a successful pull request
 -------------------------------------------

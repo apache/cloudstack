@@ -127,6 +127,30 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "the total number of snapshots available for this account")
     private String snapshotAvailable;
 
+    @SerializedName(ApiConstants.BACKUP_LIMIT)
+    @Param(description = "the total number of backups which can be stored by this account", since = "4.21.0")
+    private String backupLimit;
+
+    @SerializedName(ApiConstants.BACKUP_TOTAL)
+    @Param(description = "the total number of backups stored by this account", since = "4.21.0")
+    private Long backupTotal;
+
+    @SerializedName(ApiConstants.BACKUP_AVAILABLE)
+    @Param(description = "the total number of backups available to this account", since = "4.21.0")
+    private String backupAvailable;
+
+    @SerializedName(ApiConstants.BACKUP_STORAGE_LIMIT)
+    @Param(description = "the total backup storage space (in GiB) the account can own", since = "4.21.0")
+    private String backupStorageLimit;
+
+    @SerializedName(ApiConstants.BACKUP_STORAGE_TOTAL)
+    @Param(description = "the total backup storage space (in GiB) owned by the account", since = "4.21.0")
+    private Long backupStorageTotal;
+
+    @SerializedName(ApiConstants.BACKUP_STORAGE_AVAILABLE)
+    @Param(description = "the total backup storage space (in GiB) available to the account", since = "4.21.0")
+    private String backupStorageAvailable;
+
     @SerializedName("templatelimit")
     @Param(description = "the total number of templates which can be created by this account")
     private String templateLimit;
@@ -231,6 +255,30 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "the total secondary storage space (in GiB) available to be used for this account", since = "4.2.0")
     private String secondaryStorageAvailable;
 
+    @SerializedName(ApiConstants.BUCKET_LIMIT)
+    @Param(description = "the total number of buckets which can be stored by this account", since = "4.21.0")
+    private String bucketLimit;
+
+    @SerializedName(ApiConstants.BUCKET_TOTAL)
+    @Param(description = "the total number of buckets stored by this account", since = "4.21.0")
+    private Long bucketTotal;
+
+    @SerializedName(ApiConstants.BUCKET_AVAILABLE)
+    @Param(description = "the total number of buckets available to this account", since = "4.21.0")
+    private String bucketAvailable;
+
+    @SerializedName(ApiConstants.OBJECT_STORAGE_LIMIT)
+    @Param(description = "the total object storage space (in GiB) the account can own", since = "4.21.0")
+    private String objectStorageLimit;
+
+    @SerializedName(ApiConstants.OBJECT_STORAGE_TOTAL)
+    @Param(description = "the total object storage space (in GiB) owned by the account", since = "4.21.0")
+    private Long objectStorageTotal;
+
+    @SerializedName(ApiConstants.OBJECT_STORAGE_AVAILABLE)
+    @Param(description = "the total object storage space (in GiB) available to the account", since = "4.21.0")
+    private String objectStorageAvailable;
+
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the account")
     private String state;
@@ -270,6 +318,10 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @SerializedName(ApiConstants.TAGGED_RESOURCES)
     @Param(description = "The tagged resource limit and count for the account", since = "4.20.0")
     List<TaggedResourceLimitAndCountResponse> taggedResources;
+
+    @SerializedName(ApiConstants.API_KEY_ACCESS)
+    @Param(description = "whether api key access is Enabled, Disabled or set to Inherit (it inherits the value from the parent)", since = "4.20.1.0")
+    ApiConstants.ApiKeyAccess apiKeyAccess;
 
     @Override
     public String getObjectId() {
@@ -380,6 +432,36 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Override
     public void setSnapshotAvailable(String snapshotAvailable) {
         this.snapshotAvailable = snapshotAvailable;
+    }
+
+    @Override
+    public void setBackupLimit(String backupLimit) {
+        this.backupLimit = backupLimit;
+    }
+
+    @Override
+    public void setBackupTotal(Long backupTotal) {
+        this.backupTotal = backupTotal;
+    }
+
+    @Override
+    public void setBackupAvailable(String backupAvailable) {
+        this.backupAvailable = backupAvailable;
+    }
+
+    @Override
+    public void setBackupStorageLimit(String backupStorageLimit) {
+        this.backupStorageLimit = backupStorageLimit;
+    }
+
+    @Override
+    public void setBackupStorageTotal(Long backupStorageTotal) {
+        this.backupStorageTotal = backupStorageTotal;
+    }
+
+    @Override
+    public void setBackupStorageAvailable(String backupStorageAvailable) {
+        this.backupStorageAvailable = backupStorageAvailable;
     }
 
     @Override
@@ -533,6 +615,36 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
         this.secondaryStorageAvailable = secondaryStorageAvailable;
     }
 
+    @Override
+    public void setBucketLimit(String bucketLimit) {
+        this.bucketLimit = bucketLimit;
+    }
+
+    @Override
+    public void setBucketTotal(Long bucketTotal) {
+        this.bucketTotal = bucketTotal;
+    }
+
+    @Override
+    public void setBucketAvailable(String bucketAvailable) {
+        this.bucketAvailable = bucketAvailable;
+    }
+
+    @Override
+    public void setObjectStorageLimit(String objectStorageLimit) {
+        this.objectStorageLimit = objectStorageLimit;
+    }
+
+    @Override
+    public void setObjectStorageTotal(Long objectStorageTotal) {
+        this.objectStorageTotal = objectStorageTotal;
+    }
+
+    @Override
+    public void setObjectStorageAvailable(String objectStorageAvailable) {
+        this.objectStorageAvailable = objectStorageAvailable;
+    }
+
     public void setDefaultZone(String defaultZoneId) {
         this.defaultZoneId = defaultZoneId;
     }
@@ -553,5 +665,9 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Override
     public void setTaggedResourceLimitsAndCounts(List<TaggedResourceLimitAndCountResponse> taggedResourceLimitsAndCounts) {
         this.taggedResources = taggedResourceLimitsAndCounts;
+    }
+
+    public void setApiKeyAccess(Boolean apiKeyAccess) {
+        this.apiKeyAccess = ApiConstants.ApiKeyAccess.fromBoolean(apiKeyAccess);
     }
 }

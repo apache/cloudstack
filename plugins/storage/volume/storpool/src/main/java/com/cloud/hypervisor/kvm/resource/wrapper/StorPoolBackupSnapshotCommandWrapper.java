@@ -92,7 +92,8 @@ public final class StorPoolBackupSnapshotCommandWrapper extends CommandWrapper<S
 
             return new CopyCmdAnswer(snapshot);
         } catch (final Exception e) {
-            final String error = String.format("Failed to backup snapshot with id [%s] with a pool %s, due to %s", cmd.getSourceTO().getId(), cmd.getSourceTO().getDataStore().getUuid(), e.getMessage());
+            final String error = String.format("Failed to backup snapshot [id: %s, name: %s] with a pool with id %s, due to %s",
+                    cmd.getSourceTO().getId(), cmd.getSourceTO().getName(), cmd.getSourceTO().getDataStore().getUuid(), e.getMessage());
             SP_LOG(error);
             logger.debug(error);
             return new CopyCmdAnswer(cmd, e);

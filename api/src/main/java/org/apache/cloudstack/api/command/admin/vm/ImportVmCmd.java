@@ -144,15 +144,19 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
     private String clusterName;
 
     @Parameter(name = ApiConstants.CONVERT_INSTANCE_HOST_ID, type = CommandType.UUID, entityType = HostResponse.class,
-            description = "(only for importing VMs from VMware to KVM) optional - the host to perform the virt-v2v migration from VMware to KVM.")
+            description = "(only for importing VMs from VMware to KVM) optional - the host to perform the virt-v2v conversion from VMware to KVM.")
     private Long convertInstanceHostId;
+
+    @Parameter(name = ApiConstants.IMPORT_INSTANCE_HOST_ID, type = CommandType.UUID, entityType = HostResponse.class, since = "4.19.2",
+            description = "(only for importing VMs from VMware to KVM) optional - the host to import the converted instance from VMware to KVM.")
+    private Long importInstanceHostId;
 
     @Parameter(name = ApiConstants.CONVERT_INSTANCE_STORAGE_POOL_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class,
             description = "(only for importing VMs from VMware to KVM) optional - the temporary storage pool to perform the virt-v2v migration from VMware to KVM.")
     private Long convertStoragePoolId;
 
     @Parameter(name = ApiConstants.FORCE_MS_TO_IMPORT_VM_FILES, type = CommandType.BOOLEAN,
-            description = "(only for importing VMs from VMware to KVM) optional - if true, forces MS to import VM file(s) to temporary storage, else uses KVM Host if ovftool is available, falls back to MS if not.")
+            description = "(only for importing VMs from VMware to KVM) optional - if true, forces MS to export OVF from VMware to temporary storage, else uses KVM Host if ovftool is available, falls back to MS if not.")
     private Boolean forceMsToImportVmFiles;
 
     /////////////////////////////////////////////////////
@@ -197,6 +201,10 @@ public class ImportVmCmd extends ImportUnmanagedInstanceCmd {
 
     public Long getConvertInstanceHostId() {
         return convertInstanceHostId;
+    }
+
+    public Long getImportInstanceHostId() {
+        return importInstanceHostId;
     }
 
     public Long getConvertStoragePoolId() {
