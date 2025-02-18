@@ -1947,7 +1947,7 @@ public class UnmanagedVMsManagerImpl implements UnmanagedVMsManager {
         LOGGER.debug(String.format("Delegating the conversion of instance %s from VMware to KVM to the host %s (%s) after OVF export through ovftool",
                 sourceVM, convertHost.getId(), convertHost.getName()));
 
-        RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVMwareInstance.getName(), vcenterHost, vcenterUsername, vcenterPassword, datacenterName);
+        RemoteInstanceTO remoteInstanceTO = new RemoteInstanceTO(sourceVMwareInstance.getName(), sourceVMwareInstance.getPath(), vcenterHost, vcenterUsername, vcenterPassword, datacenterName);
         List<String> destinationStoragePools = selectInstanceConversionStoragePools(convertStoragePools, sourceVMwareInstance.getDisks(), serviceOffering, dataDiskOfferingMap);
         ConvertInstanceCommand cmd = new ConvertInstanceCommand(remoteInstanceTO,
                 Hypervisor.HypervisorType.KVM, temporaryConvertLocation, null, false, true);
