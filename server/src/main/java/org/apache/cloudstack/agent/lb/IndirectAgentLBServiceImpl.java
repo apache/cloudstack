@@ -40,6 +40,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateAgentConnectionCommand;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -84,6 +85,8 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             ResourceState.Enabled, ResourceState.Maintenance, ResourceState.Disabled,
             ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance);
     private static final List<Host.Type> agentValidHostTypes = List.of(Host.Type.Routing, Host.Type.ConsoleProxy,
+            Host.Type.SecondaryStorage, Host.Type.SecondaryStorageVM);
+    private static final List<Host.Type> agentNonRoutingHostTypes = List.of(Host.Type.ConsoleProxy,
             Host.Type.SecondaryStorage, Host.Type.SecondaryStorageVM);
     private static final List<Hypervisor.HypervisorType> agentValidHypervisorTypes = List.of(
             Hypervisor.HypervisorType.KVM, Hypervisor.HypervisorType.LXC);
@@ -246,8 +249,18 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         agentBasedHosts.add(host);
     }
 
+    private List<Long> getAllAgentBasedNonRoutingHostsFromDB(final Long zoneId, final Long msId) {
+        return hostDao.findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(zoneId, null, msId,
+                agentValidResourceStates, agentNonRoutingHostTypes, agentValidHypervisorTypes);
+    }
+
+    private List<Long> getAllAgentBasedRoutingHostsFromDB(final Long zoneId, final Long clusterId, final Long msId) {
+        return hostDao.findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(zoneId, clusterId, msId,
+                agentValidResourceStates, List.of(Host.Type.Routing), agentValidHypervisorTypes);
+    }
+
     private List<Long> getAllAgentBasedHostsFromDB(final Long zoneId, final Long clusterId) {
-        return hostDao.findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(zoneId, clusterId,
+        return hostDao.findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(zoneId, clusterId, null,
                 agentValidResourceStates, agentValidHostTypes, agentValidHypervisorTypes);
     }
 
@@ -314,6 +327,67 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         }
     }
 
+    protected boolean migrateSystemVmAgents(String fromMsUuid, long fromMsId, DataCenter dc,
+                                            long migrationStartTime, long timeoutDurationInMs, final List<String> avoidMsList, String lbAlgorithm,
+                                            boolean lbAlgorithmChanged, List<Long> orderedHostIdList) {
+        List<Long> systemVmAgentsInDc = getAllAgentBasedNonRoutingHostsFromDB(dc.getId(), fromMsId);
+        if (CollectionUtils.isEmpty(systemVmAgentsInDc)) {
+            return true;
+        }
+        logger.debug(String.format("Migrating %d systemvm agents from management server node %d (id: %s) of zone %s",
+                systemVmAgentsInDc.size(), fromMsId, fromMsUuid, dc));
+        Long lbCheckInterval = getLBPreferredHostCheckInterval(null);
+        for (final Long hostId : systemVmAgentsInDc) {
+            long migrationElapsedTimeInMs = System.currentTimeMillis() - migrationStartTime;
+            if (migrationElapsedTimeInMs >= timeoutDurationInMs) {
+                logger.debug(String.format("Stop migrating remaining systemvm agents from management server node %d (id: %s), timed out", fromMsId, fromMsUuid));
+                return false;
+            }
+
+            List<String> msList = null;
+            if (lbAlgorithmChanged) {
+                // send new MS list when there is change in lb algorithm
+                msList = getManagementServerList(hostId, dc.getId(), orderedHostIdList, lbAlgorithm);
+            }
+
+            final MigrateAgentConnectionCommand cmd = new MigrateAgentConnectionCommand(msList, avoidMsList, lbAlgorithm, lbCheckInterval);
+            agentManager.easySend(hostId, cmd); //answer not received as the agent disconnects and reconnects to other ms
+            updateLastManagementServer(hostId, fromMsId);
+        }
+        return true;
+    }
+
+    protected boolean migrateAgentsForCluster(long clusterId, String fromMsUuid, long fromMsId, DataCenter dc,
+                                              long migrationStartTime, long timeoutDurationInMs, final List<String> avoidMsList, String lbAlgorithm,
+                                              boolean lbAlgorithmChanged, List<Long> orderedHostIdList) {
+
+        List<Long> agentBasedHostsOfMsInDcAndCluster = getAllAgentBasedRoutingHostsFromDB(dc.getId(), clusterId, fromMsId);
+        if (CollectionUtils.isEmpty(agentBasedHostsOfMsInDcAndCluster)) {
+            return true;
+        }
+        logger.debug(String.format("Migrating %d indirect agents from management server node %d (id: %s) of zone %s, " +
+                "cluster ID: %d", agentBasedHostsOfMsInDcAndCluster.size(), fromMsId, fromMsUuid, dc, clusterId));
+        Long lbCheckInterval = getLBPreferredHostCheckInterval(clusterId);
+        for (final Long hostId : agentBasedHostsOfMsInDcAndCluster) {
+            long migrationElapsedTimeInMs = System.currentTimeMillis() - migrationStartTime;
+            if (migrationElapsedTimeInMs >= timeoutDurationInMs) {
+                logger.debug(String.format("Stop migrating remaining indirect agents from management server node %d (id: %s), timed out", fromMsId, fromMsUuid));
+                return false;
+            }
+
+            List<String> msList = null;
+            if (lbAlgorithmChanged) {
+                // send new MS list when there is change in lb algorithm
+                msList = getManagementServerList(hostId, dc.getId(), orderedHostIdList, lbAlgorithm);
+            }
+
+            final MigrateAgentConnectionCommand cmd = new MigrateAgentConnectionCommand(msList, avoidMsList, lbAlgorithm, lbCheckInterval);
+            agentManager.easySend(hostId, cmd); //answer not received as the agent disconnects and reconnects to other ms
+            updateLastManagementServer(hostId, fromMsId);
+        }
+        return true;
+    }
+
     @Override
     public boolean migrateAgents(String fromMsUuid, long fromMsId, String lbAlgorithm, long timeoutDurationInMs) {
         if (timeoutDurationInMs <= 0) {
@@ -342,31 +416,20 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
 
         List<DataCenterVO> dataCenterList = dcDao.listAll();
         for (DataCenterVO dc : dataCenterList) {
-            Long dcId = dc.getId();
-            List<Long> orderedHostIdList = getOrderedHostIdList(dcId);
-            List<Host> agentBasedHostsOfMsInDc = getAllAgentBasedHostsInDc(fromMsId, dcId);
-            if (CollectionUtils.isEmpty(agentBasedHostsOfMsInDc)) {
+            List<Long> orderedHostIdList = getOrderedHostIdList(dc.getId());
+            if (!migrateSystemVmAgents(fromMsUuid, fromMsId, dc, migrationStartTime,
+                    timeoutDurationInMs, avoidMsList, lbAlgorithm, lbAlgorithmChanged, orderedHostIdList)) {
+                return false;
+            }
+            List<Long> clusterIds = clusterDao.listAllClusterIds(dc.getId());
+            if (CollectionUtils.isEmpty(clusterIds)) {
                 continue;
             }
-            logger.debug(String.format("Migrating %d indirect agents from management server node %d (id: %s) of zone %s", agentBasedHostsOfMsInDc.size(), fromMsId, fromMsUuid, dc));
-            for (final Host host : agentBasedHostsOfMsInDc) {
-                long migrationElapsedTimeInMs = System.currentTimeMillis() - migrationStartTime;
-                if (migrationElapsedTimeInMs >= timeoutDurationInMs) {
-                    logger.debug(String.format("Stop migrating remaining indirect agents from management server node %d (id: %s), timed out", fromMsId, fromMsUuid));
+            for (Long clusterId : clusterIds) {
+                if (!migrateAgentsForCluster(clusterId, fromMsUuid, fromMsId, dc, migrationStartTime,
+                        timeoutDurationInMs, avoidMsList, lbAlgorithm, lbAlgorithmChanged, orderedHostIdList)) {
                     return false;
                 }
-
-                List<String> msList = null;
-                Long lbCheckInterval = 0L;
-                if (lbAlgorithmChanged) {
-                    // send new MS list when there is change in lb algorithm
-                    msList = getManagementServerList(host.getId(), dcId, orderedHostIdList, lbAlgorithm);
-                    lbCheckInterval = getLBPreferredHostCheckInterval(host.getClusterId());
-                }
-
-                final MigrateAgentConnectionCommand cmd = new MigrateAgentConnectionCommand(msList, avoidMsList, lbAlgorithm, lbCheckInterval);
-                agentManager.easySend(host.getId(), cmd); //answer not received as the agent disconnects and reconnects to other ms
-                updateLastManagementServer(host.getId(), fromMsId);
             }
         }
 
