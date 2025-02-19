@@ -1591,6 +1591,8 @@
 "label.prepare.for.shutdown": "Prepare for Shutdown",
 "label.prepareformaintenance": "Prepare for Maintenance",
 "label.presetup": "PreSetup",
+"label.press.enter": "Press enter when done.",
+"label.press.enter.tooltip": "On leaving a any of these fields above, when they all contain values, or on pressing enter, ESXi hosts will be retrieved. If this is successful, a dropdown will appear with the list of ESXi hosts.",
 "label.prev": "Prev",
 "label.previous": "Previous",
 "label.primera.username.tooltip": "The username with edit privileges",

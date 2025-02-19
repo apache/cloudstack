@@ -118,8 +118,6 @@
         <a-form-item ref="password" name="password">
           <template #label>
             <tooltip-label :title="$t('label.vcenter.password')" :tooltip="apiParams.password.description"/>
-            &nbsp;
-            <tooltip-label :title="'press enter when done.'"/>
           </template>
           <a-input-password
             v-model:value="password"
@@ -128,6 +126,8 @@
             @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
+        &nbsp;
+        <tooltip-label :title="$t('label.press.enter')" :tooltip="$t('label.press.enter.tooltip')"/>
       </div>
       <div
         v-if="selectedExistingVcenterId || (vcenterSelectedOption === 'new')">
