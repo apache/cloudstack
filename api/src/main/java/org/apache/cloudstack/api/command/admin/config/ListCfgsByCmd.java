@@ -19,9 +19,11 @@ package org.apache.cloudstack.api.command.admin.config;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.commons.lang3.StringUtils;
 
 import org.apache.cloudstack.api.APICommand;
@@ -94,6 +96,14 @@ public class ListCfgsByCmd extends BaseListCmd {
             description = "the ID of the Image Store to update the parameter value for corresponding image store")
     private Long imageStoreId;
 
+    @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID,
+            type = CommandType.UUID,
+            entityType = ManagementServerResponse.class,
+            description = "the ID of the Management Server to update the parameter value for corresponding management server",
+            validations = ApiArgValidator.PositiveNumber,
+            since = "4.21.0")
+    private Long managementServerId;
+
     @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "lists configuration by group name (primarily used for UI)", since = "4.18.0")
     private String groupName;
 
@@ -137,6 +147,10 @@ public class ListCfgsByCmd extends BaseListCmd {
 
     public Long getImageStoreId() {
         return imageStoreId;
+    }
+
+    public Long getManagementServerId() {
+        return managementServerId;
     }
 
     public String getGroupName() {
@@ -199,6 +213,9 @@ public class ListCfgsByCmd extends BaseListCmd {
         }
         if (getImageStoreId() != null){
             cfgResponse.setScope("imagestore");
+        }
+        if (getManagementServerId() != null){
+            cfgResponse.setScope("managementserver");
         }
     }
 
