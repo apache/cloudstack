@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
@@ -88,6 +89,13 @@ public class UpdateCfgCmd extends BaseCmd {
             validations = ApiArgValidator.PositiveNumber)
     private Long imageStoreId;
 
+    @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID,
+            type = CommandType.UUID,
+            entityType = ManagementServerResponse.class,
+            description = "the ID of the Management Server to update the parameter value for corresponding management server",
+            since = "4.23.0")
+    private Long managementServerId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -112,7 +120,7 @@ public class UpdateCfgCmd extends BaseCmd {
         return clusterId;
     }
 
-    public Long getStoragepoolId() {
+    public Long getStoragePoolId() {
         return storagePoolId;
     }
 
@@ -126,6 +134,10 @@ public class UpdateCfgCmd extends BaseCmd {
 
     public Long getImageStoreId() {
         return imageStoreId;
+    }
+
+    public Long getManagementServerId() {
+        return managementServerId;
     }
 
     /////////////////////////////////////////////////////
@@ -182,7 +194,7 @@ public class UpdateCfgCmd extends BaseCmd {
         if (getClusterId() != null) {
             response.setScope("cluster");
         }
-        if (getStoragepoolId() != null) {
+        if (getStoragePoolId() != null) {
             response.setScope("storagepool");
         }
         if (getAccountId() != null) {

@@ -118,6 +118,18 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','conserve_mode', 'tin
 --- Disable/enable NICs
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.nics','enabled', 'TINYINT(1) NOT NULL DEFAULT 1 COMMENT ''Indicates whether the NIC is enabled or not'' ');
 
+-- Add management_server_details table to allow ManagementServer scope configs
+CREATE TABLE IF NOT EXISTS `management_server_details` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `management_server_id` bigint unsigned NOT NULL COMMENT 'management server the detail is related to',
+    `name` varchar(255) NOT NULL COMMENT 'name of the detail',
+    `value` varchar(255) NOT NULL,
+    `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_management_server_details__management_server_id` FOREIGN KEY `fk_management_server_details__management_server_id`(`management_server_id`) REFERENCES `mshost`(`id`) ON DELETE CASCADE,
+    KEY `i_management_server_details__name__value` (`name`(128),`value`(128))
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- Add checkpoint tracking fields to backups table for incremental backup support
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'from_checkpoint_id', 'VARCHAR(255) DEFAULT NULL COMMENT "Previous active checkpoint id for incremental backups"');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'to_checkpoint_id', 'VARCHAR(255) DEFAULT NULL COMMENT "New checkpoint id created for the next incremental backup"');
