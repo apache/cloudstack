@@ -101,7 +101,7 @@ export default {
     async validateTwoPassword (rule, value) {
       const messageConfirm = this.$t('message.validate.equalto')
       const passwordVal = this.form.password
-      if (passwordVal && passwordVal !== value) {
+      if (passwordVal !== value) {
         return Promise.reject(messageConfirm)
       }
     },
