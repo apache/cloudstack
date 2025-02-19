@@ -667,9 +667,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             } else {
                 logger.debug("Converting RBD disk " + disk.getPath() + " into template " + templateName);
 
-                final QemuImgFile srcFile =
-                        new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primary.getSourceHost(), primary.getSourcePort(), primary.getAuthUserName(),
-                                primary.getAuthSecret(), disk.getPath()));
+                final QemuImgFile srcFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primary, disk.getPath()));
                 srcFile.setFormat(PhysicalDiskFormat.RAW);
 
                 final QemuImgFile destFile = new QemuImgFile(tmpltPath + "/" + templateName + ".qcow2");
@@ -1022,9 +1020,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     logger.debug("Attempting to create " + snapDir.getAbsolutePath() + " recursively for snapshot storage");
                     FileUtils.forceMkdir(snapDir);
 
-                    final QemuImgFile srcFile =
-                            new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primaryPool.getSourceHost(), primaryPool.getSourcePort(), primaryPool.getAuthUserName(),
-                                    primaryPool.getAuthSecret(), rbdSnapshot));
+                    final QemuImgFile srcFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primaryPool, rbdSnapshot));
                     srcFile.setFormat(snapshotDisk.getFormat());
 
                     final QemuImgFile destFile = new QemuImgFile(snapshotFile);
