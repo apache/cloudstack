@@ -2689,7 +2689,6 @@
 "message.volume.state.uploaderror": "Η αποστολή τόμου αντιμετώπισε κάποιο σφάλμα",
 "message.volume.state.uploadinprogress": "Η αποστολή τόμου βρίσκεται σε εξέλιξη",
 "message.volume.state.uploadop": "Η λειτουργία αποστολής τόμου βρίσκεται σε εξέλιξη ή, εν ολίγοις, ο τόμος βρίσκεται σε δευτερεύουσα αποθήκευση",
-"message.vr.alert.upon.network.offering.creation.l2": "Επειδή εικονικοί δρομολογητές δεν χρησιμοποιούνται για δίκτυα L2 η προσφορά υπολογιστικού νέφους δεν θα χρησιμοποιηθεί",
 "message.vr.alert.upon.network.offering.creation.others": "Εφόσον καμία απο τις υποχρεωτικές υπηρεσίες για την δημιουργία του εικονικού δρομολογητή (VPN, DHCP, DNS, Firewall, LB, UserData, SourceNat, StaticNat, PortForwarding) δεν είναι ενεργή, ο εικονικός δρομολογητές δεν θα δημιουργθεί και η προσφορά υπολογιστικού νέςφους δεν θα χρησιμοποιηθεί.",
 "message.warn.filetype": "jpg, jpeg, png, bmp και svg είναι οι μόνες υποστηριζόμενες μορφές εικόνας.",
 "message.zone.creation.complete": "Η δημιουργία ζώνης ολοκληρώθηκε",
