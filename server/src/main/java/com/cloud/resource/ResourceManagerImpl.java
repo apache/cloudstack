@@ -909,31 +909,41 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         // Verify that host exists
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
-            throw new InvalidParameterValueException("Host with id " + hostId + " doesn't exist");
+            String errorMessage = String.format("Host with ID [%s] was not found", hostId);
+            logger.warn(errorMessage);
+            throw new InvalidParameterValueException(errorMessage);
         }
+        logger.info("Attempting to delete host with UUID [{}].", host.getUuid());
+
         _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), host.getDataCenterId());
 
         if (!canDeleteHost(host) && !isForced) {
-            throw new CloudRuntimeException("Host " + host.getUuid() +
-                    " cannot be deleted as it is not in maintenance mode. Either put the host into maintenance or perform a forced deletion.");
+            String errorMessage = String.format("Host with UUID [%s] is not in maintenance mode and no forced deletion was requested.", host.getUuid());
+            logger.warn(errorMessage);
+            throw new CloudRuntimeException(errorMessage);
         }
         // Get storage pool host mappings here because they can be removed as a
         // part of handleDisconnect later
         final List<StoragePoolHostVO> pools = _storagePoolHostDao.listByHostIdIncludingRemoved(hostId);
+
+        logger.debug("Getting storage pools including those removed by host with UUID [{}]: [{}].", host.getUuid(), pools);
 
         final ResourceStateAdapter.DeleteHostAnswer answer =
                 (ResourceStateAdapter.DeleteHostAnswer)dispatchToStateAdapters(ResourceStateAdapter.Event.DELETE_HOST, false, host, isForced,
                         isForceDeleteStorage);
 
         if (answer == null) {
-            throw new CloudRuntimeException(String.format("No resource adapter respond to DELETE_HOST event for %s, hypervisorType is %s, host type is %s",
-                    host, host.getHypervisorType(), host.getType()));
+            String errorMessage = String.format("No resource adapter answer was returned to DELETE_HOST event for host [%s] with ID [%s], hypervisor type [%s] and host type [%s]. ",
+                    host.getUuid(), hostId, host.getHypervisorType(), host.getType());
+            logger.warn(errorMessage);
+            throw new CloudRuntimeException(errorMessage);
         }
 
         if (answer.getIsException()) {
             return false;
         }
 
+        logger.info("Host with UUID [{}] has been successfully deleted.", host.getUuid());
         if (!answer.getIsContinue()) {
             return true;
         }
@@ -945,16 +955,20 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(final TransactionStatus status) {
+                logger.debug("Releasing private IP address of host with UUID [{}].", host.getUuid());
                 _dcDao.releasePrivateIpAddress(host.getPrivateIpAddress(), host.getDataCenterId(), null);
                 _agentMgr.disconnectWithoutInvestigation(hostId, Status.Event.Remove);
 
                 // delete host details
+                logger.debug("Deleting details from database for host with UUID [{}].", host.getUuid());
                 _hostDetailsDao.deleteDetails(hostId);
 
                 // if host is GPU enabled, delete GPU entries
+                logger.debug("Deleting GPU entries from database for host with UUID [{}].", host.getUuid());
                 _hostGpuGroupsDao.deleteGpuEntries(hostId);
 
                 // delete host tags
+                logger.debug("Deleting tags from database for host with UUID [{}].", host.getUuid());
                 _hostTagsDao.deleteTags(hostId);
 
                 host.setGuid(null);
@@ -963,6 +977,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 _hostDao.update(host.getId(), host);
 
                 Host hostRemoved = _hostDao.findById(hostId);
+                logger.debug("Removing host with UUID [{}] from database.", host.getUuid());
                 _hostDao.remove(hostId);
                 if (clusterId != null) {
                     final List<Long> hostIds = _hostDao.listIdsByClusterId(clusterId);
@@ -976,16 +991,18 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 try {
                     resourceStateTransitTo(host, ResourceState.Event.DeleteHost, _nodeId);
                 } catch (final NoTransitionException e) {
-                    logger.debug(String.format("Cannot transit %s to Enabled state", host), e);
+                    logger.debug("Cannot transit host [{}] to Enabled state", host, e);
                 }
 
                 // Delete the associated entries in host ref table
+                logger.debug("Deleting storage pool entries from database for host with UUID [{}].", host.getUuid());
                 _storagePoolHostDao.deletePrimaryRecordsForHost(hostId);
 
                 // Make sure any VMs that were marked as being on this host are cleaned up
                 final List<VMInstanceVO> vms = _vmDao.listByHostId(hostId);
                 for (final VMInstanceVO vm : vms) {
                     // this is how VirtualMachineManagerImpl does it when it syncs VM states
+                    logger.debug("Setting VM with UUID [{}] as stopped, as it was in host with UUID [{}], which has been removed.", vm.getUuid(), host.getUuid());
                     vm.setState(State.Stopped);
                     vm.setHostId(null);
                     _vmDao.persist(vm);
@@ -1002,7 +1019,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         storagePool.setClusterId(null);
                         _storagePoolDao.update(poolId, storagePool);
                         _storagePoolDao.remove(poolId);
-                        logger.debug("Local storage [id: {}] is removed as a part of {} removal", storagePool, hostRemoved);
+                        logger.debug("Local storage [id: {}] is removed as a part of host [{}] removal", poolId, hostRemoved.toString());
                     }
                 }
 
@@ -1011,6 +1028,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 final SearchCriteria<CapacityVO> hostCapacitySC = _capacityDao.createSearchCriteria();
                 hostCapacitySC.addAnd("hostOrPoolId", SearchCriteria.Op.EQ, hostId);
                 hostCapacitySC.addAnd("capacityType", SearchCriteria.Op.IN, capacityTypes);
+                logger.debug("Deleting capacity entries from database for host with UUID [{}].", host.getUuid());
                 _capacityDao.remove(hostCapacitySC);
                 // remove from dedicated resources
                 final DedicatedResourceVO dr = _dedicatedDao.findByHostId(hostId);
@@ -1019,6 +1037,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
 
                 // Remove comments (if any)
+                logger.debug("Deleting comments from database for host with UUID [{}].", host.getUuid());
                 annotationDao.removeByEntityType(AnnotationService.EntityType.HOST.name(), host.getUuid());
             }
         });
