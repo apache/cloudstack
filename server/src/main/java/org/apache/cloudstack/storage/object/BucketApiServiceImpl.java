@@ -303,8 +303,15 @@ public class BucketApiServiceImpl extends ManagerBase implements BucketApiServic
                     try {
                         List<ObjectStoreVO> objectStores = _objectStoreDao.listObjectStores();
                         for(ObjectStoreVO objectStoreVO: objectStores) {
+                            logger.debug("Getting bucket usage for Object Store \"{}\"", objectStoreVO.getName());
                             ObjectStoreEntity  objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
-                            Map<String, Long> bucketSizes = objectStore.getAllBucketsUsage();
+                            Map<String, Long> bucketSizes;
+                            try {
+                                bucketSizes = objectStore.getAllBucketsUsage();
+                            } catch (CloudRuntimeException e) {
+                                logger.error(String.format("Failed to get bucket usage for Object Store \"%s\". Skipping this store.", objectStoreVO.getName()), e);
+                                continue;
+                            }
                             List<BucketVO> buckets = _bucketDao.listByObjectStoreId(objectStoreVO.getId());
                             for(BucketVO bucket : buckets) {
                                 Long size = bucketSizes.get(bucket.getName());
