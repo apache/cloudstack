@@ -114,6 +114,9 @@ public class EngineClusterVO implements EngineCluster, Identity {
     @Column(name = "engine_state", updatable = true, nullable = false, length = 32)
     protected State state = null;
 
+    @Column(name = "storage_access_groups")
+    String storageAccessGroups;
+
     public EngineClusterVO() {
         clusterType = Cluster.ClusterType.CloudManaged;
         allocationState = Grouping.AllocationState.Enabled;
@@ -174,6 +177,11 @@ public class EngineClusterVO implements EngineCluster, Identity {
     @Override
     public ManagedState getManagedState() {
         return managedState;
+    }
+
+    @Override
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
     }
 
     public void setManagedState(ManagedState managedState) {
