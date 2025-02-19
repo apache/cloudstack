@@ -87,6 +87,7 @@ export default {
     }
   },
   created () {
+    console.log('---------------', this.$route.meta.name)
     switch (this.$route.meta.name) {
       case 'account':
         this.scopeKey = 'accountid'
@@ -105,6 +106,9 @@ export default {
         break
       case 'imagestore':
         this.scopeKey = 'imagestoreuuid'
+        break
+      case 'managementserver':
+        this.scopeKey = 'managementserverid'
         break
       default:
         this.scopeKey = ''
