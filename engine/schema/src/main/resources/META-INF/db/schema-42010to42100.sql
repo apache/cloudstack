@@ -208,7 +208,6 @@ SET `sort_key` = CASE
 END;
 -- End: Changes for Guest OS category cleanup
 
-<<<<<<< HEAD
 -- Update description for configuration: host.capacityType.to.order.clusters
 UPDATE `cloud`.`configuration` SET
     `description` = 'The host capacity type (CPU, RAM or COMBINED) is used by deployment planner to order clusters during VM resource allocation'
@@ -758,6 +757,18 @@ SET `cs`.`domain_id` = (
 
 -- Re-apply VPC: update default network offering for vpc tier to conserve_mode=1 (#8309)
 UPDATE `cloud`.`network_offerings` SET conserve_mode = 1 WHERE name = 'DefaultIsolatedNetworkOfferingForVpcNetworks';
+
+-- Add management_server_details table to allow ManagementServer scope configs
+CREATE TABLE IF NOT EXISTS `management_server_details` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `management_server_id` bigint unsigned NOT NULL COMMENT 'management server the detail is related to',
+  `name` varchar(255) NOT NULL COMMENT 'name of the detail',
+  `value` varchar(255) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_management_server_details__management_server_id` FOREIGN KEY `fk_management_server_details__management_server_id`(`management_server_id`) REFERENCES `mshost`(`id`) ON DELETE CASCADE,
+  KEY `i_management_server_details__name__value` (`name`(128),`value`(128))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Create table for logs web session
 CREATE TABLE IF NOT EXISTS `cloud`.`logs_web_session` (
