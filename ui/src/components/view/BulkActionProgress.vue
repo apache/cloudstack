@@ -42,6 +42,7 @@
     </template>
     <a-card :bordered="false" style="background:#f1f1f1">
       <div><check-circle-outlined style="color: #52c41a; margin-right: 8px"/> {{ $t('label.success') + ': ' + succeededCount }}</div>
+      <div><check-circle-outlined style="color: #6e6e6e; margin-right: 8px"/> {{ $t('label.skipped') + ': ' + skippedCount }}</div>
       <div><close-circle-outlined style="color: #f5222d; margin-right: 8px"/> {{ $t('state.failed') + ': ' + failedCount }}</div>
       <div><sync-outlined style="color: #1890ff; margin-right: 8px"/> {{ $t('state.inprogress') + ': ' + selectedItems.filter(item => item.status === 'InProgress').length || 0 }}</div>
     </a-card>
@@ -143,6 +144,9 @@ export default {
   computed: {
     succeededCount () {
       return this.selectedItems.filter(item => item.status === 'success').length || 0
+    },
+    skippedCount () {
+      return this.selectedItems.filter(item => item.status === 'skipped').length || 0
     },
     failedCount () {
       return this.selectedItems.filter(item => item.status === 'failed').length || 0

@@ -121,7 +121,16 @@ export default {
           dataView: true,
           groupAction: true,
           popup: true,
-          groupMap: (selection, values) => { return selection.map(x => { return { id: x, considerlasthost: values.considerlasthost } }) },
+          groupMap: (selection, values, record) => {
+            return selection.map(x => {
+              const data = record.filter(y => { return y.id === x })
+              return {
+                id: x,
+                considerlasthost: values.considerlasthost,
+                skipGroupAction: data[0].state !== 'Stopped'
+              }
+            })
+          },
           args: (record, store) => {
             if (['Admin'].includes(store.userInfo.roletype)) {
               return ['considerlasthost']
@@ -140,7 +149,16 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#stopping-and-starting-vms',
           dataView: true,
           groupAction: true,
-          groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) },
+          groupMap: (selection, values, record) => {
+            return selection.map(x => {
+              const data = record.filter(y => { return y.id === x })
+              return {
+                id: x,
+                forced: values.forced,
+                skipGroupAction: data[0].state !== 'Running'
+              }
+            })
+          },
           args: ['forced'],
           show: (record) => { return ['Running'].includes(record.state) }
         },
@@ -165,7 +183,16 @@ export default {
           },
           groupAction: true,
           popup: true,
-          groupMap: (selection, values) => { return selection.map(x => { return { id: x, forced: values.forced } }) }
+          groupMap: (selection, values, record) => {
+            return selection.map(x => {
+              const data = record.filter(y => { return y.id === x })
+              return {
+                id: x,
+                forced: values.forced,
+                skipGroupAction: data[0].state !== 'Running'
+              }
+            })
+          }
         },
         {
           api: 'restoreVirtualMachine',
