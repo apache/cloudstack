@@ -70,7 +70,7 @@ public class ListVmwareDcVmsCmd extends BaseCmd  implements ListVmwareDcItems {
     @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "The password for specified username.")
     private String password;
 
-    @Parameter(name = ApiConstants.HOST, type = CommandType.STRING, description = "get only the VMs from the specified host.")
+    @Parameter(name = ApiConstants.HOST, type = CommandType.STRING, description = "get only the VMs from the specified ESX/ESXi host.")
     private String host;
 
     @Parameter(name = ApiConstants.BATCH_SIZE, type = CommandType.INTEGER, description = "The maximum number of results to return.")
