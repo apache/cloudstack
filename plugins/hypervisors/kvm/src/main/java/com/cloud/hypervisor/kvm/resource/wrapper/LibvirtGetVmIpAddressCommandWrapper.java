@@ -47,7 +47,6 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
         }
         String sanitizedVmName = sanitizeBashCommandArgument(vmName);
         String networkCidr = command.getVmNetworkCidr();
-        List<String[]> commands = new ArrayList<>();
         final String virt_ls_path = Script.getExecutableAbsolutePath("virt-ls");
         final String virt_cat_path = Script.getExecutableAbsolutePath("virt-cat");
         final String virt_win_reg_path = Script.getExecutableAbsolutePath("virt-win-reg");
@@ -55,7 +54,26 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
         final String grep_path = Script.getExecutableAbsolutePath("grep");
         final String awk_path = Script.getExecutableAbsolutePath("awk");
         final String sed_path = Script.getExecutableAbsolutePath("sed");
-        if(!command.isWindows()) {
+        final String virsh_path = Script.getExecutableAbsolutePath("virsh");
+
+        // first run virsh domiflist to get the network interface name from libvirt.  This is set if qemu guest agent is running in the VM
+        // and is the most reliable and least intrusive
+        List<String[]> commands = new ArrayList<>();
+        commands.add(new String[]{virsh_path, "domifaddr", sanitizedVmName, "--source", "agent"});
+        String output = Script.executePipedCommands(commands, 0).second();
+        if (output != null) {
+            String[] lines = output.split("\n");
+            for (String line : lines) {
+                ip = parseDomIfListOutput(line, networkCidr);
+                if (ip != null) {
+                    break;
+                }
+            }
+        }
+
+        commands.clear();
+        commands.add(new String[]{grep_path, ".*\\*"});
+        if(ip == null && !command.isWindows()) {
             //List all dhcp lease files inside guestVm
             commands.add(new String[]{virt_ls_path, sanitizedVmName, "/var/lib/dhclient/"});
             commands.add(new String[]{grep_path, ".*\\*.leases"});
@@ -105,5 +123,21 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
             s_logger.debug("GetVmIp: "+ vmName + " Found Ip: "+ip);
         }
         return new Answer(command, result, ip);
+    }
+
+    private String parseDomIfListOutput(String line, String networkCidr) {
+        String ip = null;
+        if (line.contains("ipv4")) {
+            String[] parts = line.split(" ");
+            if (parts.length > 2) {
+                String[] ipParts = parts[2].split("/");
+                if (ipParts.length > 0) {
+                    if (NetUtils.isIpWithInCidrRange(ipParts[0], networkCidr)) {
+                        ip = ipParts[0];
+                    }
+                }
+            }
+        }
+        return ip;
     }
 }
