@@ -68,6 +68,11 @@ public class ListClustersCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.SHOW_CAPACITIES, type = CommandType.BOOLEAN, description = "flag to display the capacity of the clusters")
     private Boolean showCapacities;
 
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "CPU arch of the clusters",
+            since = "4.20.1")
+    private String arch;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -110,6 +115,10 @@ public class ListClustersCmd extends BaseListCmd {
 
     public Boolean getShowCapacities() {
         return showCapacities;
+    }
+
+    public String getArch() {
+        return arch;
     }
 
     /////////////////////////////////////////////////////

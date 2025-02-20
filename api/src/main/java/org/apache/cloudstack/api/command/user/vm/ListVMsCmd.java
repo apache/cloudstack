@@ -149,6 +149,11 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
     @Parameter(name = ApiConstants.USER_DATA, type = CommandType.BOOLEAN, description = "Whether to return the VMs' user data or not. By default, user data will not be returned.", since = "4.18.0.0")
     private Boolean showUserData;
 
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "CPU arch of the VM",
+            since = "4.20.1")
+    private String arch;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -282,6 +287,10 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
 
     public Boolean getVnf() {
         return isVnf;
+    }
+
+    public String getArch() {
+        return arch;
     }
 
     /////////////////////////////////////////////////////
