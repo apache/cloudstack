@@ -155,6 +155,15 @@ public class Script implements Callable<String> {
         boolean obscureParam = false;
         for (int i = 0; i < command.length; i++) {
             String cmd = command[i];
+            if (cmd.startsWith("vi://")) {
+                String[] tokens = cmd.split("@");
+                if (tokens.length >= 2) {
+                    builder.append("vi://").append("******@").append(tokens[1]).append(" ");
+                } else {
+                    builder.append("vi://").append("******").append(" ");
+                }
+                continue;
+            }
             if (obscureParam) {
                 builder.append("******").append(" ");
                 obscureParam = false;
