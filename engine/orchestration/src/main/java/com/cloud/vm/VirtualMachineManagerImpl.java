@@ -707,7 +707,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private void handleUnsuccessfulExpungeOperation(List<Command> finalizeExpungeCommands, List<Command> nicExpungeCommands,
                                                     VMInstanceVO vm, Long hostId) throws OperationTimedoutException, AgentUnavailableException {
-        if (CollectionUtils.isNotEmpty(finalizeExpungeCommands) || CollectionUtils.isNotEmpty(nicExpungeCommands) && (hostId != null)) {
+        if ((CollectionUtils.isNotEmpty(finalizeExpungeCommands) || CollectionUtils.isNotEmpty(nicExpungeCommands)) && hostId != null) {
             final Commands cmds = new Commands(Command.OnError.Stop);
             addAllExpungeCommandsFromList(finalizeExpungeCommands, cmds, vm);
             addAllExpungeCommandsFromList(nicExpungeCommands, cmds, vm);
