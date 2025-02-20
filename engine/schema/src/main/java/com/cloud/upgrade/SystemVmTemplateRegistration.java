@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -84,54 +84,14 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDaoImpl;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
-import org.ini4j.Ini;
-
-import javax.inject.Inject;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.net.URI;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.Date;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class SystemVmTemplateRegistration {
     protected static Logger LOGGER = LogManager.getLogger(SystemVmTemplateRegistration.class);
-    private static final String MOUNT_COMMAND = "sudo mount -t nfs %s %s";
+    private static final String MOUNT_COMMAND_BASE = "sudo mount -t nfs";
     private static final String UMOUNT_COMMAND = "sudo umount %s";
     private static final String RELATIVE_TEMPLATE_PATH = "./engine/schema/dist/systemvm-templates/";
     private static final String ABSOLUTE_TEMPLATE_PATH = "/usr/share/cloudstack-management/templates/systemvm/";
@@ -146,6 +106,9 @@ public class SystemVmTemplateRegistration {
     private static final Integer LINUX_7_ID = 183;
     private static final Integer SCRIPT_TIMEOUT = 1800000;
     private static final Integer LOCK_WAIT_TIMEOUT = 1200;
+    private static final List<String> DOWNLOADABLE_TEMPLATE_ARCH_TYPES = Arrays.asList(
+            CPU.archARM64Identifier
+    );
 
 
     public static String CS_MAJOR_VERSION = null;
@@ -193,7 +156,7 @@ public class SystemVmTemplateRegistration {
     }
 
     public static String getMountCommand(String nfsVersion, String device, String dir) {
-        String cmd = "sudo mount -t nfs";
+        String cmd = MOUNT_COMMAND_BASE;
         if (StringUtils.isNotBlank(nfsVersion)) {
             cmd = String.format("%s -o vers=%s", cmd, nfsVersion);
         }
@@ -789,7 +752,7 @@ public class SystemVmTemplateRegistration {
                 Ini.Section section = ini.get(key);
                 NewTemplateMap.put(key, new MetadataTemplateDetails(hypervisorType.first(), section.get("templatename"),
                         section.get("filename"), section.get("downloadurl"), section.get("checksum"),
-                        section.get("arch")));
+                        hypervisorType.second()));
             }
             Ini.Section section = ini.get("default");
             return section.get("version");
@@ -809,6 +772,21 @@ public class SystemVmTemplateRegistration {
         }
     }
 
+    protected File getTemplateFile(MetadataTemplateDetails templateDetails) {
+        final String filePath = TEMPLATES_PATH + templateDetails.getFilename();
+        File tempFile = new File(filePath);
+        if (!tempFile.exists() && DOWNLOADABLE_TEMPLATE_ARCH_TYPES.contains(templateDetails.getArch()) &&
+                StringUtils.isNotBlank(templateDetails.getUrl())) {
+            LOGGER.debug("Downloading the template file {} for hypervisor {} and arch {} as it is not present",
+                    templateDetails.getUrl(), templateDetails.getHypervisorType().name(), templateDetails.getArch());
+            if (!NetUtils.downloadFileWithProgress(templateDetails.getUrl(), filePath, LOGGER)) {
+                return null;
+            }
+            return new File(filePath);
+        }
+        return tempFile;
+    }
+
     private void validateTemplates(List<Pair<Hypervisor.HypervisorType, String>> hypervisorsArchInUse) {
         boolean templatesFound = true;
         for (Pair<Hypervisor.HypervisorType, String> hypervisorArch : hypervisorsArchInUse) {
@@ -822,11 +800,12 @@ public class SystemVmTemplateRegistration {
                 templatesFound = false;
                 break;
             }
-            if (CPU.archARM64Identifier.equals(matchedTemplate.getArch())) {
-                LOGGER.debug("Skipping checksum comparison for the template file and metadata as the arch for template is {}",
-                        matchedTemplate.getArch());
+            File tempFile = getTemplateFile(matchedTemplate);
+            if (tempFile == null) {
+                LOGGER.warn("Failed to download template for hypervisor {} and arch {}, moving ahead",
+                        matchedTemplate.getHypervisorType().name(), matchedTemplate.getArch());
+                continue;
             }
-            File tempFile = new File(TEMPLATES_PATH + matchedTemplate.getFilename());
             String templateChecksum = DigestHelper.calculateChecksum(tempFile);
             if (!templateChecksum.equals(matchedTemplate.getChecksum())) {
                 LOGGER.error("Checksum {} for file {}  does not match checksum {} from metadata",
@@ -842,7 +821,7 @@ public class SystemVmTemplateRegistration {
         }
     }
 
-    protected void registerTemplatesForZone(long zoneId) {
+    protected void registerTemplatesForZone(long zoneId, String filePath) {
         Pair<String, Long> storeUrlAndId = getNfsStoreInZone(zoneId);
         String nfsVersion = getNfsVersion(storeUrlAndId.second());
         mountStore(storeUrlAndId.first(), filePath, nfsVersion);
@@ -856,7 +835,7 @@ public class SystemVmTemplateRegistration {
                 TemplateDataStoreVO templateDataStoreVO = templateDataStoreDao.findByStoreTemplate(storeUrlAndId.second(), templateId);
                 if (templateDataStoreVO != null) {
                     String installPath = templateDataStoreVO.getInstallPath();
-                    if (validateIfSeeded(storeUrlAndId.first(), installPath, nfsVersion)) {
+                    if (validateIfSeeded(templateDataStoreVO, storeUrlAndId.first(), installPath, nfsVersion)) {
                         continue;
                     }
                 }
@@ -891,7 +870,7 @@ public class SystemVmTemplateRegistration {
                                 if (filePath == null) {
                                     throw new CloudRuntimeException("Failed to create temporary file path to mount the store");
                                 }
-                                registerTemplatesForZone(zoneId);
+                                registerTemplatesForZone(zoneId, filePath);
                                 unmountStore(filePath);
                             } catch (Exception e) {
                                 unmountStore(filePath);

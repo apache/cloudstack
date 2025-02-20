@@ -20,9 +20,12 @@
 package com.cloud.utils.net;
 
 import java.io.BufferedReader;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
+import java.net.HttpURLConnection;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -31,6 +34,7 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -51,8 +55,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.commons.validator.routines.RegexValidator;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.Pair;
@@ -1873,5 +1877,52 @@ public class NetUtils {
         final long startNetMask = ip2Long(getCidrNetmask(size));
         final long start = (ip & startNetMask);
         return String.format("%s/%s", long2Ip(start), size);
+    }
+
+    public static boolean downloadFileWithProgress(final String fileURL, final String savePath, final Logger logger) {
+        HttpURLConnection httpConn = null;
+        try {
+            URL url = new URL(fileURL);
+            httpConn = (HttpURLConnection) url.openConnection();
+            int responseCode = httpConn.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                int contentLength = httpConn.getContentLength();
+                if (contentLength < 0) {
+                    logger.warn("Content length not provided for {}, progress updates may not be accurate",
+                            fileURL);
+                }
+                try (InputStream inputStream = httpConn.getInputStream();
+                     FileOutputStream outputStream = new FileOutputStream(savePath)) {
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    int downloaded = 0;
+                    int lastReportedPercent = 0;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                        downloaded += bytesRead;
+                        if (contentLength > 0) {
+                            int percentDownloaded = (int) ((downloaded / (double) contentLength) * 100);
+                            // Update every 5 percent or on completion
+                            if (percentDownloaded - lastReportedPercent >= 5 || percentDownloaded == 100) {
+                                logger.debug("Downloaded {}% from {}", downloaded, fileURL);
+                                lastReportedPercent = percentDownloaded;
+                            }
+                        }
+                    }
+                }
+                logger.info("File {} downloaded successfully using {}.", fileURL, savePath);
+            } else {
+                logger.error("No file to download {}. Server replied with code: {}", fileURL, responseCode);
+                return false;
+            }
+        } catch (IOException ex) {
+            logger.error("Failed to download {} due to: {}", fileURL, ex.getMessage(), ex);
+            return false;
+        } finally {
+            if (httpConn != null) {
+                httpConn.disconnect();
+            }
+        }
+        return true;
     }
 }
