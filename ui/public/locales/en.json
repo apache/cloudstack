@@ -3480,6 +3480,7 @@
 "message.success.change.bgp.peers": "Successfully changed BGP peers",
 "message.success.change.offering": "Successfully changed offering",
 "message.success.change.password": "Successfully changed password for User",
+"message.success.change.host.password": "Successfully changed password for host \"{name}\"",
 "message.success.clear.webhook.deliveries": "Successfully cleared webhook deliveries",
 "message.success.change.scope": "Successfully changed scope for storage pool",
 "message.success.config.backup.schedule": "Successfully configured Instance backup schedule",
