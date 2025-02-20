@@ -48,6 +48,7 @@ import org.joda.time.Duration;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.script.OutputInterpreter.TimedOutLogger;
 
@@ -155,7 +156,7 @@ public class Script implements Callable<String> {
         boolean obscureParam = false;
         for (int i = 0; i < command.length; i++) {
             String cmd = command[i];
-            if (cmd.startsWith("vi://")) {
+            if (StringUtils.isNotEmpty(cmd) && cmd.startsWith("vi://")) {
                 String[] tokens = cmd.split("@");
                 if (tokens.length >= 2) {
                     builder.append("vi://").append("******@").append(tokens[1]).append(" ");
@@ -164,25 +165,6 @@ public class Script implements Callable<String> {
                 }
                 continue;
             }
-            if (obscureParam) {
-                builder.append("******").append(" ");
-                obscureParam = false;
-            } else {
-                builder.append(command[i]).append(" ");
-            }
-
-            if ("-y".equals(cmd) || "-z".equals(cmd)) {
-                obscureParam = true;
-                _passwordCommand = true;
-            }
-        }
-        return builder.toString();
-    }
-
-    protected String buildCommandLine(List<String> command) {
-        StringBuilder builder = new StringBuilder();
-        boolean obscureParam = false;
-        for (String cmd : command) {
             if (obscureParam) {
                 builder.append("******").append(" ");
                 obscureParam = false;
