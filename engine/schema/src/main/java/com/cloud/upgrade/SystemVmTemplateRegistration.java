@@ -77,6 +77,7 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.upgrade.dao.BasicTemplateDataStoreDaoImpl;
 import com.cloud.user.Account;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.HttpUtils;
 import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.GlobalLock;
@@ -779,7 +780,7 @@ public class SystemVmTemplateRegistration {
                 StringUtils.isNotBlank(templateDetails.getUrl())) {
             LOGGER.debug("Downloading the template file {} for hypervisor {} and arch {} as it is not present",
                     templateDetails.getUrl(), templateDetails.getHypervisorType().name(), templateDetails.getArch());
-            if (!NetUtils.downloadFileWithProgress(templateDetails.getUrl(), filePath, LOGGER)) {
+            if (!HttpUtils.downloadFileWithProgress(templateDetails.getUrl(), filePath, LOGGER)) {
                 return null;
             }
             return new File(filePath);
