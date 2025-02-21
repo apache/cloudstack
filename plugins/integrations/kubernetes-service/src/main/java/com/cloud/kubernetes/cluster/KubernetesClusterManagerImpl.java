@@ -74,6 +74,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.RoutedIpv4Manager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.api.ApiDBUtils;
@@ -382,10 +383,10 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     }
 
     protected void validateIsolatedNetworkIpRules(long ipId, FirewallRule.Purpose purpose, Network network, int clusterTotalNodeCount) {
-        List<FirewallRuleVO> rules = firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose);
+        List<FirewallRuleVO> rules = firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(ipId, purpose, NetUtils.TCP_PROTO);
         for (FirewallRuleVO rule : rules) {
-            Integer startPort = rule.getSourcePortStart();
-            Integer endPort = rule.getSourcePortEnd();
+            int startPort = ObjectUtils.defaultIfNull(rule.getSourcePortStart(), 1);
+            int endPort = ObjectUtils.defaultIfNull(rule.getSourcePortEnd(), NetUtils.PORT_RANGE_MAX);
             if (logger.isDebugEnabled()) {
                 logger.debug("Validating rule with purpose: {} for network: {} with ports: {}-{}", purpose.toString(), network, startPort, endPort);
             }
@@ -568,7 +569,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         if (template != null) {
             response.setTemplateId(template.getUuid());
         }
-        ServiceOfferingVO offering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
+        ServiceOfferingVO offering = serviceOfferingDao.findByIdIncludingRemoved(kubernetesCluster.getServiceOfferingId());
         if (offering != null) {
             response.setServiceOfferingId(offering.getUuid());
             response.setServiceOfferingName(offering.getName());

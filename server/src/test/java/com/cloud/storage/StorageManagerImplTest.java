@@ -780,7 +780,6 @@ public class StorageManagerImplTest {
 
         Mockito.when(pool.getId()).thenReturn(poolId);
         Mockito.when(pool.getCapacityBytes()).thenReturn(capacityBytes);
-        Mockito.when(pool.getDataCenterId()).thenReturn(zoneId);
         Mockito.when(storagePoolDao.findById(poolId)).thenReturn(pool);
         Mockito.when(pool.getPoolType()).thenReturn(Storage.StoragePoolType.NetworkFilesystem);
 

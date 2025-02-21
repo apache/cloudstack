@@ -18,6 +18,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 import static com.cloud.host.Host.HOST_INSTANCE_CONVERSION;
 import static com.cloud.host.Host.HOST_VOLUME_ENCRYPTION;
+import static org.apache.cloudstack.utils.linux.KVMHostInfo.isHostS390x;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -245,10 +246,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private static final String SECURE = "secure";
 
     /**
+     * Machine type for s390x architecture
+     */
+    private static final String S390X_VIRTIO_DEVICE = "s390-ccw-virtio";
+
+    /**
      * Machine type.
      */
-    private static final String PC = "pc";
-    private static final String VIRT = "virt";
+    private static final String PC = isHostS390x() ? S390X_VIRTIO_DEVICE : "pc";
+    private static final String VIRT = isHostS390x() ? S390X_VIRTIO_DEVICE : "virt";
 
     /**
      * Possible devices to add to VM.
@@ -305,6 +311,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * Constant that defines ARM64 (aarch64) guest architectures.
      */
     private static final String AARCH64 = "aarch64";
+    /**
+     * Constant that defines IBM Z Arch (s390x) guest architectures.
+     */
+    private static final String S390X = "s390x";
 
     public static final String RESIZE_NOTIFY_ONLY = "NOTIFYONLY";
     public static final String BASEPATH = "/usr/share/cloudstack-common/vms/";
@@ -437,7 +447,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected static final String LOCAL_STORAGE_PATH = "local.storage.path";
     protected static final String LOCAL_STORAGE_UUID = "local.storage.uuid";
-    protected static final String DEFAULT_LOCAL_STORAGE_PATH = "/var/lib/libvirt/images/";
+    public static final String DEFAULT_LOCAL_STORAGE_PATH = "/var/lib/libvirt/images";
 
     protected List<String> localStoragePaths = new ArrayList<>();
     protected List<String> localStorageUUIDs = new ArrayList<>();
@@ -1796,7 +1806,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             "^dummy",
             "^lo",
             "^p\\d+p\\d+",
-            "^vni"
+            "^vni",
+            "^enc"
     };
 
     /**
@@ -2642,12 +2653,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         devices.addDevice(createChannelDef(vmTO));
-        devices.addDevice(createWatchDogDef());
+        if (!isGuestS390x()) {
+            devices.addDevice(createWatchDogDef());
+        }
         devices.addDevice(createVideoDef(vmTO));
         devices.addDevice(createConsoleDef());
         devices.addDevice(createGraphicDef(vmTO));
-        devices.addDevice(createTabletInputDef());
-
+        if (!isGuestS390x()) {
+            devices.addDevice(createTabletInputDef());
+        }
         if (isGuestAarch64()) {
             createArm64UsbDef(devices);
         }
@@ -2661,7 +2675,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             Map<String, String> details = vmTO.getDetails();
 
             boolean isIothreadsEnabled = details != null && details.containsKey(VmDetailConstants.IOTHREADS);
-            devices.addDevice(createSCSIDef(vcpus, isIothreadsEnabled));
+            addSCSIControllers(devices, vcpus, vmTO.getDisks().length, isIothreadsEnabled);
         }
         return devices;
     }
@@ -2699,8 +2713,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * Creates Virtio SCSI controller. <br>
      * The respective Virtio SCSI XML definition is generated only if the VM's Disk Bus is of ISCSI.
      */
-    protected SCSIDef createSCSIDef(int vcpus, boolean isIothreadsEnabled) {
-        return new SCSIDef((short)0, 0, 0, 9, 0, vcpus, isIothreadsEnabled);
+    protected SCSIDef createSCSIDef(short index, int vcpus, boolean isIothreadsEnabled) {
+        return new SCSIDef(index, 0, 0, 9 + index, 0, vcpus, isIothreadsEnabled);
+    }
+
+
+    private void addSCSIControllers(DevicesDef devices, int vcpus, int diskCount, boolean isIothreadsEnabled) {
+        int controllers = diskCount / 7;
+        if (diskCount % 7 != 0) {
+            controllers++;
+        }
+        for (int i = 0; i < controllers; i++) {
+            devices.addDevice(createSCSIDef((short)i, vcpus, isIothreadsEnabled));
+        }
     }
 
     protected ConsoleDef createConsoleDef() {
@@ -2754,7 +2779,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         FeaturesDef features = new FeaturesDef();
         features.addFeatures(PAE);
         features.addFeatures(APIC);
-        features.addFeatures(ACPI);
+        if (!isHostS390x()) {
+            features.addFeatures(ACPI);
+        }
         if (isUefiEnabled && isSecureBoot) {
             features.addFeatures(SMM);
         }
@@ -2846,6 +2873,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return AARCH64.equals(guestCpuArch);
     }
 
+    private boolean isGuestS390x() {
+        return S390X.equals(guestCpuArch);
+    }
+
     /**
      * Creates a guest definition from a VM specification.
      */
@@ -2856,7 +2887,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         guest.setManufacturer(vmTO.getMetadataManufacturer());
         guest.setProduct(vmTO.getMetadataProductName());
         guest.setGuestArch(guestCpuArch != null ? guestCpuArch : vmTO.getArch());
-        guest.setMachineType(isGuestAarch64() ? VIRT : PC);
+        guest.setMachineType((isGuestAarch64() || isGuestS390x()) ? VIRT : PC);
         guest.setBootType(GuestDef.BootType.BIOS);
         if (MapUtils.isNotEmpty(customParams)) {
             if (customParams.containsKey(GuestDef.BootType.UEFI.toString())) {
@@ -2870,7 +2901,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             guest.setIothreads(customParams.containsKey(VmDetailConstants.IOTHREADS));
         }
         guest.setUuid(uuid);
-        guest.setBootOrder(GuestDef.BootOrder.CDROM);
+        if(!isGuestS390x()) {
+            guest.setBootOrder(GuestDef.BootOrder.CDROM);
+        }
         guest.setBootOrder(GuestDef.BootOrder.HARDISK);
         return guest;
     }
@@ -3111,7 +3144,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 final DiskDef.DiskType diskType = getDiskType(physicalDisk);
                 disk.defISODisk(volPath, devId, isUefiEnabled, diskType);
 
-                if (guestCpuArch != null && guestCpuArch.equals("aarch64")) {
+                if (guestCpuArch != null && (guestCpuArch.equals("aarch64") || guestCpuArch.equals("s390x"))) {
                     disk.setBusType(DiskDef.DiskBus.SCSI);
                 }
             } else {
@@ -3122,7 +3155,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 disk.setLogicalBlockIOSize(pool.getSupportedLogicalBlockSize());
                 disk.setPhysicalBlockIOSize(pool.getSupportedPhysicalBlockSize());
 
-                if (diskBusType == DiskDef.DiskBus.SCSI ) {
+                if (diskBusType == DiskDef.DiskBus.SCSI || diskBusType == DiskDef.DiskBus.VIRTIOBLK) {
                     disk.setQemuDriver(true);
                     disk.setDiscard(DiscardType.UNMAP);
                 }
@@ -3193,7 +3226,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setCacheMode(DiskDef.DiskCacheMode.valueOf(volumeObjectTO.getCacheMode().toString().toUpperCase()));
                 }
 
-                if (volumeObjectTO.requiresEncryption()) {
+                if (volumeObjectTO.requiresEncryption() &&
+                        pool.getType().encryptionSupportMode() == Storage.EncryptionSupport.Hypervisor ) {
                     String secretUuid = createLibvirtVolumeSecret(conn, volumeObjectTO.getPath(), volumeObjectTO.getPassphrase());
                     DiskDef.LibvirtDiskEncryptDetails encryptDetails = new DiskDef.LibvirtDiskEncryptDetails(secretUuid, QemuObject.EncryptFormat.enumValue(volumeObjectTO.getEncryptFormat()));
                     disk.setLibvirtDiskEncryptDetails(encryptDetails);
@@ -3209,7 +3243,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (vmSpec.getType() != VirtualMachine.Type.User) {
             final DiskDef iso = new DiskDef();
             iso.defISODisk(sysvmISOPath, DiskDef.DiskType.FILE);
-            if (guestCpuArch != null && guestCpuArch.equals("aarch64")) {
+            if (guestCpuArch != null && (guestCpuArch.equals("aarch64") || guestCpuArch.equals("s390x"))) {
                 iso.setBusType(DiskDef.DiskBus.SCSI);
             }
             vm.getDevices().addDevice(iso);
@@ -4283,7 +4317,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return DiskDef.DiskBus.VIRTIO;
         } else if (isUefiEnabled && StringUtils.startsWithAny(platformEmulator, "Windows", "Other")) {
             return DiskDef.DiskBus.SATA;
-        } else if (guestCpuArch != null && guestCpuArch.equals("aarch64")) {
+        } else if (guestCpuArch != null && (guestCpuArch.equals("aarch64") || guestCpuArch.equals("s390x"))) {
             return DiskDef.DiskBus.SCSI;
         } else {
             return DiskDef.DiskBus.IDE;

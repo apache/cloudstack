@@ -51,12 +51,19 @@ public class ApiConstants {
     public static final String AVAILABLE = "available";
     public static final String AVAILABLE_SUBNETS = "availablesubnets";
     public static final String AVAILABLE_VIRTUAL_MACHINE_COUNT = "availablevirtualmachinecount";
+    public static final String BACKUP_AVAILABLE = "backupavailable";
     public static final String BACKUP_ID = "backupid";
+    public static final String BACKUP_LIMIT = "backuplimit";
     public static final String BACKUP_OFFERING_NAME = "backupofferingname";
     public static final String BACKUP_OFFERING_ID = "backupofferingid";
+    public static final String BACKUP_STORAGE_AVAILABLE = "backupstorageavailable";
+    public static final String BACKUP_STORAGE_LIMIT = "backupstoragelimit";
+    public static final String BACKUP_STORAGE_TOTAL = "backupstoragetotal";
+    public static final String BACKUP_TOTAL = "backuptotal";
     public static final String BASE64_IMAGE = "base64image";
     public static final String BGP_PEERS = "bgppeers";
     public static final String BGP_PEER_IDS = "bgppeerids";
+    public static final String BATCH_SIZE = "batchsize";
     public static final String BITS = "bits";
     public static final String BOOTABLE = "bootable";
     public static final String BIND_DN = "binddn";
@@ -322,6 +329,7 @@ public class ApiConstants {
     public static final String MAC_ADDRESS = "macaddress";
     public static final String MAX = "max";
     public static final String MAX_SNAPS = "maxsnaps";
+    public static final String MAX_BACKUPS = "maxbackups";
     public static final String MAX_CPU_NUMBER = "maxcpunumber";
     public static final String MAX_MEMORY = "maxmemory";
     public static final String MIN_CPU_NUMBER = "mincpunumber";
@@ -436,6 +444,7 @@ public class ApiConstants {
     public static final String QUALIFIERS = "qualifiers";
     public static final String QUERY_FILTER = "queryfilter";
     public static final String SCHEDULE = "schedule";
+    public static final String SCHEDULE_ID = "scheduleid";
     public static final String SCOPE = "scope";
     public static final String SEARCH_BASE = "searchbase";
     public static final String SECONDARY_IP = "secondaryip";
@@ -447,7 +456,6 @@ public class ApiConstants {
     public static final String SENT = "sent";
     public static final String SENT_BYTES = "sentbytes";
     public static final String SERIAL = "serial";
-    public static final String SERVICE_IP = "serviceip";
     public static final String SERVICE_OFFERING_ID = "serviceofferingid";
     public static final String SESSIONKEY = "sessionkey";
     public static final String SHOW_CAPACITIES = "showcapacities";
@@ -477,11 +485,12 @@ public class ApiConstants {
     public static final String STATE = "state";
     public static final String STATS = "stats";
     public static final String STATUS = "status";
-    public static final String STORAGE_TYPE = "storagetype";
-    public static final String STORAGE_POLICY = "storagepolicy";
-    public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
     public static final String STORAGE_CAPABILITIES = "storagecapabilities";
     public static final String STORAGE_CUSTOM_STATS = "storagecustomstats";
+    public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
+    public static final String STORAGE_POLICY = "storagepolicy";
+    public static final String STORAGE_POOL = "storagepool";
+    public static final String STORAGE_TYPE = "storagetype";
     public static final String SUBNET = "subnet";
     public static final String OWNER = "owner";
     public static final String SWAP_OWNER = "swapowner";
@@ -954,7 +963,6 @@ public class ApiConstants {
     public static final String AUTOSCALE_VMGROUP_NAME = "autoscalevmgroupname";
     public static final String BAREMETAL_DISCOVER_NAME = "baremetaldiscovername";
     public static final String BAREMETAL_RCT_URL = "baremetalrcturl";
-    public static final String BATCH_SIZE = "batchsize";
     public static final String UCS_DN = "ucsdn";
     public static final String GSLB_PROVIDER = "gslbprovider";
     public static final String EXCLUSIVE_GSLB_PROVIDER = "isexclusivegslbprovider";
@@ -1136,16 +1144,18 @@ public class ApiConstants {
     public static final String LOGOUT = "logout";
     public static final String LIST_IDPS = "listIdps";
 
-    public static final String READY_FOR_SHUTDOWN = "readyforshutdown";
+    public static final String MAINTENANCE_INITIATED = "maintenanceinitiated";
     public static final String SHUTDOWN_TRIGGERED = "shutdowntriggered";
+    public static final String READY_FOR_SHUTDOWN = "readyforshutdown";
     public static final String PENDING_JOBS_COUNT = "pendingjobscount";
+    public static final String AGENTS_COUNT = "agentscount";
+    public static final String AGENTS = "agents";
 
     public static final String PUBLIC_MTU = "publicmtu";
     public static final String PRIVATE_MTU = "privatemtu";
     public static final String MTU = "mtu";
     public static final String AUTO_ENABLE_KVM_HOST = "autoenablekvmhost";
     public static final String LIST_APIS = "listApis";
-    public static final String OBJECT_STORAGE_ID = "objectstorageid";
     public static final String VERSIONING = "versioning";
     public static final String OBJECT_LOCKING = "objectlocking";
     public static final String ENCRYPTION = "encryption";
@@ -1159,7 +1169,6 @@ public class ApiConstants {
     public static final String DISK_PATH = "diskpath";
     public static final String IMPORT_SOURCE = "importsource";
     public static final String TEMP_PATH = "temppath";
-    public static final String OBJECT_STORAGE = "objectstore";
     public static final String HEURISTIC_RULE = "heuristicrule";
     public static final String HEURISTIC_TYPE_VALID_OPTIONS = "Valid options are: ISO, SNAPSHOT, TEMPLATE and VOLUME.";
     public static final String MANAGEMENT = "management";
@@ -1187,10 +1196,30 @@ public class ApiConstants {
     public static final String SHAREDFSVM_MIN_CPU_COUNT = "sharedfsvmmincpucount";
     public static final String SHAREDFSVM_MIN_RAM_SIZE = "sharedfsvmminramsize";
 
+    // Object Storage related
+    public static final String BUCKET_AVAILABLE = "bucketavailable";
+    public static final String BUCKET_LIMIT = "bucketlimit";
+    public static final String BUCKET_TOTAL = "buckettotal";
+    public static final String OBJECT_STORAGE_ID = "objectstorageid";
+    public static final String OBJECT_STORAGE = "objectstore";
+    public static final String OBJECT_STORAGE_AVAILABLE = "objectstorageavailable";
+    public static final String OBJECT_STORAGE_LIMIT = "objectstoragelimit";
+    public static final String OBJECT_STORAGE_TOTAL = "objectstoragetotal";
+
     public static final String PARAMETER_DESCRIPTION_ACTIVATION_RULE = "Quota tariff's activation rule. It can receive a JS script that results in either " +
             "a boolean or a numeric value: if it results in a boolean value, the tariff value will be applied according to the result; if it results in a numeric value, the " +
             "numeric value will be applied; if the result is neither a boolean nor a numeric value, the tariff will not be applied. If the rule is not informed, the tariff " +
             "value will be applied.";
+
+    public static final String PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS = "The recommended format is \"yyyy-MM-dd'T'HH:mm:ssZ\" (e.g.: \"2023-01-01T12:00:00+0100\"); " +
+            "however, the following formats are also accepted: \"yyyy-MM-dd HH:mm:ss\" (e.g.: \"2023-01-01 12:00:00\") and \"yyyy-MM-dd\" (e.g.: \"2023-01-01\" - if the time is not " +
+            "added, it will be interpreted as \"00:00:00\"). If the recommended format is not used, the date will be considered in the server timezone.";
+
+    public static final String PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS = "The recommended format is \"yyyy-MM-dd'T'HH:mm:ssZ\" (e.g.: \"2023-01-01T12:00:00+0100\"); " +
+            "however, the following formats are also accepted: \"yyyy-MM-dd HH:mm:ss\" (e.g.: \"2023-01-01 12:00:00\") and \"yyyy-MM-dd\" (e.g.: \"2023-01-01\" - if the time is not " +
+            "added, it will be interpreted as \"23:59:59\"). If the recommended format is not used, the date will be considered in the server timezone.";
+
+    public static final String VMWARE_DC = "vmwaredc";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
@@ -1213,14 +1242,6 @@ public class ApiConstants {
             return ioDriver;
         }
     }
-
-    public static final String PARAMETER_DESCRIPTION_START_DATE_POSSIBLE_FORMATS = "The recommended format is \"yyyy-MM-dd'T'HH:mm:ssZ\" (e.g.: \"2023-01-01T12:00:00+0100\"); " +
-            "however, the following formats are also accepted: \"yyyy-MM-dd HH:mm:ss\" (e.g.: \"2023-01-01 12:00:00\") and \"yyyy-MM-dd\" (e.g.: \"2023-01-01\" - if the time is not " +
-            "added, it will be interpreted as \"00:00:00\"). If the recommended format is not used, the date will be considered in the server timezone.";
-
-    public static final String PARAMETER_DESCRIPTION_END_DATE_POSSIBLE_FORMATS = "The recommended format is \"yyyy-MM-dd'T'HH:mm:ssZ\" (e.g.: \"2023-01-01T12:00:00+0100\"); " +
-            "however, the following formats are also accepted: \"yyyy-MM-dd HH:mm:ss\" (e.g.: \"2023-01-01 12:00:00\") and \"yyyy-MM-dd\" (e.g.: \"2023-01-01\" - if the time is not " +
-            "added, it will be interpreted as \"23:59:59\"). If the recommended format is not used, the date will be considered in the server timezone.";
 
     public enum BootType {
         UEFI, BIOS;

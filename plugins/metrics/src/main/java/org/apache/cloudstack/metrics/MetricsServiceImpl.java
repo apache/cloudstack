@@ -61,6 +61,8 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.cluster.ClusterDrsAlgorithm;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.management.ManagementServerHost.State;
 import org.apache.cloudstack.response.ClusterMetricsResponse;
 import org.apache.cloudstack.response.DbMetricsResponse;
@@ -78,6 +80,7 @@ import org.apache.cloudstack.response.ZoneMetricsResponse;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -110,8 +113,6 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.org.Cluster;
-import com.cloud.org.Grouping;
-import com.cloud.org.Managed;
 import com.cloud.server.DbStatsCollection;
 import com.cloud.server.ManagementServerHostStats;
 import com.cloud.server.StatsCollector;
@@ -141,8 +142,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.dao.VmStatsDao;
 import com.google.gson.Gson;
 
-public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements MetricsService {
-
+public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements MetricsService, Configurable {
     @Inject
     private DataCenterDao dataCenterDao;
     @Inject
@@ -197,7 +197,6 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     }
 
     private void updateHostMetrics(final HostMetrics hostMetrics, final HostJoinVO host) {
-        hostMetrics.incrTotalHosts();
         hostMetrics.addCpuAllocated(host.getCpuReservedCapacity() + host.getCpuUsedCapacity());
         hostMetrics.addMemoryAllocated(host.getMemReservedCapacity() + host.getMemUsedCapacity());
         final HostStats hostStats = ApiDBUtils.getHostStatistics(host.getId());
@@ -561,22 +560,17 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         response.setZones(dataCenterDao.countAll());
         response.setPods(podDao.countAll());
         response.setClusters(clusterDao.countAll());
-        response.setHosts(hostDao.countAllByType(Host.Type.Routing));
+        Pair<Integer, Integer> hostCountAndCpuSockets = hostDao.countAllHostsAndCPUSocketsByType(Host.Type.Routing);
+        response.setHosts(hostCountAndCpuSockets.first());
         response.setStoragePools(storagePoolDao.countAll());
         response.setImageStores(imageStoreDao.countAllImageStores());
         response.setObjectStores(objectStoreDao.countAllObjectStores());
-        response.setSystemvms(vmInstanceDao.listByTypes(VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm).size());
+        response.setSystemvms(vmInstanceDao.countByTypes(VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm));
         response.setRouters(domainRouterDao.countAllByRole(VirtualRouter.Role.VIRTUAL_ROUTER));
         response.setInternalLbs(domainRouterDao.countAllByRole(VirtualRouter.Role.INTERNAL_LB_VM));
         response.setAlerts(alertDao.countAll());
-        int cpuSockets = 0;
-        for (final Host host : hostDao.listByType(Host.Type.Routing)) {
-            if (host.getCpuSockets() != null) {
-                cpuSockets += host.getCpuSockets();
-            }
-        }
-        response.setCpuSockets(cpuSockets);
-        response.setManagementServers(managementServerHostDao.listAll().size());
+        response.setCpuSockets(hostCountAndCpuSockets.second());
+        response.setManagementServers(managementServerHostDao.countAll());
         return response;
     }
 
@@ -634,6 +628,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     public List<StoragePoolMetricsResponse> listStoragePoolMetrics(List<StoragePoolResponse> poolResponses) {
         final List<StoragePoolMetricsResponse> metricsResponses = new ArrayList<>();
         Map<String, Long> clusterUuidToIdMap = clusterDao.findByUuids(poolResponses.stream().map(StoragePoolResponse::getClusterId).toArray(String[]::new)).stream().collect(Collectors.toMap(ClusterVO::getUuid, ClusterVO::getId));
+        Map<String, Long> poolUuidToIdMap = storagePoolDao.findByUuids(poolResponses.stream().map(StoragePoolResponse::getId).toArray(String[]::new)).stream().collect(Collectors.toMap(StoragePoolVO::getUuid, StoragePoolVO::getId));
         for (final StoragePoolResponse poolResponse: poolResponses) {
             StoragePoolMetricsResponse metricsResponse = new StoragePoolMetricsResponse();
 
@@ -644,8 +639,9 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             }
 
             Long poolClusterId = clusterUuidToIdMap.get(poolResponse.getClusterId());
+            Long poolId = poolUuidToIdMap.get(poolResponse.getId());
             final Double storageThreshold = AlertManager.StorageCapacityThreshold.valueIn(poolClusterId);
-            final Double storageDisableThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(poolClusterId);
+            final Double storageDisableThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(poolId);
 
             metricsResponse.setHasAnnotation(poolResponse.hasAnnotation());
             metricsResponse.setDiskSizeUsedGB(poolResponse.getDiskSizeUsed());
@@ -764,38 +760,44 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             final CapacityDaoImpl.SummedCapacity cpuCapacity = getCapacity(Capacity.CAPACITY_TYPE_CPU, null, clusterId);
             final CapacityDaoImpl.SummedCapacity memoryCapacity = getCapacity(Capacity.CAPACITY_TYPE_MEMORY, null, clusterId);
             final HostMetrics hostMetrics = new HostMetrics(cpuCapacity, memoryCapacity);
+            hostMetrics.setUpResources(Long.valueOf(hostDao.countAllInClusterByTypeAndStates(clusterId, Host.Type.Routing, List.of(Status.Up))));
+            hostMetrics.setTotalResources(Long.valueOf(hostDao.countAllInClusterByTypeAndStates(clusterId, Host.Type.Routing, null)));
+            hostMetrics.setTotalHosts(hostMetrics.getTotalResources());
 
-            List<Ternary<Long, Long, Long>> cpuList = new ArrayList<>();
-            List<Ternary<Long, Long, Long>> memoryList = new ArrayList<>();
-
-            for (final Host host: hostDao.findByClusterId(clusterId)) {
-                if (host == null || host.getType() != Host.Type.Routing) {
-                    continue;
+            if (AllowListMetricsComputation.value()) {
+                List<Ternary<Long, Long, Long>> cpuList = new ArrayList<>();
+                List<Ternary<Long, Long, Long>> memoryList = new ArrayList<>();
+                for (final Host host : hostDao.findByClusterId(clusterId)) {
+                    if (host == null || host.getType() != Host.Type.Routing) {
+                        continue;
+                    }
+                    updateHostMetrics(hostMetrics, hostJoinDao.findById(host.getId()));
+                    HostJoinVO hostJoin = hostJoinDao.findById(host.getId());
+                    cpuList.add(new Ternary<>(hostJoin.getCpuUsedCapacity(), hostJoin.getCpuReservedCapacity(), hostJoin.getCpus() * hostJoin.getSpeed()));
+                    memoryList.add(new Ternary<>(hostJoin.getMemUsedCapacity(), hostJoin.getMemReservedCapacity(), hostJoin.getTotalMemory()));
                 }
-                if (host.getStatus() == Status.Up) {
-                    hostMetrics.incrUpResources();
+                try {
+                    Double imbalance = ClusterDrsAlgorithm.getClusterImbalance(clusterId, cpuList, memoryList, null);
+                    metricsResponse.setDrsImbalance(imbalance.isNaN() ? null : 100.0 * imbalance);
+                } catch (ConfigurationException e) {
+                    logger.warn("Failed to get cluster imbalance for cluster {}", clusterId, e);
                 }
-                hostMetrics.incrTotalResources();
-                HostJoinVO hostJoin = hostJoinDao.findById(host.getId());
-                updateHostMetrics(hostMetrics, hostJoin);
-
-                cpuList.add(new Ternary<>(hostJoin.getCpuUsedCapacity(), hostJoin.getCpuReservedCapacity(), hostJoin.getCpus() * hostJoin.getSpeed()));
-                memoryList.add(new Ternary<>(hostJoin.getMemUsedCapacity(), hostJoin.getMemReservedCapacity(), hostJoin.getTotalMemory()));
+            } else {
+                if (cpuCapacity != null) {
+                    hostMetrics.setCpuAllocated(cpuCapacity.getAllocatedCapacity());
+                }
+                if (memoryCapacity != null) {
+                    hostMetrics.setMemoryAllocated(memoryCapacity.getAllocatedCapacity());
+                }
             }
 
-            try {
-                Double imbalance = ClusterDrsAlgorithm.getClusterImbalance(clusterId, cpuList, memoryList, null);
-                metricsResponse.setDrsImbalance(imbalance.isNaN() ? null : 100.0 * imbalance);
-            } catch (ConfigurationException e) {
-                logger.warn("Failed to get cluster imbalance for cluster " + clusterId, e);
-            }
-
-            metricsResponse.setState(clusterResponse.getAllocationState(), clusterResponse.getManagedState());
-            metricsResponse.setResources(hostMetrics.getUpResources(), hostMetrics.getTotalResources());
             addHostCpuMetricsToResponse(metricsResponse, clusterId, hostMetrics);
             addHostMemoryMetricsToResponse(metricsResponse, clusterId, hostMetrics);
 
             metricsResponse.setHasAnnotation(clusterResponse.hasAnnotation());
+            metricsResponse.setState(clusterResponse.getAllocationState(), clusterResponse.getManagedState());
+            metricsResponse.setResources(hostMetrics.getUpResources(), hostMetrics.getTotalResources());
+
             metricsResponses.add(metricsResponse);
         }
         return metricsResponses;
@@ -895,6 +897,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         metricsResponse.setDbLocal(status.isDbLocal());
         metricsResponse.setUsageLocal(status.isUsageLocal());
         metricsResponse.setAvailableProcessors(status.getAvailableProcessors());
+        metricsResponse.setLastAgents(status.getLastAgents());
+        metricsResponse.setAgents(status.getAgents());
         metricsResponse.setAgentCount(status.getAgentCount());
         metricsResponse.setCollectionTime(status.getCollectionTime());
         metricsResponse.setSessions(status.getSessions());
@@ -942,34 +946,37 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             final CapacityDaoImpl.SummedCapacity cpuCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_CPU, zoneId, null);
             final CapacityDaoImpl.SummedCapacity memoryCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_MEMORY, zoneId, null);
             final HostMetrics hostMetrics = new HostMetrics(cpuCapacity, memoryCapacity);
+            hostMetrics.setUpResources(Long.valueOf(clusterDao.countAllManagedAndEnabledByDcId(zoneId)));
+            hostMetrics.setTotalResources(Long.valueOf(clusterDao.countAllByDcId(zoneId)));
+            hostMetrics.setTotalHosts(Long.valueOf(hostDao.countAllByTypeInZone(zoneId, Host.Type.Routing)));
 
-            for (final Cluster cluster : clusterDao.listClustersByDcId(zoneId)) {
-                if (cluster == null) {
-                    continue;
-                }
-                hostMetrics.incrTotalResources();
-                if (cluster.getAllocationState() == Grouping.AllocationState.Enabled
-                        && cluster.getManagedState() == Managed.ManagedState.Managed) {
-                    hostMetrics.incrUpResources();
-                }
-
-                for (final Host host: hostDao.findByClusterId(cluster.getId())) {
-                    if (host == null || host.getType() != Host.Type.Routing) {
+            if (AllowListMetricsComputation.value()) {
+                for (final Cluster cluster : clusterDao.listClustersByDcId(zoneId)) {
+                    if (cluster == null) {
                         continue;
                     }
-                    updateHostMetrics(hostMetrics, hostJoinDao.findById(host.getId()));
+                    for (final Host host: hostDao.findByClusterId(cluster.getId())) {
+                        if (host == null || host.getType() != Host.Type.Routing) {
+                            continue;
+                        }
+                        updateHostMetrics(hostMetrics, hostJoinDao.findById(host.getId()));
+                    }
+                }
+            } else {
+                if (cpuCapacity != null) {
+                    hostMetrics.setCpuAllocated(cpuCapacity.getAllocatedCapacity());
+                }
+                if (memoryCapacity != null) {
+                    hostMetrics.setMemoryAllocated(memoryCapacity.getAllocatedCapacity());
                 }
             }
+
+            addHostCpuMetricsToResponse(metricsResponse, null, hostMetrics);
+            addHostMemoryMetricsToResponse(metricsResponse, null, hostMetrics);
 
             metricsResponse.setHasAnnotation(zoneResponse.hasAnnotation());
             metricsResponse.setState(zoneResponse.getAllocationState());
             metricsResponse.setResource(hostMetrics.getUpResources(), hostMetrics.getTotalResources());
-
-            final Long totalHosts = hostMetrics.getTotalHosts();
-            // CPU
-            addHostCpuMetricsToResponse(metricsResponse, null, hostMetrics);
-            // Memory
-            addHostMemoryMetricsToResponse(metricsResponse, null, hostMetrics);
 
             metricsResponses.add(metricsResponse);
         }
@@ -1028,12 +1035,14 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
 
     private void getQueryHistory(DbMetricsResponse response) {
         Map<String, Object> dbStats = ApiDBUtils.getDbStatistics();
-        if (dbStats != null) {
-            response.setQueries((Long)dbStats.get(DbStatsCollection.queries));
-            response.setUptime((Long)dbStats.get(DbStatsCollection.uptime));
+        if (dbStats == null) {
+            return;
         }
 
-        List<Double> loadHistory = (List<Double>) dbStats.get(DbStatsCollection.loadAvarages);
+        response.setQueries((Long)dbStats.getOrDefault(DbStatsCollection.queries, -1L));
+        response.setUptime((Long)dbStats.getOrDefault(DbStatsCollection.uptime, -1L));
+
+        List<Double> loadHistory = (List<Double>) dbStats.getOrDefault(DbStatsCollection.loadAvarages, new ArrayList<Double>());
         double[] loadAverages = new double[loadHistory.size()];
 
         int index = 0;
@@ -1108,6 +1117,16 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         return cmdList;
     }
 
+    @Override
+    public String getConfigComponentName() {
+        return MetricsService.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {AllowListMetricsComputation};
+    }
+
     private class HostMetrics {
         // CPU metrics
         private Long totalCpu = 0L;
@@ -1131,6 +1150,14 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             if (totalMemory != null) {
                 this.totalMemory = totalMemory.getTotalCapacity();
             }
+        }
+
+        public void setCpuAllocated(Long cpuAllocated) {
+            this.cpuAllocated = cpuAllocated;
+        }
+
+        public void setMemoryAllocated(Long memoryAllocated) {
+            this.memoryAllocated = memoryAllocated;
         }
 
         public void addCpuAllocated(Long cpuAllocated) {
@@ -1161,16 +1188,16 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             }
         }
 
-        public void incrTotalHosts() {
-            this.totalHosts++;
+        public void setTotalHosts(Long totalHosts) {
+            this.totalHosts = totalHosts;
         }
 
-        public void incrTotalResources() {
-            this.totalResources++;
+        public void setTotalResources(Long totalResources) {
+            this.totalResources = totalResources;
         }
 
-        public void incrUpResources() {
-            this.upResources++;
+        public void setUpResources(Long upResources) {
+            this.upResources = upResources;
         }
 
         public Long getTotalCpu() {

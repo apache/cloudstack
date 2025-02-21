@@ -85,6 +85,8 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, boolean forRebalance);
 
+    public Host createHostAndAgent(Long hostId, ServerResource resource, Map<String, String> details, boolean old, List<String> hostTags, boolean forRebalance, boolean isTransferredConnection);
+
     public Host addHost(long zoneId, ServerResource resource, Type hostType, Map<String, String> hostDetails);
 
     public HostVO createHostVOForConnectedAgent(StartupCommand[] cmds);
@@ -138,13 +140,13 @@ public interface ResourceManager extends ResourceService, Configurable {
 
     public List<HostVO> listAllHostsInOneZoneNotInClusterByHypervisors(List<HypervisorType> types, long dcId, long clusterId);
 
-    public List<HypervisorType> listAvailHypervisorInZone(Long hostId, Long zoneId);
+    public List<HypervisorType> listAvailHypervisorInZone(Long zoneId);
 
     public HostVO findHostByGuid(String guid);
 
     public HostVO findHostByName(String name);
 
-    HostStats getHostStatistics(long hostId);
+    HostStats getHostStatistics(Host host);
 
     Long getGuestOSCategoryId(long hostId);
 

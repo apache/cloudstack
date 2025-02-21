@@ -45,6 +45,7 @@ import java.util.TimeZone;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.cloud.agent.api.CleanupVMCommand;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
@@ -583,6 +584,8 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 return execute((ResizeVolumeCommand) cmd);
             } else if (clz == UnregisterVMCommand.class) {
                 return execute((UnregisterVMCommand) cmd);
+            } else if (clz == CleanupVMCommand.class) {
+                return execute((CleanupVMCommand) cmd);
             } else if (cmd instanceof StorageSubSystemCommand) {
                 checkStorageProcessorAndHandlerNfsVersionAttribute((StorageSubSystemCommand) cmd);
                 return storageHandler.handleStorageCommands((StorageSubSystemCommand) cmd);
@@ -5796,6 +5799,26 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return new Answer(cmd, true, "success");
     }
 
+    protected Answer execute(CleanupVMCommand cmd) {
+        VmwareContext context = getServiceContext();
+        VmwareHypervisorHost hyperHost = getHyperHost(context);
+
+        try {
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
+            if (vmMo == null) {
+                String msg = String.format("VM [%s] not found on vCenter, cleanup not needed.", cmd.getVmName());
+                logger.debug(msg);
+                return new Answer(cmd, true, msg);
+            }
+            vmMo.destroy();
+            String msg = String.format("VM [%s] remnants on vCenter cleaned up.", cmd.getVmName());
+            logger.debug(msg);
+            return new Answer(cmd, true, msg);
+        } catch (Exception e) {
+            return new Answer(cmd, false, createLogMessageException(e, cmd));
+        }
+    }
+
     protected Answer execute(UnregisterVMCommand cmd) {
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
@@ -6036,6 +6059,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     @Override
     public StartupCommand[] initialize() {
+        return initialize(false);
+    }
+
+    @Override
+    public StartupCommand[] initialize(boolean isTransferredConnection) {
         try {
             String hostApiVersion = "4.1";
             VmwareContext context = getServiceContext();
@@ -6064,6 +6092,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             cmd.setHypervisorType(HypervisorType.VMware);
             cmd.setCluster(_cluster);
             cmd.setHypervisorVersion(hostApiVersion);
+            cmd.setConnectionTransferred(isTransferredConnection);
 
             List<StartupStorageCommand> storageCmds = initializeLocalStorage();
             StartupCommand[] answerCmds = new StartupCommand[1 + storageCmds.size()];

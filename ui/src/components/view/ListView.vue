@@ -33,7 +33,7 @@
         <a-menu>
           <a-menu-item v-for="(column, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(column)">
             <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(column))"/>
-            {{ $t('label.' + String(getColumTitle(column)).toLowerCase()) }}
+            {{ $t('label.' + String(getColumnTitle(column)).toLowerCase()) }}
           </a-menu-item>
         </a-menu>
       </div>
@@ -86,6 +86,9 @@
             <router-link :to="{ path: $route.path + '/' + record.uuid, query: { zoneid: record.zoneid } }" v-if="record.uuid && record.zoneid">{{ $t(text.toLowerCase()) }}</router-link>
             <router-link :to="{ path: $route.path + '/' + record.uuid, query: { zoneid: $route.query.zoneid } }" v-else-if="record.uuid && $route.query.zoneid">{{ $t(text.toLowerCase()) }}</router-link>
             <router-link :to="{ path: $route.path }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
+          </span>
+          <span v-else-if="$route.path.startsWith('/guestnetwork') && record.id && record.displaynetwork === false">
+            <router-link :to="{ path: $route.path + '/' + record.id, query: { displaynetwork: false } }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
           </span>
           <span v-else>
             <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
@@ -231,6 +234,10 @@
       <template v-if="column.key === 'allocationstate'">
         <status :text="text ? text : ''" displayText />
       </template>
+      <template v-if="column.key === 'redundantstate'">
+        <status v-if="record && record.isredundantrouter" :text="text ? text : ''" displayText />
+        <status v-else :text="'N/A'" displayText :styles="{ 'min-width': '80px' }" />
+      </template>
       <template v-if="column.key === 'resourcestate'">
         <status :text="text ? text : ''" displayText />
       </template>
@@ -248,6 +255,12 @@
       </template>
       <template v-if="column.key === 'quotastate'">
         <status :text="text ? text : ''" displayText />
+      </template>
+      <template v-if="column.key === 'vmstate'">
+        <status :text="text ? text : ''" displayText vmState/>
+      </template>
+      <template v-if="column.key === 'offerha'">
+        {{ text ? $t('state.enabled') : $t('state.disabled')}}
       </template>
       <template v-if="column.key === 'vlan'">
         <a href="javascript:;">
@@ -718,7 +731,7 @@ export default {
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
         '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', '/quotatariff', '/sharedfs',
-        '/ipv4subnets'].join('|'))
+        '/ipv4subnets', '/managementserver'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {
@@ -998,16 +1011,16 @@ export default {
       return host.state
     },
     getColumnKey (name) {
-      if (typeof name === 'object') {
-        name = Object.keys(name).includes('field') ? name.field : name.customTitle
+      if (typeof name !== 'object' || name === null) {
+        return name
       }
-      return name
+      return name.field ?? name.customTitle ?? Object.keys(name)[0]
     },
-    getColumTitle (name) {
-      if (typeof name === 'object') {
-        name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
+    getColumnTitle (name) {
+      if (typeof name !== 'object' || name === null) {
+        return name
       }
-      return name
+      return name.customTitle ?? name.field ?? Object.keys(name)[0]
     },
     handleResizeColumn (w, col) {
       col.width = w

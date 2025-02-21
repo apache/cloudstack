@@ -401,7 +401,7 @@ public class LibvirtComputingResourceTest {
         VirtualMachineTO to = createDefaultVM(false);
         LibvirtVMDef vm = new LibvirtVMDef();
         GuestDef guestDef = libvirtComputingResourceSpy.createGuestFromSpec(to, vm, to.getUuid(), null);
-        verifySysInfo(guestDef, "smbios", to.getUuid(), "pc");
+        verifySysInfo(guestDef, "smbios", to.getUuid(), "s390x".equals(System.getProperty("os.arch")) ? "s390-ccw-virtio" : "pc");
         Assert.assertEquals(GuestDef.BootType.BIOS, guestDef.getBootType());
         Assert.assertNull(guestDef.getBootMode());
     }
@@ -460,6 +460,9 @@ public class LibvirtComputingResourceTest {
         VirtualMachineTO to = createDefaultVM(false);
         to.setDetails(new HashMap<>());
         to.setPlatformEmulator("Other PV Virtio-SCSI");
+
+        final DiskTO diskTO = Mockito.mock(DiskTO.class);
+        to.setDisks(new DiskTO[]{diskTO});
 
         GuestDef guest = new GuestDef();
         guest.setGuestType(GuestType.KVM);
@@ -648,7 +651,7 @@ public class LibvirtComputingResourceTest {
     public void testCreateSCSIDef() {
         VirtualMachineTO to = createDefaultVM(false);
 
-        SCSIDef scsiDef = libvirtComputingResourceSpy.createSCSIDef(to.getCpus(), false);
+        SCSIDef scsiDef = libvirtComputingResourceSpy.createSCSIDef((short)0, to.getCpus(), false);
         Document domainDoc = parse(scsiDef.toString());
         verifyScsi(to, domainDoc, "");
     }
@@ -826,7 +829,7 @@ public class LibvirtComputingResourceTest {
     }
 
     private void verifyOsType(Document domainDoc) {
-        assertXpath(domainDoc, "/domain/os/type/@machine", "pc");
+        assertXpath(domainDoc, "/domain/os/type/@machine", "s390x".equals(System.getProperty("os.arch")) ? "s390-ccw-virtio" : "pc");
         assertXpath(domainDoc, "/domain/os/type/text()", "hvm");
     }
 
@@ -6527,5 +6530,15 @@ public class LibvirtComputingResourceTest {
             assertEquals(DiskDef.DiskBus.VIRTIO, rootDisk.getBusType());
             assertEquals(DiskDef.DiscardType.UNMAP, rootDisk.getDiscard());
         }
+    }
+
+    @Test
+    public void testGetDiskModelFromVMDetailVirtioBlk() {
+        VirtualMachineTO virtualMachineTO = Mockito.mock(VirtualMachineTO.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "virtio-blk");
+        Mockito.when(virtualMachineTO.getDetails()).thenReturn(details);
+        DiskDef.DiskBus diskBus = libvirtComputingResourceSpy.getDiskModelFromVMDetail(virtualMachineTO);
+        assertEquals(DiskDef.DiskBus.VIRTIOBLK, diskBus);
     }
 }

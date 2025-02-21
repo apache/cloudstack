@@ -22,9 +22,58 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.command.user.bucket.CreateBucketCmd;
 import org.apache.cloudstack.api.command.user.bucket.UpdateBucketCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface BucketApiService {
 
+
+    ConfigKey<Long> DefaultMaxAccountBuckets = new ConfigKey<Long>("Account Defaults", Long.class,
+            "max.account.buckets",
+            "20",
+            "The default maximum number of buckets that can be created for an account",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Long> DefaultMaxAccountObjectStorage = new ConfigKey<Long>("Account Defaults", Long.class,
+            "max.account.object.storage",
+            "400",
+            "The default maximum object storage space (in GiB) that can be used for an account",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Long> DefaultMaxProjectBuckets = new ConfigKey<Long>("Project Defaults", Long.class,
+            "max.project.buckets",
+            "20",
+            "The default maximum number of buckets that can be created for a project",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Long> DefaultMaxProjectObjectStorage = new ConfigKey<Long>("Project Defaults", Long.class,
+            "max.project.object.storage",
+            "400",
+            "The default maximum object storage space (in GiB) that can be used for a project",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Long> DefaultMaxDomainBuckets = new ConfigKey<Long>("Domain Defaults", Long.class,
+            "max.domain.buckets",
+            "20",
+            "The default maximum number of buckets that can be created for a domain",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Long> DefaultMaxDomainObjectStorage = new ConfigKey<Long>("Domain Defaults", Long.class,
+            "max.domain.object.storage",
+            "400",
+            "The default maximum object storage space (in GiB) that can be used for a domain",
+            false,
+            ConfigKey.Scope.Global,
+            null);
 
     /**
      * Creates the database object for a Bucket based on the given criteria
@@ -48,7 +97,7 @@ public interface BucketApiService {
 
     boolean deleteBucket(long bucketId, Account caller);
 
-    boolean updateBucket(UpdateBucketCmd cmd, Account caller);
+    boolean updateBucket(UpdateBucketCmd cmd, Account caller) throws ResourceAllocationException;
 
     void getBucketUsage();
 }

@@ -193,7 +193,7 @@ public class KubernetesClusterUtil {
         while (System.currentTimeMillis() < timeoutTime) {
             try {
                 Pair<Boolean, String> result = SshHelper.sshExecute(ipAddress, port, user,
-                        sshKeyFile, null, "sudo cat /etc/kubernetes/admin.conf",
+                        sshKeyFile, null, "sudo cat /etc/kubernetes/user.conf 2>/dev/null || sudo cat /etc/kubernetes/admin.conf",
                         10000, 10000, 10000);
 
                 if (result.first() && StringUtils.isNotEmpty(result.second())) {

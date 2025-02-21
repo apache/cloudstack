@@ -42,12 +42,16 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
+import org.apache.cloudstack.api.command.QuotaCreditsListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
 import org.apache.cloudstack.api.command.QuotaPresetVariablesListCmd;
@@ -99,7 +103,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
-import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
@@ -116,7 +119,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Inject
     private QuotaBalanceDao _quotaBalanceDao;
     @Inject
-    private QuotaCreditsDao _quotaCreditsDao;
+    private QuotaCreditsDao quotaCreditsDao;
     @Inject
     private QuotaUsageDao _quotaUsageDao;
     @Inject
@@ -548,28 +551,32 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
     @Override
     public QuotaCreditsResponse addQuotaCredits(Long accountId, Long domainId, Double amount, Long updatedBy, Boolean enforce) {
-        Date despositedOn = new Date();
-        QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, despositedOn);
+        Date depositedOn = new Date();
+        QuotaBalanceVO qb = _quotaBalanceDao.findLaterBalanceEntry(accountId, domainId, depositedOn);
 
         if (qb != null) {
             throw new InvalidParameterValueException(String.format("Incorrect deposit date [%s], as there are balance entries after this date.",
-                    despositedOn));
+                    depositedOn));
         }
 
         QuotaCreditsVO credits = new QuotaCreditsVO(accountId, domainId, new BigDecimal(amount), updatedBy);
-        credits.setUpdatedOn(despositedOn);
-        QuotaCreditsVO result = _quotaCreditsDao.saveCredits(credits);
+        credits.setUpdatedOn(depositedOn);
+        QuotaCreditsVO result = quotaCreditsDao.saveCredits(credits);
+        if (result == null) {
+            logger.error("Unable to add credits to account ID [{}].", accountId);
+            throw new CloudRuntimeException("Unable to add credits to account.");
+        }
 
         final AccountVO account = _accountDao.findById(accountId);
         if (account == null) {
             throw new InvalidParameterValueException("Account does not exist with account id " + accountId);
         }
         final boolean lockAccountEnforcement = "true".equalsIgnoreCase(QuotaConfig.QuotaEnableEnforcement.value());
-        final BigDecimal currentAccountBalance = _quotaBalanceDao.lastQuotaBalance(accountId, domainId, startOfNextDay(new Date(despositedOn.getTime())));
+        final BigDecimal currentAccountBalance = _quotaBalanceDao.lastQuotaBalance(accountId, domainId, startOfNextDay(new Date(depositedOn.getTime())));
         logger.debug("Depositing [{}] credits on adjusted date [{}]; current balance is [{}].", amount,
-                DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageAggregationTimeZone(), despositedOn), currentAccountBalance);
+                DateUtil.displayDateInTimezone(QuotaManagerImpl.getUsageAggregationTimeZone(), depositedOn), currentAccountBalance);
         // update quota account with the balance
-        _quotaService.saveQuotaAccount(account, currentAccountBalance, despositedOn);
+        _quotaService.saveQuotaAccount(account, currentAccountBalance, depositedOn);
         if (lockAccountEnforcement) {
             if (currentAccountBalance.compareTo(new BigDecimal(0)) >= 0) {
                 if (account.getState() == Account.State.LOCKED) {
@@ -584,14 +591,8 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             }
         }
 
-        String creditor = String.valueOf(Account.ACCOUNT_ID_SYSTEM);
-        User creditorUser = _userDao.getUser(updatedBy);
-        if (creditorUser != null) {
-            creditor = creditorUser.getUsername();
-        }
-        QuotaCreditsResponse response = new QuotaCreditsResponse(result, creditor);
-        response.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
-        return response;
+        UserVO creditor = getCreditorForQuotaCredits(result);
+        return createQuotaCreditsResponse(result, creditor);
     }
 
     private QuotaEmailTemplateResponse createQuotaEmailResponse(QuotaEmailTemplatesVO template) {
@@ -936,6 +937,91 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         quotaConfigureEmailResponse.setMinBalance(quotaAccountVO.getQuotaMinBalance().doubleValue());
 
         return quotaConfigureEmailResponse;
+    }
+
+    @Override
+    public Pair<List<QuotaCreditsResponse>, Integer> createQuotaCreditsListResponse(QuotaCreditsListCmd cmd) {
+        List<QuotaCreditsVO> credits = getCreditsForQuotaCreditsList(cmd);
+
+        List<QuotaCreditsResponse> creditResponses = new ArrayList<>();
+        Map<Long, UserVO> userMap = new HashMap<>();
+
+        for (QuotaCreditsVO credit : credits) {
+            UserVO creditor = getCreditorForQuotaCreditsList(credit, userMap);
+            QuotaCreditsResponse response = createQuotaCreditsResponse(credit, creditor);
+            creditResponses.add(response);
+        }
+
+        return new Pair<>(creditResponses, creditResponses.size());
+    }
+
+    protected List<QuotaCreditsVO> getCreditsForQuotaCreditsList(QuotaCreditsListCmd cmd) {
+        Long accountId = cmd.getAccountId();
+        Long domainId = cmd.getDomainId();
+        Date startDate = cmd.getStartDate();
+        Date endDate = cmd.getEndDate();
+        boolean isRecursive = cmd.getRecursive();
+
+        if (ObjectUtils.allNull(accountId, domainId)) {
+            throw new InvalidParameterValueException("Please provide either account ID or domain ID.");
+        }
+
+        if (startDate.after(endDate)) {
+            throw new InvalidParameterValueException("The start date must be before the end date.");
+        }
+
+        Account caller = CallContext.current().getCallingAccount();
+        if (domainId != null && _accountMgr.isNormalUser(caller.getAccountId())) {
+            throw new PermissionDeniedException("Regular users are not allowed to generate domain statements.");
+        }
+
+        return quotaCreditsDao.findCredits(accountId, domainId, startDate, endDate, isRecursive);
+    }
+
+    /**
+     * Returns the creditor user of a <code>QuotaCreditsVO</code>. If <code>userMap</code> contains the user, returns the
+     * user from the map; otherwise, obtains the user from the database and adds it to the map.
+     */
+    protected UserVO getCreditorForQuotaCreditsList(QuotaCreditsVO credit, Map<Long, UserVO> userMap) {
+        Long creditorUserId = credit.getUpdatedBy();
+
+        UserVO userVo = userMap.get(creditorUserId);
+        if (userVo != null) {
+            return userVo;
+        }
+
+        userVo = getCreditorForQuotaCredits(credit);
+        userMap.put(creditorUserId, userVo);
+        return userVo;
+    }
+
+    /**
+     * Returns the creditor user of a <code>QuotaCreditsVO</code> by obtaining it from the database.
+     */
+    protected UserVO getCreditorForQuotaCredits(QuotaCreditsVO credit) {
+        Long creditorUserId = credit.getUpdatedBy();
+        UserVO userVo = _userDao.findByIdIncludingRemoved(creditorUserId);
+        if (userVo == null) {
+            logger.error("Could not find creditor user with ID [{}] for credit [{}].", creditorUserId, credit.toString());
+            throw new CloudRuntimeException("Could not find creditor user.");
+        }
+        return userVo;
+    }
+
+    protected QuotaCreditsResponse createQuotaCreditsResponse(QuotaCreditsVO credit, UserVO creditor) {
+        QuotaCreditsResponse response = new QuotaCreditsResponse();
+
+        if (credit != null) {
+            response.setCredit(credit.getCredit());
+            response.setCreditedOn(credit.getUpdatedOn());
+            response.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
+        }
+        if (creditor != null) {
+            response.setCreditorUserId(creditor.getUuid());
+            response.setCreditorUsername(creditor.getUsername());
+        }
+        response.setObjectName("credit");
+        return response;
     }
 
     @Override
