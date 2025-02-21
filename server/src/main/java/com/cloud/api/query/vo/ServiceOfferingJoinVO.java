@@ -221,6 +221,12 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name = "encrypt_root")
     private boolean encryptRoot;
 
+    @Column(name = "lease_duration")
+    private Long leaseDuration;
+
+    @Column(name = "lease_expiry_action")
+    private String leaseExpiryAction;
+
     public ServiceOfferingJoinVO() {
     }
 
@@ -459,4 +465,12 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     }
 
     public boolean getEncryptRoot() { return encryptRoot; }
+
+    public Long getLeaseDuration() {
+        return leaseDuration;
+    }
+
+    public String getLeaseExpiryAction() {
+        return leaseExpiryAction;
+    }
 }

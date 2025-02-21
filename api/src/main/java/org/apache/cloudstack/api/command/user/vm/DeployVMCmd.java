@@ -278,6 +278,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             description = "Enable packed virtqueues or not.")
     private Boolean nicPackedVirtQueues;
 
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_DURATION, type = CommandType.LONG, since = "4.21",
+            description = "Number of days instance is leased for.")
+    private Long leaseDuration = -1L;
+
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, type = CommandType.STRING, since = "4.21",
+            description = "Lease expiry action")
+    private String leaseExpiryAction;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -473,6 +481,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     public String getPassword() {
         return password;
+    }
+
+    public Long getLeaseDuration() {
+        return leaseDuration;
+    }
+
+    public String getLeaseExpiryAction() {
+        return leaseExpiryAction;
     }
 
     public List<Long> getNetworkIds() {

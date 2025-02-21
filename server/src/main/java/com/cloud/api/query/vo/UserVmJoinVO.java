@@ -16,9 +16,21 @@
 // under the License.
 package com.cloud.api.query.vo;
 
-import java.net.URI;
-import java.util.Date;
-import java.util.Map;
+import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network.GuestType;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.resource.ResourceState;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.Volume;
+import com.cloud.user.Account;
+import com.cloud.util.StoragePoolTypeConverter;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
@@ -29,22 +41,9 @@ import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Transient;
-
-import com.cloud.host.Status;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.Network.GuestType;
-import com.cloud.network.Networks.TrafficType;
-import com.cloud.resource.ResourceState;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.Volume;
-import com.cloud.user.Account;
-import com.cloud.util.StoragePoolTypeConverter;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
-import org.apache.cloudstack.util.HypervisorTypeConverter;
+import java.net.URI;
+import java.util.Date;
+import java.util.Map;
 
 @Entity
 @Table(name = "user_vm_view")
@@ -438,6 +437,12 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     @Column(name = "delete_protection")
     protected Boolean deleteProtection;
+
+    @Column(name = "lease_duration")
+    private Long leaseDuration;
+
+    @Column(name = "lease_expiry_action")
+    private String leaseExpiryAction;
 
 
     public UserVmJoinVO() {
@@ -949,7 +954,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return isDynamicallyScalable;
     }
 
-    public Boolean getDeleteProtection() {
+    public Boolean isDeleteProtection() {
         return deleteProtection;
     }
 
@@ -976,5 +981,13 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getUserDataDetails() {
         return userDataDetails;
+    }
+
+    public Long getLeaseDuration() {
+        return leaseDuration;
+    }
+
+    public String getLeaseExpiryAction() {
+        return leaseExpiryAction;
     }
 }

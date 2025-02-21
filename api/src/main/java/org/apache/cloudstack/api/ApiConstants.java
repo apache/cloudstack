@@ -520,6 +520,8 @@ public class ApiConstants {
     public static final String USED_SUBNETS = "usedsubnets";
     public static final String USED_IOPS = "usediops";
     public static final String USER_DATA = "userdata";
+    public static final String INSTANCE_LEASE_DURATION = "leaseduration";
+    public static final String INSTANCE_LEASE_EXPIRY_ACTION = "leaseexpiryaction";
 
     public static final String USER_DATA_NAME = "userdataname";
     public static final String USER_DATA_ID = "userdataid";

@@ -382,4 +382,7 @@
     <bean id="sharedFSServiceImpl" class="org.apache.cloudstack.storage.sharedfs.SharedFSServiceImpl">
         <property name="sharedFSProviders" value="#{sharedFSProvidersRegistry.registered}" />
     </bean>
+
+    <bean id="vmLeaseManager" class="org.apache.cloudstack.vm.lease.VMLeaseManagerImpl" />
+
 </beans>

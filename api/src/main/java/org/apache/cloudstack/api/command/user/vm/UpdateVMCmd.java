@@ -154,6 +154,14 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
                     " autoscaling groups or CKS, delete protection will be ignored.")
     private Boolean deleteProtection;
 
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_DURATION, type = CommandType.LONG, since = "4.21",
+            description = "Number of days instance is leased for.")
+    private Long leaseDuration = -1L;
+
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, type = CommandType.STRING, since = "4.21",
+            description = "Lease expiry action")
+    private String leaseExpiryAction;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -324,4 +332,13 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
     public ApiCommandResourceType getApiResourceType() {
         return ApiCommandResourceType.VirtualMachine;
     }
+
+    public Long getLeaseDuration() {
+        return leaseDuration;
+    }
+
+    public String getLeaseExpiryAction() {
+        return leaseExpiryAction;
+    }
+
 }

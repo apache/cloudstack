@@ -426,10 +426,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setDynamicallyScalable(userVm.isDynamicallyScalable());
         }
 
-        if (userVm.getDeleteProtection() == null) {
+        if (userVm.isDeleteProtection() == null) {
             userVmResponse.setDeleteProtection(false);
         } else {
-            userVmResponse.setDeleteProtection(userVm.getDeleteProtection());
+            userVmResponse.setDeleteProtection(userVm.isDeleteProtection());
         }
 
         if (userVm.getAutoScaleVmGroupName() != null) {
@@ -444,6 +444,11 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setUserDataName(userVm.getUserDataName());
             userVmResponse.setUserDataDetails(userVm.getUserDataDetails());
             userVmResponse.setUserDataPolicy(userVm.getUserDataPolicy());
+        }
+
+        if (userVm.getLeaseDuration() != null || userVm.getLeaseDuration() != -1) {
+            userVmResponse.setLeaseDuration(userVm.getLeaseDuration());
+            userVmResponse.setLeaseExpiryAction(userVm.getLeaseExpiryAction());
         }
 
         addVmRxTxDataToResponse(userVm, userVmResponse);
@@ -716,5 +721,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         }
         sc.setParameters("displayVm", 1);
         return customSearch(sc, null);
+    }
+
+    @Override
+    public List<UserVmJoinVO> listExpiredInstances() {
+        return List.of();
     }
 }

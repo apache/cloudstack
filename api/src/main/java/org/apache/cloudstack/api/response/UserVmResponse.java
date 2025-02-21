@@ -392,9 +392,15 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "VNF details", since = "4.19.0")
     private Map<String, String> vnfDetails;
 
-    @SerializedName((ApiConstants.VM_TYPE))
+    @SerializedName(ApiConstants.VM_TYPE)
     @Param(description = "User VM type", since = "4.20.0")
     private String vmType;
+
+    @SerializedName(ApiConstants.INSTANCE_LEASE_DURATION)
+    private Long leaseDuration;
+
+    @SerializedName(ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION)
+    private String leaseExpiryAction;
 
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<>();
@@ -1168,5 +1174,21 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
+    }
+
+    public Long getLeaseDuration() {
+        return leaseDuration;
+    }
+
+    public void setLeaseDuration(Long leaseDuration) {
+        this.leaseDuration = leaseDuration;
+    }
+
+    public String getLeaseExpiryAction() {
+        return leaseExpiryAction;
+    }
+
+    public void setLeaseExpiryAction(String leaseExpiryAction) {
+        this.leaseExpiryAction = leaseExpiryAction;
     }
 }
