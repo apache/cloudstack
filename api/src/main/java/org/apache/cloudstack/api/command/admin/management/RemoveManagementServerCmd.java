@@ -52,7 +52,7 @@ public class RemoveManagementServerCmd extends BaseCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             this.setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove Management Server");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove Management Server.");
         }
     }
 
