@@ -1161,6 +1161,7 @@ export default {
       } else {
         if (item.name === 'template') {
           query.templatefilter = 'self'
+          query.filter = 'self'
         }
 
         if (item.param === 'account') {
