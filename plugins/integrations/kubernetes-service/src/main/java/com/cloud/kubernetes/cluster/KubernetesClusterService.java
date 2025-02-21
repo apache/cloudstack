@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.kubernetes.cluster;
 
+import java.util.List;
+
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.CreateKubernetesClusterCmd;
 import org.apache.cloudstack.api.command.user.kubernetes.cluster.DeleteKubernetesClusterCmd;
@@ -33,16 +35,16 @@ import org.apache.cloudstack.api.response.RemoveVirtualMachinesFromKubernetesClu
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
+import com.cloud.user.Account;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
-
-import java.util.List;
 
 public interface KubernetesClusterService extends PluggableService, Configurable {
     static final String MIN_KUBERNETES_VERSION_HA_SUPPORT = "1.16.0";
     static final int MIN_KUBERNETES_CLUSTER_NODE_CPU = 2;
     static final int MIN_KUBERNETES_CLUSTER_NODE_RAM_SIZE = 2048;
     static final String KUBEADMIN_ACCOUNT_NAME = "kubeadmin";
+    String PROJECT_KUBEADMIN_ACCOUNT_ROLE_NAME = "Project Kubernetes Service Role";
 
     static final ConfigKey<Boolean> KubernetesServiceEnabled = new ConfigKey<Boolean>("Advanced", Boolean.class,
             "cloud.kubernetes.service.enabled",
@@ -122,4 +124,6 @@ public interface KubernetesClusterService extends PluggableService, Configurable
     boolean addVmsToCluster(AddVirtualMachinesToKubernetesClusterCmd cmd);
 
     List<RemoveVirtualMachinesFromKubernetesClusterResponse> removeVmsFromCluster(RemoveVirtualMachinesFromKubernetesClusterCmd cmd);
+
+    void cleanupForAccount(Account account);
 }
