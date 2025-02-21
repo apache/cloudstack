@@ -71,12 +71,13 @@ function createMetadataFile() {
 
 declare -a templates
 getTemplateVersion $1
-templates=( "kvm:https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-x86_64-kvm.qcow2.bz2"
-            "vmware:https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-x86_64-vmware.ova"
-            "xenserver:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-x86_64-xen.vhd.bz2"
-            "hyperv:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-x86_64-hyperv.vhd.zip"
-            "lxc:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-x86_64-kvm.qcow2.bz2"
-            "ovm3:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-x86_64-ovm.raw.bz2" )
+templates=( "kvm-x86_64:https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-x86_64-kvm.qcow2.bz2"
+            "kvm-aarch64:https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-aarch64-kvm.qcow2.bz2"
+            "vmware-x86_64:https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-x86_64-vmware.ova"
+            "xenserver-x86_64:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-x86_64-xen.vhd.bz2"
+            "hyperv-x86_64:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-x86_64-hyperv.vhd.zip"
+            "lxc-x86_64:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-x86_64-kvm.qcow2.bz2"
+            "ovm3-x86_64:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-x86_64-ovm.raw.bz2" )
 
 PARENTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )/dist/systemvm-templates/"
 mkdir -p $PARENTPATH

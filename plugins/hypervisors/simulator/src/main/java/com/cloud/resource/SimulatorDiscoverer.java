@@ -87,6 +87,7 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
             long cpuCores = MockAgentManager.DEFAULT_HOST_CPU_CORES;
             long memory = MockAgentManager.DEFAULT_HOST_MEM_SIZE;
             long localstorageSize = MockStorageManager.DEFAULT_HOST_STORAGE_SIZE;
+            String arch = MockAgentManager.DEFAULT_HOST_ARCH;
             if (scheme.equals("http")) {
                 if (host == null || !host.startsWith("sim")) {
                     String msg = "uri is not of simulator type so we're not taking care of the discovery for this: " + uri;
@@ -111,6 +112,8 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
                                 memory = Long.parseLong(parameter[1]);
                             } else if (parameter[0].equalsIgnoreCase("localstorage") && parameter[1] != null) {
                                 localstorageSize = Long.parseLong(parameter[1]);
+                            } else if (parameter[0].equalsIgnoreCase("arch") && parameter[1] != null) {
+                                arch = parameter[1];
                             }
                         }
                     }
@@ -168,6 +171,7 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
             params.put("cpucore", Long.toString(cpuCores));
             params.put("memory", Long.toString(memory));
             params.put("localstorage", Long.toString(localstorageSize));
+            params.put("arch", arch);
 
             resources = createAgentResources(params);
             return resources;

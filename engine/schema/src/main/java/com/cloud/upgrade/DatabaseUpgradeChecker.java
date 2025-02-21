@@ -30,6 +30,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.Properties;
 
 import javax.inject.Inject;
 
@@ -443,6 +444,18 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     public void check() {
         GlobalLock lock = GlobalLock.getInternLock("DatabaseUpgrade");
         try {
+
+
+            Properties properties = new Properties();
+            try (InputStream input = this.getClass().getClassLoader().getResourceAsStream("config.properties")) {
+                if (input != null) {
+                    properties.load(input);
+                    LOGGER.info("----------------------{}", properties.getProperty("systemvm.template.location", "unknown"));
+                }
+            } catch (IOException e) {
+                LOGGER.error("----------Error reading property", e);
+            }
+
             LOGGER.info("Grabbing lock to check for database upgrade.");
             if (!lock.lock(20 * 60)) {
                 throw new CloudRuntimeException("Unable to acquire lock to check for database integrity.");
