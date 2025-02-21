@@ -46,7 +46,7 @@ public class RemoveManagementServerCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() {
         boolean result = _mgr.removeManagementServer(this);
         if (result) {
             SuccessResponse response = new SuccessResponse(getCommandName());
