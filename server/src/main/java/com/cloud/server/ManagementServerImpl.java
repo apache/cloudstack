@@ -5567,11 +5567,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         ManagementServerJoinVO managementServer = managementServerJoinDao.findById(id);
 
         if (managementServer == null) {
-            throw new InvalidParameterValueException(String.format("Unable to find a Management Server with ID equal to [%s]", managementServer.getUuid()));
+            throw new InvalidParameterValueException(String.format("Unable to find a Management Server with ID equal to [%s].", managementServer.getUuid()));
         }
 
         if (!ManagementServerHost.State.Down.equals(managementServer.getState())) {
-            throw new InvalidParameterValueException(String.format("Unable to remove Management Server with ID [%s]. It can only be removed when it is in the [%s] state, however currently it is in the [%s] state", managementServer.getUuid(), ManagementServerHost.State.Down.name(), managementServer.getState().name()));
+            throw new InvalidParameterValueException(String.format("Unable to remove Management Server with ID [%s]. It can only be removed when it is in the [%s] state, however currently it is in the [%s] state.", managementServer.getUuid(), ManagementServerHost.State.Down.name(), managementServer.getState().name()));
         }
 
         managementServer.setRemoved(new Date());
