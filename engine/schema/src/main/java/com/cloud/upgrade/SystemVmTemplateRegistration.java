@@ -376,9 +376,10 @@ public class SystemVmTemplateRegistration {
 
     private static String getHypervisorArchKey(String hypervisorType, String arch) {
         if (Hypervisor.HypervisorType.KVM.name().equals(hypervisorType)) {
-            return String.format("%s-%s", hypervisorType, StringUtils.isBlank(arch) ? CPU.archX86_64Identifier : arch);
+            return String.format("%s-%s", hypervisorType.toLowerCase(),
+                    StringUtils.isBlank(arch) ? CPU.archX86_64Identifier : arch);
         }
-        return hypervisorType;
+        return hypervisorType.toLowerCase();
     }
 
     private static MetadataTemplateDetails getMetadataTemplateDetails(Hypervisor.HypervisorType hypervisorType, String arch) {
@@ -744,24 +745,38 @@ public class SystemVmTemplateRegistration {
      * exist a template corresponding to the current code version.
      */
     public static String parseMetadataFile() {
-        try {
-            Ini ini = new Ini();
-            ini.load(new FileReader(METADATA_FILE));
-            for (Pair<Hypervisor.HypervisorType, String> hypervisorType : hypervisorList) {
-                String key = getHypervisorArchKey(hypervisorType.first().name(), hypervisorType.second());
-                Ini.Section section = ini.get(key);
-                NewTemplateMap.put(key, new MetadataTemplateDetails(hypervisorType.first(), section.get("templatename"),
-                        section.get("filename"), section.get("downloadurl"), section.get("checksum"),
-                        hypervisorType.second()));
-            }
-            Ini.Section section = ini.get("default");
-            return section.get("version");
-        } catch (Exception e) {
-            String errMsg = String.format("Failed to parse systemVM template metadata file: %s", METADATA_FILE);
+        String errMsg = String.format("Failed to parse systemVM template metadata file: %s", METADATA_FILE);
+        final Ini ini = new Ini();
+        try (FileReader reader = new FileReader(METADATA_FILE)) {
+            ini.load(reader);
+        } catch (IOException e) {
             LOGGER.error(errMsg, e);
             throw new CloudRuntimeException(errMsg, e);
         }
+        if (!ini.containsKey("default")) {
+            errMsg = String.format("%s as unable to default section", errMsg);
+            LOGGER.error(errMsg);
+            throw new CloudRuntimeException(errMsg);
+        }
+        for (Pair<Hypervisor.HypervisorType, String> hypervisorType : hypervisorList) {
+            String key = getHypervisorArchKey(hypervisorType.first().name(), hypervisorType.second());
+            Ini.Section section = ini.get(key);
+            if (section == null) {
+                LOGGER.error("Failed to find details for {} in template metadata file: {}", key, METADATA_FILE);
+                continue;
+            }
+            NewTemplateMap.put(key, new MetadataTemplateDetails(
+                    hypervisorType.first(),
+                    section.get("templatename"),
+                    section.get("filename"),
+                    section.get("downloadurl"),
+                    section.get("checksum"),
+                    hypervisorType.second()));
+        }
+        Ini.Section defaultSection = ini.get("default");
+        return defaultSection.get("version");
     }
+
 
     private static void cleanupStore(Long templateId, String filePath) {
         String destTempFolder = filePath + PARTIAL_TEMPLATE_FOLDER + String.valueOf(templateId);
