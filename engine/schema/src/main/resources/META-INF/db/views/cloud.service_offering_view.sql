@@ -113,9 +113,9 @@ FROM
         AND `vsphere_storage_policy`.`name` = 'storagepolicy'
         LEFT JOIN
     `cloud`.`service_offering_details` AS `lease_duration_details` ON `lease_duration_details`.`service_offering_id` = `service_offering`.`id`
-            AND `lease_duration_details`.`name` = 'leaseduration'
-            LEFT JOIN
+        AND `lease_duration_details`.`name` = 'leaseduration'
+        LEFT JOIN
     `cloud`.`service_offering_details` AS `lease_expiry_action_details` ON `lease_expiry_action_details`.`service_offering_id` = `service_offering`.`id`
-            AND `lease_expiry_action_details`.`name` = 'leaseexpiryaction'
+        AND `lease_expiry_action_details`.`name` = 'leaseexpiryaction'
 GROUP BY
     `service_offering`.`id`;

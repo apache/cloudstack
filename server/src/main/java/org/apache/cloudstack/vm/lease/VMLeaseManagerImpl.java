@@ -19,20 +19,31 @@
 package org.apache.cloudstack.vm.lease;
 
 import com.cloud.alert.AlertManager;
-import com.cloud.api.ApiDBUtils;
+import com.cloud.api.ApiGsonHelper;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
-import com.cloud.offering.ServiceOffering;
+import com.cloud.user.User;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
+import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -41,14 +52,21 @@ import static com.cloud.vm.VirtualMachine.State.Expunging;
 import static com.cloud.vm.VirtualMachine.State.Stopped;
 
 public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, Configurable {
-    Timer vmLeaseTimer;
-    Timer vmLeaseAlterTimer;
 
     @Inject
     private UserVmJoinDao userVmJoinDao;
 
     @Inject
     private AlertManager alertManager;
+
+    @Inject
+    private AsyncJobManager asyncJobManager;
+
+    private AsyncJobDispatcher asyncJobDispatcher;
+
+    Timer vmLeaseTimer;
+
+    Timer vmLeaseAlterTimer;
 
     @Override
     public String getConfigComponentName() {
@@ -57,12 +75,16 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[] {
+        return new ConfigKey[]{
                 InstanceLeaseEnabled,
                 InstanceLeaseDuration,
                 InstanceLeaseExpiryAction,
                 InstanceLeaseSchedulerInterval
         };
+    }
+
+    public void setAsyncJobDispatcher(final AsyncJobDispatcher dispatcher) {
+        asyncJobDispatcher = dispatcher;
     }
 
     @Override
@@ -110,7 +132,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
     public void poll(Date currentTimestamp) {
         // fetch user_instances having leaseDuration configured and has expired
         List<UserVmJoinVO> leaseExpiredInstances = fetchLeaseExpiredInstances(0L);
-        List<Long> actionableInstanceIds = Arrays.asList(1L, 2L);
+        List<Long> actionableInstanceIds = new ArrayList<>();
         // iterate over them and ignore if delete protection is enabled
         for (UserVmJoinVO userVmVO : leaseExpiredInstances) {
             if (userVmVO.isDeleteProtection()) {
@@ -124,10 +146,21 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             }
         }
 
+        List<Long> submittedJobIds = new ArrayList<>();
+        List<Long> failedToSubmitInstanceIds = new ArrayList<>();
         for (Long instanceId : actionableInstanceIds) {
             UserVmJoinVO instance = userVmJoinDao.findById(instanceId);
             ExpiryAction expiryAction = getLeaseExpiryAction(instance);
-            executeExpiryAction(instance, expiryAction);
+            Long jobId = executeExpiryAction(instance, expiryAction);
+            if (jobId != null) {
+                submittedJobIds.add(jobId);
+            } else {
+                failedToSubmitInstanceIds.add(instanceId);
+            }
+        }
+        logger.debug("Successfully submitted jobs for ids: {}", submittedJobIds);
+        if (!failedToSubmitInstanceIds.isEmpty()) {
+            logger.debug("Lease scheduler failed to submit jobs for instance ids: {}", failedToSubmitInstanceIds);
         }
     }
 
@@ -135,39 +168,65 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         return userVmJoinDao.listExpiredInstances();
     }
 
-    private void executeExpiryAction(UserVmJoinVO instance, ExpiryAction expiryAction) {
+    private Long executeExpiryAction(UserVmJoinVO instance, ExpiryAction expiryAction) {
         // for qualified vms, prepare Stop/Destroy(Cmd) and submit to Job Manager
         switch (expiryAction) {
             case STOP: {
-                logger.debug("Stopping instance");
-                break;
+                logger.debug("Stopping instance with id: {} on lease expiry", instance.getUuid());
+                return executeStopInstanceJob(instance, true, 1);
             }
             case DESTROY: {
-                logger.debug("Sending Destroy instance");
-                break;
+                logger.debug("Destroying instance with id: {} on lease expiry", instance.getUuid());
+                return executeDestroyInstanceJob(instance, true, 2);
             }
             default: {
                 logger.error("Invalid configuration for instance.lease.expiryaction for vm id: {}, " +
                         "valid values are: \"stop\" and  \"destroy\"", instance.getUuid());
             }
         }
+        return null;
+    }
+
+    long executeStopInstanceJob(UserVmJoinVO vm, boolean isForced, long eventId) {
+        final Map<String, String> params = new HashMap<>();
+        params.put(ApiConstants.ID, String.valueOf(vm.getId()));
+        params.put("ctxUserId", "1");
+        params.put("ctxAccountId", String.valueOf(vm.getAccountId()));
+        params.put(ApiConstants.CTX_START_EVENT_ID, String.valueOf(eventId));
+        params.put(ApiConstants.FORCED, String.valueOf(isForced));
+        final StopVMCmd cmd = new StopVMCmd();
+        ComponentContext.inject(cmd);
+        AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, vm.getAccountId(), StopVMCmd.class.getName(),
+                ApiGsonHelper.getBuilder().create().toJson(params), vm.getId(),
+                cmd.getApiResourceType() != null ? cmd.getApiResourceType().toString() : null, null);
+        job.setDispatcher(asyncJobDispatcher.getName());
+        return asyncJobManager.submitAsyncJob(job);
+    }
+
+    long executeDestroyInstanceJob(UserVmJoinVO vm, boolean isForced, long eventId) {
+        final Map<String, String> params = new HashMap<>();
+        params.put(ApiConstants.ID, String.valueOf(vm.getId()));
+        params.put("ctxUserId", "1");
+        params.put("ctxAccountId", String.valueOf(vm.getAccountId()));
+        params.put(ApiConstants.CTX_START_EVENT_ID, String.valueOf(eventId));
+        params.put(ApiConstants.FORCED, String.valueOf(isForced));
+
+        final DestroyVMCmd cmd = new DestroyVMCmd();
+        ComponentContext.inject(cmd);
+
+        AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, vm.getAccountId(), DestroyVMCmd.class.getName(),
+                ApiGsonHelper.getBuilder().create().toJson(params), vm.getId(),
+                cmd.getApiResourceType() != null ? cmd.getApiResourceType().toString() : null, null);
+        job.setDispatcher(asyncJobDispatcher.getName());
+        return asyncJobManager.submitAsyncJob(job);
     }
 
     private ExpiryAction getLeaseExpiryAction(UserVmJoinVO instance) {
         // find expiry action from VM and compute offering
-        String action;
-        action = instance.getName(); // ToDo: call new method to get expiryAction
+        String action = instance.getLeaseExpiryAction();
         if (StringUtils.isNotEmpty(action)) {
             return ExpiryAction.valueOf(action);
         }
-
-        ServiceOffering serviceOffering = ApiDBUtils.findServiceOfferingById(instance.getServiceOfferingId());
-        action = serviceOffering.getName(); // ToDo: call new method to get correct expiryAction
-        if (StringUtils.isNotEmpty(action)) {
-            return ExpiryAction.valueOf(action);
-        }
-
-        // Find expiry Action configured in sequence Account -> Domain -> Global
-        return ExpiryAction.valueOf(InstanceLeaseExpiryAction.valueIn(instance.getAccountId()));
+        throw new CloudRuntimeException("No expiry action configured for instance: " + instance.getUuid());
     }
 }

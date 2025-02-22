@@ -16,7 +16,11 @@
 // under the License.
 package com.cloud.api.query.vo;
 
-import java.util.Date;
+import com.cloud.offering.ServiceOffering.State;
+import com.cloud.storage.Storage;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -24,13 +28,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import com.cloud.offering.ServiceOffering.State;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
-import com.cloud.storage.Storage;
-import com.cloud.utils.db.GenericDao;
+import java.util.Date;
 
 @Entity
 @Table(name = "service_offering_view")

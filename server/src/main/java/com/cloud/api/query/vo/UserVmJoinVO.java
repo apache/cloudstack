@@ -40,6 +40,8 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 import java.net.URI;
 import java.util.Date;
@@ -438,12 +440,12 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "delete_protection")
     protected Boolean deleteProtection;
 
-    @Column(name = "lease_duration")
-    private Long leaseDuration;
+    @Column(name = "lease_expiry_date")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date expiryDate;
 
     @Column(name = "lease_expiry_action")
     private String leaseExpiryAction;
-
 
     public UserVmJoinVO() {
         // Empty constructor
@@ -983,11 +985,20 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return userDataDetails;
     }
 
-    public Long getLeaseDuration() {
-        return leaseDuration;
+    public Date getExpiryDate() {
+        return expiryDate;
     }
 
     public String getLeaseExpiryAction() {
         return leaseExpiryAction;
     }
+
+//    public long getLeaseDuration() {
+//        if (leaseExpiryDate == null) {
+//            return -1L;
+//        }
+//        LocalDate createdDate = created.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+//        LocalDate expiryDate = leaseExpiryDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+//        return ChronoUnit.DAYS.between(createdDate, expiryDate);
+//    }
 }

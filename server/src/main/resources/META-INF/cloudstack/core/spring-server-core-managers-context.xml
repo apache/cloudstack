@@ -383,6 +383,8 @@
         <property name="sharedFSProviders" value="#{sharedFSProvidersRegistry.registered}" />
     </bean>
 
-    <bean id="vmLeaseManager" class="org.apache.cloudstack.vm.lease.VMLeaseManagerImpl" />
+    <bean id="vmLeaseManager" class="org.apache.cloudstack.vm.lease.VMLeaseManagerImpl" >
+        <property name="asyncJobDispatcher" ref="ApiAsyncJobDispatcher" />
+    </bean>
 
 </beans>
