@@ -146,4 +146,8 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     public boolean deleteBackup(Backup backup, boolean forced) {
         return true;
     }
+
+    @Override
+    public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
+    }
 }

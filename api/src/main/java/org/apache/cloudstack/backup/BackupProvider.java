@@ -116,4 +116,11 @@ public interface BackupProvider {
      * @param metric
      */
     Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric);
+
+    /**
+     * This method should reconcile and create backup entries for any backups created out-of-band
+     * @param vm
+     * @param metric
+     */
+    void syncBackups(VirtualMachine vm, Backup.Metric metric);
 }

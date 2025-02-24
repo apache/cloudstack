@@ -36,6 +36,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
+
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
@@ -412,6 +413,11 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public boolean willDeleteBackupsOnOfferingRemoval() {
         return false;
+    }
+
+    @Override
+    public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
+        // TODO: check and sum/return backups metrics on per VM basis
     }
 
     @Override
