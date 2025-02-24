@@ -802,6 +802,7 @@ public class VmwareHelper {
             instance = new UnmanagedInstanceTO();
             instance.setName(vmMo.getVmName());
             instance.setInternalCSName(vmMo.getInternalCSName());
+            instance.setPath((vmMo.getPath()));
             instance.setCpuCoresPerSocket(vmMo.getCoresPerSocket());
             instance.setOperatingSystemId(vmMo.getVmGuestInfo().getGuestId());
             VirtualMachineConfigSummary configSummary = vmMo.getConfigSummary();
