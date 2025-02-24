@@ -170,7 +170,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name=ApiConstants.FOR_CKS,
             type = CommandType.BOOLEAN,
-            description = "if true, the templates would be available for deploying CKS clusters", since = "4.20.0")
+            description = "if true, the templates would be available for deploying CKS clusters", since = "4.21.0")
     protected Boolean forCks;
 
     @Parameter(name = ApiConstants.TEMPLATE_TYPE, type = CommandType.STRING,

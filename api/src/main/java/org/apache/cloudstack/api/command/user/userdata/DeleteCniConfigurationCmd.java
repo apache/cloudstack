@@ -30,7 +30,7 @@ import org.apache.logging.log4j.Logger;
 
 
 @APICommand(name = "deleteCniConfiguration", description = "Deletes a CNI Configuration", responseObject = SuccessResponse.class, entityType = {UserData.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19",
+        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.21.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteCniConfigurationCmd extends DeleteUserDataCmd {
 

@@ -370,7 +370,7 @@ public interface ManagementService {
      * @param cmd    The api command class.
      * @return A VO with the registered userdata.
      */
-    UserData registerCniConfigration(RegisterCniConfigurationCmd cmd);
+    UserData registerCniConfiguration(RegisterCniConfigurationCmd cmd);
 
     /**
      * Registers a userdata.

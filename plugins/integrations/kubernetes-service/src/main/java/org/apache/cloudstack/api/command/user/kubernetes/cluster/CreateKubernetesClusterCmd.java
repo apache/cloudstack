@@ -194,13 +194,13 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor on which the CKS cluster is to be deployed. This is required if the zone in which the CKS cluster is being deployed has clusters with different hypervisor types.")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.CNI_CONFIG_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the Userdata", since = "4.19.0")
+    @Parameter(name = ApiConstants.CNI_CONFIG_ID, type = CommandType.UUID, entityType = UserDataResponse.class, description = "the ID of the Userdata", since = "4.21.0")
     private Long cniConfigId;
 
     @Parameter(name = ApiConstants.CNI_CONFIG_DETAILS, type = CommandType.MAP,
             description = "used to specify the parameters values for the variables in userdata. " +
                     "Example: cniconfigdetails[0].key=accesskey&cniconfigdetails[0].value=s389ddssaa&" +
-                    "cniconfigdetails[1].key=secretkey&cniconfigdetails[1].value=8dshfsss", since = "4.19.0")
+                    "cniconfigdetails[1].key=secretkey&cniconfigdetails[1].value=8dshfsss", since = "4.21.0")
     private Map cniConfigDetails;
 
     @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, description="the AS Number of the network")

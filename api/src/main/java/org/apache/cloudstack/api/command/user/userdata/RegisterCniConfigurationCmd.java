@@ -29,7 +29,7 @@ import org.apache.logging.log4j.Logger;
 
 @APICommand(name = "registerCniConfiguration",
         description = "Register a CNI Configuration to be used with CKS cluster",
-        since = "4.19.0",
+        since = "4.21.0",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
@@ -58,7 +58,7 @@ public class RegisterCniConfigurationCmd extends BaseRegisterUserDataCmd {
 
     @Override
     public void execute() {
-        UserData result = _mgr.registerCniConfigration(this);
+        UserData result = _mgr.registerCniConfiguration(this);
         UserDataResponse response = _responseGenerator.createUserDataResponse(result);
         response.setResponseName(getCommandName());
         response.setObjectName(ApiConstants.CNI_CONFIG);
