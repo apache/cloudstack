@@ -45,27 +45,108 @@
                   </div>
                 </template>
               </a-step>
+              <a-step :title="$t('label.select.deployment.infrastructure')" status="process">
+                <template #description>
+                  <div style="margin-top: 15px">
+                    <a-form-item
+                      v-if="!isNormalAndDomainUser"
+                      :label="$t('label.podid')"
+                      name="podid"
+                      ref="podid">
+                      <a-select
+                        v-model:value="form.podid"
+                        showSearch
+                        optionFilterProp="label"
+                        :filterOption="filterOption"
+                        :options="podSelectOptions"
+                        :loading="loading.pods"
+                        @change="onSelectPodId"
+                      ></a-select>
+                    </a-form-item>
+                    <a-form-item
+                      v-if="!isNormalAndDomainUser"
+                      :label="$t('label.clusterid')"
+                      name="clusterid"
+                      ref="clusterid">
+                      <a-select
+                        v-model:value="form.clusterid"
+                        showSearch
+                        optionFilterProp="label"
+                        :filterOption="filterOption"
+                        :options="clusterSelectOptions"
+                        :loading="loading.clusters"
+                        @change="onSelectClusterId"
+                      ></a-select>
+                    </a-form-item>
+                    <a-form-item
+                      v-if="!isNormalAndDomainUser"
+                      :label="$t('label.hostid')"
+                      name="hostid"
+                      ref="hostid">
+                      <a-select
+                        v-model:value="form.hostid"
+                        showSearch
+                        optionFilterProp="label"
+                        :filterOption="filterOption"
+                        :options="hostSelectOptions"
+                        :loading="loading.hosts"
+                        @change="onSelectHostId"
+                      ></a-select>
+                    </a-form-item>
+                  </div>
+                </template>
+              </a-step>
               <a-step
                 :title="$t('label.template')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
-                  <div style="margin-top: 15px">
-                    <a-select
-                      style="width: 100%"
-                      :options="templateSelectOptions"
-                      v-model:value="form.templateid"
-                      showSearch
-                      optionFilterProp="label"
-                      :filterOption="filterOption"
-                      :loading="loading.templates">
-                      <a-select-option v-for="temp in templateSelectOptions" :key="temp.value" :label="temp.label">
-                        <span>
-                          <resource-icon v-if="temp.icon" :image="temp.icon" size="1x" style="margin-right: 5px"/>
-                          <os-logo v-else-if="temp.value !== null" :osId="temp.ostypeid" :osName="temp.ostypename" size="lg" style="margin-left: -1px" />
-                          {{ temp.label }}
-                        </span>
-                      </a-select-option>
-                    </a-select>
+                  <div v-if="zoneSelected" style="margin-top: 15px">
+                    <a-card>
+                      {{ $t('message.template.desc') }}
+                      <div v-if="isZoneSelectedMultiArch" style="width: 100%; margin-top: 5px">
+                        {{ $t('message.template.arch') }}
+                        <a-select
+                          style="width: 100%"
+                          v-model:value="selectedArchitecture"
+                          :defaultValue="architectureTypes.opts[0].id"
+                          @change="arch => changeArchitecture(arch, true)">
+                          <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+                            {{ opt.name || opt.description }}
+                          </a-select-option>
+                        </a-select>
+                      </div>
+                      <template-iso-selection
+                        input-decorator="templateid"
+                        :items="options.templates"
+                        :loading="loading.templates"
+                        :preFillContent="dataPreFill"
+                        :key="templateKey"
+                        @handle-search-filter="($event) => fetchAllTemplates($event)"
+                        @update-template-iso="updateFieldValue" />
+                       <div>
+                        {{ $t('label.override.rootdisk.size') }}
+                        <a-switch
+                          v-model:checked="form.rootdisksizeitem"
+                          :disabled="rootDiskSizeFixed > 0 || template.deployasis || showOverrideDiskOfferingOption"
+                          @change="val => { showRootDiskSizeChanger = val }"
+                          style="margin-left: 10px;"/>
+                        <div v-if="template.deployasis">  {{ $t('message.deployasis') }} </div>
+                      </div>
+                      <disk-size-selection
+                        v-if="showRootDiskSizeChanger"
+                        input-decorator="rootdisksize"
+                        :preFillContent="dataPreFill"
+                        :isCustomized="true"
+                        :minDiskSize="dataPreFill.minrootdisksize"
+                        @update-disk-size="updateFieldValue"
+                        style="margin-top: 10px;"/>
+                    </a-card>
+                    <a-form-item class="form-item-hidden">
+                      <a-input v-model:value="form.templateid" />
+                    </a-form-item>
+                    <a-form-item class="form-item-hidden">
+                      <a-input v-model:value="form.rootdisksize" />
+                    </a-form-item>
                   </div>
                 </template>
               </a-step>
@@ -567,6 +648,7 @@ import DiskOfferingSelection from '@views/compute/wizard/DiskOfferingSelection'
 import DiskSizeSelection from '@views/compute/wizard/DiskSizeSelection'
 import VolumeDiskOfferingSelectView from '@views/compute/wizard/VolumeDiskOfferingSelectView'
 import MultiDiskSelection from '@views/compute/wizard/MultiDiskSelection'
+import TemplateIsoSelection from '@views/compute/wizard/TemplateIsoSelection'
 import AffinityGroupSelection from '@views/compute/wizard/AffinityGroupSelection'
 import NetworkSelection from '@views/compute/wizard/NetworkSelection'
 import NetworkConfiguration from '@views/compute/wizard/NetworkConfiguration'
@@ -586,6 +668,7 @@ export default {
     NetworkSelection,
     AffinityGroupSelection,
     DiskSizeSelection,
+    TemplateIsoSelection,
     MultiDiskSelection,
     VolumeDiskOfferingSelectView,
     DiskOfferingSelection,
@@ -611,6 +694,8 @@ export default {
   data () {
     return {
       zoneId: '',
+      podId: null,
+      clusterId: null,
       zoneSelected: false,
       isZoneSelectedMultiArch: false,
       dynamicscalingenabled: true,
@@ -639,7 +724,6 @@ export default {
       },
       options: {
         templates: {},
-        templates2: [],
         hypervisors: [],
         serviceOfferings: [],
         diskOfferings: [],
@@ -648,6 +732,9 @@ export default {
         networks: [],
         sshKeyPairs: [],
         UserDatas: [],
+        pods: [],
+        clusters: [],
+        hosts: [],
         groups: [],
         keyboards: [],
         bootTypes: [],
@@ -666,6 +753,9 @@ export default {
         networks: false,
         sshKeyPairs: false,
         zones: false,
+        pods: false,
+        clusters: false,
+        hosts: false,
         groups: false
       },
       owner: {
@@ -738,7 +828,7 @@ export default {
       return this.showRootDiskSizeChanger && this.rootDiskSizeFixed > 0
     },
     templateSelectOptions () {
-      return this.options.templates2.map((template) => {
+      return this.options.templates.map((template) => {
         return {
           label: template.name,
           value: template.id,
@@ -856,15 +946,34 @@ export default {
             showIcon: true
           }
         },
-        templates2: {
-          list: 'listTemplates',
-          isLoad: true,
+        pods: {
+          list: 'listPods',
+          isLoad: !this.isNormalAndDomainUser,
           options: {
-            templatefilter: 'all',
-            hypervisor: this.hypervisor,
-            showicon: true
+            zoneid: _.get(this.zone, 'id')
           },
-          field: 'templateid'
+          field: 'podid'
+        },
+        clusters: {
+          list: 'listClusters',
+          isLoad: !this.isNormalAndDomainUser,
+          options: {
+            zoneid: _.get(this.zone, 'id'),
+            podid: this.podId
+          },
+          field: 'clusterid'
+        },
+        hosts: {
+          list: 'listHosts',
+          isLoad: !this.isNormalAndDomainUser,
+          options: {
+            zoneid: _.get(this.zone, 'id'),
+            podid: this.podId,
+            clusterid: this.clusterId,
+            state: 'Up',
+            type: 'Routing'
+          },
+          field: 'hostid'
         },
         dynamicScalingVmConfig: {
           list: 'listConfigurations',
@@ -886,13 +995,44 @@ export default {
         }
       })
     },
-    hypervisorSelectOptions () {
-      return this.options.hypervisors.map((hypervisor) => {
+    podSelectOptions () {
+      const options = this.options.pods.map((pod) => {
         return {
-          label: hypervisor.name,
-          value: hypervisor.name
+          label: pod.name,
+          value: pod.id
         }
       })
+      options.unshift({
+        label: this.$t('label.default'),
+        value: null
+      })
+      return options
+    },
+    clusterSelectOptions () {
+      const options = this.options.clusters.map((cluster) => {
+        return {
+          label: cluster.name,
+          value: cluster.id
+        }
+      })
+      options.unshift({
+        label: this.$t('label.default'),
+        value: null
+      })
+      return options
+    },
+    hostSelectOptions () {
+      const options = this.options.hosts.map((host) => {
+        return {
+          label: host.name,
+          value: host.id
+        }
+      })
+      options.unshift({
+        label: this.$t('label.default'),
+        value: null
+      })
+      return options
     },
     keyboardSelectOptions () {
       const keyboardOpts = this.$config.keyboardOptions || {}
@@ -941,11 +1081,6 @@ export default {
     }
   },
   watch: {
-    '$route' (to, from) {
-      if (to.name === 'deployVirtualMachine') {
-        this.resetData()
-      }
-    },
     formModel: {
       deep: true,
       handler (instanceConfig) {
@@ -1847,8 +1982,28 @@ export default {
       this.params[name].options = { ...this.params[name].options, ...options }
       this.fetchOptions(this.params[name], name)
     },
-    onTabChange (key, type) {
-      this[type] = key
+    onSelectPodId (value) {
+      this.podId = value
+      if (this.podId === null) {
+        this.form.podid = undefined
+      }
+
+      this.fetchOptions(this.params.clusters, 'clusters')
+      this.fetchOptions(this.params.hosts, 'hosts')
+    },
+    onSelectClusterId (value) {
+      this.clusterId = value
+      if (this.clusterId === null) {
+        this.form.clusterid = undefined
+      }
+
+      this.fetchOptions(this.params.hosts, 'hosts')
+    },
+    onSelectHostId (value) {
+      this.hostId = value
+      if (this.hostId === null) {
+        this.form.hostid = undefined
+      }
     },
     fetchTemplateNics (template) {
       var nics = []

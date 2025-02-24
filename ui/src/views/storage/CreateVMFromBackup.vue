@@ -103,6 +103,7 @@ export default {
       })
     },
     populatePreFillData () {
+      this.dataPreFill.zoneid = this.resource.zoneid
       this.dataPreFill.backupid = this.resource.id
       this.dataPreFill.computeofferingid = this.vmdetails.serviceofferingid
       this.dataPreFill.templateid = this.vmdetails.templateid

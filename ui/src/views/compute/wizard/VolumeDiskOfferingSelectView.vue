@@ -33,14 +33,14 @@
           <span>
             <a-select
               @change="updateOfferingSelect($event, record.id)"
-              :value="getDefaultDiskOffering(record)"
+              v-model:value="defaultDiskOfferings[record.id]"
               showSearch
               optionFilterProp="label"
               :filterOption="(input, option) => {
                 return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
               }"
-              :style="{ width: '80%' }" >
-              <a-select-option v-for="offering in diskOfferings" :key="offering.id" :label="offering.displaytext">
+              :style="{ width: '90%' }" >
+              <a-select-option v-for="offering in validOfferings[record.id]" :key="offering.id" :label="offering.displaytext">
                 {{ offering.displaytext }}
               </a-select-option>
             </a-select>
@@ -134,6 +134,8 @@ export default {
       ],
       loading: false,
       diskOfferings: [],
+      validOfferings: [],
+      defaultDiskOfferings: [],
       tablerows: {},
       selectedCustomDiskOffering: null,
       values: {
@@ -181,9 +183,15 @@ export default {
       }).then(response => {
         this.diskOfferings = response.listdiskofferingsresponse.diskoffering || []
         this.orderDiskOfferings()
+        this.setDefaultDiskOfferings()
       }).finally(() => {
         this.loading = false
       })
+    },
+    setDefaultDiskOfferings () {
+      for (const record of this.tablerows) {
+        this.defaultDiskOfferings[record.id] = this.diskOfferings.find(x => x.id === record?.diskofferingid) ? record.diskofferingid : null
+      }
     },
     orderDiskOfferings () {
       this.loading = true
@@ -191,6 +199,9 @@ export default {
         this.custom[x.id] = this.diskOfferings.find(offering => offering.id === x.diskofferingid)?.iscustomized
         this.customIops[x.id] = this.diskOfferings.find(offering => offering.id === x.diskofferingid)?.iscustomizediops || false
       })
+      for (const item of this.items) {
+        this.validOfferings[item.id] = this.diskOfferings.filter(x => x.disksize >= item.size || (x.iscustomized))
+      }
       this.setDefaultValues()
       this.loading = false
     },
