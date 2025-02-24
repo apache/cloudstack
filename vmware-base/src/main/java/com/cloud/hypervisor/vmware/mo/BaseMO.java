@@ -34,6 +34,7 @@ import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.RetrieveResult;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class BaseMO {
@@ -65,6 +66,9 @@ public class BaseMO {
     protected static Pair<String, List<ObjectContent>> createReturnObjectPair(RetrieveResult result) {
         if (logger.isDebugEnabled()) {
             logger.debug("vmware result : {} ", ReflectionToStringBuilderUtils.reflectCollection(result));
+        }
+        if (result == null) {
+            return new Pair<>(null, new ArrayList<>());
         }
         String tokenForRetrievingNewResults = result.getToken();
         List<ObjectContent> listOfObjects = result.getObjects();
