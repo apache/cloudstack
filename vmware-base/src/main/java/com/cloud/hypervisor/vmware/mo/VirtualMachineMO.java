@@ -44,6 +44,7 @@ import java.util.stream.Collectors;
 
 import com.cloud.storage.Storage;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.vmware.vim25.VirtualController;
 import org.apache.cloudstack.storage.DiskControllerMappingVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
