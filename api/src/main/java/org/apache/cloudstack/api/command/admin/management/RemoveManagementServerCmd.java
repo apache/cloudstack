@@ -28,12 +28,6 @@ import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-
 @APICommand(name = "removeManagementServer", description = "Removes a Management Server.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = RoleType.Admin)
 public class RemoveManagementServerCmd extends BaseCmd {
