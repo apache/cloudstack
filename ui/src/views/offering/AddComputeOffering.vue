@@ -34,6 +34,28 @@
             v-model:value="form.name"
             :placeholder="$t('label.name')"/>
         </a-form-item>
+        <a-row :gutter="12" v-if="isLeaseFeatureEnabled">
+          <a-col :md="12" :lg="12">
+            <a-form-item name="leaseduration">
+              <template #label>
+                <tooltip-label :title="$t('label.instance.lease.duration')" :tooltip="apiParams.leaseduration.description" />
+              </template>
+              <a-input
+                v-model:value="form.leaseduration"
+                :placeholder="$t('label.instance.lease.never')"/>
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12">
+            <a-form-item name="leasexpiryaction">
+              <template #label>
+                <tooltip-label :title="$t('label.instance.lease.expiry.action')" :tooltip="apiParams.leaseexpiryaction.description" />
+              </template>
+              <a-input
+                v-model:value="form.leaseexpiryaction"
+                :placeholder="$t('label.instance.lease.stop')"/>
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item name="displaytext" ref="displaytext">
           <template #label>
             <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
@@ -647,6 +669,7 @@ export default {
       plannerMode: '',
       selectedGpu: '',
       showDiskOfferingModal: false,
+      isLeaseFeatureEnabled: false,
       gpuTypes: [
         {
           value: '',
@@ -713,6 +736,7 @@ export default {
     }
     this.initForm()
     this.fetchData()
+    this.determineLeaseEnabled()
     this.isPublic = isAdmin()
     this.form.ispublic = this.isPublic
   },
@@ -801,6 +825,14 @@ export default {
         }
       }
       this.fetchDiskOfferings()
+    },
+    determineLeaseEnabled () {
+      var params = { name: 'instance.lease.enabled' }
+      api('listConfigurations', params).then(json => {
+        var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
+        this.isLeaseFeatureEnabled = value === 'true'
+        console.log('Instance lease feature is enabled: ', this.isLeaseFeatureEnabled)
+      })
     },
     addDiskOffering () {
       this.showDiskOfferingModal = true

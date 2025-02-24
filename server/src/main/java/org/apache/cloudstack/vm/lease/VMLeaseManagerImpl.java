@@ -104,7 +104,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             @Override
             protected void runInContext() {
                 try {
-                    alert(new Date());
+                    alert();
                 } catch (final Throwable t) {
                     logger.warn("Catch throwable in VM lease scheduler ", t);
                 }
@@ -120,18 +120,18 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         return true;
     }
 
-    private void alert(Date date) {
-        List<UserVmJoinVO> leaseExpiringForInstances = fetchLeaseExpiredInstances(InstanceLeaseAlertStartsAt.value());
+    private void alert() {
+        List<UserVmJoinVO> leaseExpiringForInstances = userVmJoinDao.listExpiringInstancesInDays(InstanceLeaseAlertStartsAt.value().intValue());
         for (UserVmJoinVO instance : leaseExpiringForInstances) {
             alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, 0L, instance.getPodId(),
-                    "Lease expiring in 7 days", "Lease expiring");
+                    "Lease expiring for instance id: " + instance.getUuid(), "Lease expiring for instance");
         }
     }
 
     @Override
     public void poll(Date currentTimestamp) {
         // fetch user_instances having leaseDuration configured and has expired
-        List<UserVmJoinVO> leaseExpiredInstances = fetchLeaseExpiredInstances(0L);
+        List<UserVmJoinVO> leaseExpiredInstances = userVmJoinDao.listExpiredInstancesIds();
         List<Long> actionableInstanceIds = new ArrayList<>();
         // iterate over them and ignore if delete protection is enabled
         for (UserVmJoinVO userVmVO : leaseExpiredInstances) {
@@ -164,20 +164,16 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         }
     }
 
-    private List<UserVmJoinVO> fetchLeaseExpiredInstances(Long expiringInDays) {
-        return userVmJoinDao.listExpiredInstances();
-    }
-
     private Long executeExpiryAction(UserVmJoinVO instance, ExpiryAction expiryAction) {
         // for qualified vms, prepare Stop/Destroy(Cmd) and submit to Job Manager
         switch (expiryAction) {
             case STOP: {
                 logger.debug("Stopping instance with id: {} on lease expiry", instance.getUuid());
-//                return executeStopInstanceJob(instance, true, 1);
+                return executeStopInstanceJob(instance, true, 1);
             }
             case DESTROY: {
                 logger.debug("Destroying instance with id: {} on lease expiry", instance.getUuid());
-//                return executeDestroyInstanceJob(instance, true, 2);
+                return executeDestroyInstanceJob(instance, true, 2);
             }
             default: {
                 logger.error("Invalid configuration for instance.lease.expiryaction for vm id: {}, " +

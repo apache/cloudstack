@@ -82,6 +82,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Calendar;
 import java.util.stream.Collectors;
 
 @Component
@@ -110,7 +111,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
-    protected final SearchBuilder<UserVmJoinVO> expiredInstanceSearch;
+    private final SearchBuilder<UserVmJoinVO> leaseOverInstanceSearch;
+    private final SearchBuilder<UserVmJoinVO> leaseExpiringInstanceSearch;
 
     protected UserVmJoinDaoImpl() {
 
@@ -125,9 +127,16 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         activeVmByIsoSearch.and("stateNotIn", activeVmByIsoSearch.entity().getState(), SearchCriteria.Op.NIN);
         activeVmByIsoSearch.done();
 
-        expiredInstanceSearch = createSearchBuilder();
-        expiredInstanceSearch.and("leaseExpired", expiredInstanceSearch.entity().getExpiryDate(), Op.LT);
-        expiredInstanceSearch.done();
+        leaseOverInstanceSearch = createSearchBuilder();
+        leaseOverInstanceSearch.selectFields(leaseOverInstanceSearch.entity().getId());
+        leaseOverInstanceSearch.and("leaseExpired", leaseOverInstanceSearch.entity().getExpiryDate(), Op.LT);
+        leaseOverInstanceSearch.done();
+
+        leaseExpiringInstanceSearch = createSearchBuilder();
+        leaseExpiringInstanceSearch.and("leaseExpiringToday", leaseExpiringInstanceSearch.entity().getExpiryDate(), Op.GTEQ);
+        leaseExpiringInstanceSearch.and("leaseExpiresOnDate", leaseExpiringInstanceSearch.entity().getExpiryDate(), Op.LT);
+        leaseExpiringInstanceSearch.done();
+
     }
 
     @Override
@@ -729,9 +738,22 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     }
 
     @Override
-    public List<UserVmJoinVO> listExpiredInstances() {
-        SearchCriteria<UserVmJoinVO> sc = expiredInstanceSearch.create();
+    public List<UserVmJoinVO> listExpiredInstancesIds() {
+        SearchCriteria<UserVmJoinVO> sc = leaseOverInstanceSearch.create();
         sc.setParameters("leaseExpired", new Date());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<UserVmJoinVO> listExpiringInstancesInDays(int days) {
+        SearchCriteria<UserVmJoinVO> sc = leaseExpiringInstanceSearch.create();
+        Date currentDate = new Date();
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(currentDate);
+        calendar.add(Calendar.DAY_OF_MONTH, days);
+        Date nextDate = calendar.getTime();
+        sc.setParameters("leaseExpiringToday", currentDate);
+        sc.setParameters("leaseExpiresOnDate", nextDate);
         return listBy(sc);
     }
 }
