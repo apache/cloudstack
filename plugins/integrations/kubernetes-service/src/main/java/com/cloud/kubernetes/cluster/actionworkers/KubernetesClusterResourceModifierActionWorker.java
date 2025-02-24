@@ -516,10 +516,12 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
     protected FirewallRule removeApiFirewallRule(final IpAddress publicIp) {
         FirewallRule rule = null;
-        List<FirewallRuleVO> firewallRules = firewallRulesDao.listByIpAndPurposeAndNotRevoked(publicIp.getId(), FirewallRule.Purpose.Firewall);
+        List<FirewallRuleVO> firewallRules = firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(publicIp.getId(), FirewallRule.Purpose.Firewall, NetUtils.TCP_PROTO);
         for (FirewallRuleVO firewallRule : firewallRules) {
-            if (firewallRule.getSourcePortStart() == CLUSTER_API_PORT &&
-                    firewallRule.getSourcePortEnd() == CLUSTER_API_PORT) {
+            Integer startPort = firewallRule.getSourcePortStart();
+            Integer endPort = firewallRule.getSourcePortEnd();
+            if (startPort != null && startPort == CLUSTER_API_PORT &&
+                    endPort != null && endPort == CLUSTER_API_PORT) {
                 rule = firewallRule;
                 firewallService.revokeIngressFwRule(firewallRule.getId(), true);
                 logger.debug("The API firewall rule [%s] with the id [%s] was revoked",firewallRule.getName(),firewallRule.getId());
@@ -531,7 +533,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
     protected FirewallRule removeSshFirewallRule(final IpAddress publicIp, final long networkId) {
         FirewallRule rule = null;
-        List<FirewallRuleVO> firewallRules = firewallRulesDao.listByIpAndPurposeAndNotRevoked(publicIp.getId(), FirewallRule.Purpose.Firewall);
+        List<FirewallRuleVO> firewallRules = firewallRulesDao.listByIpPurposeProtocolAndNotRevoked(publicIp.getId(), FirewallRule.Purpose.Firewall, NetUtils.TCP_PROTO);
         for (FirewallRuleVO firewallRule : firewallRules) {
             PortForwardingRuleVO pfRule = portForwardingRulesDao.findByNetworkAndPorts(networkId, firewallRule.getSourcePortStart(), firewallRule.getSourcePortEnd());
             if (firewallRule.getSourcePortStart() == CLUSTER_NODES_DEFAULT_START_SSH_PORT || (Objects.nonNull(pfRule) && pfRule.getDestinationPortStart() == DEFAULT_SSH_PORT) ) {

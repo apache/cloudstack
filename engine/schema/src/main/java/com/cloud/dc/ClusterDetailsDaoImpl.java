@@ -22,18 +22,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.commons.collections.CollectionUtils;
 
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.org.Cluster;
+import com.cloud.utils.Pair;
 import com.cloud.utils.crypt.DBEncryptionUtil;
-import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
-public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long> implements ClusterDetailsDao, ScopedConfigStorage {
+public class ClusterDetailsDaoImpl extends ResourceDetailsDaoBase<ClusterDetailsVO> implements ClusterDetailsDao, ScopedConfigStorage {
+
+    @Inject
+    ClusterDao clusterDao;
+
     protected final SearchBuilder<ClusterDetailsVO> ClusterSearch;
     protected final SearchBuilder<ClusterDetailsVO> DetailSearch;
 
@@ -44,11 +53,11 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
 
     protected ClusterDetailsDaoImpl() {
         ClusterSearch = createSearchBuilder();
-        ClusterSearch.and("clusterId", ClusterSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        ClusterSearch.and("clusterId", ClusterSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         ClusterSearch.done();
 
         DetailSearch = createSearchBuilder();
-        DetailSearch.and("clusterId", DetailSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
+        DetailSearch.and("clusterId", DetailSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         DetailSearch.and("name", DetailSearch.entity().getName(), SearchCriteria.Op.EQ);
         DetailSearch.done();
     }
@@ -66,6 +75,11 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
             detail.setValue(DBEncryptionUtil.decrypt(detail.getValue()));
         }
         return detail;
+    }
+
+    @Override
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new ClusterDetailsVO(resourceId, key, value));
     }
 
     @Override
@@ -91,7 +105,7 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
             return new HashMap<>();
         }
         SearchBuilder<ClusterDetailsVO> sb = createSearchBuilder();
-        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        sb.and("clusterId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.IN);
         sb.done();
         SearchCriteria<ClusterDetailsVO> sc = sb.create();
@@ -179,5 +193,14 @@ public class ClusterDetailsDaoImpl extends GenericDaoBase<ClusterDetailsVO, Long
         }
 
         return name;
+    }
+
+    @Override
+    public Pair<Scope, Long> getParentScope(long id) {
+        Cluster cluster = clusterDao.findById(id);
+        if (cluster == null) {
+            return null;
+        }
+        return new Pair<>(getScope().getParent(), cluster.getDataCenterId());
     }
 }

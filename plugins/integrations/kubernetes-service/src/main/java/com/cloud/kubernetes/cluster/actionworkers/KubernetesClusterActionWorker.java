@@ -25,11 +25,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -268,14 +266,12 @@ public class KubernetesClusterActionWorker {
 
     protected String getControlNodeLoginUser() {
         List<KubernetesClusterVmMapVO> vmMapVOList = getKubernetesClusterVMMaps();
-        if (vmMapVOList.size() > 0) {
+        if (!vmMapVOList.isEmpty()) {
             long vmId = vmMapVOList.get(0).getVmId();
             UserVmVO userVM = userVmDao.findById(vmId);
             if (userVM == null) {
                 throw new CloudRuntimeException("Failed to find login user, Unable to log in to node to fetch details");
             }
-            Set<String> vm = new HashSet<>();
-            vm.add(userVM.getName());
             UserVmDetailVO vmDetail = userVmDetailsDao.findDetail(vmId, VmDetailConstants.CKS_CONTROL_NODE_LOGIN_USER);
             if (vmDetail != null && !org.apache.commons.lang3.StringUtils.isEmpty(vmDetail.getValue())) {
                 return vmDetail.getValue();
@@ -434,7 +430,12 @@ public class KubernetesClusterActionWorker {
         }
         IpAddress address = ipAddressDao.findByUuid(detailsVO.getValue());
         if (address == null || !Objects.equals(network.getVpcId(), address.getVpcId())) {
-            logger.warn(String.format("Public IP with ID: %s linked to the Kubernetes cluster: %s is not usable", detailsVO.getValue(), kubernetesCluster.getName()));
+            logger.warn("Public IP with ID: {} linked to the Kubernetes cluster: {} is not usable", detailsVO.getValue(), kubernetesCluster.getName());
+            if (address == null) {
+                logger.warn("Public IP with ID: {} was not found by uuid", detailsVO.getValue());
+            } else {
+                logger.warn("Public IP with ID: {} was associated with vpc {} instead of {}", detailsVO.getValue(), address.getVpcId(), network.getVpcId());
+            }
             return null;
         }
         return address;
@@ -618,8 +619,7 @@ public class KubernetesClusterActionWorker {
     }
 
     protected List<KubernetesClusterVmMapVO> getKubernetesClusterVMMaps() {
-        List<KubernetesClusterVmMapVO> clusterVMs = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
-        return clusterVMs;
+        return kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
     }
 
     protected List<KubernetesClusterVmMapVO> getKubernetesClusterVMMapsForNodes(List<Long> nodeIds) {
