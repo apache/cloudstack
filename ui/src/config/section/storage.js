@@ -17,6 +17,7 @@
 
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
+import { isZoneCreated } from '@/utils/zone'
 
 export default {
   name: 'storage',
@@ -38,7 +39,7 @@ export default {
         }
       },
       columns: () => {
-        const fields = ['name', 'state', 'sizegb', 'type', 'vmname']
+        const fields = ['name', 'state', 'sizegb', 'type', 'vmname', 'vmstate']
         const metricsFields = ['diskkbsread', 'diskkbswrite', 'diskiopstotal']
 
         if (store.getters.userInfo.roletype === 'Admin') {
@@ -103,6 +104,7 @@ export default {
           icon: 'plus-outlined',
           docHelp: 'adminguide/storage.html#creating-a-new-volume',
           label: 'label.action.create.volume',
+          show: isZoneCreated,
           listView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/CreateVolume.vue')))
@@ -112,7 +114,7 @@ export default {
           icon: 'cloud-upload-outlined',
           docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
           label: 'label.upload.volume.from.local',
-          show: () => { return 'getUploadParamsForVolume' in store.getters.apis },
+          show: () => { return isZoneCreated() && 'getUploadParamsForVolume' in store.getters.apis },
           listView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UploadLocalVolume.vue')))
@@ -122,6 +124,7 @@ export default {
           icon: 'link-outlined',
           docHelp: 'adminguide/storage.html#uploading-an-existing-volume-to-a-virtual-machine',
           label: 'label.upload.volume.from.url',
+          show: isZoneCreated,
           listView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/UploadVolume.vue')))
@@ -165,9 +168,10 @@ export default {
           label: 'label.action.take.snapshot',
           dataView: true,
           show: (record, store) => {
-            return record.state === 'Ready' && (record.hypervisor !== 'KVM' ||
-                record.hypervisor === 'KVM' && record.vmstate === 'Running' && store.features.kvmsnapshotenabled ||
-                record.hypervisor === 'KVM' && record.vmstate !== 'Running')
+            return record.state === 'Ready' &&
+              (record.hypervisor !== 'KVM' ||
+               ['Stopped', 'Destroyed'].includes(record.vmstate) ||
+               store.features.kvmsnapshotenabled)
           },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/TakeSnapshot.vue')))
@@ -179,9 +183,10 @@ export default {
           label: 'label.action.recurring.snapshot',
           dataView: true,
           show: (record, store) => {
-            return record.state === 'Ready' && (record.hypervisor !== 'KVM' ||
-                record.hypervisor === 'KVM' && record.vmstate === 'Running' && store.features.kvmsnapshotenabled ||
-                record.hypervisor === 'KVM' && record.vmstate !== 'Running')
+            return record.state === 'Ready' &&
+              (record.hypervisor !== 'KVM' ||
+               (['Stopped', 'Destroyed'].includes(record.vmstate)) ||
+               (store.features.kvmsnapshotenabled))
           },
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/storage/RecurringSnapshotVolume.vue'))),

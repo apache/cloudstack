@@ -27,6 +27,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiConstants;
+import com.cloud.utils.db.GenericSearchBuilder;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupDetailVO;
@@ -69,6 +70,9 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     BackupDetailsDao backupDetailsDao;
 
     private SearchBuilder<BackupVO> backupSearch;
+    private GenericSearchBuilder<BackupVO, Long> CountBackupsByAccount;
+    private GenericSearchBuilder<BackupVO, SumCount> CalculateBackupStorageByAccount;
+    private SearchBuilder<BackupVO> ListBackupsByVMandIntervalType;
 
     public BackupDaoImpl() {
     }
@@ -81,6 +85,27 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         backupSearch.and("backup_offering_id", backupSearch.entity().getBackupOfferingId(), SearchCriteria.Op.EQ);
         backupSearch.and("zone_id", backupSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
         backupSearch.done();
+
+        CountBackupsByAccount = createSearchBuilder(Long.class);
+        CountBackupsByAccount.select(null, SearchCriteria.Func.COUNT, null);
+        CountBackupsByAccount.and("account", CountBackupsByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        CountBackupsByAccount.and("status", CountBackupsByAccount.entity().getStatus(), SearchCriteria.Op.NIN);
+        CountBackupsByAccount.and("removed", CountBackupsByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
+        CountBackupsByAccount.done();
+
+        CalculateBackupStorageByAccount = createSearchBuilder(SumCount.class);
+        CalculateBackupStorageByAccount.select("sum", SearchCriteria.Func.SUM, CalculateBackupStorageByAccount.entity().getSize());
+        CalculateBackupStorageByAccount.and("account", CalculateBackupStorageByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
+        CalculateBackupStorageByAccount.and("status", CalculateBackupStorageByAccount.entity().getStatus(), SearchCriteria.Op.NIN);
+        CalculateBackupStorageByAccount.and("removed", CalculateBackupStorageByAccount.entity().getRemoved(), SearchCriteria.Op.NULL);
+        CalculateBackupStorageByAccount.done();
+
+        ListBackupsByVMandIntervalType = createSearchBuilder();
+        ListBackupsByVMandIntervalType.and("vmId", ListBackupsByVMandIntervalType.entity().getVmId(), SearchCriteria.Op.EQ);
+        ListBackupsByVMandIntervalType.and("intervalType", ListBackupsByVMandIntervalType.entity().getBackupIntervalType(), SearchCriteria.Op.EQ);
+        ListBackupsByVMandIntervalType.and("status", ListBackupsByVMandIntervalType.entity().getStatus(), SearchCriteria.Op.EQ);
+        ListBackupsByVMandIntervalType.and("removed", ListBackupsByVMandIntervalType.entity().getRemoved(), SearchCriteria.Op.NULL);
+        ListBackupsByVMandIntervalType.done();
     }
 
     @Override
@@ -170,6 +195,31 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
             persist(backupVO);
         }
         return listByVmId(zoneId, vmId);
+    }
+
+    @Override
+    public Long countBackupsForAccount(long accountId) {
+        SearchCriteria<Long> sc = CountBackupsByAccount.create();
+        sc.setParameters("account", accountId);
+        sc.setParameters("status", Backup.Status.Error, Backup.Status.Failed, Backup.Status.Removed, Backup.Status.Expunged);
+        return customSearch(sc, null).get(0);
+    }
+
+    @Override
+    public Long calculateBackupStorageForAccount(long accountId) {
+        SearchCriteria<SumCount> sc = CalculateBackupStorageByAccount.create();
+        sc.setParameters("account", accountId);
+        sc.setParameters("status", Backup.Status.Error, Backup.Status.Failed, Backup.Status.Removed, Backup.Status.Expunged);
+        return customSearch(sc, null).get(0).sum;
+    }
+
+    @Override
+    public List<BackupVO> listBackupsByVMandIntervalType(Long vmId, Backup.Type backupType) {
+        SearchCriteria<BackupVO> sc = ListBackupsByVMandIntervalType.create();
+        sc.setParameters("vmId", vmId);
+        sc.setParameters("type", backupType.ordinal());
+        sc.setParameters("status", Backup.Status.BackedUp);
+        return listBy(sc, null);
     }
 
     @Override

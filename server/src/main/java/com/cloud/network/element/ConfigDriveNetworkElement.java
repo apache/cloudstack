@@ -325,8 +325,12 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             try {
                 final Network network = _networkMgr.getNetwork(nic.getNetworkId());
                 final UserDataServiceProvider userDataUpdateProvider = _networkModel.getUserDataUpdateProvider(network);
+                if (userDataUpdateProvider == null) {
+                    logger.warn("Failed to get user data provider");
+                    return false;
+                }
                 final Provider provider = userDataUpdateProvider.getProvider();
-                if (provider.equals(Provider.ConfigDrive)) {
+                if (Provider.ConfigDrive.equals(provider)) {
                     try {
                         return deleteConfigDriveIso(vm);
                     } catch (ResourceUnavailableException e) {
@@ -341,8 +345,13 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     @Override
     public boolean prepareMigration(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) {
-        if (_networkModel.getUserDataUpdateProvider(network).getProvider().equals(Provider.ConfigDrive)) {
-            logger.trace(String.format("[prepareMigration] for vm: %s", vm));
+        final UserDataServiceProvider userDataUpdateProvider = _networkModel.getUserDataUpdateProvider(network);
+        if (userDataUpdateProvider == null) {
+            logger.warn("Failed to prepare for migration, can't get user data provider");
+            return false;
+        }
+        if (Provider.ConfigDrive.equals(userDataUpdateProvider.getProvider())) {
+            logger.trace(String.format("[prepareMigration] for vm: %s", vm.getInstanceName()));
             try {
                 if (isConfigDriveIsoOnHostCache(vm.getId())) {
                     vm.setConfigDriveLocation(Location.HOST);
@@ -392,7 +401,11 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     }
 
     private void recreateConfigDriveIso(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest) throws ResourceUnavailableException {
-        if (nic.isDefaultNic() && _networkModel.getUserDataUpdateProvider(network).getProvider().equals(Provider.ConfigDrive)) {
+        final UserDataServiceProvider userDataUpdateProvider = _networkModel.getUserDataUpdateProvider(network);
+        if (userDataUpdateProvider == null) {
+            return;
+        }
+        if (nic.isDefaultNic() && Provider.ConfigDrive.equals(userDataUpdateProvider.getProvider())) {
             DiskTO diskToUse = null;
             for (DiskTO disk : vm.getDisks()) {
                 if (disk.getType() == Volume.Type.ISO && disk.getPath() != null && disk.getPath().contains("configdrive")) {

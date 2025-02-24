@@ -91,6 +91,9 @@ public class BackupVO implements Backup {
     @Column(name = "zone_id")
     private long zoneId;
 
+    @Column(name = "backup_interval_type")
+    private short backupIntervalType;
+
     @Column(name = "backed_volumes", length = 65535)
     protected String backedUpVolumes;
 
@@ -212,6 +215,14 @@ public class BackupVO implements Backup {
 
     public void setZoneId(long zoneId) {
         this.zoneId = zoneId;
+    }
+
+    public short getBackupIntervalType() {
+        return backupIntervalType;
+    }
+
+    public void setBackupIntervalType(short backupIntervalType) {
+        this.backupIntervalType = backupIntervalType;
     }
 
     @Override

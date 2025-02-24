@@ -24,6 +24,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.configuration.Resource;
 import com.cloud.storage.dao.VolumeDao;
 
 import org.apache.cloudstack.backup.dao.BackupDao;
@@ -103,6 +104,16 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
+    public List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
+        return null;
+    }
+
+    @Override
+    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric) {
+        return null;
+    }
+
+    @Override
     public boolean removeVMFromBackupOffering(VirtualMachine vm) {
         logger.debug(String.format("Removing VM %s from backup offering by the Dummy Backup Provider", vm));
         return true;
@@ -114,7 +125,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public boolean takeBackup(VirtualMachine vm) {
+    public Pair<Boolean, Backup> takeBackup(VirtualMachine vm) {
         logger.debug(String.format("Starting backup for VM %s on Dummy provider", vm));
 
         BackupVO backup = new BackupVO();
@@ -122,8 +133,8 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         backup.setExternalId("dummy-external-id");
         backup.setType("FULL");
         backup.setDate(new Date());
-        backup.setSize(1024L);
-        backup.setProtectedSize(1024000L);
+        backup.setSize(1024000L);
+        backup.setProtectedSize(1 * Resource.ResourceType.bytesToGiB);
         backup.setStatus(Backup.Status.BackedUp);
         backup.setBackupOfferingId(vm.getBackupOfferingId());
         backup.setAccountId(vm.getAccountId());
@@ -135,16 +146,13 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         Map<String, String> diskOfferingDetails = backupManager.getDiskOfferingDetailsForBackup(vm.getId());
         backup.addDetails(diskOfferingDetails);
 
-        return backupDao.persist(backup) != null;
+        backup = backupDao.persist(backup);
+        return new Pair<>(true, backup);
     }
 
     @Override
     public boolean deleteBackup(Backup backup, boolean forced) {
         return true;
-    }
-
-    @Override
-    public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
     }
 
     @Override

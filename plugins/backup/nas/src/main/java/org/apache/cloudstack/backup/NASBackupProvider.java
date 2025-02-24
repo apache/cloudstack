@@ -47,6 +47,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+
 import javax.inject.Inject;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -145,7 +146,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
-    public boolean takeBackup(final VirtualMachine vm) {
+    public Pair<Boolean, Backup> takeBackup(final VirtualMachine vm) {
         final Host host = getVMHypervisorHost(vm);
 
         final BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(vm.getBackupOfferingId());
@@ -185,12 +186,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backupVO.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
             Map<String, String> details = backupManager.getDiskOfferingDetailsForBackup(vm.getId());
             backupVO.addDetails(details);
-            return backupDao.update(backupVO.getId(), backupVO);
+            if (backupDao.update(backupVO.getId(), backupVO)) {
+                return new Pair<>(true, backupVO);
+            } else {
+                throw new CloudRuntimeException("Failed to update backup");
+            }
         } else {
             backupVO.setStatus(Backup.Status.Failed);
             backupDao.remove(backupVO.getId());
+            return new Pair<>(false, null);
         }
-        return Objects.nonNull(answer) && answer.getResult();
     }
 
     private BackupVO createBackupObject(VirtualMachine vm, String backupPath) {
@@ -378,6 +383,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             return backupDao.remove(backup.getId());
         }
 
+        logger.debug("There was an error removing the backup with id " + backup.getId());
         return false;
     }
 
@@ -404,6 +410,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
+    public List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
+        return null;
+    }
+
+    @Override
+    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric) {
+        return null;
+    }
+
+    @Override
     public boolean assignVMToBackupOffering(VirtualMachine vm, BackupOffering backupOffering) {
         return Hypervisor.HypervisorType.KVM.equals(vm.getHypervisorType());
     }
@@ -416,11 +432,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public boolean willDeleteBackupsOnOfferingRemoval() {
         return false;
-    }
-
-    @Override
-    public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
-        // TODO: check and sum/return backups metrics on per VM basis
     }
 
     @Override

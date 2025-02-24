@@ -164,6 +164,7 @@ import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementService;
 import com.cloud.server.ResourceTag;
+import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -353,8 +354,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     private BackupDao backupDao;
     @Inject
+    private StatsCollector statsCollector;
+    @Inject
     HostPodDao podDao;
-
 
     protected Gson _gson;
 
@@ -2482,10 +2484,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return existingVolumeOfVm;
     }
 
-    protected StoragePool getPoolForAllocatedOrUploadedVolumeForAttach(final VolumeInfo volumeToAttach, final UserVmVO vm) {
+    protected StoragePool getSuitablePoolForAllocatedOrUploadedVolumeForAttach(final VolumeInfo volumeToAttach, final UserVmVO vm) {
         DataCenter zone = _dcDao.findById(vm.getDataCenterId());
         Pair<Long, Long> clusterHostId = virtualMachineManager.findClusterAndHostIdForVm(vm, false);
-        long podId = vm.getPodIdToDeployIn();
+        Long podId = vm.getPodIdToDeployIn();
         if (clusterHostId.first() != null) {
             Cluster cluster = clusterDao.findById(clusterHostId.first());
             podId = cluster.getPodId();
@@ -2497,12 +2499,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 offering.isUseLocalStorage(), offering.isRecreatable(),
                 volumeToAttach.getTemplateId());
         diskProfile.setHyperType(vm.getHypervisorType());
-        StoragePool pool = _volumeMgr.findStoragePool(diskProfile, zone, pod, clusterHostId.first(),
+        return _volumeMgr.findStoragePool(diskProfile, zone, pod, clusterHostId.first(),
                 clusterHostId.second(), vm, Collections.emptySet());
-        if (pool == null) {
-            throw new CloudRuntimeException(String.format("Failed to find a primary storage for volume in state: %s", volumeToAttach.getState()));
-        }
-        return pool;
     }
 
     protected VolumeInfo createVolumeOnPrimaryForAttachIfNeeded(final VolumeInfo volumeToAttach, final UserVmVO vm, VolumeVO existingVolumeOfVm) {
@@ -2520,7 +2518,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
         if (destPrimaryStorage == null) {
-            destPrimaryStorage = getPoolForAllocatedOrUploadedVolumeForAttach(volumeToAttach, vm);
+            destPrimaryStorage = getSuitablePoolForAllocatedOrUploadedVolumeForAttach(volumeToAttach, vm);
+            if (destPrimaryStorage == null) {
+                if (Volume.State.Allocated.equals(volumeToAttach.getState()) && State.Stopped.equals(vm.getState())) {
+                    return newVolumeOnPrimaryStorage;
+                }
+                throw new CloudRuntimeException(String.format("Failed to find a primary storage for volume in state: %s", volumeToAttach.getState()));
+            }
         }
         try {
             if (volumeOnSecondary && Storage.StoragePoolType.PowerFlex.equals(destPrimaryStorage.getPoolType())) {
@@ -5202,6 +5206,21 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _workJobDao.persist(workJob);
 
         return workJob;
+    }
+
+    @Override
+    public Long getVolumePhysicalSize(ImageFormat format, String path, String chainInfo) {
+        VolumeStats vs = null;
+        if (format == ImageFormat.VHD || format == ImageFormat.QCOW2 || format == ImageFormat.RAW) {
+            if (path != null) {
+                vs = statsCollector.getVolumeStats(path);
+            }
+        } else if (format == ImageFormat.OVA) {
+            if (chainInfo != null) {
+                vs = statsCollector.getVolumeStats(chainInfo);
+            }
+        }
+        return (vs == null) ? null : vs.getPhysicalSize();
     }
 
     @Override

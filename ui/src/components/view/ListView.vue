@@ -256,6 +256,12 @@
       <template v-if="column.key === 'quotastate'">
         <status :text="text ? text : ''" displayText />
       </template>
+      <template v-if="column.key === 'vmstate'">
+        <status :text="text ? text : ''" displayText vmState/>
+      </template>
+      <template v-if="column.key === 'offerha'">
+        {{ text ? $t('state.enabled') : $t('state.disabled')}}
+      </template>
       <template v-if="column.key === 'vlan'">
         <a href="javascript:;">
           <router-link v-if="$route.path === '/guestvlans'" :to="{ path: '/guestvlans/' + record.id }">{{ text }}</router-link>

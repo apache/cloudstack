@@ -144,9 +144,11 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
 
             createOrupdateConfigObject(date, configurable.getConfigComponentName(), key, null);
 
-            if ((key.scope() != null) && (key.scope() != ConfigKey.Scope.Global)) {
-                Set<ConfigKey<?>> currentConfigs = _scopeLevelConfigsMap.get(key.scope());
-                currentConfigs.add(key);
+            if (!key.isGlobalOrEmptyScope()) {
+                for (ConfigKey.Scope scope : key.getScopes()) {
+                    Set<ConfigKey<?>> currentConfigs = _scopeLevelConfigsMap.get(scope);
+                    currentConfigs.add(key);
+                }
             }
         }
 
@@ -204,12 +206,12 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         } else {
             boolean configUpdated = false;
             if (vo.isDynamic() != key.isDynamic() || !ObjectUtils.equals(vo.getDescription(), key.description()) || !ObjectUtils.equals(vo.getDefaultValue(), key.defaultValue()) ||
-                !ObjectUtils.equals(vo.getScope(), key.scope().toString()) ||
+                !ObjectUtils.equals(vo.getScope(), key.getScopeBitmask()) ||
                 !ObjectUtils.equals(vo.getComponent(), componentName)) {
                 vo.setDynamic(key.isDynamic());
                 vo.setDescription(key.description());
                 vo.setDefaultValue(key.defaultValue());
-                vo.setScope(key.scope().toString());
+                vo.setScope(key.getScopeBitmask());
                 vo.setComponent(componentName);
                 vo.setUpdated(date);
                 configUpdated = true;
@@ -283,12 +285,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
             scopeId = Long.valueOf(parts[2]);
         } catch (IllegalArgumentException ignored) {}
         if (!ConfigKey.Scope.Global.equals(scope) && scopeId != null) {
-            ScopedConfigStorage scopedConfigStorage = null;
-            for (ScopedConfigStorage storage : _scopedStorages) {
-                if (storage.getScope() == scope) {
-                    scopedConfigStorage = storage;
-                }
-            }
+            ScopedConfigStorage scopedConfigStorage = getScopedStorage(scope);
             if (scopedConfigStorage == null) {
                 throw new CloudRuntimeException("Unable to find config storage for this scope: " + scope + " for " + key);
             }
@@ -313,26 +310,6 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     @Override
     public void invalidateConfigCache(String key, ConfigKey.Scope scope, Long scopeId) {
         configCache.invalidate(getConfigCacheKey(key, scope, scopeId));
-    }
-
-    public ScopedConfigStorage findScopedConfigStorage(ConfigKey<?> config) {
-        for (ScopedConfigStorage storage : _scopedStorages) {
-            if (storage.getScope() == config.scope()) {
-                return storage;
-            }
-        }
-
-        throw new CloudRuntimeException("Unable to find config storage for this scope: " + config.scope() + " for " + config.key());
-    }
-
-    public ScopedConfigStorage getDomainScope(ConfigKey<?> config) {
-        for (ScopedConfigStorage storage : _scopedStorages) {
-            if (storage.getScope() == ConfigKey.Scope.Domain) {
-                return storage;
-            }
-        }
-
-        throw new CloudRuntimeException("Unable to find config storage for this scope: " + ConfigKey.Scope.Domain + " for " + config.key());
     }
 
     public List<ScopedConfigStorage> getScopedStorages() {
@@ -397,5 +374,28 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     @Override
     public boolean isNewConfig(ConfigKey<?> configKey) {
         return newConfigs.contains(configKey.key());
+    }
+
+    protected ScopedConfigStorage getScopedStorage(ConfigKey.Scope scope) {
+        ScopedConfigStorage scopedConfigStorage = null;
+        for (ScopedConfigStorage storage : _scopedStorages) {
+            if (storage.getScope() == scope) {
+                scopedConfigStorage = storage;
+                break;
+            }
+        }
+        return scopedConfigStorage;
+    }
+
+    @Override
+    public Pair<ConfigKey.Scope, Long> getParentScope(ConfigKey.Scope scope, Long id) {
+        if (scope.getParent() == null) {
+            return null;
+        }
+        ScopedConfigStorage scopedConfigStorage = getScopedStorage(scope);
+        if (scopedConfigStorage == null) {
+            return null;
+        }
+        return scopedConfigStorage.getParentScope(id);
     }
 }
