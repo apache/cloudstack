@@ -173,11 +173,11 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         switch (expiryAction) {
             case STOP: {
                 logger.debug("Stopping instance with id: {} on lease expiry", instance.getUuid());
-                return executeStopInstanceJob(instance, true, 1);
+//                return executeStopInstanceJob(instance, true, 1);
             }
             case DESTROY: {
                 logger.debug("Destroying instance with id: {} on lease expiry", instance.getUuid());
-                return executeDestroyInstanceJob(instance, true, 2);
+//                return executeDestroyInstanceJob(instance, true, 2);
             }
             default: {
                 logger.error("Invalid configuration for instance.lease.expiryaction for vm id: {}, " +

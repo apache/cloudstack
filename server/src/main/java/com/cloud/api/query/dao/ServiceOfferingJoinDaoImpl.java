@@ -176,6 +176,11 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
             }
         }
 
+        if (offering.getLeaseDuration() != null && offering.getLeaseDuration() != -1L) {
+            offeringResponse.setLeaseDuration(offering.getLeaseDuration());
+            offeringResponse.setLeaseExpiryAction(offering.getLeaseExpiryAction());
+        }
+
         long rootDiskSizeInGb = (long) offering.getRootDiskSize() / GB_TO_BYTES;
         offeringResponse.setRootDiskSize(rootDiskSizeInGb);
         offeringResponse.setDiskOfferingStrictness(offering.getDiskOfferingStrictness());

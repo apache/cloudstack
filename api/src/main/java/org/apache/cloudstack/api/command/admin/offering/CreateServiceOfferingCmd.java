@@ -251,7 +251,14 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             since="4.20")
     private Boolean purgeResources;
 
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_DURATION, type = CommandType.LONG,
+            description = "Number of days instance is leased for.",
+            since = "4.21.0")
+    private Long leaseDuration;
 
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, type = CommandType.STRING, since = "4.21.0",
+            description = "Lease expiry action")
+    private String leaseExpiryAction;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -485,6 +492,14 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             return encryptRoot;
         }
         return false;
+    }
+
+    public String getLeaseExpiryAction() {
+        return leaseExpiryAction;
+    }
+
+    public Long getLeaseDuration() {
+        return leaseDuration;
     }
 
     public boolean isPurgeResources() {

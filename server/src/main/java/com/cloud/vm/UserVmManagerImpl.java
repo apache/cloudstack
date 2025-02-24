@@ -6307,8 +6307,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String formattedLeaseExpiryDate = sdf.format(leaseExpiryDate);
 
-        userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE, formattedLeaseExpiryDate, true);
-        userVmDetailsDao.addDetail(vm.getId(),  VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION, leaseExpiryAction, true);
+        userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE, formattedLeaseExpiryDate, false);
+        userVmDetailsDao.addDetail(vm.getId(),  VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION, leaseExpiryAction, false);
     }
 
     /**

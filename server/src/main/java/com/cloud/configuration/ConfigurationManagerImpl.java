@@ -136,6 +136,7 @@ import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
@@ -3327,7 +3328,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
                 cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled(), diskOfferingId,
-                cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), cmd.isPurgeResources());
+                cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), cmd.isPurgeResources(), cmd.getLeaseDuration(), cmd.getLeaseExpiryAction());
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
@@ -3340,7 +3341,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
             final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID,
             final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness,
-            final boolean isCustomized, final boolean encryptRoot, final boolean purgeResources) {
+            final boolean isCustomized, final boolean encryptRoot, final boolean purgeResources, Long leaseDuration, String leaseExpiryAction) {
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
@@ -3447,6 +3448,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if ((serviceOffering = _serviceOfferingDao.persist(serviceOffering)) != null) {
+            if (leaseDuration != null && leaseDuration != -1L) {
+                leaseExpiryAction = StringUtils.isNotEmpty(leaseExpiryAction) ? leaseExpiryAction : VMLeaseManager.InstanceLeaseExpiryAction.valueIn(account.getId());
+                if (StringUtils.isNotEmpty(leaseExpiryAction)) {
+                    detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.INSTANCE_LEASE_DURATION, String.valueOf(leaseDuration), false));
+                    detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, leaseExpiryAction, false));
+                }
+            }
+
             for (Long domainId : filteredDomainIds) {
                 detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
             }
