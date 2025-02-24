@@ -1179,15 +1179,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<UserVmResponse> searchForUserVMs(ListVMsCmd cmd) {
         ListResponse<UserVmResponse> response = new ListResponse<>();
-        if (cmd.getShowLeasedInstances()) {
-            List<UserVmJoinVO> result = _userVmJoinDao.listExpiredInstances();
-
-            List<UserVmResponse> vmResponses = ViewResponseHelper.createUserVmResponse(ResponseView.Full, "virtualmachine",
-                    cmd.getDetails(), cmd.getAccumulate(), cmd.getShowUserData(), result.toArray(new UserVmJoinVO[result.size()]));
-            response.setResponses(vmResponses, result.size());
-            return response;
-        }
-
         Pair<List<UserVmJoinVO>, Integer> result = searchForUserVMsInternal(cmd);
 
         if (cmd.getRetrieveOnlyResourceCount()) {
@@ -1484,6 +1475,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             resourceTagSearch.cp();
 
             userVmSearchBuilder.join("tags", resourceTagSearch, resourceTagSearch.entity().getResourceId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
+        }
+
+        if (cmd.getOnlyLeasedInstances() != null && cmd.getOnlyLeasedInstances()) {
+            SearchBuilder<UserVmDetailVO> leasedInstancesSearch = userVmDetailsDao.createSearchBuilder();
+            leasedInstancesSearch.and(VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE, leasedInstancesSearch.entity().getName(), SearchCriteria.Op.NNULL);
+            userVmSearchBuilder.join("userVmToLeased", leasedInstancesSearch, leasedInstancesSearch.entity().getResourceId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         if (keyPairName != null) {
