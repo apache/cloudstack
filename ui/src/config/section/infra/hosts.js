@@ -27,7 +27,7 @@ export default {
   searchFilters: ['name', 'zoneid', 'podid', 'clusterid', 'hypervisor'],
   resourceType: 'Host',
   filters: () => {
-    const filters = ['enabled', 'disabled', 'maintenance', 'up', 'down', 'alert']
+    const filters = ['enabled', 'disabled', 'maintenance', 'up', 'down', 'disconnected', 'alert']
     return filters
   },
   params: { type: 'routing' },
@@ -65,7 +65,7 @@ export default {
       api: 'addHost',
       icon: 'plus-outlined',
       label: 'label.add.host',
-      docHelp: 'adminguide/installguide/configuration.html#adding-a-host',
+      docHelp: 'installguide/configuration.html#adding-a-host',
       listView: true,
       popup: true,
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostAdd.vue')))

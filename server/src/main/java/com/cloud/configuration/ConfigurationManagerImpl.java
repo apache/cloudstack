@@ -16,6 +16,11 @@
 // under the License.
 package com.cloud.configuration;
 
+import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
+import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
+import static com.cloud.offering.NetworkOffering.RoutingMode.Static;
+import static org.apache.cloudstack.framework.config.ConfigKey.CATEGORY_SYSTEM;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -307,11 +312,6 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.googlecode.ipv6.IPv6Address;
 import com.googlecode.ipv6.IPv6Network;
-
-import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
-import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
-import static com.cloud.offering.NetworkOffering.RoutingMode.Static;
-import static org.apache.cloudstack.framework.config.ConfigKey.CATEGORY_SYSTEM;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final String PERACCOUNT = "peraccount";
@@ -1072,7 +1072,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Optional optionalValue;
         String defaultValue;
         String category;
-        String configScope;
+        List<ConfigKey.Scope> configScope;
         final ConfigurationVO config = _configDao.findByName(name);
         if (config == null) {
             configKey = _configDepot.get(name);
@@ -1082,11 +1082,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             defaultValue = configKey.defaultValue();
             category = configKey.category();
-            configScope = configKey.scope().toString();
+            configScope = configKey.getScopes();
         } else {
             defaultValue = config.getDefaultValue();
             category = config.getCategory();
-            configScope = config.getScope();
+            configScope = config.getScopes();
         }
 
         String scope = "";
@@ -1111,8 +1111,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("cannot handle multiple IDs, provide only one ID corresponding to the scope");
         }
 
-        if (scope != null && !scope.equals(ConfigKey.Scope.Global.toString()) && !configScope.contains(scope)) {
-            throw new InvalidParameterValueException("Invalid scope id provided for the parameter " + name);
+        if (scope != null) {
+            ConfigKey.Scope scopeVal = ConfigKey.Scope.valueOf(scope);
+            if (!scope.equals(ConfigKey.Scope.Global.toString()) && !configScope.contains(scopeVal)) {
+                throw new InvalidParameterValueException("Invalid scope id provided for the parameter " + name);
+            }
         }
 
         String newValue = null;
@@ -1222,10 +1225,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return "Invalid configuration variable.";
         }
 
-        String configScope = cfg.getScope();
+        List<ConfigKey.Scope> configScope = cfg.getScopes();
         if (scope != null) {
-            if (!configScope.contains(scope) &&
-                    !(ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN.value() && configScope.contains(ConfigKey.Scope.Account.toString()) &&
+            ConfigKey.Scope scopeVal = ConfigKey.Scope.valueOf(scope);
+            if (!configScope.contains(scopeVal) &&
+                    !(ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN.value() && configScope.contains(ConfigKey.Scope.Account) &&
                             scope.equals(ConfigKey.Scope.Domain.toString()))) {
                 logger.error("Invalid scope id provided for the parameter " + name);
                 return "Invalid scope id provided for the parameter " + name;
@@ -2521,7 +2525,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
 
         // Check if there are any non-removed hosts in the zone.
-        if (!_hostDao.listByDataCenterId(zoneId).isEmpty()) {
+        if (!_hostDao.listEnabledIdsByDataCenterId(zoneId).isEmpty()) {
             throw new CloudRuntimeException(errorMsg + "there are servers in this zone.");
         }
 
@@ -7225,15 +7229,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             sc.addAnd("id", SearchCriteria.Op.EQ, id);
         }
 
-        if (tags != null) {
-            sc.addAnd("tags", SearchCriteria.Op.EQ, tags);
-        }
-
         if (isTagged != null) {
             if (isTagged) {
                 sc.addAnd("tags", SearchCriteria.Op.NNULL);
             } else {
                 sc.addAnd("tags", SearchCriteria.Op.NULL);
+            }
+        }
+
+        if (tags != null) {
+            if (GuestType.Shared.name().equalsIgnoreCase(guestIpType)) {
+                SearchCriteria<NetworkOfferingJoinVO> tagsSc = networkOfferingJoinDao.createSearchCriteria();
+                tagsSc.addAnd("tags", SearchCriteria.Op.EQ, tags);
+                tagsSc.addOr("isDefault", SearchCriteria.Op.EQ, true);
+                sc.addAnd("tags", SearchCriteria.Op.SC, tagsSc);
+            } else {
+                sc.addAnd("tags", SearchCriteria.Op.EQ, tags);
             }
         }
 
@@ -7297,7 +7308,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 boolean addOffering = true;
                 List<Service> checkForProviders = new ArrayList<Service>();
 
-                if (checkForTags && ! checkNetworkOfferingTags(pNtwkTags, allowNullTag, offering.getTags())) {
+                if (checkForTags && !checkNetworkOfferingTags(pNtwkTags, allowNullTag, offering.getTags())) {
                     continue;
                 }
 

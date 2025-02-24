@@ -652,7 +652,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
                     continue;
                 }
                 boolean maxGuestLimit = capacityManager.checkIfHostReachMaxGuestLimit(host);
-                boolean hostHasCPUCapacity = capacityManager.checkIfHostHasCpuCapability(hostInCluster.getId(), cpu, speed);
+                boolean hostHasCPUCapacity = capacityManager.checkIfHostHasCpuCapability(hostInCluster, cpu, speed);
                 int cpuRequested = cpu * speed;
                 long ramRequested = ramSize * 1024L * 1024L;
                 ClusterDetailsVO clusterDetailsCpuOvercommit = clusterDetailsDao.findDetail(cluster.getId(), "cpuOvercommitRatio");

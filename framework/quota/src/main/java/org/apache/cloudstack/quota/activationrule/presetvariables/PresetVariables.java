@@ -39,6 +39,9 @@ public class PresetVariables {
     @PresetVariableDefinition(description = "Zone where the resource is.")
     private GenericPresetVariable zone;
 
+    @PresetVariableDefinition(description = "Configurations of the resource.")
+    private Configuration configuration;
+
     @PresetVariableDefinition(description = "A list containing the tariffs ordered by the field 'position'.")
     private List<Tariff> lastTariffs;
 
@@ -88,6 +91,14 @@ public class PresetVariables {
 
     public void setZone(GenericPresetVariable zone) {
         this.zone = zone;
+    }
+
+    public Configuration getConfiguration() {
+        return configuration;
+    }
+
+    public void setConfiguration(Configuration configuration) {
+        this.configuration = configuration;
     }
 
     public List<Tariff> getLastTariffs() {

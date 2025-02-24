@@ -56,6 +56,7 @@
         :loading="loading"
         :tabs="$route.meta.tabs" />
       <tree-view
+        v-else
         :key="treeViewKey"
         :treeData="treeData"
         :treeSelected="treeSelected"
@@ -139,6 +140,15 @@ export default {
         this.fetchData()
       }
     })
+  },
+  watch: {
+    '$route' (to, from) {
+      // When the route changes from /domain/:id to /domain or vice versa, the component is not destroyed and created again
+    // So, we need to watch the route params to fetch the data again to update the component
+      if (to.path.startsWith('/domain') && from.params.id !== to.params.id) {
+        this.fetchData()
+      }
+    }
   },
   provide () {
     return {

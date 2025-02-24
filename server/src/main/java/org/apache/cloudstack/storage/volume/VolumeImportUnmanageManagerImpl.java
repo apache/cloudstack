@@ -79,7 +79,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -206,7 +206,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         if (diskOffering.isCustomized()) {
             volumeApiService.validateCustomDiskOfferingSizeRange(volume.getVirtualSize() / ByteScaleUtils.GiB);
         }
-        if (!volumeApiService.doesTargetStorageSupportDiskOffering(pool, diskOffering.getTags())) {
+        if (!volumeApiService.doesStoragePoolSupportDiskOffering(pool, diskOffering)) {
             logFailureAndThrowException(String.format("Disk offering: %s storage tags are not compatible with selected storage pool: %s", diskOffering, pool));
         }
 
@@ -248,7 +248,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
         StorageFilerTO storageTO = new StorageFilerTO(pool);
         GetVolumesOnStorageCommand command = new GetVolumesOnStorageCommand(storageTO, volumePath, keyword);
         Answer answer = agentManager.easySend(host.getId(), command);
-        if (answer == null || !(answer instanceof GetVolumesOnStorageAnswer)) {
+        if (!(answer instanceof GetVolumesOnStorageAnswer)) {
             logFailureAndThrowException(String.format("Cannot get volumes on storage pool via host %s", host));
         }
         if (!answer.getResult()) {
@@ -366,7 +366,7 @@ public class VolumeImportUnmanageManagerImpl implements VolumeImportUnmanageServ
     }
 
     private boolean checkIfVolumeForSnapshot(StoragePoolVO pool, String fullVolumePath) {
-        List<String> absPathList = Arrays.asList(fullVolumePath);
+        List<String> absPathList = Collections.singletonList(fullVolumePath);
         return CollectionUtils.isNotEmpty(snapshotDataStoreDao.listByStoreAndInstallPaths(pool.getId(), DataStoreRole.Primary, absPathList));
     }
 

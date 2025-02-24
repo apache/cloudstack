@@ -29,8 +29,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.backup.Backup.Metric;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.veeam.VeeamClient;
@@ -42,20 +40,15 @@ import org.apache.commons.lang3.BooleanUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.event.ActionEventUtils;
-import com.cloud.event.EventTypes;
-import com.cloud.event.EventVO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.dc.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMap;
 import com.cloud.dc.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -109,6 +102,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     private AgentManager agentMgr;
     @Inject
     private VirtualMachineManager virtualMachineManager;
+    @Inject
+    private VolumeDao volumeDao;
 
     protected VeeamClient getClient(final Long zoneId) {
         try {
@@ -220,9 +215,10 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public boolean takeBackup(final VirtualMachine vm) {
+    public Pair<Boolean, Backup> takeBackup(final VirtualMachine vm) {
         final VeeamClient client = getClient(vm.getDataCenterId());
-        return client.startBackupJob(vm.getBackupExternalId());
+        Boolean result = client.startBackupJob(vm.getBackupExternalId());
+        return new Pair<>(result, null);
     }
 
     @Override
@@ -322,26 +318,30 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         return metrics;
     }
 
-    private List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
-        String backupName = getGuestBackupName(vm.getInstanceName(), vm.getUuid());
-        return getClient(vm.getDataCenterId()).listRestorePoints(backupName, vm.getInstanceName());
+    @Override
+    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric) {
+        BackupVO backup = new BackupVO();
+        backup.setVmId(vm.getId());
+        backup.setExternalId(restorePoint.getId());
+        backup.setType(restorePoint.getType());
+        backup.setDate(restorePoint.getCreated());
+        backup.setStatus(Backup.Status.BackedUp);
+        if (metric != null) {
+            backup.setSize(metric.getBackupSize());
+            backup.setProtectedSize(metric.getDataSize());
+        }
+        backup.setBackupOfferingId(vm.getBackupOfferingId());
+        backup.setAccountId(vm.getAccountId());
+        backup.setDomainId(vm.getDomainId());
+        backup.setZoneId(vm.getDataCenterId());
+        backupDao.persist(backup);
+        return backup;
     }
 
-    private Backup checkAndUpdateIfBackupEntryExistsForRestorePoint(List<Backup> backupsInDb, Backup.RestorePoint restorePoint, Backup.Metric metric) {
-        for (final Backup backup : backupsInDb) {
-            if (restorePoint.getId().equals(backup.getExternalId())) {
-                if (metric != null) {
-                    logger.debug("Update backup with [id: {}, uuid: {}, name: {}, external id: {}] from [size: {}, protected size: {}] to [size: {}, protected size: {}].",
-                            backup.getId(), backup.getUuid(), backup.getName(), backup.getExternalId(), backup.getSize(), backup.getProtectedSize(), metric.getBackupSize(), metric.getDataSize());
-
-                    ((BackupVO) backup).setSize(metric.getBackupSize());
-                    ((BackupVO) backup).setProtectedSize(metric.getDataSize());
-                    backupDao.update(backup.getId(), ((BackupVO) backup));
-                }
-                return backup;
-            }
-        }
-        return null;
+    @Override
+    public List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
+        String backupName = getGuestBackupName(vm.getInstanceName(), vm.getUuid());
+        return getClient(vm.getDataCenterId()).listRestorePoints(backupName, vm.getInstanceName());
     }
 
     @Override
@@ -378,6 +378,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                         backup.setAccountId(vm.getAccountId());
                         backup.setDomainId(vm.getDomainId());
                         backup.setZoneId(vm.getDataCenterId());
+                        backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
 
                         logger.debug("Creating a new entry in backups: [id: {}, uuid: {}, name: {}, vm_id: {}, external_id: {}, type: {}, date: {}, backup_offering_id: {}, account_id: {}, "
                                 + "domain_id: {}, zone_id: {}].", backup.getId(), backup.getUuid(), backup.getName(), backup.getVmId(), backup.getExternalId(), backup.getType(), backup.getDate(), backup.getBackupOfferingId(), backup.getAccountId(), backup.getDomainId(), backup.getZoneId());

@@ -1544,7 +1544,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             //For volumes which are 'attached' successfully, set the 'deleted' column in the usage_storage table,
             //so that the secondary storage should stop accounting and only primary will be accounted.
             SearchCriteria<UsageStorageVO> sc = _usageStorageDao.createSearchCriteria();
-            sc.addAnd("id", SearchCriteria.Op.EQ, volId);
+            sc.addAnd("entityId", SearchCriteria.Op.EQ, volId);
             sc.addAnd("storageType", SearchCriteria.Op.EQ, StorageTypes.VOLUME);
             List<UsageStorageVO> volumesVOs = _usageStorageDao.search(sc, null);
             if (volumesVOs != null) {
@@ -1599,7 +1599,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             //For Upload event add an entry to the usage_storage table.
             SearchCriteria<UsageStorageVO> sc = _usageStorageDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
-            sc.addAnd("id", SearchCriteria.Op.EQ, volId);
+            sc.addAnd("entityId", SearchCriteria.Op.EQ, volId);
+            sc.addAnd("storageType", SearchCriteria.Op.EQ, StorageTypes.VOLUME);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
             List<UsageStorageVO> volumesVOs = _usageStorageDao.search(sc, null);
 
@@ -1776,7 +1777,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         } else if (EventTypes.EVENT_LOAD_BALANCER_DELETE.equals(event.getType())) {
             SearchCriteria<UsageLoadBalancerPolicyVO> sc = _usageLoadBalancerPolicyDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.addAnd("lbId", SearchCriteria.Op.EQ, id);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
             List<UsageLoadBalancerPolicyVO> lbVOs = _usageLoadBalancerPolicyDao.search(sc, null);
             if (lbVOs.size() > 1) {
@@ -1810,7 +1811,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         } else if (EventTypes.EVENT_NET_RULE_DELETE.equals(event.getType())) {
             SearchCriteria<UsagePortForwardingRuleVO> sc = _usagePortForwardingRuleDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
-            sc.addAnd("id", SearchCriteria.Op.EQ, id);
+            sc.addAnd("pfId", SearchCriteria.Op.EQ, id);
             sc.addAnd("deleted", SearchCriteria.Op.NULL);
             List<UsagePortForwardingRuleVO> pfVOs = _usagePortForwardingRuleDao.search(sc, null);
             if (pfVOs.size() > 1) {
@@ -2111,7 +2112,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         } else if (EventTypes.EVENT_VM_SNAPSHOT_OFF_PRIMARY.equals(event.getType())) {
             QueryBuilder<UsageSnapshotOnPrimaryVO> sc = QueryBuilder.create(UsageSnapshotOnPrimaryVO.class);
             sc.and(sc.entity().getAccountId(), SearchCriteria.Op.EQ, event.getAccountId());
-            sc.and(sc.entity().getId(), SearchCriteria.Op.EQ, vmId);
+            sc.and(sc.entity().getVmId(), SearchCriteria.Op.EQ, vmId);
             sc.and(sc.entity().getName(), SearchCriteria.Op.EQ, name);
             sc.and(sc.entity().getDeleted(), SearchCriteria.Op.NULL);
             List<UsageSnapshotOnPrimaryVO> vmsnaps = sc.list();
@@ -2154,6 +2155,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (EventTypes.EVENT_NETWORK_DELETE.equals(event.getType())) {
             usageNetworksDao.remove(event.getResourceId(), event.getCreateDate());
         } else if (EventTypes.EVENT_NETWORK_CREATE.equals(event.getType())) {
+            logger.debug("Marking existing helper entries for network [{}] as removed.", event.getResourceId());
+            usageNetworksDao.remove(event.getResourceId(), event.getCreateDate());
+            logger.debug("Creating a helper entry for network [{}].", event.getResourceId());
             UsageNetworksVO usageNetworksVO = new UsageNetworksVO(event.getResourceId(), event.getOfferingId(), event.getZoneId(), event.getAccountId(), domainId, Network.State.Allocated.name(), event.getCreateDate(), null);
             usageNetworksDao.persist(usageNetworksVO);
         } else if (EventTypes.EVENT_NETWORK_UPDATE.equals(event.getType())) {
@@ -2169,10 +2173,13 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (EventTypes.EVENT_VPC_DELETE.equals(event.getType())) {
             usageVpcDao.remove(event.getResourceId(), event.getCreateDate());
         } else if (EventTypes.EVENT_VPC_CREATE.equals(event.getType())) {
+            logger.debug("Marking existing helper entries for VPC [{}] as removed.", event.getResourceId());
+            usageVpcDao.remove(event.getResourceId(), event.getCreateDate());
+            logger.debug("Creating a helper entry for VPC [{}].", event.getResourceId());
             UsageVpcVO usageVPCVO = new UsageVpcVO(event.getResourceId(), event.getZoneId(), event.getAccountId(), domainId, Vpc.State.Enabled.name(), event.getCreateDate(), null);
             usageVpcDao.persist(usageVPCVO);
         } else {
-            logger.error(String.format("Unknown event type [%s] in VPC event parser. Skipping it.", event.getType()));
+            logger.error("Unknown event type [{}] in VPC event parser. Skipping it.", event.getType());
         }
     }
 

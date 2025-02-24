@@ -16,6 +16,27 @@
 // under the License.
 package com.cloud.user;
 
+import java.net.InetAddress;
+import java.util.List;
+import java.util.Map;
+
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
+import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
+import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
+import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.springframework.stereotype.Component;
+
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.dc.DataCenter;
@@ -34,25 +55,6 @@ import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.acl.SecurityChecker.AccessType;
-import org.apache.cloudstack.api.command.admin.account.CreateAccountCmd;
-import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
-import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
-import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
-import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
-import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
-import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
-import org.apache.cloudstack.api.response.UserTwoFactorAuthenticationSetupResponse;
-import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.springframework.stereotype.Component;
-
-import javax.naming.ConfigurationException;
-import java.net.InetAddress;
-import java.util.List;
-import java.util.Map;
 
 @Component
 public class MockAccountManagerImpl extends ManagerBase implements Manager, AccountManager {
@@ -495,5 +497,10 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
 
     @Override
     public void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword, boolean skipCurrentPassValidation) {
+    }
+
+    @Override
+    public UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user) {
+        return null;
     }
 }

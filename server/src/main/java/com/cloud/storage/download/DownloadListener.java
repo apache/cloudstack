@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage.download;
 
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -23,10 +24,6 @@ import java.util.Map;
 import java.util.Timer;
 
 import javax.inject.Inject;
-
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -41,6 +38,10 @@ import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
+import org.apache.cloudstack.utils.cache.LazyCache;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -54,7 +55,7 @@ import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
 import com.cloud.storage.download.DownloadState.DownloadEvent;
@@ -136,6 +137,20 @@ public class DownloadListener implements Listener {
     @Inject
     private VolumeService _volumeSrv;
 
+    private LazyCache<Long, List<Hypervisor.HypervisorType>> zoneHypervisorsCache;
+
+    private List<Hypervisor.HypervisorType> listAvailHypervisorInZone(long zoneId) {
+        if (_resourceMgr == null) {
+            return Collections.emptyList();
+        }
+        return _resourceMgr.listAvailHypervisorInZone(zoneId);
+    }
+
+    protected void initZoneHypervisorsCache() {
+        zoneHypervisorsCache =
+                new LazyCache<>(32, 30, this::listAvailHypervisorInZone);
+    }
+
     // TODO: this constructor should be the one used for template only, remove other template constructor later
     public DownloadListener(EndPoint ssAgent, DataStore store, DataObject object, Timer timer, DownloadMonitorImpl downloadMonitor, DownloadCommand cmd,
             AsyncCompletionCallback<DownloadAnswer> callback) {
@@ -151,6 +166,12 @@ public class DownloadListener implements Listener {
         _callback = callback;
         DownloadAnswer answer = new DownloadAnswer("", Status.NOT_DOWNLOADED);
         callback(answer);
+        initZoneHypervisorsCache();
+    }
+
+    public DownloadListener(DownloadMonitorImpl monitor) {
+        _downloadMonitor = monitor;
+        initZoneHypervisorsCache();
     }
 
     public AsyncCompletionCallback<DownloadAnswer> getCallback() {
@@ -210,10 +231,6 @@ public class DownloadListener implements Listener {
     public void log(String message, Level level) {
         logger.log(level, "{}, {}: {}({}) at host [id: {}, uuid: {}]",
                 message, object.getType(), object.getUuid(), object, _ssAgent.getId(), _ssAgent.getUuid());
-    }
-
-    public DownloadListener(DownloadMonitorImpl monitor) {
-        _downloadMonitor = monitor;
     }
 
     @Override
@@ -280,14 +297,15 @@ public class DownloadListener implements Listener {
     @Override
     public void processConnect(Host agent, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
         if (cmd instanceof StartupRoutingCommand) {
-            List<HypervisorType> hypers = _resourceMgr.listAvailHypervisorInZone(agent.getId(), agent.getDataCenterId());
-            HypervisorType hostHyper = agent.getHypervisorType();
-            if (hypers.contains(hostHyper)) {
+            List<Hypervisor.HypervisorType> hypervisors = zoneHypervisorsCache.get(agent.getDataCenterId());
+            Hypervisor.HypervisorType hostHyper = agent.getHypervisorType();
+            if (hypervisors.contains(hostHyper)) {
                 return;
             }
             _imageSrv.handleSysTemplateDownload(hostHyper, agent.getDataCenterId());
             // update template_zone_ref for cross-zone templates
             _imageSrv.associateCrosszoneTemplatesToZone(agent.getDataCenterId());
+
         }
         /* This can be removed
         else if ( cmd instanceof StartupStorageCommand) {
