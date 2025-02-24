@@ -111,23 +111,23 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class,
             description = "the ID of the service offering for the virtual machines in the cluster.")
-    protected Long serviceOfferingId;
+    private Long serviceOfferingId;
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.NODE_TYPE_OFFERING_MAP, type = CommandType.MAP,
             description = "(Optional) Node Type to Service Offering ID mapping. If provided, it overrides the serviceofferingid parameter")
-    protected Map<String, Map<String, String>> serviceOfferingNodeTypeMap;
+    private Map<String, Map<String, String>> serviceOfferingNodeTypeMap;
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.NODE_TYPE_TEMPLATE_MAP, type = CommandType.MAP,
             description = "(Optional) Node Type to Template ID mapping. If provided, it overrides the default template: System VM template")
-    protected Map<String, Map<String, String>> templateNodeTypeMap;
+    private Map<String, Map<String, String>> templateNodeTypeMap;
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.ETCD_NODES, type = CommandType.LONG,
             description = "(Optional) Number of Kubernetes cluster etcd nodes, default is 0." +
                     "In case the number is greater than 0, etcd nodes are separate from master nodes and are provisioned accordingly")
-    protected Long etcdNodes;
+    private Long etcdNodes;
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the" +

@@ -282,7 +282,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             }
             ServiceOffering nodeOffering = getServiceOfferingForNodeTypeOnCluster(nodeType, kubernetesCluster);
             if (logger.isDebugEnabled()) {
-                logger.debug(String.format("Checking deployment destination for %s nodes on Kubernetes cluster : %s in zone : %s", nodeType.name(), kubernetesCluster.getName(), zone.getName()));
+                logger.debug("Checking deployment destination for {} nodes on Kubernetes cluster : {} in zone : {}", nodeType.name(), kubernetesCluster.getName(), zone.getName());
             }
             DeployDestination planForNodeType = plan(nodes, zone, nodeOffering, domainId, accountId, hypervisorType);
             destinationMap.put(nodeType.name(), planForNodeType);

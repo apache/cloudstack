@@ -1927,7 +1927,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         String[] keys = getServiceUserKeys(kubernetesCluster);
         KubernetesClusterScaleWorker scaleWorker =
-            new KubernetesClusterScaleWorker(kubernetesClusterDao.findById(cmd.getId()),
+            new KubernetesClusterScaleWorker(kubernetesCluster,
                 nodeToOfferingMap,
                 cmd.getClusterSize(),
                 cmd.getNodeIds(),
@@ -1942,7 +1942,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
     /**
      * Creates a map for the requested node type service offering
-     * For the node type ALL: Every node is scaled to the same offering
+     * For the node type DEFAULT: Every node is scaled to the same offering
      */
     protected Map<String, ServiceOffering> createNodeTypeToServiceOfferingMap(Map<String, Long> idsMapping,
                                                                               Long serviceOfferingId, KubernetesClusterVO kubernetesCluster) {

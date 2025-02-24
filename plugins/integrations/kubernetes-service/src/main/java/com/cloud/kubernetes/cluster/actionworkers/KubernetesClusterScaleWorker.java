@@ -528,7 +528,8 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
         scaleTimeoutTime = System.currentTimeMillis() + KubernetesClusterService.KubernetesClusterScaleTimeout.value() * 1000;
         final long originalClusterSize = kubernetesCluster.getNodeCount();
-        if (serviceOfferingNodeTypeMap.containsKey(DEFAULT.name())) {
+        boolean hasDefaultOffering = serviceOfferingNodeTypeMap.containsKey(DEFAULT.name());
+        if (hasDefaultOffering) {
             final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
             if (existingServiceOffering == null) {
                 logAndThrow(Level.ERROR, String.format("Scaling Kubernetes cluster : %s failed, service offering for the Kubernetes cluster not found!", kubernetesCluster.getName()));
@@ -536,7 +537,6 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
         }
 
         final boolean autoscalingChanged = isAutoscalingChanged();
-        boolean hasDefaultOffering = serviceOfferingNodeTypeMap.containsKey(DEFAULT.name());
         Long existingDefaultOfferingId = kubernetesCluster.getServiceOfferingId();
         ServiceOffering defaultServiceOffering = serviceOfferingNodeTypeMap.getOrDefault(DEFAULT.name(), null);
 

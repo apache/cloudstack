@@ -167,7 +167,7 @@ public class KubernetesServiceHelperImpl extends AdapterBase implements Kubernet
 
     protected void addNodeTypeOfferingEntry(String nodeTypeStr, String serviceOfferingUuid, ServiceOffering serviceOffering, Map<String, Long> mapping) {
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("Node Type: '%s' should use Service Offering ID: '%s'", nodeTypeStr, serviceOfferingUuid));
+            logger.debug("Node Type: '{}' should use Service Offering ID: '{}'", nodeTypeStr, serviceOfferingUuid);
         }
         KubernetesClusterNodeType nodeType = KubernetesClusterNodeType.valueOf(nodeTypeStr.toUpperCase());
         mapping.put(nodeType.name(), serviceOffering.getId());
