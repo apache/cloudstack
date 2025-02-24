@@ -50,8 +50,7 @@ public interface BackupProvider {
     /**
      * Assign a VM to a backup offering or policy
      * @param vm
-     * @param backup
-     * @param policy
+     * @param backupOffering
      * @return
      */
     boolean assignVMToBackupOffering(VirtualMachine vm, BackupOffering backupOffering);
@@ -72,14 +71,14 @@ public interface BackupProvider {
     /**
      * Starts and creates an adhoc backup process
      * for a previously registered VM backup
-     * @param backup
+     * @param vm
      * @return
      */
     Pair<Boolean, Backup> takeBackup(VirtualMachine vm);
 
     /**
      * Delete an existing backup
-     * @param backuo The backup to exclude
+     * @param backup The backup to exclude
      * @param forced Indicates if backup will be force removed or not
      * @return
      */

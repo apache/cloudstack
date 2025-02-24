@@ -17,7 +17,6 @@
 package org.apache.cloudstack.backup;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
@@ -38,7 +37,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.backup.dao.BackupDao;
-import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -72,13 +70,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     private BackupRepositoryDao backupRepositoryDao;
 
     @Inject
-    private BackupOfferingDao backupOfferingDao;
-
-    @Inject
     private HostDao hostDao;
-
-    @Inject
-    private ClusterDao clusterDao;
 
     @Inject
     private VolumeDao volumeDao;
@@ -167,7 +159,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             command.setVolumePaths(volumePaths);
         }
 
-        BackupAnswer answer = null;
+        BackupAnswer answer;
         try {
             answer = (BackupAnswer) agentManager.send(host.getId(), command);
         } catch (AgentUnavailableException e) {
@@ -205,7 +197,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
                 virtualSize += volume.getSize();
             }
         }
-        backup.setProtectedSize(Long.valueOf(virtualSize));
+        backup.setProtectedSize(virtualSize);
         backup.setStatus(Backup.Status.BackingUp);
         backup.setBackupOfferingId(vm.getBackupOfferingId());
         backup.setAccountId(vm.getAccountId());
@@ -232,7 +224,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setVmExists(vm.getRemoved() == null);
         restoreCommand.setVmState(vm.getState());
 
-        BackupAnswer answer = null;
+        BackupAnswer answer;
         try {
             answer = (BackupAnswer) agentManager.send(host.getId(), restoreCommand);
         } catch (AgentUnavailableException e) {
@@ -299,7 +291,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setVmState(vmNameAndState.second());
         restoreCommand.setRestoreVolumeUUID(volumeUuid);
 
-        BackupAnswer answer = null;
+        BackupAnswer answer;
         try {
             answer = (BackupAnswer) agentManager.send(hostVO.getId(), restoreCommand);
         } catch (AgentUnavailableException e) {
@@ -351,7 +343,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         DeleteBackupCommand command = new DeleteBackupCommand(backup.getExternalId(), backupRepository.getType(),
                 backupRepository.getAddress(), backupRepository.getMountOptions());
 
-        BackupAnswer answer = null;
+        BackupAnswer answer;
         try {
             answer = (BackupAnswer) agentManager.send(host.getId(), command);
         } catch (AgentUnavailableException e) {
@@ -364,7 +356,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             return backupDao.remove(backup.getId());
         }
 
-        logger.debug("There was an error removing the backup with id " + backup.getId());
+        logger.debug("There was an error removing the backup with id {}", backup.getId());
         return false;
     }
 
