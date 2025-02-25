@@ -75,27 +75,27 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
             "backup.plugin.veeam.version", "0",
             "The version of Veeam backup and recovery. CloudStack will get Veeam server version via PowerShell commands if it is 0 or not set", true, ConfigKey.Scope.Zone);
 
-    private ConfigKey<String> VeeamUsername = new ConfigKey<>("Advanced", String.class,
+    private final ConfigKey<String> VeeamUsername = new ConfigKey<>("Advanced", String.class,
             "backup.plugin.veeam.username", "administrator",
             "The Veeam backup and recovery username.", true, ConfigKey.Scope.Zone);
 
-    private ConfigKey<String> VeeamPassword = new ConfigKey<>("Secure", String.class,
+    private final ConfigKey<String> VeeamPassword = new ConfigKey<>("Secure", String.class,
             "backup.plugin.veeam.password", "",
             "The Veeam backup and recovery password.", true, ConfigKey.Scope.Zone);
 
-    private ConfigKey<Boolean> VeeamValidateSSLSecurity = new ConfigKey<>("Advanced", Boolean.class, "backup.plugin.veeam.validate.ssl", "false",
+    private final ConfigKey<Boolean> VeeamValidateSSLSecurity = new ConfigKey<>("Advanced", Boolean.class, "backup.plugin.veeam.validate.ssl", "false",
             "When set to true, this will validate the SSL certificate when connecting to https/ssl enabled Veeam API service.", true, ConfigKey.Scope.Zone);
 
-    private ConfigKey<Integer> VeeamApiRequestTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.request.timeout", "300",
+    private final ConfigKey<Integer> VeeamApiRequestTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.request.timeout", "300",
             "The Veeam B&R API request timeout in seconds.", true, ConfigKey.Scope.Zone);
 
-    private static ConfigKey<Integer> VeeamRestoreTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.restore.timeout", "600",
+    private static final ConfigKey<Integer> VeeamRestoreTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.restore.timeout", "600",
             "The Veeam B&R API restore backup timeout in seconds.", true, ConfigKey.Scope.Zone);
 
-    private static ConfigKey<Integer> VeeamTaskPollInterval = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.task.poll.interval", "5",
+    private static final ConfigKey<Integer> VeeamTaskPollInterval = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.task.poll.interval", "5",
             "The time interval in seconds when the management server polls for Veeam task status.", true, ConfigKey.Scope.Zone);
 
-    private static ConfigKey<Integer> VeeamTaskPollMaxRetry = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.task.poll.max.retry", "120",
+    private static final ConfigKey<Integer> VeeamTaskPollMaxRetry = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.task.poll.max.retry", "120",
             "The max number of retrying times when the management server polls for Veeam task status.", true, ConfigKey.Scope.Zone);
 
     @Inject
@@ -202,7 +202,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         final VmwareDatacenter vmwareDC = findVmwareDatacenterForVM(vm);
         try {
             if (!client.removeVMFromVeeamJob(vm.getBackupExternalId(), vm.getInstanceName(), vmwareDC.getVcenterHost())) {
-                logger.warn("Failed to remove VM from Veeam Job id: " + vm.getBackupExternalId());
+                logger.warn("Failed to remove VM from Veeam Job id: {}", vm.getBackupExternalId());
             }
         } catch (Exception e) {
             logger.debug("VM was removed from the job so could not remove again, trying to delete the veeam job now.", e);
@@ -210,7 +210,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
         final String clonedJobName = getGuestBackupName(vm.getInstanceName(), vm.getUuid());
         if (!client.deleteJobAndBackup(clonedJobName)) {
-            logger.warn("Failed to remove Veeam job and backup for job: " + clonedJobName);
+            logger.warn("Failed to remove Veeam job and backup for job: {}", clonedJobName);
             throw new CloudRuntimeException("Failed to delete Veeam B&R job and backup, an operation may be in progress. Please try again after some time.");
         }
         client.syncBackupRepository();
@@ -236,9 +236,9 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
             throw new CloudRuntimeException(String.format("Could not find any VM associated with the Backup [uuid: %s, name: %s, externalId: %s].", backup.getUuid(), backup.getName(), backup.getExternalId()));
         }
         if (!forced) {
-            logger.debug(String.format("Veeam backup provider does not have a safe way to remove a single restore point, which results in all backup chain being removed. "
-                    + "More information about this limitation can be found in the links: [%s, %s].", "https://forums.veeam.com/powershell-f26/removing-a-single-restorepoint-t21061.html",
-                    "https://helpcenter.veeam.com/docs/backup/vsphere/retention_separate_vms.html?ver=110"));
+            logger.debug("Veeam backup provider does not have a safe way to remove a single restore point, which results in all backup chain being removed. "
+                    + "More information about this limitation can be found in the links: [{}, {}].", "https://forums.veeam.com/powershell-f26/removing-a-single-restorepoint-t21061.html",
+                    "https://helpcenter.veeam.com/docs/backup/vsphere/retention_separate_vms.html?ver=110");
             throw new CloudRuntimeException("Veeam backup provider does not have a safe way to remove a single restore point, which results in all backup chain being removed. "
                     + "Use forced:true to skip this verification and remove the complete backup chain.");
         }
@@ -265,7 +265,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         try {
             return getClient(vm.getDataCenterId()).restoreFullVM(vm.getInstanceName(), restorePointId);
         } catch (Exception ex) {
-            logger.error(String.format("Failed to restore Full VM due to: %s. Retrying after some preparation", ex.getMessage()));
+            logger.error("Failed to restore Full VM due to: {}. Retrying after some preparation", ex.getMessage());
             prepareForBackupRestoration(vm);
             return getClient(vm.getDataCenterId()).restoreFullVM(vm.getInstanceName(), restorePointId);
         }
@@ -275,7 +275,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         if (!Hypervisor.HypervisorType.VMware.equals(vm.getHypervisorType())) {
             return;
         }
-        logger.info("Preparing for restoring VM " + vm);
+        logger.info("Preparing for restoring VM {}", vm);
         PrepareForBackupRestorationCommand command = new PrepareForBackupRestorationCommand(vm.getInstanceName());
         Long hostId = virtualMachineManager.findClusterAndHostIdForVm(vm.getId()).second();
         if (hostId == null) {
@@ -284,7 +284,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         try {
             Answer answer = agentMgr.easySend(hostId, command);
             if (answer != null && answer.getResult()) {
-                logger.info("Succeeded to prepare for restoring VM " + vm);
+                logger.info("Succeeded to prepare for restoring VM {}", vm);
             } else {
                 throw new CloudRuntimeException(String.format("Failed to prepare for restoring VM %s. details: %s", vm,
                         (answer != null ? answer.getDetails() : null)));
@@ -310,7 +310,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         }
 
         List<String> vmUuids = vms.stream().filter(Objects::nonNull).map(VirtualMachine::getUuid).collect(Collectors.toList());
-        logger.debug(String.format("Get Backup Metrics for VMs: [%s].", String.join(", ", vmUuids)));
+        logger.debug("Get Backup Metrics for VMs: [{}].", String.join(", ", vmUuids));
 
         final Map<String, Backup.Metric> backendMetrics = getClient(zoneId).getBackupMetrics();
         for (final VirtualMachine vm : vms) {
@@ -328,54 +328,12 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
     @Override
     public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric) {
-        BackupVO backup = new BackupVO();
-        backup.setVmId(vm.getId());
-        backup.setExternalId(restorePoint.getId());
-        backup.setType(restorePoint.getType());
-        backup.setDate(restorePoint.getCreated());
-        backup.setStatus(Backup.Status.BackedUp);
-        if (metric != null) {
-            backup.setSize(metric.getBackupSize());
-            backup.setProtectedSize(metric.getDataSize());
-        }
-        backup.setBackupOfferingId(vm.getBackupOfferingId());
-        backup.setAccountId(vm.getAccountId());
-        backup.setDomainId(vm.getDomainId());
-        backup.setZoneId(vm.getDataCenterId());
-        backupDao.persist(backup);
-        return backup;
-    }
-
-    @Override
-    public List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
-        String backupName = getGuestBackupName(vm.getInstanceName(), vm.getUuid());
-        return getClient(vm.getDataCenterId()).listRestorePoints(backupName, vm.getInstanceName());
-    }
-
-    private Backup checkAndUpdateIfBackupEntryExistsForRestorePoint(List<Backup> backupsInDb, Backup.RestorePoint restorePoint, Backup.Metric metric) {
-        for (final Backup backup : backupsInDb) {
-            if (restorePoint.getId().equals(backup.getExternalId())) {
-                if (metric != null) {
-                    logger.debug("Update backup with [id: {}, uuid: {}, name: {}, external id: {}] from [size: {}, protected size: {}] to [size: {}, protected size: {}].",
-                            backup.getId(), backup.getUuid(), backup.getName(), backup.getExternalId(), backup.getSize(), backup.getProtectedSize(), metric.getBackupSize(), metric.getDataSize());
-
-                    ((BackupVO) backup).setSize(metric.getBackupSize());
-                    ((BackupVO) backup).setProtectedSize(metric.getDataSize());
-                    backupDao.update(backup.getId(), ((BackupVO) backup));
-                }
-                return backup;
-            }
-        }
-        return null;
-    }
-
-    @Override
-    public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
         List<Backup.RestorePoint> restorePoints = listRestorePoints(vm);
         if (CollectionUtils.isEmpty(restorePoints)) {
             logger.debug("Can't find any restore point to VM: {}", vm);
-            return;
+            return null;
         }
+        final Backup[] persistedBackup = new Backup[1];
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
@@ -407,19 +365,43 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
                         logger.debug("Creating a new entry in backups: [id: {}, uuid: {}, name: {}, vm_id: {}, external_id: {}, type: {}, date: {}, backup_offering_id: {}, account_id: {}, "
                                 + "domain_id: {}, zone_id: {}].", backup.getId(), backup.getUuid(), backup.getName(), backup.getVmId(), backup.getExternalId(), backup.getType(), backup.getDate(), backup.getBackupOfferingId(), backup.getAccountId(), backup.getDomainId(), backup.getZoneId());
-                        backupDao.persist(backup);
+                        persistedBackup[0] = backupDao.persist(backup);
 
                         ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_VM_BACKUP_CREATE,
-                                String.format("Created backup %s for VM ID: %s", backup.getUuid(), vm.getUuid()),
+                                String.format("Created backup %s for VM ID: %s", persistedBackup[0].getUuid(), vm.getUuid()),
                                 vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),0);
                     }
                 }
                 for (final Long backupIdToRemove : removeList) {
-                    logger.warn(String.format("Removing backup with ID: [%s].", backupIdToRemove));
+                    logger.warn("Removing backup with ID: [{}].", backupIdToRemove);
                     backupDao.remove(backupIdToRemove);
                 }
             }
         });
+        return persistedBackup[0];
+    }
+
+    @Override
+    public List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
+        String backupName = getGuestBackupName(vm.getInstanceName(), vm.getUuid());
+        return getClient(vm.getDataCenterId()).listRestorePoints(backupName, vm.getInstanceName());
+    }
+
+    private Backup checkAndUpdateIfBackupEntryExistsForRestorePoint(List<Backup> backupsInDb, Backup.RestorePoint restorePoint, Backup.Metric metric) {
+        for (final Backup backup : backupsInDb) {
+            if (restorePoint.getId().equals(backup.getExternalId())) {
+                if (metric != null) {
+                    logger.debug("Update backup with [id: {}, uuid: {}, name: {}, external id: {}] from [size: {}, protected size: {}] to [size: {}, protected size: {}].",
+                            backup.getId(), backup.getUuid(), backup.getName(), backup.getExternalId(), backup.getSize(), backup.getProtectedSize(), metric.getBackupSize(), metric.getDataSize());
+
+                    ((BackupVO) backup).setSize(metric.getBackupSize());
+                    ((BackupVO) backup).setProtectedSize(metric.getDataSize());
+                    backupDao.update(backup.getId(), ((BackupVO) backup));
+                }
+                return backup;
+            }
+        }
+        return null;
     }
 
     @Override

@@ -101,7 +101,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             // Try to find any Up host in the same cluster
             for (final Host hostInCluster : hostDao.findHypervisorHostInCluster(host.getClusterId())) {
                 if (hostInCluster.getStatus() == Status.Up) {
-                    LOG.debug("Found Host {}", hostInCluster);
+                    LOG.debug("Found Host {} in cluster {}", hostInCluster, host.getClusterId());
                     return hostInCluster;
                 }
             }
@@ -109,7 +109,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         // Try to find any Host in the zone
         for (final HostVO hostInZone : hostDao.listByDataCenterIdAndHypervisorType(host.getDataCenterId(), Hypervisor.HypervisorType.KVM)) {
             if (hostInZone.getStatus() == Status.Up) {
-                LOG.debug("Found Host {}", hostInZone);
+                LOG.debug("Found Host {} in zone {}", hostInZone, host.getDataCenterId());
                 return hostInZone;
             }
         }
@@ -405,11 +405,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public boolean willDeleteBackupsOnOfferingRemoval() {
         return false;
-    }
-
-    @Override
-    public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
-        // TODO: check and sum/return backups metrics on per VM basis
     }
 
     @Override
