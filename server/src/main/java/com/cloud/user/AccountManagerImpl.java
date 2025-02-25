@@ -3016,7 +3016,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             users = List.of(cmd.getUserId());
         } else {
             User callerUser = CallContext.current().getCallingUser();
-            users = cmd.listAll() && isAdmin(callerUser.getAccountId()) ? queryService.searchForAccessableUsers() : List.of(callerUser.getId());
+            users = cmd.listAll() && isAdmin(callerUser.getAccountId()) ? queryService.searchForAccessibleUsers() : List.of(callerUser.getId());
         }
 
         Pair<List<ApiKeyPairVO>,  Integer> keyPairs = apiKeyPairDao.listByUserIdsPaginated(users, cmd);
@@ -3119,7 +3119,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (!isAdmin(callerUser.getAccountId()) && callerUser.getId() != userId) {
             throw new PermissionDeniedException("Only admins can operate on API keys owned by other users");
         }
-        List<Long> accessibleUsers = queryService.searchForAccessableUsers();
+        List<Long> accessibleUsers = queryService.searchForAccessibleUsers();
         User desiredUser = _userDao.getUser(userId);
         if (accessibleUsers.stream().noneMatch(u -> Objects.equals(u, userId))) {
             throw new PermissionDeniedException(String.format("Could not perform operation because calling user has less permissions " +

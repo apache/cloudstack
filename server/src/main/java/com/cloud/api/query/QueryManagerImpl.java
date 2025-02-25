@@ -857,7 +857,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     }
 
     @Override
-    public List<Long> searchForAccessableUsers() {
+    public List<Long> searchForAccessibleUsers() {
         List<Long> permittedAccounts = new ArrayList<>();
         Account callingAccount = CallContext.current().getCallingAccount();
         Filter searchFilter = new Filter(UserAccountJoinVO.class, "id", true);
