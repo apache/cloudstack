@@ -22,7 +22,6 @@ import java.util.List;
 
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.hypervisor.Hypervisor;
@@ -35,7 +34,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO, Long> implements GuestOSHypervisorDao {
-    private static final Logger s_logger = Logger.getLogger(GuestOSHypervisorDaoImpl.class);
 
     protected final SearchBuilder<GuestOSHypervisorVO> guestOsSearch;
     protected final SearchBuilder<GuestOSHypervisorVO> mappingSearch;
@@ -92,14 +90,14 @@ public class GuestOSHypervisorDaoImpl extends GenericDaoBase<GuestOSHypervisorVO
         String guestOs = guestOsId != null ? String.format("guest OS ID: %d", guestOsId) : String.format("guest OS ID: %s", guestOsName);
         String parentVersion = CloudStackVersion.getVMwareParentVersion(hypervisorVersion);
         if (parentVersion == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.info(String.format("Mapping for %s for hypervisor: %s with version: %s can not be found. Parent version is also null",
+            if (logger.isDebugEnabled()) {
+                logger.info(String.format("Mapping for %s for hypervisor: %s with version: %s can not be found. Parent version is also null",
                         guestOs, hypervisorType, hypervisorVersion));
             }
             return null;
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Mapping for %s for hypervisor: %s with version: %s can not be found. " +
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Mapping for %s for hypervisor: %s with version: %s can not be found. " +
                     "Trying to find one for the parent version: %s", guestOs, hypervisorType, hypervisorVersion, parentVersion));
         }
         return guestOsId != null ?

@@ -62,13 +62,25 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item name="cidr" ref="cidr">
+        <ownership-selection v-if="isAdminOrDomainAdmin()" @fetch-owner="fetchOwnerOptions"/>
+        <a-form-item name="cidr" ref="cidr" v-if="selectedVpcOffering && (selectedVpcOffering.networkmode !== 'ROUTED' || isAdmin())">
           <template #label>
             <tooltip-label :title="$t('label.cidr')" :tooltip="apiParams.cidr.description"/>
           </template>
           <a-input
             v-model:value="form.cidr"
             :placeholder="apiParams.cidr.description"/>
+        </a-form-item>
+        <a-form-item
+          v-if="selectedVpcOffering && selectedVpcOffering.networkmode === 'ROUTED'"
+          ref="cidrsize"
+          name="cidrsize">
+          <template #label>
+            <tooltip-label :title="$t('label.cidrsize')" :tooltip="apiParams.cidrsize.description"/>
+          </template>
+          <a-input
+            v-model:value="form.cidrsize"
+            :placeholder="apiParams.cidrsize.description"/>
         </a-form-item>
         <a-form-item name="networkdomain" ref="networkdomain">
           <template #label>
@@ -93,6 +105,25 @@
             @change="handleVpcOfferingChange" >
             <a-select-option :value="offering.id" v-for="offering in vpcOfferings" :key="offering.id" :label="offering.name">
               {{ offering.name }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item ref="asnumber" name="asnumber" v-if="isASNumberRequired()">
+          <template #label>
+            <tooltip-label :title="$t('label.asnumber')" :tooltip="apiParams.asnumber.description"/>
+          </template>
+          <a-select
+            v-model:value="form.asnumber"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="asNumberLoading"
+            :placeholder="apiParams.asnumber.description"
+            @change="val => { handleASNumberChange(val) }">
+            <a-select-option v-for="(opt, optIndex) in asNumbersZone" :key="optIndex" :label="opt.asnumber">
+              {{ opt.asnumber }}
             </a-select-option>
           </a-select>
         </a-form-item>
@@ -155,7 +186,7 @@
             </a-form-item>
           </a-col>
         </a-row>
-        <a-form-item v-if="selectedNetworkOfferingSupportsSourceNat" name="sourcenatipaddress" ref="sourcenatipaddress">
+        <a-form-item v-if="selectedNetworkOfferingSupportsSourceNat && !isNsxNetwork" name="sourcenatipaddress" ref="sourcenatipaddress">
           <template #label>
             <tooltip-label :title="$t('label.routerip')" :tooltip="apiParams.sourcenatipaddress?.description"/>
           </template>
@@ -180,12 +211,15 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
 
 export default {
   name: 'CreateVpc',
   components: {
+    OwnershipSelection,
     ResourceIcon,
     TooltipLabel
   },
@@ -193,6 +227,7 @@ export default {
     return {
       loading: false,
       loadingZone: false,
+      selectedZone: {},
       loadingOffering: false,
       setMTU: false,
       zoneid: '',
@@ -201,7 +236,11 @@ export default {
       publicMtuMax: 1500,
       minMTU: 68,
       errorPublicMtu: '',
-      selectedVpcOffering: {}
+      selectedVpcOffering: {},
+      isNsxNetwork: false,
+      asNumberLoading: false,
+      asNumbersZone: [],
+      selectedAsNumber: 0
     }
   },
   beforeCreate () {
@@ -231,6 +270,7 @@ export default {
     }
   },
   methods: {
+    isAdminOrDomainAdmin,
     initForm () {
       this.formRef = ref()
       this.form = reactive({
@@ -239,12 +279,20 @@ export default {
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
         zoneid: [{ required: true, message: this.$t('label.required') }],
-        cidr: [{ required: true, message: this.$t('message.error.required.input') }],
         vpcofferingid: [{ required: true, message: this.$t('label.required') }]
       })
     },
+    isASNumberRequired () {
+      return !this.isObjectEmpty(this.selectedVpcOffering) && this.selectedVpcOffering.specifyasnumber && this.selectedVpcOffering?.routingmode.toLowerCase() === 'dynamic'
+    },
+    isObjectEmpty (obj) {
+      return !(obj !== null && obj !== undefined && Object.keys(obj).length > 0 && obj.constructor === Object)
+    },
     async fetchData () {
       this.fetchZones()
+    },
+    isAdmin () {
+      return isAdmin()
     },
     fetchPublicMtuForZone () {
       api('listConfigurations', {
@@ -278,14 +326,33 @@ export default {
         if (zone.id === value) {
           this.setMTU = zone?.allowuserspecifyvrmtu || false
           this.publicMtuMax = zone?.routerpublicinterfacemaxmtu || 1500
+          this.isNsxNetwork = zone?.isnsxenabled || false
+          this.selectedZone = zone
         }
       }
       this.fetchOfferings()
+      if (this.isASNumberRequired()) {
+        this.fetchZoneASNumbers()
+      }
+    },
+    fetchZoneASNumbers () {
+      const params = {}
+      this.asNumberLoading = true
+      params.zoneid = this.selectedZone.id
+      params.isallocated = false
+      api('listASNumbers', params).then(json => {
+        this.asNumbersZone = json.listasnumbersresponse.asnumber
+        this.asNumberLoading = false
+      })
     },
     fetchOfferings () {
       this.loadingOffering = true
       api('listVPCOfferings', { zoneid: this.form.zoneid, state: 'Enabled' }).then((response) => {
         this.vpcOfferings = response.listvpcofferingsresponse.vpcoffering
+        this.vpcOfferings = this.vpcOfferings.filter(offering => offering.fornsx === this.selectedZone.isnsxenabled)
+        if (!this.selectedZone.routedmodeenabled) {
+          this.vpcOfferings = this.vpcOfferings.filter(offering => offering.networkmode !== 'ROUTED')
+        }
         this.form.vpcofferingid = this.vpcOfferings[0].id || ''
         this.selectedVpcOffering = this.vpcOfferings[0] || {}
       }).finally(() => {
@@ -296,6 +363,28 @@ export default {
         }
       })
     },
+    fetchOwnerOptions (OwnerOptions) {
+      this.owner = {
+        projectid: null,
+        domainid: this.$store.getters.userInfo.domainid,
+        account: this.$store.getters.userInfo.account
+      }
+      if (OwnerOptions.selectedAccountType === 'Account') {
+        if (!OwnerOptions.selectedAccount) {
+          return
+        }
+        this.owner.account = OwnerOptions.selectedAccount
+        this.owner.domainid = OwnerOptions.selectedDomain
+        this.owner.projectid = null
+      } else if (OwnerOptions.selectedAccountType === 'Project') {
+        if (!OwnerOptions.selectedProject) {
+          return
+        }
+        this.owner.account = null
+        this.owner.domainid = null
+        this.owner.projectid = OwnerOptions.selectedProject
+      }
+    },
     handleVpcOfferingChange (value) {
       this.selectedVpcOffering = {}
       if (!value) {
@@ -305,9 +394,16 @@ export default {
         if (offering.id === value) {
           this.selectedVpcOffering = offering
           this.form.vpcofferingid = offering.id
+          if (this.isASNumberRequired()) {
+            this.fetchZoneASNumbers()
+          }
           return
         }
       }
+    },
+    handleASNumberChange (selectedIndex) {
+      this.selectedAsNumber = this.asNumbersZone[selectedIndex].asnumber
+      this.form.asnumber = this.selectedAsNumber
     },
     closeAction () {
       this.$emit('close-action')
@@ -328,7 +424,14 @@ export default {
       if (this.loading) return
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-        const params = {}
+        var params = {}
+        if (this.owner?.account) {
+          params.account = this.owner.account
+          params.domainid = this.owner.domainid
+        } else if (this.owner?.projectid) {
+          params.domainid = this.owner.domainid
+          params.projectid = this.owner.projectid
+        }
         for (const key in values) {
           const input = values[key]
           if (input === '' || input === null || input === undefined) {
@@ -336,9 +439,29 @@ export default {
           }
           params[key] = input
         }
+        if (this.selectedVpcOffering.networkmode === 'ROUTED') {
+          if ((values.cidr === undefined || values.cidr === '') && (values.cidrsize === undefined || values.cidrsize === '')) {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.error.cidr.or.cidrsize')
+            })
+            return
+          }
+        } else {
+          if (values.cidr === undefined || values.cidr === '') {
+            this.$notification.error({
+              message: this.$t('message.request.failed'),
+              description: this.$t('message.error.cidr')
+            })
+            return
+          }
+        }
+        if ('asnumber' in values && this.isASNumberRequired()) {
+          params.asnumber = values.asnumber
+        }
         this.loading = true
         const title = this.$t('label.add.vpc')
-        const description = this.$t('message.success.add.vpc.network')
+        const description = this.$t('message.success.add.vpc')
         api('createVPC', params).then(json => {
           const jobId = json.createvpcresponse.jobid
           if (jobId) {

@@ -47,7 +47,6 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceIcon;
@@ -58,7 +57,6 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "listVirtualMachines", description = "List the virtual machines owned by the account.", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ListVMsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

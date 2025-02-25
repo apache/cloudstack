@@ -17,7 +17,8 @@
 
 <template>
   <a-spin :spinning="fetchLoading">
-    <div style="width: 100%; display: flex">
+
+     <div style="width: 100%; display: flex">
       <a-button
         type="dashed"
         style="width: 100%; margin-right: 10px"
@@ -31,6 +32,14 @@
         <template #icon><download-outlined /></template>
         {{ $t('label.acl.export') }}
       </a-button>
+      <div class="search-bar">
+        <a-input-search
+          style="width: 25vw;float: right;margin-left: 10px; z-index: 8"
+          :placeholder="$t('label.search')"
+          v-model:value="searchQuery"
+          @search="fetchData"
+        />
+      </div>
     </div>
 
     <div class="list">
@@ -218,19 +227,50 @@
           :label="$t('label.protocolnumber')"
           ref="protocolnumber"
           name="protocolnumber">
-          <a-input v-model:value="form.protocolnumber" />
+          <a-select
+            v-model:value="form.protocolnumber"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+            <a-select-option v-for="(opt, optIndex) in protocolNumbers" :key="optIndex" :label="opt.name">
+              {{ opt.index + ' - ' + opt.name }}
+            </a-select-option>
+          </a-select>
         </a-form-item>
 
-        <div v-if="form.protocol === 'icmp'">
+        <div v-if="form.protocol === 'icmp' || (form.protocol === 'protocolnumber' && form.protocolnumber === 1)">
           <a-form-item :label="$t('label.icmptype')" ref="icmptype" name="icmptype">
-            <a-input v-model:value="form.icmptype" :placeholder="$t('icmp.type.desc')" />
+            <a-select
+              v-model:value="form.icmptype"
+              @change="val => { updateIcmpCodes(val) }"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+              <a-select-option v-for="(opt) in icmpTypes" :key="opt.index" :label="opt.description">
+                {{ opt.index + ' - ' + opt.description }}
+              </a-select-option>
+            </a-select>
           </a-form-item>
           <a-form-item :label="$t('label.icmpcode')" ref="icmpcode" name="icmpcode">
-            <a-input v-model:value="form.icmpcode" :placeholder="$t('icmp.code.desc')" />
+            <a-select
+              v-model:value="form.icmpcode"
+              showSearch
+              optionFilterProp="label"
+              :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }" >
+              <a-select-option v-for="(opt) in icmpCodes" :key="opt.code" :label="opt.description">
+                {{ opt.code + ' - ' + opt.description }}
+              </a-select-option>
+            </a-select>
           </a-form-item>
         </div>
 
-        <div v-show="['tcp', 'udp', 'protocolnumber'].includes(form.protocol)">
+        <div v-show="['tcp', 'udp', 'protocolnumber'].includes(form.protocol) && !(form.protocol === 'protocolnumber' && form.protocolnumber === 1)">
           <a-form-item :label="$t('label.startport')" ref="startport" name="startport">
             <a-input-number style="width: 100%" v-model:value="form.startport" />
           </a-form-item>
@@ -293,8 +333,12 @@ export default {
   },
   data () {
     return {
+      searchQuery: '', // Bind this to the search input
       acls: [],
       fetchLoading: false,
+      protocolNumbers: [],
+      icmpTypes: [],
+      icmpCodes: [],
       tags: [],
       selectedAcl: null,
       tagsModalVisible: false,
@@ -306,6 +350,7 @@ export default {
   },
   created () {
     this.initForm()
+    this.fetchNetworkProtocols()
     this.fetchData()
   },
   watch: {
@@ -320,6 +365,8 @@ export default {
       this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({})
+      this.form.icmptype = -1
+      this.form.icmpcode = -1
     },
     csv ({ data = null, columnDelimiter = ',', lineDelimiter = '\n' }) {
       let result = null
@@ -365,9 +412,42 @@ export default {
 
       return result
     },
+    fetchNetworkProtocols () {
+      api('listNetworkProtocols', {
+        option: 'protocolnumber'
+      }).then(json => {
+        this.protocolNumbers = json.listnetworkprotocolsresponse?.networkprotocol || []
+      })
+      api('listNetworkProtocols', {
+        option: 'icmptype'
+      }).then(json => {
+        this.icmpTypes.push({ index: -1, description: this.$t('label.all') })
+        const results = json.listnetworkprotocolsresponse?.networkprotocol || []
+        for (const result of results) {
+          this.icmpTypes.push(result)
+        }
+      })
+      this.icmpCodes.push({ code: -1, description: this.$t('label.all') })
+    },
+    updateIcmpCodes (val) {
+      this.form.icmpcode = -1
+      this.icmpCodes = []
+      this.icmpCodes.push({ code: -1, description: this.$t('label.all') })
+      const icmpType = this.icmpTypes.find(icmpType => icmpType.index === val)
+      if (icmpType && icmpType.details) {
+        const icmpTypeDetails = icmpType.details
+        for (const k of Object.keys(icmpTypeDetails)) {
+          this.icmpCodes.push({ code: parseInt(k), description: icmpTypeDetails[k] })
+        }
+      }
+    },
     fetchData () {
       this.fetchLoading = true
-      api('listNetworkACLs', { aclid: this.resource.id }).then(json => {
+      const params = {
+        aclid: this.resource.id,
+        keyword: this.searchQuery
+      }
+      api('listNetworkACLs', params).then(json => {
         this.acls = json.listnetworkaclsresponse.networkacl || []
         if (this.acls.length > 0) {
           this.acls.sort((a, b) => a.number - b.number)
@@ -490,8 +570,15 @@ export default {
         self.form.cidrlist = acl.cidrlist
         self.form.action = acl.action
         self.form.protocol = acl.protocol
+        if (!['tcp', 'udp', 'icmp', 'all'].includes(acl.protocol)) {
+          self.form.protocol = 'protocolnumber'
+          self.form.protocolnumber = parseInt(acl.protocol)
+        }
         self.form.startport = acl.startport
         self.form.endport = acl.endport
+        self.form.icmptype = parseInt(acl.icmptype)
+        this.updateIcmpCodes(self.form.icmptype)
+        self.form.icmpcode = acl.icmpcode
         self.form.traffictype = acl.traffictype
         self.form.reason = acl.reason
       }, 200)
@@ -511,9 +598,9 @@ export default {
         data.endport = values.endport || ''
       }
 
-      if (values.protocol === 'icmp') {
-        data.icmptype = values.icmptype || -1
-        data.icmpcode = values.icmpcode || -1
+      if (values.protocol === 'icmp' || (values.protocol === 'protocolnumber' && values.protocolnumber === 1)) {
+        data.icmptype = values.icmptype
+        data.icmpcode = values.icmpcode
       }
 
       if (values.protocol === 'protocolnumber') {

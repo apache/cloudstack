@@ -28,14 +28,12 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.Snapshot;
 
 @APICommand(name = "listSnapshots", description = "Lists all available snapshots for the account.", responseObject = SnapshotResponse.class, entityType = {
         Snapshot.class }, responseView = ResponseObject.ResponseView.Restricted, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListSnapshotsCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

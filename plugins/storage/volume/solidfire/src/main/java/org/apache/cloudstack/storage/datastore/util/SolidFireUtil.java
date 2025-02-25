@@ -28,7 +28,8 @@ import java.util.UUID;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
@@ -80,7 +81,7 @@ import com.solidfire.jsvcgen.javautil.Optional;
 import static org.apache.commons.lang.ArrayUtils.toPrimitive;
 
 public class SolidFireUtil {
-    private static final Logger LOGGER = Logger.getLogger(SolidFireUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(SolidFireUtil.class);
 
     public static final String PROVIDER_NAME = "SolidFire";
     public static final String SHARED_PROVIDER_NAME = "SolidFireShared";
@@ -88,7 +89,7 @@ public class SolidFireUtil {
     private static final Random RANDOM = new Random(System.nanoTime());
     public static final int LOCK_TIME_IN_SECONDS = 300;
 
-    public static final String LOG_PREFIX = "SolidFire: ";
+    public static final String LOGGER_PREFIX = "SolidFire: ";
 
     public static final String MANAGEMENT_VIP = "mVip";
     public static final String STORAGE_VIP = "sVip";
@@ -539,7 +540,7 @@ public class SolidFireUtil {
 
                         if (sfVag.getInitiators().length < MAX_NUM_INITIATORS_PER_VAG) {
                             if (!hostSupports_iScsi(host)) {
-                                String errMsg = "Host with ID " + host.getId() + " does not support iSCSI.";
+                                String errMsg = String.format("Host %s does not support iSCSI.", host);
 
                                 LOGGER.warn(errMsg);
 
@@ -561,7 +562,7 @@ public class SolidFireUtil {
 
             if (numVags > 0) {
                 if (!hostSupports_iScsi(host)) {
-                    String errMsg = "Host with ID " + host.getId() + " does not support iSCSI.";
+                    String errMsg = String.format("Host %s does not support iSCSI.", host);
 
                     LOGGER.warn(errMsg);
 

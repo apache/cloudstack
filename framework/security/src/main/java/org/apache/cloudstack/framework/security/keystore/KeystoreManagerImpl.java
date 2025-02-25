@@ -32,7 +32,6 @@ import javax.inject.Inject;
 
 import com.cloud.utils.Pair;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.Ternary;
@@ -42,7 +41,6 @@ import com.cloud.utils.security.CertificateHelper;
 
 @Component
 public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager {
-    private static final Logger s_logger = Logger.getLogger(KeystoreManagerImpl.class);
 
     @Inject
     private KeystoreDao _ksDao;
@@ -52,7 +50,7 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
         String errMsg = null;
         if (StringUtils.isAnyEmpty(certificate, key, domainSuffix)) {
             errMsg = String.format("Invalid parameter found in (certificate, key, domainSuffix) tuple for domain: %s", domainSuffix);
-            s_logger.error(errMsg);
+            logger.error(errMsg);
             return new Pair<>(false, errMsg);
         }
 
@@ -64,10 +62,10 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
                 return new Pair<>(true, errMsg);
             }
             errMsg = String.format("Unable to construct keystore for domain: %s", domainSuffix);
-            s_logger.error(errMsg);
+            logger.error(errMsg);
         } catch (Exception e) {
             errMsg = String.format("Certificate validation failed due to exception for domain: %s", domainSuffix);
-            s_logger.error(errMsg, e);
+            logger.error(errMsg, e);
         }
         return new Pair<>(false, errMsg);
     }
@@ -114,9 +112,9 @@ public class KeystoreManagerImpl extends ManagerBase implements KeystoreManager 
             return CertificateHelper.buildAndSaveKeystore(certs, storePassword);
         } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | InvalidKeySpecException | IOException e) {
             String msg = String.format("Unable to build keystore for %s due to %s", name, e.getClass().getSimpleName());
-            s_logger.warn(msg);
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(msg, e);
+            logger.warn(msg);
+            if (logger.isDebugEnabled()) {
+                logger.debug(msg, e);
             }
         }
         return null;

@@ -26,9 +26,9 @@
     <bean id="name" class="java.lang.String" >
         <constructor-arg value="child1-1" />
     </bean>
-    
+
     <bean id="child1-1" class="java.lang.String" >
         <constructor-arg value="child1-1" />
     </bean>
-    
+
 </beans>

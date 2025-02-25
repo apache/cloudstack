@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,20 +17,20 @@
 # under the License.
 
 #set -x
- 
+
 usage() {
-  printf "Usage: %s [vhd file in secondary storage] [template directory in secondary storage] \n" $(basename $0) 
+  printf "Usage: %s [vhd file in secondary storage] [template directory in secondary storage] \n" $(basename $0)
 }
 
 cleanup()
 {
-  if [ ! -z $snapshotdir ]; then 
+  if [ ! -z $snapshotdir ]; then
     umount $snapshotdir
     if [ $? -eq 0 ];  then
       rmdir $snapshotdir
     fi
   fi
-  if [ ! -z $templatedir ]; then 
+  if [ ! -z $templatedir ]; then
     umount $templatedir
     if [ $? -eq 0 ];  then
       rmdir $templatedir
@@ -99,7 +99,7 @@ upgradeSnapshot()
     exit 0
   fi
   if [ "${parent##*vhd has}" = " no parent" ]; then
-    dd if=$templatevhd of=$snapshotdir/$templatefilename bs=2M 
+    dd if=$templatevhd of=$snapshotdir/$templatefilename bs=2M
     if [ $? -ne 0 ]; then
       echo "31#failed to dd $templatevhd to $snapshotdir/$templatefilenamed"
       cleanup

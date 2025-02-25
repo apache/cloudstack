@@ -36,7 +36,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateCommand;
@@ -74,7 +73,6 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     @Inject
     private VirtualMachineManager virtualMachineManager;
 
-    private static final Logger LOGGER = Logger.getLogger(KvmNonManagedStorageDataMotionStrategy.class);
 
     /**
      * Uses the canHandle from the Super class {@link StorageSystemDataMotionStrategy}. If the storage pool is of file and the internalCanHandle from {@link StorageSystemDataMotionStrategy} CANT_HANDLE, returns the StrategyPriority.HYPERVISOR strategy priority. otherwise returns CANT_HANDLE.
@@ -212,7 +210,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
 
         TemplateInfo directDownloadTemplateInfo = templateDataFactory.getReadyBypassedTemplateOnPrimaryStore(srcVolumeInfo.getTemplateId(), destDataStore.getId(), destHost.getId());
         if (directDownloadTemplateInfo != null) {
-            LOGGER.debug(String.format("Template %s was of direct download type and successfully staged to primary store %s", directDownloadTemplateInfo.getId(), directDownloadTemplateInfo.getDataStore().getId()));
+            logger.debug("Template {} was of direct download type and successfully staged to primary store {}", directDownloadTemplateInfo.getImage(), directDownloadTemplateInfo.getDataStore());
             return;
         }
 
@@ -223,8 +221,8 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
                 TemplateInfo sourceTemplateInfo = templateDataFactory.getTemplate(srcVolumeInfo.getTemplateId(), sourceTemplateDataStore);
                 TemplateObjectTO sourceTemplate = new TemplateObjectTO(sourceTemplateInfo);
 
-                LOGGER.debug(String.format("Could not find template [id=%s, name=%s] on the storage pool [id=%s]; copying the template to the target storage pool.",
-                        srcVolumeInfo.getTemplateId(), sourceTemplateInfo.getName(), destDataStore.getId()));
+                logger.debug("Could not find template [id={}, uuid={}, name={}] on the storage pool [{}]; copying the template to the target storage pool.",
+                        srcVolumeInfo.getTemplateId(), sourceTemplateInfo.getUuid(), sourceTemplateInfo.getName(), destDataStore);
 
                 TemplateInfo destTemplateInfo = templateDataFactory.getTemplate(srcVolumeInfo.getTemplateId(), destDataStore);
                 final TemplateObjectTO destTemplate = new TemplateObjectTO(destTemplateInfo);
@@ -236,7 +234,8 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
                 return;
             }
         }
-        LOGGER.debug(String.format("Skipping 'copy template to target filesystem storage before migration' due to the template [%s] already exist on the storage pool [%s].", srcVolumeInfo.getTemplateId(), destStoragePool.getId()));
+        logger.debug("Skipping 'copy template to target filesystem storage before migration' due to the template [{}] already exist on the storage pool [{}].",
+                srcVolumeInfo.getTemplateId(), destStoragePool);
     }
 
     /**
@@ -269,8 +268,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     }
 
     private String generateFailToCopyTemplateMessage(TemplateObjectTO sourceTemplate, DataStore destDataStore) {
-        return String.format("Failed to copy template [id=%s, name=%s] to the primary storage pool [id=%s].", sourceTemplate.getId(),
-                sourceTemplate.getName(), destDataStore.getId());
+        return String.format("Failed to copy template [%s] to the primary storage pool [%s].", sourceTemplate, destDataStore);
     }
 
     /**
@@ -282,7 +280,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
             if (copyCommandAnswer.getDetails() != null) {
                 failureDetails = " Details: " + copyCommandAnswer.getDetails();
             }
-            LOGGER.error(generateFailToCopyTemplateMessage(sourceTemplate, destDataStore) + failureDetails);
+            logger.error(generateFailToCopyTemplateMessage(sourceTemplate, destDataStore) + failureDetails);
         }
     }
 

@@ -17,21 +17,32 @@
 
 package org.apache.cloudstack.alert.snmp;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import org.apache.log4j.AppenderSkeleton;
-import org.apache.log4j.spi.ErrorCode;
-import org.apache.log4j.spi.LoggingEvent;
-
 import com.cloud.utils.net.NetUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.Filter;
+import org.apache.logging.log4j.core.Layout;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
+import org.apache.logging.log4j.core.config.plugins.Plugin;
+import org.apache.logging.log4j.core.config.plugins.PluginElement;
+import org.apache.logging.log4j.core.config.plugins.PluginAttribute;
+import org.apache.logging.log4j.core.config.plugins.PluginFactory;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 
-public class SnmpTrapAppender extends AppenderSkeleton {
+@Plugin(name = "SnmpTrapAppender", category = "Core", elementType = "appender", printObject = true)
+public class SnmpTrapAppender extends AbstractAppender {
+    protected static Logger LOGGER = LogManager.getLogger(SnmpTrapAppender.class);
     private String _delimiter = ",";
-    private String _snmpManagerIpAddresses;
-    private String _snmpManagerPorts;
-    private String _snmpManagerCommunities;
+    private String snmpManagerIpAddresses;
+    private String snmpManagerPorts;
+    private String snmpManagerCommunities;
 
     private String _oldSnmpManagerIpAddresses = null;
     private String _oldSnmpManagerPorts = null;
@@ -41,27 +52,21 @@ public class SnmpTrapAppender extends AppenderSkeleton {
     private List<String> _communities = null;
     private List<String> _ports = null;
 
-    List<SnmpHelper> _snmpHelpers = new ArrayList<SnmpHelper>();
+    private SnmpEnhancedPatternLayout snmpEnhancedPatternLayout;
+
+    List<SnmpHelper> _snmpHelpers = new ArrayList<>();
+
+    protected SnmpTrapAppender(String name, Filter filter, Layout<? extends Serializable> layout, final boolean ignoreExceptions, final Property[] properties,
+            String snmpManagerIpAddresses, String snmpManagerPorts, String snmpManagerCommunities) {
+        super(name, filter, layout, ignoreExceptions, properties);
+        this.snmpEnhancedPatternLayout = new SnmpEnhancedPatternLayout();
+        this.snmpManagerIpAddresses = snmpManagerIpAddresses;
+        this.snmpManagerPorts = snmpManagerPorts;
+        this.snmpManagerCommunities = snmpManagerCommunities;
+    }
 
     @Override
-    protected void append(LoggingEvent event) {
-        SnmpEnhancedPatternLayout snmpEnhancedPatternLayout;
-
-        if (getLayout() == null) {
-            errorHandler.error("No layout set for the Appender named [" + getName() + ']', null, ErrorCode.MISSING_LAYOUT);
-            return;
-        }
-
-        if (getLayout() instanceof SnmpEnhancedPatternLayout) {
-            snmpEnhancedPatternLayout = (SnmpEnhancedPatternLayout)getLayout();
-        } else {
-            return;
-        }
-
-        if (!isAsSevereAsThreshold(event.getLevel())) {
-            return;
-        }
-
+    public void append(LogEvent event) {
         SnmpTrapInfo snmpTrapInfo = snmpEnhancedPatternLayout.parseEvent(event);
 
         if (snmpTrapInfo != null && !_snmpHelpers.isEmpty()) {
@@ -69,41 +74,57 @@ public class SnmpTrapAppender extends AppenderSkeleton {
                 try {
                     helper.sendSnmpTrap(snmpTrapInfo);
                 } catch (Exception e) {
-                    errorHandler.error(e.getMessage());
+                    getHandler().error(e.getMessage());
                 }
             }
         }
     }
 
+    @PluginFactory
+    public static SnmpTrapAppender createAppender(@PluginAttribute("name") String name, @PluginElement("Layout") Layout<? extends Serializable> layout,
+            @PluginElement("Filter") final Filter filter, @PluginAttribute("ignoreExceptions") boolean ignoreExceptions, @PluginElement("properties") final Property[] properties,
+            @PluginAttribute("SnmpManagerIpAddresses") String snmpManagerIpAddresses, @PluginAttribute("SnmpManagerPorts") String snmpManagerPorts,
+            @PluginAttribute("SnmpManagerCommunities") String snmpManagerCommunities) {
+
+        if (name == null) {
+            LOGGER.error("No name provided for SnmpTrapAppender");
+            return null;
+        }
+        if (layout == null) {
+            layout = PatternLayout.createDefaultLayout();
+        }
+        return new SnmpTrapAppender(name, filter, layout, ignoreExceptions, properties, snmpManagerIpAddresses, snmpManagerPorts, snmpManagerCommunities);
+    }
+
     void setSnmpHelpers() {
-        if (_snmpManagerIpAddresses == null || _snmpManagerIpAddresses.trim().isEmpty() || _snmpManagerCommunities == null || _snmpManagerCommunities.trim().isEmpty() ||
-            _snmpManagerPorts == null || _snmpManagerPorts.trim().isEmpty()) {
+        if (snmpManagerIpAddresses == null || snmpManagerIpAddresses.trim().isEmpty() || snmpManagerCommunities == null || snmpManagerCommunities.trim().isEmpty() ||
+            snmpManagerPorts == null || snmpManagerPorts.trim().isEmpty()) {
             reset();
             return;
         }
 
-        if (_oldSnmpManagerIpAddresses != null && _oldSnmpManagerIpAddresses.equals(_snmpManagerIpAddresses) &&
-            _oldSnmpManagerCommunities.equals(_snmpManagerCommunities) && _oldSnmpManagerPorts.equals(_snmpManagerPorts)) {
+        if (_oldSnmpManagerIpAddresses != null && _oldSnmpManagerIpAddresses.equals(snmpManagerIpAddresses) &&
+            _oldSnmpManagerCommunities.equals(snmpManagerCommunities) && _oldSnmpManagerPorts.equals(snmpManagerPorts)) {
             return;
         }
 
-        _oldSnmpManagerIpAddresses = _snmpManagerIpAddresses;
-        _oldSnmpManagerPorts = _snmpManagerPorts;
-        _oldSnmpManagerCommunities = _snmpManagerCommunities;
+        _oldSnmpManagerIpAddresses = snmpManagerIpAddresses;
+        _oldSnmpManagerPorts = snmpManagerPorts;
+        _oldSnmpManagerCommunities = snmpManagerCommunities;
 
-        _ipAddresses = parse(_snmpManagerIpAddresses);
-        _communities = parse(_snmpManagerCommunities);
-        _ports = parse(_snmpManagerPorts);
+        _ipAddresses = parse(snmpManagerIpAddresses);
+        _communities = parse(snmpManagerCommunities);
+        _ports = parse(snmpManagerPorts);
 
         if (!(_ipAddresses.size() == _communities.size() && _ipAddresses.size() == _ports.size())) {
             reset();
-            errorHandler.error(" size of ip addresses , communities, " + "and ports list doesn't match, " + "setting all to null");
+            getHandler().error(" size of ip addresses , communities, " + "and ports list doesn't match, " + "setting all to null");
             return;
         }
 
         if (!validateIpAddresses() || !validatePorts()) {
             reset();
-            errorHandler.error(" Invalid format for the IP Addresses or Ports parameter ");
+            getHandler().error(" Invalid format for the IP Addresses or Ports parameter ");
             return;
         }
 
@@ -114,7 +135,7 @@ public class SnmpTrapAppender extends AppenderSkeleton {
             try {
                 _snmpHelpers.add(new SnmpHelper(address, _communities.get(i)));
             } catch (Exception e) {
-                errorHandler.error(e.getMessage());
+                getHandler().error(e.getMessage());
             }
         }
     }
@@ -124,17 +145,6 @@ public class SnmpTrapAppender extends AppenderSkeleton {
         _communities = null;
         _ports = null;
         _snmpHelpers.clear();
-    }
-
-    @Override
-    public void close() {
-        if (!closed)
-            closed = true;
-    }
-
-    @Override
-    public boolean requiresLayout() {
-        return true;
     }
 
     private List<String> parse(String str) {
@@ -168,38 +178,20 @@ public class SnmpTrapAppender extends AppenderSkeleton {
         return true;
     }
 
-    public String getSnmpManagerIpAddresses() {
-        return _snmpManagerIpAddresses;
-    }
-
     public void setSnmpManagerIpAddresses(String snmpManagerIpAddresses) {
-        this._snmpManagerIpAddresses = snmpManagerIpAddresses;
+        this.snmpManagerIpAddresses = snmpManagerIpAddresses;
         setSnmpHelpers();
     }
 
-    public String getSnmpManagerPorts() {
-        return _snmpManagerPorts;
-    }
 
     public void setSnmpManagerPorts(String snmpManagerPorts) {
-        this._snmpManagerPorts = snmpManagerPorts;
+        this.snmpManagerPorts = snmpManagerPorts;
         setSnmpHelpers();
-    }
-
-    public String getSnmpManagerCommunities() {
-        return _snmpManagerCommunities;
     }
 
     public void setSnmpManagerCommunities(String snmpManagerCommunities) {
-        this._snmpManagerCommunities = snmpManagerCommunities;
+        this.snmpManagerCommunities = snmpManagerCommunities;
         setSnmpHelpers();
     }
 
-    public String getDelimiter() {
-        return _delimiter;
-    }
-
-    public void setDelimiter(String delimiter) {
-        this._delimiter = delimiter;
-    }
 }

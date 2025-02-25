@@ -19,8 +19,7 @@ package com.cloud.ha.dao;
 import java.util.Date;
 import java.util.List;
 
-
-import org.apache.log4j.Logger;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.ha.HaWorkVO;
@@ -32,13 +31,13 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> implements HighAvailabilityDao {
-    private static final Logger s_logger = Logger.getLogger(HighAvailabilityDaoImpl.class);
 
-    private final SearchBuilder<HaWorkVO> TBASearch;
+    protected SearchBuilder<HaWorkVO> TBASearch;
     private final SearchBuilder<HaWorkVO> PreviousInstanceSearch;
     private final SearchBuilder<HaWorkVO> UntakenMigrationSearch;
     private final SearchBuilder<HaWorkVO> CleanupSearch;
@@ -259,5 +258,44 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
         vo.setServerId(null);
 
         return update(vo, sc);
+    }
+
+    @Override
+    public int expungeByVmList(List<Long> vmIds, Long batchSize) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return 0;
+        }
+        SearchBuilder<HaWorkVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getInstanceId(), SearchCriteria.Op.IN);
+        SearchCriteria<HaWorkVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return batchExpunge(sc, batchSize);
+    }
+
+    protected void updatePendingWorkToInvestigating(SearchCriteria<HaWorkVO> sc) {
+        HaWorkVO haWorkVO = createForUpdate();
+        haWorkVO.setStep(Step.Investigating);
+        UpdateBuilder updateBuilder = getUpdateBuilder(haWorkVO);
+        update(updateBuilder, sc, null);
+    }
+
+    @Override
+    public void markPendingWorksAsInvestigating() {
+        final SearchCriteria<HaWorkVO> sc = TBASearch.create();
+        sc.setParameters("time", System.currentTimeMillis() >> 10);
+        sc.setParameters("step", Step.Done, Step.Cancelled);
+        updatePendingWorkToInvestigating(sc);
+    }
+
+    @Override
+    public void markServerPendingWorksAsInvestigating(long managementServerId) {
+        SearchBuilder<HaWorkVO> sb = createSearchBuilder();
+        sb.and("server", sb.entity().getServerId(), Op.EQ);
+        sb.and("step", sb.entity().getStep(), Op.NIN);
+        sb.done();
+        SearchCriteria<HaWorkVO> sc = sb.create();
+        sc.setParameters("server", managementServerId);
+        sc.setParameters("step", Step.Done, Step.Cancelled);
+        updatePendingWorkToInvestigating(sc);
     }
 }

@@ -34,15 +34,12 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 import java.util.Map;
 
 @ResourceWrapper(handles = CheckVolumeCommand.class)
 public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<CheckVolumeCommand, Answer, LibvirtComputingResource> {
-
-    private static final Logger s_logger = Logger.getLogger(LibvirtCheckVolumeCommandWrapper.class);
 
     @Override
     public Answer execute(final CheckVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -64,7 +61,7 @@ public final class LibvirtCheckVolumeCommandWrapper extends CommandWrapper<Check
             }
 
         } catch (final Exception e) {
-            s_logger.error("Error while locating disk: "+ e.getMessage());
+            logger.error("Error while locating disk: "+ e.getMessage());
             return new Answer(command, false, result);
         }
     }

@@ -20,8 +20,8 @@ package org.apache.cloudstack.api.command.admin.cluster;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -42,7 +42,6 @@ import com.cloud.user.Account;
 @APICommand(name = "addCluster", description = "Adds a new cluster", responseObject = ClusterResponse.class,
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddClusterCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(AddClusterCmd.class.getName());
 
 
     @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING, required = true, description = "the cluster name")
@@ -68,6 +67,11 @@ public class AddClusterCmd extends BaseCmd {
                required = true,
                description = "hypervisor type of the cluster: XenServer,KVM,VMware,Hyperv,BareMetal,Simulator,Ovm3")
     private String hypervisor;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the cluster. Valid options are: x86_64, aarch64",
+            since = "4.20")
+    private String arch;
 
     @Parameter(name = ApiConstants.CLUSTER_TYPE, type = CommandType.STRING, required = true, description = "type of the cluster: CloudManaged, ExternalManaged")
     private String clusterType;
@@ -206,6 +210,10 @@ public class AddClusterCmd extends BaseCmd {
         return ApiCommandResourceType.Cluster;
     }
 
+    public CPU.CPUArch getArch() {
+        return CPU.CPUArch.fromType(arch);
+    }
+
     @Override
     public void execute() {
         try {
@@ -226,10 +234,10 @@ public class AddClusterCmd extends BaseCmd {
 
             this.setResponseObject(response);
         } catch (DiscoveryException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
         } catch (ResourceInUseException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             ServerApiException e = new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
             for (String proxyObj : ex.getIdProxyList()) {
                 e.addProxyObject(proxyObj);

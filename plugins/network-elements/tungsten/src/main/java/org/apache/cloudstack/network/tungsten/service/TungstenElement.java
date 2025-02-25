@@ -135,7 +135,6 @@ import org.apache.cloudstack.network.tungsten.dao.TungstenFabricLBHealthMonitorV
 import org.apache.cloudstack.network.tungsten.model.TungstenLoadBalancerMember;
 import org.apache.cloudstack.network.tungsten.model.TungstenRule;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -154,7 +153,6 @@ public class TungstenElement extends AdapterBase
     implements StaticNatServiceProvider, IpDeployer, FirewallServiceProvider,
     LoadBalancingServiceProvider, PortForwardingServiceProvider, ResourceStateAdapter, DnsServiceProvider, Listener,
     StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine>, NetworkMigrationResponder {
-    private static final Logger s_logger = Logger.getLogger(TungstenElement.class);
 
     private static final String NETWORK = "network";
 
@@ -273,11 +271,10 @@ public class TungstenElement extends AdapterBase
     }
 
     protected boolean canHandle(Network network, Network.Service service) {
-        s_logger.debug("Checking if TungstenElement can handle service " + service.getName() + " on network "
-            + network.getDisplayText());
+        logger.debug(String.format("Checking if TungstenElement can handle service %s on network %s", service.getName(), network));
 
         if (!networkModel.isProviderForNetwork(getProvider(), network.getId())) {
-            s_logger.debug("TungstenElement is not a provider for network " + network.getDisplayText());
+            logger.debug(String.format("TungstenElement is not a provider for network %s", network));
             return false;
         }
 
@@ -663,8 +660,7 @@ public class TungstenElement extends AdapterBase
                             TungstenUtils.getPublicNetworkPolicyName(ipAddressVO.getId()), null, network.getUuid());
                     tungstenFabricUtils.sendTungstenCommand(deleteTungstenNetworkPolicyCommand, network.getDataCenterId());
                 } catch (IllegalArgumentException e) {
-                    throw new CloudRuntimeException(
-                            "Failing to expunge the vm from Tungsten-Fabric with the uuid " + vm.getUuid());
+                    throw new CloudRuntimeException(String.format("Failing to expunge the vm %s from Tungsten-Fabric", vm));
                 }
             }
 
@@ -682,8 +678,7 @@ public class TungstenElement extends AdapterBase
                     TungstenCommand deleteVmCmd = new DeleteTungstenVmCommand(vm.getUuid());
                     tungstenFabricUtils.sendTungstenCommand(deleteVmCmd, network.getDataCenterId());
                 } catch (IllegalArgumentException e) {
-                    throw new CloudRuntimeException(
-                            "Failing to expunge the vm from Tungsten-Fabric with the uuid " + vm.getUuid());
+                    throw new CloudRuntimeException(String.format("Failing to expunge the vm %s from Tungsten-Fabric", vm));
                 }
             }
         }

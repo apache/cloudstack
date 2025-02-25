@@ -34,7 +34,6 @@ import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ImportConvertedInstanceAnswer;
@@ -59,8 +58,6 @@ import com.cloud.utils.script.Script;
 
 @ResourceWrapper(handles =  ImportConvertedInstanceCommand.class)
 public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper<ImportConvertedInstanceCommand, Answer, LibvirtComputingResource> {
-
-    private static final Logger s_logger = Logger.getLogger(LibvirtImportConvertedInstanceCommandWrapper.class);
 
     @Override
     public Answer execute(ImportConvertedInstanceCommand cmd, LibvirtComputingResource serverResource) {
@@ -94,11 +91,11 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
         } catch (Exception e) {
             String error = String.format("Error converting instance %s from %s, due to: %s",
                     sourceInstanceName, sourceHypervisorType, e.getMessage());
-            s_logger.error(error, e);
+            logger.error(error, e);
             return new ImportConvertedInstanceAnswer(cmd, false, error);
         } finally {
             if (conversionTemporaryLocation instanceof NfsTO) {
-                s_logger.debug("Cleaning up secondary storage temporary location");
+                logger.debug("Cleaning up secondary storage temporary location");
                 storagePoolMgr.deleteStoragePool(temporaryStoragePool.getType(), temporaryStoragePool.getUuid());
             }
         }
@@ -120,7 +117,7 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
                 x.getDeviceType() == LibvirtVMDef.DiskDef.DeviceType.DISK).collect(Collectors.toList());
         if (CollectionUtils.isEmpty(disksDefs)) {
             String err = String.format("Cannot find any disk defined on the converted XML domain %s.xml", convertedBasePath);
-            s_logger.error(err);
+            logger.error(err);
             throw new CloudRuntimeException(err);
         }
         sanitizeDisksPath(disksDefs);
@@ -138,7 +135,7 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
 
     protected List<KVMPhysicalDisk> getTemporaryDisksWithPrefixFromTemporaryPool(KVMStoragePool pool, String path, String prefix) {
         String msg = String.format("Could not parse correctly the converted XML domain, checking for disks on %s with prefix %s", path, prefix);
-        s_logger.info(msg);
+        logger.info(msg);
         pool.refresh();
         List<KVMPhysicalDisk> disksWithPrefix = pool.listPhysicalDisks()
                 .stream()
@@ -146,7 +143,7 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
                 .collect(Collectors.toList());
         if (CollectionUtils.isEmpty(disksWithPrefix)) {
             msg = String.format("Could not find any converted disk with prefix %s on temporary location %s", prefix, path);
-            s_logger.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
         return disksWithPrefix;
@@ -156,10 +153,10 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
                                                             KVMStoragePool temporaryStoragePool,
                                                             String temporaryConvertUuid) {
         for (KVMPhysicalDisk disk : disks) {
-            s_logger.info(String.format("Cleaning up temporary disk %s after conversion from temporary location", disk.getName()));
+            logger.info(String.format("Cleaning up temporary disk %s after conversion from temporary location", disk.getName()));
             temporaryStoragePool.deletePhysicalDisk(disk.getName(), Storage.ImageFormat.QCOW2);
         }
-        s_logger.info(String.format("Cleaning up temporary domain %s after conversion from temporary location", temporaryConvertUuid));
+        logger.info(String.format("Cleaning up temporary domain %s after conversion from temporary location", temporaryConvertUuid));
         FileUtil.deleteFiles(temporaryStoragePool.getLocalPath(), temporaryConvertUuid, ".xml");
     }
 
@@ -178,26 +175,26 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
         if (temporaryDisks.size() != destinationStoragePools.size()) {
             String warn = String.format("Discrepancy between the converted instance disks (%s) " +
                     "and the expected number of disks (%s)", temporaryDisks.size(), destinationStoragePools.size());
-            s_logger.warn(warn);
+            logger.warn(warn);
         }
         for (int i = 0; i < temporaryDisks.size(); i++) {
             String poolPath = destinationStoragePools.get(i);
             KVMStoragePool destinationPool = storagePoolMgr.getStoragePool(Storage.StoragePoolType.NetworkFilesystem, poolPath);
             if (destinationPool == null) {
                 String err = String.format("Could not find a storage pool by URI: %s", poolPath);
-                s_logger.error(err);
+                logger.error(err);
                 continue;
             }
             if (destinationPool.getType() != Storage.StoragePoolType.NetworkFilesystem) {
                 String err = String.format("Storage pool by URI: %s is not an NFS storage", poolPath);
-                s_logger.error(err);
+                logger.error(err);
                 continue;
             }
             KVMPhysicalDisk sourceDisk = temporaryDisks.get(i);
-            if (s_logger.isDebugEnabled()) {
+            if (logger.isDebugEnabled()) {
                 String msg = String.format("Trying to copy converted instance disk number %s from the temporary location %s" +
                         " to destination storage pool %s", i, sourceDisk.getPool().getLocalPath(), destinationPool.getUuid());
-                s_logger.debug(msg);
+                logger.debug(msg);
             }
 
             String destinationName = UUID.randomUUID().toString();
@@ -267,7 +264,7 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
         commands.add(new String[]{Script.getExecutableAbsolutePath("mount")});
         commands.add(new String[]{Script.getExecutableAbsolutePath("grep"), storagePool.getLocalPath()});
         String storagePoolMountPoint = Script.executePipedCommands(commands, 0).second();
-        s_logger.debug(String.format("NFS Storage pool: %s - local path: %s, mount point: %s", storagePool.getUuid(), storagePool.getLocalPath(), storagePoolMountPoint));
+        logger.debug(String.format("NFS Storage pool: %s - local path: %s, mount point: %s", storagePool.getUuid(), storagePool.getLocalPath(), storagePoolMountPoint));
         if (StringUtils.isNotEmpty(storagePoolMountPoint)) {
             String[] res = storagePoolMountPoint.strip().split(" ");
             res = res[0].split(":");
@@ -283,7 +280,7 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
         String xmlPath = String.format("%s.xml", installPath);
         if (!new File(xmlPath).exists()) {
             String err = String.format("Conversion failed. Unable to find the converted XML domain, expected %s", xmlPath);
-            s_logger.error(err);
+            logger.error(err);
             throw new CloudRuntimeException(err);
         }
         InputStream is = new BufferedInputStream(new FileInputStream(xmlPath));
@@ -294,8 +291,8 @@ public class LibvirtImportConvertedInstanceCommandWrapper extends CommandWrapper
             return parser;
         } catch (RuntimeException e) {
             String err = String.format("Error parsing the converted instance XML domain at %s: %s", xmlPath, e.getMessage());
-            s_logger.error(err, e);
-            s_logger.debug(xml);
+            logger.error(err, e);
+            logger.debug(xml);
             return null;
         }
     }

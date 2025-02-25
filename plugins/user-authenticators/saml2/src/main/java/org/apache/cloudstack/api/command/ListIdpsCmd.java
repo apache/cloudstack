@@ -30,7 +30,6 @@ import org.apache.cloudstack.api.response.IdpResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.saml.SAML2AuthManager;
 import org.apache.cloudstack.saml.SAMLProviderMetadata;
-import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -43,7 +42,6 @@ import java.util.Map;
 
 @APICommand(name = "listIdps", description = "Returns list of discovered SAML Identity Providers", responseObject = IdpResponse.class, entityType = {})
 public class ListIdpsCmd extends BaseCmd implements APIAuthenticator {
-    public static final Logger s_logger = Logger.getLogger(ListIdpsCmd.class.getName());
 
     @Inject
     ApiServerService _apiServer;
@@ -102,7 +100,7 @@ public class ListIdpsCmd extends BaseCmd implements APIAuthenticator {
             }
         }
         if (_samlAuthManager == null) {
-            s_logger.error("No suitable Pluggable Authentication Manager found for SAML2 Login Cmd");
+            logger.error("No suitable Pluggable Authentication Manager found for SAML2 Login Cmd");
         }
     }
 }

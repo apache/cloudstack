@@ -45,7 +45,6 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -64,7 +63,6 @@ import com.cloud.utils.net.Proxy;
 
 @Component
 public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor {
-    static final Logger LOGGER = Logger.getLogger(DownloadMonitorImpl.class);
 
     @Inject
     private TemplateDataStoreDao _vmTemplateStoreDao;
@@ -91,7 +89,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
         String cert = configs.get("secstorage.ssl.cert.domain");
         if (!"realhostip.com".equalsIgnoreCase(cert)) {
-            LOGGER.warn("Only realhostip.com ssl cert is supported, ignoring self-signed and other certs");
+            logger.warn("Only realhostip.com ssl cert is supported, ignoring self-signed and other certs");
         }
 
         _copyAuthPasswd = configs.get("secstorage.copy.password");
@@ -155,7 +153,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             EndPoint ep = _epSelector.select(template);
             if (ep == null) {
                 String errMsg = "There is no secondary storage VM for downloading template to image store " + store.getName();
-                LOGGER.warn(errMsg);
+                logger.warn(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
             DownloadListener dl = new DownloadListener(ep, store, template, _timer, this, dcmd, callback);
@@ -166,14 +164,14 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 // DownloadListener to use
                 // new ObjectInDataStore.State transition. TODO: fix this later
                 // to be able to remove downloadState from template_store_ref.
-                LOGGER.info("found existing download job");
+                logger.info("found existing download job");
                 dl.setCurrState(vmTemplateStore.getDownloadState());
             }
 
             try {
                 ep.sendMessageAsync(dcmd, new UploadListener.Callback(ep.getId(), dl));
             } catch (Exception e) {
-                LOGGER.warn("Unable to start /resume download of template " + template.getId() + " to " + store.getName(), e);
+                logger.warn("Unable to start /resume download of template {} to {}", template, store, e);
                 dl.setDisconnected();
                 dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
             }
@@ -212,7 +210,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             EndPoint ep = _epSelector.select(snapshot);
             if (ep == null) {
                 String errMsg = "There is no secondary storage VM for downloading snapshot to image store " + store.getName();
-                LOGGER.warn(errMsg);
+                logger.warn(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
             DownloadListener dl = new DownloadListener(ep, store, snapshot, _timer, this, dcmd, callback);
@@ -223,14 +221,14 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 // DownloadListener to use
                 // new ObjectInDataStore.State transition. TODO: fix this later
                 // to be able to remove downloadState from template_store_ref.
-                LOGGER.info("found existing download job");
+                logger.info("found existing download job");
                 dl.setCurrState(snapshotStore.getDownloadState());
             }
 
             try {
                 ep.sendMessageAsync(dcmd, new UploadListener.Callback(ep.getId(), dl));
             } catch (Exception e) {
-                LOGGER.warn("Unable to start /resume download of snapshot " + snapshot.getId() + " to " + store.getName(), e);
+                logger.warn("Unable to start /resume download of snapshot {} to {}", snapshot, store, e);
                 dl.setDisconnected();
                 dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
             }
@@ -246,12 +244,12 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
                 if (template.getUri() != null) {
                     initiateTemplateDownload(template, callback);
                 } else {
-                    LOGGER.info("Template url is null, cannot download");
+                    logger.info("Template url is null, cannot download");
                     DownloadAnswer ans = new DownloadAnswer("Template url is null", Status.UNKNOWN);
                     callback.complete(ans);
                 }
             } else {
-                LOGGER.info("Template download is already in progress or already downloaded");
+                logger.info("Template download is already in progress or already downloaded");
                 DownloadAnswer ans =
                         new DownloadAnswer("Template download is already in progress or already downloaded", Status.UNKNOWN);
                 callback.complete(ans);
@@ -294,7 +292,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
 
         EndPoint ep = _epSelector.select(volume);
         if (ep == null) {
-            LOGGER.warn("There is no secondary storage VM for image store " + store.getName());
+            logger.warn("There is no secondary storage VM for image store " + store.getName());
             return;
         }
         DownloadListener dl = new DownloadListener(ep, store, volume, _timer, this, dcmd, callback);
@@ -307,7 +305,7 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
         try {
             ep.sendMessageAsync(dcmd, new UploadListener.Callback(ep.getId(), dl));
         } catch (Exception e) {
-            LOGGER.warn("Unable to start /resume download of volume " + volume.getId() + " to " + store.getName(), e);
+            logger.warn("Unable to start /resume download of volume {} to {}", volume, store, e);
             dl.setDisconnected();
             dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
         }
@@ -321,12 +319,12 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             if (snapshot.getUri() != null) {
                 initiateSnapshotDownload(snapshot, callback);
             } else {
-                LOGGER.info("Snapshot url is null, cannot download");
+                logger.info("Snapshot url is null, cannot download");
                 DownloadAnswer ans = new DownloadAnswer("Snapshot url is null", Status.UNKNOWN);
                 callback.complete(ans);
             }
         } else {
-            LOGGER.info("Snapshot download is already in progress or already downloaded");
+            logger.info("Snapshot download is already in progress or already downloaded");
             DownloadAnswer ans =
                     new DownloadAnswer("Snapshot download is already in progress or already downloaded", Status.UNKNOWN);
             callback.complete(ans);

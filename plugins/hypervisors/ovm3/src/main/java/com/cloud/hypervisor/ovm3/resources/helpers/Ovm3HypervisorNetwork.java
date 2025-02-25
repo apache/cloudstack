@@ -21,7 +21,8 @@ import java.util.List;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckNetworkAnswer;
@@ -39,8 +40,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 public class Ovm3HypervisorNetwork {
-    private static final Logger LOGGER = Logger
-            .getLogger(Ovm3HypervisorNetwork.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private Connection c;
     private Ovm3Configuration config;
     public Ovm3HypervisorNetwork(Connection conn, Ovm3Configuration ovm3config) {
@@ -57,12 +57,12 @@ public class Ovm3HypervisorNetwork {
            String controlIface = config.getAgentControlNetworkName();
            if (controlIface != null
                    && net.getInterfaceByName(controlIface) == null) {
-               LOGGER.debug("starting " + controlIface);
+               logger.debug("starting " + controlIface);
                net.startOvsLocalConfig(controlIface);
                /* ovs replies too "fast" so the bridge can be "busy" */
                int contCount = 0;
                while (net.getInterfaceByName(controlIface) == null) {
-                   LOGGER.debug("waiting for " + controlIface);
+                   logger.debug("waiting for " + controlIface);
                    Thread.sleep(1 * 1000);
                    if (contCount > 9) {
                        throw new ConfigurationException("Unable to configure "
@@ -72,7 +72,7 @@ public class Ovm3HypervisorNetwork {
                    contCount++;
                }
            } else {
-               LOGGER.debug("already have " + controlIface);
+               logger.debug("already have " + controlIface);
            }
            /*
             * The bridge is remembered upon reboot, but not the IP or the
@@ -85,10 +85,10 @@ public class Ovm3HypervisorNetwork {
            cSp.ovsControlInterface(controlIface,
                    NetUtils.getLinkLocalCIDR());
         } catch (InterruptedException e) {
-            LOGGER.error("interrupted?", e);
+            logger.error("interrupted?", e);
         } catch (Ovm3ResourceException e) {
             String msg = "Basic configuration failed on " + config.getAgentHostname();
-            LOGGER.error(msg, e);
+            logger.error(msg, e);
             throw new ConfigurationException(msg + ", " + e.getMessage());
         }
     }
@@ -96,27 +96,27 @@ public class Ovm3HypervisorNetwork {
     /**/
     private boolean isNetworkSetupByName(String nameTag) {
         if (nameTag != null) {
-            LOGGER.debug("Looking for network setup by name " + nameTag);
+            logger.debug("Looking for network setup by name " + nameTag);
 
             try {
                 Network net = new Network(c);
                 net.getInterfaceList();
                 if (net.getBridgeByName(nameTag) != null) {
-                    LOGGER.debug("Found bridge with name: " + nameTag);
+                    logger.debug("Found bridge with name: " + nameTag);
                     return true;
                 }
             } catch (Ovm3ResourceException e) {
-                LOGGER.debug("Unxpected error looking for name: " + nameTag, e);
+                logger.debug("Unxpected error looking for name: " + nameTag, e);
                 return false;
             }
         }
-        LOGGER.debug("No bridge with name: " + nameTag);
+        logger.debug("No bridge with name: " + nameTag);
         return false;
     }
 
     /* this might have to change in the future, works for now... */
     public CheckNetworkAnswer execute(CheckNetworkCommand cmd) {
-        LOGGER.debug("Checking if network name setup is done on "
+        logger.debug("Checking if network name setup is done on "
                     + config.getAgentHostname());
 
         List<PhysicalNetworkSetupInfo> infoList = cmd
@@ -141,7 +141,7 @@ public class Ovm3HypervisorNetwork {
                         + info.getPhysicalNetworkId()
                         + ", Guest Network is not configured on the backend by name "
                         + info.getGuestNetworkName();
-                LOGGER.error(msg);
+                logger.error(msg);
                 return new CheckNetworkAnswer(cmd, false, msg);
             }
             if (!isNetworkSetupByName(info.getPrivateNetworkName())) {
@@ -149,7 +149,7 @@ public class Ovm3HypervisorNetwork {
                         + info.getPhysicalNetworkId()
                         + ", Private Network is not configured on the backend by name "
                         + info.getPrivateNetworkName();
-                LOGGER.error(msg);
+                logger.error(msg);
                 return new CheckNetworkAnswer(cmd, false, msg);
             }
             if (!isNetworkSetupByName(info.getPublicNetworkName())) {
@@ -157,7 +157,7 @@ public class Ovm3HypervisorNetwork {
                         + info.getPhysicalNetworkId()
                         + ", Public Network is not configured on the backend by name "
                         + info.getPublicNetworkName();
-                LOGGER.error(msg);
+                logger.error(msg);
                 return new CheckNetworkAnswer(cmd, false, msg);
             }
             /* Storage network is optional, will revert to private otherwise */
@@ -180,7 +180,7 @@ public class Ovm3HypervisorNetwork {
             }
             return new Answer(cmd, true, "success");
         } catch (Ovm3ResourceException e) {
-            LOGGER.debug("Ping " + cmd.getComputingHostIp() + " failed", e);
+            logger.debug("Ping " + cmd.getComputingHostIp() + " failed", e);
             return new Answer(cmd, false, e.getMessage());
         }
     }
@@ -190,7 +190,7 @@ public class Ovm3HypervisorNetwork {
         if (vlanId < 1 || vlanId > 4094) {
             String msg = "Incorrect vlan " + vlanId
                     + ", needs to be between 1 and 4094";
-            LOGGER.error(msg);
+            logger.error(msg);
             throw new CloudRuntimeException(msg);
         }
         Network net = new Network(c);
@@ -201,12 +201,12 @@ public class Ovm3HypervisorNetwork {
             if (net.getInterfaceByName(brName) == null) {
                 net.startOvsVlanBridge(brName, physInterface, vlanId);
             } else {
-                LOGGER.debug("Interface " + brName + " already exists");
+                logger.debug("Interface " + brName + " already exists");
             }
         } catch (Ovm3ResourceException e) {
             String msg = "Unable to create vlan " + vlanId.toString()
                     + " bridge for " + networkName;
-            LOGGER.warn(msg + ": " + e);
+            logger.warn(msg + ": " + e);
             throw new CloudRuntimeException(msg + ":" + e.getMessage());
         }
         return brName;

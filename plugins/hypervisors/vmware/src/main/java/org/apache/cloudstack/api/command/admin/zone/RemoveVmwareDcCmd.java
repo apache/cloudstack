@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.zone;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,21 +34,20 @@ import com.cloud.hypervisor.vmware.VmwareDatacenterService;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "removeVmwareDc", responseObject = SuccessResponse.class, description = "Remove a VMware datacenter from a zone.",
+@APICommand(name = "removeVmwareDc", responseObject = SuccessResponse.class, description = "Remove a Vmware datacenter from a zone.",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RemoveVmwareDcCmd extends BaseCmd {
 
     @Inject
     public VmwareDatacenterService _vmwareDatacenterService;
 
-    public static final Logger s_logger = Logger.getLogger(RemoveVmwareDcCmd.class.getName());
 
 
     @Parameter(name = ApiConstants.ZONE_ID,
                type = CommandType.UUID,
                entityType = ZoneResponse.class,
                required = true,
-               description = "The id of Zone from which VMware datacenter has to be removed.")
+               description = "The id of Zone from which Vmware datacenter has to be removed.")
     private Long zoneId;
 
     public Long getZoneId() {
@@ -65,10 +63,10 @@ public class RemoveVmwareDcCmd extends BaseCmd {
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove VMware datacenter from zone");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove Vmware datacenter from zone");
             }
         } catch (ResourceInUseException ex) {
-            s_logger.warn("The zone has one or more resources (like cluster), hence not able to remove VMware datacenter from zone."
+            logger.warn("The zone has one or more resources (like cluster), hence not able to remove VMware datacenter from zone."
                 + " Please remove all resource from zone, and retry. Exception: ", ex);
             ServerApiException e = new ServerApiException(ApiErrorCode.INTERNAL_ERROR, ex.getMessage());
             for (String proxyObj : ex.getIdProxyList()) {

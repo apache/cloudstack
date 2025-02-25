@@ -267,6 +267,14 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Param(description = "Base64 string representation of the resource icon", since = "4.16.0.0")
     ResourceIconResponse icon;
 
+    @SerializedName(ApiConstants.TAGGED_RESOURCES)
+    @Param(description = "The tagged resource limit and count for the account", since = "4.20.0")
+    List<TaggedResourceLimitAndCountResponse> taggedResources;
+
+    @SerializedName(ApiConstants.API_KEY_ACCESS)
+    @Param(description = "whether api key access is Enabled, Disabled or set to Inherit (it inherits the value from the parent)", since = "4.20.1.0")
+    ApiConstants.ApiKeyAccess apiKeyAccess;
+
     @Override
     public String getObjectId() {
         return id;
@@ -544,5 +552,14 @@ public class AccountResponse extends BaseResponse implements ResourceLimitAndCou
     @Override
     public void setResourceIconResponse(ResourceIconResponse icon) {
         this.icon = icon;
+    }
+
+    @Override
+    public void setTaggedResourceLimitsAndCounts(List<TaggedResourceLimitAndCountResponse> taggedResourceLimitsAndCounts) {
+        this.taggedResources = taggedResourceLimitsAndCounts;
+    }
+
+    public void setApiKeyAccess(Boolean apiKeyAccess) {
+        this.apiKeyAccess = ApiConstants.ApiKeyAccess.fromBoolean(apiKeyAccess);
     }
 }

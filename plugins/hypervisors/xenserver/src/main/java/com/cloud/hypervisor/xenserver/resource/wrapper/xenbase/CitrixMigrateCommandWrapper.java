@@ -22,7 +22,6 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 import java.util.Set;
 
 import org.apache.commons.lang.BooleanUtils;
-import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
@@ -42,7 +41,6 @@ import com.xensource.xenapi.VM;
 @ResourceWrapper(handles =  MigrateCommand.class)
 public class CitrixMigrateCommandWrapper extends CommandWrapper<MigrateCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixMigrateCommandWrapper.class);
 
     @Override
     public Answer execute(final MigrateCommand command, final CitrixResourceBase citrixResourceBase) {
@@ -65,7 +63,7 @@ public class CitrixMigrateCommandWrapper extends CommandWrapper<MigrateCommand, 
             }
             if (dsthost == null) {
                 final String msg = "Migration failed due to unable to find host " + dstHostIpAddr + " in XenServer pool " + citrixResourceBase.getHost().getPool();
-                s_logger.warn(msg);
+                logger.warn(msg);
                 return new MigrateAnswer(command, false, msg, null);
             }
             for (final VM vm : vms) {
@@ -93,12 +91,12 @@ public class CitrixMigrateCommandWrapper extends CommandWrapper<MigrateCommand, 
             // Attach the config drive iso device to VM
             VM vm = vms.iterator().next();
             if (!citrixResourceBase.attachConfigDriveIsoToVm(conn, vm)) {
-                s_logger.debug("Config drive ISO attach failed after migration for vm "+vmName);
+                logger.debug("Config drive ISO attach failed after migration for vm "+vmName);
             }
 
             return new MigrateAnswer(command, true, "migration succeeded", null);
         } catch (final Exception e) {
-            s_logger.warn(e.getMessage(), e);
+            logger.warn(e.getMessage(), e);
             return new MigrateAnswer(command, false, e.getMessage(), null);
         }
     }
@@ -111,9 +109,9 @@ public class CitrixMigrateCommandWrapper extends CommandWrapper<MigrateCommand, 
         if (citrixResourceBase.canBridgeFirewall()) {
             final String result = citrixResourceBase.callHostPlugin(conn, "vmops", "destroy_network_rules_for_vm", "vmName", command.getVmName());
             if (BooleanUtils.toBoolean(result)) {
-                s_logger.debug(String.format("Removed network rules from source host [%s] for migrated vm [%s]", dsthost.getHostname(conn), command.getVmName()));
+                logger.debug(String.format("Removed network rules from source host [%s] for migrated vm [%s]", dsthost.getHostname(conn), command.getVmName()));
             } else {
-                s_logger.warn(String.format("Failed to remove network rules from source host [%s] for migrated vm [%s]", dsthost.getHostname(conn), command.getVmName()));
+                logger.warn(String.format("Failed to remove network rules from source host [%s] for migrated vm [%s]", dsthost.getHostname(conn), command.getVmName()));
             }
         }
     }

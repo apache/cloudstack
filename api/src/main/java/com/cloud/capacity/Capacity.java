@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.capacity;
 
+import java.util.List;
+
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -34,6 +36,11 @@ public interface Capacity extends InternalIdentity, Identity {
     public static final short CAPACITY_TYPE_GPU = 19;
 
     public static final short CAPACITY_TYPE_CPU_CORE = 90;
+
+    public static final List<Short> STORAGE_CAPACITY_TYPES = List.of(CAPACITY_TYPE_STORAGE,
+            CAPACITY_TYPE_STORAGE_ALLOCATED,
+            CAPACITY_TYPE_SECONDARY_STORAGE,
+            CAPACITY_TYPE_LOCAL_STORAGE);
 
     public Long getHostOrPoolId();
 
@@ -54,4 +61,6 @@ public interface Capacity extends InternalIdentity, Identity {
     public Float getUsedPercentage();
 
     public Long getAllocatedCapacity();
+
+    public String getTag();
 }

@@ -25,7 +25,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.network.Network;
 import com.cloud.user.Account;
@@ -38,7 +37,6 @@ import com.cloud.user.Account;
         since = "4.17.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ResetNetworkPermissionsCmd extends BaseCmd {
-    public static final Logger LOGGER = Logger.getLogger(ResetNetworkPermissionsCmd.class.getName());
 
 
     // ///////////////////////////////////////////////////

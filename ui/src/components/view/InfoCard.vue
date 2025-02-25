@@ -128,6 +128,12 @@
             <status class="status" :text="resource.resourcestate" displayText/>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="('success' in resource) && $route.meta.name === 'webhookdeliveries'">
+          <div class="resource-detail-item__label">{{ $t('label.success') }}</div>
+          <div class="resource-detail-item__details">
+            <status class="status" :text="resource.success ? 'success' : 'error'"/>
+          </div>
+        </div>
 
         <div class="resource-detail-item" v-if="resource.id">
           <div class="resource-detail-item__label">{{ $t('label.id') }}</div>
@@ -192,6 +198,9 @@
               </a-tooltip>
             </span>
             <span v-else>{{ resource.cputotal }}</span>
+            <a-tag v-if="resource.arch" style="margin-left: 10px">
+              {{ resource.arch }}
+            </a-tag>
           </div>
           <div>
             <span v-if="resource.cpuused">
@@ -556,7 +565,8 @@
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.serviceofferingname && resource.serviceofferingid">
-          <div class="resource-detail-item__label">{{ $t('label.serviceofferingname') }}</div>
+          <div class="resource-detail-item__label" v-if="$route.meta.name === 'router' || $route.meta.name === 'systemvm'">{{ $t('label.system.offering') }}</div>
+          <div class="resource-detail-item__label" v-else >{{ $t('label.serviceofferingname') }}</div>
           <div class="resource-detail-item__details">
             <cloud-outlined />
             <router-link v-if="!isStatic && ($route.meta.name === 'router' || $route.meta.name === 'systemvm')" :to="{ path: '/systemoffering/' + resource.serviceofferingid}">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
@@ -564,12 +574,19 @@
             <span v-else>{{ resource.serviceofferingname || resource.serviceofferingid }}</span>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="resource.diskofferingname && resource.diskofferingid">
+        <div class="resource-detail-item" v-if="resource.rootdiskofferingid && resource.rootdiskofferingdisplaytext || resource.datadiskofferingid && resource.datadiskofferingdisplaytext">
           <div class="resource-detail-item__label">{{ $t('label.diskoffering') }}</div>
           <div class="resource-detail-item__details">
             <hdd-outlined />
-            <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.diskofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/diskoffering/' + resource.diskofferingid }">{{ resource.diskofferingname || resource.diskofferingid }} </router-link>
-            <span v-else>{{ resource.diskofferingname || resource.diskofferingid }}</span>
+            <div v-if="resource.rootdiskofferingid">
+              <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.rootdiskofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/diskoffering/' + resource.rootdiskofferingid }">{{ resource.rootdiskofferingdisplaytext }}</router-link>
+              <span v-else>{{ resource.rootdiskofferingdisplaytext }}</span>
+            </div>
+            <span v-if="resource.rootdiskofferingid && resource.datadiskofferingid">&nbsp;|&nbsp;</span>
+            <div v-if="resource.datadiskofferingid">
+              <router-link v-if="!isStatic && $router.resolve('/diskoffering/' + resource.datadiskofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/diskoffering/' + resource.datadiskofferingid }">{{ resource.datadiskofferingdisplaytext }}</router-link>
+              <span v-else>{{ resource.datadiskofferingdisplaytext }}</span>
+            </div>
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.backupofferingid">
@@ -692,6 +709,22 @@
             <span v-else>{{ resource.domain || resource.domainid }}</span>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.payloadurl">
+          <div class="resource-detail-item__label">{{ $t('label.payloadurl') }}</div>
+          <div class="resource-detail-item__details">
+          <link-outlined/>
+            <a v-if="!isStatic" :href="resource.payloadurl">{{ resource.payloadurl }}</a>
+            <span v-else>{{ resource.payloadurl }}</span>
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="resource.webhookid">
+          <div class="resource-detail-item__label">{{ $t('label.webhook') }}</div>
+          <div class="resource-detail-item__details">
+            <node-index-outlined />
+            <router-link v-if="!isStatic && $router.resolve('/webhook/' + resource.webhookid).matched[0].redirect !== '/exception/404'" :to="{ path: '/webhook/' + resource.webhookid }">{{ resource.webhookname || resource.webhookid }}</router-link>
+            <span v-else>{{ resource.webhookname || resource.webhookid }}</span>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="resource.managementserverid">
           <div class="resource-detail-item__label">{{ $t('label.management.servers') }}</div>
           <div class="resource-detail-item__details">
@@ -730,8 +763,18 @@
         </div>
       </div>
 
-      <div class="account-center-tags" v-if="showKeys">
+      <div class="account-center-tags" v-if="showKeys || resource.apikeyaccess">
         <a-divider/>
+      </div>
+      <div class="account-center-tags" v-if="resource.apikeyaccess && resource.account">
+        <div class="resource-detail-item">
+          <div class="resource-detail-item__label">{{ $t('label.apikeyaccess') }}</div>
+          <div class="resource-detail-item__details">
+            <status class="status" :text="resource.apikeyaccess" displayText/>
+          </div>
+        </div>
+      </div>
+      <div class="account-center-tags" v-if="showKeys">
         <div class="user-keys">
           <key-outlined />
           <strong>
@@ -1080,6 +1123,9 @@ export default {
       api('getUserKeys', { id: this.resource.id }).then(json => {
         this.showKeys = true
         this.newResource.secretkey = json.getuserkeysresponse.userkeys.secretkey
+        if (!this.isAdmin()) {
+          this.newResource.apikeyaccess = json.getuserkeysresponse.userkeys.apikeyaccess ? 'Enabled' : 'Disabled'
+        }
         this.$emit('change-resource', this.newResource)
       })
     },
@@ -1109,6 +1155,9 @@ export default {
       return ['Admin'].includes(this.$store.getters.userInfo.roletype) ||
         (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
         (this.resource.project && this.resource.projectid === this.$store.getters.project.id)
+    },
+    isAdmin () {
+      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
     },
     showInput () {
       this.inputVisible = true

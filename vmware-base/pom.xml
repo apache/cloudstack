@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.19.2.0-SNAPSHOT</version>
+        <version>4.20.1.0-SNAPSHOT</version>
     </parent>
     <dependencies>
         <dependency>
@@ -50,6 +50,16 @@
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>jakarta.xml.bind</groupId>
+            <artifactId>jakarta.xml.bind-api</artifactId>
+            <version>${cs.jakarta.xml.bind.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.sun.xml.bind</groupId>
+            <artifactId>jaxb-impl</artifactId>
+            <version>${cs.jaxb.impl.version}</version>
         </dependency>
         <dependency>
             <groupId>com.cloud.com.vmware</groupId>

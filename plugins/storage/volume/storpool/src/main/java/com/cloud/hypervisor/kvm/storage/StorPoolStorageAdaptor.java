@@ -28,7 +28,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.storage.Storage;
@@ -39,7 +40,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
-@StorageAdaptorInfo(storagePoolType=StoragePoolType.StorPool)
 public class StorPoolStorageAdaptor implements StorageAdaptor {
     public static void SP_LOG(String fmt, Object... args) {
         try (PrintWriter spLogFile = new PrintWriter(new BufferedWriter(new FileWriter("/var/log/cloudstack/agent/storpool-agent.log", true)))) {
@@ -52,7 +52,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
         }
     }
 
-    private static final Logger log = Logger.getLogger(StorPoolStorageAdaptor.class);
+    protected static Logger LOGGER = LogManager.getLogger(StorPoolStorageAdaptor.class);
 
     private static final Map<String, KVMStoragePool> storageUuidToStoragePool = new HashMap<String, KVMStoragePool>();
 
@@ -63,6 +63,11 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
         StorPoolStoragePool storagePool = new StorPoolStoragePool(uuid, host, port, storagePoolType, this);
         storageUuidToStoragePool.put(uuid, storagePool);
         return storagePool;
+    }
+
+    @Override
+    public StoragePoolType getStoragePoolType() {
+        return StoragePoolType.StorPool;
     }
 
     @Override
@@ -99,7 +104,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
         if (!file.exists()) {
             return 0;
         }
-        Script sc = new Script("blockdev", 0, log);
+        Script sc = new Script("blockdev", 0, LOGGER);
         sc.add("--getsize64", devPath);
 
         OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
@@ -108,7 +113,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
         if (res != null) {
             SP_LOG("Unable to retrieve device size for %s. Res: %s", devPath, res);
 
-            log.debug(String.format("Unable to retrieve device size for %s. Res: %s", devPath, res));
+            LOGGER.debug(String.format("Unable to retrieve device size for %s. Res: %s", devPath, res));
             return 0;
         }
 
@@ -156,7 +161,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
         String err = null;
 
         for(int i = 0; i < numTries; i++) {
-            Script sc = new Script("storpool", 0, log);
+            Script sc = new Script("storpool", 0, LOGGER);
             sc.add("-M");
             sc.add(command);
             sc.add(type, name);
@@ -188,7 +193,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
 
         if (err != null) {
             SP_LOG(err);
-            log.warn(err);
+            LOGGER.warn(err);
             throw new CloudRuntimeException(err);
         }
 
@@ -207,7 +212,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
 
         SP_LOG("StorPoolStorageAdaptor.resize: size=%s, uuid=%s, name=%s", newSize, volumeUuid, name);
 
-        Script sc = new Script("storpool", 0, log);
+        Script sc = new Script("storpool", 0, LOGGER);
         sc.add("-M");
         sc.add("volume");
         sc.add(name);
@@ -224,7 +229,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
 
         String err = String.format("Unable to resize volume %s. Error: %s", name, res);
         SP_LOG(err);
-        log.warn(err);
+        LOGGER.warn(err);
         throw new CloudRuntimeException(err);
     }
 
@@ -232,7 +237,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     public KVMPhysicalDisk getPhysicalDisk(String volumeUuid, KVMStoragePool pool) {
         SP_LOG("StorPoolStorageAdaptor.getPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool);
 
-        log.debug(String.format("getPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool));
+        LOGGER.debug(String.format("getPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool));
 
         final long deviceSize = getDeviceSize(volumeUuid);
 
@@ -247,7 +252,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     public boolean connectPhysicalDisk(String volumeUuid, KVMStoragePool pool, Map<String, String> details, boolean isVMMigrate) {
         SP_LOG("StorPoolStorageAdaptor.connectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool);
 
-        log.debug(String.format("connectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool));
+        LOGGER.debug(String.format("connectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool));
 
         return attachOrDetachVolume("attach", "volume", volumeUuid);
     }
@@ -256,19 +261,19 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
     public boolean disconnectPhysicalDisk(String volumeUuid, KVMStoragePool pool) {
         SP_LOG("StorPoolStorageAdaptor.disconnectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool);
 
-        log.debug(String.format("disconnectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool));
+        LOGGER.debug(String.format("disconnectPhysicalDisk: uuid=%s, pool=%s", volumeUuid, pool));
         return attachOrDetachVolume("detach", "volume", volumeUuid);
     }
 
     public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
         String volumeUuid = volumeToDisconnect.get(DiskTO.UUID);
-        log.debug(String.format("StorPoolStorageAdaptor.disconnectPhysicalDisk: map. uuid=%s", volumeUuid));
+        LOGGER.debug(String.format("StorPoolStorageAdaptor.disconnectPhysicalDisk: map. uuid=%s", volumeUuid));
         return attachOrDetachVolume("detach", "volume", volumeUuid);
     }
 
     @Override
     public boolean disconnectPhysicalDiskByPath(String localPath) {
-        log.debug(String.format("disconnectPhysicalDiskByPath: localPath=%s", localPath));
+        LOGGER.debug(String.format("disconnectPhysicalDiskByPath: localPath=%s", localPath));
         return attachOrDetachVolume("detach", "volume", localPath);
     }
 
@@ -283,7 +288,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
             throw new UnsupportedOperationException(err);
         }
 
-        Script sc = new Script("storpool", 0, log);
+        Script sc = new Script("storpool", 0, LOGGER);
         sc.add("-M");
         sc.add("snapshot", name);
         sc.add("delete", name);
@@ -294,7 +299,7 @@ public class StorPoolStorageAdaptor implements StorageAdaptor {
         if (res != null) {
             final String err = String.format("Unable to delete StorPool snapshot '%s'. Error: %s", name, res);
             SP_LOG(err);
-            log.warn(err);
+            LOGGER.warn(err);
             throw new UnsupportedOperationException(err);
         }
         return true; // apparently ignored

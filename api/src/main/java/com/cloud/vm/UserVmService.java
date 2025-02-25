@@ -68,10 +68,7 @@ public interface UserVmService {
     /**
      * Destroys one virtual machine
      *
-     * @param userId
-     *            the id of the user performing the action
-     * @param vmId
-     *            the id of the virtual machine.
+     * @param cmd the API Command Object containg the parameters to use for this service action
      * @throws ConcurrentOperationException
      * @throws ResourceUnavailableException
      */
@@ -112,13 +109,13 @@ public interface UserVmService {
     UserVm startVirtualMachine(StartVMCmd cmd) throws StorageUnavailableException, ExecutionException, ConcurrentOperationException, ResourceUnavailableException,
         InsufficientCapacityException, ResourceAllocationException;
 
+    UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ResourceAllocationException;
+
     void startVirtualMachine(UserVm vm) throws OperationTimedoutException, ResourceUnavailableException, InsufficientCapacityException;
 
     void startVirtualMachineForHA(VirtualMachine vm, Map<VirtualMachineProfile.Param, Object> params,
           DeploymentPlanner planner) throws InsufficientCapacityException, ResourceUnavailableException,
             ConcurrentOperationException, OperationTimedoutException;
-
-    UserVm rebootVirtualMachine(RebootVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;
 
     UserVm updateVirtualMachine(UpdateVMCmd cmd) throws ResourceUnavailableException, InsufficientCapacityException;
 
@@ -156,14 +153,6 @@ public interface UserVmService {
      * Creates a Basic Zone User VM in the database and returns the VM to the
      * caller.
      *
-     *
-     *
-     * @param sshKeyPair
-     *            - name of the ssh key pair used to login to the virtual
-     *            machine
-     * @param cpuSpeed
-     * @param memory
-     * @param cpuNumber
      * @param zone
      *            - availability zone for the virtual machine
      * @param serviceOffering
@@ -239,9 +228,6 @@ public interface UserVmService {
      * Creates a User VM in Advanced Zone (Security Group feature is enabled) in
      * the database and returns the VM to the caller.
      *
-     *
-     *
-     * @param type
      * @param zone
      *            - availability zone for the virtual machine
      * @param serviceOffering
@@ -317,14 +303,6 @@ public interface UserVmService {
      * Creates a User VM in Advanced Zone (Security Group feature is disabled)
      * in the database and returns the VM to the caller.
      *
-     *
-     *
-     * @param sshKeyPair
-     *            - name of the ssh key pair used to login to the virtual
-     *            machine
-     * @param cpuSpeed
-     * @param memory
-     * @param cpuNumber
      * @param zone
      *            - availability zone for the virtual machine
      * @param serviceOffering
@@ -491,14 +469,14 @@ public interface UserVmService {
     VirtualMachine migrateVirtualMachineWithVolume(Long vmId, Host destinationHost, Map<String, String> volumeToPool) throws ResourceUnavailableException,
         ConcurrentOperationException, ManagementServerException, VirtualMachineMigrationException;
 
-    UserVm moveVMToUser(AssignVMCmd moveUserVMCmd) throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException,
+    UserVm moveVmToUser(AssignVMCmd moveUserVMCmd) throws ResourceAllocationException, ConcurrentOperationException, ResourceUnavailableException,
         InsufficientCapacityException;
 
     VirtualMachine vmStorageMigration(Long vmId, StoragePool destPool);
 
     VirtualMachine vmStorageMigration(Long vmId, Map<String, String> volumeToPool);
 
-    UserVm restoreVM(RestoreVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException;
+    UserVm restoreVM(RestoreVMCmd cmd) throws InsufficientCapacityException, ResourceUnavailableException, ResourceAllocationException;
 
     UserVm restoreVirtualMachine(Account caller, long vmId, Long newTemplateId, Long rootDiskOfferingId, boolean expunge, Map<String, String> details) throws InsufficientCapacityException, ResourceUnavailableException;
 

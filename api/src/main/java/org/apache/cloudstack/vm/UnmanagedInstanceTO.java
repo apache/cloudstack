@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.vm;
 
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import java.util.List;
 
@@ -32,6 +32,8 @@ public class UnmanagedInstanceTO {
     private String name;
 
     private String internalCSName;
+
+    private String path;
 
     private PowerState powerState;
 
@@ -73,6 +75,14 @@ public class UnmanagedInstanceTO {
 
     public void setInternalCSName(String internalCSName) {
         this.internalCSName = internalCSName;
+    }
+
+    public String getPath() {
+        return path;
+    }
+
+    public void setPath(String path) {
+        this.path = path;
     }
 
     public PowerState getPowerState() {
@@ -177,6 +187,13 @@ public class UnmanagedInstanceTO {
 
     public void setVncPassword(String vncPassword) {
         this.vncPassword = vncPassword;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("UnmanagedInstanceTO %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "name", "internalCSName", "hostName", "clusterName"));
     }
 
     public static class Disk {
@@ -322,12 +339,9 @@ public class UnmanagedInstanceTO {
 
         @Override
         public String toString() {
-            return "Disk {" +
-                    "diskId='" + diskId + '\'' +
-                    ", capacity=" + toHumanReadableSize(capacity) +
-                    ", controller='" + controller + '\'' +
-                    ", controllerUnit=" + controllerUnit +
-                    "}";
+            return String.format("Disk %s",
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                            this, "diskId", "internalCSName", "controller", "controllerUnit"));
         }
     }
 
@@ -424,11 +438,9 @@ public class UnmanagedInstanceTO {
 
         @Override
         public String toString() {
-            return "Nic{" +
-                    "nicId='" + nicId + '\'' +
-                    ", adapterType='" + adapterType + '\'' +
-                    ", macAddress='" + macAddress + '\'' +
-                    "}";
+            return String.format("Nic %s",
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                            this, "nicId", "adapterType", "macAddress"));
         }
     }
 }

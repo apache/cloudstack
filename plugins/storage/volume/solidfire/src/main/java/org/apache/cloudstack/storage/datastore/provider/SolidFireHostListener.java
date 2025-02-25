@@ -25,7 +25,9 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import com.cloud.host.Host;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
@@ -55,7 +57,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class SolidFireHostListener implements HypervisorHostListener {
-    private static final Logger LOGGER = Logger.getLogger(SolidFireHostListener.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject private AgentManager agentMgr;
     @Inject private AlertManager alertMgr;
@@ -73,13 +75,13 @@ public class SolidFireHostListener implements HypervisorHostListener {
         HostVO host = hostDao.findById(hostId);
 
         if (host == null) {
-            LOGGER.error(String.format("Failed to add host by SolidFireHostListener as host was not found with id = %s ", hostId));
+            logger.error(String.format("Failed to add host by SolidFireHostListener as host was not found with id = %s ", hostId));
 
             return false;
         }
 
         if (host.getClusterId() == null) {
-            LOGGER.error("Failed to add host by SolidFireHostListener as host has no associated cluster id");
+            logger.error("Failed to add host by SolidFireHostListener as host has no associated cluster id");
             return false;
         }
 
@@ -104,10 +106,10 @@ public class SolidFireHostListener implements HypervisorHostListener {
         }
 
         if (host.getHypervisorType().equals(HypervisorType.XenServer)) {
-            handleXenServer(host.getClusterId(), host.getId(), storagePoolId);
+            handleXenServer(host.getClusterId(), host, storagePoolId);
         }
         else if (host.getHypervisorType().equals(HypervisorType.KVM)) {
-            handleKVM(hostId, storagePoolId);
+            handleKVM(host, storagePoolId);
         }
 
         return true;
@@ -146,7 +148,7 @@ public class SolidFireHostListener implements HypervisorHostListener {
         return true;
     }
 
-    private void handleXenServer(long clusterId, long hostId, long storagePoolId) {
+    private void handleXenServer(long clusterId, Host host, long storagePoolId) {
         List<String> storagePaths = getStoragePaths(clusterId, storagePoolId);
 
         StoragePool storagePool = (StoragePool)dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
@@ -156,7 +158,7 @@ public class SolidFireHostListener implements HypervisorHostListener {
 
             cmd.setStoragePath(storagePath);
 
-            sendModifyStoragePoolCommand(cmd, storagePool, hostId);
+            sendModifyStoragePoolCommand(cmd, storagePool, host);
         }
     }
 
@@ -180,17 +182,17 @@ public class SolidFireHostListener implements HypervisorHostListener {
                 cmd.setTargetTypeToRemove(targetTypeToRemove);
                 cmd.setRemoveAsync(true);
 
-                sendModifyTargetsCommand(cmd, host.getId());
+                sendModifyTargetsCommand(cmd, host);
             }
         }
     }
 
-    private void handleKVM(long hostId, long storagePoolId) {
+    private void handleKVM(Host host, long storagePoolId) {
         StoragePool storagePool = (StoragePool)dataStoreMgr.getDataStore(storagePoolId, DataStoreRole.Primary);
 
         ModifyStoragePoolCommand cmd = new ModifyStoragePoolCommand(true, storagePool);
 
-        sendModifyStoragePoolCommand(cmd, storagePool, hostId);
+        sendModifyStoragePoolCommand(cmd, storagePool, host);
     }
 
     private List<String> getStoragePaths(long clusterId, long storagePoolId) {
@@ -259,17 +261,15 @@ public class SolidFireHostListener implements HypervisorHostListener {
         return targets;
     }
 
-    private void sendModifyTargetsCommand(ModifyTargetsCommand cmd, long hostId) {
-        Answer answer = agentMgr.easySend(hostId, cmd);
+    private void sendModifyTargetsCommand(ModifyTargetsCommand cmd, Host host) {
+        Answer answer = agentMgr.easySend(host.getId(), cmd);
 
         if (answer == null) {
             throw new CloudRuntimeException("Unable to get an answer to the modify targets command");
         }
 
         if (!answer.getResult()) {
-            String msg = "Unable to modify targets on the following host: " + hostId;
-
-            HostVO host = hostDao.findById(hostId);
+            String msg = String.format("Unable to modify targets on the following host: %s", host);
 
             alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), msg, msg);
 
@@ -277,24 +277,23 @@ public class SolidFireHostListener implements HypervisorHostListener {
         }
     }
 
-    private void sendModifyStoragePoolCommand(ModifyStoragePoolCommand cmd, StoragePool storagePool, long hostId) {
-        Answer answer = agentMgr.easySend(hostId, cmd);
+    private void sendModifyStoragePoolCommand(ModifyStoragePoolCommand cmd, StoragePool storagePool, Host host) {
+        Answer answer = agentMgr.easySend(host.getId(), cmd);
 
         if (answer == null) {
-            throw new CloudRuntimeException("Unable to get an answer to the modify storage pool command (" + storagePool.getId() + ")");
+            throw new CloudRuntimeException(String.format("Unable to get an answer to the modify storage pool command (%s)", storagePool));
         }
 
         if (!answer.getResult()) {
-            String msg = "Unable to attach storage pool " + storagePool.getId() + " to host " + hostId;
+            String msg = String.format("Unable to attach storage pool %s to host %s", storagePool, host);
 
             alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
 
-            throw new CloudRuntimeException("Unable to establish a connection from agent to storage pool " + storagePool.getId() + " due to " + answer.getDetails() +
-                " (" + storagePool.getId() + ")");
+            throw new CloudRuntimeException(String.format("Unable to establish a connection from agent to storage pool %s due to %s", storagePool, answer.getDetails()));
         }
 
-        assert (answer instanceof ModifyStoragePoolAnswer) : "ModifyStoragePoolAnswer expected ; Pool = " + storagePool.getId() + " Host = " + hostId;
+        assert (answer instanceof ModifyStoragePoolAnswer) : String.format("ModifyStoragePoolAnswer expected ; Pool = %s Host = %s", storagePool, host);
 
-        LOGGER.info("Connection established between storage pool " + storagePool + " and host + " + hostId);
+        logger.info("Connection established between storage pool {} and host {}", storagePool, host);
     }
 }

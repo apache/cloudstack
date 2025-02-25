@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -44,7 +43,6 @@ import com.cloud.user.Account;
 @APICommand(name = "resizeVolume", description = "Resizes a volume", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {Volume.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
-    public static final Logger s_logger = Logger.getLogger(ResizeVolumeCmd.class.getName());
 
     private static final String s_name = "resizevolumeresponse";
 
@@ -75,6 +73,10 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
                description = "new disk offering id")
     private Long newDiskOfferingId;
 
+    @Parameter(name = ApiConstants.AUTO_MIGRATE, type = CommandType.BOOLEAN, required = false,
+            description = "Flag to allow automatic migration of the volume to another suitable storage pool that accommodates the new size", since = "4.20.1")
+    private Boolean autoMigrate;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -103,6 +105,10 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
         return getEntityId();
     }
 
+    public void setId(Long id) {
+        this.id = id;
+    }
+
     public Long getMinIops() {
         return minIops;
     }
@@ -115,12 +121,20 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
         return size;
     }
 
+    public void setSize(Long size) {
+        this.size = size;
+    }
+
     public boolean isShrinkOk() {
         return shrinkOk;
     }
 
     public Long getNewDiskOfferingId() {
         return newDiskOfferingId;
+    }
+
+    public boolean getAutoMigrate() {
+        return autoMigrate == null ? false : autoMigrate;
     }
 
     /////////////////////////////////////////////////////
@@ -195,10 +209,10 @@ public class ResizeVolumeCmd extends BaseAsyncCmd implements UserCmd {
 
             volume = _volumeService.resizeVolume(this);
         } catch (ResourceAllocationException ex) {
-            s_logger.error(ex.getMessage());
+            logger.error(ex.getMessage());
             throw new ServerApiException(ApiErrorCode.RESOURCE_ALLOCATION_ERROR, ex.getMessage());
         } catch (InvalidParameterValueException ex) {
-            s_logger.info(ex.getMessage());
+            logger.info(ex.getMessage());
             throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, ex.getMessage());
         }
 

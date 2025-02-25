@@ -53,15 +53,16 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.ssl.SSLContextBuilder;
-import org.apache.log4j.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class PrimeraAdapter implements ProviderAdapter {
 
-    static final Logger logger = Logger.getLogger(PrimeraAdapter.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     public static final String HOSTSET = "hostset";
     public static final String CPG = "cpg";
@@ -145,16 +146,18 @@ public class PrimeraAdapter implements ProviderAdapter {
         }
 
         // determine volume type based on offering
-        // THIN: tpvv=true, reduce=false
-        // SPARSE: tpvv=true, reduce=true
-        // THICK: tpvv=false, tpZeroFill=true (not supported)
+        // tpvv -- thin provisioned virtual volume (no deduplication)
+        // reduce -- thin provisioned virtual volume (with duplication and compression, also known as DECO)
+        // these are the only choices with newer Primera devices
+        // we will use THIN for the deduplicated/compressed type and SPARSE for thin-only without dedup/compress
+        // note: DECO/reduce type must be at least 16GB in size
         if (diskOffering != null) {
             if (diskOffering.getType() == ProvisioningType.THIN) {
-                request.setTpvv(true);
-                request.setReduce(false);
-            } else if (diskOffering.getType() == ProvisioningType.SPARSE) {
                 request.setTpvv(false);
                 request.setReduce(true);
+            } else if (diskOffering.getType() == ProvisioningType.SPARSE) {
+                request.setTpvv(true);
+                request.setReduce(false);
             } else if (diskOffering.getType() == ProvisioningType.FAT) {
                 throw new RuntimeException("This storage provider does not support FAT provisioned volumes");
             }
@@ -165,8 +168,16 @@ public class PrimeraAdapter implements ProviderAdapter {
             }
         } else {
             // default to deduplicated volume
-            request.setReduce(true);
             request.setTpvv(false);
+            request.setReduce(true);
+        }
+
+        if (request.getReduce() == true) {
+            // check if sizeMiB is less than 16GB adjust up to 16GB.  The AdaptiveDatastoreDriver will automatically
+            // update this on the cloudstack side to match
+            if (request.getSizeMiB() < 16 * 1024) {
+                request.setSizeMiB(16 * 1024);
+            }
         }
 
         request.setComment(ProviderVolumeNamer.generateObjectComment(context, dataIn));
@@ -184,8 +195,11 @@ public class PrimeraAdapter implements ProviderAdapter {
         if (host == null) {
             throw new RuntimeException("Unable to find host " + hostname + " on storage provider");
         }
-        request.setHostname(host.getName());
 
+        // check if we already have a vlun for requested host
+        Integer vlun = hasVlun(hostname, hostname);
+        if (vlun == null) {
+        request.setHostname(host.getName());
         request.setVolumeName(dataIn.getExternalName());
         request.setAutoLun(true);
         // auto-lun returned here: Location: /api/v1/vluns/test_vv02,252,mysystem,2:2:4
@@ -197,7 +211,13 @@ public class PrimeraAdapter implements ProviderAdapter {
         if (toks.length <2) {
             throw new RuntimeException("Attach volume failed with invalid location response to vlun add command on storage provider.  Provided location: " + location);
         }
-        return toks[1];
+            try {
+                vlun = Integer.parseInt(toks[1]);
+            } catch (NumberFormatException e) {
+                throw new RuntimeException("VLUN attach request succeeded but the VLUN value is not a valid number: " + toks[1]);
+            }
+        }
+        return vlun.toString();
     }
 
     /**
@@ -230,6 +250,20 @@ public class PrimeraAdapter implements ProviderAdapter {
                 }
             });
         }
+    }
+
+    private Integer hasVlun(String externalName, String hostname) {
+        PrimeraVlunList list = getVluns(externalName);
+        if (list != null && list.getMembers().size() > 0) {
+            for (PrimeraVlun vlun: list.getMembers()) {
+                if (hostname != null) {
+                    if (vlun.getHostname().equals(hostname) || vlun.getHostname().equals(hostname.split("\\.")[0])) {
+                        return vlun.getLun();
+                    }
+                }
+            }
+        }
+        return null;
     }
 
     public void removeVlun(String name, Integer lunid, String hostString) {

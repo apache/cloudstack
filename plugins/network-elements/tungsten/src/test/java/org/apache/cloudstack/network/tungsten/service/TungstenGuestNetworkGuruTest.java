@@ -233,7 +233,7 @@ public class TungstenGuestNetworkGuruTest {
         final Network network = mock(Network.class);
         final Account account = mock(Account.class);
 
-        final Network designedNetwork = guru.design(offering, plan, network, account);
+        final Network designedNetwork = guru.design(offering, plan, network, "", 1L, account);
         assertNotNull(designedNetwork);
         assertSame(Networks.BroadcastDomainType.TUNGSTEN, designedNetwork.getBroadcastDomainType());
         assertSame(Network.State.Allocated, designedNetwork.getState());

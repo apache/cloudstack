@@ -87,7 +87,7 @@ def mkdir(name, mode, fatal):
     except OSError as e:
         if e.errno != 17:
             print("failed to make directories " + name + " due to :" + e.strerror)
-            if(fatal):
+            if fatal:
                 sys.exit(1)
 
 
@@ -196,7 +196,7 @@ def execute(command):
         returncode = 0
 
         logging.debug("Command [%s] has the result [%s]" % (command, result))
-        return result.splitlines()
+        return result.decode().splitlines()
     except subprocess.CalledProcessError as e:
         logging.error(e)
         returncode = e.returncode

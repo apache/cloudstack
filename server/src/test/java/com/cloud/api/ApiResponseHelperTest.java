@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api;
 
+import com.cloud.capacity.Capacity;
+import com.cloud.configuration.Resource;
 import com.cloud.domain.DomainVO;
 import com.cloud.network.PublicIpQuarantine;
 import com.cloud.network.as.AutoScaleVmGroup;
@@ -451,5 +453,32 @@ public class ApiResponseHelperTest {
         Assert.assertEquals(removalReason, result.getRemovalReason());
         Assert.assertEquals(removerAccountUuid, result.getRemoverAccountId());
         Assert.assertEquals("quarantinedip", result.getResponseName());
+    }
+
+    @Test
+    public void testCapacityListingForSingleTag() {
+        Capacity c1 = Mockito.mock(Capacity.class);
+        Mockito.when(c1.getTag()).thenReturn("tag1");
+        Capacity c2 = Mockito.mock(Capacity.class);
+        Mockito.when(c2.getTag()).thenReturn("tag1");
+        Capacity c3 = Mockito.mock(Capacity.class);
+        Mockito.when(c3.getTag()).thenReturn("tag2");
+        Capacity c4 = Mockito.mock(Capacity.class);
+        Assert.assertTrue(apiResponseHelper.capacityListingForSingleTag(List.of(c1, c2)));
+        Assert.assertFalse(apiResponseHelper.capacityListingForSingleTag(List.of(c1, c2, c3)));
+        Assert.assertFalse(apiResponseHelper.capacityListingForSingleTag(List.of(c4, c2, c3)));
+    }
+
+    @Test
+    public void testCapacityListingForSingleNonGpuType() {
+        Capacity c1 = Mockito.mock(Capacity.class);
+        Mockito.when(c1.getCapacityType()).thenReturn((short)Resource.ResourceType.user_vm.getOrdinal());
+        Capacity c2 = Mockito.mock(Capacity.class);
+        Mockito.when(c2.getCapacityType()).thenReturn((short)Resource.ResourceType.user_vm.getOrdinal());
+        Capacity c3 = Mockito.mock(Capacity.class);
+        Mockito.when(c3.getCapacityType()).thenReturn((short)Resource.ResourceType.volume.getOrdinal());
+        Capacity c4 = Mockito.mock(Capacity.class);
+        Assert.assertTrue(apiResponseHelper.capacityListingForSingleNonGpuType(List.of(c1, c2)));
+        Assert.assertFalse(apiResponseHelper.capacityListingForSingleNonGpuType(List.of(c1, c2, c3)));
     }
 }

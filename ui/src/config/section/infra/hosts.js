@@ -27,7 +27,7 @@ export default {
   searchFilters: ['name', 'zoneid', 'podid', 'clusterid', 'hypervisor'],
   resourceType: 'Host',
   filters: () => {
-    const filters = ['enabled', 'disabled', 'maintenance', 'up', 'down', 'alert']
+    const filters = ['enabled', 'disabled', 'maintenance', 'up', 'down', 'disconnected', 'alert']
     return filters
   },
   params: { type: 'routing' },
@@ -41,7 +41,7 @@ export default {
     fields.push('zonename')
     return fields
   },
-  details: ['name', 'id', 'resourcestate', 'ipaddress', 'hypervisor', 'type', 'clustername', 'podname', 'zonename', 'disconnected', 'created'],
+  details: ['name', 'id', 'resourcestate', 'ipaddress', 'hypervisor', 'arch', 'type', 'clustername', 'podname', 'zonename', 'disconnected', 'created'],
   tabs: [{
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
@@ -64,7 +64,7 @@ export default {
       api: 'addHost',
       icon: 'plus-outlined',
       label: 'label.add.host',
-      docHelp: 'adminguide/installguide/configuration.html#adding-a-host',
+      docHelp: 'installguide/configuration.html#adding-a-host',
       listView: true,
       popup: true,
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostAdd.vue')))
@@ -74,12 +74,8 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['name', 'hosttags', 'istagarule', 'oscategoryid'],
-      mapping: {
-        oscategoryid: {
-          api: 'listOsCategories'
-        }
-      }
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostUpdate')))
     },
     {
       api: 'provisionCertificate',
@@ -287,7 +283,7 @@ export default {
     },
     {
       api: 'startRollingMaintenance',
-      icon: 'setting-outlined',
+      icon: 'control-outlined',
       label: 'label.start.rolling.maintenance',
       message: 'label.start.rolling.maintenance',
       docHelp: 'adminguide/hosts.html#kvm-rolling-maintenance',

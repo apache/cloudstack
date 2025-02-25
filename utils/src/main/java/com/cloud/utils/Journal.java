@@ -21,8 +21,8 @@ package com.cloud.utils;
 
 import java.util.ArrayList;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Journal is used to kept what has happened during a process so someone can track
@@ -49,7 +49,7 @@ public class Journal {
     }
 
     public void record(Logger logger, Level p, String msg, Object... params) {
-        if (logger.isEnabledFor(p)) {
+        if (logger.isEnabled(p)) {
             StringBuilder buf = new StringBuilder();
             toString(buf, msg, params);
             String entry = buf.toString();

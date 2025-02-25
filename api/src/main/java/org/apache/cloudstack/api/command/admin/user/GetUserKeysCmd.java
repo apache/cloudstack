@@ -20,6 +20,7 @@ package org.apache.cloudstack.api.command.admin.user;
 
 import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,7 +30,6 @@ import org.apache.cloudstack.api.response.RegisterResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 
 import java.util.Map;
-import org.apache.log4j.Logger;
 
 @APICommand(name = "getUserKeys",
             description = "This command allows the user to query the seceret and API keys for the account",
@@ -44,7 +44,6 @@ public class GetUserKeysCmd extends BaseCmd{
     @Parameter(name= ApiConstants.ID, type = CommandType.UUID, entityType = UserResponse.class, required = true, description = "ID of the user whose keys are required")
     private Long id;
 
-    public static final Logger s_logger = Logger.getLogger(GetUserKeysCmd.class.getName());
 
     public Long getID(){
         return id;
@@ -56,11 +55,13 @@ public class GetUserKeysCmd extends BaseCmd{
         else return Account.ACCOUNT_ID_SYSTEM;
     }
     public void execute(){
-        Map<String, String> keys = _accountService.getKeys(this);
+        Pair<Boolean, Map<String, String>> keys = _accountService.getKeys(this);
+
         RegisterResponse response = new RegisterResponse();
         if(keys != null){
-            response.setApiKey(keys.get("apikey"));
-            response.setSecretKey(keys.get("secretkey"));
+            response.setApiKeyAccess(keys.first());
+            response.setApiKey(keys.second().get("apikey"));
+            response.setSecretKey(keys.second().get("secretkey"));
         }
 
         response.setObjectName("userkeys");

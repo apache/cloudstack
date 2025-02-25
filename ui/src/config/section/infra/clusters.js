@@ -35,7 +35,7 @@ export default {
     fields.push('zonename')
     return fields
   },
-  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'hypervisortype', 'podname', 'zonename', 'drsimbalance'],
+  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'arch', 'hypervisortype', 'podname', 'zonename', 'drsimbalance'],
   related: [{
     name: 'host',
     title: 'label.hosts',
@@ -73,7 +73,7 @@ export default {
       api: 'addCluster',
       icon: 'plus-outlined',
       label: 'label.add.cluster',
-      docHelp: 'adminguide/installguide/configuration.html#adding-a-cluster',
+      docHelp: 'installguide/configuration.html#adding-a-cluster',
       listView: true,
       popup: true,
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ClusterAdd.vue')))
@@ -83,14 +83,19 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['clustername']
+      args: ['clustername', 'arch'],
+      mapping: {
+        arch: {
+          options: ['x86_64', 'aarch64']
+        }
+      }
     },
     {
       api: 'updateCluster',
       icon: 'play-circle-outlined',
       label: 'label.action.enable.cluster',
       message: 'message.action.enable.cluster',
-      docHelp: 'adminguide/installguide/hosts.html#disabling-and-enabling-zones-pods-and-clusters',
+      docHelp: 'adminguide/hosts.html#disabling-and-enabling-zones-pods-and-clusters',
       dataView: true,
       defaultArgs: { allocationstate: 'Enabled' },
       show: (record) => { return record.allocationstate === 'Disabled' }
@@ -100,7 +105,7 @@ export default {
       icon: 'pause-circle-outlined',
       label: 'label.action.disable.cluster',
       message: 'message.action.disable.cluster',
-      docHelp: 'adminguide/installguide/hosts.html#disabling-and-enabling-zones-pods-and-clusters',
+      docHelp: 'adminguide/hosts.html#disabling-and-enabling-zones-pods-and-clusters',
       dataView: true,
       defaultArgs: { allocationstate: 'Disabled' },
       show: (record) => { return record.allocationstate === 'Enabled' }

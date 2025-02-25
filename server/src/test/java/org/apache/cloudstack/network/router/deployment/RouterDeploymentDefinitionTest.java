@@ -31,6 +31,8 @@ import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.VirtualRouterProvider.Type;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkServiceProviderVO;
 import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -45,9 +47,9 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -58,7 +60,7 @@ import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static junit.framework.Assert.fail;
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.lenient;
@@ -73,6 +75,10 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
 
     @Mock
     protected NetworkVO mockNw;
+    @Mock
+    PhysicalNetworkDao physicalNetworkDao;
+    @Mock
+    protected NsxProviderDao nsxProviderDao;
 
     protected RouterDeploymentDefinition deployment;
 
@@ -98,6 +104,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
                 .setAccountOwner(mockOwner)
                 .setParams(params)
                 .build();
+        deployment.pNtwkDao = physicalNetworkDao;
     }
 
     @Test
@@ -604,6 +611,8 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     @Test(expected = CloudRuntimeException.class)
     public void testFindVirtualProviderWithNullPhyNwSrvProvider() {
         // Prepare
+
+        when(physicalNetworkDao.findById(PHYSICAL_NW_ID)).thenReturn(null);
         when(mockNetworkModel.getPhysicalNetworkId(deployment.guestNetwork)).thenReturn(PHYSICAL_NW_ID);
         final Type type = Type.VirtualRouter;
         when(physicalProviderDao.findByServiceProvider(PHYSICAL_NW_ID, type.toString()))
@@ -688,7 +697,7 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
         when(mockNw.getNetworkOfferingId()).thenReturn(OFFERING_ID);
         when(mockNetworkOfferingDao.findById(OFFERING_ID)).thenReturn(mockNwOfferingVO);
         when(mockNwOfferingVO.getServiceOfferingId()).thenReturn(null);
-        when(mockServiceOfferingDao.findDefaultSystemOffering(Matchers.anyString(), Matchers.anyBoolean())).thenReturn(mockSvcOfferingVO);
+        when(mockServiceOfferingDao.findDefaultSystemOffering(ArgumentMatchers.anyString(), ArgumentMatchers.anyBoolean())).thenReturn(mockSvcOfferingVO);
         when(mockSvcOfferingVO.getId()).thenReturn(DEFAULT_OFFERING_ID);
 
         // Execute
@@ -770,8 +779,8 @@ public class RouterDeploymentDefinitionTest extends RouterDeploymentDefinitionTe
     protected void driveTestPrepareDeployment(final boolean isRedundant, final boolean isPublicNw) {
         // Prepare
         when(mockNw.isRedundant()).thenReturn(isRedundant);
-        when(mockNetworkModel.isProviderSupportServiceInNetwork(
-                NW_ID_1, Service.SourceNat, Provider.VirtualRouter)).thenReturn(isPublicNw);
+        when(mockNetworkModel.isAnyServiceSupportedInNetwork(
+                NW_ID_1, Provider.VirtualRouter, Service.SourceNat, Service.Gateway)).thenReturn(isPublicNw);
         // Execute
         final boolean canProceedDeployment = deployment.prepareDeployment();
         // Assert

@@ -114,15 +114,7 @@ export default {
       handler (newItem, oldItem) {
         if (newItem.id === oldItem.id) return
 
-        if (this.resource.associatednetworkid) {
-          api('listNetworks', { id: this.resource.associatednetworkid, listall: true }).then(response => {
-            if (response && response.listnetworksresponse && response.listnetworksresponse.network) {
-              this.networkService = response.listnetworksresponse.network[0]
-            } else {
-              this.networkService = {}
-            }
-          })
-        }
+        this.fetchData()
       }
     },
     '$route.fullPath': function () {
@@ -140,8 +132,20 @@ export default {
     window.addEventListener('popstate', function () {
       self.setActiveTab()
     })
+    this.fetchData()
   },
   methods: {
+    fetchData () {
+      if (this.resource.associatednetworkid) {
+        api('listNetworks', { id: this.resource.associatednetworkid, listall: true }).then(response => {
+          if (response && response.listnetworksresponse && response.listnetworksresponse.network) {
+            this.networkService = response.listnetworksresponse.network[0]
+          } else {
+            this.networkService = {}
+          }
+        })
+      }
+    },
     onTabChange (key) {
       this.activeTab = key
       const query = Object.assign({}, this.$route.query)

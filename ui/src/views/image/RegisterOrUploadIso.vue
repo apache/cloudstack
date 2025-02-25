@@ -183,6 +183,26 @@
           </a-select>
         </a-form-item>
 
+        <a-form-item
+          name="arch"
+          ref="arch">
+          <template #label>
+            <tooltip-label :title="$t('label.arch')" :tooltip="apiParams.arch.description"/>
+          </template>
+          <a-select
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            v-model:value="form.arch"
+            :placeholder="apiParams.arch.description">
+            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+              {{ opt.name || opt.description }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+
         <a-row :gutter="12">
           <a-col :md="24" :lg="12">
             <a-form-item
@@ -243,6 +263,12 @@
                 <tooltip-label :title="$t('label.ispublic')" :tooltip="apiParams.ispublic.description"/>
               </template>
               <a-switch v-model:checked="form.ispublic" />
+            </a-form-item>
+            <a-form-item ref="passwordenabled" name="passwordenabled" v-if="currentForm === 'Create'">
+              <template #label>
+                <tooltip-label :title="$t('label.passwordenabled')" :tooltip="apiParams.passwordenabled.description"/>
+              </template>
+              <a-switch v-model:checked="form.passwordenabled" />
             </a-form-item>
           </a-col>
           <a-col :md="24" :lg="12">
@@ -316,7 +342,8 @@ export default {
       accounts: [],
       domainLoading: false,
       domainid: null,
-      account: null
+      account: null,
+      architectureTypes: {}
     }
   },
   beforeCreate () {
@@ -343,6 +370,7 @@ export default {
         bootable: true,
         isextractable: false,
         ispublic: false,
+        passwordenabled: false,
         isdynamicallyscalable: false
       })
       this.rules = reactive({
@@ -356,6 +384,7 @@ export default {
     fetchData () {
       this.fetchZoneData()
       this.fetchOsType()
+      this.fetchArchitectureTypes()
       this.fetchUserData()
       this.fetchUserdataPolicy()
       if ('listDomains' in this.$store.getters.apis) {
@@ -380,6 +409,19 @@ export default {
         this.zoneLoading = false
         this.form.zoneid = (this.zones[0].id ? this.zones[0].id : '')
       })
+    },
+    fetchArchitectureTypes () {
+      this.architectureTypes.opts = []
+      const typesList = []
+      typesList.push({
+        id: 'x86_64',
+        description: 'AMD 64 bits (x86_64)'
+      })
+      typesList.push({
+        id: 'aarch64',
+        description: 'ARM 64 bits (aarch64)'
+      })
+      this.architectureTypes.opts = typesList
     },
     fetchOsType () {
       this.osTypeLoading = true

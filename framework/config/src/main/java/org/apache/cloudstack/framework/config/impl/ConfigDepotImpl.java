@@ -35,9 +35,11 @@ import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
 import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
+import org.apache.cloudstack.utils.cache.LazyCache;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
@@ -71,7 +73,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
  *     validation class to validate the value the admin input for the key.
  */
 public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
-    private final static Logger s_logger = Logger.getLogger(ConfigDepotImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
+    protected final static long CONFIG_CACHE_EXPIRE_SECONDS = 30;
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -82,12 +85,15 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
     List<ScopedConfigStorage> _scopedStorages;
     Set<Configurable> _configured = Collections.synchronizedSet(new HashSet<Configurable>());
     Set<String> newConfigs = Collections.synchronizedSet(new HashSet<>());
+    LazyCache<String, String> configCache;
 
     private HashMap<String, Pair<String, ConfigKey<?>>> _allKeys = new HashMap<String, Pair<String, ConfigKey<?>>>(1007);
 
     HashMap<ConfigKey.Scope, Set<ConfigKey<?>>> _scopeLevelConfigsMap = new HashMap<ConfigKey.Scope, Set<ConfigKey<?>>>();
 
     public ConfigDepotImpl() {
+        configCache = new LazyCache<>(512,
+                CONFIG_CACHE_EXPIRE_SECONDS, this::getConfigStringValueInternal);
         ConfigKey.init(this);
         createEmptyScopeLevelMappings();
     }
@@ -126,7 +132,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         if (_configured.contains(configurable))
             return;
 
-        s_logger.debug("Retrieving keys from " + configurable.getClass().getSimpleName());
+        logger.debug("Retrieving keys from " + configurable.getClass().getSimpleName());
 
         for (ConfigKey<?> key : configurable.getConfigKeys()) {
             Pair<String, ConfigKey<?>> previous = _allKeys.get(key.key());
@@ -265,6 +271,48 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
 
     public ConfigurationDao global() {
         return _configDao;
+    }
+
+    protected String getConfigStringValueInternal(String cacheKey) {
+        String[] parts = cacheKey.split("-");
+        String key = parts[0];
+        ConfigKey.Scope scope = ConfigKey.Scope.Global;
+        Long scopeId = null;
+        try {
+            scope = ConfigKey.Scope.valueOf(parts[1]);
+            scopeId = Long.valueOf(parts[2]);
+        } catch (IllegalArgumentException ignored) {}
+        if (!ConfigKey.Scope.Global.equals(scope) && scopeId != null) {
+            ScopedConfigStorage scopedConfigStorage = null;
+            for (ScopedConfigStorage storage : _scopedStorages) {
+                if (storage.getScope() == scope) {
+                    scopedConfigStorage = storage;
+                }
+            }
+            if (scopedConfigStorage == null) {
+                throw new CloudRuntimeException("Unable to find config storage for this scope: " + scope + " for " + key);
+            }
+            return scopedConfigStorage.getConfigValue(scopeId, key);
+        }
+        ConfigurationVO configurationVO = _configDao.findById(key);
+        if (configurationVO != null) {
+            return configurationVO.getValue();
+        }
+        return null;
+    }
+
+    private String getConfigCacheKey(String key, ConfigKey.Scope scope, Long scopeId) {
+        return String.format("%s-%s-%d", key, scope, (scopeId == null ? 0 : scopeId));
+    }
+
+    @Override
+    public String getConfigStringValue(String key, ConfigKey.Scope scope, Long scopeId) {
+        return configCache.get(getConfigCacheKey(key, scope, scopeId));
+    }
+
+    @Override
+    public void invalidateConfigCache(String key, ConfigKey.Scope scope, Long scopeId) {
+        configCache.invalidate(getConfigCacheKey(key, scope, scopeId));
     }
 
     public ScopedConfigStorage findScopedConfigStorage(ConfigKey<?> config) {

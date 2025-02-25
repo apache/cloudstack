@@ -28,7 +28,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "vpc_offerings")
@@ -58,6 +60,12 @@ public class VpcOfferingVO implements VpcOffering {
     @Column(name = "default")
     boolean isDefault = false;
 
+    @Column(name = "for_nsx")
+    boolean forNsx = false;
+
+    @Column(name = "network_mode")
+    NetworkOffering.NetworkMode networkMode;
+
     @Column(name = GenericDao.REMOVED_COLUMN)
     Date removed;
 
@@ -78,6 +86,13 @@ public class VpcOfferingVO implements VpcOffering {
 
     @Column(name = "sort_key")
     int sortKey;
+
+    @Column(name="routing_mode")
+    @Enumerated(value = EnumType.STRING)
+    private NetworkOffering.RoutingMode routingMode;
+
+    @Column(name = "specify_as_number")
+    private Boolean specifyAsNumber = false;
 
     public VpcOfferingVO() {
         this.uuid = UUID.randomUUID().toString();
@@ -144,14 +159,31 @@ public class VpcOfferingVO implements VpcOffering {
         return isDefault;
     }
 
+    public boolean isForNsx() {
+        return forNsx;
+    }
+
+    public void setForNsx(boolean forNsx) {
+        this.forNsx = forNsx;
+    }
+
+    public NetworkOffering.NetworkMode getNetworkMode() {
+        return networkMode;
+    }
+
+    public void setNetworkMode(NetworkOffering.NetworkMode networkMode) {
+        this.networkMode =  networkMode;
+    }
+
     public void setUniqueName(String uniqueName) {
         this.uniqueName = uniqueName;
     }
 
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder("[VPC Offering [");
-        return buf.append(id).append("-").append(name).append("]").toString();
+        return String.format("VPCOffering %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name"));
     }
 
     public void setName(String name) {
@@ -204,4 +236,21 @@ public class VpcOfferingVO implements VpcOffering {
         return sortKey;
     }
 
+    @Override
+    public NetworkOffering.RoutingMode getRoutingMode() {
+        return routingMode;
+    }
+
+    public void setRoutingMode(NetworkOffering.RoutingMode routingMode) {
+        this.routingMode = routingMode;
+    }
+
+    @Override
+    public Boolean isSpecifyAsNumber() {
+        return specifyAsNumber;
+    }
+
+    public void setSpecifyAsNumber(Boolean specifyAsNumber) {
+        this.specifyAsNumber = specifyAsNumber;
+    }
 }

@@ -18,6 +18,8 @@
 package com.cloud.api.query.dao;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,7 +35,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
-import org.apache.log4j.Logger;
+
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.ApiResponseHelper;
@@ -45,7 +48,6 @@ import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
-import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -53,14 +55,12 @@ import com.cloud.vm.VMInstanceVO;
 
 public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<SnapshotJoinVO, SnapshotResponse> implements SnapshotJoinDao {
 
-    public static final Logger s_logger = Logger.getLogger(SnapshotJoinDaoImpl.class);
-
     @Inject
-    private AccountService accountService;
+    AccountService accountService;
     @Inject
-    private AnnotationDao annotationDao;
+    AnnotationDao annotationDao;
     @Inject
-    private ConfigurationDao configDao;
+    ConfigurationDao configDao;
     @Inject
     SnapshotDataFactory snapshotDataFactory;
 
@@ -88,10 +88,10 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         if (snapshot.getDataCenterId() == null) {
             return;
         }
-        SnapshotInfo snapshotInfo = null;
+        SnapshotInfo snapshotInfo;
         snapshotInfo = snapshotDataFactory.getSnapshotWithRoleAndZone(snapshot.getId(), snapshot.getStoreRole(), snapshot.getDataCenterId());
         if (snapshotInfo == null) {
-            s_logger.debug("Unable to find info for image store snapshot with uuid " + snapshot.getUuid());
+            logger.debug("Unable to find info for image store snapshot {}", snapshot);
             snapshotResponse.setRevertable(false);
         } else {
             snapshotResponse.setRevertable(snapshotInfo.isRevertable());
@@ -196,13 +196,6 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
     }
 
     @Override
-    public Pair<List<SnapshotJoinVO>, Integer> searchIncludingRemovedAndCount(final SearchCriteria<SnapshotJoinVO> sc, final Filter filter) {
-        List<SnapshotJoinVO> objects = searchIncludingRemoved(sc, filter, null, false);
-        Integer count = getDistinctCount(sc);
-        return new Pair<>(objects, count);
-    }
-
-    @Override
     public List<SnapshotJoinVO> searchBySnapshotStorePair(String... pairs) {
         // set detail batch query size
         int DETAILS_BATCH_SIZE = 2000;
@@ -246,14 +239,33 @@ public class SnapshotJoinDaoImpl extends GenericDaoBaseWithTagInformation<Snapsh
         return uvList;
     }
 
+    protected List<SnapshotJoinVO> findById(Long zoneId, long id) {
+        SearchBuilder<SnapshotJoinVO> sb = createSearchBuilder();
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<SnapshotJoinVO> sc = sb.create();
+        sc.setParameters("id", id);
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        List<SnapshotJoinVO> snapshotJoinVOS = search(sc, null);
+        if (CollectionUtils.isEmpty(snapshotJoinVOS)) {
+            return null;
+        }
+        snapshotJoinVOS.sort(Comparator.comparing(SnapshotJoinVO::getSnapshotStorePair));
+        return Collections.singletonList(snapshotJoinVOS.get(0));
+    }
+
     @Override
     public List<SnapshotJoinVO> findByDistinctIds(Long zoneId, Long... ids) {
         if (ids == null || ids.length == 0) {
             return new ArrayList<>();
         }
-
+        if (ids.length == 1) {
+            return findById(zoneId, ids[0]);
+        }
         Filter searchFilter = new Filter(SnapshotJoinVO.class, "snapshotStorePair", QueryService.SortKeyAscending.value(), null, null);
-
         SearchCriteria<SnapshotJoinVO> sc = snapshotIdsSearch.create();
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);

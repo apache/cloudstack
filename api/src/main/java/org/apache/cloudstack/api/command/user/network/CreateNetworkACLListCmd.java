@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -41,7 +40,6 @@ import com.cloud.user.Account;
         responseObject = NetworkACLResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateNetworkACLListCmd.class.getName());
 
 
     // ///////////////////////////////////////////////////
@@ -130,7 +128,7 @@ public class CreateNetworkACLListCmd extends BaseAsyncCreateCmd {
         } else {
             account = CallContext.current().getCallingAccount();
             if (!Account.Type.ADMIN.equals(account.getType())) {
-                s_logger.warn(String.format("Only Root Admin can create global ACLs. Account [%s] cannot create any global ACL.", account));
+                logger.warn(String.format("Only Root Admin can create global ACLs. Account [%s] cannot create any global ACL.", account));
                 throw new PermissionDeniedException("Only Root Admin can create global ACLs.");
             }
 

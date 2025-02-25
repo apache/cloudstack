@@ -23,7 +23,6 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
@@ -46,7 +45,6 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> implements AccountJoinDao {
-    public static final Logger s_logger = Logger.getLogger(AccountJoinDaoImpl.class);
 
     @Inject
     private ConfigurationDao configDao;
@@ -84,6 +82,9 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         accountResponse.setNetworkDomain(account.getNetworkDomain());
         accountResponse.setDefaultZone(account.getDataCenterUuid());
         accountResponse.setIsDefault(account.isDefault());
+        if (view == ResponseView.Full) {
+            accountResponse.setApiKeyAccess(account.getApiKeyAccess());
+        }
 
         // get network stat
         accountResponse.setBytesReceived(account.getBytesReceived());

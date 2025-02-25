@@ -39,7 +39,7 @@ import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 
 import java.io.File;
@@ -118,7 +118,7 @@ public class CertServiceTest {
         when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
-        when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
+        when(certService._sslCertDao.persist(ArgumentMatchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
 
         certService._accountDao = Mockito.mock(AccountDao.class);
         when(certService._accountDao.findByIdIncludingRemoved(anyLong())).thenReturn((AccountVO)account);
@@ -175,7 +175,7 @@ public class CertServiceTest {
         when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
-        when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
+        when(certService._sslCertDao.persist(ArgumentMatchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
 
         certService._accountDao = Mockito.mock(AccountDao.class);
         when(certService._accountDao.findByIdIncludingRemoved(anyLong())).thenReturn((AccountVO)account);
@@ -234,7 +234,7 @@ public class CertServiceTest {
         when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
-        when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
+        when(certService._sslCertDao.persist(ArgumentMatchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
 
         certService._accountDao = Mockito.mock(AccountDao.class);
         when(certService._accountDao.findByIdIncludingRemoved(anyLong())).thenReturn((AccountVO)account);
@@ -284,7 +284,7 @@ public class CertServiceTest {
         when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
-        when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
+        when(certService._sslCertDao.persist(ArgumentMatchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
 
         certService._accountDao = Mockito.mock(AccountDao.class);
         when(certService._accountDao.findByIdIncludingRemoved(anyLong())).thenReturn((AccountVO)account);
@@ -331,7 +331,7 @@ public class CertServiceTest {
         when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
-        when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
+        when(certService._sslCertDao.persist(ArgumentMatchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
@@ -383,7 +383,7 @@ public class CertServiceTest {
         when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
-        when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
+        when(certService._sslCertDao.persist(ArgumentMatchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
@@ -433,7 +433,7 @@ public class CertServiceTest {
         when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
-        when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
+        when(certService._sslCertDao.persist(ArgumentMatchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
@@ -482,7 +482,7 @@ public class CertServiceTest {
         when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
-        when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
+        when(certService._sslCertDao.persist(ArgumentMatchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
@@ -525,7 +525,7 @@ public class CertServiceTest {
         when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
-        when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
+        when(certService._sslCertDao.persist(ArgumentMatchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
@@ -570,7 +570,7 @@ public class CertServiceTest {
         when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
-        when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
+        when(certService._sslCertDao.persist(ArgumentMatchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
@@ -614,7 +614,7 @@ public class CertServiceTest {
         when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
-        when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
+        when(certService._sslCertDao.persist(ArgumentMatchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();
@@ -658,7 +658,7 @@ public class CertServiceTest {
         when(certService._domainDao.findByIdIncludingRemoved(anyLong())).thenReturn(domain);
 
         certService._sslCertDao = Mockito.mock(SslCertDao.class);
-        when(certService._sslCertDao.persist(Matchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
+        when(certService._sslCertDao.persist(ArgumentMatchers.any(SslCertVO.class))).thenReturn(new SslCertVO());
 
         //creating the command
         final UploadSslCertCmd uploadCmd = new UploadSslCertCmdExtn();

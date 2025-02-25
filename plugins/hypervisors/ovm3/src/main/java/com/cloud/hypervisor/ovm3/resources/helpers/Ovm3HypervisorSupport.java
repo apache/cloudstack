@@ -26,7 +26,8 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
@@ -63,7 +64,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.trilead.ssh2.SCPClient;
 
 public class Ovm3HypervisorSupport {
-    private final Logger LOGGER = Logger.getLogger(Ovm3HypervisorSupport.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private Connection c;
     private Ovm3Configuration config;
 
@@ -162,19 +163,19 @@ public class Ovm3HypervisorSupport {
                 + filename);
         File keyFile = null;
         if (keyPath != null) {
-            LOGGER.debug("found SshKey " + keyPath);
+            logger.debug("found SshKey " + keyPath);
             keyFile = new File(keyPath);
         }
         if (keyFile == null || !keyFile.exists()) {
             String key = "client/target/generated-webapp/WEB-INF/classes/scripts/vm/systemvm/"
                     + filename;
-            LOGGER.warn("findScript failed, going for generated " + key);
+            logger.warn("findScript failed, going for generated " + key);
             keyFile = new File(key);
         }
         if (keyFile == null || !keyFile.exists()) {
             String key = "/usr/share/cloudstack-common/scripts/vm/systemvm/"
                     + filename;
-            LOGGER.warn("generated key retrieval failed " + key);
+            logger.warn("generated key retrieval failed " + key);
             keyFile = new File(key);
         }
         return keyFile;
@@ -190,12 +191,12 @@ public class Ovm3HypervisorSupport {
             /* get data we need from parts */
             Linux host = new Linux(c);
             if (!host.getOvmVersion().startsWith("3.2.") && !host.getOvmVersion().startsWith("3.3.")) {
-                LOGGER.error("Hypervisor not supported: " + host.getOvmVersion());
+                logger.error("Hypervisor not supported: " + host.getOvmVersion());
                 throw new CloudRuntimeException(
                         "OVM 3.2. or 3.3. are only supported, not "
                                 + host.getOvmVersion());
             } else {
-                LOGGER.debug("Hypervisor version: " + host.getOvmVersion());
+                logger.debug("Hypervisor version: " + host.getOvmVersion());
             }
             cmd.setName(host.getHostName());
             cmd.setSpeed(host.getCpuKhz());
@@ -249,7 +250,7 @@ public class Ovm3HypervisorSupport {
             d.put("isprimary", config.getAgentIsPrimary().toString());
             d.put("hasprimary", config.getAgentHasPrimary().toString());
             cmd.setHostDetails(d);
-            LOGGER.debug("Add an Ovm3 host " + config.getAgentHostname() + ":"
+            logger.debug("Add an Ovm3 host " + config.getAgentHostname() + ":"
                     + cmd.getHostDetails());
         } catch (Ovm3ResourceException e) {
             throw new CloudRuntimeException("Ovm3ResourceException: "
@@ -266,7 +267,7 @@ public class Ovm3HypervisorSupport {
      * @throws IOException
      */
     public Boolean setupServer(String key) throws IOException {
-        LOGGER.debug("Setup all bits on agent: " + config.getAgentHostname());
+        logger.debug("Setup all bits on agent: " + config.getAgentHostname());
         /* version dependent patching ? */
         try {
             com.trilead.ssh2.Connection sshConnection = SSHCmdHelper
@@ -315,7 +316,7 @@ public class Ovm3HypervisorSupport {
                     config.getAgentStorageCheckTimeout(),
                     config.getAgentStorageCheckInterval());
         } catch (Exception es) {
-            LOGGER.error("Unexpected exception ", es);
+            logger.error("Unexpected exception ", es);
             String msg = "Unable to install module in agent";
             throw new CloudRuntimeException(msg);
         }
@@ -333,7 +334,7 @@ public class Ovm3HypervisorSupport {
             Xen vms = new Xen(c);
             return vms.getRunningVmConfigs();
         } catch (Exception e) {
-            LOGGER.debug("getting VM list from " + config.getAgentHostname()
+            logger.debug("getting VM list from " + config.getAgentHostname()
                     + " failed", e);
             throw new CloudRuntimeException("Exception on getting VMs from "
                     + config.getAgentHostname() + ":" + e.getMessage(), e);
@@ -386,7 +387,7 @@ public class Ovm3HypervisorSupport {
             } else {
                 ns = State.Unknown;
             }
-            LOGGER.trace("state " + ns + " for " + vm.getVmName()
+            logger.trace("state " + ns + " for " + vm.getVmName()
                     + " based on " + as);
             states.put(vm.getVmName(), ns);
         }
@@ -411,7 +412,7 @@ public class Ovm3HypervisorSupport {
         try {
             newStates = getAllVmStates(vmStateMap);
         } catch (Ovm3ResourceException e) {
-            LOGGER.error("Ovm3 full sync failed: ", e);
+            logger.error("Ovm3 full sync failed: ", e);
             throw e;
         }
         synchronized (vmStateMap) {
@@ -422,41 +423,41 @@ public class Ovm3HypervisorSupport {
                 final String vmName = entry.getKey();
                 State newState = entry.getValue();
                 final State oldState = oldStates.remove(vmName);
-                LOGGER.trace("state for " + vmName + ", old: " + oldState
+                logger.trace("state for " + vmName + ", old: " + oldState
                         + ", new: " + newState);
 
                 /* eurh ? */
                 if (newState == State.Stopped && oldState != State.Stopping
                         && oldState != null && oldState != State.Stopped) {
-                    LOGGER.trace("Getting power state....");
+                    logger.trace("Getting power state....");
                     newState = State.Running;
                 }
 
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("VM " + vmName + ": ovm has state " + newState
+                if (logger.isTraceEnabled()) {
+                    logger.trace("VM " + vmName + ": ovm has state " + newState
                             + " and we have state "
                             + (oldState != null ? oldState.toString() : "null"));
                 }
 
                 if (newState == State.Migrating) {
-                    LOGGER.trace(vmName + " is migrating, skipping state check");
+                    logger.trace(vmName + " is migrating, skipping state check");
                     continue;
                 }
 
                 if (oldState == null) {
                     vmStateMap.put(vmName, newState);
-                    LOGGER.debug("New state without old state: " + vmName);
+                    logger.debug("New state without old state: " + vmName);
                     changes.put(vmName, newState);
                 } else if (oldState == State.Starting) {
                     if (newState == State.Running) {
                         vmStateMap.put(vmName, newState);
                     } else if (newState == State.Stopped) {
-                        LOGGER.debug("Ignoring vm " + vmName
+                        logger.debug("Ignoring vm " + vmName
                                 + " because of a lag in starting the vm.");
                     }
                 } else if (oldState == State.Migrating) {
                     if (newState == State.Running) {
-                        LOGGER.debug("Detected that a migrating VM is now running: "
+                        logger.debug("Detected that a migrating VM is now running: "
                                 + vmName);
                         vmStateMap.put(vmName, newState);
                     }
@@ -464,7 +465,7 @@ public class Ovm3HypervisorSupport {
                     if (newState == State.Stopped) {
                         vmStateMap.put(vmName, newState);
                     } else if (newState == State.Running) {
-                        LOGGER.debug("Ignoring vm " + vmName
+                        logger.debug("Ignoring vm " + vmName
                                 + " because of a lag in stopping the vm. ");
                         /* should kill it hard perhaps ? */
                     }
@@ -482,27 +483,27 @@ public class Ovm3HypervisorSupport {
                 final State oldState = entry.getValue();
 
                 if (oldState == State.Stopping) {
-                    LOGGER.debug("Removing VM " + vmName
+                    logger.debug("Removing VM " + vmName
                             + " in transition state stopping.");
                     vmStateMap.remove(vmName);
                 } else if (oldState == State.Starting) {
-                    LOGGER.debug("Removing VM " + vmName
+                    logger.debug("Removing VM " + vmName
                             + " in transition state starting.");
                     vmStateMap.remove(vmName);
                 } else if (oldState == State.Stopped) {
-                    LOGGER.debug("Stopped VM " + vmName + " removing.");
+                    logger.debug("Stopped VM " + vmName + " removing.");
                     vmStateMap.remove(vmName);
                 } else if (oldState == State.Migrating) {
                     /*
                      * do something smarter here.. newstate should say stopping
                      * already
                      */
-                    LOGGER.debug("Ignoring VM " + vmName
+                    logger.debug("Ignoring VM " + vmName
                             + " in migrating state.");
                 } else {
                     /* if it's not there name it stopping */
                     State state = State.Stopping;
-                    LOGGER.debug("VM " + vmName
+                    logger.debug("VM " + vmName
                             + " is now missing from ovm3 server so removing it");
                     changes.put(vmName, state);
                     vmStateMap.remove(vmName);
@@ -536,7 +537,7 @@ public class Ovm3HypervisorSupport {
             throws Ovm3ResourceException {
         final Map<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>();
         for (final Map.Entry<String, State> vm : vmStateMap.entrySet()) {
-            LOGGER.debug("VM " + vm.getKey() + " state: " + vm.getValue() + ":"
+            logger.debug("VM " + vm.getKey() + " state: " + vm.getValue() + ":"
                     + convertStateToPower(vm.getValue()));
             vmStates.put(vm.getKey(), new HostVmStateReportEntry(
                     convertStateToPower(vm.getValue()), c.getIp()));
@@ -558,14 +559,14 @@ public class Ovm3HypervisorSupport {
         try {
             pong = test.echo(ping);
         } catch (Ovm3ResourceException e) {
-            LOGGER.debug("CheckHealth went wrong: " + config.getAgentHostname()
+            logger.debug("CheckHealth went wrong: " + config.getAgentHostname()
                     + ", " + e.getMessage(), e);
             return new CheckHealthAnswer(cmd, false);
         }
         if (ping.contentEquals(pong)) {
             return new CheckHealthAnswer(cmd, true);
         }
-        LOGGER.debug("CheckHealth did not receive " + ping + " but got " + pong
+        logger.debug("CheckHealth did not receive " + ping + " but got " + pong
                 + " from " + config.getAgentHostname());
         return new CheckHealthAnswer(cmd, false);
     }
@@ -577,30 +578,30 @@ public class Ovm3HypervisorSupport {
      */
     public boolean primaryCheck() {
         if ("".equals(config.getOvm3PoolVip())) {
-            LOGGER.debug("No cluster vip, not checking for primary");
+            logger.debug("No cluster vip, not checking for primary");
             return false;
         }
 
         try {
             CloudstackPlugin cSp = new CloudstackPlugin(c);
             if (cSp.dom0HasIp(config.getOvm3PoolVip())) {
-                LOGGER.debug(config.getAgentHostname()
+                logger.debug(config.getAgentHostname()
                         + " is a primary, already has vip "
                         + config.getOvm3PoolVip());
                 config.setAgentIsPrimary(true);
             } else if (cSp.ping(config.getOvm3PoolVip())) {
-                LOGGER.debug(config.getAgentHostname()
+                logger.debug(config.getAgentHostname()
                         + " has a primary, someone has vip "
                         + config.getOvm3PoolVip());
                 config.setAgentHasPrimary(true);
             } else {
-                LOGGER.debug(config.getAgentHostname()
+                logger.debug(config.getAgentHostname()
                         + " becomes a primary, no one has vip "
                         + config.getOvm3PoolVip());
                 config.setAgentIsPrimary(true);
             }
         } catch (Ovm3ResourceException e) {
-            LOGGER.debug(config.getAgentHostname()
+            logger.debug(config.getAgentHostname()
                     + " can't reach primary: " + e.getMessage());
             config.setAgentHasPrimary(false);
         }
@@ -619,22 +620,22 @@ public class Ovm3HypervisorSupport {
                     /* check pool state here */
                     return new ReadyAnswer(cmd);
                 } else {
-                    LOGGER.debug("Primary IP changes to "
+                    logger.debug("Primary IP changes to "
                             + pool.getPoolPrimaryVip() + ", it should be "
                             + c.getIp());
                     return new ReadyAnswer(cmd, "I am not the primary server");
                 }
             } else if (host.getIsPrimary()) {
-                LOGGER.debug("Primary, not clustered "
+                logger.debug("Primary, not clustered "
                         + config.getAgentHostname());
                 return new ReadyAnswer(cmd);
             } else {
-                LOGGER.debug("No primary, not clustered "
+                logger.debug("No primary, not clustered "
                         + config.getAgentHostname());
                 return new ReadyAnswer(cmd);
             }
         } catch (CloudRuntimeException | Ovm3ResourceException e) {
-            LOGGER.debug("XML RPC Exception" + e.getMessage(), e);
+            logger.debug("XML RPC Exception" + e.getMessage(), e);
             throw new CloudRuntimeException("XML RPC Exception"
                     + e.getMessage(), e);
         }
@@ -644,19 +645,19 @@ public class Ovm3HypervisorSupport {
     /* check "the" virtual machine */
     public CheckVirtualMachineAnswer execute(
             final CheckVirtualMachineCommand cmd) {
-        LOGGER.debug("CheckVirtualMachineCommand: " + cmd.getVmName());
+        logger.debug("CheckVirtualMachineCommand: " + cmd.getVmName());
         String vmName = cmd.getVmName();
         try {
             CloudstackPlugin plug = new CloudstackPlugin(c);
             Integer vncPort = Integer.valueOf(plug.getVncPort(vmName));
             if (vncPort == 0) {
-                LOGGER.warn("No VNC port for " + vmName);
+                logger.warn("No VNC port for " + vmName);
             }
             /* we already have the state ftw */
             Map<String, State> states = getAllVmStates(vmStateMap);
             State vmState = states.get(vmName);
             if (vmState == null) {
-                LOGGER.warn("Check state of " + vmName
+                logger.warn("Check state of " + vmName
                         + " return null in CheckVirtualMachineCommand");
                 vmState = State.Stopped;
             }
@@ -666,7 +667,7 @@ public class Ovm3HypervisorSupport {
             return new CheckVirtualMachineAnswer(cmd,
                     convertStateToPower(vmState), vncPort);
         } catch (Ovm3ResourceException e) {
-            LOGGER.debug("Check migration for " + vmName + " failed", e);
+            logger.debug("Check migration for " + vmName + " failed", e);
             return new CheckVirtualMachineAnswer(cmd,
                     convertStateToPower(State.Stopped), null);
         }
@@ -678,13 +679,13 @@ public class Ovm3HypervisorSupport {
      * For now leave it as we're not clustering in OVM terms.
      */
     public MaintainAnswer execute(MaintainCommand cmd) {
-        LOGGER.debug("MaintainCommand");
+        logger.debug("MaintainCommand");
         /*
          * try {
          * Network net = new Network(c);
          * net.stopOvsLocalConfig(config.getAgentControlNetworkName());
          * } catch (Ovm3ResourceException e) {
-         * LOGGER.debug("unable to disable " +
+         * logger.debug("unable to disable " +
          * config.getAgentControlNetworkName(), e);
          * }
          */
@@ -706,7 +707,7 @@ public class Ovm3HypervisorSupport {
                     0, 0);
             return new GetHostStatsAnswer(cmd, hostStats);
         } catch (Exception e) {
-            LOGGER.debug("Unable to get host stats for: " + cmd.getHostName(),
+            logger.debug("Unable to get host stats for: " + cmd.getHostName(),
                     e);
             return new Answer(cmd, false, e.getMessage());
         }
@@ -716,18 +717,18 @@ public class Ovm3HypervisorSupport {
      * We rely on storage health with CheckOnHostCommand....
      */
     public FenceAnswer execute(FenceCommand cmd) {
-        LOGGER.debug("FenceCommand");
+        logger.debug("FenceCommand");
         try {
             Boolean res = false;
             return new FenceAnswer(cmd, res, res.toString());
         } catch (Exception e) {
-            LOGGER.error("Unable to fence" + cmd.getHostIp(), e);
+            logger.error("Unable to fence" + cmd.getHostIp(), e);
             return new FenceAnswer(cmd, false, e.getMessage());
         }
     }
 
     public CheckOnHostAnswer execute(CheckOnHostCommand cmd) {
-        LOGGER.debug("CheckOnHostCommand");
+        logger.debug("CheckOnHostCommand");
         CloudstackPlugin csp = new CloudstackPlugin(c);
         try {
             Boolean alive = csp.dom0CheckStorageHealth(config.getAgentScriptsDir(),
@@ -742,7 +743,7 @@ public class Ovm3HypervisorSupport {
             } else {
                     msg = "storage dead for " + cmd.getHost().getGuid();
             }
-            LOGGER.debug(msg);
+            logger.debug(msg);
             return new CheckOnHostAnswer(cmd, alive, msg);
         } catch (Ovm3ResourceException e) {
             return new CheckOnHostAnswer(cmd, false, "Error while checking storage for " +cmd.getHost().getGuid() +": " + e.getMessage());

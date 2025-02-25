@@ -33,7 +33,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.storage.datastore.lifecycle.BasePrimaryDataStoreLifeCycleImpl;
 import org.apache.cloudstack.storage.datastore.util.NexentaUtil;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.dc.DataCenterVO;
@@ -48,8 +47,6 @@ import com.cloud.storage.StoragePoolAutomation;
 public class NexentaPrimaryDataStoreLifeCycle
         extends BasePrimaryDataStoreLifeCycleImpl
         implements PrimaryDataStoreLifeCycle {
-    private static final Logger logger =
-            Logger.getLogger(NexentaPrimaryDataStoreLifeCycle.class);
 
     @Inject
     private DataCenterDao zoneDao;
@@ -144,7 +141,7 @@ public class NexentaPrimaryDataStoreLifeCycle
 
         for (HostVO host : hosts) {
             try {
-                _storageMgr.connectHostToSharedPool(host.getId(), dataStore.getId());
+                _storageMgr.connectHostToSharedPool(host, dataStore.getId());
             } catch (Exception e) {
                 logger.warn("Unable to establish a connection between " + host + " and " + dataStore, e);
             }

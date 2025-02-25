@@ -38,25 +38,26 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.mail.EmailConstants;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class SMTPMailSender {
 
-    protected Logger logger = Logger.getLogger(SMTPMailSender.class);
+    protected Logger logger = LogManager.getLogger(SMTPMailSender.class);
 
     protected Session session = null;
     protected SMTPSessionProperties sessionProps;
 
-    protected static final String CONFIG_HOST = "host";
-    protected static final String CONFIG_PORT = "port";
-    protected static final String CONFIG_USE_AUTH = "useAuth";
-    protected static final String CONFIG_USERNAME = "username";
-    protected static final String CONFIG_PASSWORD = "password";
-    protected static final String CONFIG_DEBUG_MODE = "debug";
-    protected static final String CONFIG_USE_STARTTLS = "useStartTLS";
-    protected static final String CONFIG_ENABLED_SECURITY_PROTOCOLS = "enabledSecurityProtocols";
-    protected static final String CONFIG_TIMEOUT = "timeout";
-    protected static final String CONFIG_CONNECTION_TIMEOUT = "connectiontimeout";
+    public static final String CONFIG_HOST = "host";
+    public static final String CONFIG_PORT = "port";
+    public static final String CONFIG_USE_AUTH = "useAuth";
+    public static final String CONFIG_USERNAME = "username";
+    public static final String CONFIG_PASSWORD = "password";
+    public static final String CONFIG_DEBUG_MODE = "debug";
+    public static final String CONFIG_USE_STARTTLS = "useStartTLS";
+    public static final String CONFIG_ENABLED_SECURITY_PROTOCOLS = "enabledSecurityProtocols";
+    public static final String CONFIG_TIMEOUT = "timeout";
+    public static final String CONFIG_CONNECTION_TIMEOUT = "connectiontimeout";
 
     protected Map<String, String> configs;
     protected String namespace;

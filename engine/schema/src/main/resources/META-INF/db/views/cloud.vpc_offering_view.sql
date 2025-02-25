@@ -17,7 +17,6 @@
 
 -- cloud.vpc_offering_view source
 
-
 DROP VIEW IF EXISTS `cloud`.`vpc_offering_view`;
 
 CREATE VIEW `cloud`.`vpc_offering_view` AS
@@ -29,6 +28,8 @@ select
     `vpc_offerings`.`display_text` AS `display_text`,
     `vpc_offerings`.`state` AS `state`,
     `vpc_offerings`.`default` AS `default`,
+    `vpc_offerings`.`for_nsx` AS `for_nsx`,
+    `vpc_offerings`.`network_mode` AS `network_mode`,
     `vpc_offerings`.`created` AS `created`,
     `vpc_offerings`.`removed` AS `removed`,
     `vpc_offerings`.`service_offering_id` AS `service_offering_id`,
@@ -36,6 +37,8 @@ select
     `vpc_offerings`.`supports_region_level_vpc` AS `supports_region_level_vpc`,
     `vpc_offerings`.`redundant_router_service` AS `redundant_router_service`,
     `vpc_offerings`.`sort_key` AS `sort_key`,
+    `vpc_offerings`.`routing_mode` AS `routing_mode`,
+    `vpc_offerings`.`specify_as_number` AS `specify_as_number`,
     group_concat(distinct `domain`.`id` separator ',') AS `domain_id`,
     group_concat(distinct `domain`.`uuid` separator ',') AS `domain_uuid`,
     group_concat(distinct `domain`.`name` separator ',') AS `domain_name`,

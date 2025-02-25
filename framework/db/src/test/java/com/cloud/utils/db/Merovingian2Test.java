@@ -19,13 +19,14 @@ package com.cloud.utils.db;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
 public class Merovingian2Test extends TestCase {
-    static final Logger s_logger = Logger.getLogger(Merovingian2Test.class);
+    protected Logger logger = LogManager.getLogger(Merovingian2Test.class);
     Merovingian2 _lockController = Merovingian2.createLockController(1234);
 
     @Override
@@ -43,15 +44,15 @@ public class Merovingian2Test extends TestCase {
     @Test
     public void testLockAndRelease() {
 
-        s_logger.info("Testing first acquire");
+        logger.info("Testing first acquire");
         boolean result = _lockController.acquire("first" + 1234, 5);
         Assert.assertTrue(result);
 
-        s_logger.info("Testing acquire of different lock");
+        logger.info("Testing acquire of different lock");
         result = _lockController.acquire("second" + 1234, 5);
         Assert.assertTrue(result);
 
-        s_logger.info("Testing reacquire of the same lock");
+        logger.info("Testing reacquire of the same lock");
         result = _lockController.acquire("first" + 1234, 5);
         Assert.assertTrue(result);
 
@@ -61,14 +62,14 @@ public class Merovingian2Test extends TestCase {
         count = _lockController.owns("second" + 1234);
         Assert.assertEquals(count, 1);
 
-        s_logger.info("Testing release of the first lock");
+        logger.info("Testing release of the first lock");
         result = _lockController.release("first" + 1234);
         Assert.assertTrue(result);
 
         count = _lockController.owns("first" + 1234);
         Assert.assertEquals(count, 1);
 
-        s_logger.info("Testing release of the second lock");
+        logger.info("Testing release of the second lock");
         result = _lockController.release("second" + 1234);
         Assert.assertTrue(result);
 

@@ -64,7 +64,8 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVolumeStatAnswer;
@@ -110,7 +111,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Preconditions;
 
 public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
-    private static final Logger LOGGER = Logger.getLogger(ScaleIOPrimaryDataStoreDriver.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject
     EndPointSelector selector;
@@ -150,8 +151,12 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         sdcManager = new ScaleIOSDCManagerImpl();
     }
 
-    public ScaleIOGatewayClient getScaleIOClient(final Long storagePoolId) throws Exception {
-        return ScaleIOGatewayClientConnectionPool.getInstance().getClient(storagePoolId, storagePoolDetailsDao);
+    ScaleIOGatewayClient getScaleIOClient(final StoragePool storagePool) throws Exception {
+        return ScaleIOGatewayClientConnectionPool.getInstance().getClient(storagePool, storagePoolDetailsDao);
+    }
+
+    ScaleIOGatewayClient getScaleIOClient(final DataStore dataStore) throws Exception {
+        return ScaleIOGatewayClientConnectionPool.getInstance().getClient(dataStore, storagePoolDetailsDao);
     }
 
     private boolean setVolumeLimitsOnSDC(VolumeVO volume, Host host, DataStore dataStore, Long iopsLimit, Long bandwidthLimitInKbps) throws Exception {
@@ -159,10 +164,10 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         final String sdcId = sdcManager.prepareSDC(host, dataStore);
         if (StringUtils.isBlank(sdcId)) {
             alertHostSdcDisconnection(host);
-            throw new CloudRuntimeException("Unable to grant access to volume: " + volume.getId() + ", no Sdc connected with host ip: " + host.getPrivateIpAddress());
+            throw new CloudRuntimeException("Unable to grant access to volume: " + volume + ", no Sdc connected with host ip: " + host.getPrivateIpAddress());
         }
 
-        final ScaleIOGatewayClient client = getScaleIOClient(dataStore.getId());
+        final ScaleIOGatewayClient client = getScaleIOClient(dataStore);
         return client.mapVolumeToSdcWithLimits(ScaleIOUtil.getVolumePath(volume.getPath()), sdcId, iopsLimit, bandwidthLimitInKbps);
     }
 
@@ -196,22 +201,25 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             final String sdcId = sdcManager.prepareSDC(host, dataStore);
             if (StringUtils.isBlank(sdcId)) {
                 alertHostSdcDisconnection(host);
-                throw new CloudRuntimeException(String.format("Unable to grant access to %s: %s, no Sdc connected with host ip: %s", dataObject.getType(), dataObject.getId(), host.getPrivateIpAddress()));
+                throw new CloudRuntimeException(String.format(
+                        "Unable to grant access to %s: [id: %d, uuid: %s], no Sdc connected with host ip: %s",
+                        dataObject.getType(), dataObject.getId(),
+                        dataObject.getUuid(), host.getPrivateIpAddress()));
             }
 
             if (DataObjectType.VOLUME.equals(dataObject.getType())) {
                 final VolumeVO volume = volumeDao.findById(dataObject.getId());
-                LOGGER.debug("Granting access for PowerFlex volume: " + volume.getPath());
+                logger.debug("Granting access for PowerFlex volume: {} at path {}", volume, volume.getPath());
                 return setVolumeLimitsFromDetails(volume, host, dataStore);
             } else if (DataObjectType.TEMPLATE.equals(dataObject.getType())) {
                 final VMTemplateStoragePoolVO templatePoolRef = vmTemplatePoolDao.findByPoolTemplate(dataStore.getId(), dataObject.getId(), null);
-                LOGGER.debug("Granting access for PowerFlex template volume: " + templatePoolRef.getInstallPath());
-                final ScaleIOGatewayClient client = getScaleIOClient(dataStore.getId());
+                logger.debug("Granting access for PowerFlex template volume: {}", templatePoolRef.getInstallPath());
+                final ScaleIOGatewayClient client = getScaleIOClient(dataStore);
                 return client.mapVolumeToSdc(ScaleIOUtil.getVolumePath(templatePoolRef.getInstallPath()), sdcId);
             } else if (DataObjectType.SNAPSHOT.equals(dataObject.getType())) {
                 SnapshotInfo snapshot = (SnapshotInfo) dataObject;
-                LOGGER.debug("Granting access for PowerFlex volume snapshot: " + snapshot.getPath());
-                final ScaleIOGatewayClient client = getScaleIOClient(dataStore.getId());
+                logger.debug("Granting access for PowerFlex volume snapshot: {} at path {}", snapshot, snapshot.getPath());
+                final ScaleIOGatewayClient client = getScaleIOClient(dataStore);
                 return client.mapVolumeToSdc(ScaleIOUtil.getVolumePath(snapshot.getPath()), sdcId);
             }
 
@@ -229,28 +237,31 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public void revokeAccess(DataObject dataObject, Host host, DataStore dataStore) {
         if (host == null) {
-            LOGGER.info("Declining to revoke access to PowerFlex volume when a host is not provided");
+            logger.info("Declining to revoke access to PowerFlex volume when a host is not provided");
             return;
         }
 
         try {
-            final String sdcId = getConnectedSdc(dataStore.getId(), host.getId());
+            final String sdcId = getConnectedSdc(dataStore, host);
             if (StringUtils.isBlank(sdcId)) {
-                LOGGER.warn(String.format("Unable to revoke access for %s: %s, no Sdc connected with host ip: %s", dataObject.getType(), dataObject.getId(), host.getPrivateIpAddress()));
+                logger.warn("Unable to revoke access for {}: [id: {}, uuid: {}], " +
+                        "no Sdc connected with host [id: {}, uuid: {}, ip: {}]",
+                        dataObject.getType(), dataObject.getId(), dataObject.getUuid(),
+                        host.getId(), host.getUuid(), host.getPrivateIpAddress());
                 return;
             }
-            final ScaleIOGatewayClient client = getScaleIOClient(dataStore.getId());
+            final ScaleIOGatewayClient client = getScaleIOClient(dataStore);
             if (DataObjectType.VOLUME.equals(dataObject.getType())) {
                 final VolumeVO volume = volumeDao.findById(dataObject.getId());
-                LOGGER.debug("Revoking access for PowerFlex volume: " + volume.getPath());
+                logger.debug("Revoking access for PowerFlex volume: {} at path {}", volume, volume.getPath());
                 client.unmapVolumeFromSdc(ScaleIOUtil.getVolumePath(volume.getPath()), sdcId);
             } else if (DataObjectType.TEMPLATE.equals(dataObject.getType())) {
                 final VMTemplateStoragePoolVO templatePoolRef = vmTemplatePoolDao.findByPoolTemplate(dataStore.getId(), dataObject.getId(), null);
-                LOGGER.debug("Revoking access for PowerFlex template volume: " + templatePoolRef.getInstallPath());
+                logger.debug("Revoking access for PowerFlex template volume: {}", templatePoolRef.getInstallPath());
                 client.unmapVolumeFromSdc(ScaleIOUtil.getVolumePath(templatePoolRef.getInstallPath()), sdcId);
             } else if (DataObjectType.SNAPSHOT.equals(dataObject.getType())) {
                 SnapshotInfo snapshot = (SnapshotInfo) dataObject;
-                LOGGER.debug("Revoking access for PowerFlex volume snapshot: " + snapshot.getPath());
+                logger.debug("Revoking access for PowerFlex volume snapshot: {} at path {}", snapshot, snapshot.getPath());
                 client.unmapVolumeFromSdc(ScaleIOUtil.getVolumePath(snapshot.getPath()), sdcId);
             }
             if (client.listVolumesMappedToSdc(sdcId).isEmpty()) {
@@ -258,33 +269,35 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 sdcManager.stopSDC(host, dataStore);
             }
         } catch (Exception e) {
-            LOGGER.warn("Failed to revoke access due to: " + e.getMessage(), e);
+            logger.warn("Failed to revoke access due to: " + e.getMessage(), e);
         }
     }
 
     public void revokeVolumeAccess(String volumePath, Host host, DataStore dataStore) {
         if (host == null) {
-            LOGGER.warn("Declining to revoke access to PowerFlex volume when a host is not provided");
+            logger.warn("Declining to revoke access to PowerFlex volume when a host is not provided");
             return;
         }
 
         try {
-            LOGGER.debug("Revoking access for PowerFlex volume: " + volumePath);
+            logger.debug("Revoking access for PowerFlex volume: " + volumePath);
 
-            final String sdcId = getConnectedSdc(dataStore.getId(), host.getId());
+            final String sdcId = getConnectedSdc(dataStore, host);
             if (StringUtils.isBlank(sdcId)) {
-                LOGGER.warn(String.format("Unable to revoke access for volume: %s, no Sdc connected with host ip: %s", volumePath, host.getPrivateIpAddress()));
+                logger.warn("Unable to revoke access for volume: {}, " +
+                        "no Sdc connected with host [id: {}, uuid: {}, ip: {}]",
+                        volumePath, host.getId(), host.getUuid(), host.getPrivateIpAddress());
                 return;
             }
 
-            final ScaleIOGatewayClient client = getScaleIOClient(dataStore.getId());
+            final ScaleIOGatewayClient client = getScaleIOClient(dataStore);
             client.unmapVolumeFromSdc(ScaleIOUtil.getVolumePath(volumePath), sdcId);
             if (client.listVolumesMappedToSdc(sdcId).isEmpty()) {
                 sdcManager = ComponentContext.inject(sdcManager);
                 sdcManager.stopSDC(host, dataStore);
             }
         } catch (Exception e) {
-            LOGGER.warn("Failed to revoke access due to: " + e.getMessage(), e);
+            logger.warn("Failed to revoke access due to: " + e.getMessage(), e);
         }
     }
 
@@ -293,19 +306,20 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         revokeAccess(dataObject, host, dataStore);
     }
 
-    public String getConnectedSdc(long poolId, long hostId) {
+    public String getConnectedSdc(DataStore dataStore, Host host) {
         try {
-            StoragePoolHostVO poolHostVO = storagePoolHostDao.findByPoolHost(poolId, hostId);
+            StoragePoolHostVO poolHostVO = storagePoolHostDao.findByPoolHost(dataStore.getId(), host.getId());
             if (poolHostVO == null) {
                 return null;
             }
 
-            final ScaleIOGatewayClient client = getScaleIOClient(poolId);
+            final ScaleIOGatewayClient client = getScaleIOClient(dataStore);
             if (client.isSdcConnected(poolHostVO.getLocalPath())) {
                 return poolHostVO.getLocalPath();
             }
         } catch (Exception e) {
-            LOGGER.warn("Couldn't check SDC connection for the host: " + hostId + " and storage pool: " + poolId + " due to " + e.getMessage(), e);
+            logger.warn(String.format("Couldn't check SDC connection for the host: %s and " +
+                    "storage pool: %s due to %s", host, dataStore, e.getMessage()), e);
         }
 
         return null;
@@ -346,7 +360,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
         }
 
-        LOGGER.debug("Used/Allocated storage space (in bytes): " + String.valueOf(usedSpaceBytes));
+        logger.debug("Used/Allocated storage space (in bytes): " + String.valueOf(usedSpaceBytes));
 
         return usedSpaceBytes;
     }
@@ -403,7 +417,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void takeSnapshot(SnapshotInfo snapshotInfo, AsyncCompletionCallback<CreateCmdResult> callback) {
-        LOGGER.debug("Taking PowerFlex volume snapshot");
+        logger.debug("Taking PowerFlex volume snapshot");
 
         Preconditions.checkArgument(snapshotInfo != null, "snapshotInfo cannot be null");
 
@@ -423,7 +437,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         try {
             SnapshotObjectTO snapshotObjectTo = (SnapshotObjectTO)snapshotInfo.getTO();
 
-            final ScaleIOGatewayClient client = getScaleIOClient(storagePoolId);
+            final ScaleIOGatewayClient client = getScaleIOClient(storagePool);
             final String scaleIOVolumeId = ScaleIOUtil.getVolumePath(volumeVO.getPath());
             String snapshotName = String.format("%s-%s-%s-%s", ScaleIOUtil.SNAPSHOT_PREFIX, snapshotInfo.getId(),
                     storagePool.getUuid().split("-")[0].substring(4), ManagementServerImpl.customCsIdentifier.value());
@@ -440,8 +454,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             result = new CreateCmdResult(null, createObjectAnswer);
             result.setResult(null);
         } catch (Exception e) {
-            String errMsg = "Unable to take PowerFlex volume snapshot for volume: " + volumeInfo.getId() + " due to " + e.getMessage();
-            LOGGER.warn(errMsg);
+            logger.warn("Unable to take PowerFlex volume snapshot for volume: {} due to {}", volumeInfo, e.getMessage());
             result = new CreateCmdResult(null, new CreateObjectAnswer(e.toString()));
             result.setResult(e.toString());
         }
@@ -451,7 +464,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void revertSnapshot(SnapshotInfo snapshot, SnapshotInfo snapshotOnPrimaryStore, AsyncCompletionCallback<CommandResult> callback) {
-        LOGGER.debug("Reverting to PowerFlex volume snapshot");
+        logger.debug("Reverting to PowerFlex volume snapshot");
 
         Preconditions.checkArgument(snapshot != null, "snapshotInfo cannot be null");
 
@@ -469,8 +482,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 return;
             }
 
-            long storagePoolId = volumeVO.getPoolId();
-            final ScaleIOGatewayClient client = getScaleIOClient(storagePoolId);
+            StoragePoolVO storagePool = storagePoolDao.findById(volumeVO.getPoolId());
+            final ScaleIOGatewayClient client = getScaleIOClient(storagePool);
             String snapshotVolumeId = ScaleIOUtil.getVolumePath(snapshot.getPath());
             final String destVolumeId = ScaleIOUtil.getVolumePath(volumeVO.getPath());
             client.revertSnapshot(snapshotVolumeId, destVolumeId);
@@ -478,7 +491,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             CommandResult commandResult = new CommandResult();
             callback.complete(commandResult);
         } catch (Exception ex) {
-            LOGGER.debug("Unable to revert to PowerFlex snapshot: " + snapshot.getId(), ex);
+            logger.debug(String.format("Unable to revert to PowerFlex snapshot: %s", snapshot), ex);
             throw new CloudRuntimeException(ex.getMessage());
         }
     }
@@ -488,7 +501,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     public CreateObjectAnswer createVolume(VolumeInfo volumeInfo, long storagePoolId, boolean migrationInvolved, Long usageSize) {
-        LOGGER.debug("Creating PowerFlex volume");
+        logger.debug("Creating PowerFlex volume");
 
         StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
 
@@ -497,7 +510,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         Preconditions.checkArgument(storagePool != null && storagePool.getHostAddress() != null, "storagePool and host address should not be null");
 
         try {
-            final ScaleIOGatewayClient client = getScaleIOClient(storagePoolId);
+            final ScaleIOGatewayClient client = getScaleIOClient(storagePool);
             final String scaleIOStoragePoolId = storagePool.getPath();
             final Long sizeInBytes = volumeInfo.getSize();
             final long sizeInGb = (long) Math.ceil(sizeInBytes / (1024.0 * 1024.0 * 1024.0));
@@ -533,7 +546,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             // if volume needs to be set up with encryption, do it now if it's not a root disk (which gets done during template copy)
             if (anyVolumeRequiresEncryption(volumeInfo) && (!volumeInfo.getVolumeType().equals(Volume.Type.ROOT) || migrationInvolved)) {
-                LOGGER.debug(String.format("Setting up encryption for volume %s", volumeInfo.getId()));
+                logger.debug("Setting up encryption for volume [id: {}, uuid: {}, name: {}]",
+                        volumeInfo.getId(), volumeInfo.getUuid(), volumeInfo.getName());
                 VolumeObjectTO prepVolume = (VolumeObjectTO) createdObject.getTO();
                 prepVolume.setPath(volumePath);
                 prepVolume.setUuid(volumePath);
@@ -557,19 +571,20 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     }
                 }
             } else {
-                 LOGGER.debug(String.format("No encryption configured for data volume %s", volumeInfo));
+                 logger.debug("No encryption configured for data volume [id: {}, uuid: {}, name: {}]",
+                         volumeInfo.getId(), volumeInfo.getUuid(), volumeInfo.getName());
             }
 
             return answer;
         } catch (Exception e) {
             String errMsg = "Unable to create PowerFlex Volume due to " + e.getMessage();
-            LOGGER.warn(errMsg);
+            logger.warn(errMsg);
             throw new CloudRuntimeException(errMsg, e);
         }
     }
 
     private String  createTemplateVolume(TemplateInfo templateInfo, long storagePoolId) {
-        LOGGER.debug("Creating PowerFlex template volume");
+        logger.debug("Creating PowerFlex template volume");
 
         StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
         Preconditions.checkArgument(templateInfo != null, "templateInfo cannot be null");
@@ -577,7 +592,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         Preconditions.checkArgument(storagePool != null && storagePool.getHostAddress() != null, "storagePool and host address should not be null");
 
         try {
-            final ScaleIOGatewayClient client = getScaleIOClient(storagePoolId);
+            final ScaleIOGatewayClient client = getScaleIOClient(storagePool);
             final String scaleIOStoragePoolId = storagePool.getPath();
             final Long sizeInBytes = templateInfo.getSize();
             final long sizeInGb = (long) Math.ceil(sizeInBytes / (1024.0 * 1024.0 * 1024.0));
@@ -607,7 +622,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             return templatePath;
         } catch (Exception e) {
             String errMsg = "Unable to create PowerFlex template volume due to " + e.getMessage();
-            LOGGER.warn(errMsg);
+            logger.warn(errMsg);
             throw new CloudRuntimeException(errMsg, e);
         }
     }
@@ -619,22 +634,22 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         Answer answer = new Answer(null, false, "not started");
         try {
             if (dataObject.getType() == DataObjectType.VOLUME) {
-                LOGGER.debug("createAsync - creating volume");
+                logger.debug("createAsync - creating volume");
                 CreateObjectAnswer createAnswer = createVolume((VolumeInfo) dataObject, dataStore.getId());
                 scaleIOVolumePath = createAnswer.getData().getPath();
                 answer = createAnswer;
             } else if (dataObject.getType() == DataObjectType.TEMPLATE) {
-                LOGGER.debug("createAsync - creating template");
+                logger.debug("createAsync - creating template");
                 scaleIOVolumePath = createTemplateVolume((TemplateInfo)dataObject, dataStore.getId());
                 answer = new Answer(null, true, "created template");
             } else {
                 errMsg = "Invalid DataObjectType (" + dataObject.getType() + ") passed to createAsync";
-                LOGGER.error(errMsg);
+                logger.error(errMsg);
                 answer = new Answer(null, false, errMsg);
             }
         } catch (Exception ex) {
             errMsg = ex.getMessage();
-            LOGGER.error(errMsg);
+            logger.error(errMsg);
             if (callback == null) {
                 throw ex;
             }
@@ -662,23 +677,23 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         try {
             boolean deleteResult = false;
             if (dataObject.getType() == DataObjectType.VOLUME) {
-                LOGGER.debug("deleteAsync - deleting volume");
+                logger.debug("deleteAsync - deleting volume");
                 scaleIOVolumePath = ((VolumeInfo) dataObject).getPath();
             } else if (dataObject.getType() == DataObjectType.SNAPSHOT) {
-                LOGGER.debug("deleteAsync - deleting snapshot");
+                logger.debug("deleteAsync - deleting snapshot");
                 scaleIOVolumePath = ((SnapshotInfo) dataObject).getPath();
             } else if (dataObject.getType() == DataObjectType.TEMPLATE) {
-                LOGGER.debug("deleteAsync - deleting template");
+                logger.debug("deleteAsync - deleting template");
                 scaleIOVolumePath = ((TemplateInfo) dataObject).getInstallPath();
             } else {
                 errMsg = "Invalid DataObjectType (" + dataObject.getType() + ") passed to deleteAsync";
-                LOGGER.error(errMsg);
+                logger.error(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
 
             try {
                 String scaleIOVolumeId = ScaleIOUtil.getVolumePath(scaleIOVolumePath);
-                final ScaleIOGatewayClient client = getScaleIOClient(storagePoolId);
+                final ScaleIOGatewayClient client = getScaleIOClient(storagePool);
                 deleteResult =  client.deleteVolume(scaleIOVolumeId);
                 if (!deleteResult) {
                     errMsg = "Failed to delete PowerFlex volume with id: " + scaleIOVolumeId;
@@ -690,12 +705,12 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 storagePoolDao.update(storagePoolId, storagePool);
             } catch (Exception e) {
                 errMsg = "Unable to delete PowerFlex volume: " + scaleIOVolumePath + " due to " + e.getMessage();
-                LOGGER.warn(errMsg);
+                logger.warn(errMsg);
                 throw new CloudRuntimeException(errMsg, e);
             }
         } catch (Exception ex) {
             errMsg = ex.getMessage();
-            LOGGER.error(errMsg);
+            logger.error(errMsg);
             if (callback == null) {
                 throw ex;
             }
@@ -739,16 +754,16 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 } else {
                     errMsg = "Unsupported copy operation from src object: (" + srcData.getType() + ", " + srcData.getDataStore() + "), dest object: ("
                             + destData.getType() + ", " + destData.getDataStore() + ")";
-                    LOGGER.warn(errMsg);
+                    logger.warn(errMsg);
                     answer = new Answer(null, false, errMsg);
                 }
             } else {
                 errMsg = "Unsupported copy operation";
-                LOGGER.warn(errMsg);
+                logger.warn(errMsg);
                 answer = new Answer(null, false, errMsg);
             }
         } catch (Exception e) {
-            LOGGER.debug("Failed to copy due to " + e.getMessage(), e);
+            logger.debug("Failed to copy due to " + e.getMessage(), e);
             errMsg = e.toString();
             answer = new Answer(null, false, errMsg);
         }
@@ -772,26 +787,26 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
          * Data stores of file type happen automatically, but block device types have to handle it. Unfortunately for ScaleIO this means we add a whole 8GB to
          * the original size, but only if we are close to an 8GB boundary.
          */
-        LOGGER.debug(String.format("Copying template %s to volume %s", srcData.getId(), destData.getId()));
+        logger.debug("Copying template {} to volume {}", srcData, destData);
         VolumeInfo destInfo = (VolumeInfo) destData;
         boolean encryptionRequired = anyVolumeRequiresEncryption(destData);
         if (encryptionRequired) {
             if (needsExpansionForEncryptionHeader(srcData.getSize(), destData.getSize())) {
                 long newSize = destData.getSize() + (1<<30);
-                LOGGER.debug(String.format("Destination volume %s(%s) is configured for encryption. Resizing to fit headers, new size %s will be rounded up to nearest 8Gi", destInfo.getId(), destData.getSize(), newSize));
+                logger.debug("Destination volume {} ({}) is configured for encryption. Resizing to fit headers, new size {} will be rounded up to nearest 8Gi", destInfo, destData.getSize(), newSize);
                 ResizeVolumePayload p = new ResizeVolumePayload(newSize, destInfo.getMinIops(), destInfo.getMaxIops(),
                     destInfo.getHypervisorSnapshotReserve(), false, destInfo.getAttachedVmName(), null, true);
                 destInfo.addPayload(p);
                 resizeVolume(destInfo);
             } else {
-                LOGGER.debug(String.format("Template %s has size %s, ok for volume %s with size %s", srcData.getId(), srcData.getSize(), destData.getId(), destData.getSize()));
+                logger.debug("Template {} has size {}, ok for volume {} with size {}", srcData, srcData.getSize(), destData, destData.getSize());
             }
         } else {
-            LOGGER.debug(String.format("Destination volume is not configured for encryption, skipping encryption prep. Volume: %s", destData.getId()));
+            logger.debug("Destination volume is not configured for encryption, skipping encryption prep. Volume: {}", destData);
         }
 
         // Copy PowerFlex/ScaleIO template to volume
-        LOGGER.debug(String.format("Initiating copy from PowerFlex template volume on host %s", destHost != null ? destHost.getId() : "<not specified>"));
+        logger.debug("Initiating copy from PowerFlex template volume on host {}", destHost != null ? destHost : "<not specified>");
         int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
         CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
 
@@ -799,7 +814,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         EndPoint ep = destHost != null ? RemoteHostEndPoint.getHypervisorHostEndPoint(destHost) : selector.select(srcData, encryptionRequired);
         if (ep == null) {
             String errorMsg = String.format("No remote endpoint to send command, unable to find a valid endpoint. Requires encryption support: %s", encryptionRequired);
-            LOGGER.error(errorMsg);
+            logger.error(errorMsg);
             answer = new Answer(cmd, false, errorMsg);
         } else {
             VolumeVO volume = volumeDao.findById(destData.getId());
@@ -808,7 +823,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 setVolumeLimitsOnSDC(volume, host, destData.getDataStore(), 0L, 0L);
                 answer = ep.sendMessage(cmd);
             } catch (Exception e) {
-                LOGGER.error("Failed to copy template to volume due to: " + e.getMessage(), e);
+                logger.error("Failed to copy template to volume due to: " + e.getMessage(), e);
                 answer = new Answer(cmd, false, e.getMessage());
             }
         }
@@ -818,7 +833,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     protected Answer copyOfflineVolume(DataObject srcData, DataObject destData, Host destHost) {
         // Copy PowerFlex/ScaleIO volume
-        LOGGER.debug(String.format("Initiating copy from PowerFlex template volume on host %s", destHost != null ? destHost.getId() : "<not specified>"));
+        logger.debug("Initiating copy from PowerFlex template volume on host {}", destHost != null ? destHost : "<not specified>");
         String value = configDao.getValue(Config.CopyVolumeWait.key());
         int copyVolumeWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.CopyVolumeWait.getDefaultValue()));
 
@@ -829,7 +844,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         EndPoint ep = destHost != null ? RemoteHostEndPoint.getHypervisorHostEndPoint(destHost) : selector.select(srcData, encryptionRequired);
         if (ep == null) {
             String errorMsg = String.format("No remote endpoint to send command, unable to find a valid endpoint. Requires encryption support: %s", encryptionRequired);
-            LOGGER.error(errorMsg);
+            logger.error(errorMsg);
             answer = new Answer(cmd, false, errorMsg);
         } else {
             answer = ep.sendMessage(cmd);
@@ -860,7 +875,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             GetVolumeStatCommand statCmd = new GetVolumeStatCommand(srcVolumeInfo.getPath(), srcVolumeInfo.getStoragePoolType(), srcStore.getUuid());
             GetVolumeStatAnswer statAnswer = (GetVolumeStatAnswer) ep.sendMessage(statCmd);
             if (!statAnswer.getResult() ) {
-                LOGGER.warn(String.format("Unable to get volume %s stats", srcVolumeInfo.getId()));
+                logger.warn(String.format("Unable to get volume %s stats", srcVolumeInfo));
             } else if (statAnswer.getVirtualSize() > 0) {
                 srcVolumeUsableSize = statAnswer.getVirtualSize();
             }
@@ -881,15 +896,15 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 updateVolumeAfterCopyVolume(srcData, destData);
                 updateSnapshotsAfterCopyVolume(srcData, destData);
                 deleteSourceVolumeAfterSuccessfulBlockCopy(srcData, host);
-                LOGGER.debug(String.format("Successfully migrated migrate PowerFlex volume %d to storage pool %d", srcVolumeId,  destPoolId));
+                logger.debug("Successfully migrated migrate PowerFlex volume {} to storage pool {}", srcData,  destStore);
                 answer = new Answer(null, true, null);
             } else {
-                String errorMsg = "Failed to migrate PowerFlex volume: " + srcVolumeId + " to storage pool " + destPoolId;
-                LOGGER.debug(errorMsg);
+                String errorMsg = String.format("Failed to migrate PowerFlex volume: %s to storage pool %s", srcData, destStore);
+                logger.debug(errorMsg);
                 answer = new Answer(null, false, errorMsg);
             }
         } catch (Exception e) {
-            LOGGER.error("Failed to migrate PowerFlex volume: " + srcVolumeId + " due to: " + e.getMessage());
+            logger.error("Failed to migrate PowerFlex volume: {} due to: {}", srcData, e.getMessage());
             answer = new Answer(null, false, e.getMessage());
         }
 
@@ -940,8 +955,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     public void updateSnapshotsAfterCopyVolume(DataObject srcData, DataObject destData) throws Exception {
         final long srcVolumeId = srcData.getId();
         DataStore srcStore = srcData.getDataStore();
-        final long srcPoolId = srcStore.getId();
-        final ScaleIOGatewayClient client = getScaleIOClient(srcPoolId);
+        final ScaleIOGatewayClient client = getScaleIOClient(srcStore);
 
         DataStore destStore = destData.getDataStore();
         final long destPoolId = destStore.getId();
@@ -950,7 +964,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         List<SnapshotVO> snapshots = snapshotDao.listByVolumeId(srcVolumeId);
         if (CollectionUtils.isNotEmpty(snapshots)) {
             for (SnapshotVO snapshot : snapshots) {
-                SnapshotDataStoreVO snapshotStore = snapshotDataStoreDao.findByStoreSnapshot(DataStoreRole.Primary, srcPoolId, snapshot.getId());
+                SnapshotDataStoreVO snapshotStore = snapshotDataStoreDao.findByStoreSnapshot(DataStoreRole.Primary, srcStore.getId(), snapshot.getId());
                 if (snapshotStore == null) {
                     continue;
                 }
@@ -978,15 +992,15 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         String errMsg;
         try {
             String scaleIOVolumeId = ScaleIOUtil.getVolumePath(srcVolumePath);
-            final ScaleIOGatewayClient client = getScaleIOClient(srcStore.getId());
+            final ScaleIOGatewayClient client = getScaleIOClient(srcStore);
             Boolean deleteResult =  client.deleteVolume(scaleIOVolumeId);
             if (!deleteResult) {
                 errMsg = "Failed to delete source PowerFlex volume with id: " + scaleIOVolumeId;
-                LOGGER.warn(errMsg);
+                logger.warn(errMsg);
             }
         } catch (Exception e) {
             errMsg = "Unable to delete source PowerFlex volume: " + srcVolumePath + " due to " + e.getMessage();
-            LOGGER.warn(errMsg);;
+            logger.warn(errMsg);;
         }
     }
 
@@ -999,16 +1013,16 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         String errMsg;
         try {
             String scaleIOVolumeId = ScaleIOUtil.getVolumePath(destVolumePath);
-            final ScaleIOGatewayClient client = getScaleIOClient(destStore.getId());
+            final ScaleIOGatewayClient client = getScaleIOClient(destStore);
             Boolean deleteResult =  client.deleteVolume(scaleIOVolumeId);
             if (!deleteResult) {
                 errMsg = "Failed to delete PowerFlex volume with id: " + scaleIOVolumeId;
-                LOGGER.warn(errMsg);
+                logger.warn(errMsg);
             }
 
         } catch (Exception e) {
             errMsg = "Unable to delete destination PowerFlex volume: " + destVolumePath + " due to " + e.getMessage();
-            LOGGER.warn(errMsg);
+            logger.warn(errMsg);
             throw new CloudRuntimeException(errMsg, e);
         }
 
@@ -1078,7 +1092,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             long srcPoolId = srcStore.getId();
             long destPoolId = destStore.getId();
 
-            final ScaleIOGatewayClient client = getScaleIOClient(srcPoolId);
+            final ScaleIOGatewayClient client = getScaleIOClient(srcStore);
             final String srcVolumePath = ((VolumeInfo) srcData).getPath();
             final String srcVolumeId = ScaleIOUtil.getVolumePath(srcVolumePath);
             final StoragePoolVO destStoragePool = storagePoolDao.findById(destPoolId);
@@ -1143,12 +1157,12 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                 answer = new Answer(null, true, null);
             } else {
-                String errorMsg = "Failed to migrate PowerFlex volume: " + srcData.getId() + " to storage pool " + destPoolId;
-                LOGGER.debug(errorMsg);
+                String errorMsg = String.format("Failed to migrate PowerFlex volume: %s to storage pool %d", srcData, destPoolId);
+                logger.debug(errorMsg);
                 answer = new Answer(null, false, errorMsg);
             }
         } catch (Exception e) {
-            LOGGER.error("Failed to migrate PowerFlex volume: " + srcData.getId() + " due to: " + e.getMessage());
+            logger.error("Failed to migrate PowerFlex volume: {} due to: {}", srcData, e.getMessage());
             answer = new Answer(null, false, e.getMessage());
         }
 
@@ -1198,14 +1212,15 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     private void resizeVolume(VolumeInfo volumeInfo) {
-        LOGGER.debug("Resizing PowerFlex volume");
+        logger.debug("Resizing PowerFlex volume");
 
         Preconditions.checkArgument(volumeInfo != null, "volumeInfo cannot be null");
 
         try {
             String scaleIOVolumeId = ScaleIOUtil.getVolumePath(volumeInfo.getPath());
             Long storagePoolId = volumeInfo.getPoolId();
-            final ScaleIOGatewayClient client = getScaleIOClient(storagePoolId);
+            StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
+            final ScaleIOGatewayClient client = getScaleIOClient(storagePool);
 
             ResizeVolumePayload payload = (ResizeVolumePayload)volumeInfo.getpayload();
             long newSizeInBytes = payload.newSize != null ? payload.newSize : volumeInfo.getSize();
@@ -1219,7 +1234,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             long newSizeIn8gbBoundary = (long) (Math.ceil(newSizeInGB / 8.0) * 8.0);
 
             if (scaleIOVolume.getSizeInKb() == newSizeIn8gbBoundary << 20) {
-                LOGGER.debug("No resize necessary at API");
+                logger.debug("No resize necessary at API");
             } else {
                 scaleIOVolume = client.resizeVolume(scaleIOVolumeId, (int) newSizeIn8gbBoundary);
                 if (scaleIOVolume == null) {
@@ -1227,7 +1242,6 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 }
             }
 
-            StoragePoolVO storagePool = storagePoolDao.findById(storagePoolId);
             boolean attachedRunning = false;
             long hostId = 0;
 
@@ -1254,7 +1268,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
 
             if (volumeInfo.getFormat().equals(Storage.ImageFormat.QCOW2) || attachedRunning) {
-                LOGGER.debug("Volume needs to be resized at the hypervisor host");
+                logger.debug("Volume needs to be resized at the hypervisor host");
 
                 if (hostId == 0) {
                     hostId = selector.select(volumeInfo, true).getId();
@@ -1281,9 +1295,9 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     } else if (!answer.getResult()) {
                         // for non-qcow2, notifying the running VM is going to be best-effort since we can't roll back
                         // or avoid VM seeing a successful change at the PowerFlex volume after e.g. reboot
-                        LOGGER.warn("Resized raw volume, but failed to notify. VM will see change on reboot. Error:" + answer.getDetails());
+                        logger.warn("Resized raw volume, but failed to notify. VM will see change on reboot. Error:" + answer.getDetails());
                     } else {
-                        LOGGER.debug("Resized volume at host: " + answer.getDetails());
+                        logger.debug("Resized volume at host: " + answer.getDetails());
                     }
                 } finally {
                     if (!attachedRunning) {
@@ -1314,8 +1328,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             storagePool.setUsedBytes(Math.min(usedBytes, capacityBytes));
             storagePoolDao.update(storagePoolId, storagePool);
         } catch (Exception e) {
-            String errMsg = "Unable to resize PowerFlex volume: " + volumeInfo.getId() + " due to " + e.getMessage();
-            LOGGER.warn(errMsg);
+            String errMsg = "Unable to resize PowerFlex volume: " + volumeInfo + " due to " + e.getMessage();
+            logger.warn(errMsg);
             throw new CloudRuntimeException(errMsg, e);
         }
     }
@@ -1333,7 +1347,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
         } catch (Exception ex) {
             errMsg = ex.getMessage();
-            LOGGER.error(errMsg);
+            logger.error(errMsg);
             if (callback == null) {
                 throw ex;
             }
@@ -1344,6 +1358,16 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             result.setResult(errMsg);
             callback.complete(result);
         }
+    }
+
+    @Override
+    public long getVolumeSizeRequiredOnPool(long volumeSize, Long templateSize, boolean isEncryptionRequired) {
+        long newSizeInGB = volumeSize / (1024 * 1024 * 1024);
+        if (templateSize != null && isEncryptionRequired && needsExpansionForEncryptionHeader(templateSize, volumeSize)) {
+            newSizeInGB = (volumeSize + (1<<30)) / (1024 * 1024 * 1024);
+        }
+        long newSizeIn8gbBoundary = (long) (Math.ceil(newSizeInGB / 8.0) * 8.0);
+        return newSizeIn8gbBoundary * (1024 * 1024 * 1024);
     }
 
     @Override
@@ -1366,12 +1390,11 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         Map<String, String> customStats = new HashMap<>();
 
         try {
-            final ScaleIOGatewayClient client = getScaleIOClient(pool.getId());
+            final ScaleIOGatewayClient client = getScaleIOClient(pool);
             int connectedSdcsCount = client.getConnectedSdcsCount();
             customStats.put(ScaleIOUtil.CONNECTED_SDC_COUNT_STAT, String.valueOf(connectedSdcsCount));
         } catch (Exception e) {
-            String errMsg = "Unable to get custom storage stats for the pool: " + pool.getId() + " due to " + e.getMessage();
-            LOGGER.error(errMsg);
+            logger.error("Unable to get custom storage stats for the pool: {} due to {}", pool, e.getMessage());
         }
 
         return customStats;
@@ -1382,7 +1405,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         Preconditions.checkArgument(storagePool != null, "storagePool cannot be null");
 
         try {
-            final ScaleIOGatewayClient client = getScaleIOClient(storagePool.getId());
+            final ScaleIOGatewayClient client = getScaleIOClient(storagePool);
             StoragePoolStatistics poolStatistics = client.getStoragePoolStatistics(storagePool.getPath());
             if (poolStatistics != null && poolStatistics.getNetMaxCapacityInBytes() != null && poolStatistics.getNetUsedCapacityInBytes() != null) {
                 Long capacityBytes = poolStatistics.getNetMaxCapacityInBytes();
@@ -1390,8 +1413,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 return new Pair<Long, Long>(capacityBytes, usedBytes);
             }
         } catch (Exception e) {
-            String errMsg = "Unable to get storage stats for the pool: " + storagePool.getId() + " due to " + e.getMessage();
-            LOGGER.warn(errMsg);
+            String errMsg = "Unable to get storage stats for the pool: " + storagePool + " due to " + e.getMessage();
+            logger.warn(errMsg);
             throw new CloudRuntimeException(errMsg, e);
         }
 
@@ -1409,7 +1432,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         Preconditions.checkArgument(StringUtils.isNotEmpty(volumePath), "volumePath cannot be null");
 
         try {
-            final ScaleIOGatewayClient client = getScaleIOClient(storagePool.getId());
+            final ScaleIOGatewayClient client = getScaleIOClient(storagePool);
             VolumeStatistics volumeStatistics = client.getVolumeStatistics(ScaleIOUtil.getVolumePath(volumePath));
             if (volumeStatistics != null) {
                 Long provisionedSizeInBytes = volumeStatistics.getNetProvisionedAddressesInBytes();
@@ -1417,8 +1440,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 return new Pair<Long, Long>(provisionedSizeInBytes, allocatedSizeInBytes);
             }
         }  catch (Exception e) {
-            String errMsg = "Unable to get stats for the volume: " + volumePath + " in the pool: " + storagePool.getId() + " due to " + e.getMessage();
-            LOGGER.warn(errMsg);
+            String errMsg = "Unable to get stats for the volume: " + volumePath + " in the pool: " + storagePool + " due to " + e.getMessage();
+            logger.warn(errMsg);
             throw new CloudRuntimeException(errMsg, e);
         }
 
@@ -1436,10 +1459,10 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             if (poolHostVO == null) {
                 return false;
             }
-            final ScaleIOGatewayClient client = getScaleIOClient(pool.getId());
+            final ScaleIOGatewayClient client = getScaleIOClient(pool);
             return client.isSdcConnected(poolHostVO.getLocalPath());
         } catch (Exception e) {
-            LOGGER.warn("Unable to check the host: " + host.getId() + " access to storage pool: " + pool.getId() + " due to " + e.getMessage(), e);
+            logger.warn("Unable to check the host: {} access to storage pool: {} due to {}", host, pool, e.getMessage(), e);
             return false;
         }
     }
@@ -1459,8 +1482,8 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             return;
         }
 
-        LOGGER.warn("SDC not connected on the host: " + host.getId());
-        String msg = "SDC not connected on the host: " + host.getId() + ", reconnect the SDC to MDM";
+        logger.warn("SDC not connected on the host: {}", host);
+        String msg = String.format("SDC not connected on the host: %s, reconnect the SDC to MDM", host);
         alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "SDC disconnected on host: " + host.getUuid(), msg);
     }
 

@@ -23,15 +23,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 
 /*
  * synonym to the pool python lib in the ovs-agent
  */
 public class Pool extends OvmObject {
-    private static final Logger LOGGER = Logger
-            .getLogger(Pool.class);
 
     private final List<String> validRoles = new ArrayList<String>() {
         {

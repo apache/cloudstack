@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -58,25 +58,25 @@ fi
 
 
 
-if [ "$rflag" == 1 ] 
+if [ "$rflag" == 1 ]
 then
   find $instancefs -name rootdisk
-  if [ $? -gt 0 ] 
+  if [ $? -gt 0 ]
   then
     exit 5
   fi
   exit 0
 fi
 
-if [ "$dflag" == 1 ] 
+if [ "$dflag" == 1 ]
 then
   if [[ $disknum -eq 0 ]]
-  then 
+  then
     find $instancefs -name datadisk
-  else 
+  else
     find $instancefs -name datadisk${disknum}
   fi
-  if [ $? -gt 0 ] 
+  if [ $? -gt 0 ]
   then
     exit 6
   fi

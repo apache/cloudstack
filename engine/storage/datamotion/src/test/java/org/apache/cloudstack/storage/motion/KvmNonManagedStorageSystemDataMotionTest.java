@@ -51,7 +51,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -303,7 +303,6 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         Mockito.lenient().when(dataStoreVO.getId()).thenReturn(0l);
 
         ImageStoreEntity destDataStore = Mockito.mock(ImageStoreImpl.class);
-        Mockito.doReturn(0l).when(destDataStore).getId();
 
         Answer copyCommandAnswer = Mockito.mock(Answer.class);
 

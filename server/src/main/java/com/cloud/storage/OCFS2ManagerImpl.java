@@ -24,7 +24,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -53,7 +52,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, ResourceListener {
-    private static final Logger s_logger = Logger.getLogger(OCFS2ManagerImpl.class);
 
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
@@ -90,12 +88,12 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
     private List<Ternary<Integer, String, String>> marshalNodes(List<HostVO> hosts) {
         Integer i = 0;
         List<Ternary<Integer, String, String>> lst = new ArrayList<Ternary<Integer, String, String>>();
-        for (HostVO h : hosts) {
+        for (HostVO host : hosts) {
             /**
              * Don't show "node" in node name otherwise OVM's utils/config_o2cb.sh will be going crazy
              */
-            String nodeName = "ovm_" + h.getPrivateIpAddress().replace(".", "_");
-            Ternary<Integer, String, String> node = new Ternary<Integer, String, String>(i, h.getPrivateIpAddress(), nodeName);
+            String nodeName = "ovm_" + host.getPrivateIpAddress().replace(".", "_");
+            Ternary<Integer, String, String> node = new Ternary<Integer, String, String>(i, host.getPrivateIpAddress(), nodeName);
             lst.add(node);
             i++;
         }
@@ -104,14 +102,14 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
 
     private boolean prepareNodes(String clusterName, List<HostVO> hosts) {
         PrepareOCFS2NodesCommand cmd = new PrepareOCFS2NodesCommand(clusterName, marshalNodes(hosts));
-        for (HostVO h : hosts) {
-            Answer ans = _agentMgr.easySend(h.getId(), cmd);
+        for (HostVO host : hosts) {
+            Answer ans = _agentMgr.easySend(host.getId(), cmd);
             if (ans == null) {
-                s_logger.debug("Host " + h.getId() + " is not in UP state, skip preparing OCFS2 node on it");
+                logger.debug("Host {} is not in UP state, skip preparing OCFS2 node on it", host);
                 continue;
             }
             if (!ans.getResult()) {
-                s_logger.warn("PrepareOCFS2NodesCommand failed on host " + h.getId() + " " + ans.getDetails());
+                logger.warn("PrepareOCFS2NodesCommand failed on host {} {}", host, ans.getDetails());
                 return false;
             }
         }
@@ -152,7 +150,7 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
         sc.and(sc.entity().getType(), Op.EQ, Host.Type.Routing);
         List<HostVO> hosts = sc.list();
         if (hosts.isEmpty()) {
-            s_logger.debug("There is no host in cluster " + clusterId + ", no need to prepare OCFS2 nodes");
+            logger.debug("There is no host in cluster {}, no need to prepare OCFS2 nodes", cluster);
             return true;
         }
 
@@ -180,8 +178,8 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
     @Override
     public void processDeletHostEventAfter(Host host) {
         String errMsg =
-            String.format("Prepare OCFS2 nodes failed after delete host %1$s (zone:%2$s, pod:%3$s, cluster:%4$s", host.getId(), host.getDataCenterId(), host.getPodId(),
-                host.getClusterId());
+            String.format("Prepare OCFS2 nodes failed after delete host %s (zone: %s, pod: %s, cluster: %s",
+                    host, host.getDataCenterId(), host.getPodId(), host.getClusterId());
 
         if (host.getHypervisorType() != HypervisorType.Ovm) {
             return;
@@ -200,10 +198,10 @@ public class OCFS2ManagerImpl extends ManagerBase implements OCFS2Manager, Resou
         if (hasOcfs2) {
             try {
                 if (!prepareNodes(host.getClusterId())) {
-                    s_logger.warn(errMsg);
+                    logger.warn(errMsg);
                 }
             } catch (Exception e) {
-                s_logger.error(errMsg, e);
+                logger.error(errMsg, e);
             }
         }
     }

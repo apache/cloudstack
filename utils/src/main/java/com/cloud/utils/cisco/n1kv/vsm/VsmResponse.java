@@ -27,7 +27,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.apache.cloudstack.utils.security.ParserUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -70,7 +71,7 @@ public abstract class VsmResponse {
         error, warning;
     }
 
-    private static final Logger s_logger = Logger.getLogger(VsmResponse.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     protected String _xmlResponse;
     protected Document _docResponse;
@@ -102,11 +103,11 @@ public abstract class VsmResponse {
                 parse(_docResponse.getDocumentElement());
             }
         } catch (ParserConfigurationException e) {
-            s_logger.error("Error parsing the response : " + e.toString());
+            logger.error("Error parsing the response : " + e.toString());
         } catch (SAXException e) {
-            s_logger.error("Error parsing the response : " + e.toString());
+            logger.error("Error parsing the response : " + e.toString());
         } catch (IOException e) {
-            s_logger.error("Error parsing the response : " + e.toString());
+            logger.error("Error parsing the response : " + e.toString());
         }
     }
 
@@ -158,7 +159,7 @@ public abstract class VsmResponse {
                 }
             }
         } catch (DOMException e) {
-            s_logger.error("Error parsing the response : " + e.toString());
+            logger.error("Error parsing the response : " + e.toString());
         }
     }
 
@@ -217,7 +218,7 @@ public abstract class VsmResponse {
             LSSerializer lss = ls.createLSSerializer();
             System.out.println(lss.writeToString(_docResponse));
         } catch (ParserConfigurationException e) {
-            s_logger.error("Error parsing the response : " + e.toString());
+            logger.error("Error parsing the response : " + e.toString());
         }
     }
 }

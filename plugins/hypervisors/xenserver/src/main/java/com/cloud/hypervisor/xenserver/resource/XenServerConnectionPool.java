@@ -29,7 +29,8 @@ import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.XenAPIException;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.XmlRpcClientException;
 
@@ -48,7 +49,7 @@ import java.util.Properties;
 import java.util.Queue;
 
 public class XenServerConnectionPool {
-    private static final Logger s_logger = Logger.getLogger(XenServerConnectionPool.class);
+    protected static Logger LOGGER = LogManager.getLogger(XenServerConnectionPool.class);
     protected HashMap<String /* poolUuid */, XenServerConnection> _conns = new HashMap<String, XenServerConnection>();
     protected int _retries;
     protected int _interval;
@@ -57,7 +58,7 @@ public class XenServerConnectionPool {
     static {
         File file = PropertiesUtil.findConfigFile("environment.properties");
         if (file == null) {
-            s_logger.debug("Unable to find environment.properties");
+            LOGGER.debug("Unable to find environment.properties");
         } else {
             try {
                 final Properties props = PropertiesUtil.loadFromFile(file);
@@ -65,11 +66,11 @@ public class XenServerConnectionPool {
                 if (search != null) {
                     s_sleepOnError = NumbersUtil.parseInterval(search, 10) * 1000;
                 }
-                s_logger.info("XenServer Connection Pool Configs: sleep.interval.on.error=" + s_sleepOnError);
+                LOGGER.info("XenServer Connection Pool Configs: sleep.interval.on.error=" + s_sleepOnError);
             } catch (FileNotFoundException e) {
-                s_logger.debug("File is not found", e);
+                LOGGER.debug("File is not found", e);
             } catch (IOException e) {
-                s_logger.debug("IO Exception while reading file", e);
+                LOGGER.debug("IO Exception while reading file", e);
             }
         }
         try {
@@ -89,7 +90,7 @@ public class XenServerConnectionPool {
         } catch (NoSuchAlgorithmException e) {
             //ignore this
         } catch (KeyManagementException e) {
-            s_logger.debug("Init SSLContext failed ", e);
+            LOGGER.debug("Init SSLContext failed ", e);
         }
     }
 
@@ -101,8 +102,8 @@ public class XenServerConnectionPool {
     private void addConnect(String poolUuid, XenServerConnection conn) {
         if (poolUuid == null)
             return;
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Add master connection through " + conn.getIp() + " for pool(" + conn.getPoolUuid() + ")");
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Add master connection through " + conn.getIp() + " for pool(" + conn.getPoolUuid() + ")");
         }
         synchronized (_conns) {
             _conns.put(poolUuid, conn);
@@ -126,8 +127,8 @@ public class XenServerConnectionPool {
             conn = _conns.remove(poolUuid);
         }
         if (conn != null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Remove master connection through " + conn.getIp() + " for pool(" + conn.getPoolUuid() + ")");
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug("Remove master connection through " + conn.getIp() + " for pool(" + conn.getPoolUuid() + ")");
             }
 
         }
@@ -159,12 +160,12 @@ public class XenServerConnectionPool {
                 loginWithPassword(conn, username, password, APIVersion.latest().toString());
             }  catch (Exception e1) {
                 String msg = "Unable to create master connection to host(" + maddress +") , due to " + e1.toString();
-                s_logger.debug(msg);
+                LOGGER.debug(msg);
                 throw new CloudRuntimeException(msg, e1);
             }
         } catch (Exception e) {
             String msg = "Unable to create master connection to host(" + ip +") , due to " + e.toString();
-            s_logger.debug(msg);
+            LOGGER.debug(msg);
             throw new CloudRuntimeException(msg, e);
         }
         return conn;
@@ -175,8 +176,8 @@ public class XenServerConnectionPool {
             return new URL("https://" + ip);
         } catch (Exception e) {
             String msg = "Unable to convert IP " + ip + " to URL due to " + e.toString();
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(msg);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(msg);
             }
             throw new CloudRuntimeException(msg, e);
         }
@@ -188,7 +189,7 @@ public class XenServerConnectionPool {
         if (hostUuid == null || poolUuid == null || ipAddress == null || username == null || password == null) {
             String msg = "Connect some parameter are null hostUuid:" + hostUuid + " ,poolUuid:" + poolUuid
                     + " ,ipAddress:" + ipAddress;
-            s_logger.debug(msg);
+            LOGGER.debug(msg);
             throw new CloudRuntimeException(msg);
         }
         synchronized (poolUuid.intern()) {
@@ -198,7 +199,7 @@ public class XenServerConnectionPool {
                     Host host = Host.getByUuid(mConn, hostUuid);
                     if (!host.getEnabled(mConn)) {
                         String msg = "Cannot connect this host " + ipAddress + " due to the host is not enabled";
-                        s_logger.debug(msg);
+                        LOGGER.debug(msg);
                         if (mConn.getIp().equalsIgnoreCase(ipAddress)) {
                             removeConnect(poolUuid);
                             mConn = null;
@@ -209,9 +210,9 @@ public class XenServerConnectionPool {
                 } catch (CloudRuntimeException e) {
                         throw e;
                 } catch (Exception e) {
-                    if (s_logger.isDebugEnabled()) {
+                    if (LOGGER.isDebugEnabled()) {
                         String ip = mConn != null ? mConn.getIp() : null;
-                        s_logger.debug("connect through IP(" + ip + ") for pool(" + poolUuid + ") is broken due to " + e.toString());
+                        LOGGER.debug("connect through IP(" + ip + ") for pool(" + poolUuid + ") is broken due to " + e.toString());
                     }
                     removeConnect(poolUuid);
                     mConn = null;
@@ -228,13 +229,13 @@ public class XenServerConnectionPool {
                         try{
                             Session.logout(conn);
                         } catch (Exception e) {
-                            s_logger.debug("Caught exception during logout", e);
+                            LOGGER.debug("Caught exception during logout", e);
                         }
                         conn.dispose();
                     }
                     if (!hostenabled) {
                         String msg = "Unable to create master connection, due to master Host " + ipAddress + " is not enabled";
-                        s_logger.debug(msg);
+                        LOGGER.debug(msg);
                         throw new CloudRuntimeException(msg);
                     }
                     mConn = new XenServerConnection(getURL(ipAddress), ipAddress, username, password, _retries, _interval, wait, _connWait);
@@ -247,12 +248,12 @@ public class XenServerConnectionPool {
                         Host host = session.getThisHost(mConn);
                         if (!host.getEnabled(mConn)) {
                             String msg = "Unable to create master connection, due to master Host " + maddress + " is not enabled";
-                            s_logger.debug(msg);
+                            LOGGER.debug(msg);
                             throw new CloudRuntimeException(msg);
                         }
                     }  catch (Exception e1) {
                         String msg = "Unable to create master connection to host(" + maddress +") , due to " + e1.toString();
-                        s_logger.debug(msg);
+                        LOGGER.debug(msg);
                         throw new CloudRuntimeException(msg, e1);
 
                     }
@@ -260,7 +261,7 @@ public class XenServerConnectionPool {
                         throw e;
                 } catch (Exception e) {
                     String msg = "Unable to create master connection to host(" + ipAddress +") , due to " + e.toString();
-                    s_logger.debug(msg);
+                    LOGGER.debug(msg);
                     throw new CloudRuntimeException(msg, e);
                 }
                 addConnect(poolUuid, mConn);
@@ -457,19 +458,19 @@ public class XenServerConnectionPool {
             try {
                 return super.dispatch(methodcall, methodparams);
             } catch (Types.SessionInvalid e) {
-                s_logger.debug("Session is invalid for method: " + methodcall + " due to " + e.toString());
+                LOGGER.debug("Session is invalid for method: " + methodcall + " due to " + e.toString());
                 removeConnect(_poolUuid);
                 throw e;
             } catch (XmlRpcClientException e) {
-                s_logger.debug("XmlRpcClientException for method: " + methodcall + " due to " + e.toString());
+                LOGGER.debug("XmlRpcClientException for method: " + methodcall + " due to " + e.toString());
                 removeConnect(_poolUuid);
                 throw e;
             } catch (XmlRpcException e) {
-                s_logger.debug("XmlRpcException for method: " + methodcall + " due to " + e.toString());
+                LOGGER.debug("XmlRpcException for method: " + methodcall + " due to " + e.toString());
                 removeConnect(_poolUuid);
                 throw e;
             } catch (Types.HostIsSlave e) {
-                 s_logger.debug("HostIsSlave Exception for method: " + methodcall + " due to " + e.toString());
+                 LOGGER.debug("HostIsSlave Exception for method: " + methodcall + " due to " + e.toString());
                  removeConnect(_poolUuid);
                  throw e;
             }

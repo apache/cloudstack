@@ -26,6 +26,7 @@ import com.linbit.linstor.api.model.Node;
 import com.linbit.linstor.api.model.Properties;
 import com.linbit.linstor.api.model.ProviderKind;
 import com.linbit.linstor.api.model.Resource;
+import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceDefinitionModify;
 import com.linbit.linstor.api.model.ResourceGroup;
 import com.linbit.linstor.api.model.ResourceWithVolumes;
@@ -37,17 +38,22 @@ import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public class LinstorUtil {
-    private static final Logger s_logger = Logger.getLogger(LinstorUtil.class);
+    protected static Logger LOGGER = LogManager.getLogger(LinstorUtil.class);
 
     public final static String PROVIDER_NAME = "Linstor";
     public static final String RSC_PREFIX = "cs-";
     public static final String RSC_GROUP = "resourceGroup";
+    public static final String CS_TEMPLATE_FOR_PREFIX = "_cs-template-for-";
 
     public static final String TEMP_VOLUME_ID = "tempVolumeId";
 
@@ -161,7 +167,7 @@ public class LinstorUtil {
 
         if (rscGrps.isEmpty()) {
             final String errMsg = String.format("Linstor: Resource group '%s' not found", rscGroupName);
-            s_logger.error(errMsg);
+            LOGGER.error(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
 
@@ -185,7 +191,7 @@ public class LinstorUtil {
                 .mapToLong(sp -> sp.getTotalCapacity() != null ? sp.getTotalCapacity() : 0L)
                 .sum() * 1024;  // linstor uses kiB
         } catch (ApiException apiEx) {
-            s_logger.error(apiEx.getMessage());
+            LOGGER.error(apiEx.getMessage());
             throw new CloudRuntimeException(apiEx);
         }
     }
@@ -206,8 +212,8 @@ public class LinstorUtil {
                     .map(Resource::getNodeName)
                     .findFirst()
                     .orElse(null);
-       }
-        s_logger.error("isResourceInUse: null returned from resourceList");
+        }
+        LOGGER.error("isResourceInUse: null returned from resourceList");
         return null;
     }
 
@@ -255,14 +261,14 @@ public class LinstorUtil {
                 // CloudStack resource always only have 1 volume
                 String devicePath = rsc.getVolumes().get(0).getDevicePath();
                 if (devicePath != null && !devicePath.isEmpty()) {
-                    s_logger.debug(String.format("getDevicePath: %s -> %s", rscName, devicePath));
+                    LOGGER.debug("getDevicePath: {} -> {}", rscName, devicePath);
                     return devicePath;
                 }
             }
         }
 
         final String errMsg = "viewResources didn't return resources or volumes for " + rscName;
-        s_logger.error(errMsg);
+        LOGGER.error(errMsg);
         throw new CloudRuntimeException("Linstor: " + errMsg);
     }
 
@@ -286,5 +292,115 @@ public class LinstorUtil {
             answers = api.resourceDefinitionModify(rscName, rdm);
         }
         return answers;
+    }
+
+    /**
+     * Returns all resource definitions that start with the given `startWith` name.
+     * @param api
+     * @param startWith startWith String
+     * @return a List with all ResourceDefinition starting with `startWith`
+     * @throws ApiException
+     */
+    public static List<ResourceDefinition> getRDListStartingWith(DevelopersApi api, String startWith)
+            throws ApiException
+    {
+        List<ResourceDefinition> rscDfns = api.resourceDefinitionList(null, null, null, null);
+
+        return rscDfns.stream()
+                .filter(rscDfn -> rscDfn.getName().toLowerCase().startsWith(startWith.toLowerCase()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Returns a pair list of resource-definitions with ther 1:1 mapped resource-group objects that start with the
+     * resource name `startWith`
+     * @param api
+     * @param startWith
+     * @return
+     * @throws ApiException
+     */
+    public static List<Pair<ResourceDefinition, ResourceGroup>> getRDAndRGListStartingWith(DevelopersApi api, String startWith)
+            throws ApiException
+    {
+        List<ResourceDefinition> foundRDs = getRDListStartingWith(api, startWith);
+
+        List<String> rscGrpStrings = foundRDs.stream()
+                .map(ResourceDefinition::getResourceGroupName)
+                .collect(Collectors.toList());
+
+        Map<String, ResourceGroup> rscGrps = api.resourceGroupList(rscGrpStrings, null, null, null).stream()
+                .collect(Collectors.toMap(ResourceGroup::getName, rscGrp -> rscGrp));
+
+        return foundRDs.stream()
+                .map(rd -> new Pair<>(rd, rscGrps.get(rd.getResourceGroupName())))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * The full name of template-for aux property key.
+     * @param rscGrpName
+     * @return
+     */
+    public static String getTemplateForAuxPropKey(String rscGrpName) {
+        return String.format("Aux/%s%s", CS_TEMPLATE_FOR_PREFIX, rscGrpName);
+    }
+
+    /**
+     * Template resource should have a _cs-template-for-... property, that indicates to which resource-group
+     * this template belongs, it works like a refcount to keep it alive if there are still such properties on the
+     * template resource. That methods set the correct property on the given resource.
+     * @param api
+     * @param rscName Resource name to set the property.
+     * @param rscGrpName Resource group this template should belong too.
+     * @throws ApiException
+     */
+    public static void setAuxTemplateForProperty(DevelopersApi api, String rscName, String rscGrpName)
+            throws ApiException
+    {
+        ResourceDefinitionModify rdm = new ResourceDefinitionModify();
+        Properties props = new Properties();
+        String propKey = LinstorUtil.getTemplateForAuxPropKey(rscGrpName);
+        props.put(propKey, "true");
+        rdm.setOverrideProps(props);
+        ApiCallRcList answers = api.resourceDefinitionModify(rscName, rdm);
+
+        if (answers.hasError()) {
+            String bestError = LinstorUtil.getBestErrorMessage(answers);
+            LOGGER.error("Set {} on {} error: {}", propKey, rscName, bestError);
+            throw new CloudRuntimeException(bestError);
+        } else {
+            LOGGER.info("Set {} property on {}", propKey, rscName);
+        }
+    }
+
+    /**
+     * Find the correct resource definition to clone from.
+     * There could be multiple resource definitions for the same template, with the same prefix.
+     * This method searches for which resource group the resource definition was intended and returns that.
+     * If no exact resource definition could be found, we return the first with a similar name as a fallback.
+     * If there is not even one with the correct prefix, we return null.
+     * @param api
+     * @param rscName
+     * @param rscGrpName
+     * @return The resource-definition to clone from, if no template and no match, return null.
+     * @throws ApiException
+     */
+    public static ResourceDefinition findResourceDefinition(DevelopersApi api, String rscName, String rscGrpName)
+            throws ApiException {
+        List<ResourceDefinition> rscDfns = api.resourceDefinitionList(null, null, null, null);
+
+        List<ResourceDefinition> rdsStartingWith = rscDfns.stream()
+                .filter(rscDfn -> rscDfn.getName().toLowerCase().startsWith(rscName.toLowerCase()))
+                .collect(Collectors.toList());
+
+        if (rdsStartingWith.isEmpty()) {
+            return null;
+        }
+
+        Optional<ResourceDefinition> rd = rdsStartingWith.stream()
+                .filter(rscDfn -> rscDfn.getProps().containsKey(LinstorUtil.getTemplateForAuxPropKey(rscGrpName)))
+                .findFirst();
+
+        return rd.orElseGet(() -> rdsStartingWith.get(0));
     }
 }

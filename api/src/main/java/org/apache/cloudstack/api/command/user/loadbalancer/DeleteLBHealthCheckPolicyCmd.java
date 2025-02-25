@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.loadbalancer;
 
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,7 +36,6 @@ import com.cloud.user.Account;
 @APICommand(name = "deleteLBHealthCheckPolicy", description = "Deletes a load balancer health check policy.", responseObject = SuccessResponse.class, since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteLBHealthCheckPolicyCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteLBHealthCheckPolicyCmd.class.getName());
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////

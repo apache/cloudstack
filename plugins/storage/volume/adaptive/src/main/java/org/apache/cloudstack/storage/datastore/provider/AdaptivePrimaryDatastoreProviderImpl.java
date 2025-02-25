@@ -24,7 +24,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.component.ComponentContext;
@@ -35,7 +36,7 @@ import org.apache.cloudstack.storage.datastore.lifecycle.AdaptiveDataStoreLifeCy
 
 @Component
 public abstract class AdaptivePrimaryDatastoreProviderImpl implements PrimaryDataStoreProvider {
-    static final Logger s_logger = Logger.getLogger(AdaptivePrimaryDatastoreProviderImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     AdaptiveDataStoreDriverImpl driver;
 
@@ -46,7 +47,7 @@ public abstract class AdaptivePrimaryDatastoreProviderImpl implements PrimaryDat
     DataStoreLifeCycle lifecycle;
 
     AdaptivePrimaryDatastoreProviderImpl(ProviderAdapterFactory f) {
-        s_logger.info("Creating " + f.getProviderName());
+        logger.info("Creating " + f.getProviderName());
         factoryMap.register(f);
     }
 
@@ -57,7 +58,7 @@ public abstract class AdaptivePrimaryDatastoreProviderImpl implements PrimaryDat
 
     @Override
     public boolean configure(Map<String, Object> params) {
-        s_logger.info("Configuring " + getName());
+        logger.info("Configuring " + getName());
         driver = new AdaptiveDataStoreDriverImpl(factoryMap);
         driver.setProviderName(getName());
         lifecycle = ComponentContext.inject(new AdaptiveDataStoreLifeCycleImpl(factoryMap));

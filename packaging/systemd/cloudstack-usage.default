@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-JAVA_OPTS="-Xms256m -Xmx2048m"
+JAVA_OPTS="-Xms256m -Xmx2048m --add-opens=java.base/java.lang=ALL-UNNAMED"
 
 CLASSPATH="/usr/share/cloudstack-usage/*:/usr/share/cloudstack-usage/lib/*:/usr/share/cloudstack-mysql-ha/lib/*:/etc/cloudstack/usage:/usr/share/java/mysql-connector-java.jar"
 

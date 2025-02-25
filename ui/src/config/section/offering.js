@@ -40,7 +40,7 @@ export default {
       filters: ['active', 'inactive'],
       columns: ['name', 'displaytext', 'state', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot']
+        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot', 'purgeresources']
         if (store.getters.apis.createServiceOffering &&
           store.getters.apis.createServiceOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')
@@ -48,6 +48,13 @@ export default {
         if (store.getters.apis.createServiceOffering &&
           store.getters.apis.createServiceOffering.params.filter(x => x.name === 'rootdisksize').length > 0) {
           fields.splice(12, 0, 'rootdisksize')
+        }
+        const detailFields = ['minmemory', 'maxmemory', 'mincpunumber', 'maxcpunumber']
+        for (const field of detailFields) {
+          if (store.getters.apis.createServiceOffering &&
+              store.getters.apis.createServiceOffering.params.filter(x => field === x.name).length > 0) {
+            fields.push(field)
+          }
         }
         return fields
       },
@@ -135,7 +142,7 @@ export default {
       permission: ['listServiceOfferings', 'listInfrastructure'],
       searchFilters: ['name', 'zoneid', 'domainid', 'cpunumber', 'cpuspeed', 'memory'],
       params: { issystem: 'true', isrecursive: 'true' },
-      columns: ['name', 'state', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'order'],
+      columns: ['name', 'state', 'systemvmtype', 'cpunumber', 'cpuspeed', 'memory', 'storagetype', 'offerha', 'order'],
       filters: ['active', 'inactive'],
       details: ['name', 'id', 'displaytext', 'systemvmtype', 'provisioningtype', 'storagetype', 'iscustomized', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'storagetags', 'hosttags', 'tags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness'],
       resourceType: 'ServiceOffering',
@@ -221,7 +228,9 @@ export default {
       columns: ['name', 'displaytext', 'state', 'disksize', 'domain', 'zone', 'order'],
       filters: ['active', 'inactive'],
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'disksizestrictness', 'iscustomizediops', 'diskIopsReadRate', 'diskIopsWriteRate', 'diskBytesReadRate', 'diskBytesWriteRate', 'miniops', 'maxiops', 'tags', 'domain', 'zone', 'created', 'encrypt']
+        var fields = ['name', 'id', 'displaytext', 'disksize', 'provisioningtype', 'storagetype', 'iscustomized', 'disksizestrictness', 'iscustomizediops',
+          'diskIopsReadRate', 'diskIopsWriteRate', 'diskBytesReadRate', 'diskBytesReadRateMax', 'diskBytesWriteRate', 'diskBytesWriteRateMax', 'miniops', 'maxiops', 'tags',
+          'domain', 'zone', 'created', 'encrypt']
         if (store.getters.apis.createDiskOffering &&
           store.getters.apis.createDiskOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')
@@ -366,7 +375,7 @@ export default {
       permission: ['listNetworkOfferings'],
       searchFilters: ['name', 'zoneid', 'domainid', 'tags'],
       columns: ['name', 'state', 'guestiptype', 'traffictype', 'networkrate', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'internetprotocol', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'service', 'tags', 'domain', 'zone'],
+      details: ['name', 'id', 'displaytext', 'guestiptype', 'traffictype', 'internetprotocol', 'networkrate', 'ispersistent', 'egressdefaultpolicy', 'availability', 'conservemode', 'specifyvlan', 'routingmode', 'specifyasnumber', 'specifyipranges', 'supportspublicaccess', 'supportsstrechedl2subnet', 'forvpc', 'fornsx', 'networkmode', 'service', 'tags', 'domain', 'zone'],
       resourceType: 'NetworkOffering',
       tabs: [
         {
@@ -466,7 +475,7 @@ export default {
       searchFilters: ['name', 'zoneid', 'domainid'],
       resourceType: 'VpcOffering',
       columns: ['name', 'state', 'displaytext', 'domain', 'zone', 'order'],
-      details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'tags', 'service', 'domain', 'zone', 'created'],
+      details: ['name', 'id', 'displaytext', 'internetprotocol', 'distributedvpcrouter', 'tags', 'routingmode', 'specifyasnumber', 'service', 'fornsx', 'networkmode', 'domain', 'zone', 'created'],
       related: [{
         name: 'vpc',
         title: 'label.vpc',

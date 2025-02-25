@@ -27,7 +27,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.gson.Gson;
@@ -45,14 +46,14 @@ import com.google.gson.JsonSerializer;
  * Note: toPairList and appendPairList only support simple POJO objects currently
  */
 public class JobSerializerHelper {
-    private static final Logger s_logger = Logger.getLogger(JobSerializerHelper.class);
+    protected static Logger LOGGER = LogManager.getLogger(JobSerializerHelper.class);
     public static final String token = "/";
 
     private static Gson s_gson;
     static {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.setVersion(1.5);
-        s_logger.debug("Job GSON Builder initialized.");
+        LOGGER.debug("Job GSON Builder initialized.");
         gsonBuilder.registerTypeAdapter(Class.class, new ClassTypeAdapter());
         gsonBuilder.registerTypeAdapter(Throwable.class, new ThrowableTypeAdapter());
         s_gson = gsonBuilder.create();

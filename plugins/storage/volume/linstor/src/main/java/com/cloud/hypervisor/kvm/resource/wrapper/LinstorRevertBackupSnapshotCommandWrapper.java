@@ -32,15 +32,12 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 @ResourceWrapper(handles = LinstorRevertBackupSnapshotCommand.class)
 public final class LinstorRevertBackupSnapshotCommandWrapper
     extends CommandWrapper<LinstorRevertBackupSnapshotCommand, CopyCmdAnswer, LibvirtComputingResource>
 {
-    private static final Logger s_logger = Logger.getLogger(LinstorRevertBackupSnapshotCommandWrapper.class);
-
     private void convertQCow2ToRAW(final String srcPath, final String dstPath, int waitMilliSeconds)
         throws LibvirtException, QemuImgException
     {
@@ -54,7 +51,7 @@ public final class LinstorRevertBackupSnapshotCommandWrapper
     @Override
     public CopyCmdAnswer execute(LinstorRevertBackupSnapshotCommand cmd, LibvirtComputingResource serverResource)
     {
-        s_logger.debug("LinstorRevertBackupSnapshotCommandWrapper: " + cmd.getSrcTO().getPath() + " -> " + cmd.getDestTO().getPath());
+        logger.debug("LinstorRevertBackupSnapshotCommandWrapper: " + cmd.getSrcTO().getPath() + " -> " + cmd.getDestTO().getPath());
         final SnapshotObjectTO src = (SnapshotObjectTO) cmd.getSrcTO();
         final VolumeObjectTO dst = (VolumeObjectTO) cmd.getDestTO();
         KVMStoragePool secondaryPool = null;
@@ -83,7 +80,7 @@ public final class LinstorRevertBackupSnapshotCommandWrapper
         } catch (final Exception e) {
             final String error = String.format("Failed to revert snapshot with id [%s] with a pool %s, due to %s",
                 cmd.getSrcTO().getId(), cmd.getSrcTO().getDataStore().getUuid(), e.getMessage());
-            s_logger.error(error);
+            logger.error(error);
             return new CopyCmdAnswer(cmd, e);
         } finally {
             LinstorBackupSnapshotCommandWrapper.cleanupSecondaryPool(secondaryPool);

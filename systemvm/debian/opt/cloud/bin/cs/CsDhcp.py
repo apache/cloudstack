@@ -14,13 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import CsHelper
+from . import CsHelper
 import logging
 import os
 from netaddr import *
 from random import randint
 import json
-from CsGuestNetwork import CsGuestNetwork
+from .CsGuestNetwork import CsGuestNetwork
 from cs.CsDatabag import CsDataBag
 from cs.CsFile import CsFile
 from cs.CsAddress import CsIP
@@ -139,8 +139,7 @@ class CsDhcp(CsDataBag):
             # Listen Address
             if self.cl.is_redundant():
                 listen_address.append(gateway)
-            else:
-                listen_address.append(ip)
+            listen_address.append(ip)
             # Add localized "data-server" records in /etc/hosts for VPC routers
             if self.config.is_vpc() or self.config.is_router():
                 self.add_host(gateway, "%s data-server" % CsHelper.get_hostname())

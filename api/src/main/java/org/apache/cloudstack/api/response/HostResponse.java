@@ -152,7 +152,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Deprecated
     @SerializedName("memoryallocated")
     @Param(description = "the amount of the host's memory currently allocated")
-    private long memoryAllocated;
+    private Long memoryAllocated;
 
     @SerializedName("memoryallocatedpercentage")
     @Param(description = "the amount of the host's memory currently allocated in percentage")
@@ -222,6 +222,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "comma-separated list of tags for the host")
     private String hostTags;
 
+    @SerializedName("explicithosttags")
+    @Param(description = "comma-separated list of explicit host tags for the host", since = "4.20.0")
+    private String explicitHostTags;
+
+    @SerializedName("implicithosttags")
+    @Param(description = "comma-separated list of implicit host tags for the host", since = "4.20.0")
+    private String implicitHostTags;
+
     @SerializedName(ApiConstants.IS_TAG_A_RULE)
     @Param(description = ApiConstants.PARAMETER_DESCRIPTION_IS_TAG_A_RULE)
     private Boolean isTagARule;
@@ -281,6 +289,10 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.INSTANCE_CONVERSION_SUPPORTED)
     @Param(description = "true if the host supports instance conversion (using virt-v2v)", since = "4.19.1")
     private Boolean instanceConversionSupported;
+
+    @SerializedName(ApiConstants.ARCH)
+    @Param(description = "CPU Arch of the host", since = "4.20")
+    private String arch;
 
     @Override
     public String getObjectId() {
@@ -395,7 +407,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.memWithOverprovisioning=memWithOverprovisioning;
     }
 
-    public void setMemoryAllocated(long memoryAllocated) {
+    public void setMemoryAllocated(Long memoryAllocated) {
         this.memoryAllocated = memoryAllocated;
     }
 
@@ -461,6 +473,22 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setHostTags(String hostTags) {
         this.hostTags = hostTags;
+    }
+
+    public String getExplicitHostTags() {
+        return explicitHostTags;
+    }
+
+    public void setExplicitHostTags(String explicitHostTags) {
+        this.explicitHostTags = explicitHostTags;
+    }
+
+    public String getImplicitHostTags() {
+        return implicitHostTags;
+    }
+
+    public void setImplicitHostTags(String implicitHostTags) {
+        this.implicitHostTags = implicitHostTags;
     }
 
     public void setHasEnoughCapacity(Boolean hasEnoughCapacity) {
@@ -659,8 +687,8 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return memoryTotal;
     }
 
-    public long getMemoryAllocated() {
-        return memoryAllocated;
+    public Long getMemoryAllocated() {
+        return memoryAllocated == null ? 0 : memoryAllocated;
     }
 
     public void setMemoryAllocatedPercentage(String memoryAllocatedPercentage) {
@@ -761,6 +789,14 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setIsTagARule(Boolean tagARule) {
         isTagARule = tagARule;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
+    }
+
+    public String getArch() {
+        return arch;
     }
 
     public Long getCpuAllocatedValue() {

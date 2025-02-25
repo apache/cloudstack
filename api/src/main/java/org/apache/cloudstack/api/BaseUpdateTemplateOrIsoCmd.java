@@ -16,15 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api;
 
-import org.apache.log4j.Logger;
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collection;
 import java.util.Map;
 
 public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(BaseUpdateTemplateOrIsoCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -78,6 +78,11 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
             type = CommandType.BOOLEAN,
             description = "optional boolean field, which indicates if details should be cleaned up or not (if set to true, details removed for this resource, details field ignored; if false or not set, no action)")
     private Boolean cleanupDetails;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "the CPU arch of the template/ISO. Valid options are: x86_64, aarch64",
+            since = "4.20")
+    private String arch;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -142,5 +147,12 @@ public abstract class BaseUpdateTemplateOrIsoCmd extends BaseCmd {
 
     public boolean isCleanupDetails(){
         return cleanupDetails == null ? false : cleanupDetails.booleanValue();
+    }
+
+    public CPU.CPUArch getCPUArch() {
+        if (StringUtils.isBlank(arch)) {
+            return null;
+        }
+        return CPU.CPUArch.fromType(arch);
     }
 }

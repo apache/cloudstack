@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.NetworkUsageCommand;
@@ -62,7 +61,6 @@ import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 
 public class NicPlugInOutRules extends RuleApplier {
 
-    private static final Logger s_logger = Logger.getLogger(NicPlugInOutRules.class);
 
     private final List<? extends PublicIpAddress> _ipAddresses;
 
@@ -102,7 +100,7 @@ public class NicPlugInOutRules extends RuleApplier {
             final boolean result = networkTopology.applyRules(_network, router, typeString, isPodLevelException, podId, failWhenDisconnect,
                     new RuleApplierWrapper<RuleApplier>(ipAssociationRules));
             if (!result) {
-                s_logger.warn("Failed to de-associate IPs before unplugging nics");
+                logger.warn("Failed to de-associate IPs before unplugging nics");
                 return false;
             }
         }
@@ -112,7 +110,7 @@ public class NicPlugInOutRules extends RuleApplier {
             PublicIpAddress ip = entry.getValue();
             NicVO nic = nicDao.findByIp4AddressAndNetworkIdAndInstanceId(ip.getNetworkId(), _router.getId(), ip.getAddress().addr());
             if (nic != null) {
-                s_logger.info("Collect network statistics for nic " + nic + " from router " + _router);
+                logger.info("Collect network statistics for nic " + nic + " from router " + _router);
                 routerService.collectNetworkStatistics(_router, nic);
             }
             Network publicNtwk = null;
@@ -121,7 +119,7 @@ public class NicPlugInOutRules extends RuleApplier {
                 URI broadcastUri = BroadcastDomainType.Vlan.toUri(entry.getKey());
                 itMgr.removeVmFromNetwork(_router, publicNtwk, broadcastUri);
             } catch (ConcurrentOperationException e) {
-                s_logger.warn("Failed to remove router " + _router + " from vlan " + entry.getKey() + " in public network " + publicNtwk + " due to ", e);
+                logger.warn("Failed to remove router " + _router + " from vlan " + entry.getKey() + " in public network " + publicNtwk + " due to ", e);
                 return false;
             }
         }
@@ -152,12 +150,12 @@ public class NicPlugInOutRules extends RuleApplier {
                 publicNtwk = networkModel.getNetwork(ip.getNetworkId());
                 publicNic = itMgr.addVmToNetwork(_router, publicNtwk, defaultNic);
             } catch (ConcurrentOperationException e) {
-                s_logger.warn("Failed to add router " + _router + " to vlan " + vlanTag + " in public network " + publicNtwk + " due to ", e);
+                logger.warn("Failed to add router " + _router + " to vlan " + vlanTag + " in public network " + publicNtwk + " due to ", e);
             } catch (InsufficientCapacityException e) {
-                s_logger.warn("Failed to add router " + _router + " to vlan " + vlanTag + " in public network " + publicNtwk + " due to ", e);
+                logger.warn("Failed to add router " + _router + " to vlan " + vlanTag + " in public network " + publicNtwk + " due to ", e);
             } finally {
                 if (publicNic == null) {
-                    s_logger.warn("Failed to add router " + _router + " to vlan " + vlanTag + " in public network " + publicNtwk);
+                    logger.warn("Failed to add router " + _router + " to vlan " + vlanTag + " in public network " + publicNtwk);
                     return false;
                 }
             }
@@ -220,7 +218,7 @@ public class NicPlugInOutRules extends RuleApplier {
                                 && (allIp.isSourceNat()
                                 || rulesDao.countRulesByIpIdAndState(allIp.getId(), FirewallRule.State.Active) > 0
                                 || (allIp.isOneToOneNat() && allIp.getRuleState() == null))) {
-                            s_logger.debug("Updating the nic " + nic + " with new ip address " + allIp.getAddress().addr());
+                            logger.debug("Updating the nic " + nic + " with new ip address " + allIp.getAddress().addr());
                             nic.setIPv4Address(allIp.getAddress().addr());
                             nicDao.update(nic.getId(), nic);
                             ipUpdated = true;
@@ -229,7 +227,7 @@ public class NicPlugInOutRules extends RuleApplier {
                     }
                     if (!ipUpdated) {
                         nicsToUnplug.put(ip.getVlanTag(), ip);
-                        s_logger.debug("Need to unplug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + " in public network id =" + publicNtwkId);
+                        logger.debug("Need to unplug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + " in public network id =" + publicNtwkId);
                     }
                 }
             }
@@ -253,14 +251,14 @@ public class NicPlugInOutRules extends RuleApplier {
 
                 if (nic == null && nicsToPlug.get(ip.getVlanTag()) == null) {
                     nicsToPlug.put(ip.getVlanTag(), ip);
-                    s_logger.debug("Need to plug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + " in public network id =" + publicNtwkId);
+                    logger.debug("Need to plug the nic for ip=" + ip + "; vlan=" + ip.getVlanTag() + " in public network id =" + publicNtwkId);
                 } else {
                     final PublicIpAddress nicToUnplug = nicsToUnplug.get(ip.getVlanTag());
                     if (nicToUnplug != null) {
                         NicVO nicVO = nicDao.findByIp4AddressAndNetworkIdAndInstanceId(publicNtwkId, _router.getId(), nicToUnplug.getAddress().addr());
                         nicVO.setIPv4Address(ip.getAddress().addr());
                         nicDao.update(nicVO.getId(), nicVO);
-                        s_logger.debug("Updated the nic " + nicVO + " with the new ip address " + ip.getAddress().addr());
+                        logger.debug("Updated the nic " + nicVO + " with the new ip address " + ip.getAddress().addr());
                         nicsToUnplug.remove(ip.getVlanTag());
                     }
                 }

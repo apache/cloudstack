@@ -86,7 +86,8 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.network.tungsten.model.TungstenLoadBalancerMember;
 import org.apache.cloudstack.network.tungsten.model.TungstenRule;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -99,8 +100,8 @@ import java.util.concurrent.TimeUnit;
 
 public class TungstenApi {
 
-    private static final Logger S_LOGGER = Logger.getLogger(TungstenApi.class);
-    private static final Status.ErrorHandler errorHandler = S_LOGGER::error;
+    protected Logger logger = LogManager.getLogger(getClass());
+    private final Status.ErrorHandler errorHandler = logger::error;
 
     public static final String TUNGSTEN_DEFAULT_DOMAIN = "default-domain";
     public static final String TUNGSTEN_DEFAULT_PROJECT = "admin";
@@ -208,7 +209,7 @@ public class TungstenApi {
             status.ifFailure(errorHandler);
             return (VirtualMachine) apiConnector.findById(VirtualMachine.class, virtualMachine.getUuid());
         } catch (IOException e) {
-            S_LOGGER.error("Unable to create Tungsten-Fabric vm " + vmUuid, e);
+            logger.error("Unable to create Tungsten-Fabric vm " + vmUuid, e);
             return null;
         }
     }
@@ -224,7 +225,7 @@ public class TungstenApi {
             virtualMachine = (VirtualMachine) apiConnector.findById(VirtualMachine.class, virtualMachineUuid);
             project = (Project) apiConnector.findById(Project.class, projectUuid);
         } catch (IOException e) {
-            S_LOGGER.error("Failed getting the resources needed for virtual machine interface creation from Tungsten-Fabric");
+            logger.error("Failed getting the resources needed for virtual machine interface creation from Tungsten-Fabric");
         }
 
         VirtualMachineInterface virtualMachineInterface = new VirtualMachineInterface();
@@ -248,7 +249,7 @@ public class TungstenApi {
             return (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class,
                 virtualMachineInterface.getUuid());
         } catch (IOException e) {
-            S_LOGGER.error("Failed creating virtual machine interface in Tungsten-Fabric");
+            logger.error("Failed creating virtual machine interface in Tungsten-Fabric");
             return null;
         }
     }
@@ -263,7 +264,7 @@ public class TungstenApi {
             virtualMachineInterface = (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class,
                 vmInterfaceUuid);
         } catch (IOException e) {
-            S_LOGGER.error("Failed getting the resources needed for instance ip creation from Tungsten-Fabric");
+            logger.error("Failed getting the resources needed for instance ip creation from Tungsten-Fabric");
             return null;
         }
 
@@ -277,7 +278,7 @@ public class TungstenApi {
             status.ifFailure(errorHandler);
             return (InstanceIp) apiConnector.findById(InstanceIp.class, instanceIp.getUuid());
         } catch (IOException e) {
-            S_LOGGER.error("Failed creating instance ip in Tungsten-Fabric");
+            logger.error("Failed creating instance ip in Tungsten-Fabric");
             return null;
         }
     }
@@ -292,7 +293,7 @@ public class TungstenApi {
             virtualMachineInterface = (VirtualMachineInterface) apiConnector.findById(VirtualMachineInterface.class,
                 vmInterfaceUuid);
         } catch (IOException e) {
-            S_LOGGER.error("Failed getting the resources needed for instance ip creation with subnet from Tungsten-Fabric");
+            logger.error("Failed getting the resources needed for instance ip creation with subnet from Tungsten-Fabric");
             return null;
         }
 
@@ -307,7 +308,7 @@ public class TungstenApi {
             status.ifFailure(errorHandler);
             return (InstanceIp) apiConnector.findById(InstanceIp.class, instanceIp.getUuid());
         } catch (IOException e) {
-            S_LOGGER.error("Failed creating instance ip in Tungsten-Fabric");
+            logger.error("Failed creating instance ip in Tungsten-Fabric");
             return null;
         }
     }
@@ -325,7 +326,7 @@ public class TungstenApi {
             status.ifFailure(errorHandler);
             return status.isSuccess();
         } catch (IOException e) {
-            S_LOGGER.error("Failed deleting the virtual machine interface from Tungsten-Fabric");
+            logger.error("Failed deleting the virtual machine interface from Tungsten-Fabric");
             return false;
         }
     }
@@ -421,7 +422,7 @@ public class TungstenApi {
                 VirtualMachineInterface.class, project, name);
 
             if (virtualMachineInterface != null) {
-                S_LOGGER.error("interface " + name + " is existed");
+                logger.error("interface " + name + " is existed");
                 return null;
             }
 
@@ -553,7 +554,7 @@ public class TungstenApi {
             TimeUnit.SECONDS.sleep(1);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            S_LOGGER.error("can not delay for service instance create");
+            logger.error("can not delay for service instance create");
         }
 
         try {

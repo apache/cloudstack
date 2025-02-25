@@ -24,7 +24,6 @@ import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -40,7 +39,6 @@ import java.util.List;
         description = "Updates a port forwarding rule. Only the private port and the virtual machine can be updated.", entityType = {PortForwardingRule.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdatePortForwardingRuleCmd.class.getName());
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////

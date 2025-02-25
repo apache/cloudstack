@@ -21,7 +21,6 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
 import java.util.Set;
 
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.RebootAnswer;
@@ -36,21 +35,20 @@ import com.xensource.xenapi.VM;
 @ResourceWrapper(handles =  RebootCommand.class)
 public final class CitrixRebootCommandWrapper extends CommandWrapper<RebootCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixRebootCommandWrapper.class);
 
     @Override
     public Answer execute(final RebootCommand command, final CitrixResourceBase citrixResourceBase) {
         final Connection conn = citrixResourceBase.getConnection();
-        s_logger.debug("7. The VM " + command.getVmName() + " is in Starting state");
+        logger.debug("7. The VM " + command.getVmName() + " is in Starting state");
         try {
             Set<VM> vms = null;
             try {
                 vms = VM.getByNameLabel(conn, command.getVmName());
             } catch (final XenAPIException e0) {
-                s_logger.debug("getByNameLabel failed " + e0.toString());
+                logger.debug("getByNameLabel failed " + e0.toString());
                 return new RebootAnswer(command, "getByNameLabel failed " + e0.toString(), false);
             } catch (final Exception e0) {
-                s_logger.debug("getByNameLabel failed " + e0.getMessage());
+                logger.debug("getByNameLabel failed " + e0.getMessage());
                 return new RebootAnswer(command, "getByNameLabel failed", false);
             }
             for (final VM vm : vms) {
@@ -58,13 +56,13 @@ public final class CitrixRebootCommandWrapper extends CommandWrapper<RebootComma
                     citrixResourceBase.rebootVM(conn, vm, vm.getNameLabel(conn));
                 } catch (final Exception e) {
                     final String msg = e.toString();
-                    s_logger.warn(msg, e);
+                    logger.warn(msg, e);
                     return new RebootAnswer(command, msg, false);
                 }
             }
             return new RebootAnswer(command, "reboot succeeded", true);
         } finally {
-            s_logger.debug("8. The VM " + command.getVmName() + " is in Running state");
+            logger.debug("8. The VM " + command.getVmName() + " is in Running state");
         }
     }
 }

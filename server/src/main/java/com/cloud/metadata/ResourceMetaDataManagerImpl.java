@@ -47,7 +47,6 @@ import org.apache.cloudstack.resourcedetail.dao.LBHealthCheckPolicyDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.GuestOsDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.dao.DataCenterDetailsDao;
@@ -71,7 +70,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 
 @Component
 public class ResourceMetaDataManagerImpl extends ManagerBase implements ResourceMetaDataService, ResourceMetaDataManager {
-    public static final Logger s_logger = Logger.getLogger(ResourceMetaDataManagerImpl.class);
     @Inject
     VolumeDetailsDao _volumeDetailDao;
     @Inject

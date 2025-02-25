@@ -52,6 +52,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -99,6 +100,8 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
     static MockedStatic<RemoteHostEndPoint> remoteHostEndPointMock;
 
+    private AutoCloseable closeable;
+
     @BeforeClass
     public static void init() {
         remoteHostEndPointMock = mockStatic(RemoteHostEndPoint.class);
@@ -111,8 +114,14 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
     @Before
     public void initMocks() {
-        MockitoAnnotations.initMocks(this);
+        closeable = MockitoAnnotations.openMocks(this);
     }
+
+    @After
+    public void tearDown() throws Exception {
+        closeable.close();
+    }
+
     @Test
     public void testSameScaleIOStorageInstance() {
         DataStore srcStore = Mockito.mock(DataStore.class);
@@ -377,14 +386,13 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         when(srcData.getPath()).thenReturn("bec0ba7700000007:vol-11-6aef-10ee");
         when(srcData.getFolder()).thenReturn("921c364500000007");
         DataStore destStore = Mockito.mock(DataStore.class);
-        when(destStore.getId()).thenReturn(2L);
         when(destData.getDataStore()).thenReturn(destStore);
         doNothing().when(scaleIOPrimaryDataStoreDriver)
                 .revokeAccess(any(), any(), any());
 
         ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
         doReturn(client).when(scaleIOPrimaryDataStoreDriver)
-                .getScaleIOClient(any());
+                .getScaleIOClient(any(DataStore.class));
         when(client.deleteVolume(any())).thenReturn(true);
 
         VolumeVO volume = new VolumeVO("root", 1L, 1L, 1L, 1L, 1L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
@@ -415,13 +423,12 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         when(srcData.getPath()).thenReturn(srcVolumePath);
         when(srcData.getFolder()).thenReturn("921c364500000007");
         DataStore destStore = Mockito.mock(DataStore.class);
-        when(destStore.getId()).thenReturn(2L);
         when(destData.getDataStore()).thenReturn(destStore);
         doNothing().when(scaleIOPrimaryDataStoreDriver).revokeAccess(any(), any(), any());
 
         ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
         doReturn(client).when(scaleIOPrimaryDataStoreDriver)
-                .getScaleIOClient(any());
+                .getScaleIOClient(any(DataStore.class));
         when(client.deleteVolume(any())).thenReturn(false);
 
         VolumeVO volume = new VolumeVO("root", 1L, 1L, 1L, 1L, 1L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
@@ -452,7 +459,7 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
         ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
         doReturn(client).when(scaleIOPrimaryDataStoreDriver)
-                .getScaleIOClient(any());
+                .getScaleIOClient(any(DataStore.class));
         when(client.deleteVolume(any())).thenReturn(true);
 
         scaleIOPrimaryDataStoreDriver.deleteSourceVolumeAfterSuccessfulBlockCopy(srcData, host);
@@ -464,21 +471,19 @@ public class ScaleIOPrimaryDataStoreDriverTest {
 
         VolumeInfo srcData = Mockito.mock(VolumeInfo.class);
         Host host = Mockito.mock(Host.class);
-        when(host.getId()).thenReturn(1L);
         String srcVolumePath = "bec0ba7700000007:vol-11-6aef-10ee";
 
         DataStore srcStore = Mockito.mock(DataStore.class);
-        when(srcStore.getId()).thenReturn(1L);
         DataTO volumeTO = Mockito.mock(DataTO.class);
         when(srcData.getDataStore()).thenReturn(srcStore);
         when(srcData.getTO()).thenReturn(volumeTO);
         when(volumeTO.getPath()).thenReturn(srcVolumePath);
         String sdcId = "7332760565f6340f";
-        doReturn(sdcId).when(scaleIOPrimaryDataStoreDriver).getConnectedSdc(1L, 1L);
+        doReturn(sdcId).when(scaleIOPrimaryDataStoreDriver).getConnectedSdc(srcStore, host);
 
         ScaleIOGatewayClient client = Mockito.mock(ScaleIOGatewayClient.class);
         doReturn(client).when(scaleIOPrimaryDataStoreDriver)
-                .getScaleIOClient(any());
+                .getScaleIOClient(any(DataStore.class));
         doReturn(true).when(client).unmapVolumeFromSdc(any(), any());
         when(client.deleteVolume(any())).thenReturn(false);
 
@@ -495,13 +500,12 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         String srcVolumePath = "bec0ba7700000007:vol-11-6aef-10ee";
 
         DataStore srcStore = Mockito.mock(DataStore.class);
-        when(srcStore.getId()).thenReturn(1L);
         DataTO volumeTO = Mockito.mock(DataTO.class);
         when(srcData.getDataStore()).thenReturn(srcStore);
         when(srcData.getTO()).thenReturn(volumeTO);
         when(volumeTO.getPath()).thenReturn(srcVolumePath);
         String sdcId = "7332760565f6340f";
-        doReturn(null).when(scaleIOPrimaryDataStoreDriver).getConnectedSdc(1L, 1L);
+        doReturn(null).when(scaleIOPrimaryDataStoreDriver).getConnectedSdc(srcStore, host);
 
         scaleIOPrimaryDataStoreDriver.deleteSourceVolumeAfterSuccessfulBlockCopy(srcData, host);
     }
@@ -547,5 +551,38 @@ public class ScaleIOPrimaryDataStoreDriverTest {
         Answer answer = scaleIOPrimaryDataStoreDriver.copyOfflineVolume(srcData, destData, destHost);
 
         Assert.assertEquals(false, answer.getResult());
+    }
+
+    @Test
+    public void testGetVolumeSizeRequiredOnPool() {
+        Assert.assertEquals(16L * (1024 * 1024 * 1024),
+                scaleIOPrimaryDataStoreDriver.getVolumeSizeRequiredOnPool(
+                        10L * (1024 * 1024 * 1024),
+                        null,
+                        true));
+
+        Assert.assertEquals(16L * (1024 * 1024 * 1024),
+                scaleIOPrimaryDataStoreDriver.getVolumeSizeRequiredOnPool(
+                        10L * (1024 * 1024 * 1024),
+                        null,
+                        false));
+
+        Assert.assertEquals(16L * (1024 * 1024 * 1024),
+                scaleIOPrimaryDataStoreDriver.getVolumeSizeRequiredOnPool(
+                        16L * (1024 * 1024 * 1024),
+                        null,
+                        false));
+
+        Assert.assertEquals(16L * (1024 * 1024 * 1024),
+                scaleIOPrimaryDataStoreDriver.getVolumeSizeRequiredOnPool(
+                        16L * (1024 * 1024 * 1024),
+                        16L * (1024 * 1024 * 1024),
+                        false));
+
+        Assert.assertEquals(24L * (1024 * 1024 * 1024),
+                scaleIOPrimaryDataStoreDriver.getVolumeSizeRequiredOnPool(
+                        16L * (1024 * 1024 * 1024),
+                        16L * (1024 * 1024 * 1024),
+                        true));
     }
 }

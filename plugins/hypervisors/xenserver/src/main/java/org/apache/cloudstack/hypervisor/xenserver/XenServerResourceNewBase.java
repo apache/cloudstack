@@ -22,7 +22,6 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.StartupCommand;
@@ -61,7 +60,6 @@ import com.xensource.xenapi.VM;
  *
  */
 public class XenServerResourceNewBase extends XenServer620SP1Resource {
-    private static final Logger s_logger = Logger.getLogger(XenServerResourceNewBase.class);
     protected VmEventListener _listener = null;
 
     @Override
@@ -96,8 +94,8 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
 
     protected void waitForTask2(final Connection c, final Task task, final long pollInterval, final long timeout) throws XenAPIException, XmlRpcException, TimeoutException {
         final long beginTime = System.currentTimeMillis();
-        if (s_logger.isTraceEnabled()) {
-            s_logger.trace("Task " + task.getNameLabel(c) + " (" + task.getType(c) + ") sent to " + c.getSessionReference() + " is pending completion with a " + timeout +
+        if (logger.isTraceEnabled()) {
+            logger.trace("Task " + task.getNameLabel(c) + " (" + task.getType(c) + ") sent to " + c.getSessionReference() + " is pending completion with a " + timeout +
                     "ms timeout");
         }
         final Set<String> classes = new HashSet<String>();
@@ -112,14 +110,14 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
             Set<Event.Record> events = map.events;
             if (events.size() == 0) {
                 final String msg = "No event for task " + task.toWireString();
-                s_logger.warn(msg);
+                logger.warn(msg);
                 task.cancel(c);
                 throw new TimeoutException(msg);
             }
             for (final Event.Record rec : events) {
                 if (!(rec.snapshot instanceof Task.Record)) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Skipping over " + rec);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Skipping over " + rec);
                     }
                     continue;
                 }
@@ -127,20 +125,20 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
                 final Task.Record taskRecord = (Task.Record)rec.snapshot;
 
                 if (taskRecord.status != Types.TaskStatusType.PENDING) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Task, ref:" + task.toWireString() + ", UUID:" + taskRecord.uuid + " is done " + taskRecord.status);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Task, ref:" + task.toWireString() + ", UUID:" + taskRecord.uuid + " is done " + taskRecord.status);
                     }
                     return;
                 } else {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Task: ref:" + task.toWireString() + ", UUID:" + taskRecord.uuid +  " progress: " + taskRecord.progress);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Task: ref:" + task.toWireString() + ", UUID:" + taskRecord.uuid +  " progress: " + taskRecord.progress);
                     }
 
                 }
             }
             if (System.currentTimeMillis() - beginTime > timeout) {
                 final String msg = "Async " + timeout / 1000 + " seconds timeout for task " + task.toString();
-                s_logger.warn(msg);
+                logger.warn(msg);
                 task.cancel(c);
                 throw new TimeoutException(msg);
             }
@@ -171,7 +169,7 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
                     try {
                         results = Event.from(conn, _classes, _token, new Double(30));
                     } catch (final Exception e) {
-                        s_logger.error("Retrying the waiting on VM events due to: ", e);
+                        logger.error("Retrying the waiting on VM events due to: ", e);
                         continue;
                     }
 
@@ -182,8 +180,8 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
                     for (final Event.Record event : events) {
                         try {
                             if (!(event.snapshot instanceof VM.Record)) {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("The snapshot is not a VM: " + event);
+                                if (logger.isDebugEnabled()) {
+                                    logger.debug("The snapshot is not a VM: " + event);
                                 }
                                 continue;
                             }
@@ -195,11 +193,11 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
                             }
                             recordChanges(conn, vm, hostUuid);
                         } catch (final Exception e) {
-                            s_logger.error("Skipping over " + event, e);
+                            logger.error("Skipping over " + event, e);
                         }
                     }
                 } catch (final Throwable th) {
-                    s_logger.error("Exception caught in eventlistener thread: ", th);
+                    logger.error("Exception caught in eventlistener thread: ", th);
                 }
             }
         }
@@ -217,11 +215,11 @@ public class XenServerResourceNewBase extends XenServer620SP1Resource {
                 try {
                     results = Event.from(conn, _classes, _token, new Double(30));
                 } catch (final Exception e) {
-                    s_logger.error("Retrying the waiting on VM events due to: ", e);
+                    logger.error("Retrying the waiting on VM events due to: ", e);
                     throw new CloudRuntimeException("Unable to start a listener thread to listen to VM events", e);
                 }
                 _token = results.token;
-                s_logger.debug("Starting the event listener thread for " + _host.getUuid());
+                logger.debug("Starting the event listener thread for " + _host.getUuid());
                 super.start();
             }
         }

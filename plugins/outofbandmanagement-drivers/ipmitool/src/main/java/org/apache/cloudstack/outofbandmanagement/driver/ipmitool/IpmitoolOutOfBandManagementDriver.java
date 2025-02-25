@@ -29,7 +29,6 @@ import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDrive
 import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDriverCommand;
 import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDriverPowerCommand;
 import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDriverResponse;
-import org.apache.log4j.Logger;
 import org.joda.time.Duration;
 
 import java.util.Arrays;
@@ -39,7 +38,6 @@ import java.util.concurrent.Executors;
 import org.apache.commons.lang3.StringUtils;
 
 public final class IpmitoolOutOfBandManagementDriver extends AdapterBase implements OutOfBandManagementDriver, Configurable {
-    public static final Logger LOG = Logger.getLogger(IpmitoolOutOfBandManagementDriver.class);
 
     private static volatile boolean isDriverEnabled = false;
     private static boolean isIpmiToolBinAvailable = false;
@@ -47,13 +45,13 @@ public final class IpmitoolOutOfBandManagementDriver extends AdapterBase impleme
     private final ExecutorService ipmitoolExecutor = Executors.newFixedThreadPool(OutOfBandManagementService.SyncThreadPoolSize.value(), new NamedThreadFactory("IpmiToolDriver"));
     private final IpmitoolWrapper IPMITOOL = new IpmitoolWrapper(ipmitoolExecutor);
 
-    public final ConfigKey<String> IpmiToolPath = new ConfigKey<String>("Advanced", String.class, "outofbandmanagement.ipmitool.path", "/usr/bin/ipmitool",
+    public final ConfigKey<String> IpmiToolPath = new ConfigKey<>("Advanced", String.class, "outofbandmanagement.ipmitool.path", "/usr/bin/ipmitool",
             "The out of band management ipmitool path used by the IpmiTool driver. Default: /usr/bin/ipmitool.", true, ConfigKey.Scope.Global);
 
-    public final ConfigKey<String> IpmiToolInterface = new ConfigKey<String>("Advanced", String.class, "outofbandmanagement.ipmitool.interface", "lanplus",
+    public final ConfigKey<String> IpmiToolInterface = new ConfigKey<>("Advanced", String.class, "outofbandmanagement.ipmitool.interface", "lanplus",
             "The out of band management IpmiTool driver interface to use. Default: lanplus. Valid values are: lan, lanplus, open etc.", true, ConfigKey.Scope.Global);
 
-    public final ConfigKey<String> IpmiToolRetries = new ConfigKey<String>("Advanced", String.class, "outofbandmanagement.ipmitool.retries", "1",
+    public final ConfigKey<String> IpmiToolRetries = new ConfigKey<>("Advanced", String.class, "outofbandmanagement.ipmitool.retries", "1",
             "The out of band management IpmiTool driver retries option -R. Default 1.", true, ConfigKey.Scope.Global);
 
     private String getIpmiUserId(ImmutableMap<OutOfBandManagement.Option, String> options, final Duration timeOut) {
@@ -70,14 +68,14 @@ public final class IpmitoolOutOfBandManagementDriver extends AdapterBase impleme
         if (!output.isSuccess()) {
             String oneLineCommand = StringUtils.join(ipmiToolCommands, " ");
             String message = String.format("Failed to find IPMI user [%s] to change password. Command [%s], error [%s].", username, oneLineCommand, output.getError());
-            LOG.debug(message);
+            logger.debug(message);
             throw new CloudRuntimeException(message);
         }
 
         final String userId = IPMITOOL.findIpmiUser(output.getResult(), username);
         if (StringUtils.isEmpty(userId)) {
             String message = String.format("No IPMI user ID found for the username [%s].", username);
-            LOG.debug(message);
+            logger.debug(message);
             throw new CloudRuntimeException(message);
         }
         return userId;
@@ -88,7 +86,7 @@ public final class IpmitoolOutOfBandManagementDriver extends AdapterBase impleme
             initDriver();
             if (!isIpmiToolBinAvailable) {
                 String message = "Aborting operation due to ipmitool binary not available for execution.";
-                LOG.debug(message);
+                logger.debug(message);
                 return new OutOfBandManagementDriverResponse(null, message, false);
             }
         }
@@ -96,7 +94,7 @@ public final class IpmitoolOutOfBandManagementDriver extends AdapterBase impleme
         OutOfBandManagementDriverResponse response = new OutOfBandManagementDriverResponse(null, "Unsupported Command", false);
         if (!isDriverEnabled) {
             String message = "Driver not enabled or shutdown.";
-            LOG.debug(message);
+            logger.debug(message);
             response.setError(message);
             return response;
         }
@@ -108,7 +106,7 @@ public final class IpmitoolOutOfBandManagementDriver extends AdapterBase impleme
 
         if (response != null && !response.isSuccess() && response.getError().contains("RAKP 2 HMAC is invalid")) {
             String message = String.format("Setting authFailure as 'true' due to [%s].", response.getError());
-            LOG.debug(message);
+            logger.debug(message);
             response.setAuthFailure(true);
         }
         return response;
@@ -122,16 +120,16 @@ public final class IpmitoolOutOfBandManagementDriver extends AdapterBase impleme
 
         final OutOfBandManagementDriverResponse response = IPMITOOL.executeCommands(ipmiToolCommands, cmd.getTimeout());
 
-        String oneLineCommand = StringUtils.join(ipmiToolCommands, " ");
+        String oneLineCommand = StringUtils.join(IPMITOOL.getSanatisedCommandStrings(ipmiToolCommands), " ");
         String result = response.getResult().trim();
 
         if (response.isSuccess()) {
-            LOG.debug(String.format("The command [%s] was successful and got the result [%s].", oneLineCommand, result));
+            logger.debug(String.format("The command [%s] was successful and got the result [%s].", oneLineCommand, result));
             if (cmd.getPowerOperation().equals(OutOfBandManagement.PowerOperation.STATUS)) {
                 response.setPowerState(IPMITOOL.parsePowerState(result));
             }
         } else {
-            LOG.debug(String.format("The command [%s] failed and got the result [%s]. Error: [%s].", oneLineCommand, result, response.getError()));
+            logger.debug(String.format("The command [%s] failed and got the result [%s]. Error: [%s].", oneLineCommand, result, response.getError()));
         }
         return response;
     }
@@ -150,10 +148,10 @@ public final class IpmitoolOutOfBandManagementDriver extends AdapterBase impleme
         final OutOfBandManagementDriverResponse output = IPMITOOL.executeCommands(Arrays.asList(IpmiToolPath.value(), "-V"));
         if (output.isSuccess() && output.getResult().startsWith("ipmitool version")) {
             isIpmiToolBinAvailable = true;
-            LOG.debug(String.format("OutOfBandManagementDriver ipmitool initialized [%s].", output.getResult()));
+            logger.debug(String.format("OutOfBandManagementDriver ipmitool initialized [%s].", output.getResult()));
         } else {
             isIpmiToolBinAvailable = false;
-            LOG.error(String.format("OutOfBandManagementDriver ipmitool failed initialization with error [%s]; standard output [%s].", output.getError(), output.getResult()));
+            logger.error(String.format("OutOfBandManagementDriver ipmitool failed initialization with error [%s]; standard output [%s].", output.getError(), output.getResult()));
         }
     }
 

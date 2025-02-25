@@ -18,6 +18,7 @@ package com.cloud.kubernetes.cluster;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
@@ -25,9 +26,6 @@ import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.event.EventTypes;
 import com.cloud.kubernetes.cluster.dao.KubernetesClusterDao;
@@ -39,9 +37,14 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmManager;
 
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.commons.lang3.ObjectUtils;
+import org.springframework.stereotype.Component;
+
 @Component
 public class KubernetesServiceHelperImpl extends AdapterBase implements KubernetesServiceHelper, Configurable {
-    private static final Logger logger = Logger.getLogger(KubernetesServiceHelperImpl.class);
+    private static final Logger logger = LogManager.getLogger(KubernetesServiceHelperImpl.class);
 
     @Inject
     private KubernetesClusterDao kubernetesClusterDao;
@@ -72,6 +75,15 @@ public class KubernetesServiceHelperImpl extends AdapterBase implements Kubernet
     }
 
     @Override
+    public ControlledEntity findByVmId(long vmId) {
+        KubernetesClusterVmMapVO clusterVmMapVO = kubernetesClusterVmMapDao.getClusterMapFromVmId(vmId);
+        if (Objects.isNull(clusterVmMapVO)) {
+            return null;
+        }
+        return kubernetesClusterDao.findById(clusterVmMapVO.getClusterId());
+    }
+
+    @Override
     public void checkVmCanBeDestroyed(UserVm userVm) {
         if (!UserVmManager.CKS_NODE.equals(userVm.getUserVmType())) {
             return;
@@ -80,8 +92,8 @@ public class KubernetesServiceHelperImpl extends AdapterBase implements Kubernet
         if (vmMapVO == null) {
             return;
         }
-        logger.error(String.format("VM ID: %s is a part of Kubernetes cluster ID: %d", userVm.getId(), vmMapVO.getClusterId()));
         KubernetesCluster kubernetesCluster = kubernetesClusterDao.findById(vmMapVO.getClusterId());
+        logger.error("VM {} is a part of Kubernetes cluster {} with ID: {}", userVm, kubernetesCluster, vmMapVO.getClusterId());
         String msg = "Instance is a part of a Kubernetes cluster";
         if (kubernetesCluster != null) {
             if (KubernetesCluster.ClusterType.ExternalManaged.equals(kubernetesCluster.getClusterType())) {

@@ -51,7 +51,6 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -170,7 +169,6 @@ import com.google.gson.JsonParseException;
  **/
 public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxyManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter, Configurable {
 
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL_IN_MILLISECONDS = 30000;
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC_IN_SECONDS = 180;
@@ -289,8 +287,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 HostVO host = _hostDao.findById(agentId);
                 if (host.getType() == Type.ConsoleProxy) {
                     String name = host.getName();
-                    if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Console proxy agent disconnected, proxy: " + name);
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Console proxy agent disconnected, proxy: " + name);
                     }
                     if (name != null && name.startsWith("v-")) {
                         String[] tokens = name.split("-");
@@ -299,13 +297,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                         try {
                             proxyVmId = Long.parseLong(tokenSecondElement);
                         } catch (NumberFormatException e) {
-                            s_logger.error(String.format("[%s] is not a valid number, unable to parse [%s].", tokenSecondElement, e.getMessage()), e);
+                            logger.error(String.format("[%s] is not a valid number, unable to parse [%s].", tokenSecondElement, e.getMessage()), e);
                             return;
                         }
 
                         final ConsoleProxyVO proxy = consoleProxyDao.findById(proxyVmId);
-                        if (proxy == null && s_logger.isInfoEnabled()) {
-                            s_logger.info("Console proxy agent disconnected but corresponding console proxy VM no longer exists in DB, proxy: " + name);
+                        if (proxy == null && logger.isInfoEnabled()) {
+                            logger.info("Console proxy agent disconnected but corresponding console proxy VM no longer exists in DB, proxy: " + name);
                         }
                     } else {
                         assert (false) : "Invalid console proxy name: " + name;
@@ -320,7 +318,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             long proxyVmId = startupCmd.getProxyVmId();
             ConsoleProxyVO consoleProxy = consoleProxyDao.findById(proxyVmId);
             if (consoleProxy == null) {
-                s_logger.info("Proxy " + proxyVmId + " is no longer in DB, skip sending startup command");
+                logger.info("Proxy " + proxyVmId + " is no longer in DB, skip sending startup command");
                 return null;
             }
 
@@ -331,20 +329,20 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     @Override
-    public ConsoleProxyInfo assignProxy(final long dataCenterId, final long vmId) {
-        ConsoleProxyVO proxy = doAssignProxy(dataCenterId, vmId);
+    public ConsoleProxyInfo assignProxy(final long dataCenterId, final VMInstanceVO userVm) {
+        ConsoleProxyVO proxy = doAssignProxy(dataCenterId, userVm);
         if (proxy == null) {
             return null;
         }
 
         if (proxy.getPublicIpAddress() == null) {
-            s_logger.warn(String.format("Assigned console proxy [%s] does not have a valid public IP address.", proxy.toString()));
+            logger.warn(String.format("Assigned console proxy [%s] does not have a valid public IP address.", proxy.toString()));
             return null;
         }
 
         KeystoreVO ksVo = _ksDao.findByName(ConsoleProxyManager.CERTIFICATE_NAME);
         if (proxy.isSslEnabled() && ksVo == null) {
-            s_logger.warn(String.format("SSL is enabled for console proxy [%s] but no server certificate found in database.", proxy.toString()));
+            logger.warn(String.format("SSL is enabled for console proxy [%s] but no server certificate found in database.", proxy.toString()));
         }
 
         ConsoleProxyInfo info;
@@ -357,18 +355,12 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         return  info;
     }
 
-    public ConsoleProxyVO doAssignProxy(long dataCenterId, long vmId) {
+    public ConsoleProxyVO doAssignProxy(long dataCenterId, VMInstanceVO vm) {
         ConsoleProxyVO proxy = null;
-        VMInstanceVO vm = vmInstanceDao.findById(vmId);
-
-        if (vm == null) {
-            s_logger.warn("VM " + vmId + " no longer exists, return a null proxy for vm:" + vmId);
-            return null;
-        }
 
         if (!availableVmStateOnAssignProxy.contains(vm.getState())) {
-            if (s_logger.isInfoEnabled()) {
-                s_logger.info(String.format("Detected that %s is not currently in \"Starting\", \"Running\", \"Stopping\" or \"Migrating\" state, it will fail the proxy assignment.", vm.toString()));
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Detected that %s is not currently in \"Starting\", \"Running\", \"Stopping\" or \"Migrating\" state, it will fail the proxy assignment.", vm.toString()));
             }
             return null;
         }
@@ -380,18 +372,18 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
                     if (proxy != null) {
                         if (!isInAssignableState(proxy)) {
-                            if (s_logger.isInfoEnabled()) {
-                                s_logger.info("A previous assigned proxy is not assignable now, reassign console proxy for user vm : " + vmId);
+                            if (logger.isInfoEnabled()) {
+                                logger.info("A previous assigned proxy is not assignable now, reassign console proxy for user vm : {}", vm);
                             }
                             proxy = null;
                         } else {
                             if (consoleProxyDao.getProxyActiveLoad(proxy.getId()) < capacityPerProxy || hasPreviousSession(proxy, vm)) {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Assign previous allocated console proxy for user vm : " + vmId);
+                                if (logger.isDebugEnabled()) {
+                                    logger.debug("Assign previous allocated console proxy for user vm: {}", vm);
                                 }
 
                                 if (proxy.getActiveSession() >= capacityPerProxy) {
-                                    s_logger.warn("Assign overloaded proxy to user VM as previous session exists, user vm : " + vmId);
+                                    logger.warn("Assign overloaded proxy to user VM as previous session exists, user vm: {}", vm);
                                 }
                             } else {
                                 proxy = null;
@@ -407,17 +399,17 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 allocProxyLock.unlock();
             }
         } else {
-            s_logger.error("Unable to acquire synchronization lock to get/allocate proxy resource for vm :" + vmId +
-                ". Previous console proxy allocation is taking too long");
+            logger.error("Unable to acquire synchronization lock to get/allocate proxy " +
+                    "resource for vm: {}. Previous console proxy allocation is taking too long", vm);
         }
 
         if (proxy == null) {
-            s_logger.warn("Unable to find or allocate console proxy resource");
+            logger.warn("Unable to find or allocate console proxy resource");
             return null;
         }
 
         if (vm.getProxyId() == null || vm.getProxyId() != proxy.getId()) {
-            vmInstanceDao.updateProxyId(vmId, proxy.getId(), DateUtil.currentGMTTime());
+            vmInstanceDao.updateProxyId(vm.getId(), proxy.getId(), DateUtil.currentGMTTime());
         }
 
         proxy.setSslEnabled(sslEnabled);
@@ -442,7 +434,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             String details = detailsInBytes != null ? new String(detailsInBytes, Charset.forName("US-ASCII")) : null;
             status = parseJsonToConsoleProxyStatus(details);
         } catch (JsonParseException e) {
-            s_logger.warn(String.format("Unable to parse proxy [%s] session details [%s] due to [%s].", proxy.toString(), Arrays.toString(proxy.getSessionDetails()), e.getMessage()), e);
+            logger.warn(String.format("Unable to parse proxy [%s] session details [%s] due to [%s].", proxy.toString(), Arrays.toString(proxy.getSessionDetails()), e.getMessage()), e);
         }
 
         if (status != null && status.getConnections() != null) {
@@ -453,7 +445,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                     try {
                         taggedVmId = Long.parseLong(connection.tag);
                     } catch (NumberFormatException e) {
-                        s_logger.warn(String.format("Unable to parse console proxy connection info passed through tag [%s] due to [%s].", connection.tag, e.getMessage()), e);
+                        logger.warn(String.format("Unable to parse console proxy connection info passed through tag [%s] due to [%s].", connection.tag, e.getMessage()), e);
                     }
                 }
 
@@ -464,7 +456,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
             return DateUtil.currentGMTTime().getTime() - vm.getProxyAssignTime().getTime() < proxySessionTimeoutValue;
         } else {
-            s_logger.warn(String.format("Unable to retrieve load info from proxy [%s] on an overloaded proxy.", proxy.toString()));
+            logger.warn(String.format("Unable to retrieve load info from proxy [%s] on an overloaded proxy.", proxy.toString()));
             return false;
         }
     }
@@ -488,9 +480,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 return proxy;
             }
 
-            s_logger.warn(String.format("Console proxy [%s] must be in \"Stopped\" state to start proxy. Current state [%s].", proxy.toString(), proxy.getState()));
+            logger.warn(String.format("Console proxy [%s] must be in \"Stopped\" state to start proxy. Current state [%s].", proxy.toString(), proxy.getState()));
         } catch ( ConcurrentOperationException | InsufficientCapacityException | OperationTimedoutException | ResourceUnavailableException ex) {
-            s_logger.warn(String.format("Unable to start proxy [%s] due to [%s].", proxyVmId, ex.getMessage()), ex);
+            logger.warn(String.format("Unable to start proxy [%s] due to [%s].", proxyVmId, ex.getMessage()), ex);
         }
 
         return null;
@@ -506,8 +498,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     public ConsoleProxyVO assignProxyFromRunningPool(long dataCenterId) {
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Assign console proxy from running pool for request from data center : " + dataCenterId);
+        DataCenterVO zone = dataCenterDao.findById(dataCenterId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Assign console proxy from running pool for request from data center: {}", zone);
         }
 
         ConsoleProxyAllocator allocator = getCurrentAllocator();
@@ -521,8 +514,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                     it.remove();
                 }
             }
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Running [%s] proxy instances [%s].", runningList.size(), runningList.stream().map(proxy -> proxy.toString()).collect(Collectors.joining(", "))));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Running [%s] proxy instances [%s].", runningList.size(), runningList.stream().map(proxy -> proxy.toString()).collect(Collectors.joining(", "))));
             }
 
             List<Pair<Long, Integer>> l = consoleProxyDao.getProxyLoadMatrix();
@@ -534,8 +527,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
                     loadInfo.put(proxyId, countRunningVms);
 
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug(String.format("Running proxy instance allocation {\"proxyId\": %s, \"countRunningVms\": %s}.", proxyId, countRunningVms));
+                    if (logger.isDebugEnabled()) {
+                        logger.debug(String.format("Running proxy instance allocation {\"proxyId\": %s, \"countRunningVms\": %s}.", proxyId, countRunningVms));
                     }
 
                 }
@@ -544,14 +537,14 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             Long allocated = allocator.allocProxy(runningList, loadInfo, dataCenterId);
 
             if (allocated == null) {
-                s_logger.debug(String.format("Console proxy not found, unable to assign console proxy from running pool for request from zone [%s].", dataCenterId));
+                logger.debug("Console proxy not found, unable to assign console proxy from running pool for request from zone [{}].", zone);
                 return null;
             }
 
             return consoleProxyDao.findById(allocated);
         } else {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Empty running proxy pool for now in data center : " + dataCenterId);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Empty running proxy pool for now in data center: {}", zone);
             }
 
         }
@@ -571,13 +564,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     public ConsoleProxyVO startNew(long dataCenterId) throws ConcurrentOperationException {
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Assign console proxy from a newly started instance for request from data center : " + dataCenterId);
         }
 
         if (!allowToLaunchNew(dataCenterId)) {
             String configKey = Config.ConsoleProxyLaunchMax.key();
-            s_logger.warn(String.format("The number of launched console proxys on zone [%s] has reached the limit [%s]. Limit set in [%s].", dataCenterId, configurationDao.getValue(configKey), configKey));
+            logger.warn(String.format("The number of launched console proxys on zone [%s] has reached the limit [%s]. Limit set in [%s].", dataCenterId, configurationDao.getValue(configKey), configKey));
             return null;
         }
 
@@ -591,8 +584,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         long proxyVmId = (Long)context.get("proxyVmId");
         if (proxyVmId == 0) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug(String.format("Unable to create proxy instance in zone [%s].", dataCenterId));
+            if (logger.isDebugEnabled()) {
+                logger.debug(String.format("Unable to create proxy instance in zone [%s].", dataCenterId));
             }
             return null;
         }
@@ -603,8 +596,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_CREATED, dataCenterId, proxy.getId(), proxy, null));
             return proxy;
         } else {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Unable to allocate console proxy storage, remove the console proxy record from DB, proxy id: " + proxyVmId);
+            if (logger.isDebugEnabled()) {
+                logger.debug("Unable to allocate console proxy storage, remove the console proxy record from DB, proxy id: " + proxyVmId);
             }
         }
         return null;
@@ -719,7 +712,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             virtualMachineManager.allocate(name, template, serviceOffering, networks, plan, null);
         } catch (InsufficientCapacityException e) {
             String message = String.format("Unable to allocate proxy [%s] on zone [%s] due to [%s].", proxy.toString(), dataCenterId, e.getMessage());
-            s_logger.warn(message, e);
+            logger.warn(message, e);
             throw new CloudRuntimeException(message, e);
         }
 
@@ -749,8 +742,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             HostVO host = hostDao.findById(agentId);
             if (host.getType() == Type.ConsoleProxy) {
                 String name = host.getName();
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Console proxy agent disconnected, proxy: " + name);
+                if (logger.isInfoEnabled()) {
+                    logger.info("Console proxy agent disconnected, proxy: " + name);
                 }
                 if (name != null && name.startsWith("v-")) {
                     String[] tokens = name.split("-");
@@ -758,13 +751,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                     try {
                         proxyVmId = Long.parseLong(tokens[1]);
                     } catch (NumberFormatException e) {
-                        s_logger.error("Unexpected exception " + e.getMessage(), e);
+                        logger.error("Unexpected exception " + e.getMessage(), e);
                         return;
                     }
 
                     final ConsoleProxyVO proxy = consoleProxyDao.findById(proxyVmId);
-                    if (proxy == null && s_logger.isInfoEnabled()) {
-                        s_logger.info("Console proxy agent disconnected but corresponding console proxy VM no longer exists in DB, proxy: " + name);
+                    if (proxy == null && logger.isInfoEnabled()) {
+                        logger.info("Console proxy agent disconnected but corresponding console proxy VM no longer exists in DB, proxy: " + name);
                     }
                 } else {
                     assert (false) : "Invalid console proxy name: " + name;
@@ -790,8 +783,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     private boolean allowToLaunchNew(long dcId) {
         if (!isConsoleProxyVmRequired(dcId)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Console proxy vm not required in zone " + dcId + " not launching");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Console proxy vm not required in zone " + dcId + " not launching");
             }
             return false;
         }
@@ -809,8 +802,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     }
 
     private void allocCapacity(long dataCenterId) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Allocating console proxy standby capacity for zone [%s].", dataCenterId));
+        DataCenterVO zone = dataCenterDao.findById(dataCenterId);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Allocating console proxy standby capacity for zone [{}].", zone);
         }
 
         ConsoleProxyVO proxy = null;
@@ -819,26 +813,26 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             boolean consoleProxyVmFromStoppedPool = false;
             proxy = assignProxyFromStoppedPool(dataCenterId);
             if (proxy == null) {
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("No stopped console proxy is available, need to allocate a new console proxy");
+                if (logger.isInfoEnabled()) {
+                    logger.info("No stopped console proxy is available, need to allocate a new console proxy");
                 }
 
                 if (allocProxyLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_SYNC_IN_SECONDS)) {
                     try {
                         proxy = startNew(dataCenterId);
                     } catch (ConcurrentOperationException e) {
-                        s_logger.warn(String.format("Unable to start new console proxy on zone [%s] due to [%s].", dataCenterId, e.getMessage()), e);
+                        logger.warn("Unable to start new console proxy on zone [{}] due to [{}].", zone, e.getMessage(), e);
                     } finally {
                         allocProxyLock.unlock();
                     }
                 } else {
-                    if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Unable to acquire synchronization lock for console proxy vm allocation, wait for next scan");
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Unable to acquire synchronization lock for console proxy vm allocation, wait for next scan");
                     }
                 }
             } else {
-                if (s_logger.isInfoEnabled()) {
-                    s_logger.info("Found a stopped console proxy, starting it. Vm id : " + proxy.getId());
+                if (logger.isInfoEnabled()) {
+                    logger.info("Found a stopped console proxy, starting it. VM: {}", proxy);
                 }
                 consoleProxyVmFromStoppedPool = true;
             }
@@ -848,14 +842,14 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 proxy = startProxy(proxyVmId, false);
 
                 if (proxy != null) {
-                    if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Console proxy " + proxy.getHostName() + " is started");
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Console proxy {} is started", proxy);
                     }
                     SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
                         new ConsoleProxyAlertEventArgs(ConsoleProxyAlertEventArgs.PROXY_UP, dataCenterId, proxy.getId(), proxy, null));
                 } else {
-                    if (s_logger.isInfoEnabled()) {
-                        s_logger.info("Unable to start console proxy vm for standby capacity, vm id : " + proxyVmId + ", will recycle it and start a new one");
+                    if (logger.isInfoEnabled()) {
+                        logger.info("Unable to start console proxy vm for standby capacity, vm: {}, will recycle it and start a new one", proxy);
                     }
 
                     if (consoleProxyVmFromStoppedPool) {
@@ -865,7 +859,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
         } catch (Exception e) {
            errorString = e.getMessage();
-           s_logger.warn(String.format("Unable to allocate console proxy standby capacity for zone [%s] due to [%s].", dataCenterId, e.getMessage()), e);
+           logger.warn("Unable to allocate console proxy standby capacity for zone [{}] due to [{}].", zone, e.getMessage(), e);
            throw e;
         } finally {
             if (proxy == null || proxy.getState() != State.Running)
@@ -874,20 +868,18 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
     }
 
-    public boolean isZoneReady(Map<Long, ZoneHostInfo> zoneHostInfoMap, long dataCenterId) {
-        List <HostVO> hosts = hostDao.listByDataCenterId(dataCenterId);
-        if (CollectionUtils.isEmpty(hosts)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Zone " + dataCenterId + " has no host available which is enabled and in Up state");
-            }
+    public boolean isZoneReady(Map<Long, ZoneHostInfo> zoneHostInfoMap, DataCenter dataCenter) {
+        Integer totalUpAndEnabledHosts = hostDao.countUpAndEnabledHostsInZone(dataCenter.getId());
+        if (totalUpAndEnabledHosts != null && totalUpAndEnabledHosts < 1) {
+            logger.debug("{} has no host available which is enabled and in Up state", dataCenter);
             return false;
         }
-        ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
+        ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenter.getId());
         if (zoneHostInfo != null && isZoneHostReady(zoneHostInfo)) {
-            VMTemplateVO template = vmTemplateDao.findSystemVMReadyTemplate(dataCenterId, HypervisorType.Any);
+            VMTemplateVO template = vmTemplateDao.findSystemVMReadyTemplate(dataCenter.getId(), HypervisorType.Any);
             if (template == null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("System vm template is not ready at data center " + dataCenterId + ", wait until it is ready to launch console proxy vm");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("System vm template is not ready at data center {}, wait until it is ready to launch console proxy vm", dataCenter);
                 }
                 return false;
             }
@@ -895,22 +887,22 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             if (template.isDirectDownload()) {
                 templateHostRef = templateDataStoreDao.findByTemplate(template.getId(), DataStoreRole.Image);
             } else {
-                templateHostRef = templateDataStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dataCenterId, Status.DOWNLOADED);
+                templateHostRef = templateDataStoreDao.findByTemplateZoneDownloadStatus(template.getId(), dataCenter.getId(), Status.DOWNLOADED);
             }
 
             if (templateHostRef != null) {
-                Boolean useLocalStorage = BooleanUtils.toBoolean(ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
-                List<Pair<Long, Integer>> l = consoleProxyDao.getDatacenterStoragePoolHostInfo(dataCenterId, useLocalStorage);
-                if (CollectionUtils.isNotEmpty(l) && l.get(0).second() > 0) {
+                Boolean useLocalStorage = BooleanUtils.toBoolean(ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenter.getId()));
+                boolean hasDatacenterStoragePoolHostInfo = consoleProxyDao.hasDatacenterStoragePoolHostInfo(dataCenter.getId(), !useLocalStorage);
+                if (hasDatacenterStoragePoolHostInfo) {
                     return true;
                 } else {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Primary storage is not ready, wait until it is ready to launch console proxy");
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Primary storage is not ready, wait until it is ready to launch console proxy");
                     }
                 }
             } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("Zone [%s] is ready, but console proxy template [%s] is not ready on secondary storage.", dataCenterId, template.getId()));
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Zone [{}] is ready, but console proxy template [{}] is not ready on secondary storage.", dataCenter, template);
                 }
             }
         }
@@ -944,8 +936,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public boolean start() {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Start console proxy manager");
+        if (logger.isInfoEnabled()) {
+            logger.info("Start console proxy manager");
         }
 
         return true;
@@ -953,8 +945,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public boolean stop() {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Stop console proxy manager");
+        if (logger.isInfoEnabled()) {
+            logger.info("Stop console proxy manager");
         }
 
         loadScanner.stop();
@@ -967,8 +959,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public boolean stopProxy(long proxyVmId) {
         ConsoleProxyVO proxy = consoleProxyDao.findById(proxyVmId);
         if (proxy == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Stopping console proxy failed: console proxy " + proxyVmId + " no longer exists");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Stopping console proxy failed: console proxy " + proxyVmId + " no longer exists");
             }
             return false;
         }
@@ -977,7 +969,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             virtualMachineManager.stop(proxy.getUuid());
             return true;
         } catch (CloudRuntimeException | ResourceUnavailableException e) {
-            s_logger.warn(String.format("Unable to stop console proxy [%s] due to [%s].", proxy.toString(), e.getMessage()), e);
+            logger.warn(String.format("Unable to stop console proxy [%s] due to [%s].", proxy.toString(), e.getMessage()), e);
             return false;
         }
     }
@@ -1001,7 +993,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 });
             }
         } catch (Exception e) {
-            s_logger.error(String.format("Unable to set console proxy management state to [%s] due to [%s].", state, e.getMessage()), e);
+            logger.error(String.format("Unable to set console proxy management state to [%s] due to [%s].", state, e.getMessage()), e);
         }
     }
 
@@ -1018,7 +1010,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
         }
 
-        s_logger.error(String.format("Value [%s] set in global configuration [%s] is not a valid console proxy management state.", value, configKey));
+        logger.error(String.format("Value [%s] set in global configuration [%s] is not a valid console proxy management state.", value, configKey));
         return null;
     }
 
@@ -1036,7 +1028,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 configurationDao.update(Config.ConsoleProxyManagementState.key(), Config.ConsoleProxyManagementState.getCategory(), lastState.toString());
             }
         } catch (Exception e) {
-            s_logger.error(String.format("Unable to resume last management state due to [%s].", e.getMessage()), e);
+            logger.error(String.format("Unable to resume last management state due to [%s].", e.getMessage()), e);
         }
     }
 
@@ -1052,7 +1044,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
         }
 
-        s_logger.error(String.format("Value [%s] set in global configuration [%s] is not a valid console proxy management state.", value, configKey));
+        logger.error(String.format("Value [%s] set in global configuration [%s] is not a valid console proxy management state.", value, configKey));
         return null;
     }
 
@@ -1069,8 +1061,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             final Answer answer = agentManager.easySend(proxy.getHostId(), cmd);
 
             if (answer != null && answer.getResult()) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Successfully reboot console proxy " + proxy.getHostName());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Successfully reboot console proxy " + proxy.getHostName());
                 }
 
                 SubscriptionMgr.getInstance().notifySubscribers(ConsoleProxyManager.ALERT_SUBJECT, this,
@@ -1078,8 +1070,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
                 return true;
             } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("failed to reboot console proxy : " + proxy.getHostName());
+                if (logger.isDebugEnabled()) {
+                    logger.debug("failed to reboot console proxy : " + proxy.getHostName());
                 }
 
                 return false;
@@ -1103,13 +1095,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             consoleProxyDao.remove(vmId);
             HostVO host = hostDao.findByTypeNameAndZoneId(proxy.getDataCenterId(), proxy.getHostName(), Host.Type.ConsoleProxy);
             if (host != null) {
-                s_logger.debug(String.format("Removing host [%s] entry for proxy [%s].", host.toString(), vmId));
+                logger.debug("Removing host [{}] entry for proxy [{}].", host, proxy);
                 return hostDao.remove(host.getId());
             }
 
             return true;
         } catch (ResourceUnavailableException e) {
-            s_logger.warn(String.format("Unable to destroy console proxy [%s] due to [%s].", proxy, e.getMessage()), e);
+            logger.warn(String.format("Unable to destroy console proxy [%s] due to [%s].", proxy, e.getMessage()), e);
             return false;
         }
     }
@@ -1125,8 +1117,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Start configuring console proxy manager : " + name);
+        if (logger.isInfoEnabled()) {
+            logger.info("Start configuring console proxy manager : " + name);
         }
 
         Map<String, String> configs = configurationDao.getConfiguration("management-server", params);
@@ -1138,7 +1130,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         consoleProxyUrlDomain = configs.get(Config.ConsoleProxyUrlDomain.key());
         if( sslEnabled && (consoleProxyUrlDomain == null || consoleProxyUrlDomain.isEmpty())) {
-            s_logger.warn("Empty console proxy domain, explicitly disabling SSL");
+            logger.warn("Empty console proxy domain, explicitly disabling SSL");
             sslEnabled = false;
         }
 
@@ -1164,9 +1156,9 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             useStorageVm = true;
         }
 
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Console proxy max session soft limit : " + capacityPerProxy);
-            s_logger.info("Console proxy standby capacity : " + standbyCapacity);
+        if (logger.isInfoEnabled()) {
+            logger.info("Console proxy max session soft limit : " + capacityPerProxy);
+            logger.info("Console proxy standby capacity : " + standbyCapacity);
         }
 
         instance = configs.get("instance.name");
@@ -1191,14 +1183,14 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             serviceOfferingVO = serviceOfferingDao.findByUuid(cpvmSrvcOffIdStr);
             if (serviceOfferingVO == null) {
                 try {
-                     s_logger.debug(String.format("Unable to find a service offering by the UUID for console proxy VM with the value [%s] set in the configuration [%s]. Trying to find by the ID.", cpvmSrvcOffIdStr, configKey));
+                     logger.debug(String.format("Unable to find a service offering by the UUID for console proxy VM with the value [%s] set in the configuration [%s]. Trying to find by the ID.", cpvmSrvcOffIdStr, configKey));
                     serviceOfferingVO = serviceOfferingDao.findById(Long.parseLong(cpvmSrvcOffIdStr));
                 } catch (NumberFormatException ex) {
-                    s_logger.warn(String.format("Unable to find a service offering by the ID for console proxy VM with the value [%s] set in the configuration [%s]. The value is not a valid integer number. Error: [%s].", cpvmSrvcOffIdStr, configKey, ex.getMessage()), ex);
+                    logger.warn(String.format("Unable to find a service offering by the ID for console proxy VM with the value [%s] set in the configuration [%s]. The value is not a valid integer number. Error: [%s].", cpvmSrvcOffIdStr, configKey, ex.getMessage()), ex);
                 }
             }
             if (serviceOfferingVO == null) {
-                s_logger.warn(String.format("Unable to find a service offering by the UUID or ID for console proxy VM with the value [%s] set in the configuration [%s]", cpvmSrvcOffIdStr, configKey));
+                logger.warn(String.format("Unable to find a service offering by the UUID or ID for console proxy VM with the value [%s] set in the configuration [%s]", cpvmSrvcOffIdStr, configKey));
             }
         }
 
@@ -1211,7 +1203,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
             if (offerings == null || offerings.size() < 2) {
                 String msg = "Data integrity problem : System Offering For Console Proxy has been removed?";
-                s_logger.error(msg);
+                logger.error(msg);
                 throw new ConfigurationException(msg);
             }
         }
@@ -1225,8 +1217,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             staticPort = NumbersUtil.parseInt(configurationDao.getValue("consoleproxy.static.port"), 8443);
         }
 
-        if (s_logger.isInfoEnabled()) {
-            s_logger.info("Console Proxy Manager is configured.");
+        if (logger.isInfoEnabled()) {
+            logger.info("Console Proxy Manager is configured.");
         }
         return true;
     }
@@ -1291,10 +1283,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             if (nic.getTrafficType() == TrafficType.Management) {
                 String mgmt_cidr = configurationDao.getValue(Config.ManagementNetwork.key());
                 if (NetUtils.isValidCidrList(mgmt_cidr)) {
-                    s_logger.debug("Management server cidr list is " + mgmt_cidr);
+                    logger.debug("Management server cidr list is " + mgmt_cidr);
                     buf.append(" mgmtcidr=").append(mgmt_cidr);
                 } else {
-                    s_logger.error("Invalid management cidr list: " + mgmt_cidr);
+                    logger.error("Invalid management cidr list: " + mgmt_cidr);
                 }
                 buf.append(" localgw=").append(dest.getPod().getGateway());
             }
@@ -1317,8 +1309,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
         buf.append(" keystore_password=").append(VirtualMachineGuru.getEncodedString(PasswordGenerator.generateRandomPassword(16)));
         String bootArgs = buf.toString();
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Boot Args for " + profile + ": " + bootArgs);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Boot Args for " + profile + ": " + bootArgs);
         }
 
         return true;
@@ -1362,7 +1354,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         if (controlNic == null) {
             if (managementNic == null) {
-                s_logger.error("Management network doesn't exist for the console proxy vm " + profile.getVirtualMachine());
+                logger.error("Management network doesn't exist for the console proxy vm " + profile.getVirtualMachine());
                 return false;
             }
             controlNic = managementNic;
@@ -1381,7 +1373,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     public boolean finalizeStart(VirtualMachineProfile profile, long hostId, Commands cmds, ReservationContext context) {
         CheckSshAnswer answer = (CheckSshAnswer)cmds.getAnswer("checkSsh");
         if (answer == null || !answer.getResult()) {
-            s_logger.warn(String.format("Unable to use SSH on the VM [%s] due to [%s].", profile.toString(), answer == null ? "null answer" : answer.getDetails()));
+            logger.warn(String.format("Unable to use SSH on the VM [%s] due to [%s].", profile.toString(), answer == null ? "null answer" : answer.getDetails()));
             return false;
         }
 
@@ -1394,7 +1386,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
                 consoleProxyDao.update(consoleVm.getId(), consoleVm);
             }
         } catch (InsufficientAddressCapacityException ex) {
-            s_logger.warn(String.format("Unable to retrieve system IP and enable static NAT for the VM [%s] due to [%s].", profile.toString(), ex.getMessage()), ex);
+            logger.warn(String.format("Unable to retrieve system IP and enable static NAT for the VM [%s] due to [%s].", profile.toString(), ex.getMessage()), ex);
             return false;
         }
 
@@ -1420,7 +1412,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             try {
                 rulesManager.disableStaticNat(ip.getId(), ctx.getCallingAccount(), ctx.getCallingUserId(), true);
             } catch (ResourceUnavailableException ex) {
-                s_logger.error(String.format("Unable to disable static NAT and release system IP [%s] as a part of VM [%s] stop due to [%s].", ip.toString(), profile.toString(), ex.getMessage()), ex);
+                logger.error(String.format("Unable to disable static NAT and release system IP [%s] as a part of VM [%s] stop due to [%s].", ip.toString(), profile.toString(), ex.getMessage()), ex);
             }
         }
     }
@@ -1469,13 +1461,13 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private void handleResetSuspending() {
         List<ConsoleProxyVO> runningProxies = consoleProxyDao.getProxyListInStates(State.Running);
         for (ConsoleProxyVO proxy : runningProxies) {
-            s_logger.info("Stop console proxy " + proxy.getId() + " because of we are currently in ResetSuspending management mode");
+            logger.info("Stop console proxy {} because of we are currently in ResetSuspending management mode", proxy);
             stopProxy(proxy.getId());
         }
 
         List<ConsoleProxyVO> proxiesInTransition = consoleProxyDao.getProxyListInStates(State.Running, State.Starting, State.Stopping);
         if (CollectionUtils.isEmpty(proxiesInTransition)) {
-            s_logger.info("All previous console proxy VMs in transition mode ceased the mode, we will now resume to last management state");
+            logger.info("All previous console proxy VMs in transition mode ceased the mode, we will now resume to last management state");
             resumeLastManagementState();
         }
     }
@@ -1485,15 +1477,15 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         scanManagementState();
 
         if (!reserveStandbyCapacity()) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Reserving standby capacity is disabled, skip capacity scan");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Reserving standby capacity is disabled, skip capacity scan");
             }
             return false;
         }
 
         List<StoragePoolVO> upPools = primaryDataStoreDao.listByStatus(StoragePoolStatus.Up);
         if (CollectionUtils.isEmpty(upPools)) {
-            s_logger.debug("Skip capacity scan as there is no Primary Storage in 'Up' state");
+            logger.debug("Skip capacity scan as there is no Primary Storage in 'Up' state");
             return false;
         }
 
@@ -1503,32 +1495,33 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     @Override
     public Long[] getScannablePools() {
         List<Long> zoneIds = dataCenterDao.listEnabledNonEdgeZoneIds();
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("Enabled non-edge zones available for scan: %s", org.apache.commons.lang3.StringUtils.join(zoneIds, ",")));
+        if (logger.isDebugEnabled()) {
+            logger.debug(String.format("Enabled non-edge zones available for scan: %s", org.apache.commons.lang3.StringUtils.join(zoneIds, ",")));
         }
         return zoneIds.toArray(Long[]::new);
     }
 
     @Override
     public boolean isPoolReadyForScan(Long dataCenterId) {
-        if (!isZoneReady(zoneHostInfoMap, dataCenterId)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Zone " + dataCenterId + " is not ready to launch console proxy yet");
+        DataCenterVO zone = dataCenterDao.findById(dataCenterId);
+        if (!isZoneReady(zoneHostInfoMap, zone)) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Zone {} is not ready to launch console proxy yet", zone);
             }
             return false;
         }
 
         List<ConsoleProxyVO> l = consoleProxyDao.getProxyListInStates(VirtualMachine.State.Starting, VirtualMachine.State.Stopping);
         if (l.size() > 0) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Zone " + dataCenterId + " has " + l.size() + " console proxy VM(s) in transition state");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Zone {} has {} console proxy VM(s) in transition state", zone, l.size());
             }
 
             return false;
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Zone " + dataCenterId + " is ready to launch console proxy");
+        if (logger.isDebugEnabled()) {
+            logger.debug("Zone {} is ready to launch console proxy", zone);
         }
         return true;
     }
@@ -1546,8 +1539,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         if (!checkCapacity(proxyInfo, vmInfo)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Expand console proxy standby capacity for zone " + proxyInfo.getName());
+            if (logger.isDebugEnabled()) {
+                logger.debug("Expand console proxy standby capacity for zone " + proxyInfo.getName());
             }
 
             return new Pair<>(AfterScanAction.expand, null);
@@ -1634,7 +1627,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         try {
             status = parseJsonToConsoleProxyStatus(statusInfo);
         } catch (JsonParseException e) {
-            s_logger.warn(String.format("Unable to parse load info [%s] from proxy {\"vmId\": %s} due to [%s].", statusInfo, proxyVmId, e.getMessage()), e);
+            logger.warn(String.format("Unable to parse load info [%s] from proxy {\"vmId\": %s} due to [%s].", statusInfo, proxyVmId, e.getMessage()), e);
         }
 
         int count = 0;
@@ -1649,7 +1642,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
             details = statusInfo.getBytes(Charset.forName("US-ASCII"));
         } else {
-            s_logger.debug(String.format("Unable to retrieve load info from proxy {\"vmId\": %s}. Invalid load info [%s].", proxyVmId, statusInfo));
+            logger.debug(String.format("Unable to retrieve load info from proxy {\"vmId\": %s}. Invalid load info [%s].", proxyVmId, statusInfo));
         }
 
         consoleProxyDao.update(proxyVmId, count, DateUtil.currentGMTTime(), details);

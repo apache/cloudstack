@@ -48,11 +48,12 @@ public class DateUtil {
 
     public static final TimeZone GMT_TIMEZONE = TimeZone.getTimeZone("GMT");
     public static final String YYYYMMDD_FORMAT = "yyyyMMddHHmmss";
-    private static final DateFormat s_outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    private static final String ZONED_DATETIME_FORMAT = "yyyy-MM-dd'T'HH:mm:ssZ";
+    private static final DateFormat ZONED_DATETIME_SIMPLE_FORMATTER = new SimpleDateFormat(ZONED_DATETIME_FORMAT);
 
     private static final DateTimeFormatter[] parseFormats = new DateTimeFormatter[]{
         DateTimeFormatter.ISO_OFFSET_DATE_TIME,
-        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ"),
+        DateTimeFormatter.ofPattern(ZONED_DATETIME_FORMAT),
         DateTimeFormatter.ISO_INSTANT,
         // with milliseconds
         DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSX"),
@@ -95,7 +96,7 @@ public class DateUtil {
     }
 
     public static String displayDateInTimezone(TimeZone tz, Date time) {
-        return getDateDisplayString(tz, time, "yyyy-MM-dd HH:mm:ss z");
+        return getDateDisplayString(tz, time, ZONED_DATETIME_FORMAT);
     }
 
     public static String getDateDisplayString(TimeZone tz, Date time) {
@@ -103,6 +104,10 @@ public class DateUtil {
     }
 
     public static String getDateDisplayString(TimeZone tz, Date time, String formatString) {
+        if (time == null) {
+            return null;
+        }
+
         DateFormat df = new SimpleDateFormat(formatString);
         df.setTimeZone(tz);
 
@@ -113,9 +118,9 @@ public class DateUtil {
         if (date == null) {
             return "";
         }
-        String formattedString = null;
-        synchronized (s_outputFormat) {
-            formattedString = s_outputFormat.format(date);
+        String formattedString;
+        synchronized (ZONED_DATETIME_SIMPLE_FORMATTER) {
+            formattedString = ZONED_DATETIME_SIMPLE_FORMATTER.format(date);
         }
         return formattedString;
     }

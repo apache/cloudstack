@@ -20,10 +20,13 @@ import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.RemoteInstanceTO;
 import com.cloud.hypervisor.Hypervisor;
 
+import java.util.List;
+
 public class ConvertInstanceCommand extends Command {
 
     private RemoteInstanceTO sourceInstance;
     private Hypervisor.HypervisorType destinationHypervisorType;
+    private List<String> destinationStoragePools;
     private DataStoreTO conversionTemporaryLocation;
     private String templateDirOnConversionLocation;
     private boolean checkConversionSupport;
@@ -33,10 +36,12 @@ public class ConvertInstanceCommand extends Command {
     public ConvertInstanceCommand() {
     }
 
-    public ConvertInstanceCommand(RemoteInstanceTO sourceInstance, Hypervisor.HypervisorType destinationHypervisorType, DataStoreTO conversionTemporaryLocation,
+    public ConvertInstanceCommand(RemoteInstanceTO sourceInstance, Hypervisor.HypervisorType destinationHypervisorType,
+                                  List<String> destinationStoragePools, DataStoreTO conversionTemporaryLocation,
                                   String templateDirOnConversionLocation, boolean checkConversionSupport, boolean exportOvfToConversionLocation) {
         this.sourceInstance = sourceInstance;
         this.destinationHypervisorType = destinationHypervisorType;
+        this.destinationStoragePools = destinationStoragePools;
         this.conversionTemporaryLocation = conversionTemporaryLocation;
         this.templateDirOnConversionLocation = templateDirOnConversionLocation;
         this.checkConversionSupport = checkConversionSupport;
@@ -49,6 +54,10 @@ public class ConvertInstanceCommand extends Command {
 
     public Hypervisor.HypervisorType getDestinationHypervisorType() {
         return destinationHypervisorType;
+    }
+
+    public List<String> getDestinationStoragePools() {
+        return destinationStoragePools;
     }
 
     public DataStoreTO getConversionTemporaryLocation() {

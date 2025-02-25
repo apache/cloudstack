@@ -53,7 +53,7 @@ public class ScaleIOStorageAdaptorTest {
     @Before
     public void setUp() {
         mockedScript = Mockito.mockStatic(Script.class);
-        scaleIOStorageAdaptor = Mockito.spy(new ScaleIOStorageAdaptor(storageLayer));
+        scaleIOStorageAdaptor = Mockito.spy(ScaleIOStorageAdaptor.class);
     }
 
     @After

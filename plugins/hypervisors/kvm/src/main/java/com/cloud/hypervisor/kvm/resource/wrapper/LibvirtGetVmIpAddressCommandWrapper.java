@@ -22,8 +22,6 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetVmIpAddressCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
@@ -35,7 +33,6 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  GetVmIpAddressCommand.class)
 public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<GetVmIpAddressCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtGetVmIpAddressCommandWrapper.class);
 
     @Override
     public Answer execute(final GetVmIpAddressCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -76,7 +73,7 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
                         ip = ipAddr;
                         break;
                     }
-                    s_logger.debug("GetVmIp: "+ vmName + " Ip: "+ipAddr+" does not belong to network "+networkCidr);
+                    logger.debug("GetVmIp: "+ vmName + " Ip: "+ipAddr+" does not belong to network "+networkCidr);
                 }
             }
         } else {
@@ -88,7 +85,7 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
             commands.add(new String[]{sed_path, "-e", "s/^\"//", "-e", "s/\"$//"});
             String ipList = Script.executePipedCommands(commands, 0).second();
             if(ipList != null) {
-                s_logger.debug("GetVmIp: "+ vmName + "Ips: "+ipList);
+                logger.debug("GetVmIp: "+ vmName + "Ips: "+ipList);
                 String[] ips = ipList.split("\n");
                 for (String ipAddr : ips){
                     // Check if the IP belongs to the network
@@ -96,13 +93,13 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
                         ip = ipAddr;
                         break;
                     }
-                    s_logger.debug("GetVmIp: "+ vmName + " Ip: "+ipAddr+" does not belong to network "+networkCidr);
+                    logger.debug("GetVmIp: "+ vmName + " Ip: "+ipAddr+" does not belong to network "+networkCidr);
                 }
             }
         }
         if(ip != null){
             result = true;
-            s_logger.debug("GetVmIp: "+ vmName + " Found Ip: "+ip);
+            logger.debug("GetVmIp: "+ vmName + " Found Ip: "+ip);
         }
         return new Answer(command, result, ip);
     }

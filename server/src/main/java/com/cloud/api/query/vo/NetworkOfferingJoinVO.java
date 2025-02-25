@@ -30,6 +30,7 @@ import com.cloud.network.Network;
 import com.cloud.network.Networks;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 @Entity
 @Table(name = "network_offering_view")
@@ -157,6 +158,12 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     @Column(name = "for_tungsten")
     boolean forTungsten;
 
+    @Column(name = "for_nsx")
+    boolean forNsx;
+
+    @Column(name = "network_mode")
+    NetworkMode networkMode;
+
     @Column(name = "service_package_id")
     private String servicePackageUuid = null;
 
@@ -184,7 +191,20 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     @Column(name = "internet_protocol")
     private String internetProtocol = null;
 
+    @Column(name="routing_mode")
+    @Enumerated(value = EnumType.STRING)
+    private RoutingMode routingMode;
+
+    @Column(name = "specify_as_number")
+    private Boolean specifyAsNumber;
+
     public NetworkOfferingJoinVO() {
+    }
+
+    @Override
+    public String toString() {
+        return String.format("NetworkOffering %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                this, "id", "uuid", "name", "trafficType"));
     }
 
     @Override
@@ -349,6 +369,24 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
 
     public void setForVpc(boolean forVpc) { this.forVpc = forVpc; }
 
+    @Override
+    public boolean isForNsx() {
+        return forNsx;
+    }
+
+    public void setForNsx(boolean forNsx) {
+        this.forNsx = forNsx;
+    }
+
+    @Override
+    public NetworkMode getNetworkMode() {
+        return networkMode;
+    }
+
+    public void setNetworkMode(NetworkMode networkMode) {
+        this.networkMode = networkMode;
+    }
+
     public String getServicePackage() {
         return servicePackageUuid;
     }
@@ -416,5 +454,22 @@ public class NetworkOfferingJoinVO extends BaseViewVO implements NetworkOffering
     @Override
     public boolean isSupportsVmAutoScaling() {
         return supportsVmAutoScaling;
+    }
+
+    @Override
+    public RoutingMode getRoutingMode() {
+        return routingMode;
+    }
+
+    public void setRoutingMode(RoutingMode routingMode) {
+        this.routingMode = routingMode;
+    }
+
+    public Boolean isSpecifyAsNumber() {
+        return specifyAsNumber;
+    }
+
+    public void setSpecifyAsNumber(Boolean specifyAsNumber) {
+        this.specifyAsNumber = specifyAsNumber;
     }
 }

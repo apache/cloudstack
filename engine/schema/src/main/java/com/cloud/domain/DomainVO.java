@@ -26,14 +26,16 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "domain")
 public class DomainVO implements Domain {
-    public static final Logger s_logger = Logger.getLogger(DomainVO.class.getName());
+    protected transient Logger logger = LogManager.getLogger(getClass());
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -205,7 +207,9 @@ public class DomainVO implements Domain {
 
     @Override
     public String toString() {
-        return new StringBuilder("Domain:").append(id).append(path).toString();
+        return String.format("Domain %s",
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+                        this, "id", "uuid", "name", "path"));
     }
 
     @Override

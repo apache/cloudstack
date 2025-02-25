@@ -124,6 +124,7 @@ export default {
         waiting: 'message.launch.zone',
         launching: 'message.please.wait.while.zone.is.being.created'
       },
+      nsx: false,
       isLaunchZone: false,
       processStatus: null,
       messageError: '',
@@ -200,7 +201,6 @@ export default {
         this.stepData.tasks = []
         this.stepData.stepMove = this.stepData.stepMove.filter(item => item.indexOf('createStorageNetworkIpRange') === -1)
       }
-      console.log('step-data', this.stepData)
       // this.handleSubmit()
     }
   },
@@ -217,6 +217,7 @@ export default {
     setStepStatus (status) {
       const index = this.steps.findIndex(step => step.index === this.currentStep)
       this.steps[index].status = status
+      this.nsx = false
     },
     handleBack (e) {
       this.$emit('backPressed')
@@ -481,6 +482,11 @@ export default {
               if (physicalNetwork.isolationMethod === 'TF' &&
                 physicalNetwork.traffics.findIndex(traffic => traffic.type === 'public') > -1) {
                 this.stepData.isTungstenZone = true
+                this.stepData.tungstenPhysicalNetworkId = physicalNetworkReturned.id
+              }
+              if (physicalNetwork.isolationMethod === 'NSX' &&
+                physicalNetwork.traffics.findIndex(traffic => traffic.type === 'public' || traffic.type === 'guest') > -1) {
+                this.stepData.isNsxZone = true
                 this.stepData.tungstenPhysicalNetworkId = physicalNetworkReturned.id
               }
             } else {
@@ -855,7 +861,7 @@ export default {
           this.stepData.podReturned = await this.createPod(params)
           this.stepData.stepMove.push('createPod')
         }
-        await this.stepConfigurePublicTraffic()
+        await this.stepConfigurePublicTraffic('message.configuring.public.traffic', 'publicTraffic', 0)
       } catch (e) {
         this.messageError = e
         this.processStatus = STATUS_FAILED
@@ -893,19 +899,24 @@ export default {
         this.setStepStatus(STATUS_FAILED)
       }
     },
-    async stepConfigurePublicTraffic () {
+    async stepConfigurePublicTraffic (message, trafficType, idx) {
       if (
         (this.isBasicZone &&
           (this.havingSG && this.havingEIP && this.havingELB)) ||
         (this.isAdvancedZone && !this.sgEnabled && !this.isEdgeZone)) {
         this.setStepStatus(STATUS_FINISH)
         this.currentStep++
-        this.addStep('message.configuring.public.traffic', 'publicTraffic')
+        this.addStep(message, trafficType)
+        if (trafficType === 'nsxPublicTraffic') {
+          this.nsx = false
+        }
 
         let stopNow = false
         this.stepData.returnedPublicTraffic = this.stepData?.returnedPublicTraffic || []
-        for (let index = 0; index < this.prefillContent['public-ipranges'].length; index++) {
-          const publicVlanIpRange = this.prefillContent['public-ipranges'][index]
+        let publicIpRanges = this.prefillContent['public-ipranges']
+        publicIpRanges = publicIpRanges.filter(item => item.fornsx === (idx === 1))
+        for (let index = 0; index < publicIpRanges.length; index++) {
+          const publicVlanIpRange = publicIpRanges[index]
           let isExisting = false
 
           this.stepData.returnedPublicTraffic.forEach(publicVlan => {
@@ -926,6 +937,8 @@ export default {
           params.zoneId = this.stepData.zoneReturned.id
           if (publicVlanIpRange.vlan && publicVlanIpRange.vlan.length > 0) {
             params.vlan = publicVlanIpRange.vlan
+          } else if (publicVlanIpRange.fornsx) {
+            params.vlan = null
           } else {
             params.vlan = 'untagged'
           }
@@ -933,6 +946,8 @@ export default {
           params.netmask = publicVlanIpRange.netmask
           params.startip = publicVlanIpRange.startIp
           params.endip = publicVlanIpRange.endIp
+          params.fornsx = publicVlanIpRange.fornsx
+          params.forsystemvms = publicVlanIpRange.forsystemvms
 
           if (this.isBasicZone) {
             params.forVirtualNetwork = true
@@ -945,10 +960,10 @@ export default {
           }
 
           try {
-            if (!this.stepData.stepMove.includes('createPublicVlanIpRange' + index)) {
+            if (!this.stepData.stepMove.includes('createPublicVlanIpRange' + idx + index)) {
               const vlanIpRangeItem = await this.createVlanIpRange(params)
               this.stepData.returnedPublicTraffic.push(vlanIpRangeItem)
-              this.stepData.stepMove.push('createPublicVlanIpRange' + index)
+              this.stepData.stepMove.push('createPublicVlanIpRange' + idx + index)
             }
           } catch (e) {
             this.messageError = e
@@ -956,7 +971,6 @@ export default {
             this.setStepStatus(STATUS_FAILED)
             stopNow = true
           }
-
           if (stopNow) {
             break
           }
@@ -966,10 +980,16 @@ export default {
           return
         }
 
-        if (this.stepData.isTungstenZone) {
-          await this.stepCreateTungstenFabricPublicNetwork()
+        if (idx === 0) {
+          await this.stepConfigurePublicTraffic('message.configuring.nsx.public.traffic', 'nsxPublicTraffic', 1)
         } else {
-          await this.stepConfigureStorageTraffic()
+          if (this.stepData.isTungstenZone) {
+            await this.stepCreateTungstenFabricPublicNetwork()
+          } else if (this.stepData.isNsxZone) {
+            await this.stepAddNsxController()
+          } else {
+            await this.stepConfigureStorageTraffic()
+          }
         }
       } else if (this.isAdvancedZone && this.sgEnabled) {
         if (this.stepData.isTungstenZone) {
@@ -1038,6 +1058,38 @@ export default {
         this.setStepStatus(STATUS_FAILED)
       }
     },
+    async stepAddNsxController () {
+      this.setStepStatus(STATUS_FINISH)
+      this.currentStep++
+      this.addStep('message.add.nsx.controller', 'nsx')
+      if (this.stepData.stepMove.includes('nsx')) {
+        await this.stepConfigureStorageTraffic()
+        return
+      }
+      try {
+        if (!this.stepData.stepMove.includes('addNsxController')) {
+          const providerParams = {}
+          providerParams.name = this.prefillContent?.nsxName || ''
+          providerParams.nsxproviderhostname = this.prefillContent?.nsxHostname || ''
+          providerParams.nsxproviderport = this.prefillContent?.nsxPort || ''
+          providerParams.username = this.prefillContent?.username || ''
+          providerParams.password = this.prefillContent?.password || ''
+          providerParams.zoneid = this.stepData.zoneReturned.id
+          providerParams.tier0gateway = this.prefillContent?.tier0Gateway || ''
+          providerParams.edgecluster = this.prefillContent?.edgeCluster || ''
+          providerParams.transportzone = this.prefillContent?.transportZone || ''
+
+          await this.addNsxController(providerParams)
+          this.stepData.stepMove.push('addNsxController')
+        }
+        this.stepData.stepMove.push('nsx')
+        await this.stepConfigureStorageTraffic()
+      } catch (e) {
+        this.messageError = e
+        this.processStatus = STATUS_FAILED
+        this.setStepStatus(STATUS_FAILED)
+      }
+    },
     async stepConfigureStorageTraffic () {
       let targetNetwork = false
       this.prefillContent.physicalNetworks.forEach(physicalNetwork => {
@@ -1048,7 +1100,7 @@ export default {
         }
       })
 
-      if (!targetNetwork) {
+      if (!targetNetwork && !this.isNsxZone) {
         await this.stepConfigureGuestTraffic()
         return
       }
@@ -1231,6 +1283,7 @@ export default {
       if (this.isEdgeZone) {
         clusterName = 'Cluster-' + this.stepData.zoneReturned.name
       }
+      params.arch = this.prefillContent?.arch || null
 
       if (hypervisor === 'VMware') {
         params.username = this.prefillContent?.vCenterUsername || null
@@ -1306,7 +1359,7 @@ export default {
       hostData.clusterid = this.stepData.clusterReturned.id
       hostData.hypervisor = this.stepData.clusterReturned.hypervisortype
       hostData.clustertype = this.stepData.clusterReturned.clustertype
-      hostData.hosttags = this.prefillContent?.hostTags || null
+      hostData.hosttags = this.prefillContent?.hostTags || ''
       hostData.username = this.prefillContent?.hostUserName || null
       hostData.password = hostPassword
       const hostname = this.prefillContent?.hostName || null
@@ -2178,6 +2231,16 @@ export default {
     createTungstenFabricProvider (args) {
       return new Promise((resolve, reject) => {
         api('createTungstenFabricProvider', {}, 'POST', args).then(json => {
+          resolve()
+        }).catch(error => {
+          const message = error.response.headers['x-description']
+          reject(message)
+        })
+      })
+    },
+    addNsxController (args) {
+      return new Promise((resolve, reject) => {
+        api('addNsxController', {}, 'POST', args).then(json => {
           resolve()
         }).catch(error => {
           const message = error.response.headers['x-description']

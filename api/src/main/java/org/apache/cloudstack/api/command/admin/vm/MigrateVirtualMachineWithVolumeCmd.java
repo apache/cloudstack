@@ -33,7 +33,6 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.SystemVmResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -52,7 +51,6 @@ import com.cloud.vm.VirtualMachine;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(MigrateVirtualMachineWithVolumeCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -157,7 +155,7 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
         Host destinationHost = _resourceService.getHost(getHostId());
         // OfflineVmwareMigration: destination host would have to not be a required parameter for stopped VMs
         if (destinationHost == null) {
-            s_logger.error(String.format("Unable to find the host with ID [%s].", getHostId()));
+            logger.error(String.format("Unable to find the host with ID [%s].", getHostId()));
             throw new InvalidParameterValueException("Unable to find the specified host to migrate the VM.");
         }
         return destinationHost;
@@ -193,10 +191,10 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to migrate vm");
             }
         } catch (ResourceUnavailableException ex) {
-            s_logger.warn("Exception: ", ex);
+            logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
         } catch (ConcurrentOperationException | ManagementServerException | VirtualMachineMigrationException e) {
-            s_logger.warn("Exception: ", e);
+            logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

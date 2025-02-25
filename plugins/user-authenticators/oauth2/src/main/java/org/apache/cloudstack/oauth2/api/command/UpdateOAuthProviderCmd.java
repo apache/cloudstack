@@ -21,7 +21,6 @@ import org.apache.cloudstack.auth.UserOAuth2Authenticator;
 import org.apache.cloudstack.oauth2.OAuth2AuthManager;
 import org.apache.cloudstack.oauth2.api.response.OauthProviderResponse;
 import org.apache.cloudstack.oauth2.vo.OauthProviderVO;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -38,7 +37,6 @@ import java.util.List;
 @APICommand(name = "updateOauthProvider", description = "Updates the registered OAuth provider details", responseObject = OauthProviderResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.19.0")
 public final class UpdateOAuthProviderCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateOAuthProviderCmd.class.getName());
 
 
     /////////////////////////////////////////////////////

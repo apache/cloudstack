@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.KubernetesClusterConfigResponse;
 import org.apache.cloudstack.api.response.KubernetesClusterResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.kubernetes.cluster.KubernetesClusterService;
 import com.cloud.user.Account;
@@ -44,7 +43,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
         responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class GetKubernetesClusterConfigCmd extends BaseCmd {
-    public static final Logger LOGGER = Logger.getLogger(GetKubernetesClusterConfigCmd.class.getName());
 
     @Inject
     public KubernetesClusterService kubernetesClusterService;

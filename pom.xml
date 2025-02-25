@@ -29,7 +29,7 @@
 
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.19.2.0-SNAPSHOT</version>
+    <version>4.20.1.0-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Apache CloudStack</name>
     <description>Apache CloudStack is an IaaS ("Infrastructure as a Service") cloud orchestration platform.</description>
@@ -50,7 +50,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <project.systemvm.template.location>https://download.cloudstack.org/systemvm</project.systemvm.template.location>
-        <project.systemvm.template.version>4.19.1.0</project.systemvm.template.version>
+        <project.systemvm.template.version>4.20.0.0</project.systemvm.template.version>
         <sonar.organization>apache</sonar.organization>
         <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 
@@ -58,7 +58,7 @@
         <cs.jdk.version>11</cs.jdk.version>
         <cs.target.dir>target</cs.target.dir>
         <cs.replace.properties>build/replace.properties</cs.replace.properties>
-        <argLine>-Djava.security.egd=file:/dev/./urandom -noverify</argLine>
+        <argLine>-Djava.security.egd=file:/dev/./urandom -noverify --add-opens=java.base/java.lang=ALL-UNNAMED --add-exports=java.base/sun.security.x509=ALL-UNNAMED --add-opens=java.base/javax.net.ssl=ALL-UNNAMED</argLine>
 
         <!-- Plugins versions -->
         <cs.antrun-plugin.version>1.8</cs.antrun-plugin.version>
@@ -79,17 +79,18 @@
         <cs.site-plugin.version>3.8.2</cs.site-plugin.version>
         <cs.surefire-plugin.version>2.22.2</cs.surefire-plugin.version>
         <cs.clover-maven-plugin.version>4.4.1</cs.clover-maven-plugin.version>
+        <cs.exec-maven-plugin.version>3.2.0</cs.exec-maven-plugin.version>
 
         <!-- Logging versions -->
+        <cs.log4j.version>2.19.0</cs.log4j.version>
         <cs.reload4j.version>1.2.25</cs.reload4j.version>
         <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
-        <cs.logging.version>1.1.1</cs.logging.version>
 
         <!-- Apache Commons versions -->
         <cs.codec.version>1.15</cs.codec.version>
         <cs.commons-cli.version>1.5.0</cs.commons-cli.version>
         <cs.commons-collections.version>4.4</cs.commons-collections.version>
-        <cs.commons-compress.version>1.21</cs.commons-compress.version>
+        <cs.commons-compress.version>1.26.0</cs.commons-compress.version>
         <cs.commons-exec.version>1.3</cs.commons-exec.version>
         <cs.commons-fileupload.version>1.4</cs.commons-fileupload.version>
         <cs.commons-httpclient.version>3.1</cs.commons-httpclient.version>
@@ -101,6 +102,7 @@
         <cs.configuration.version>1.10</cs.configuration.version>
         <cs.daemon.version>1.3.3</cs.daemon.version>
         <cs.dbcp.version>2.9.0</cs.dbcp.version>
+        <cs.hikaricp.version>5.1.0</cs.hikaricp.version>
         <cs.discovery.version>0.5</cs.discovery.version>
         <cs.lang.version>2.6</cs.lang.version>
         <cs.pool.version>2.9.0</cs.pool.version>
@@ -114,7 +116,7 @@
         <cs.junit.dataprovider.version>1.13.1</cs.junit.dataprovider.version>
         <cs.junit.jupiter.version>5.9.1</cs.junit.jupiter.version>
         <cs.guava-testlib.version>18.0</cs.guava-testlib.version>
-        <cs.mockito.version>3.12.4</cs.mockito.version>
+        <cs.mockito.version>4.11.0</cs.mockito.version>
         <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
         <cs.selenium-java-client-driver.version>1.0.1</cs.selenium-java-client-driver.version>
         <cs.testng.version>7.1.0</cs.testng.version>
@@ -137,6 +139,7 @@
         <cs.cxf.version>3.2.14</cs.cxf.version>
         <cs.ehcache.version>2.6.11</cs.ehcache.version>
         <cs.globodns-client.version>0.0.27</cs.globodns-client.version>
+        <cs.gmavenplus.version>3.0.2</cs.gmavenplus.version>
         <cs.google-http-client>1.42.3</cs.google-http-client>
         <cs.groovy.version>2.4.17</cs.groovy.version>
         <cs.gson.version>1.7.2</cs.gson.version>
@@ -151,7 +154,9 @@
         <cs.maven-javadoc-plugin.version>3.1.1</cs.maven-javadoc-plugin.version>
         <cs.javax.annotation.version>1.3.2</cs.javax.annotation.version>
         <cs.jaxb.version>2.3.0</cs.jaxb.version>
-        <cs.jaxws.version>2.3.2-1</cs.jaxws.version>
+        <cs.jaxb.impl.version>2.3.9</cs.jaxb.impl.version>
+        <cs.jakarta.xml.bind.version>2.3.3</cs.jakarta.xml.bind.version>
+        <cs.jaxws.version>2.3.7</cs.jaxws.version>
         <cs.jersey-client.version>2.26</cs.jersey-client.version>
         <cs.jetty.version>9.4.51.v20230217</cs.jetty.version>
         <cs.jetty-maven-plugin.version>9.4.27.v20200227</cs.jetty-maven-plugin.version>
@@ -164,12 +169,13 @@
         <cs.kafka-clients.version>2.7.0</cs.kafka-clients.version>
         <cs.libvirt-java.version>0.5.3</cs.libvirt-java.version>
         <cs.mail.version>1.5.0-b01</cs.mail.version>
+        <cs.mustache.version>0.9.14</cs.mustache.version>
         <cs.mysql.version>8.0.33</cs.mysql.version>
         <cs.neethi.version>2.0.4</cs.neethi.version>
         <cs.nitro.version>10.1</cs.nitro.version>
         <cs.opensaml.version>2.6.6</cs.opensaml.version>
         <cs.rados-java.version>0.6.0</cs.rados-java.version>
-        <cs.java-linstor.version>0.5.2</cs.java-linstor.version>
+        <cs.java-linstor.version>0.6.0</cs.java-linstor.version>
         <cs.reflections.version>0.10.2</cs.reflections.version>
         <cs.servicemix.version>3.4.4_1</cs.servicemix.version>
         <cs.servlet.version>4.0.1</cs.servlet.version>
@@ -183,7 +189,7 @@
         <cs.xstream.version>1.4.20</cs.xstream.version>
         <org.springframework.version>5.3.26</org.springframework.version>
         <cs.ini.version>0.5.4</cs.ini.version>
-        <cs.gmaven.version>1.12.0</cs.gmaven.version>
+        <cs.caffeine.version>3.1.7</cs.caffeine.version>
     </properties>
 
     <distributionManagement>
@@ -360,6 +366,7 @@
                 <artifactId>commons-daemon</artifactId>
                 <version>${cs.daemon.version}</version>
             </dependency>
+
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-dbcp2</artifactId>
@@ -370,6 +377,11 @@
                         <groupId>commons-pool2</groupId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>com.zaxxer</groupId>
+                <artifactId>HikariCP</artifactId>
+                <version>${cs.hikaricp.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-discovery</groupId>
@@ -437,6 +449,27 @@
                 <version>${cs.jstl.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-core</artifactId>
+                <version>${cs.log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>${cs.log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>ch.qos.reload4j</groupId>
+                <artifactId>reload4j</artifactId>
+                <version>${cs.reload4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>mysql</groupId>
+                <artifactId>mysql-connector-java</artifactId>
+                <version>${cs.mysql.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
                 <groupId>log4j</groupId>
                 <artifactId>apache-log4j-extras</artifactId>
                 <version>${cs.log4j.extras.version}</version>
@@ -446,11 +479,6 @@
                         <groupId>log4j</groupId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>ch.qos.reload4j</groupId>
-                <artifactId>reload4j</artifactId>
-                <version>${cs.reload4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.mysql</groupId>
@@ -717,7 +745,7 @@
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-core</artifactId>
+            <artifactId>mockito-inline</artifactId>
             <version>${cs.mockito.version}</version>
             <scope>test</scope>
             <exclusions>
@@ -755,6 +783,11 @@
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
             <version>1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>${cs.caffeine.version}</version>
         </dependency>
     </dependencies>
 
@@ -923,20 +956,6 @@
                                 </pluginExecution>
                                 <pluginExecution>
                                     <pluginExecutionFilter>
-                                        <groupId>org.codehaus.gmaven</groupId>
-                                        <artifactId>gmaven-plugin</artifactId>
-                                        <versionRange>[1.3,)</versionRange>
-                                        <goals>
-                                            <goal>compile</goal>
-                                            <goal>testCompile</goal>
-                                        </goals>
-                                    </pluginExecutionFilter>
-                                    <action>
-                                        <ignore></ignore>
-                                    </action>
-                                </pluginExecution>
-                                <pluginExecution>
-                                    <pluginExecutionFilter>
                                         <groupId>org.apache.maven.plugins</groupId>
                                         <artifactId>maven-checkstyle-plugin</artifactId>
                                         <versionRange>[2.11,)</versionRange>
@@ -1001,6 +1020,7 @@
                             <exclude>.idea/</exclude>
                             <exclude>.metadata/**</exclude>
                             <exclude>.git/**</exclude>
+                            <exclude>.github/linters/codespell.txt</exclude>
                             <exclude>.gitignore</exclude>
                             <exclude>CHANGES.md</exclude>
                             <exclude>CONTRIBUTING.md</exclude>
@@ -1030,6 +1050,7 @@
                             <exclude>systemvm/agent/js/jquery.js</exclude>
                             <exclude>systemvm/agent/js/jquery.flot.navigate.js</exclude>
                             <exclude>systemvm/agent/noVNC/**</exclude>
+                            <exclude>systemvm/agent/packages/**</exclude>
                             <exclude>systemvm/debian/**</exclude>
                             <exclude>test/integration/component/test_host_ha.sh</exclude>
                             <exclude>test/systemvm/README.md</exclude>

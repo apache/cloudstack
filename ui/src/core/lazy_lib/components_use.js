@@ -61,6 +61,7 @@ import {
   Tree,
   Calendar,
   Slider,
+  Result,
   AutoComplete,
   Collapse,
   Space,
@@ -133,5 +134,6 @@ export default {
     app.use(Descriptions)
     app.use(Space)
     app.use(Statistic)
+    app.use(Result)
   }
 }

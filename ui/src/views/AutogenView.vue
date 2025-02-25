@@ -51,7 +51,7 @@
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
                       v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
-                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes', 'computeoffering', 'systemoffering', 'diskoffering'].includes($route.name) ||
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes', 'computeoffering', 'systemoffering', 'diskoffering', 'sharedfs'].includes($route.name) ||
                       ['account'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')">
@@ -67,7 +67,7 @@
                   </a-select>
                 </a-tooltip>
                 <a-switch
-                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver'].includes($route.name)"
+                  v-if="!dataView && ['vm', 'volume', 'zone', 'cluster', 'host', 'storagepool', 'managementserver', 'sharedfs'].includes($route.name)"
                   style="margin-left: 8px; min-height: 23px; margin-bottom: 4px"
                   :checked-children="$t('label.metrics')"
                   :un-checked-children="$t('label.metrics')"
@@ -183,20 +183,20 @@
                 <template #message>
                   <exclamation-circle-outlined style="color: red; fontSize: 30px; display: inline-flex" />
                   <span style="padding-left: 5px" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
-                  <span v-html="$t(currentAction.message)" />
+                  <span v-html="currentAction.message" />
                 </template>
               </a-alert>
               <a-alert v-else type="warning">
                 <template #message>
                   <span v-if="selectedRowKeys.length > 0" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
-                  <span v-html="$t(currentAction.message)" />
+                  <span v-html="currentAction.message" />
                 </template>
               </a-alert>
             </div>
             <div v-else>
               <a-alert type="warning">
                 <template #message>
-                  <span v-html="$t(currentAction.message)" />
+                  <span v-html="currentAction.message" />
                 </template>
               </a-alert>
             </div>
@@ -211,6 +211,11 @@
                 :pagination="true"
                 style="overflow-y: auto"
               >
+                <template #bodyCell="{ column, text }">
+                  <template v-if="column.key === 'allocated' && ['asnumbers', 'publicip'].includes($route.meta.name)">
+                    {{ $toLocaleDate(text) }}
+                  </template>
+                </template>
               </a-table>
             </div>
             <br v-if="currentAction.paramFields.length > 0"/>
@@ -420,7 +425,7 @@
           @update-selected-columns="updateSelectedColumns"
           @selection-change="onRowSelectionChange"
           @refresh="fetchData"
-          @edit-tariff-action="(showAction, record) => $emit('edit-tariff-action', showAction, record)"/>
+        />
         <a-pagination
           class="row-element"
           style="margin-top: 10px"
@@ -687,7 +692,7 @@ export default {
         return this.$route.query.filter
       }
       const routeName = this.$route.name
-      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'oauthsetting', 'guestos', 'guestoshypervisormapping', 'kubernetes'].includes(routeName)) {
+      if ((this.projectView && routeName === 'vm') || (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool'].includes(routeName)) || ['account', 'guestnetwork', 'guestvlans', 'oauthsetting', 'guestos', 'guestoshypervisormapping', 'kubernetes', 'asnumbers'].includes(routeName)) {
         return 'all'
       }
       if (['publicip'].includes(routeName)) {
@@ -696,7 +701,7 @@ export default {
       if (['volume'].includes(routeName)) {
         return 'user'
       }
-      if (['event', 'computeoffering', 'systemoffering', 'diskoffering'].includes(routeName)) {
+      if (['event', 'computeoffering', 'systemoffering', 'diskoffering', 'quotatariff'].includes(routeName)) {
         return 'active'
       }
       return 'self'
@@ -740,7 +745,7 @@ export default {
       })
     },
     fetchData (params = {}) {
-      if (this.$route.name === 'deployVirtualMachine') {
+      if (['deployVirtualMachine', 'usage'].includes(this.$route.name)) {
         return
       }
       if (this.routeName !== this.$route.name) {
@@ -802,8 +807,8 @@ export default {
 
       this.projectView = Boolean(store.getters.project && store.getters.project.id)
       this.hasProjectId = ['vm', 'vmgroup', 'ssh', 'affinitygroup', 'userdata', 'volume', 'snapshot', 'buckets', 'vmsnapshot', 'guestnetwork',
-        'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes',
-        'autoscalevmgroup', 'vnfapp'].includes(this.$route.name)
+        'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes', 'sharedfs',
+        'autoscalevmgroup', 'vnfapp', 'webhook'].includes(this.$route.name)
 
       if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
         this.dataView = true
@@ -960,11 +965,17 @@ export default {
         params.showIcon = true
       }
 
+      const customParamHandler = this.$route.meta.customParamHandler
+      if (customParamHandler && typeof customParamHandler === 'function') {
+        params = customParamHandler(params, this.$route.query)
+      }
+
       if (['listAnnotations', 'listRoles', 'listZonesMetrics', 'listPods',
         'listClustersMetrics', 'listHostsMetrics', 'listStoragePoolsMetrics',
         'listImageStores', 'listSystemVms', 'listManagementServers',
         'listConfigurations', 'listHypervisorCapabilities',
-        'listAlerts', 'listNetworkOfferings', 'listVPCOfferings'].includes(this.apiName)) {
+        'listAlerts', 'listNetworkOfferings', 'listVPCOfferings',
+        'listASNumbers'].includes(this.apiName)) {
         delete params.listall
       }
 
@@ -1163,13 +1174,11 @@ export default {
       this.currentAction.paramFields = []
       this.currentAction.paramFilters = []
       if ('message' in action) {
-        var message = action.message
         if (typeof action.message === 'function') {
-          message = action.message(action.resource)
+          action.message = action.message(action.resource)
         }
-        action.message = message
+        action.message = Array.isArray(action.message) ? this.$t(...action.message) : this.$t(action.message)
       }
-
       this.getArgs(action, isGroupAction, paramFields)
       this.getFilters(action, isGroupAction, paramFields)
       this.getFirstIndexFocus()
@@ -1498,18 +1507,26 @@ export default {
                   this.selectedItems.filter(item => item === resource)
                 }
               }
-              var message = action.successMessage ? this.$t(action.successMessage) : this.$t(action.label) +
-                (resourceName ? ' - ' + resourceName : '')
-              var duration = 2
-              if (action.additionalMessage) {
-                message = message + ' - ' + this.$t(action.successMessage)
-                duration = 5
-              }
               if (this.selectedItems.length === 0) {
+                let message = ''
+                let messageDuration = 2
+                if ('successMessage' in action) {
+                  message = action.successMessage
+                  if (typeof action.successMessage === 'function') {
+                    message = action.successMessage(action.resource)
+                  }
+                  message = Array.isArray(message) ? this.$t(...message) : this.$t(message)
+                } else {
+                  message = this.$t(action.label) + (resourceName ? ' - ' + resourceName : '')
+                }
+                if ('additionalMessage' in action) {
+                  message = `${message} - ${this.$t(action.additionalMessage)}`
+                  messageDuration = 5
+                }
                 this.$message.success({
                   content: message,
                   key: action.label + resourceName,
-                  duration: duration
+                  duration: messageDuration
                 })
               }
               break
@@ -1556,13 +1573,16 @@ export default {
               continue
             }
             if (input === undefined || input === null ||
-              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork', 'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering', 'updateZone', 'updateAccount'].includes(action.api))) {
+              (input === '' && !['updateStoragePool', 'updateHost', 'updatePhysicalNetwork',
+                'updateDiskOffering', 'updateNetworkOffering', 'updateServiceOffering',
+                'updateZone', 'updateAccount', 'updateWebhook'].includes(action.api))) {
               if (param.type === 'boolean') {
                 params[key] = false
               }
               break
             }
-            if (input === '' && !['tags', 'hosttags', 'storagetags', 'dns2', 'ip6dns1', 'ip6dns2', 'internaldns2', 'networkdomain'].includes(key)) {
+            if (input === '' && !['tags', 'hosttags', 'storagetags', 'dns2', 'ip6dns1',
+              'ip6dns2', 'internaldns2', 'networkdomain', 'secretkey'].includes(key)) {
               break
             }
             if (action.mapping && key in action.mapping && action.mapping[key].options) {
@@ -1735,7 +1755,7 @@ export default {
         if (filter === 'all') {
           delete query.resourcestate
           delete query.state
-        } else if (['up', 'down', 'alert'].includes(filter)) {
+        } else if (['up', 'down', 'disconnected', 'alert'].includes(filter)) {
           delete query.resourcestate
           query.state = filter
         } else {
@@ -1756,6 +1776,12 @@ export default {
           query.allocatedonly = 'false'
         } else if (filter === 'allocatedonly') {
           query.allocatedonly = 'true'
+        }
+      } else if (this.$route.name === 'asnumbers') {
+        if (['allocatedonly', 'free'].includes(filter)) {
+          query.isallocated = (filter === 'allocatedonly')
+        } else {
+          delete query.isallocated
         }
       } else if (this.$route.name === 'event') {
         if (filter === 'archived') {

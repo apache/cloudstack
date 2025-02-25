@@ -22,8 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.network.dao.NetworkDao;
 import org.apache.cloudstack.network.topology.NetworkTopologyVisitor;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
@@ -37,7 +37,6 @@ import com.cloud.vm.dao.NicDao;
 
 public class VpcIpAssociationRules extends RuleApplier {
 
-    private static final Logger s_logger = Logger.getLogger(VpcIpAssociationRules.class);
 
     private final List<? extends PublicIpAddress> _ipAddresses;
 
@@ -58,6 +57,7 @@ public class VpcIpAssociationRules extends RuleApplier {
         _ipsToSend = new ArrayList<PublicIpAddress>();
 
         NicDao nicDao = visitor.getVirtualNetworkApplianceFactory().getNicDao();
+        NetworkDao networkDao = visitor.getVirtualNetworkApplianceFactory().getNetworkDao();
         for (PublicIpAddress ipAddr : _ipAddresses) {
             String broadcastURI = BroadcastDomainType.Vlan.toUri(ipAddr.getVlanTag()).toString();
             Nic nic = nicDao.findByNetworkIdInstanceIdAndBroadcastUri(ipAddr.getNetworkId(), _router.getId(), broadcastURI);
@@ -65,9 +65,9 @@ public class VpcIpAssociationRules extends RuleApplier {
             String macAddress = null;
             if (nic == null) {
                 if (ipAddr.getState() != IpAddress.State.Releasing) {
-                    throw new CloudRuntimeException("Unable to find the nic in network " + ipAddr.getNetworkId() + "  to apply the ip address " + ipAddr + " for");
+                    throw new CloudRuntimeException(String.format("Unable to find the nic in network %s to apply the ip address %s for", networkDao.findById(ipAddr.getNetworkId()), ipAddr));
                 }
-                s_logger.debug("Not sending release for ip address " + ipAddr + " as its nic is already gone from VPC router " + _router);
+                logger.debug("Not sending release for ip address " + ipAddr + " as its nic is already gone from VPC router " + _router);
             } else {
                 macAddress = nic.getMacAddress();
                 _vlanMacAddress.put(BroadcastDomainType.getValue(BroadcastDomainType.fromString(ipAddr.getVlanTag())), macAddress);

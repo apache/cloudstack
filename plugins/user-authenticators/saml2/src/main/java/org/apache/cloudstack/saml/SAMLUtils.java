@@ -63,7 +63,8 @@ import org.apache.cloudstack.api.response.LoginCmdResponse;
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.joda.time.DateTime;
 import org.opensaml.Configuration;
@@ -108,7 +109,7 @@ import com.cloud.utils.HttpUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SAMLUtils {
-    public static final Logger s_logger = Logger.getLogger(SAMLUtils.class);
+    protected static Logger LOGGER = LogManager.getLogger(SAMLUtils.class);
 
     static final String charset = "abcdefghijklmnopqrstuvwxyz";
 
@@ -128,7 +129,7 @@ public class SAMLUtils {
             for (Attribute attribute : attributeStatement.getAttributes()) {
                 if (attribute.getAttributeValues() != null && attribute.getAttributeValues().size() > 0) {
                     String value = attribute.getAttributeValues().get(0).getDOM().getTextContent();
-                    s_logger.debug("SAML attribute name: " + attribute.getName() + " friendly-name:" + attribute.getFriendlyName() + " value:" + value);
+                    LOGGER.debug("SAML attribute name: " + attribute.getName() + " friendly-name:" + attribute.getFriendlyName() + " value:" + value);
                     if (attributeKey.equals(attribute.getName()) || attributeKey.equals(attribute.getFriendlyName())) {
                         return value;
                     }
@@ -163,7 +164,7 @@ public class SAMLUtils {
             String appendOperator = idpMetadata.getSsoUrl().contains("?") ? "&" : "?";
             redirectUrl = idpMetadata.getSsoUrl() + appendOperator + SAMLUtils.generateSAMLRequestSignature("SAMLRequest=" + SAMLUtils.encodeSAMLRequest(authnRequest), privateKey, signatureAlgorithm);
         } catch (ConfigurationException | FactoryConfigurationError | MarshallingException | IOException | NoSuchAlgorithmException | InvalidKeyException | java.security.SignatureException e) {
-            s_logger.error("SAML AuthnRequest message building error: " + e.getMessage());
+            LOGGER.error("SAML AuthnRequest message building error: " + e.getMessage());
         }
         return redirectUrl;
     }
@@ -318,7 +319,7 @@ public class SAMLUtils {
         }
         String sameSite = ApiServlet.getApiSessionKeySameSite();
         String sessionKeyCookie = String.format("%s=%s;Domain=%s;Path=%s;%s", ApiConstants.SESSIONKEY, loginResponse.getSessionKey(), domain, path, sameSite);
-        s_logger.debug("Adding sessionkey cookie to response: " + sessionKeyCookie);
+        LOGGER.debug("Adding sessionkey cookie to response: " + sessionKeyCookie);
         resp.addHeader("SET-COOKIE", sessionKeyCookie);
         resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly;Path=/client/api;%s", ApiConstants.SESSIONKEY, loginResponse.getSessionKey(), sameSite));
     }
@@ -335,7 +336,7 @@ public class SAMLUtils {
             X509EncodedKeySpec spec = keyFactory.getKeySpec(key, X509EncodedKeySpec.class);
             return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()), Charset.forName("UTF-8"));
         } catch (InvalidKeySpecException e) {
-            s_logger.error("Unable to get KeyFactory:" + e.getMessage());
+            LOGGER.error("Unable to get KeyFactory:" + e.getMessage());
         }
         return null;
     }
@@ -353,7 +354,7 @@ public class SAMLUtils {
                     PKCS8EncodedKeySpec.class);
             return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()), Charset.forName("UTF-8"));
         } catch (InvalidKeySpecException e) {
-            s_logger.error("Unable to get KeyFactory:" + e.getMessage());
+            LOGGER.error("Unable to get KeyFactory:" + e.getMessage());
         }
         return null;
     }
@@ -372,7 +373,7 @@ public class SAMLUtils {
         try {
             return keyFactory.generatePublic(x509KeySpec);
         } catch (InvalidKeySpecException e) {
-            s_logger.error("Unable to create PublicKey from PublicKey string:" + e.getMessage());
+            LOGGER.error("Unable to create PublicKey from PublicKey string:" + e.getMessage());
         }
         return null;
     }
@@ -391,7 +392,7 @@ public class SAMLUtils {
         try {
             return keyFactory.generatePrivate(pkscs8KeySpec);
         } catch (InvalidKeySpecException e) {
-            s_logger.error("Unable to create PrivateKey from privateKey string:" + e.getMessage());
+            LOGGER.error("Unable to create PrivateKey from privateKey string:" + e.getMessage());
         }
         return null;
     }

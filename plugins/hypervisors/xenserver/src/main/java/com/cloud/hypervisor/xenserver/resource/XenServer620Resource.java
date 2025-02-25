@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.xensource.xenapi.Connection;
@@ -29,7 +28,6 @@ import com.xensource.xenapi.PoolPatch;
 
 public class XenServer620Resource extends XenServer610Resource {
 
-    private static final Logger s_logger = Logger.getLogger(XenServer620Resource.class);
 
     protected boolean hostHasHotFix(final Connection conn, final String hotFixUuid) {
         try {
@@ -44,7 +42,7 @@ public class XenServer620Resource extends XenServer610Resource {
                 }
             }
         } catch (final Exception e) {
-            s_logger.debug("can't get patches information for hotFix: " + hotFixUuid);
+            logger.debug("can't get patches information for hotFix: " + hotFixUuid);
         }
         return false;
     }

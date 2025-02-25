@@ -22,10 +22,10 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.dao.DataCenterDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -39,9 +39,12 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.Pair;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class BasePrimaryDataStoreLifeCycleImpl {
-    private static final Logger s_logger = Logger.getLogger(BasePrimaryDataStoreLifeCycleImpl.class);
+    protected Logger logger = LogManager.getLogger(getClass());
+
     @Inject
     AgentManager agentMgr;
     @Inject
@@ -52,6 +55,8 @@ public class BasePrimaryDataStoreLifeCycleImpl {
     PrimaryDataStoreHelper dataStoreHelper;
     @Inject
     protected HostDao hostDao;
+    @Inject
+    protected DataCenterDao zoneDao;
     @Inject
     protected StoragePoolHostDao storagePoolHostDao;
 
@@ -70,13 +75,13 @@ public class BasePrimaryDataStoreLifeCycleImpl {
 
     public void changeStoragePoolScopeToZone(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
         List<HostVO> hosts = getPoolHostsList(clusterScope, hypervisorType);
-        s_logger.debug("Changing scope of the storage pool to Zone");
+        logger.debug("Changing scope of the storage pool to Zone");
         if (hosts != null) {
             for (HostVO host : hosts) {
                 try {
-                    storageMgr.connectHostToSharedPool(host.getId(), store.getId());
+                    storageMgr.connectHostToSharedPool(host, store.getId());
                 } catch (Exception e) {
-                    s_logger.warn("Unable to establish a connection between " + host + " and " + store, e);
+                    logger.warn("Unable to establish a connection between " + host + " and " + store, e);
                 }
             }
         }
@@ -85,7 +90,7 @@ public class BasePrimaryDataStoreLifeCycleImpl {
 
     public void changeStoragePoolScopeToCluster(DataStore store, ClusterScope clusterScope, HypervisorType hypervisorType) {
         Pair<List<StoragePoolHostVO>, Integer> hostPoolRecords = storagePoolHostDao.listByPoolIdNotInCluster(clusterScope.getScopeId(), store.getId());
-        s_logger.debug("Changing scope of the storage pool to Cluster");
+        logger.debug("Changing scope of the storage pool to Cluster");
         if (hostPoolRecords.second() > 0) {
             StoragePool pool = (StoragePool) store;
             for (StoragePoolHostVO host : hostPoolRecords.first()) {
@@ -94,7 +99,7 @@ public class BasePrimaryDataStoreLifeCycleImpl {
 
                 if (answer != null) {
                     if (!answer.getResult()) {
-                        s_logger.debug("Failed to delete storage pool: " + answer.getResult());
+                        logger.debug("Failed to delete storage pool: " + answer.getResult());
                     } else if (HypervisorType.KVM != hypervisorType) {
                         break;
                     }

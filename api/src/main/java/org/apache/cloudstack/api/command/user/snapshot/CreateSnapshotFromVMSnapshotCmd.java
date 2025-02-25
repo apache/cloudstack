@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.VMSnapshotResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -43,7 +42,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
 @APICommand(name = "createSnapshotFromVMSnapshot", description = "Creates an instant snapshot of a volume from existing vm snapshot.", responseObject = SnapshotResponse.class, entityType = {Snapshot.class}, since = "4.10.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateSnapshotFromVMSnapshotCmd.class.getName());
 
     // ///////////////////////////////////////////////////
     // ////////////// API parameters /////////////////////
@@ -126,10 +124,10 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
         if (account.getType() == Account.Type.PROJECT) {
             Project project = _projectService.findByProjectAccountId(vmsnapshot.getAccountId());
             if (project == null) {
-                throw new InvalidParameterValueException("Unable to find project by account id=" + account.getUuid());
+                throw new InvalidParameterValueException(String.format("Unable to find project by account %s", account));
             }
             if (project.getState() != Project.State.Active) {
-                throw new PermissionDeniedException("Can't add resources to the project id=" + project.getUuid() + " in state=" + project.getState() + " as it's no longer active");
+                throw new PermissionDeniedException(String.format("Can't add resources to the project %s in state=%s as it's no longer active", project, project.getState()));
             }
         } else if (account.getState() == Account.State.DISABLED) {
             throw new PermissionDeniedException("The owner of template is disabled: " + account);
@@ -166,8 +164,9 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void execute() {
-        s_logger.info("CreateSnapshotFromVMSnapshotCmd with vm snapshot id:" + getVMSnapshotId() + " and snapshot id:" + getEntityId() + " starts:" + System.currentTimeMillis());
-        CallContext.current().setEventDetails("Vm Snapshot Id: "+ this._uuidMgr.getUuid(VMSnapshot.class, getVMSnapshotId()));
+        VMSnapshot vmSnapshot = _vmSnapshotService.getVMSnapshotById(getVMSnapshotId());
+        logger.info("CreateSnapshotFromVMSnapshotCmd with vm snapshot {} with id {} and snapshot [id: {}, uuid: {}]", vmSnapshot, getVMSnapshotId(), getEntityId(), getEntityUuid());
+        CallContext.current().setEventDetails("Vm Snapshot Id: " + vmSnapshot.getUuid());
         Snapshot snapshot = null;
         try {
             snapshot = _snapshotService.backupSnapshotFromVmSnapshot(getEntityId(), getVmId(), getVolumeId(), getVMSnapshotId());
@@ -176,19 +175,19 @@ public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
                 response.setResponseName(getCommandName());
                 this.setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot from vm snapshot " + getVMSnapshotId());
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to create snapshot due to an internal error creating snapshot from vm snapshot %s", vmSnapshot));
             }
         } catch (InvalidParameterValueException ex) {
             throw ex;
         } catch (Exception e) {
-            s_logger.debug("Failed to create snapshot", e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create snapshot due to an internal error creating snapshot from vm snapshot " + getVMSnapshotId());
+            logger.debug("Failed to create snapshot", e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, String.format("Failed to create snapshot due to an internal error creating snapshot from vm snapshot %s", vmSnapshot));
         } finally {
             if (snapshot == null) {
                 try {
                     _snapshotService.deleteSnapshot(getEntityId(), null);
                 } catch (Exception e) {
-                    s_logger.debug("Failed to clean failed snapshot" + getEntityId());
+                    logger.debug("Failed to clean failed snapshot {} with id {}", () -> _entityMgr.findById(Snapshot.class, getEntityId()), this::getEntityId);
                 }
             }
         }

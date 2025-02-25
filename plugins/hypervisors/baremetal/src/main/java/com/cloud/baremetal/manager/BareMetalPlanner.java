@@ -24,7 +24,6 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.utils.NumbersUtil;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterDetailsDao;
@@ -51,7 +50,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
-    private static final Logger s_logger = Logger.getLogger(BareMetalPlanner.class);
     @Inject
     protected DataCenterDao _dcDao;
     @Inject
@@ -78,12 +76,12 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
 
         if (vm.getLastHostId() != null && haVmTag == null) {
-            HostVO h = _hostDao.findById(vm.getLastHostId());
-            DataCenter dc = _dcDao.findById(h.getDataCenterId());
-            Pod pod = _podDao.findById(h.getPodId());
-            Cluster c = _clusterDao.findById(h.getClusterId());
-            s_logger.debug("Start baremetal vm " + vm.getId() + " on last stayed host " + h.getId());
-            return new DeployDestination(dc, pod, c, h);
+            HostVO host = _hostDao.findById(vm.getLastHostId());
+            DataCenter dc = _dcDao.findById(host.getDataCenterId());
+            Pod pod = _podDao.findById(host.getPodId());
+            Cluster cluster = _clusterDao.findById(host.getClusterId());
+            logger.debug("Start baremetal vm {} on last stayed host {}", vm, host);
+            return new DeployDestination(dc, pod, cluster, host);
         }
 
         if (haVmTag != null) {
@@ -114,7 +112,7 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
         }
 
         if (target == null) {
-            s_logger.warn("Cannot find host with tag " + hostTag + " use capacity from service offering");
+            logger.warn("Cannot find host with tag " + hostTag + " use capacity from service offering");
             cpu_requested = offering.getCpu() * offering.getSpeed();
             ram_requested = offering.getRamSize() * 1024L * 1024L;
         } else {
@@ -126,27 +124,27 @@ public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
             if (haVmTag == null) {
                 hosts = _resourceMgr.listAllUpAndEnabledNonHAHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
             } else {
-                s_logger.warn("Cannot find HA host with tag " + haVmTag + " in cluster id=" + cluster.getId() + ", pod id=" + cluster.getPodId() + ", data center id=" +
+                logger.warn("Cannot find HA host with tag " + haVmTag + " in cluster " + cluster + ", pod id=" + cluster.getPodId() + ", data center id=" +
                     cluster.getDataCenterId());
                 return null;
             }
-            for (HostVO h : hosts) {
-                long cluster_id = h.getClusterId();
+            for (HostVO host : hosts) {
+                long cluster_id = host.getClusterId();
                 ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, "cpuOvercommitRatio");
                 ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, "memoryOvercommitRatio");
                 Float cpuOvercommitRatio = Float.parseFloat(cluster_detail_cpu.getValue());
                 Float memoryOvercommitRatio = Float.parseFloat(cluster_detail_ram.getValue());
 
-                if (_capacityMgr.checkIfHostHasCapacity(h.getId(), cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
-                    s_logger.debug("Find host " + h.getId() + " has enough capacity");
-                    DataCenter dc = _dcDao.findById(h.getDataCenterId());
-                    Pod pod = _podDao.findById(h.getPodId());
-                    return new DeployDestination(dc, pod, cluster, h);
+                if (_capacityMgr.checkIfHostHasCapacity(host, cpu_requested, ram_requested, false, cpuOvercommitRatio, memoryOvercommitRatio, true)) {
+                    logger.debug(String.format("Find host %s has enough capacity", host));
+                    DataCenter dc = _dcDao.findById(host.getDataCenterId());
+                    Pod pod = _podDao.findById(host.getPodId());
+                    return new DeployDestination(dc, pod, cluster, host);
                 }
             }
         }
 
-        s_logger.warn(String.format("Cannot find enough capacity(requested cpu=%1$s memory=%2$s)", cpu_requested, NumbersUtil.toHumanReadableSize(ram_requested)));
+        logger.warn(String.format("Cannot find enough capacity(requested cpu=%1$s memory=%2$s)", cpu_requested, NumbersUtil.toHumanReadableSize(ram_requested)));
         return null;
     }
 

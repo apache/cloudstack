@@ -26,7 +26,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.auth.UserAuthenticator;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -38,7 +37,6 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class LdapAuthenticator extends AdapterBase implements UserAuthenticator {
-    private static final Logger LOGGER = Logger.getLogger(LdapAuthenticator.class.getName());
 
     @Inject
     private LdapManager _ldapManager;
@@ -61,15 +59,15 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
     public Pair<Boolean, ActionOnFailedAuthentication> authenticate(final String username, final String password, final Long domainId, final Map<String, Object[]> requestParameters) {
         Pair<Boolean, ActionOnFailedAuthentication> rc = new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
 
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("Retrieving ldap user: " + username);
+        if (logger.isDebugEnabled()) {
+            logger.debug("Retrieving ldap user: " + username);
         }
 
         // TODO not allowing an empty password is a policy we shouldn't decide on. A private cloud may well want to allow this.
         if (StringUtils.isNoneEmpty(username, password)) {
             if (_ldapManager.isLdapEnabled(domainId) || _ldapManager.isLdapEnabled()) {
-                if (LOGGER.isTraceEnabled()) {
-                    LOGGER.trace("LDAP is enabled in the ldapManager");
+                if (logger.isTraceEnabled()) {
+                    logger.trace("LDAP is enabled in the ldapManager");
                 }
                 final UserAccount user = _userAccountDao.getUserAccount(username, domainId);
                 if (user != null && ! User.Source.LDAP.equals(user.getSource())) {
@@ -78,25 +76,25 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                 List<LdapTrustMapVO> ldapTrustMapVOs = getLdapTrustMapVOS(domainId);
                 if(ldapTrustMapVOs != null && ldapTrustMapVOs.size() > 0) {
                     if(ldapTrustMapVOs.size() == 1 && ldapTrustMapVOs.get(0).getAccountId() == 0) {
-                        if (LOGGER.isTraceEnabled()) {
-                            LOGGER.trace("We have a single mapping of a domain to an ldap group or ou");
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("We have a single mapping of a domain to an ldap group or ou");
                         }
                         rc = authenticate(username, password, domainId, user, ldapTrustMapVOs.get(0));
                     } else {
-                        if (LOGGER.isTraceEnabled()) {
-                            LOGGER.trace("we are dealing with mapping of accounts in a domain to ldap groups");
+                        if (logger.isTraceEnabled()) {
+                            logger.trace("we are dealing with mapping of accounts in a domain to ldap groups");
                         }
                         rc = authenticate(username, password, domainId, user, ldapTrustMapVOs);
                     }
                 } else {
-                    if (LOGGER.isTraceEnabled()) {
-                        LOGGER.trace(String.format("'this' domain (%d) is not linked to ldap follow normal authentication", domainId));
+                    if (logger.isTraceEnabled()) {
+                        logger.trace(String.format("'this' domain (%d) is not linked to ldap follow normal authentication", domainId));
                     }
                     rc = authenticate(username, password, domainId, user);
                 }
             }
         } else {
-            LOGGER.debug("Username or Password cannot be empty");
+            logger.debug("Username or Password cannot be empty");
         }
 
         return rc;
@@ -175,7 +173,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                 }
             }
         } catch (NoLdapUserMatchingQueryException e) {
-            LOGGER.debug(e.getMessage());
+            logger.debug(e.getMessage());
             disableUserInCloudStack(userAccount);
         }
 
@@ -183,7 +181,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
     }
 
     private void tracelist(String msg, List<String> listToTrace) {
-        if (LOGGER.isTraceEnabled()) {
+        if (logger.isTraceEnabled()) {
             StringBuilder logMsg = new StringBuilder();
             logMsg.append(msg);
             logMsg.append(':');
@@ -191,13 +189,13 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                 logMsg.append(' ');
                 logMsg.append(listMember);
             }
-            LOGGER.trace(logMsg.toString());
+            logger.trace(logMsg.toString());
         }
     }
 
     private void logAndDisable(UserAccount userAccount, String msg, boolean remove) {
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info(msg);
+        if (logger.isInfoEnabled()) {
+            logger.info(msg);
         }
         if(remove) {
             removeUserInCloudStack(userAccount);
@@ -230,7 +228,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
             final Account.Type accountType = ldapTrustMapVO.getAccountType();
             processLdapUser(password, domainId, user, rc, ldapUser, accountType);
         } catch (NoLdapUserMatchingQueryException e) {
-            LOGGER.debug(e.getMessage());
+            logger.debug(e.getMessage());
             // no user in ldap ==>> disable user in cloudstack
             disableUserInCloudStack(user);
         }
@@ -273,10 +271,10 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                 if(!ldapUser.isDisabled()) {
                     result = _ldapManager.canAuthenticate(ldapUser.getPrincipal(), password, domainId);
                 } else {
-                    LOGGER.debug("user with principal "+ ldapUser.getPrincipal() + " is disabled in ldap");
+                    logger.debug("user with principal "+ ldapUser.getPrincipal() + " is disabled in ldap");
                 }
             } catch (NoLdapUserMatchingQueryException e) {
-                LOGGER.debug(e.getMessage());
+                logger.debug(e.getMessage());
             }
         }
         return processResultAndAction(user, result);

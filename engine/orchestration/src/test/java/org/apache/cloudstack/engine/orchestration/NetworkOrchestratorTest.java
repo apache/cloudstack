@@ -35,14 +35,12 @@ import com.cloud.dc.DataCenter;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.IpAddressManager;
 import com.cloud.utils.Pair;
-
-import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
-import org.mockito.Matchers;
+import org.mockito.ArgumentMatchers;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -101,7 +99,6 @@ import junit.framework.TestCase;
  */
 @RunWith(JUnit4.class)
 public class NetworkOrchestratorTest extends TestCase {
-    static final Logger s_logger = Logger.getLogger(NetworkOrchestratorTest.class);
 
     NetworkOrchestrator testOrchestrator = Mockito.spy(new NetworkOrchestrator());
 
@@ -146,7 +143,7 @@ public class NetworkOrchestratorTest extends TestCase {
         when(provider.getCapabilities()).thenReturn(services);
         capabilities.put(Network.Capability.DhcpAccrossMultipleSubnets, "true");
 
-        when(testOrchestrator._ntwkSrvcDao.getProviderForServiceInNetwork(Matchers.anyLong(), Matchers.eq(Service.Dhcp))).thenReturn(dhcpProvider);
+        when(testOrchestrator._ntwkSrvcDao.getProviderForServiceInNetwork(ArgumentMatchers.anyLong(), ArgumentMatchers.eq(Service.Dhcp))).thenReturn(dhcpProvider);
         when(testOrchestrator._networkModel.getElementImplementingProvider(dhcpProvider)).thenReturn(provider);
 
         when(guru.getName()).thenReturn(guruName);

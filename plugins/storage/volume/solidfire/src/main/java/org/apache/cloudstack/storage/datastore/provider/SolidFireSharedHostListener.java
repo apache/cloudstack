@@ -25,6 +25,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.host.Host;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -32,7 +33,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -51,7 +53,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SolidFireSharedHostListener implements HypervisorHostListener {
-    private static final Logger LOGGER = Logger.getLogger(SolidFireSharedHostListener.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     @Inject private AgentManager agentMgr;
     @Inject private AlertManager alertMgr;
@@ -67,13 +69,13 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
         HostVO host = hostDao.findById(hostId);
 
         if (host == null) {
-            LOGGER.error(String.format("Failed to add host by SolidFireSharedHostListener as host was not found with id = %s ", hostId));
+            logger.error(String.format("Failed to add host by SolidFireSharedHostListener as host was not found with id = %s ", hostId));
 
             return false;
         }
 
         if (host.getClusterId() == null) {
-            LOGGER.error("Failed to add host by SolidFireSharedHostListener as host has no associated cluster id");
+            logger.error("Failed to add host by SolidFireSharedHostListener as host has no associated cluster id");
             return false;
         }
 
@@ -186,23 +188,21 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
                     cmd.setTargetTypeToRemove(targetTypeToRemove);
                     cmd.setRemoveAsync(true);
 
-                    sendModifyTargetsCommand(cmd, host.getId());
+                    sendModifyTargetsCommand(cmd, host);
                 }
             }
         }
     }
 
-    private void sendModifyTargetsCommand(ModifyTargetsCommand cmd, long hostId) {
-        Answer answer = agentMgr.easySend(hostId, cmd);
+    private void sendModifyTargetsCommand(ModifyTargetsCommand cmd, Host host) {
+        Answer answer = agentMgr.easySend(host.getId(), cmd);
 
         if (answer == null) {
             throw new CloudRuntimeException("Unable to get an answer to the modify targets command");
         }
 
         if (!answer.getResult()) {
-            String msg = "Unable to modify targets on the following host: " + hostId;
-
-            HostVO host = hostDao.findById(hostId);
+            String msg = String.format("Unable to modify targets on the following host: %s", host);
 
             alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), msg, msg);
 
@@ -214,21 +214,22 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
         Answer answer = agentMgr.easySend(hostId, cmd);
 
         if (answer == null) {
-            throw new CloudRuntimeException("Unable to get an answer to the modify storage pool command for storage pool: " + storagePool.getId());
+            throw new CloudRuntimeException(String.format("Unable to get an answer to the modify storage pool command for storage pool: %s", storagePool));
         }
 
+        HostVO host = hostDao.findById(hostId);
         if (!answer.getResult()) {
-            String msg = "Unable to attach storage pool " + storagePool.getId() + " to the host " + hostId;
+            String msg = String.format("Unable to attach storage pool %s to the host %s", storagePool, host);
 
             alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, storagePool.getDataCenterId(), storagePool.getPodId(), msg, msg);
 
             throw new CloudRuntimeException(msg);
         }
 
-        assert (answer instanceof ModifyStoragePoolAnswer) : "ModifyStoragePoolAnswer not returned from ModifyStoragePoolCommand; Storage pool = " +
-            storagePool.getId() + "; Host = " + hostId;
+        assert (answer instanceof ModifyStoragePoolAnswer) :
+                String.format("ModifyStoragePoolAnswer not returned from ModifyStoragePoolCommand; Storage pool = %s; Host = %s", storagePool, host);
 
-        LOGGER.info("Connection established between storage pool " + storagePool + " and host " + hostId);
+        logger.info("Connection established between storage pool {} and host {}", storagePool, host);
 
         return (ModifyStoragePoolAnswer)answer;
     }

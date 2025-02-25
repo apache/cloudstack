@@ -31,15 +31,16 @@ import java.util.Iterator;
 import java.util.Properties;
 
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
-import org.apache.log4j.Logger;
 
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.template.Processor.FormatInfo;
 import com.cloud.utils.NumbersUtil;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class TemplateLocation {
-    private static final Logger s_logger = Logger.getLogger(TemplateLocation.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     public final static String Filename = "template.properties";
 
     StorageLayer _storage;
@@ -90,8 +91,8 @@ public class TemplateLocation {
             if (!isRemoved) {
                 purged = false;
             }
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug((isRemoved ? "Removed " : "Unable to remove") + file);
+            if (logger.isDebugEnabled()) {
+                logger.debug((isRemoved ? "Removed " : "Unable to remove") + file);
             }
         }
 
@@ -102,27 +103,27 @@ public class TemplateLocation {
         try (FileInputStream strm = new FileInputStream(_file);) {
             _props.load(strm);
         } catch (IOException e) {
-            s_logger.warn("Unable to load the template properties for '" + _file + "': ", e);
+            logger.warn("Unable to load the template properties for '" + _file + "': ", e);
         }
 
         for (ImageFormat format : ImageFormat.values()) {
             String currentExtension = format.getFileExtension();
             String ext = _props.getProperty(currentExtension);
             if (ext != null) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("File extension '" + currentExtension + "' was found in '" + _file + "'.");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("File extension '" + currentExtension + "' was found in '" + _file + "'.");
                 }
                 FormatInfo info = new FormatInfo();
                 info.format = format;
                 info.filename = _props.getProperty(currentExtension + ".filename");
                 if (info.filename == null) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Property '" + currentExtension + ".filename' was not found in '" + _file + "'. Current format is ignored.");
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Property '" + currentExtension + ".filename' was not found in '" + _file + "'. Current format is ignored.");
                     }
                     continue;
                 }
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Property '" + currentExtension + ".filename' was found in '" + _file + "'. Current format will be parsed.");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Property '" + currentExtension + ".filename' was found in '" + _file + "'. Current format will be parsed.");
                 }
                 info.size = NumbersUtil.parseLong(_props.getProperty(currentExtension + ".size"), -1);
                 _props.setProperty("physicalSize", Long.toString(info.size));
@@ -131,18 +132,18 @@ public class TemplateLocation {
 
                 if (!checkFormatValidity(info)) {
                     _isCorrupted = true;
-                    s_logger.warn("Cleaning up inconsistent information for " + format);
+                    logger.warn("Cleaning up inconsistent information for " + format);
                 }
             } else {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Format extension '" + currentExtension + "' wasn't found in '" + _file + "'.");
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Format extension '" + currentExtension + "' wasn't found in '" + _file + "'.");
                 }
             }
         }
 
         if (_props.getProperty("uniquename") == null || _props.getProperty("virtualsize") == null) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Property 'uniquename' or 'virtualsize' weren't found in '" + _file + "'. Loading failed.");
+            if (logger.isDebugEnabled()) {
+                logger.debug("Property 'uniquename' or 'virtualsize' weren't found in '" + _file + "'. Loading failed.");
             }
             return false;
         }
@@ -160,7 +161,7 @@ public class TemplateLocation {
         try (FileOutputStream strm =  new FileOutputStream(_file);) {
             _props.store(strm, "");
         } catch (IOException e) {
-            s_logger.warn("Unable to save the template properties ", e);
+            logger.warn("Unable to save the template properties ", e);
             return false;
         }
         return true;
@@ -204,9 +205,9 @@ public class TemplateLocation {
         deleteFormat(newInfo.format);
 
         if (!checkFormatValidity(newInfo)) {
-            s_logger.warn("Format is invalid");
-            s_logger.debug("Format: " + newInfo.format + " size: " + toHumanReadableSize(newInfo.size) + " virtualsize: " + toHumanReadableSize(newInfo.virtualSize) + " filename: " + newInfo.filename);
-            s_logger.debug("format, filename cannot be null and size, virtual size should be  > 0 ");
+            logger.warn("Format is invalid");
+            logger.debug("Format: " + newInfo.format + " size: " + toHumanReadableSize(newInfo.size) + " virtualsize: " + toHumanReadableSize(newInfo.virtualSize) + " filename: " + newInfo.filename);
+            logger.debug("format, filename cannot be null and size, virtual size should be  > 0 ");
             return false;
         }
 

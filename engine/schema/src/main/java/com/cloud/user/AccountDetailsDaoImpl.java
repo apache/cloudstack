@@ -23,27 +23,24 @@ import java.util.Optional;
 
 import javax.inject.Inject;
 
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.domain.DomainDetailVO;
 import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDetailsDao;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.domain.dao.DomainDetailsDao;
 import com.cloud.user.dao.AccountDao;
-
-import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
-public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long> implements AccountDetailsDao, ScopedConfigStorage {
+public class AccountDetailsDaoImpl extends ResourceDetailsDaoBase<AccountDetailVO> implements AccountDetailsDao, ScopedConfigStorage {
     protected final SearchBuilder<AccountDetailVO> accountSearch;
 
     @Inject
@@ -57,16 +54,16 @@ public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long>
 
     protected AccountDetailsDaoImpl() {
         accountSearch = createSearchBuilder();
-        accountSearch.and("accountId", accountSearch.entity().getAccountId(), Op.EQ);
+        accountSearch.and("accountId", accountSearch.entity().getResourceId(), Op.EQ);
         accountSearch.done();
     }
 
     @Override
     public Map<String, String> findDetails(long accountId) {
         QueryBuilder<AccountDetailVO> sc = QueryBuilder.create(AccountDetailVO.class);
-        sc.and(sc.entity().getAccountId(), Op.EQ, accountId);
+        sc.and(sc.entity().getResourceId(), Op.EQ, accountId);
         List<AccountDetailVO> results = sc.list();
-        Map<String, String> details = new HashMap<String, String>(results.size());
+        Map<String, String> details = new HashMap<>(results.size());
         for (AccountDetailVO r : results) {
             details.put(r.getName(), r.getValue());
         }
@@ -90,9 +87,14 @@ public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long>
     @Override
     public AccountDetailVO findDetail(long accountId, String name) {
         QueryBuilder<AccountDetailVO> sc = QueryBuilder.create(AccountDetailVO.class);
-        sc.and(sc.entity().getAccountId(), Op.EQ, accountId);
+        sc.and(sc.entity().getResourceId(), Op.EQ, accountId);
         sc.and(sc.entity().getName(), Op.EQ, name);
         return sc.find();
+    }
+
+    @Override
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new AccountDetailVO(resourceId, key, value));
     }
 
     @Override
@@ -118,9 +120,9 @@ public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long>
     }
 
     @Override
-    public String getConfigValue(long id, ConfigKey<?> key) {
+    public String getConfigValue(long id, String key) {
         // check if account level setting is configured
-        AccountDetailVO vo = findDetail(id, key.key());
+        AccountDetailVO vo = findDetail(id, key);
         String value = vo == null ? null : getActualValue(vo);
         if (value != null) {
             return value;
@@ -140,7 +142,7 @@ public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long>
             if (account.isPresent()) {
                 DomainVO domain = _domainDao.findById(account.get().getDomainId());
                 while (domain != null) {
-                    DomainDetailVO domainVO = _domainDetailsDao.findDetail(domain.getId(), key.key());
+                    DomainDetailVO domainVO = _domainDetailsDao.findDetail(domain.getId(), key);
                     if (domainVO != null) {
                         value = _domainDetailsDao.getActualValue(domainVO);
                         break;
@@ -153,14 +155,5 @@ public class AccountDetailsDaoImpl extends GenericDaoBase<AccountDetailVO, Long>
             }
         }
         return value;
-    }
-
-    @Override
-    public String getActualValue(AccountDetailVO accountDetailVO) {
-        ConfigurationVO configurationVO = _configDao.findByName(accountDetailVO.getName());
-        if (configurationVO != null && configurationVO.isEncrypted()) {
-            return DBEncryptionUtil.decrypt(accountDetailVO.getValue());
-        }
-        return accountDetailVO.getValue();
     }
 }

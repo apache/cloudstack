@@ -30,7 +30,6 @@ import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainBlockInfo;
@@ -42,13 +41,12 @@ import java.util.List;
 
 @ResourceWrapper(handles=GetUnmanagedInstancesCommand.class)
 public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWrapper<GetUnmanagedInstancesCommand, GetUnmanagedInstancesAnswer, LibvirtComputingResource> {
-    private static final Logger LOGGER = Logger.getLogger(LibvirtGetUnmanagedInstancesCommandWrapper.class);
 
     private static final int requiredVncPasswordLength = 22;
 
     @Override
     public GetUnmanagedInstancesAnswer execute(GetUnmanagedInstancesCommand command, LibvirtComputingResource libvirtComputingResource) {
-        LOGGER.info("Fetching unmanaged instances on host");
+        logger.info("Fetching unmanaged instance on host");
 
         HashMap<String, UnmanagedInstanceTO> unmanagedInstances = new HashMap<>();
         try {
@@ -65,7 +63,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             }
         } catch (Exception e) {
             String err = String.format("Error listing unmanaged instances: %s", e.getMessage());
-            LOGGER.error(err, e);
+            logger.error(err, e);
             return new GetUnmanagedInstancesAnswer(command, err);
         }
 
@@ -81,7 +79,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             final Domain domain = libvirtComputingResource.getDomain(conn, vmNameCmd);
             if (domain == null) {
                 String msg = String.format("VM %s not found", vmNameCmd);
-                LOGGER.error(msg);
+                logger.error(msg);
                 throw new CloudRuntimeException(msg);
             }
 
@@ -104,14 +102,14 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
     private void checkIfVmExists(String vmNameCmd,final Domain domain) throws LibvirtException {
         if (StringUtils.isNotEmpty(vmNameCmd) &&
                 !vmNameCmd.equals(domain.getName())) {
-            LOGGER.error("GetUnmanagedInstancesCommand: exact vm name not found " + vmNameCmd);
+            logger.error("GetUnmanagedInstancesCommand: exact vm name not found " + vmNameCmd);
             throw new CloudRuntimeException("GetUnmanagedInstancesCommand: exact vm name not found " + vmNameCmd);
         }
     }
 
     private void checkIfVmIsManaged(GetUnmanagedInstancesCommand command,String vmNameCmd,final Domain domain) throws LibvirtException {
         if (command.hasManagedInstance(domain.getName())) {
-            LOGGER.error("GetUnmanagedInstancesCommand: vm already managed " + vmNameCmd);
+            logger.error("GetUnmanagedInstancesCommand: vm already managed " + vmNameCmd);
             throw new CloudRuntimeException("GetUnmanagedInstancesCommand:  vm already managed " + vmNameCmd);
         }
     }
@@ -124,7 +122,10 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
             instance.setName(domain.getName());
 
             instance.setCpuCores((int) LibvirtComputingResource.countDomainRunningVcpus(domain));
-            instance.setCpuSpeed(parser.getCpuTuneDef().getShares()/instance.getCpuCores());
+
+            if (parser.getCpuTuneDef() != null && instance.getCpuCores() != null) {
+                instance.setCpuSpeed(parser.getCpuTuneDef().getShares()/instance.getCpuCores());
+            }
 
             if (parser.getCpuModeDef() != null) {
                 instance.setCpuCoresPerSocket(parser.getCpuModeDef().getCoresPerSocket());
@@ -137,7 +138,7 @@ public final class LibvirtGetUnmanagedInstancesCommandWrapper extends CommandWra
 
             return instance;
         } catch (Exception e) {
-            LOGGER.info("Unable to retrieve unmanaged instance info. " + e.getMessage(), e);
+            logger.info("Unable to retrieve unmanaged instance info. " + e.getMessage(), e);
             return null;
         }
     }

@@ -40,6 +40,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -72,7 +73,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -145,7 +147,7 @@ import static org.apache.cloudstack.vm.UnmanagedVMsManagerImpl.KVM_VM_IMPORT_DEF
 import static org.apache.cloudstack.vm.UnmanagedVMsManagerImpl.VM_IMPORT_DEFAULT_TEMPLATE_NAME;
 
 public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
-    private static final Logger LOGGER = Logger.getLogger(StorageSystemDataMotionStrategy.class);
+    protected Logger logger = LogManager.getLogger(getClass());
     private static final Random RANDOM = new Random(System.nanoTime());
     private static final int LOCK_TIME_IN_SECONDS = 300;
     private static final String OPERATION_NOT_SUPPORTED = "This operation is not supported.";
@@ -268,7 +270,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 Boolean supportsStorageSystemSnapshots = Boolean.valueOf(value);
 
                 if (supportsStorageSystemSnapshots) {
-                    LOGGER.info("Using 'StorageSystemDataMotionStrategy' (dataObject is a volume or snapshot and the storage system supports snapshots)");
+                    logger.info("Using 'StorageSystemDataMotionStrategy' (dataObject is a volume or snapshot and the storage system supports snapshots)");
 
                     return true;
                 }
@@ -278,7 +280,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 Boolean canCloneVolume = Boolean.valueOf(value);
 
                 if (canCloneVolume) {
-                    LOGGER.info("Using 'StorageSystemDataMotionStrategy' (dataObject is a template and the storage system can create a volume from a volume)");
+                    logger.info("Using 'StorageSystemDataMotionStrategy' (dataObject is a template and the storage system can create a volume from a volume)");
 
                     return true;
                 }
@@ -439,7 +441,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     }
 
     private void handleError(String errMsg, AsyncCompletionCallback<CopyCommandResult> callback) {
-        LOGGER.warn(errMsg);
+        logger.warn(errMsg);
 
         invokeCallback(errMsg, callback);
 
@@ -643,8 +645,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             return false;
         }
 
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug("needCacheStorage true; dest at " + destTO.getPath() + ", dest role " + destStoreTO.getRole().toString() + "; src at " +
+        if (logger.isDebugEnabled()) {
+            logger.debug("needCacheStorage true; dest at " + destTO.getPath() + ", dest role " + destStoreTO.getRole().toString() + "; src at " +
                     srcTO.getPath() + ", src role " + srcStoreTO.getRole().toString());
         }
 
@@ -662,7 +664,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         } else if (destScope.getScopeId() != null) {
             selectedScope = getZoneScope(destScope);
         } else {
-            LOGGER.warn("Cannot find a zone-wide scope for movement that needs a cache storage");
+            logger.warn("Cannot find a zone-wide scope for movement that needs a cache storage");
         }
 
         return selectedScope;
@@ -757,7 +759,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         if (ep == null) {
             String errMsg = "No remote endpoint to send command to; check if host or SSVM is down";
 
-            LOGGER.error(errMsg);
+            logger.error(errMsg);
 
             answer = new Answer(command, false, errMsg);
         } else {
@@ -798,7 +800,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             _volumeService.revokeAccess(destVolumeInfo, hostVO, destVolumeInfo.getDataStore());
         }
         catch (Exception ex) {
-            LOGGER.warn("Failed to revoke access to the volume with the following ID: " + destVolumeInfo.getId());
+            logger.warn("Failed to revoke access to the volume with the following ID: " + destVolumeInfo.getId());
         }
 
         try {
@@ -812,7 +814,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             volumeDetailsDao.removeDetails(srcVolumeInfo.getId());
         }
         catch (Exception ex) {
-            LOGGER.warn(ex.getMessage());
+            logger.warn(ex.getMessage());
         }
 
         VolumeVO volumeVO = _volumeDao.findById(srcVolumeInfo.getId());
@@ -875,7 +877,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 try {
                     _volumeService.revokeAccess(destVolumeInfo, hostVO, destVolumeInfo.getDataStore());
                 } catch (Exception e) {
-                    LOGGER.warn(String.format("Failed to revoke access for volume 'name=%s,uuid=%s' after a migration attempt", destVolumeInfo.getVolume(), destVolumeInfo.getUuid()), e);
+                    logger.warn(String.format("Failed to revoke access for volume 'name=%s,uuid=%s' after a migration attempt", destVolumeInfo.getVolume(), destVolumeInfo.getUuid()), e);
                 }
             }
 
@@ -967,7 +969,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     _volumeDao.remove(tempVolumeVO.getId());
                 }
             } catch (Throwable e2) {
-                LOGGER.warn("Failed to delete temporary volume created for copy", e2);
+                logger.warn("Failed to delete temporary volume created for copy", e2);
             }
 
             throw e;
@@ -1015,7 +1017,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             copyCmdAnswer = (CopyCmdAnswer)agentManager.send(hostVO.getId(), copyCommand);
         } catch (Exception ex) {
             String msg = "Failed to create template from snapshot (Snapshot ID = " + snapshotInfo.getId() + ") : ";
-            LOGGER.warn(msg, ex);
+            logger.warn(msg, ex);
             throw new CloudRuntimeException(msg + ex.getMessage(), ex);
         }
         finally {
@@ -1029,7 +1031,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 try {
                     srcFinal.getDataStore().getDriver().deleteAsync(srcFinal.getDataStore(), srcFinal, null);
                 } catch (Throwable e) {
-                    LOGGER.warn("Failed to delete temporary volume created for copy", e);
+                    logger.warn("Failed to delete temporary volume created for copy", e);
                 }
             }
 
@@ -1116,7 +1118,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     String noSupportForResignErrMsg = "Unable to locate an applicable host with which to perform a resignature operation : Cluster ID = " +
                             hostVO.getClusterId();
 
-                    LOGGER.warn(noSupportForResignErrMsg);
+                    logger.warn(noSupportForResignErrMsg);
 
                     throw new CloudRuntimeException(noSupportForResignErrMsg);
                 }
@@ -1197,7 +1199,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 if (!copyCmdAnswer.getResult()) {
                     errMsg = copyCmdAnswer.getDetails();
 
-                    LOGGER.warn(errMsg);
+                    logger.warn(errMsg);
 
                     throw new CloudRuntimeException(errMsg);
                 }
@@ -1218,7 +1220,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     if (ep == null) {
                         errMsg = "No remote endpoint to send command, check if host or SSVM is down";
 
-                        LOGGER.error(errMsg);
+                        logger.error(errMsg);
 
                         copyCmdAnswer = new CopyCmdAnswer(errMsg);
                     } else {
@@ -1231,7 +1233,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             } catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
                 String msg = "Failed to create template from snapshot (Snapshot ID = " + snapshotInfo.getId() + ") : ";
 
-                LOGGER.warn(msg, ex);
+                logger.warn(msg, ex);
 
                 throw new CloudRuntimeException(msg + ex.getMessage(), ex);
             } finally {
@@ -1266,7 +1268,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     }
                 }
                 catch (Exception ex) {
-                    LOGGER.warn("Error processing snapshot event: " + ex.getMessage(), ex);
+                    logger.warn("Error processing snapshot event: " + ex.getMessage(), ex);
                 }
             }
         }
@@ -1326,7 +1328,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     String noSupportForResignErrMsg = "Unable to locate an applicable host with which to perform a resignature operation : Cluster ID = " +
                             volumeStoragePoolVO.getClusterId();
 
-                    LOGGER.warn(noSupportForResignErrMsg);
+                    logger.warn(noSupportForResignErrMsg);
 
                     throw new CloudRuntimeException(noSupportForResignErrMsg);
                 }
@@ -1363,7 +1365,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             if (!copyCmdAnswer.getResult()) {
                 errMsg = copyCmdAnswer.getDetails();
 
-                LOGGER.warn(errMsg);
+                logger.warn(errMsg);
 
                 throw new CloudRuntimeException(errMsg);
             }
@@ -1383,7 +1385,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 _volumeService.revokeAccess(snapshotInfo, hostVO, snapshotDataStore);
             }
             catch (Exception e) {
-                LOGGER.debug("Failed to revoke access from dest volume", e);
+                logger.debug("Failed to revoke access from dest volume", e);
             }
 
             if (usingBackendSnapshot) {
@@ -1399,7 +1401,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 }
             }
             catch (Exception ex) {
-                LOGGER.warn("Error processing snapshot event: " + ex.getMessage(), ex);
+                logger.warn("Error processing snapshot event: " + ex.getMessage(), ex);
             }
 
             if (copyCmdAnswer == null) {
@@ -1458,7 +1460,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             VolumeApiResult result = future.get();
 
             if (result.isFailed()) {
-                LOGGER.error("Failed to create a volume: " + result.getResult());
+                logger.error("Failed to create a volume: " + result.getResult());
 
                 throw new CloudRuntimeException(result.getResult());
             }
@@ -1533,6 +1535,16 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 verifyFormat(templateInfo.getFormat());
             }
 
+            // this blurb handles the case where the storage system can clone a volume from a template
+            String canCloneVolumeFromTemplate = templateInfo.getDataStore().getDriver().getCapabilities().get("CAN_CLONE_VOLUME_FROM_TEMPLATE");
+            if (canCloneVolumeFromTemplate != null && canCloneVolumeFromTemplate.toLowerCase().equals("true")) {
+                DataStoreDriver driver = templateInfo.getDataStore().getDriver();
+                driver.createAsync(volumeInfo.getDataStore(), volumeInfo, null);
+                volumeInfo = _volumeDataFactory.getVolume(volumeInfo.getId(), volumeInfo.getDataStore());
+                driver.copyAsync(templateInfo, volumeInfo, null);
+                return;
+            }
+
             HostVO hostVO = null;
 
             final boolean computeClusterSupportsVolumeClone;
@@ -1553,7 +1565,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     String noSupportForResignErrMsg = "Unable to locate an applicable host with which to perform a resignature operation : Cluster ID = " +
                             hostVO.getClusterId();
 
-                    LOGGER.warn(noSupportForResignErrMsg);
+                    logger.warn(noSupportForResignErrMsg);
 
                     throw new CloudRuntimeException(noSupportForResignErrMsg);
                 }
@@ -1586,7 +1598,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             }
 
             if (result.isFailed()) {
-                LOGGER.warn("Failed to create a volume: " + result.getResult());
+                logger.warn("Failed to create a volume: " + result.getResult());
 
                 throw new CloudRuntimeException(result.getResult());
             }
@@ -1630,7 +1642,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 volumeInfo.getDataStore().getDriver().deleteAsync(volumeInfo.getDataStore(), volumeInfo, null);
             }
             catch (Exception exc) {
-                LOGGER.warn("Failed to delete volume", exc);
+                logger.warn("Failed to delete volume", exc);
             }
 
             if (templateInfo != null) {
@@ -1640,7 +1652,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 errMsg = "Create volume from template failed: " + ex.getMessage();
             }
 
-            throw new CloudRuntimeException(errMsg);
+            throw new CloudRuntimeException(errMsg, ex);
         }
         finally {
             if (copyCmdAnswer == null) {
@@ -1677,7 +1689,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     String noSupportForResignErrMsg = "Unable to locate an applicable host with which to perform a resignature operation : Cluster ID = " +
                             hostVO.getClusterId();
 
-                    LOGGER.warn(noSupportForResignErrMsg);
+                    logger.warn(noSupportForResignErrMsg);
 
                     throw new CloudRuntimeException(noSupportForResignErrMsg);
                 }
@@ -1713,7 +1725,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             }
 
             if (result.isFailed()) {
-                LOGGER.warn("Failed to create a volume: " + result.getResult());
+                logger.warn("Failed to create a volume: " + result.getResult());
 
                 throw new CloudRuntimeException(result.getResult());
             }
@@ -1856,7 +1868,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
             String msg = "Failed to copy image : ";
 
-            LOGGER.warn(msg, ex);
+            logger.warn(msg, ex);
 
             throw new CloudRuntimeException(msg + ex.getMessage(), ex);
         }
@@ -1899,7 +1911,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      */
     private void deleteVolumeFromSnapshot(SnapshotInfo snapshotInfo) {
         try {
-            LOGGER.debug("Cleaning up temporary volume created for copy from a snapshot");
+            logger.debug("Cleaning up temporary volume created for copy from a snapshot");
 
             SnapshotDetailsVO snapshotDetails = handleSnapshotDetails(snapshotInfo.getId(), "delete");
 
@@ -1911,7 +1923,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             }
 
         } catch (Throwable e) {
-            LOGGER.warn("Failed to clean up temporary volume created for copy from a snapshot, transction will not be failed but an adminstrator should clean this up: " + snapshotInfo.getUuid() + " - " + snapshotInfo.getPath(), e);
+            logger.warn("Failed to clean up temporary volume created for copy from a snapshot, transction will not be failed but an adminstrator should clean this up: " + snapshotInfo.getUuid() + " - " + snapshotInfo.getPath(), e);
         }
     }
 
@@ -1920,7 +1932,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             ((PrimaryDataStoreDriver)volumeInfo.getDataStore().getDriver()).handleQualityOfServiceForVolumeMigration(volumeInfo, qualityOfServiceState);
         }
         catch (Exception ex) {
-            LOGGER.warn(ex);
+            logger.warn(ex);
         }
     }
 
@@ -2113,7 +2125,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             Integer newVmCpuShares = ((PrepareForMigrationAnswer) pfma).getNewVmCpuShares();
             if (newVmCpuShares != null) {
-                LOGGER.debug(String.format("Setting CPU shares to [%d] as part of migrate VM with volumes command for VM [%s].", newVmCpuShares, vmTO));
+                logger.debug(String.format("Setting CPU shares to [%d] as part of migrate VM with volumes command for VM [%s].", newVmCpuShares, vmTO));
                 migrateCommand.setNewVmCpuShares(newVmCpuShares);
             }
 
@@ -2139,7 +2151,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             String volumesAndStorages = volumeDataStoreMap.entrySet().stream().map(entry -> formatEntryOfVolumesAndStoragesAsJsonToDisplayOnLog(entry)).collect(Collectors.joining(","));
 
             errMsg = String.format("Copy volume(s) to storage(s) [%s] and VM to host [%s] failed in StorageSystemDataMotionStrategy.copyAsync. Error message: [%s].", volumesAndStorages, formatMigrationElementsAsJsonToDisplayOnLog("vm", vmTO.getId(), srcHost.getId(), destHost.getId()), ex.getMessage());
-            LOGGER.error(errMsg, ex);
+            logger.error(errMsg, ex);
 
             throw new CloudRuntimeException(errMsg);
         } finally {
@@ -2160,11 +2172,11 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 srcVolumeInfo.getTemplateId() != null &&
                 Objects.nonNull(vmTemplate) &&
                 !Arrays.asList(KVM_VM_IMPORT_DEFAULT_TEMPLATE_NAME, VM_IMPORT_DEFAULT_TEMPLATE_NAME).contains(vmTemplate.getName())) {
-            LOGGER.debug(String.format("Copying template [%s] of volume [%s] from source storage pool [%s] to target storage pool [%s].", srcVolumeInfo.getTemplateId(), srcVolumeInfo.getId(), sourceStoragePool.getId(), destStoragePool.getId()));
+            logger.debug(String.format("Copying template [%s] of volume [%s] from source storage pool [%s] to target storage pool [%s].", srcVolumeInfo.getTemplateId(), srcVolumeInfo.getId(), sourceStoragePool.getId(), destStoragePool.getId()));
             copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
             return MigrationOptions.Type.LinkedClone;
         }
-        LOGGER.debug(String.format("Skipping copy template from source storage pool [%s] to target storage pool [%s] before migration due to volume [%s] does not have a " +
+        logger.debug(String.format("Skipping copy template from source storage pool [%s] to target storage pool [%s] before migration due to volume [%s] does not have a " +
                 "template or we are doing full clone migration.", sourceStoragePool.getId(), destStoragePool.getId(), srcVolumeInfo.getId()));
         return MigrationOptions.Type.FullClone;
     }
@@ -2279,7 +2291,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 }
             }
             catch (Exception e) {
-                LOGGER.debug("Failed to disconnect one or more (original) dest volumes", e);
+                logger.debug("Failed to disconnect one or more (original) dest volumes", e);
             }
         }
 
@@ -2310,14 +2322,14 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     disconnectHostFromVolume(destHost, destVolumeInfo.getPoolId(), destVolumeInfo.get_iScsiName());
                 }
                 catch (Exception e) {
-                    LOGGER.debug("Failed to disconnect (new) dest volume", e);
+                    logger.debug("Failed to disconnect (new) dest volume", e);
                 }
 
                 try {
                     _volumeService.revokeAccess(destVolumeInfo, destHost, destVolumeInfo.getDataStore());
                 }
                 catch (Exception e) {
-                    LOGGER.debug("Failed to revoke access from dest volume", e);
+                    logger.debug("Failed to revoke access from dest volume", e);
                 }
 
                 destVolumeInfo.processEvent(Event.OperationFailed);
@@ -2331,10 +2343,10 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     AsyncCallFuture<VolumeApiResult> destroyFuture = _volumeService.expungeVolumeAsync(destVolumeInfo);
 
                     if (destroyFuture.get().isFailed()) {
-                        LOGGER.debug("Failed to clean up dest volume on storage");
+                        logger.debug("Failed to clean up dest volume on storage");
                     }
                 } catch (Exception e) {
-                    LOGGER.debug("Failed to clean up dest volume on storage", e);
+                    logger.debug("Failed to clean up dest volume on storage", e);
                 }
             }
         }
@@ -2447,7 +2459,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      */
     protected void prepareDiskWithSecretConsumerDetail(VirtualMachineTO vmTO, VolumeInfo srcVolume, String destPath) {
         if (vmTO.getDisks() != null) {
-            LOGGER.debug(String.format("Preparing VM TO '%s' disks with migration data", vmTO));
+            logger.debug(String.format("Preparing VM TO '%s' disks with migration data", vmTO));
             Arrays.stream(vmTO.getDisks()).filter(diskTO -> diskTO.getData().getId() == srcVolume.getId()).forEach( diskTO -> {
                 if (diskTO.getDetails() == null) {
                     diskTO.setDetails(new HashMap<>());
@@ -2578,7 +2590,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 if (!copyCmdAnswer.getResult()) {
                     errMsg = copyCmdAnswer.getDetails();
 
-                    LOGGER.warn(errMsg);
+                    logger.warn(errMsg);
 
                     throw new CloudRuntimeException(errMsg);
                 }
@@ -2592,7 +2604,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
                 String msg = "Failed to create template from volume (Volume ID = " + volumeInfo.getId() + ") : ";
 
-                LOGGER.warn(msg, ex);
+                logger.warn(msg, ex);
 
                 throw new CloudRuntimeException(msg + ex.getMessage(), ex);
             }
@@ -2602,7 +2614,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                         _volumeService.revokeAccess(volumeInfo, hostVO, srcDataStore);
                     }
                     catch (Exception ex) {
-                        LOGGER.warn("Error revoking access to volume (Volume ID = " + volumeInfo.getId() + "): " + ex.getMessage(), ex);
+                        logger.warn("Error revoking access to volume (Volume ID = " + volumeInfo.getId() + "): " + ex.getMessage(), ex);
                     }
                 }
 
@@ -2626,14 +2638,14 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     }
                 }
                 catch (Exception ex) {
-                    LOGGER.warn("Error processing snapshot event: " + ex.getMessage(), ex);
+                    logger.warn("Error processing snapshot event: " + ex.getMessage(), ex);
                 }
             }
         }
         catch (Exception ex) {
             errMsg = ex.getMessage();
 
-            throw new CloudRuntimeException(errMsg);
+            throw new CloudRuntimeException(errMsg, ex);
         }
         finally {
             if (copyCmdAnswer == null) {
@@ -2836,7 +2848,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         if (!lock.lock(LOCK_TIME_IN_SECONDS)) {
             String errMsg = "Couldn't lock the DB (in performResignature) on the following string: " + dataStore.getUuid();
 
-            LOGGER.warn(errMsg);
+            logger.warn(errMsg);
 
             throw new CloudRuntimeException(errMsg);
         }
@@ -2851,7 +2863,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             String msg = "Failed to resign the DataObject with the following ID: " + dataObj.getId();
 
-            LOGGER.warn(msg, ex);
+            logger.warn(msg, ex);
 
             throw new CloudRuntimeException(msg + ex.getMessage());
         }
@@ -2937,9 +2949,9 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 _volumeService.revokeAccess(destVolumeInfo, hostVO, destVolumeInfo.getDataStore());
                 handleQualityOfServiceForVolumeMigration(destVolumeInfo, PrimaryDataStoreDriver.QualityOfServiceState.NO_MIGRATION);
             } catch (Throwable e) {
-                LOGGER.warn("During cleanup post-migration and exception occured: " + e);
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug("Exception during post-migration cleanup.", e);
+                logger.warn("During cleanup post-migration and exception occured: " + e);
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Exception during post-migration cleanup.", e);
                 }
             }
         }
@@ -2980,7 +2992,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         catch (Exception ex) {
             String msg = "Failed to perform volume copy to secondary storage : ";
 
-            LOGGER.warn(msg, ex);
+            logger.warn(msg, ex);
 
             throw new CloudRuntimeException(msg + ex.getMessage());
         }
@@ -3058,7 +3070,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
             String msg = "Failed to perform VDI copy : ";
 
-            LOGGER.warn(msg, ex);
+            logger.warn(msg, ex);
 
             throw new CloudRuntimeException(msg + ex.getMessage(), ex);
         }

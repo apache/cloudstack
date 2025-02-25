@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api.query;
 
+import static com.cloud.vm.VmDetailConstants.SSH_PUBLIC_KEY;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -34,39 +36,6 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.event.EventVO;
-import com.cloud.event.dao.EventDao;
-import com.cloud.host.HostVO;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.service.ServiceOfferingDetailsVO;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.host.Host;
-import com.cloud.host.dao.HostDao;
-import com.cloud.network.as.AutoScaleVmGroupVmMapVO;
-import com.cloud.network.as.dao.AutoScaleVmGroupDao;
-import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.PublicIpQuarantineDao;
-import com.cloud.network.PublicIpQuarantine;
-import com.cloud.network.vo.PublicIpQuarantineVO;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.user.AccountVO;
-import com.cloud.user.SSHKeyPairVO;
-import com.cloud.user.dao.SSHKeyPairDao;
-import com.cloud.vm.InstanceGroupVMMapVO;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.UserVmDetailVO;
-import com.cloud.vm.dao.InstanceGroupVMMapDao;
-import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
-import com.cloud.storage.VolumeVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -108,6 +77,7 @@ import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.ListQuarantinedIpsCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCmd;
+import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
@@ -129,6 +99,7 @@ import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.DetailOptionsResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -142,6 +113,7 @@ import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
+import org.apache.cloudstack.api.response.PeerManagementServerNodeResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -193,7 +165,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.query.dao.AccountJoinDao;
@@ -204,7 +175,6 @@ import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.DomainJoinDao;
 import com.cloud.api.query.dao.DomainRouterJoinDao;
 import com.cloud.api.query.dao.HostJoinDao;
-import com.cloud.api.query.dao.HostTagDao;
 import com.cloud.api.query.dao.ImageStoreJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
 import com.cloud.api.query.dao.ManagementServerJoinDao;
@@ -229,7 +199,6 @@ import com.cloud.api.query.vo.DomainJoinVO;
 import com.cloud.api.query.vo.DomainRouterJoinVO;
 import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
-import com.cloud.api.query.vo.HostTagVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
 import com.cloud.api.query.vo.ManagementServerJoinVO;
@@ -245,8 +214,11 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.cluster.ManagementServerHostPeerJoinVO;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.cluster.dao.ManagementServerHostPeerJoinDao;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DedicatedResourceVO;
@@ -255,22 +227,40 @@ import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.EventVO;
+import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.host.Host;
+import com.cloud.host.HostTagVO;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.PublicIpQuarantine;
 import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.VNF;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
+import com.cloud.network.as.AutoScaleVmGroupVmMapVO;
+import com.cloud.network.as.dao.AutoScaleVmGroupDao;
+import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.dao.RouterHealthCheckResultDao;
 import com.cloud.network.dao.RouterHealthCheckResultVO;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
+import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -286,6 +276,7 @@ import com.cloud.server.ResourceManagerUtil;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
+import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -298,24 +289,35 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolTagVO;
+import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiServiceImpl;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate.State;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
+import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -331,279 +333,285 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.InstanceGroupVMMapVO;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.InstanceGroupVMMapDao;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
-import org.apache.cloudstack.api.response.BucketResponse;
-
-import static com.cloud.vm.VmDetailConstants.SSH_PUBLIC_KEY;
 
 @Component
 public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements QueryService, Configurable {
 
-    public static final Logger s_logger = Logger.getLogger(QueryManagerImpl.class);
 
     private static final String ID_FIELD = "id";
 
     @Inject
-    private AccountManager accountMgr;
+    AccountManager accountMgr;
 
     @Inject
-    private ProjectManager _projectMgr;
+    ProjectManager _projectMgr;
 
     @Inject
-    private DomainDao _domainDao;
+    DomainDao _domainDao;
 
     @Inject
-    private DomainJoinDao _domainJoinDao;
+    DomainJoinDao _domainJoinDao;
 
     @Inject
-    private UserAccountJoinDao _userAccountJoinDao;
+    UserAccountJoinDao _userAccountJoinDao;
 
     @Inject
-    private EventDao eventDao;
+    EventDao eventDao;
 
     @Inject
-    private EventJoinDao _eventJoinDao;
+    EventJoinDao _eventJoinDao;
 
     @Inject
-    private ResourceTagJoinDao _resourceTagJoinDao;
+    ResourceTagJoinDao _resourceTagJoinDao;
 
     @Inject
-    private InstanceGroupJoinDao _vmGroupJoinDao;
+    InstanceGroupJoinDao _vmGroupJoinDao;
 
     @Inject
-    private UserVmJoinDao _userVmJoinDao;
+    UserVmJoinDao _userVmJoinDao;
 
     @Inject
-    private UserVmDao userVmDao;
+    UserVmDao userVmDao;
 
     @Inject
-    private VMInstanceDao _vmInstanceDao;
+    VMInstanceDao _vmInstanceDao;
 
     @Inject
-    private SecurityGroupJoinDao _securityGroupJoinDao;
+    SecurityGroupJoinDao _securityGroupJoinDao;
 
     @Inject
-    private SecurityGroupVMMapDao securityGroupVMMapDao;
+    SecurityGroupVMMapDao securityGroupVMMapDao;
 
     @Inject
-    private DomainRouterJoinDao _routerJoinDao;
+    DomainRouterJoinDao _routerJoinDao;
 
     @Inject
-    private ProjectInvitationJoinDao _projectInvitationJoinDao;
+    ProjectInvitationJoinDao _projectInvitationJoinDao;
 
     @Inject
-    private ProjectJoinDao _projectJoinDao;
+    ProjectJoinDao _projectJoinDao;
 
     @Inject
-    private ProjectDao _projectDao;
+    ProjectDao _projectDao;
 
     @Inject
-    private ProjectAccountDao _projectAccountDao;
+    ProjectAccountDao _projectAccountDao;
 
     @Inject
-    private ProjectAccountJoinDao _projectAccountJoinDao;
+    ProjectAccountJoinDao _projectAccountJoinDao;
 
     @Inject
-    private HostJoinDao hostJoinDao;
+    HostJoinDao hostJoinDao;
 
     @Inject
-    private VolumeJoinDao _volumeJoinDao;
+    VolumeJoinDao _volumeJoinDao;
 
     @Inject
-    private AccountDao _accountDao;
+    AccountDao _accountDao;
 
     @Inject
-    private AccountJoinDao _accountJoinDao;
+    AccountJoinDao _accountJoinDao;
 
     @Inject
-    private AsyncJobJoinDao _jobJoinDao;
+    AsyncJobJoinDao _jobJoinDao;
 
     @Inject
-    private StoragePoolJoinDao _poolJoinDao;
+    StoragePoolJoinDao _poolJoinDao;
 
     @Inject
-    private StoragePoolTagsDao _storageTagDao;
+    StoragePoolTagsDao _storageTagDao;
 
     @Inject
-    private HostTagDao _hostTagDao;
+    HostTagsDao _hostTagDao;
 
     @Inject
-    private ImageStoreJoinDao _imageStoreJoinDao;
+    ImageStoreJoinDao _imageStoreJoinDao;
 
     @Inject
-    private DiskOfferingJoinDao _diskOfferingJoinDao;
+    DiskOfferingJoinDao _diskOfferingJoinDao;
 
     @Inject
-    private DiskOfferingDetailsDao _diskOfferingDetailsDao;
+    DiskOfferingDetailsDao _diskOfferingDetailsDao;
 
     @Inject
-    private ServiceOfferingJoinDao _srvOfferingJoinDao;
+    ServiceOfferingJoinDao _srvOfferingJoinDao;
 
     @Inject
-    private ServiceOfferingDao _srvOfferingDao;
+    ServiceOfferingDao _srvOfferingDao;
 
     @Inject
-    private ServiceOfferingDetailsDao _srvOfferingDetailsDao;
+    ServiceOfferingDetailsDao _srvOfferingDetailsDao;
 
     @Inject
-    private DiskOfferingDao _diskOfferingDao;
+    DiskOfferingDao _diskOfferingDao;
 
     @Inject
-    private DataCenterJoinDao _dcJoinDao;
+    DataCenterJoinDao _dcJoinDao;
 
     @Inject
-    private DomainRouterDao _routerDao;
+    DomainRouterDao _routerDao;
 
     @Inject
-    private HighAvailabilityManager _haMgr;
+    HighAvailabilityManager _haMgr;
 
     @Inject
-    private VMTemplateDao _templateDao;
+    VMTemplateDao _templateDao;
 
     @Inject
-    private TemplateJoinDao _templateJoinDao;
+    TemplateJoinDao _templateJoinDao;
 
     @Inject
-    private ResourceManager _resourceMgr;
+    ResourceManager _resourceMgr;
     @Inject
-    private ResourceMetaDataService _resourceMetaDataMgr;
+    ResourceMetaDataService _resourceMetaDataMgr;
 
     @Inject
-    private ResourceManagerUtil resourceManagerUtil;
+    ResourceManagerUtil resourceManagerUtil;
 
     @Inject
-    private AffinityGroupVMMapDao _affinityGroupVMMapDao;
+    AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
     @Inject
-    private AffinityGroupJoinDao _affinityGroupJoinDao;
+    AffinityGroupJoinDao _affinityGroupJoinDao;
 
     @Inject
-    private DedicatedResourceDao _dedicatedDao;
+    DedicatedResourceDao _dedicatedDao;
 
     @Inject
-    private DomainManager _domainMgr;
+    DomainManager _domainMgr;
 
     @Inject
-    private AffinityGroupDomainMapDao _affinityGroupDomainMapDao;
+    AffinityGroupDomainMapDao _affinityGroupDomainMapDao;
 
     @Inject
-    private ResourceTagDao resourceTagDao;
+    ResourceTagDao resourceTagDao;
 
     @Inject
-    private DataStoreManager dataStoreManager;
+    DataStoreManager dataStoreManager;
 
     @Inject
     ManagementServerJoinDao managementServerJoinDao;
 
     @Inject
-    public VpcVirtualNetworkApplianceService routerService;
+    VpcVirtualNetworkApplianceService routerService;
 
     @Inject
-    private ResponseGenerator responseGenerator;
+    ResponseGenerator responseGenerator;
 
     @Inject
-    private RouterHealthCheckResultDao routerHealthCheckResultDao;
+    RouterHealthCheckResultDao routerHealthCheckResultDao;
 
     @Inject
-    private PrimaryDataStoreDao storagePoolDao;
+    PrimaryDataStoreDao storagePoolDao;
 
     @Inject
-    private StoragePoolDetailsDao _storagePoolDetailsDao;
+    StoragePoolDetailsDao _storagePoolDetailsDao;
 
     @Inject
-    private ProjectInvitationDao projectInvitationDao;
+    ProjectInvitationDao projectInvitationDao;
 
     @Inject
-    private TemplateDataStoreDao templateDataStoreDao;
+    TemplateDataStoreDao templateDataStoreDao;
 
     @Inject
-    private VMTemplatePoolDao templatePoolDao;
+    VMTemplatePoolDao templatePoolDao;
 
     @Inject
-    private SnapshotDataStoreDao snapshotDataStoreDao;
+    SnapshotDataStoreDao snapshotDataStoreDao;
 
     @Inject
-    private UserDao userDao;
+    UserDao userDao;
 
     @Inject
-    private VirtualMachineManager virtualMachineManager;
+    VirtualMachineManager virtualMachineManager;
 
     @Inject
-    private VolumeDao volumeDao;
+    VolumeDao volumeDao;
 
     @Inject
-    private ResourceIconDao resourceIconDao;
+    ResourceIconDao resourceIconDao;
+    @Inject
+    StorageManager storageManager;
 
     @Inject
-    private ManagementServerHostDao msHostDao;
+    ManagementServerHostDao msHostDao;
 
     @Inject
-    private SecondaryStorageHeuristicDao secondaryStorageHeuristicDao;
+    SecondaryStorageHeuristicDao secondaryStorageHeuristicDao;
 
     @Inject
-    private NetworkDao networkDao;
+    NetworkDao networkDao;
 
     @Inject
-    private IPAddressDao ipAddressDao;
+    IPAddressDao ipAddressDao;
 
     @Inject
-    private NicDao nicDao;
+    NicDao nicDao;
 
     @Inject
-    private HostDao hostDao;
+    HostDao hostDao;
 
     @Inject
-    private OutOfBandManagementDao outOfBandManagementDao;
+    OutOfBandManagementDao outOfBandManagementDao;
 
     @Inject
-    private InstanceGroupVMMapDao instanceGroupVMMapDao;
+    InstanceGroupVMMapDao instanceGroupVMMapDao;
 
     @Inject
-    private AffinityGroupVMMapDao affinityGroupVMMapDao;
+    AffinityGroupVMMapDao affinityGroupVMMapDao;
 
     @Inject
-    private UserVmDetailsDao userVmDetailsDao;
+    UserVmDetailsDao userVmDetailsDao;
 
     @Inject
-    private SSHKeyPairDao sshKeyPairDao;
+    SSHKeyPairDao sshKeyPairDao;
 
     @Inject
-    private BackupOfferingDao backupOfferingDao;
+    BackupOfferingDao backupOfferingDao;
 
     @Inject
-    private AutoScaleVmGroupDao autoScaleVmGroupDao;
+    AutoScaleVmGroupDao autoScaleVmGroupDao;
 
     @Inject
-    private AutoScaleVmGroupVmMapDao autoScaleVmGroupVmMapDao;
+    AutoScaleVmGroupVmMapDao autoScaleVmGroupVmMapDao;
 
     @Inject
-    private SnapshotJoinDao snapshotJoinDao;
+    SnapshotJoinDao snapshotJoinDao;
 
     @Inject
-    private ObjectStoreDao objectStoreDao;
+    ObjectStoreDao objectStoreDao;
 
     @Inject
-    private BucketDao bucketDao;
+    BucketDao bucketDao;
 
     @Inject
     EntityManager entityManager;
 
     @Inject
-    private PublicIpQuarantineDao publicIpQuarantineDao;
+    PublicIpQuarantineDao publicIpQuarantineDao;
 
     @Inject
-    private StoragePoolHostDao storagePoolHostDao;
+    StoragePoolHostDao storagePoolHostDao;
 
     @Inject
-    private ClusterDao clusterDao;
+    ClusterDao clusterDao;
+
+    @Inject
+    ManagementServerHostPeerJoinDao mshostPeerJoinDao;
 
 
     private SearchCriteria<ServiceOfferingJoinVO> getMinimumCpuServiceOfferingJoinSearchCriteria(int cpu) {
@@ -653,10 +661,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
      * .api.command.admin.user.ListUsersCmd)
      */
     @Override
-    public ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
+    public ListResponse<UserResponse> searchForUsers(ResponseView responseView, ListUsersCmd cmd) throws PermissionDeniedException {
         Pair<List<UserAccountJoinVO>, Integer> result = searchForUsersInternal(cmd);
-        ListResponse<UserResponse> response = new ListResponse<UserResponse>();
-        List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(CallContext.current().getCallingAccount().getDomainId(),
+        ListResponse<UserResponse> response = new ListResponse<>();
+        if (CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN) {
+            responseView = ResponseView.Full;
+        }
+        List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(responseView, CallContext.current().getCallingAccount().getDomainId(),
                 result.first().toArray(new UserAccountJoinVO[result.first().size()]));
         response.setResponses(userResponses, result.second());
         return response;
@@ -683,10 +694,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object state = null;
         String keyword = null;
 
-        Pair<List<UserAccountJoinVO>, Integer> result =  getUserListInternal(caller, permittedAccounts, listAll, id, username, type, accountName, state, keyword, domainId, recursive,
-                null);
+        Pair<List<UserAccountJoinVO>, Integer> result =  getUserListInternal(caller, permittedAccounts, listAll, id,
+                username, type, accountName, state, keyword, null, domainId, recursive, null);
         ListResponse<UserResponse> response = new ListResponse<UserResponse>();
-        List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(CallContext.current().getCallingAccount().getDomainId(),
+        List<UserResponse> userResponses = ViewResponseHelper.createUserResponse(ResponseView.Restricted, CallContext.current().getCallingAccount().getDomainId(),
                 result.first().toArray(new UserAccountJoinVO[result.first().size()]));
         response.setResponses(userResponses, result.second());
         return response;
@@ -711,6 +722,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String accountName = cmd.getAccountName();
         Object state = cmd.getState();
         String keyword = cmd.getKeyword();
+        String apiKeyAccess = cmd.getApiKeyAccess();
 
         Long domainId = cmd.getDomainId();
         boolean recursive = cmd.isRecursive();
@@ -719,11 +731,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Filter searchFilter = new Filter(UserAccountJoinVO.class, "id", true, startIndex, pageSizeVal);
 
-        return getUserListInternal(caller, permittedAccounts, listAll, id, username, type, accountName, state, keyword, domainId, recursive, searchFilter);
+        return getUserListInternal(caller, permittedAccounts, listAll, id, username, type, accountName, state, keyword, apiKeyAccess, domainId, recursive, searchFilter);
     }
 
     private Pair<List<UserAccountJoinVO>, Integer> getUserListInternal(Account caller, List<Long> permittedAccounts, boolean listAll, Long id, Object username, Object type,
-            String accountName, Object state, String keyword, Long domainId, boolean recursive, Filter searchFilter) {
+            String accountName, Object state, String keyword, String apiKeyAccess, Long domainId, boolean recursive, Filter searchFilter) {
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, recursive, null);
         accountMgr.buildACLSearchParameters(caller, id, accountName, null, permittedAccounts, domainIdRecursiveListProject, listAll, false);
         domainId = domainIdRecursiveListProject.first();
@@ -749,6 +761,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("domainId", sb.entity().getDomainId(), Op.EQ);
         sb.and("accountName", sb.entity().getAccountName(), Op.EQ);
         sb.and("state", sb.entity().getState(), Op.EQ);
+        if (apiKeyAccess != null) {
+            sb.and("apiKeyAccess", sb.entity().getApiKeyAccess(), Op.EQ);
+        }
 
         if ((accountName == null) && (domainId != null)) {
             sb.and("domainPath", sb.entity().getDomainPath(), Op.LIKE);
@@ -803,13 +818,22 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("state", state);
         }
 
+        if (apiKeyAccess != null) {
+            try {
+                ApiConstants.ApiKeyAccess access = ApiConstants.ApiKeyAccess.valueOf(apiKeyAccess.toUpperCase());
+                sc.setParameters("apiKeyAccess", access.toBoolean());
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException("ApiKeyAccess value can only be Enabled/Disabled/Inherit");
+            }
+        }
+
         return _userAccountJoinDao.searchAndCount(sc, searchFilter);
     }
 
     @Override
     public ListResponse<EventResponse> searchForEvents(ListEventsCmd cmd) {
         Pair<List<EventJoinVO>, Integer> result = searchForEventsInternal(cmd);
-        ListResponse<EventResponse> response = new ListResponse<EventResponse>();
+        ListResponse<EventResponse> response = new ListResponse<>();
         List<EventResponse> eventResponses = ViewResponseHelper.createEventResponse(result.first().toArray(new EventJoinVO[result.first().size()]));
         response.setResponses(eventResponses, result.second());
         return response;
@@ -821,8 +845,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer count = eventIdPage.second();
         Long[] idArray = eventIdPage.first().toArray(new Long[0]);
 
-        if (count == 0) {
-            return new Pair<>(new ArrayList<>(), count);
+        /**
+         * Need to check array empty, because {@link com.cloud.utils.db.GenericDaoBase#searchAndCount(SearchCriteria, Filter, boolean)}
+         * makes two calls: first to get objects and second to get count.
+         * List events has start date filter, there is highly possible cause where no objects loaded
+         * and next millisecond new event added and finally we ended up with count = 1 and no ids.
+         */
+        if (count == 0 || idArray.length < 1) {
+            count = 0;
         }
 
         List<EventJoinVO> events = _eventJoinDao.searchByIds(idArray);
@@ -875,7 +905,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
         accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -966,7 +996,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("archived", cmd.getArchived());
         }
 
-        Pair<List<Long>, Integer> eventPair = null;
+        Pair<List<Long>, Integer> eventPair;
         // event_view will not have duplicate rows for each event, so
         // searchAndCount should be good enough.
         if ((entryTime != null) && (duration != null)) {
@@ -1003,7 +1033,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<ResourceTagResponse> listTags(ListTagsCmd cmd) {
         Pair<List<ResourceTagJoinVO>, Integer> tags = listTagsInternal(cmd);
-        ListResponse<ResourceTagResponse> response = new ListResponse<ResourceTagResponse>();
+        ListResponse<ResourceTagResponse> response = new ListResponse<>();
         List<ResourceTagResponse> tagResponses = ViewResponseHelper.createResourceTagResponse(false, tags.first().toArray(new ResourceTagJoinVO[tags.first().size()]));
         response.setResponses(tagResponses, tags.second());
         return response;
@@ -1011,7 +1041,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     private Pair<List<ResourceTagJoinVO>, Integer> listTagsInternal(ListTagsCmd cmd) {
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedAccounts = new ArrayList<>();
         String key = cmd.getKey();
         String value = cmd.getValue();
         String resourceId = cmd.getResourceId();
@@ -1031,7 +1061,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
 
         accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), projectId, permittedAccounts, domainIdRecursiveListProject, listAll, false);
         Long domainId = domainIdRecursiveListProject.first();
@@ -1083,14 +1113,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("customer", customerName);
         }
 
-        Pair<List<ResourceTagJoinVO>, Integer> result = _resourceTagJoinDao.searchAndCount(sc, searchFilter);
-        return result;
+        return _resourceTagJoinDao.searchAndCount(sc, searchFilter);
     }
 
     @Override
     public ListResponse<InstanceGroupResponse> searchForVmGroups(ListVMGroupsCmd cmd) {
         Pair<List<InstanceGroupJoinVO>, Integer> groups = searchForVmGroupsInternal(cmd);
-        ListResponse<InstanceGroupResponse> response = new ListResponse<InstanceGroupResponse>();
+        ListResponse<InstanceGroupResponse> response = new ListResponse<>();
         List<InstanceGroupResponse> grpResponses = ViewResponseHelper.createInstanceGroupResponse(groups.first().toArray(new InstanceGroupJoinVO[groups.first().size()]));
         response.setResponses(grpResponses, groups.second());
         return response;
@@ -1102,9 +1131,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String keyword = cmd.getKeyword();
 
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedAccounts = new ArrayList<>();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
         accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -1298,7 +1327,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Filter searchFilter = new Filter(UserVmVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
 
-        List<Long> ids = null;
+        List<Long> ids;
         if (cmd.getId() != null) {
             if (cmd.getIds() != null && !cmd.getIds().isEmpty()) {
                 throw new InvalidParameterValueException("Specify either id or ids but not both parameters");
@@ -1664,7 +1693,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<SecurityGroupResponse> searchForSecurityGroups(ListSecurityGroupsCmd cmd) {
         Pair<List<SecurityGroupJoinVO>, Integer> result = searchForSecurityGroupsInternal(cmd);
-        ListResponse<SecurityGroupResponse> response = new ListResponse<SecurityGroupResponse>();
+        ListResponse<SecurityGroupResponse> response = new ListResponse<>();
         List<SecurityGroupResponse> routerResponses = ViewResponseHelper.createSecurityGroupResponses(result.first());
         response.setResponses(routerResponses, result.second());
         return response;
@@ -1676,7 +1705,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String securityGroup = cmd.getSecurityGroupName();
         Long id = cmd.getId();
         Object keyword = cmd.getKeyword();
-        List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedAccounts = new ArrayList<>();
         Map<String, String> tags = cmd.getTags();
 
         if (instanceId != null) {
@@ -1688,7 +1717,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             return listSecurityGroupRulesByVM(instanceId.longValue(), cmd.getStartIndex(), cmd.getPageSizeVal());
         }
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
         accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -1747,7 +1776,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sgIds[i++] = v.getId();
         }
         List<SecurityGroupJoinVO> sgs = _securityGroupJoinDao.searchByIds(sgIds);
-        return new Pair<List<SecurityGroupJoinVO>, Integer>(sgs, count);
+        return new Pair<>(sgs, count);
     }
 
     private Pair<List<SecurityGroupJoinVO>, Integer> listSecurityGroupRulesByVM(long vmId, long pageInd, long pageSize) {
@@ -1756,7 +1785,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer count = sgVmMappingPair.second();
         if (count.intValue() == 0) {
             // handle empty result cases
-            return new Pair<List<SecurityGroupJoinVO>, Integer>(new ArrayList<SecurityGroupJoinVO>(), count);
+            return new Pair<>(new ArrayList<>(), count);
         }
         List<SecurityGroupVMMapVO> sgVmMappings = sgVmMappingPair.first();
         Long[] sgIds = new Long[sgVmMappings.size()];
@@ -1765,14 +1794,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sgIds[i++] = sgVm.getSecurityGroupId();
         }
         List<SecurityGroupJoinVO> sgs = _securityGroupJoinDao.searchByIds(sgIds);
-        return new Pair<List<SecurityGroupJoinVO>, Integer>(sgs, count);
+        return new Pair<>(sgs, count);
     }
 
     @Override
     public ListResponse<DomainRouterResponse> searchForRouters(ListRoutersCmd cmd) {
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(), cmd.getState(), cmd.getZoneId(), cmd.getPodId(), cmd.getClusterId(),
                 cmd.getHostId(), cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), cmd.getVersion(), cmd.isHealthCheckFailed());
-        ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
+        ListResponse<DomainRouterResponse> response = new ListResponse<>();
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
         if (VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
             for (DomainRouterResponse res : routerResponses) {
@@ -1792,7 +1821,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     public ListResponse<DomainRouterResponse> searchForInternalLbVms(ListInternalLBVMsCmd cmd) {
         Pair<List<DomainRouterJoinVO>, Integer> result = searchForRoutersInternal(cmd, cmd.getId(), cmd.getRouterName(), cmd.getState(), cmd.getZoneId(), cmd.getPodId(), null, cmd.getHostId(),
                 cmd.getKeyword(), cmd.getNetworkId(), cmd.getVpcId(), cmd.getForVpc(), cmd.getRole(), null, null);
-        ListResponse<DomainRouterResponse> response = new ListResponse<DomainRouterResponse>();
+        ListResponse<DomainRouterResponse> response = new ListResponse<>();
         List<DomainRouterResponse> routerResponses = ViewResponseHelper.createDomainRouterResponse(result.first().toArray(new DomainRouterJoinVO[result.first().size()]));
         if (VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
             for (DomainRouterResponse res : routerResponses) {
@@ -1813,9 +1842,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             Long hostId, String keyword, Long networkId, Long vpcId, Boolean forVpc, String role, String version, Boolean isHealthCheckFailed) {
 
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedAccounts = new ArrayList<>();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
         accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -1871,7 +1900,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     sb.and("routerId", sb.entity().getId(), SearchCriteria.Op.NIN);
                 }
             } else if (isHealthCheckFailed) {
-                return new Pair<List<DomainRouterJoinVO>, Integer>(Collections.emptyList(), 0);
+                return new Pair<>(Collections.emptyList(), 0);
             }
         }
 
@@ -1951,13 +1980,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             vrIds[i++] = v.getId();
         }
         List<DomainRouterJoinVO> vrs = _routerJoinDao.searchByIds(vrIds);
-        return new Pair<List<DomainRouterJoinVO>, Integer>(vrs, count);
+        return new Pair<>(vrs, count);
     }
 
     @Override
     public ListResponse<ProjectResponse> listProjects(ListProjectsCmd cmd) {
         Pair<List<ProjectJoinVO>, Integer> projects = listProjectsInternal(cmd);
-        ListResponse<ProjectResponse> response = new ListResponse<ProjectResponse>();
+        ListResponse<ProjectResponse> response = new ListResponse<>();
         List<ProjectResponse> projectResponses = ViewResponseHelper.createProjectResponse(cmd.getDetails(), projects.first().toArray(new ProjectJoinVO[projects.first().size()]));
         response.setResponses(projectResponses, projects.second());
         return response;
@@ -2125,13 +2154,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             prjIds[i++] = v.getId();
         }
         List<ProjectJoinVO> prjs = _projectJoinDao.searchByIds(prjIds);
-        return new Pair<List<ProjectJoinVO>, Integer>(prjs, count);
+        return new Pair<>(prjs, count);
     }
 
     @Override
     public ListResponse<ProjectInvitationResponse> listProjectInvitations(ListProjectInvitationsCmd cmd) {
         Pair<List<ProjectInvitationJoinVO>, Integer> invites = listProjectInvitationsInternal(cmd);
-        ListResponse<ProjectInvitationResponse> response = new ListResponse<ProjectInvitationResponse>();
+        ListResponse<ProjectInvitationResponse> response = new ListResponse<>();
         List<ProjectInvitationResponse> projectInvitationResponses = ViewResponseHelper.createProjectInvitationResponse(invites.first().toArray(new ProjectInvitationJoinVO[invites.first().size()]));
 
         response.setResponses(projectInvitationResponses, invites.second());
@@ -2153,9 +2182,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Account caller = CallContext.current().getCallingAccount();
         User callingUser = CallContext.current().getCallingUser();
-        List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedAccounts = new ArrayList<>();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(domainId, isRecursive, null);
         accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject, listAll, true);
         domainId = domainIdRecursiveListProject.first();
         isRecursive = domainIdRecursiveListProject.second();
@@ -2207,7 +2236,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<ProjectAccountResponse> listProjectAccounts(ListProjectAccountsCmd cmd) {
         Pair<List<ProjectAccountJoinVO>, Integer> projectAccounts = listProjectAccountsInternal(cmd);
-        ListResponse<ProjectAccountResponse> response = new ListResponse<ProjectAccountResponse>();
+        ListResponse<ProjectAccountResponse> response = new ListResponse<>();
         List<ProjectAccountResponse> projectResponses = ViewResponseHelper.createProjectAccountResponse(projectAccounts.first().toArray(new ProjectAccountJoinVO[projectAccounts.first().size()]));
         response.setResponses(projectResponses, projectAccounts.second());
         return response;
@@ -2279,10 +2308,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // FIXME: do we need to support list hosts with VmId, maybe we should
         // create another command just for this
         // Right now it is handled separately outside this QueryService
-        s_logger.debug(">>>Searching for hosts>>>");
+        logger.debug(">>>Searching for hosts>>>");
         Pair<List<HostJoinVO>, Integer> hosts = searchForServersInternal(cmd);
-        ListResponse<HostResponse> response = new ListResponse<HostResponse>();
-        s_logger.debug(">>>Generating Response>>>");
+        ListResponse<HostResponse> response = new ListResponse<>();
+        logger.debug(">>>Generating Response>>>");
         List<HostResponse> hostResponses = ViewResponseHelper.createHostResponse(cmd.getDetails(), hosts.first().toArray(new HostJoinVO[hosts.first().size()]));
         response.setResponses(hostResponses, hosts.second());
         return response;
@@ -2325,7 +2354,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // ids
         hostSearchBuilder.and("id", hostSearchBuilder.entity().getId(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("name", hostSearchBuilder.entity().getName(), SearchCriteria.Op.EQ);
-        hostSearchBuilder.and("type", hostSearchBuilder.entity().getType(), SearchCriteria.Op.LIKE);
+        hostSearchBuilder.and("type", hostSearchBuilder.entity().getType(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("status", hostSearchBuilder.entity().getStatus(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("dataCenterId", hostSearchBuilder.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         hostSearchBuilder.and("podId", hostSearchBuilder.entity().getPodId(), SearchCriteria.Op.EQ);
@@ -2352,10 +2381,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (haHosts != null && haTag != null && !haTag.isEmpty()) {
             SearchBuilder<HostTagVO> hostTagSearchBuilder = _hostTagDao.createSearchBuilder();
             if ((Boolean)haHosts) {
-                hostTagSearchBuilder.and("tag", hostTagSearchBuilder.entity().getName(), SearchCriteria.Op.EQ);
+                hostTagSearchBuilder.and("tag", hostTagSearchBuilder.entity().getTag(), SearchCriteria.Op.EQ);
             } else {
-                hostTagSearchBuilder.and().op("tag", hostTagSearchBuilder.entity().getName(), Op.NEQ);
-                hostTagSearchBuilder.or("tagNull", hostTagSearchBuilder.entity().getName(), Op.NULL);
+                hostTagSearchBuilder.and().op("tag", hostTagSearchBuilder.entity().getTag(), Op.NEQ);
+                hostTagSearchBuilder.or("tagNull", hostTagSearchBuilder.entity().getTag(), Op.NULL);
                 hostTagSearchBuilder.cp();
             }
             hostSearchBuilder.join("hostTagSearch", hostTagSearchBuilder, hostSearchBuilder.entity().getId(), hostTagSearchBuilder.entity().getHostId(), JoinBuilder.JoinType.LEFT);
@@ -2377,7 +2406,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("name", name);
         }
         if (type != null) {
-            sc.setParameters("type", "%" + type);
+            sc.setParameters("type", type);
         }
         if (state != null) {
             sc.setParameters("status", state);
@@ -2693,7 +2722,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<DomainResponse> searchForDomains(ListDomainsCmd cmd) {
         Pair<List<DomainJoinVO>, Integer> result = searchForDomainsInternal(cmd);
-        ListResponse<DomainResponse> response = new ListResponse<DomainResponse>();
+        ListResponse<DomainResponse> response = new ListResponse<>();
 
         ResponseView respView = ResponseView.Restricted;
         if (cmd instanceof ListDomainsCmdByAdmin) {
@@ -2795,7 +2824,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<AccountResponse> searchForAccounts(ListAccountsCmd cmd) {
         Pair<List<AccountJoinVO>, Integer> result = searchForAccountsInternal(cmd);
-        ListResponse<AccountResponse> response = new ListResponse<AccountResponse>();
+        ListResponse<AccountResponse> response = new ListResponse<>();
 
         ResponseView respView = ResponseView.Restricted;
         if (cmd instanceof ListAccountsCmdByAdmin) {
@@ -2884,6 +2913,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Object state = cmd.getState();
         Object isCleanupRequired = cmd.isCleanupRequired();
         Object keyword = cmd.getKeyword();
+        String apiKeyAccess = cmd.getApiKeyAccess();
 
         SearchBuilder<AccountVO> accountSearchBuilder = _accountDao.createSearchBuilder();
         accountSearchBuilder.select(null, Func.DISTINCT, accountSearchBuilder.entity().getId()); // select distinct
@@ -2896,6 +2926,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         accountSearchBuilder.and("typeNEQ", accountSearchBuilder.entity().getType(), SearchCriteria.Op.NEQ);
         accountSearchBuilder.and("idNEQ", accountSearchBuilder.entity().getId(), SearchCriteria.Op.NEQ);
         accountSearchBuilder.and("type2NEQ", accountSearchBuilder.entity().getType(), SearchCriteria.Op.NEQ);
+        if (apiKeyAccess != null) {
+            accountSearchBuilder.and("apiKeyAccess", accountSearchBuilder.entity().getApiKeyAccess(), Op.EQ);
+        }
 
         if (domainId != null && isRecursive) {
             SearchBuilder<DomainVO> domainSearch = _domainDao.createSearchBuilder();
@@ -2959,6 +2992,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
+        if (apiKeyAccess != null) {
+            try {
+                ApiConstants.ApiKeyAccess access = ApiConstants.ApiKeyAccess.valueOf(apiKeyAccess.toUpperCase());
+                sc.setParameters("apiKeyAccess", access.toBoolean());
+            } catch (IllegalArgumentException ex) {
+                throw new InvalidParameterValueException("ApiKeyAccess value can only be Enabled/Disabled/Inherit");
+            }
+        }
+
         Pair<List<AccountVO>, Integer> uniqueAccountPair = _accountDao.searchAndCount(sc, searchFilter);
         Integer count = uniqueAccountPair.second();
         List<Long> accountIds = uniqueAccountPair.first().stream().map(AccountVO::getId).collect(Collectors.toList());
@@ -2968,7 +3010,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<AsyncJobResponse> searchForAsyncJobs(ListAsyncJobsCmd cmd) {
         Pair<List<AsyncJobJoinVO>, Integer> result = searchForAsyncJobsInternal(cmd);
-        ListResponse<AsyncJobResponse> response = new ListResponse<AsyncJobResponse>();
+        ListResponse<AsyncJobResponse> response = new ListResponse<>();
         List<AsyncJobResponse> jobResponses = ViewResponseHelper.createAsyncJobResponse(result.first().toArray(new AsyncJobJoinVO[result.first().size()]));
         response.setResponses(jobResponses, result.second());
         return response;
@@ -2978,9 +3020,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Account caller = CallContext.current().getCallingAccount();
 
-        List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedAccounts = new ArrayList<>();
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(), cmd.isRecursive(), null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
         accountMgr.buildACLSearchParameters(caller, null, cmd.getAccountName(), null, permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();
         Boolean isRecursive = domainIdRecursiveListProject.second();
@@ -3140,7 +3182,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<StorageTagResponse> searchForStorageTags(ListStorageTagsCmd cmd) {
         Pair<List<StoragePoolTagVO>, Integer> result = searchForStorageTagsInternal(cmd);
-        ListResponse<StorageTagResponse> response = new ListResponse<StorageTagResponse>();
+        ListResponse<StorageTagResponse> response = new ListResponse<>();
         List<StorageTagResponse> tagResponses = ViewResponseHelper.createStorageTagResponse(result.first().toArray(new StoragePoolTagVO[result.first().size()]));
 
         response.setResponses(tagResponses, result.second());
@@ -3175,13 +3217,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         List<StoragePoolTagVO> vrs = _storageTagDao.searchByIds(vrIds);
 
-        return new Pair<List<StoragePoolTagVO>, Integer>(vrs, count);
+        return new Pair<>(vrs, count);
     }
 
     @Override
     public ListResponse<HostTagResponse> searchForHostTags(ListHostTagsCmd cmd) {
         Pair<List<HostTagVO>, Integer> result = searchForHostTagsInternal(cmd);
-        ListResponse<HostTagResponse> response = new ListResponse<HostTagResponse>();
+        ListResponse<HostTagResponse> response = new ListResponse<>();
         List<HostTagResponse> tagResponses = ViewResponseHelper.createHostTagResponse(result.first().toArray(new HostTagVO[result.first().size()]));
 
         response.setResponses(tagResponses, result.second());
@@ -3216,7 +3258,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         List<HostTagVO> vrs = _hostTagDao.searchByIds(vrIds);
 
-        return new Pair<List<HostTagVO>, Integer>(vrs, count);
+        return new Pair<>(vrs, count);
     }
 
     @Override
@@ -3299,14 +3341,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             vrIds[i++] = v.getId();
         }
         List<ImageStoreJoinVO> vrs = _imageStoreJoinDao.searchByIds(vrIds);
-        return new Pair<List<ImageStoreJoinVO>, Integer>(vrs, count);
+        return new Pair<>(vrs, count);
 
     }
 
     @Override
     public ListResponse<ImageStoreResponse> searchForSecondaryStagingStores(ListSecondaryStagingStoresCmd cmd) {
         Pair<List<ImageStoreJoinVO>, Integer> result = searchForCacheStoresInternal(cmd);
-        ListResponse<ImageStoreResponse> response = new ListResponse<ImageStoreResponse>();
+        ListResponse<ImageStoreResponse> response = new ListResponse<>();
 
         List<ImageStoreResponse> poolResponses = ViewResponseHelper.createImageStoreResponse(result.first().toArray(new ImageStoreJoinVO[result.first().size()]));
         response.setResponses(poolResponses, result.second());
@@ -3378,15 +3420,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             vrIds[i++] = v.getId();
         }
         List<ImageStoreJoinVO> vrs = _imageStoreJoinDao.searchByIds(vrIds);
-        return new Pair<List<ImageStoreJoinVO>, Integer>(vrs, count);
+        return new Pair<>(vrs, count);
 
     }
 
     @Override
     public ListResponse<DiskOfferingResponse> searchForDiskOfferings(ListDiskOfferingsCmd cmd) {
         Pair<List<DiskOfferingJoinVO>, Integer> result = searchForDiskOfferingsInternal(cmd);
-        ListResponse<DiskOfferingResponse> response = new ListResponse<DiskOfferingResponse>();
-        List<DiskOfferingResponse> offeringResponses = ViewResponseHelper.createDiskOfferingResponse(result.first().toArray(new DiskOfferingJoinVO[result.first().size()]));
+        ListResponse<DiskOfferingResponse> response = new ListResponse<>();
+        List<DiskOfferingResponse> offeringResponses = ViewResponseHelper.createDiskOfferingResponses(cmd.getVirtualMachineId(), result.first());
         response.setResponses(offeringResponses, result.second());
         return response;
     }
@@ -3444,6 +3486,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Boolean encrypt = cmd.getEncrypt();
         String storageType = cmd.getStorageType();
         DiskOffering.State state = cmd.getState();
+        final Long vmId = cmd.getVirtualMachineId();
 
         Filter searchFilter = new Filter(DiskOfferingVO.class, "sortKey", SortKeyAscending.value(), cmd.getStartIndex(), cmd.getPageSizeVal());
         searchFilter.addOrderBy(DiskOfferingVO.class, "id", true);
@@ -3624,6 +3667,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setJoinParameters("domainDetailsSearch", "domainIdIN", domainIds.toArray());
         }
 
+        if (vmId != null) {
+            UserVmVO vm = userVmDao.findById(vmId);
+            if (vm == null) {
+                throw new InvalidParameterValueException("Unable to find the VM instance with the specified ID");
+            }
+            if (!isRootAdmin) {
+                accountMgr.checkAccess(account, null, false, vm);
+            }
+        }
+
         Pair<List<DiskOfferingVO>, Integer> uniquePairs = _diskOfferingDao.searchAndCount(sc, searchFilter);
         String[] requiredTagsArray = new String[0];
         if (CollectionUtils.isNotEmpty(uniquePairs.first()) && VolumeApiServiceImpl.MatchStoragePoolTagsWithDiskOffering.valueIn(zoneId)) {
@@ -3670,6 +3723,24 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return response;
     }
 
+    protected List<String> getHostTagsFromTemplateForServiceOfferingsListing(Account caller, Long templateId) {
+        List<String> hostTags = new ArrayList<>();
+        if (templateId == null) {
+            return hostTags;
+        }
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(templateId);
+        if (template == null) {
+            throw new InvalidParameterValueException("Unable to find template with the specified ID");
+        }
+        if (caller.getType() != Account.Type.ADMIN) {
+            accountMgr.checkAccess(caller, null, false, template);
+        }
+        if (StringUtils.isNotEmpty(template.getTemplateTag())) {
+            hostTags.add(template.getTemplateTag());
+        }
+        return hostTags;
+    }
+
     private Pair<List<ServiceOfferingJoinVO>, Integer> searchForServiceOfferingsInternal(ListServiceOfferingsCmd cmd) {
         Pair<List<Long>, Integer> offeringIdPage = searchForServiceOfferingIdsAndCount(cmd);
 
@@ -3714,6 +3785,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Boolean encryptRoot = cmd.getEncryptRoot();
         String storageType = cmd.getStorageType();
         ServiceOffering.State state = cmd.getState();
+        final Long templateId = cmd.getTemplateId();
 
         final Account owner = accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
 
@@ -4157,8 +4229,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
-        if (!hostTags.isEmpty()) {
-            for(String tag : hostTags) {
+        if (CollectionUtils.isNotEmpty(hostTags)) {
+            for (String tag : hostTags) {
                 sc.setParameters("hostTag" + tag, tag);
             }
         }
@@ -4172,7 +4244,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<ZoneResponse> listDataCenters(ListZonesCmd cmd) {
         Pair<List<DataCenterJoinVO>, Integer> result = listDataCentersInternal(cmd);
-        ListResponse<ZoneResponse> response = new ListResponse<ZoneResponse>();
+        ListResponse<ZoneResponse> response = new ListResponse<>();
 
         ResponseView respView = ResponseView.Restricted;
         if (cmd instanceof ListZonesCmdByAdmin || CallContext.current().getCallingAccount().getType() == Account.Type.ADMIN) {
@@ -4259,10 +4331,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 // list
 
                 // find all domain Id up to root domain for this account
-                List<Long> domainIds = new ArrayList<Long>();
+                List<Long> domainIds = new ArrayList<>();
                 DomainVO domainRecord = _domainDao.findById(account.getDomainId());
                 if (domainRecord == null) {
-                    s_logger.error("Could not find the domainId for account:" + account.getAccountName());
+                    logger.error("Could not find the domainId for account: {}", account);
                     throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
                 }
                 domainIds.add(domainRecord.getId());
@@ -4299,10 +4371,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 // it was decided to return all zones for the domain admin, and
                 // everything above till root, as well as zones till the domain
                 // leaf
-                List<Long> domainIds = new ArrayList<Long>();
+                List<Long> domainIds = new ArrayList<>();
                 DomainVO domainRecord = _domainDao.findById(account.getDomainId());
                 if (domainRecord == null) {
-                    s_logger.error("Could not find the domainId for account:" + account.getAccountName());
+                    logger.error("Could not find the domainId for account: {}", account);
                     throw new CloudAuthenticationException("Could not find the domainId for account:" + account.getAccountName());
                 }
                 domainIds.add(domainRecord.getId());
@@ -4339,8 +4411,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             // one VM running there
             Boolean available = cmd.isAvailable();
             if (account != null) {
-                if ((available != null) && Boolean.FALSE.equals(available)) {
-                    Set<Long> dcIds = new HashSet<Long>(); // data centers with
+                if (Boolean.FALSE.equals(available)) {
+                    Set<Long> dcIds = new HashSet<>(); // data centers with
                     // at least one VM
                     // running
                     List<DomainRouterVO> routers = _routerDao.listBy(account.getId());
@@ -4348,7 +4420,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                         dcIds.add(router.getDataCenterId());
                     }
                     if (dcIds.size() == 0) {
-                        return new Pair<List<DataCenterJoinVO>, Integer>(new ArrayList<DataCenterJoinVO>(), 0);
+                        return new Pair<>(new ArrayList<>(), 0);
                     } else {
                         sc.addAnd("id", SearchCriteria.Op.IN, dcIds.toArray());
                     }
@@ -4372,7 +4444,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     private List<Long> removeDedicatedZoneNotSuitabe(List<Long> domainIds) {
         // remove dedicated zone of other domain
-        List<Long> dedicatedZoneIds = new ArrayList<Long>();
+        List<Long> dedicatedZoneIds = new ArrayList<>();
         List<DedicatedResourceVO> dedicatedResources = _dedicatedDao.listZonesNotInDomainIds(domainIds);
         for (DedicatedResourceVO dr : dedicatedResources) {
             if (dr != null) {
@@ -4413,7 +4485,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Override
     public ListResponse<TemplateResponse> listTemplates(ListTemplatesCmd cmd) {
         Pair<List<TemplateJoinVO>, Integer> result = searchForTemplatesInternal(cmd);
-        ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
+        ListResponse<TemplateResponse> response = new ListResponse<>();
 
         ResponseView respView = ResponseView.Restricted;
         if (cmd instanceof ListTemplatesCmdByAdmin) {
@@ -4441,14 +4513,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             listAll = true;
         }
 
-        List<Long> permittedAccountIds = new ArrayList<Long>();
+        List<Long> permittedAccountIds = new ArrayList<>();
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
         accountMgr.buildACLSearchParameters(
                 caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccountIds,
                 domainIdRecursiveListProject, listAll, false
         );
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
-        List<Account> permittedAccounts = new ArrayList<Account>();
+        List<Account> permittedAccounts = new ArrayList<>();
         for (Long accountId : permittedAccountIds) {
             permittedAccounts.add(accountMgr.getAccount(accountId));
         }
@@ -4470,7 +4542,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), cmd.getStoragePoolId(),
                 cmd.getImageStoreId(), hypervisorType, showDomr, cmd.listInReadyState(), permittedAccounts, caller,
                 listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId, cmd.getShowUnique(),
-                templateType, isVnf);
+                templateType, isVnf, cmd.getArch());
     }
 
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name, String keyword,
@@ -4479,18 +4551,18 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller,
             ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags,
             boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId, Boolean showUnique, String templateType,
-            Boolean isVnf) {
+            Boolean isVnf, CPU.CPUArch arch) {
 
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;
         if (!isIso) {
-            hypers = _resourceMgr.listAvailHypervisorInZone(null, null);
+            hypers = _resourceMgr.listAvailHypervisorInZone(null);
             if (hypers == null || hypers.isEmpty()) {
-                return new Pair<List<TemplateJoinVO>, Integer>(new ArrayList<TemplateJoinVO>(), 0);
+                return new Pair<>(new ArrayList<>(), 0);
             }
         }
 
-        VMTemplateVO template = null;
+        VMTemplateVO template;
 
         Filter searchFilter = new Filter(TemplateJoinVO.class, "sortKey", SortKeyAscending.value(), startIndex, pageSize);
         searchFilter.addOrderBy(TemplateJoinVO.class, "tempZonePair", SortKeyAscending.value());
@@ -4517,6 +4589,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("dataStoreId", SearchCriteria.Op.EQ, imageStoreId);
         }
 
+        if (arch != null) {
+            sc.addAnd("arch", SearchCriteria.Op.EQ, arch);
+        }
+
         if (storagePoolId != null) {
             sc.setJoinParameters("storagePool", "pool_id", storagePoolId);
         }
@@ -4528,13 +4604,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 throw new InvalidParameterValueException("Please specify a valid template ID.");
             }// If ISO requested then it should be ISO.
             if (isIso && template.getFormat() != ImageFormat.ISO) {
-                s_logger.error("Template Id " + templateId + " is not an ISO");
+                logger.error("Template {} is not an ISO", template);
                 InvalidParameterValueException ex = new InvalidParameterValueException("Specified Template Id is not an ISO");
                 ex.addProxyObject(template.getUuid(), "templateId");
                 throw ex;
             }// If ISO not requested then it shouldn't be an ISO.
             if (!isIso && template.getFormat() == ImageFormat.ISO) {
-                s_logger.error("Incorrect format of the template id " + templateId);
+                logger.error("Incorrect format of the template: {}", template);
                 InvalidParameterValueException ex = new InvalidParameterValueException("Incorrect format " + template.getFormat() + " of the specified template id");
                 ex.addProxyObject(template.getUuid(), "templateId");
                 throw ex;
@@ -4557,7 +4633,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("id", SearchCriteria.Op.EQ, templateId);
         } else {
 
-            DomainVO domain = null;
+            DomainVO domain;
             if (!permittedAccounts.isEmpty()) {
                 domain = _domainDao.findById(permittedAccounts.get(0).getDomainId());
             } else {
@@ -4579,15 +4655,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 sc.addAnd("domainPath", SearchCriteria.Op.LIKE, domain.getPath() + "%");
             }
 
-            List<Long> relatedDomainIds = new ArrayList<Long>();
-            List<Long> permittedAccountIds = new ArrayList<Long>();
+            List<Long> relatedDomainIds = new ArrayList<>();
+            List<Long> permittedAccountIds = new ArrayList<>();
             if (!permittedAccounts.isEmpty()) {
                 for (Account account : permittedAccounts) {
                     permittedAccountIds.add(account.getId());
                     boolean publicTemplates = (templateFilter == TemplateFilter.featured || templateFilter == TemplateFilter.community);
 
                     // get all parent domain ID's all the way till root domain
-                    DomainVO domainTreeNode = null;
+                    DomainVO domainTreeNode;
                     //if template filter is featured, or community, all child domains should be included in search
                     if (publicTemplates) {
                         domainTreeNode = _domainDao.findById(Domain.ROOT_DOMAIN);
@@ -4670,7 +4746,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
      */
     protected void applyPublicTemplateSharingRestrictions(SearchCriteria<TemplateJoinVO> sc, Account caller) {
         if (caller.getType() == Account.Type.ADMIN) {
-            s_logger.debug(String.format("Account [%s] is a root admin. Therefore, it has access to all public templates.", caller));
+            logger.debug(String.format("Account [%s] is a root admin. Therefore, it has access to all public templates.", caller));
             return;
         }
 
@@ -4682,7 +4758,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         if (!unsharableDomainIds.isEmpty()) {
-            s_logger.info(String.format("The public templates belonging to the domains [%s] will not be listed to account [%s] as they have the configuration [%s] marked as 'false'.", unsharableDomainIds, caller, QueryService.SharePublicTemplatesWithOtherDomains.key()));
+            logger.info(String.format("The public templates belonging to the domains [%s] will not be listed to account [%s] as they have the configuration [%s] marked as 'false'.", unsharableDomainIds, caller, QueryService.SharePublicTemplatesWithOtherDomains.key()));
             sc.addAnd("domainId", SearchCriteria.Op.NOTIN, unsharableDomainIds.toArray());
         }
     }
@@ -4694,17 +4770,17 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
      */
     protected void addDomainIdToSetIfDomainDoesNotShareTemplates(long domainId, Account account, Set<Long> unsharableDomainIds) {
         if (domainId == account.getDomainId()) {
-            s_logger.trace(String.format("Domain [%s] will not be added to the set of domains with unshared templates since the account [%s] belongs to it.", domainId, account));
+            logger.trace(String.format("Domain [%s] will not be added to the set of domains with unshared templates since the account [%s] belongs to it.", domainId, account));
             return;
         }
 
         if (unsharableDomainIds.contains(domainId)) {
-            s_logger.trace(String.format("Domain [%s] is already on the set of domains with unshared templates.", domainId));
+            logger.trace(String.format("Domain [%s] is already on the set of domains with unshared templates.", domainId));
             return;
         }
 
         if (!checkIfDomainSharesTemplates(domainId)) {
-            s_logger.debug(String.format("Domain [%s] will be added to the set of domains with unshared templates as configuration [%s] is false.", domainId, QueryService.SharePublicTemplatesWithOtherDomains.key()));
+            logger.debug(String.format("Domain [%s] will be added to the set of domains with unshared templates as configuration [%s] is false.", domainId, QueryService.SharePublicTemplatesWithOtherDomains.key()));
             unsharableDomainIds.add(domainId);
         }
     }
@@ -4818,7 +4894,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // sc.addAnd("removed", SearchCriteria.Op.NULL);
 
         // search unique templates and find details by Ids
-        Pair<List<TemplateJoinVO>, Integer> uniqueTmplPair = null;
+        Pair<List<TemplateJoinVO>, Integer> uniqueTmplPair;
         if (showRemovedTmpl) {
             uniqueTmplPair = _templateJoinDao.searchIncludingRemovedAndCount(sc, searchFilter);
         } else {
@@ -4849,7 +4925,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             return templateDataPair;
         }
         List<TemplateJoinVO> templateData = templateDataPair.first();
-        List<TemplateJoinVO> templates = null;
+        List<TemplateJoinVO> templates;
         if (showUnique) {
             Long[] templateIds = templateData.stream().map(template -> template.getId()).toArray(Long[]::new);
             templates = _templateJoinDao.findByDistinctIds(templateIds);
@@ -4858,7 +4934,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             templates = _templateJoinDao.searchByTemplateZonePair(showRemoved, templateZonePairs);
         }
 
-        return new Pair<List<TemplateJoinVO>, Integer>(templates, count);
+        return new Pair<>(templates, count);
     }
 
     @Override
@@ -4906,7 +4982,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return searchForTemplatesInternal(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(),
                 cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), cmd.getStoragePoolId(), cmd.getImageStoreId(),
                 hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria,
-                tags, showRemovedISO, null, null, cmd.getShowUnique(), null, null);
+                tags, showRemovedISO, null, null, cmd.getShowUnique(), null, null, cmd.getArch());
     }
 
     @Override
@@ -4977,8 +5053,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         options.put(VmDetailConstants.ROOT_DISK_SIZE, Collections.emptyList());
 
         if (HypervisorType.KVM.equals(hypervisorType)) {
+            options.put(VmDetailConstants.CPU_THREAD_PER_CORE, Collections.emptyList());
             options.put(VmDetailConstants.NIC_ADAPTER, Arrays.asList("e1000", "virtio", "rtl8139", "vmxnet3", "ne2k_pci"));
-            options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "virtio"));
+            options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "virtio", "virtio-blk"));
             options.put(VmDetailConstants.VIDEO_HARDWARE, Arrays.asList("cirrus", "vga", "qxl", "virtio"));
             options.put(VmDetailConstants.VIDEO_RAM, Collections.emptyList());
             options.put(VmDetailConstants.IO_POLICY, Arrays.asList("threads", "native", "io_uring", "storage_specific"));
@@ -5032,8 +5109,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             return listAffinityGroupsByVM(vmId.longValue(), startIndex, pageSize);
         }
 
-        List<Long> permittedAccounts = new ArrayList<Long>();
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> ternary = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
+        List<Long> permittedAccounts = new ArrayList<>();
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> ternary = new Ternary<>(domainId, isRecursive, null);
 
         accountMgr.buildACLSearchParameters(caller, affinityGroupId, accountName, projectId, permittedAccounts, ternary, listAll, false);
 
@@ -5049,7 +5126,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Pair<List<AffinityGroupJoinVO>, Integer> uniqueGroupsPair = _affinityGroupJoinDao.searchAndCount(sc, searchFilter);
 
         // search group details by ids
-        List<AffinityGroupJoinVO> affinityGroups = new ArrayList<AffinityGroupJoinVO>();
+        List<AffinityGroupJoinVO> affinityGroups = new ArrayList<>();
 
         Integer count = uniqueGroupsPair.second();
         if (count.intValue() != 0) {
@@ -5065,7 +5142,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (!permittedAccounts.isEmpty()) {
             // add domain level affinity groups
             if (domainId != null) {
-                SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId,
+                SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<>(), listProjectResourcesCriteria, affinityGroupId,
                         affinityGroupName, affinityGroupType, keyword);
                 Pair<List<AffinityGroupJoinVO>, Integer> groupsPair = listDomainLevelAffinityGroups(scDomain, searchFilter, domainId);
                 affinityGroups.addAll(groupsPair.first());
@@ -5074,7 +5151,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
                 for (Long permAcctId : permittedAccounts) {
                     Account permittedAcct = _accountDao.findById(permAcctId);
-                    SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId,
+                    SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<>(), listProjectResourcesCriteria, affinityGroupId,
                             affinityGroupName, affinityGroupType, keyword);
                     Pair<List<AffinityGroupJoinVO>, Integer> groupsPair = listDomainLevelAffinityGroups(scDomain, searchFilter, permittedAcct.getDomainId());
                     affinityGroups.addAll(groupsPair.first());
@@ -5083,14 +5160,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         } else if (((permittedAccounts.isEmpty()) && (domainId != null) && isRecursive)) {
             // list all domain level affinity groups for the domain admin case
-            SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<Long>(), listProjectResourcesCriteria, affinityGroupId, affinityGroupName,
+            SearchCriteria<AffinityGroupJoinVO> scDomain = buildAffinityGroupSearchCriteria(null, isRecursive, new ArrayList<>(), listProjectResourcesCriteria, affinityGroupId, affinityGroupName,
                     affinityGroupType, keyword);
             Pair<List<AffinityGroupJoinVO>, Integer> groupsPair = listDomainLevelAffinityGroups(scDomain, searchFilter, domainId);
             affinityGroups.addAll(groupsPair.first());
             count += groupsPair.second();
         }
 
-        return new Pair<List<AffinityGroupJoinVO>, Integer>(affinityGroups, count);
+        return new Pair<>(affinityGroups, count);
 
     }
 
@@ -5176,7 +5253,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Integer count = agVmMappingPair.second();
         if (count.intValue() == 0) {
             // handle empty result cases
-            return new Pair<List<AffinityGroupJoinVO>, Integer>(new ArrayList<AffinityGroupJoinVO>(), count);
+            return new Pair<>(new ArrayList<>(), count);
         }
         List<AffinityGroupVMMapVO> agVmMappings = agVmMappingPair.first();
         Long[] agIds = new Long[agVmMappings.size()];
@@ -5185,11 +5262,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             agIds[i++] = agVm.getAffinityGroupId();
         }
         List<AffinityGroupJoinVO> ags = _affinityGroupJoinDao.searchByIds(agIds);
-        return new Pair<List<AffinityGroupJoinVO>, Integer>(ags, count);
+        return new Pair<>(ags, count);
     }
 
     private Pair<List<AffinityGroupJoinVO>, Integer> listDomainLevelAffinityGroups(SearchCriteria<AffinityGroupJoinVO> sc, Filter searchFilter, long domainId) {
-        List<Long> affinityGroupIds = new ArrayList<Long>();
+        List<Long> affinityGroupIds = new ArrayList<>();
         Set<Long> allowedDomains = _domainMgr.getDomainParentIds(domainId);
         List<AffinityGroupDomainMapVO> maps = _affinityGroupDomainMapDao.listByDomain(allowedDomains.toArray());
 
@@ -5212,7 +5289,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             Integer count = uniqueGroupsPair.second();
             if (count.intValue() == 0) {
                 // empty result
-                return new Pair<>(new ArrayList<AffinityGroupJoinVO>(), 0);
+                return new Pair<>(new ArrayList<>(), 0);
             }
             List<AffinityGroupJoinVO> uniqueGroups = uniqueGroupsPair.first();
             Long[] vrIds = new Long[uniqueGroups.size()];
@@ -5223,7 +5300,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             List<AffinityGroupJoinVO> vrs = _affinityGroupJoinDao.searchByIds(vrIds);
             return new Pair<>(vrs, count);
         } else {
-            return new Pair<>(new ArrayList<AffinityGroupJoinVO>(), 0);
+            return new Pair<>(new ArrayList<>(), 0);
         }
     }
 
@@ -5254,7 +5331,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
-        List<? extends ResourceDetail> detailList = new ArrayList<ResourceDetail>();
+        List<? extends ResourceDetail> detailList = new ArrayList<>();
         ResourceDetail requestedDetail = null;
 
         if (key == null) {
@@ -5268,7 +5345,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             detailList = _resourceMetaDataMgr.getDetails(resourceType, key, value, forDisplay);
         }
 
-        List<ResourceDetailResponse> responseList = new ArrayList<ResourceDetailResponse>();
+        List<ResourceDetailResponse> responseList = new ArrayList<>();
         if (requestedDetail != null) {
             ResourceDetailResponse detailResponse = createResourceDetailsResponse(requestedDetail, resourceType);
             responseList.add(detailResponse);
@@ -5300,7 +5377,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         List<ManagementServerResponse> hostResponses = new ArrayList<>();
 
         for (ManagementServerJoinVO host : result.first()) {
-            ManagementServerResponse hostResponse = createManagementServerResponse(host);
+            ManagementServerResponse hostResponse = createManagementServerResponse(host, cmd.getPeers());
             hostResponses.add(hostResponse);
         }
 
@@ -5323,7 +5400,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return managementServerJoinDao.searchAndCount(sc, null);
     }
 
-    protected ManagementServerResponse createManagementServerResponse(ManagementServerJoinVO mgmt) {
+    protected ManagementServerResponse createManagementServerResponse(ManagementServerJoinVO mgmt, boolean listPeers) {
         ManagementServerResponse mgmtResponse = new ManagementServerResponse();
         mgmtResponse.setId(mgmt.getUuid());
         mgmtResponse.setName(mgmt.getName());
@@ -5335,14 +5412,38 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         mgmtResponse.setLastServerStart(mgmt.getLastJvmStart());
         mgmtResponse.setLastServerStop(mgmt.getLastJvmStop());
         mgmtResponse.setLastBoot(mgmt.getLastSystemBoot());
-        mgmtResponse.setServiceIp(mgmt.getServiceIP());
+        if (listPeers) {
+            List<ManagementServerHostPeerJoinVO> peers = mshostPeerJoinDao.listByOwnerMshostId(mgmt.getId());
+            for (ManagementServerHostPeerJoinVO peer: peers) {
+                mgmtResponse.addPeer(createPeerManagementServerNodeResponse(peer));
+            }
+        }
+        mgmtResponse.setIpAddress(mgmt.getServiceIP());
         mgmtResponse.setObjectName("managementserver");
         return mgmtResponse;
     }
 
+    private PeerManagementServerNodeResponse createPeerManagementServerNodeResponse(ManagementServerHostPeerJoinVO peer) {
+        PeerManagementServerNodeResponse response = new PeerManagementServerNodeResponse();
+
+        response.setState(peer.getPeerState());
+        response.setLastUpdated(peer.getLastUpdateTime());
+
+        response.setPeerId(peer.getPeerMshostUuid());
+        response.setPeerName(peer.getPeerMshostName());
+        response.setPeerMsId(String.valueOf(peer.getPeerMshostMsId()));
+        response.setPeerRunId(String.valueOf(peer.getPeerMshostRunId()));
+        response.setPeerState(peer.getPeerMshostState());
+        response.setPeerServiceIp(peer.getPeerMshostServiceIp());
+        response.setPeerServicePort(String.valueOf(peer.getPeerMshostServicePort()));
+
+        response.setObjectName("peermanagementserver");
+        return response;
+    }
+
     @Override
     public List<RouterHealthCheckResultResponse> listRouterHealthChecks(GetRouterHealthCheckResultsCmd cmd) {
-        s_logger.info("Executing health check command " + cmd);
+        logger.info("Executing health check command " + cmd);
         long routerId = cmd.getRouterId();
         if (!VirtualNetworkApplianceManager.RouterHealthChecksEnabled.value()) {
             throw new CloudRuntimeException("Router health checks are not enabled for router " + routerId);
@@ -5494,7 +5595,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Filter searchFilter = new Filter(SnapshotJoinVO.class, "snapshotStorePair", SortKeyAscending.value(), startIndex, pageSize);
 
         List<Long> permittedAccountIds = new ArrayList<>();
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(domainId, isRecursive, null);
         accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccountIds, domainIdRecursiveListProject, listAll, false);
         ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
         domainId = domainIdRecursiveListProject.first();
@@ -5627,7 +5728,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Integer count = snapshotDataPair.second();
         if (count == 0) {
-            // empty result
             return snapshotDataPair;
         }
         List<SnapshotJoinVO> snapshotData = snapshotDataPair.first();
@@ -5637,13 +5737,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         } else {
             snapshots = snapshotJoinDao.searchBySnapshotStorePair(snapshotData.stream().map(SnapshotJoinVO::getSnapshotStorePair).toArray(String[]::new));
         }
-
         return new Pair<>(snapshots, count);
     }
 
     public ListResponse<ObjectStoreResponse> searchForObjectStores(ListObjectStoragePoolsCmd cmd) {
         Pair<List<ObjectStoreVO>, Integer> result = searchForObjectStoresInternal(cmd);
-        ListResponse<ObjectStoreResponse> response = new ListResponse<ObjectStoreResponse>();
+        ListResponse<ObjectStoreResponse> response = new ListResponse<>();
 
         List<ObjectStoreResponse> poolResponses = ViewResponseHelper.createObjectStoreResponse(result.first().toArray(new ObjectStoreVO[result.first().size()]));
         response.setResponses(poolResponses, result.second());
@@ -5728,7 +5827,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long startIndex = cmd.getStartIndex();
         Long pageSize = cmd.getPageSizeVal();
         Account caller = CallContext.current().getCallingAccount();
-        List<Long> permittedAccounts = new ArrayList<Long>();
+        List<Long> permittedAccounts = new ArrayList<>();
 
         // Verify parameters
         if (id != null) {
@@ -5740,7 +5839,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         List<Long> ids = getIdsListFromCmd(cmd.getId(), cmd.getIds());
 
-        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(cmd.getDomainId(),
+        Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(),
                 cmd.isRecursive(), null);
         accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, cmd.listAll(), false);
         Long domainId = domainIdRecursiveListProject.first();

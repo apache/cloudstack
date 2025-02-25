@@ -19,11 +19,13 @@ package com.cloud.api.query.dao;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import javax.inject.Inject;
 
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -31,7 +33,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -48,13 +50,10 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
-import javax.inject.Inject;
-
 import static org.apache.cloudstack.query.QueryService.SortKeyAscending;
 
 @Component
 public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJoinVO, Long> implements ServiceOfferingJoinDao {
-    public static final Logger s_logger = Logger.getLogger(ServiceOfferingJoinDaoImpl.class);
 
     @Inject
     VsphereStoragePolicyDao _vsphereStoragePolicyDao;
@@ -171,6 +170,10 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
                 if (vsphereStoragePolicyVO != null)
                     offeringResponse.setVsphereStoragePolicy(vsphereStoragePolicyVO.getName());
             }
+            String purgeResource = offeringDetails.get(ServiceOffering.PURGE_DB_ENTITIES_KEY);
+            if (StringUtils.isNotBlank(purgeResource)) {
+                offeringResponse.setPurgeResources(Boolean.parseBoolean(purgeResource));
+            }
         }
 
         long rootDiskSizeInGb = (long) offering.getRootDiskSize() / GB_TO_BYTES;
@@ -200,7 +203,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
 
     @Override
     public Map<Long, List<String>> listDomainsOfServiceOfferingsUsedByDomainPath(String domainPath) {
-        s_logger.debug(String.format("Retrieving the domains of the service offerings used by domain with path [%s].", domainPath));
+        logger.debug("Retrieving the domains of the service offerings used by domain with path [{}].", domainPath);
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try (PreparedStatement pstmt = txn.prepareStatement(LIST_DOMAINS_OF_SERVICE_OFFERINGS_USED_BY_DOMAIN_PATH)) {
@@ -221,10 +224,10 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
 
             return domainsOfServiceOfferingsUsedByDomainPath;
         } catch (SQLException e) {
-            s_logger.error(String.format("Failed to retrieve the domains of the service offerings used by domain with path [%s] due to [%s]. Returning an empty "
+            logger.error(String.format("Failed to retrieve the domains of the service offerings used by domain with path [%s] due to [%s]. Returning an empty "
                     + "list of domains.", domainPath, e.getMessage()));
 
-            s_logger.debug(String.format("Failed to retrieve the domains of the service offerings used by domain with path [%s]. Returning an empty "
+            logger.debug(String.format("Failed to retrieve the domains of the service offerings used by domain with path [%s]. Returning an empty "
                     + "list of domains.", domainPath), e);
 
             return new HashMap<>();

@@ -26,7 +26,6 @@ import javax.persistence.EntityExistsException;
 
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.event.UsageEventVO;
@@ -35,6 +34,7 @@ import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -44,7 +44,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 @Component
 @DB()
 public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Long> implements ServiceOfferingDao {
-    protected static final Logger s_logger = Logger.getLogger(ServiceOfferingDaoImpl.class);
 
     @Inject
     protected ServiceOfferingDetailsDao detailsDao;
@@ -268,7 +267,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         ServiceOfferingVO serviceOffering = findByName(name);
         if (serviceOffering == null) {
             String message = "System service offering " + name + " not found";
-            s_logger.error(message);
+            logger.error(message);
             throw new CloudRuntimeException(message);
         }
         return serviceOffering;
@@ -292,5 +291,25 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
             return null;
         }
         return vos.get(0);
+    }
+
+    @Override
+    public List<Long> listIdsByHostTag(String tag) {
+        GenericSearchBuilder<ServiceOfferingVO, Long> sb = createSearchBuilder(Long.class);
+        sb.selectFields(sb.entity().getId());
+        sb.and("tagNotNull", sb.entity().getHostTag(), SearchCriteria.Op.NNULL);
+        sb.and().op("tagEq", sb.entity().getHostTag(), SearchCriteria.Op.EQ);
+        sb.or("tagStartLike", sb.entity().getHostTag(), SearchCriteria.Op.LIKE);
+        sb.or("tagMidLike", sb.entity().getHostTag(), SearchCriteria.Op.LIKE);
+        sb.or("tagEndLike", sb.entity().getHostTag(), SearchCriteria.Op.LIKE);
+        sb.cp();
+        sb.done();
+        SearchCriteria<Long> sc = sb.create();
+
+        sc.setParameters("tagEq", tag);
+        sc.setParameters("tagStartLike", tag + ",%");
+        sc.setParameters("tagMidLike", "%," + tag + ",%");
+        sc.setParameters("tagEndLike",   "%," + tag);
+        return customSearch(sc, null);
     }
 }

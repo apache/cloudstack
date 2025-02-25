@@ -76,6 +76,12 @@ class TestUpdateConfigWithScope(cloudstackTestCase):
         updateConfigurationCmd.scopeid = 1
         self.apiClient.updateConfiguration(updateConfigurationCmd)
 
+
+        updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
+        updateConfigurationCmd.name = "commands.timeout"
+        updateConfigurationCmd.value = ""
+        self.apiClient.updateConfiguration(updateConfigurationCmd)
+
 class TestListConfigurations(cloudstackTestCase):
     """
     Test to list configurations (global settings)
@@ -181,3 +187,46 @@ class TestListConfigurations(cloudstackTestCase):
                                          subgroup=subgroup)
         self.assertNotEqual(len(listConfigurationsResponse), 0, "Check if the list configurations API returns a non-empty response")
         self.debug("Total %d configurations for group %s, subgroup %s" % (len(listConfigurationsResponse), group, subgroup))
+
+    @attr(tags=["devcloud", "basic", "advanced"], required_hardware="false")
+    def test_UpdateCommandsTimeoutConfigParamWithValidValue(self):
+        """
+        test update configuration setting for commands.timeout with valid value
+        @return:
+        """
+        updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
+        updateConfigurationCmd.name = "commands.timeout"
+        updateConfigurationCmd.value = "DhcpEntryCommand= 600, SavePasswordCommand= 300, VmDataCommand= 300"
+
+        updateConfigurationResponse = self.apiClient.updateConfiguration(updateConfigurationCmd)
+        self.debug("updated the parameter %s with value %s" % (updateConfigurationResponse.name, updateConfigurationResponse.value))
+
+        listConfigurationsCmd = listConfigurations.listConfigurationsCmd()
+        listConfigurationsCmd.name = updateConfigurationResponse.name
+        listConfigurationsResponse = self.apiClient.listConfigurations(listConfigurationsCmd)
+
+        for item in listConfigurationsResponse:
+            if item.name == updateConfigurationResponse.name:
+                configParam = item
+
+        self.assertEqual(configParam.value, updateConfigurationResponse.value, "Check if the update API returned is the same as the one we got in the list API")
+
+
+    @attr(tags=["devcloud", "basic", "advanced"], required_hardware="false")
+    def test_UpdateCommandsTimeoutConfigParamWithInvalidValue(self):
+        """
+        Test update configuration setting for commands.timeout with invalid valid value
+        @return:
+        """
+        updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
+        updateConfigurationCmd.name = "commands.timeout"
+        updateConfigurationCmd.value = "StartCommand: 1"  # Intentionally providing invalid format
+
+        try:
+            self.apiClient.updateConfiguration(updateConfigurationCmd)
+            self.fail("API call should have failed due to invalid format, but it succeeded.")
+        except Exception as e:
+            self.debug("Caught expected exception: %s" % str(e))
+            error_message = str(e)
+            self.assertIn("errorCode: 431", error_message, "Expected error code 431 for invalid format")
+            self.assertIn("Validation failed", error_message, "Expected validation failure message")

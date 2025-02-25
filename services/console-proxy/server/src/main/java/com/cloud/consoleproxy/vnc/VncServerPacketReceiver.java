@@ -22,12 +22,14 @@ import java.io.DataInputStream;
 import java.io.IOException;
 
 import com.cloud.consoleproxy.ConsoleProxyClientListener;
-import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.vnc.packet.server.FramebufferUpdatePacket;
 import com.cloud.consoleproxy.vnc.packet.server.ServerCutText;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 public class VncServerPacketReceiver implements Runnable {
-    private static final Logger s_logger = Logger.getLogger(VncServerPacketReceiver.class);
+    protected Logger logger = LogManager.getLogger(getClass());
 
     private final VncScreenDescription screen;
     private BufferedImageCanvas canvas;
@@ -87,12 +89,12 @@ public class VncServerPacketReceiver implements Runnable {
                 }
             }
         } catch (Throwable e) {
-            s_logger.error("Unexpected exception: ", e);
+            logger.error("Unexpected exception: ", e);
             if (connectionAlive) {
                 closeConnection();
             }
         } finally {
-            s_logger.info("Receiving thread exit processing, shutdown connection");
+            logger.info("Receiving thread exit processing, shutdown connection");
             vncConnection.shutdown();
         }
     }
@@ -120,6 +122,6 @@ public class VncServerPacketReceiver implements Runnable {
         StringSelection contents = new StringSelection(clipboardContent.getContent());
         Toolkit.getDefaultToolkit().getSystemClipboard().setContents(contents, null);
 
-        s_logger.info("Server clipboard buffer: " + clipboardContent.getContent());
+        logger.info("Server clipboard buffer: " + clipboardContent.getContent());
     }
 }

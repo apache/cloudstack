@@ -64,6 +64,16 @@ public class PortForwardingRuleVO extends FirewallRuleVO implements PortForwardi
         this.sourceCidrs = sourceCidrs;
     }
 
+    public PortForwardingRuleVO(String xId, long srcIpId, int srcPortStart, int srcPortEnd, Ip dstIp, int dstPortStart, int dstPortEnd, String protocol, long networkId,
+                                long accountId, long domainId, long instanceId) {
+        this(xId, srcIpId, srcPortStart, srcPortEnd, dstIp, dstPortStart, dstPortEnd, protocol.toLowerCase(), networkId, accountId, domainId, instanceId, null);
+    }
+
+    public PortForwardingRuleVO(String xId, long srcIpId, int srcPort, Ip dstIp, int dstPort, String protocol, long networkId, long accountId,
+                                long domainId, long instanceId) {
+        this(xId, srcIpId, srcPort, srcPort, dstIp, dstPort, dstPort, protocol.toLowerCase(), networkId, accountId, domainId, instanceId, null);
+    }
+
     @Override
     public Ip getDestinationIpAddress() {
         return destinationIpAddress;

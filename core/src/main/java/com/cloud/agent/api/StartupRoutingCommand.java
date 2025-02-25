@@ -32,6 +32,7 @@ public class StartupRoutingCommand extends StartupCommand {
     Integer cpuSockets;
     int cpus;
     long speed;
+    String cpuArch;
     long memory;
     long dom0MinMemory;
     boolean poolSync;
@@ -174,6 +175,10 @@ public class StartupRoutingCommand extends StartupCommand {
         this.hostTags.add(hostTag);
     }
 
+    public void setHostTags(List<String> hostTags) {
+        this.hostTags = hostTags;
+    }
+
     public  HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetails() {
         return groupDetails;
     }
@@ -196,5 +201,13 @@ public class StartupRoutingCommand extends StartupCommand {
 
     public void setHostHealthCheckResult(Boolean hostHealthCheckResult) {
         this.hostHealthCheckResult = hostHealthCheckResult;
+    }
+
+    public String getCpuArch() {
+        return cpuArch;
+    }
+
+    public void setCpuArch(String cpuArch) {
+        this.cpuArch = cpuArch;
     }
 }

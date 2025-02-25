@@ -25,6 +25,9 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.Formatter;
+
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import java.util.List;
 
 /**
@@ -32,6 +35,8 @@ import java.util.List;
  * It can also be used for formatting MAC addresses.
  **/
 public class MacAddress {
+    protected static Logger LOGGER = LogManager.getLogger(MacAddress.class);
+
     private long _addr = 0;
 
     protected MacAddress() {
