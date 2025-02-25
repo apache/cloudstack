@@ -47,3 +47,6 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.storage_pool', 'used_iops', 'bigint 
 
 -- Add reason column for op_ha_work
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.op_ha_work', 'reason', 'varchar(32) DEFAULT NULL COMMENT "Reason for the HA work"');
+
+CALL `cloud`.`IDEMPOTENT_DROP_UNIQUE_KEY`('counter', 'uc_counter__provider__source__value');
+CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.counter', 'uc_counter__provider__source__value__removed', '(provider, source, value, removed)');

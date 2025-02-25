@@ -22,9 +22,6 @@
 -- Add last_id to the volumes table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.volumes', 'last_id', 'bigint(20) unsigned DEFAULT NULL');
 
-CALL `cloud`.`IDEMPOTENT_DROP_UNIQUE_KEY`('counter', 'uc_counter__provider__source__value');
-CALL `cloud`.`IDEMPOTENT_ADD_UNIQUE_KEY`('cloud.counter', 'uc_counter__provider__source__value__removed', '(provider, source, value, removed)');
-
 -- Grant access to 2FA APIs for the "Read-Only User - Default" role
 
 CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Read-Only User - Default', 'setupUserTwoFactorAuthentication', 'ALLOW');
