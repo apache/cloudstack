@@ -99,3 +99,12 @@ CREATE TABLE IF NOT EXISTS `cloud`.`api_keypair_permissions` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_keypair_permissions__api_keypair_id` FOREIGN KEY(`api_keypair_id`) REFERENCES `cloud`.`api_keypair`(`id`)
     );
+
+INSERT INTO `cloud`.`api_keypair` (uuid, user_id, domain_id, account_id, api_key, secret_key, created, name)
+SELECT  uuid(), user.id, account.domain_id, account.id, user.api_key, user.secret_key, now(), 'Active key pair'
+FROM    `cloud`.`user` AS user
+JOIN    `cloud`.`account` AS account ON user.account_id = account.id
+WHERE   user.api_key IS NOT NULL
+  AND     user.secret_key IS NOT NULL;
+
+ALTER TABLE `cloud`.`user` DROP COLUMN IF EXISTS api_key, DROP COLUMN IF EXISTS secret_key;

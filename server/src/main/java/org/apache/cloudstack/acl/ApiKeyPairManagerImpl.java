@@ -73,9 +73,9 @@ public class ApiKeyPairManagerImpl extends ManagerBase implements ApiKeyPairServ
 
     @Override
     public void validateCallingUserHasAccessToDesiredUser(Long userId) {
-        List<Long> accessableUsers = queryService.searchForAccessableUsers();
+        List<Long> accessibleUsers = queryService.searchForAccessibleUsers();
         User desiredUser = userDao.getUser(userId);
-        if (accessableUsers.stream().noneMatch(u -> Objects.equals(u, userId))) {
+        if (accessibleUsers.stream().noneMatch(u -> Objects.equals(u, userId))) {
             throw new InvalidParameterValueException(String.format("Could not perform operation because calling user has less permissions " +
                     "than the informed user [%s].", desiredUser.getId()));
         }

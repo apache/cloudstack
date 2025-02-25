@@ -144,8 +144,8 @@ public class RegisterUserKeysCmd extends BaseAsyncCmd {
     @Override
     public long getEntityOwnerId() {
         User user = _entityMgr.findById(User.class, getUserId());
-        List<Long> accessableUsers = _queryService.searchForAccessableUsers();
-        if (user != null && accessableUsers.stream().anyMatch(u -> u == user.getId())) {
+        List<Long> accessibleUsers = _queryService.searchForAccessibleUsers();
+        if (user != null && accessibleUsers.stream().anyMatch(u -> u == user.getId())) {
             return user.getAccountId();
         }
         return Account.ACCOUNT_ID_SYSTEM;
