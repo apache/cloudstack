@@ -276,8 +276,8 @@ public class UriUtilsTest {
 
     @Test
     public void validateUrl() {
-        Pair<String, Integer> url1 = UriUtils.validateUrl("https://www.cloudstack.org");
-        Assert.assertEquals(url1.first(), "www.cloudstack.org");
+        Pair<String, Integer> url1 = UriUtils.validateUrl("https://www.cloudstack.apache.org/");
+        Assert.assertEquals(url1.first(), "www.cloudstack.apache.org");
 
         Pair<String, Integer> url2 = UriUtils.validateUrl("https://www.apache.org");
         Assert.assertEquals(url2.first(), "www.apache.org");
