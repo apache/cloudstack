@@ -356,7 +356,7 @@ public class NetScalerVMManagerImpl extends ManagerBase implements NetScalerVMMa
         nsVpx = _routerDao.persist(nsVpx);
 
         VMInstanceVO vmVO= _vmDao.findVMByHostName(nxVpxName);
-        _itMgr.allocate(nxVpxName, template, vpxOffering, networks, plan, template.getHypervisorType());
+        _itMgr.allocate(nxVpxName, template, vpxOffering, networks, plan, template.getHypervisorType(), null, null);
         Map<Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         try {
             if (vmVO != null) {
