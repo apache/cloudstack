@@ -58,9 +58,7 @@ public class ApiKeyPairDaoImpl extends GenericDaoBase<ApiKeyPairVO, Long> implem
 
     public Pair<List<ApiKeyPairVO>, Integer> listApiKeysByUserOrApiKeyId(Long userId, Long apiKeyId) {
         SearchCriteria<ApiKeyPairVO> sc = keyPairSearch.create();
-        if (userId != null) {
-            sc.setParametersIfNotNull("userId", String.valueOf(userId));
-        }
+        sc.setParametersIfNotNull("userId", userId);
         sc.setParametersIfNotNull("id", apiKeyId);
         final Filter searchFilter = new Filter(100);
         return searchAndCount(sc, searchFilter);
@@ -68,9 +66,7 @@ public class ApiKeyPairDaoImpl extends GenericDaoBase<ApiKeyPairVO, Long> implem
 
     public ApiKeyPairVO getLastApiKeyCreatedByUser(Long userId) {
         final SearchCriteria<ApiKeyPairVO> sc = keyPairSearch.create();
-        if (userId != null) {
-            sc.setParameters("userId", String.valueOf(userId));
-        }
+        sc.setParametersIfNotNull("userId", userId);
         final Filter searchBySorted = new Filter(ApiKeyPairVO.class, "id", false, null, null);
         return findOneBy(sc, searchBySorted);
     }

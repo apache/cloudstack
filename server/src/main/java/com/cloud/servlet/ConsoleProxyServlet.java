@@ -555,7 +555,7 @@ public class ConsoleProxyServlet extends HttpServlet {
             }
 
             if (keyPair == null) {
-                LOGGER.debug("User does not have a keypair associated with the account -- ignoring request, username: " + user.getUsername());
+                LOGGER.debug("User does not have a keypair associated with the account -- ignoring request, username: {}", user.getUsername());
                 return false;
             }
 
