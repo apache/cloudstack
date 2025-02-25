@@ -49,7 +49,7 @@ public class ApiKeyPairPermissionsDaoImpl extends GenericDaoBase<ApiKeyPairPermi
     public ApiKeyPairPermissionVO persist(final ApiKeyPairPermissionVO item) {
         item.setSortOrder(0);
         final List<ApiKeyPairPermissionVO> permissionsList = findAllByKeyPairIdSorted(item.getApiKeyPairId());
-        if (permissionsList != null && !permissionsList.isEmpty()) {
+        if (!CollectionUtils.isEmpty(permissionsList)) {
             ApiKeyPairPermissionVO lastPermission = permissionsList.get(permissionsList.size() - 1);
             item.setSortOrder(lastPermission.getSortOrder() + 1);
         }
