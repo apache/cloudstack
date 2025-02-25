@@ -47,7 +47,6 @@ public class Upgrade42010to42100Test {
             when(dbUpgradeUtils.getTableColumnType(conn, "configuration", "scope")).thenReturn("varchar(255)");
 
             try (MockedStatic<TransactionLegacy> ignored2 = Mockito.mockStatic(TransactionLegacy.class)) {
-                Mockito.doNothing().when(upgrade).performKeyPairMigration(conn);
                 TransactionLegacy txn = Mockito.mock(TransactionLegacy.class);
                 when(TransactionLegacy.currentTxn()).thenReturn(txn);
                 PreparedStatement pstmt = Mockito.mock(PreparedStatement.class);
