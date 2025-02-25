@@ -72,11 +72,7 @@ public class ApiKeyPairDaoImpl extends GenericDaoBase<ApiKeyPairVO, Long> implem
             sc.setParameters("userId", String.valueOf(userId));
         }
         final Filter searchBySorted = new Filter(ApiKeyPairVO.class, "id", false, null, null);
-        final List<ApiKeyPairVO> apiKeyPairVOList = listBy(sc, searchBySorted);
-        if (CollectionUtils.isEmpty(apiKeyPairVOList)) {
-            return null;
-        }
-        return apiKeyPairVOList.get(0);
+        return findOneBy(sc, searchBySorted);
     }
 
     public Pair<List<ApiKeyPairVO>, Integer> listByUserIdsPaginated(List<Long> userIds, ListUserKeysCmd cmd) {
