@@ -2913,7 +2913,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        if (VMLeaseManager.InstanceLeaseEnabled.value() || cmd.getLeaseDuration() != null) {
+        if (VMLeaseManager.InstanceLeaseEnabled.value() && cmd.getLeaseDuration() != null) {
             applyLeaseOnUpdateInstance(vmInstance, cmd.getLeaseDuration(), cmd.getLeaseExpiryAction());
         }
 
@@ -6229,8 +6229,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // Store lease related info in the user_vm_details
-        if (VMLeaseManager.InstanceLeaseEnabled.value()) {
-            applyLeaseOnInstance(vm, cmd.getLeaseDuration(), cmd.getLeaseExpiryAction(), svcOffering);
+        if (VMLeaseManager.InstanceLeaseEnabled.value() && cmd.getLeaseDuration() != null) {
+            applyLeaseOnCreateInstance(vm, cmd.getLeaseDuration(), cmd.getLeaseExpiryAction(), svcOffering);
         }
 
         // check if this templateId has a child ISO
@@ -6276,7 +6276,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @param leaseExpiryAction
      * @param serviceOfferingJoinVO
      */
-    private void applyLeaseOnInstance(UserVm vm, Long leaseDuration, String leaseExpiryAction, ServiceOfferingJoinVO serviceOfferingJoinVO) {
+    private void applyLeaseOnCreateInstance(UserVm vm, Long leaseDuration, String leaseExpiryAction, ServiceOfferingJoinVO serviceOfferingJoinVO) {
         leaseDuration = leaseDuration != -1 ? leaseDuration : serviceOfferingJoinVO.getLeaseDuration();
         // if leaseDuration is null or -1, instance will never expire, nothing to be done
         if  (leaseDuration == null || leaseDuration == -1) {
@@ -6284,14 +6284,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         leaseExpiryAction = Strings.isNotEmpty(leaseExpiryAction) ? leaseExpiryAction : serviceOfferingJoinVO.getLeaseExpiryAction();
-        if (StringUtils.isNotEmpty(serviceOfferingJoinVO.getLeaseExpiryAction())) {
+        if (StringUtils.isEmpty(leaseExpiryAction)) {
             leaseExpiryAction = VMLeaseManager.InstanceLeaseExpiryAction.valueIn(vm.getAccountId());
         }
         updateLeaseDetailsForInstance(vm, leaseDuration, leaseExpiryAction);
     }
 
     private void applyLeaseOnUpdateInstance(UserVm vm, Long leaseDuration, String leaseExpiryAction) {
-        if (leaseDuration < 1) {
+        if (leaseDuration == -1L) {
             userVmDetailsDao.removeDetail(vm.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
             userVmDetailsDao.removeDetail(vm.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION);
             return;

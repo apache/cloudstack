@@ -2647,6 +2647,7 @@
 "label.create.bucket": "Create Bucket",
 "label.instance.lease": "Instance Lease",
 "label.instance.lease.duration": "Lease Duration",
+"label.instance.lease.date": "Lease expiry date",
 "label.instance.lease.expiry.action": "Lease Expiry Action",
 "label.instance.lease.never": "Never expires",
 "label.instance.lease.stop": "stop",

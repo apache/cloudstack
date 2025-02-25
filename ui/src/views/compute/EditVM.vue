@@ -118,6 +118,29 @@
         <a-switch v-model:checked="form.deleteprotection" />
       </a-form-item>
 
+      <a-row :gutter="12">
+        <a-col :md="12" :lg="12">
+          <a-form-item name="leaseduration" ref="leaseduration">
+            <template #label>
+              <tooltip-label :title="$t('label.instance.lease.date')" />
+            </template>
+            <a-input
+              v-model:value="form.leaseduration"
+              :placeholder="$t('label.instance.lease.never')"/>
+          </a-form-item>
+        </a-col>
+        <a-col :md="12" :lg="12">
+          <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction">
+            <template #label>
+              <tooltip-label :title="$t('label.instance.lease.expiry.action')"  />
+            </template>
+            <a-input
+              v-model:value="form.leaseexpiryaction"
+              :placeholder="$t('label.instance.lease.stop')"/>
+          </a-form-item>
+        </a-col>
+      </a-row>
+
       <div :span="24" class="action-button">
         <a-button :loading="loading" @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -187,7 +210,9 @@ export default {
         group: this.resource.group,
         securitygroupids: this.resource.securitygroup.map(x => x.id),
         userdata: '',
-        haenable: this.resource.haenable
+        haenable: this.resource.haenable,
+        leaseduration: this.resource.leaseduration,
+        leaseexpiryaction: this.resource.leaseexpiryaction
       })
       this.rules = reactive({})
     },
@@ -357,6 +382,13 @@ export default {
         if (values.userdata && values.userdata.length > 0) {
           params.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
+        if (values.leaseduration && values.leaseduration !== undefined) {
+          params.leaseduration = values.leaseduration
+        }
+        if (values.leaseexpiryaction && values.leaseexpiryaction !== undefined) {
+          params.leaseexpiryaction = values.leaseexpiryaction
+        }
+
         this.loading = true
 
         api('updateVirtualMachine', {}, 'POST', params).then(json => {

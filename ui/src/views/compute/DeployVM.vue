@@ -560,6 +560,28 @@
                   <div style="margin-top: 15px" v-if="showDetails">
                     <div
                       v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
+                      <a-row :gutter="12" v-if="isLeaseFeatureEnabled">
+                        <a-col :md="12" :lg="12">
+                          <a-form-item name="leaseduration" ref="leaseduration">
+                            <template #label>
+                              <tooltip-label :title="$t('label.instance.lease.duration')" />
+                            </template>
+                            <a-input
+                              v-model:value="form.leaseduration"
+                              :placeholder="$t('label.instance.lease.never')"/>
+                          </a-form-item>
+                        </a-col>
+                        <a-col :md="12" :lg="12">
+                          <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction">
+                            <template #label>
+                              <tooltip-label :title="$t('label.instance.lease.expiry.action')"  />
+                            </template>
+                            <a-input
+                              v-model:value="form.leaseexpiryaction"
+                              :placeholder="$t('label.instance.lease.stop')"/>
+                          </a-form-item>
+                        </a-col>
+                      </a-row>
                       <a-form-item :label="$t('label.boottype')" name="boottype" ref="boottype">
                         <a-select
                           v-model:value="form.boottype"
@@ -939,6 +961,7 @@ export default {
       clusterId: null,
       zoneSelected: false,
       isZoneSelectedMultiArch: false,
+      isLeaseFeatureEnabled: false,
       dynamicscalingenabled: true,
       templateKey: 0,
       showRegisteredUserdata: true,
@@ -1601,6 +1624,7 @@ export default {
     this.initForm()
     this.dataPreFill = this.preFillContent && Object.keys(this.preFillContent).length > 0 ? this.preFillContent : {}
     this.fetchData()
+    this.determineLeaseEnabled()
   },
   provide () {
     return {
@@ -1646,6 +1670,18 @@ export default {
             }
           }]
         }
+      }
+    },
+    determineLeaseEnabled () {
+      var params = { name: 'instance.lease.enabled' }
+      api('listConfigurations', params).then(json => {
+        var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
+        this.isLeaseFeatureEnabled = value === 'true'
+      })
+
+      if (this.isLeaseFeatureEnabled) {
+        this.leaseduration = 90
+        this.leaseexpiryaction = 'stop'
       }
     },
     getPropertyQualifiers (qualifiers, type) {
@@ -2192,6 +2228,12 @@ export default {
         }
         if (values.group) {
           deployVmData.group = values.group
+        }
+        if (values.leaseduration) {
+          deployVmData.leaseduration = values.leaseduration
+        }
+        if (values.leaseexpiryaction) {
+          deployVmData.leaseexpiryaction = values.leaseexpiryaction
         }
         // step 8: enter setup
         if ('properties' in values) {

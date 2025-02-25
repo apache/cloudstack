@@ -151,7 +151,7 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
 
     @Parameter(name = ApiConstants.ONLY_LEASED_INSTANCES, type = CommandType.BOOLEAN,
             description = "Whether to return the Leased instances",
-            since = "4.21")
+            since = "4.21.0")
     private Boolean onlyLeasedInstances = false;
 
     /////////////////////////////////////////////////////

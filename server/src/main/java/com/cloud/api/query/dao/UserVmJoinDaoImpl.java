@@ -128,7 +128,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         activeVmByIsoSearch.done();
 
         leaseOverInstanceSearch = createSearchBuilder();
-        leaseOverInstanceSearch.selectFields(leaseOverInstanceSearch.entity().getId());
+        leaseOverInstanceSearch.selectFields(leaseOverInstanceSearch.entity().getId(), leaseOverInstanceSearch.entity().getState(),
+                leaseOverInstanceSearch.entity().isDeleteProtection(), leaseOverInstanceSearch.entity().getUuid());
         leaseOverInstanceSearch.and("leaseExpired", leaseOverInstanceSearch.entity().getExpiryDate(), Op.LT);
         leaseOverInstanceSearch.done();
 

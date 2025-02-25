@@ -36,7 +36,7 @@
         </a-form-item>
         <a-row :gutter="12" v-if="isLeaseFeatureEnabled">
           <a-col :md="12" :lg="12">
-            <a-form-item name="leaseduration">
+            <a-form-item name="leaseduration" ref="leaseduration">
               <template #label>
                 <tooltip-label :title="$t('label.instance.lease.duration')" :tooltip="apiParams.leaseduration.description" />
               </template>
@@ -46,7 +46,7 @@
             </a-form-item>
           </a-col>
           <a-col :md="12" :lg="12">
-            <a-form-item name="leasexpiryaction">
+            <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction">
               <template #label>
                 <tooltip-label :title="$t('label.instance.lease.expiry.action')" :tooltip="apiParams.leaseexpiryaction.description" />
               </template>
@@ -718,7 +718,9 @@ export default {
       diskOfferings: [],
       selectedDiskOfferingId: '',
       qosType: '',
-      isDomainAdminAllowedToInformTags: false
+      isDomainAdminAllowedToInformTags: false,
+      leaseduration: -1,
+      leaseexpiryaction: ''
     }
   },
   beforeCreate () {
@@ -758,7 +760,9 @@ export default {
         iscustomizeddiskiops: this.isCustomizedDiskIops,
         diskofferingid: this.selectedDiskOfferingId,
         diskofferingstrictness: this.diskofferingstrictness,
-        encryptdisk: this.encryptdisk
+        encryptdisk: this.encryptdisk,
+        leaseduration: this.leaseduration,
+        leaseexpiryaction: this.leaseexpiryaction
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.required.input') }],
@@ -831,8 +835,12 @@ export default {
       api('listConfigurations', params).then(json => {
         var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
         this.isLeaseFeatureEnabled = value === 'true'
-        console.log('Instance lease feature is enabled: ', this.isLeaseFeatureEnabled)
       })
+
+      if (this.isLeaseFeatureEnabled) {
+        this.leaseduration = 90
+        this.leaseexpiryaction = 'stop'
+      }
     },
     addDiskOffering () {
       this.showDiskOfferingModal = true
@@ -984,6 +992,7 @@ export default {
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
+        console.log('test values: ', values)
         var params = {
           issystem: this.isSystem,
           name: values.name,
@@ -997,7 +1006,9 @@ export default {
           dynamicscalingenabled: values.dynamicscalingenabled,
           diskofferingstrictness: values.diskofferingstrictness,
           encryptroot: values.encryptdisk,
-          purgeresources: values.purgeresources
+          purgeresources: values.purgeresources,
+          leaseduration: values.leaseduration,
+          leaseexpiryaction: values.leaseexpiryaction
         }
         if (values.diskofferingid) {
           params.diskofferingid = values.diskofferingid
@@ -1093,6 +1104,15 @@ export default {
         if ('systemvmtype' in values && values.systemvmtype !== undefined) {
           params.systemvmtype = values.systemvmtype
         }
+
+        if ('leaseduration' in values && values.leaseduration !== undefined) {
+          params.leaseduration = values.leaseduration
+        }
+
+        if ('leaseexpiryaction' in values && values.leaseexpiryaction !== undefined) {
+          params.leaseexpiryaction = values.leaseexpiryaction
+        }
+
         if (values.ispublic !== true) {
           var domainIndexes = values.domainid
           var domainId = null
