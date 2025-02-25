@@ -149,7 +149,7 @@ public interface VolumeOrchestrationService {
      * Allocate a volume or multiple volumes in case of template is registered with the 'deploy-as-is' option, allowing multiple disks
      */
     List<DiskProfile> allocateTemplatedVolumes(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
-                                               Account owner);
+                                               Account owner, Volume volume, Snapshot snapshot);
 
     String getVmNameFromVolumeId(long volumeId);
 
