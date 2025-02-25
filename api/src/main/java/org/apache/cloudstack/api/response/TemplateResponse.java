@@ -210,7 +210,7 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     @SerializedName(ApiConstants.FOR_CKS)
     @Param(description = "If true it indicates that the template can be used for CKS cluster deployments",
-            since = "4.20")
+            since = "4.21.0")
     private Boolean forCks;
 
     @SerializedName(ApiConstants.DEPLOY_AS_IS_DETAILS)

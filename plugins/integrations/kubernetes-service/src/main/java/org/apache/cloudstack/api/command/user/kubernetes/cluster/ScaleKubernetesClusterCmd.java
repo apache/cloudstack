@@ -74,7 +74,8 @@ public class ScaleKubernetesClusterCmd extends BaseAsyncCmd {
 
     @ACL(accessType = SecurityChecker.AccessType.UseEntry)
     @Parameter(name = ApiConstants.NODE_TYPE_OFFERING_MAP, type = CommandType.MAP,
-            description = "(Optional) Node Type to Service Offering ID mapping. If provided, it overrides the serviceofferingid parameter")
+            description = "(Optional) Node Type to Service Offering ID mapping. If provided, it overrides the serviceofferingid parameter",
+            since = "4.21.0")
     protected Map<String, Map<String, String>> serviceOfferingNodeTypeMap;
 
     @Parameter(name=ApiConstants.SIZE, type = CommandType.LONG,

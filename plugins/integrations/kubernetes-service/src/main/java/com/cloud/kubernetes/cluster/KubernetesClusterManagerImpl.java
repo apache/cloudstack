@@ -805,8 +805,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         response.setClusterType(kubernetesCluster.getClusterType());
         response.setCreated(kubernetesCluster.getCreated());
 
-
-
         return response;
     }
 
@@ -2476,6 +2474,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
             KubernetesClusterUpgradeTimeout,
             KubernetesClusterUpgradeRetries,
             KubernetesClusterAddNodeTimeout,
+            KubernetesClusterRemoveNodeTimeout,
             KubernetesClusterExperimentalFeaturesEnabled,
             KubernetesMaxClusterSize,
             KubernetesControlNodeInstallAttemptWait,

@@ -58,13 +58,12 @@ public class RemoveNodesFromKubernetesClusterCmd extends BaseAsyncCmd {
             entityType= UserVmResponse.class,
             description = "comma separated list of node (physical or virtual machines) IDs that need to be" +
                     "removed from the Kubernetes cluster (CKS)",
-            required = true,
-            since = "4.21.0")
+            required = true)
     private List<Long> nodeIds;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true,
             entityType = KubernetesClusterResponse.class,
-            description = "the ID of the Kubernetes cluster", since = "4.21.0")
+            description = "the ID of the Kubernetes cluster")
     private Long clusterId;
 
     /////////////////////////////////////////////////////

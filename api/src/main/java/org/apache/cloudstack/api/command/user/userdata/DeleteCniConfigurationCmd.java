@@ -34,7 +34,7 @@ import org.apache.logging.log4j.Logger;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class DeleteCniConfigurationCmd extends DeleteUserDataCmd {
 
-    public static final Logger logger = LogManager.getLogger(DeleteUserDataCmd.class.getName());
+    public static final Logger logger = LogManager.getLogger(DeleteCniConfigurationCmd.class.getName());
 
 
     /////////////////////////////////////////////////////
@@ -49,7 +49,7 @@ public class DeleteCniConfigurationCmd extends DeleteUserDataCmd {
             response.setSuccess(result);
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete userdata");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete CNI configuration");
         }
     }
 

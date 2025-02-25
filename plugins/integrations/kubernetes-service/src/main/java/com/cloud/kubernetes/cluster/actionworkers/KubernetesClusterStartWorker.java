@@ -334,10 +334,10 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     }
 
     private String getInitialEtcdClusterDetails(List<String> ipAddresses, List<String> hostnames) {
-        String initialCluster = "%s=http://%s:2380";
+        String initialCluster = "%s=http://%s:%s";
         StringBuilder clusterInfo = new StringBuilder();
             for (int i = 0; i < ipAddresses.size(); i++) {
-                clusterInfo.append(String.format(initialCluster, hostnames.get(i), ipAddresses.get(i)));
+                clusterInfo.append(String.format(initialCluster, hostnames.get(i), ipAddresses.get(i), KubernetesClusterActionWorker.ETCD_NODE_PEER_COMM_PORT));
                 if (i < ipAddresses.size()-1) {
                     clusterInfo.append(",");
                 }
@@ -353,7 +353,7 @@ public class KubernetesClusterStartWorker extends KubernetesClusterResourceModif
     private String getEtcdEndpointList(List<Network.IpAddresses> ipAddresses) {
         StringBuilder endpoints = new StringBuilder();
         for (int i = 0; i < ipAddresses.size(); i++) {
-            endpoints.append(String.format("- http://%s:2379", ipAddresses.get(i).getIp4Address()));
+            endpoints.append(String.format("- http://%s:%s", ipAddresses.get(i).getIp4Address(), KubernetesClusterActionWorker.ETCD_NODE_CLIENT_REQUEST_PORT));
             if (i < ipAddresses.size()-1) {
                 endpoints.append("\n          ");
             }

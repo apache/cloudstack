@@ -115,18 +115,21 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.NODE_TYPE_OFFERING_MAP, type = CommandType.MAP,
-            description = "(Optional) Node Type to Service Offering ID mapping. If provided, it overrides the serviceofferingid parameter")
+            description = "(Optional) Node Type to Service Offering ID mapping. If provided, it overrides the serviceofferingid parameter",
+            since = "4.21.0")
     private Map<String, Map<String, String>> serviceOfferingNodeTypeMap;
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.NODE_TYPE_TEMPLATE_MAP, type = CommandType.MAP,
-            description = "(Optional) Node Type to Template ID mapping. If provided, it overrides the default template: System VM template")
+            description = "(Optional) Node Type to Template ID mapping. If provided, it overrides the default template: System VM template",
+            since = "4.21.0")
     private Map<String, Map<String, String>> templateNodeTypeMap;
 
     @ACL(accessType = AccessType.UseEntry)
     @Parameter(name = ApiConstants.ETCD_NODES, type = CommandType.LONG,
             description = "(Optional) Number of Kubernetes cluster etcd nodes, default is 0." +
-                    "In case the number is greater than 0, etcd nodes are separate from master nodes and are provisioned accordingly")
+                    "In case the number is greater than 0, etcd nodes are separate from master nodes and are provisioned accordingly",
+            since = "4.21.0")
     private Long etcdNodes;
 
     @ACL(accessType = AccessType.UseEntry)
@@ -200,7 +203,8 @@ public class CreateKubernetesClusterCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.CNI_CONFIG_DETAILS, type = CommandType.MAP,
             description = "used to specify the parameters values for the variables in userdata. " +
                     "Example: cniconfigdetails[0].key=accesskey&cniconfigdetails[0].value=s389ddssaa&" +
-                    "cniconfigdetails[1].key=secretkey&cniconfigdetails[1].value=8dshfsss", since = "4.21.0")
+                    "cniconfigdetails[1].key=secretkey&cniconfigdetails[1].value=8dshfsss",
+            since = "4.21.0")
     private Map cniConfigDetails;
 
     @Parameter(name=ApiConstants.AS_NUMBER, type=CommandType.LONG, description="the AS Number of the network")

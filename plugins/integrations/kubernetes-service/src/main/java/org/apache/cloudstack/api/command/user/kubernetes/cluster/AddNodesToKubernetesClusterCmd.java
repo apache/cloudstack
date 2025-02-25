@@ -52,8 +52,7 @@ public class AddNodesToKubernetesClusterCmd extends BaseAsyncCmd {
             entityType= UserVmResponse.class,
             description = "comma separated list of (external) node (physical or virtual machines) IDs that need to be" +
                     "added as worker nodes to an existing managed Kubernetes cluster (CKS)",
-            required = true,
-            since = "4.21.0")
+            required = true)
     private List<Long> nodeIds;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, required = true,
@@ -62,13 +61,11 @@ public class AddNodesToKubernetesClusterCmd extends BaseAsyncCmd {
     private Long clusterId;
 
     @Parameter(name = ApiConstants.MOUNT_CKS_ISO_ON_VR, type = CommandType.BOOLEAN,
-            description = "(optional) Vmware only, uses the CKS cluster network VR to mount the CKS ISO",
-            since = "4.21.0")
+            description = "(optional) Vmware only, uses the CKS cluster network VR to mount the CKS ISO")
     private Boolean mountCksIsoOnVr;
 
     @Parameter(name = ApiConstants.MANUAL_UPGRADE, type = CommandType.BOOLEAN,
-            description = "(optional) indicates if the node is marked for manual upgrade and excluded from the Kubernetes cluster upgrade operation",
-            since = "4.21.0")
+            description = "(optional) indicates if the node is marked for manual upgrade and excluded from the Kubernetes cluster upgrade operation")
     private Boolean manualUpgrade;
 
     /////////////////////////////////////////////////////
