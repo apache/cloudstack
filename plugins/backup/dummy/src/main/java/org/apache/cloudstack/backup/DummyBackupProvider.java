@@ -112,7 +112,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Override
     public boolean removeVMFromBackupOffering(VirtualMachine vm) {
-        logger.debug(String.format("Removing VM %s from backup offering by the Dummy Backup Provider", vm));
+        logger.debug("Removing VM {} from backup offering by the Dummy Backup Provider", vm);
         return true;
     }
 
@@ -123,7 +123,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Override
     public Pair<Boolean, Backup> takeBackup(VirtualMachine vm) {
-        logger.debug(String.format("Starting backup for VM %s on Dummy provider", vm));
+        logger.debug("Starting backup for VM {} on Dummy provider", vm);
 
         BackupVO backup = new BackupVO();
         backup.setVmId(vm.getId());
@@ -131,7 +131,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         backup.setType("FULL");
         backup.setDate(new Date());
         backup.setSize(1024000L);
-        backup.setProtectedSize(1 * Resource.ResourceType.bytesToGiB);
+        backup.setProtectedSize(Resource.ResourceType.bytesToGiB);
         backup.setStatus(Backup.Status.BackedUp);
         backup.setBackupOfferingId(vm.getBackupOfferingId());
         backup.setAccountId(vm.getAccountId());
