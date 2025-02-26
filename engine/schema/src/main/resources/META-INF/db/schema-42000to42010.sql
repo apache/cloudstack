@@ -47,3 +47,11 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.storage_pool', 'used_iops', 'bigint 
 
 -- Add reason column for op_ha_work
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.op_ha_work', 'reason', 'varchar(32) DEFAULT NULL COMMENT "Reason for the HA work"');
+
+-- add support for xcpng 8.3
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`
+       (uuid, hypervisor_type, hypervisor_version, max_guests_limit, security_group_enabled, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported, vm_snapshot_enabled)
+VALUES (UUID(), 'XenServer', '8.3', 1024, 1, 253, 64, 1, 0);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor`
+       (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined)
+        SELECT UUID(),'XenServer', '8.3', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='XenServer' AND hypervisor_version='8.2.1';
