@@ -22,6 +22,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import java.util.Collections;
 import java.util.Objects;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.cloudstack.acl.ApiKeyPairPermissionVO;
 import org.springframework.stereotype.Component;
 
