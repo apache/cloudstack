@@ -424,7 +424,7 @@ public class UnmanagedVMsManagerImplTest {
         ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
         when(importUnmanageInstanceCmd.getName()).thenReturn("TestInstance");
         when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
-        when(volumeApiService.doesTargetStorageSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
+        when(volumeApiService.doesStoragePoolSupportDiskOfferingTags(any(StoragePool.class), any())).thenReturn(true);
         try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
             unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
         }
@@ -704,7 +704,7 @@ public class UnmanagedVMsManagerImplTest {
             when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(CheckConvertInstanceCommand.class))).thenReturn(checkConvertInstanceAnswer);
         }
 
-        when(volumeApiService.doesTargetStorageSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
+        when(volumeApiService.doesStoragePoolSupportDiskOfferingTags(any(StoragePool.class), any())).thenReturn(true);
 
         ConvertInstanceAnswer convertInstanceAnswer = mock(ConvertInstanceAnswer.class);
         ImportConvertedInstanceAnswer convertImportedInstanceAnswer = mock(ImportConvertedInstanceAnswer.class);
@@ -769,7 +769,7 @@ public class UnmanagedVMsManagerImplTest {
         storagePools.add(storagePool);
         when(primaryDataStoreDao.findLocalStoragePoolsByHostAndTags(anyLong(), any())).thenReturn(storagePools);
         when(primaryDataStoreDao.findById(anyLong())).thenReturn(storagePool);
-        when(volumeApiService.doesTargetStorageSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
+        when(volumeApiService.doesStoragePoolSupportDiskOfferingTags(any(StoragePool.class), any())).thenReturn(true);
         StoragePoolHostVO storagePoolHost = Mockito.mock(StoragePoolHostVO.class);
         when(storagePoolHostDao.findByPoolHost(anyLong(), anyLong())).thenReturn(storagePoolHost);
         try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {

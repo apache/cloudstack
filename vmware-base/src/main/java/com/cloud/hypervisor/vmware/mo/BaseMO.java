@@ -16,13 +16,25 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.utils.Pair;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
+
 import org.apache.log4j.Logger;
 
 import com.vmware.vim25.CustomFieldDef;
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.InvalidPropertyFaultMsg;
+import com.vmware.vim25.RuntimeFaultFaultMsg;
+import com.vmware.vim25.ObjectContent;
+import com.vmware.vim25.RetrieveResult;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BaseMO {
     private static final Logger s_logger = Logger.getLogger(BaseMO.class);
@@ -48,6 +60,18 @@ public class BaseMO {
         _mor = new ManagedObjectReference();
         _mor.setType(morType);
         _mor.setValue(morValue);
+    }
+
+    protected static Pair<String, List<ObjectContent>> createReturnObjectPair(RetrieveResult result) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("vmware result : " + ReflectionToStringBuilderUtils.reflectCollection(result));
+        }
+        if (result == null) {
+            return new Pair<>(null, new ArrayList<>());
+        }
+        String tokenForRetrievingNewResults = result.getToken();
+        List<ObjectContent> listOfObjects = result.getObjects();
+        return new Pair<>(tokenForRetrievingNewResults, listOfObjects);
     }
 
     public VmwareContext getContext() {
@@ -137,11 +161,11 @@ public class BaseMO {
         return null;
     }
 
-    public int getCustomFieldKey(String fieldName) throws Exception {
+    public int getCustomFieldKey(String fieldName) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         return getCustomFieldKey(getMor().getType(), fieldName);
     }
 
-    public int getCustomFieldKey(String morType, String fieldName) throws Exception {
+    public int getCustomFieldKey(String morType, String fieldName) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
         assert (morType != null);
 
         ManagedObjectReference cfmMor = _context.getServiceContent().getCustomFieldsManager();
@@ -152,5 +176,31 @@ public class BaseMO {
         CustomFieldsManagerMO cfmMo = new CustomFieldsManagerMO(_context, cfmMor);
 
         return cfmMo.getCustomFieldKey(morType, fieldName);
+    }
+
+    protected Pair<String, List<ObjectContent>> retrieveNextSetOfProperties(String tokenForPriorQuery) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
+        RetrieveResult result = _context.getService().continueRetrievePropertiesEx(_context.getPropertyCollector(), tokenForPriorQuery);
+        return BaseMO.createReturnObjectPair(result);
+    }
+
+    protected void objectContentToUnmanagedInstanceTO(Pair<String, List<ObjectContent>> objectContents, List<UnmanagedInstanceTO> vms) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+        List<ObjectContent> ocs = objectContents.second();
+        if (ocs != null) {
+            for (ObjectContent oc : ocs) {
+                ManagedObjectReference vmMor = oc.getObj();
+                if (vmMor != null) {
+                    VirtualMachineMO vmMo = new VirtualMachineMO(_context, vmMor);
+                    try {
+                        if (!vmMo.isTemplate()) {
+                            HostMO hostMO = vmMo.getRunningHost();
+                            UnmanagedInstanceTO unmanagedInstance = VmwareHelper.getUnmanagedInstance(hostMO, vmMo);
+                            vms.add(unmanagedInstance);
+                        }
+                    } catch (Exception e) {
+                        s_logger.debug(String.format("Unexpected error checking unmanaged instance %s, excluding it: %s", vmMo.getVmName(), e.getMessage()), e);
+                    }
+                }
+            }
+        }
     }
 }

@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.dc.dao;
 
-import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
@@ -45,8 +44,8 @@ public class DataCenterDetailsDaoImpl extends ResourceDetailsDaoBase<DataCenterD
 
     @Override
     public String getConfigValue(long id, ConfigKey<?> key) {
-        ResourceDetail vo = findDetail(id, key.key());
-        return vo == null ? null : vo.getValue();
+        DataCenterDetailVO vo = findDetail(id, key.key());
+        return vo == null ? null : getActualValue(vo);
     }
 
     @Override

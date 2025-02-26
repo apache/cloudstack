@@ -19,10 +19,12 @@ package com.cloud.hypervisor.vmware.manager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.rmi.RemoteException;
 import java.time.Duration;
 import java.time.Instant;
@@ -43,10 +45,11 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
-import com.cloud.hypervisor.vmware.util.VmwareClient;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcVmsCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcHostsCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcItems;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePolicyCompatiblePoolsCmd;
@@ -87,6 +90,7 @@ import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.ClusterVSMMapVO;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.VmwareDatacenter;
 import com.cloud.dc.VsphereStoragePolicy;
 import com.cloud.dc.VsphereStoragePolicyVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -112,7 +116,8 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.vmware.LegacyZoneVO;
 import com.cloud.hypervisor.vmware.VmwareCleanupMaid;
-import com.cloud.dc.VmwareDatacenter;
+import com.cloud.hypervisor.vmware.util.VmwareClient;
+import com.cloud.hypervisor.vmware.util.VmwareClientException;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
 import com.cloud.dc.VmwareDatacenterVO;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMap;
@@ -165,13 +170,18 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import com.cloud.utils.ssh.SshHelper;
-import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
+// TODO move these items upstream?
 import com.vmware.pbm.PbmProfile;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.InvalidLocaleFaultMsg;
+import com.vmware.vim25.InvalidLoginFaultMsg;
+import com.vmware.vim25.RuntimeFaultFaultMsg;
+import com.vmware.vim25.InvalidPropertyFaultMsg;
+import org.jetbrains.annotations.NotNull;
 
 public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener, VmwareDatacenterService, Configurable {
     private static final Logger s_logger = Logger.getLogger(VmwareManagerImpl.class);
@@ -247,11 +257,11 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private StorageLayer _storage;
     private final String _privateNetworkVSwitchName = "vSwitch0";
 
-    private int _portsPerDvPortGroup = DEFAULT_PORTS_PER_DV_PORT_GROUP;
+    private final int _portsPerDvPortGroup = DEFAULT_PORTS_PER_DV_PORT_GROUP;
     private boolean _fullCloneFlag;
     private boolean _instanceNameFlag;
     private String _serviceConsoleName;
-    private String _managemetPortGroupName;
+    private String _managementPortGroupName;
     private String _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
     private String _recycleHungWorker = "false";
     private int _additionalPortRangeStart;
@@ -265,7 +275,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     private final Random _rand = new Random(System.currentTimeMillis());
 
-    private static ScheduledExecutorService templateCleanupScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vmware-FullyClonedTemplateCheck"));;
+    private static final ScheduledExecutorService templateCleanupScheduler = Executors.newScheduledThreadPool(1, new NamedThreadFactory("Vmware-FullyClonedTemplateCheck"));
 
     private final VmwareStorageManager _storageMgr;
     private final GlobalLock _exclusiveOpLock = GlobalLock.getInternLock("vmware.exclusive.op");
@@ -349,9 +359,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             _serviceConsoleName = "Service Console";
         }
 
-        _managemetPortGroupName = _configDao.getValue(Config.VmwareManagementPortGroup.key());
-        if (_managemetPortGroupName == null) {
-            _managemetPortGroupName = "Management Network";
+        _managementPortGroupName = _configDao.getValue(Config.VmwareManagementPortGroup.key());
+        if (_managementPortGroupName == null) {
+            _managementPortGroupName = "Management Network";
         }
 
         _defaultSystemVmNicAdapterType = _configDao.getValue(Config.VmwareSystemVmNicDeviceType.key());
@@ -450,7 +460,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         s_logger.info("Preparing network on host " + hostMo.getContext().toString() + " for " + privateTrafficLabel);
         VirtualSwitchType vsType = VirtualSwitchType.getType(vSwitchType);
-        //The management network is probably always going to be a physical network with islation type of vlans, so assume BroadcastDomainType VLAN
+        //The management network is probably always going to be a physical network with isolation type of vlans, so assume BroadcastDomainType VLAN
         if (VirtualSwitchType.StandardVirtualSwitch == vsType) {
             HypervisorHostHelper.prepareNetwork(vSwitchName, "cloud.private", hostMo, vlanId, null, null, 180000, false, BroadcastDomainType.Vlan, null, null);
         }
@@ -459,7 +469,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             AboutInfo about = hostMo.getHostAboutInfo();
             if (about != null) {
                 String version = about.getApiVersion();
-                if (version != null && (version.equals("4.0") || version.equals("4.1")) && _portsPerDvPortGroup < DEFAULT_PORTS_PER_DV_PORT_GROUP_VSPHERE4_x) {
+                if (version != null && (version.equals("4.0") || version.equals("4.1")) ) { // && _portsPerDvPortGroup < DEFAULT_PORTS_PER_DV_PORT_GROUP_VSPHERE4_x)
                     portsPerDvPortGroup = DEFAULT_PORTS_PER_DV_PORT_GROUP_VSPHERE4_x;
                 }
             }
@@ -482,7 +492,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             }
 
             URI uriForHost = new URI(UriUtils.encodeURIComponent(clusterDetails.get("url") + "/" + host.getName()));
-            morSrcHost = serviceContext.getHostMorByPath(URLDecoder.decode(uriForHost.getPath(), "UTF-8"));
+            morSrcHost = serviceContext.getHostMorByPath(URLDecoder.decode(uriForHost.getPath(), StandardCharsets.UTF_8));
             if (morSrcHost == null) {
                 return null;
             }
@@ -498,19 +508,18 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             throw new CloudRuntimeException("Invalid serviceContext");
         }
         ManagedObjectReference mor = serviceContext.getHostMorByPath(hostInventoryPath);
-        String privateTrafficLabel = null;
+        String privateTrafficLabel;
         privateTrafficLabel = serviceContext.getStockObject("privateTrafficLabel");
         if (privateTrafficLabel == null) {
             privateTrafficLabel = _privateNetworkVSwitchName;
         }
 
         if (mor != null) {
-            List<ManagedObjectReference> returnedHostList = new ArrayList<ManagedObjectReference>();
+            List<ManagedObjectReference> returnedHostList = new ArrayList<>();
 
             if (mor.getType().equals("ComputeResource")) {
                 List<ManagedObjectReference> hosts = serviceContext.getVimClient().getDynamicProperty(mor, "host");
-                assert (hosts != null && hosts.size() > 0);
-
+                assert (CollectionUtils.isNullOrEmpty(hosts));
                 // For ESX host, we need to enable host firewall to allow VNC access
                 HostMO hostMo = new HostMO(serviceContext, hosts.get(0));
 
@@ -521,8 +530,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 List<ManagedObjectReference> hosts = serviceContext.getVimClient().getDynamicProperty(mor, "host");
                 assert (hosts != null);
 
-                if (hosts.size() > 0) {
-                    AboutInfo about = (AboutInfo)(serviceContext.getVimClient().getDynamicProperty(hosts.get(0), "config.product"));
+                if (!hosts.isEmpty()) {
+                    AboutInfo about = serviceContext.getVimClient().getDynamicProperty(hosts.get(0), "config.product");
                     String version = about.getApiVersion();
                     int maxHostsPerCluster = _hvCapabilitiesDao.getMaxHostsPerCluster(HypervisorType.VMware, version);
                     if (hosts.size() > maxHostsPerCluster) {
@@ -551,7 +560,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 returnedHostList.add(mor);
                 return returnedHostList;
             } else {
-                s_logger.error("Unsupport host type " + mor.getType() + ":" + mor.getValue() + " from inventory path: " + hostInventoryPath);
+                s_logger.error("Unsupported host type " + mor.getType() + ":" + mor.getValue() + " from inventory path: " + hostInventoryPath);
                 return null;
             }
         }
@@ -616,13 +625,13 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public String getManagementPortGroupName() {
-        return _managemetPortGroupName;
+        return _managementPortGroupName;
     }
 
     @Override
     public String getManagementPortGroupByHost(HostMO hostMo) throws Exception {
         if (hostMo.getHostType() == VmwareHostType.ESXi) {
-            return _managemetPortGroupName;
+            return _managementPortGroupName;
         }
         return _serviceConsoleName;
     }
@@ -632,7 +641,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         params.put("vmware.create.full.clone", _fullCloneFlag);
         params.put("vm.instancename.flag", _instanceNameFlag);
         params.put("service.console.name", _serviceConsoleName);
-        params.put("management.portgroup.name", _managemetPortGroupName);
+        params.put("management.portgroup.name", _managementPortGroupName);
         params.put("vmware.root.disk.controller", _rootDiskController);
         params.put("vmware.data.disk.controller", _dataDiskController);
         params.put("vmware.recycle.hung.wokervm", _recycleHungWorker);
@@ -659,25 +668,25 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             return false;
         }
 
-        String tokens[] = workerTag.split("-");
+        String[] tokens = workerTag.split("-");
         if (tokens.length != 3) {
             s_logger.error("Invalid worker VM tag " + workerTag);
             return false;
         }
 
         long startTick = Long.parseLong(tokens[0]);
-        long msid = Long.parseLong(tokens[1]);
-        long runid = Long.parseLong(tokens[2]);
+        long msId = Long.parseLong(tokens[1]);
+        long runId = Long.parseLong(tokens[2]);
 
-        if (msHostPeerDao.countStateSeenInPeers(msid, runid, ManagementServerHost.State.Down) > 0) {
+        if (msHostPeerDao.countStateSeenInPeers(msId, runId, ManagementServerHost.State.Down) > 0) {
             if (s_logger.isInfoEnabled())
                 s_logger.info("Worker VM's owner management server node has been detected down from peer nodes, recycle it");
             return true;
         }
 
-        if (runid != clusterManager.getManagementRunId(msid)) {
+        if (runId != clusterManager.getManagementRunId(msId)) {
             if (s_logger.isInfoEnabled())
-                s_logger.info("Worker VM's owner management server has changed runid, recycle it");
+                s_logger.info("Worker VM's owner management server has changed runId, recycle it");
             return true;
         }
 
@@ -712,7 +721,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                     File patchFolder = new File(mountPoint + "/systemvm");
                     if (!patchFolder.exists()) {
                         if (!patchFolder.mkdirs()) {
-                            String msg = "Unable to create systemvm folder on secondary storage. location: " + patchFolder.toString();
+                            String msg = "Unable to create systemvm folder on secondary storage. location: " + patchFolder;
                             s_logger.error(msg);
                             throw new CloudRuntimeException(msg);
                         }
@@ -731,7 +740,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                         } catch (IOException e) {
                             s_logger.error("Unexpected exception ", e);
 
-                            String msg = "Unable to copy systemvm ISO on secondary storage. src location: " + srcIso.toString() + ", dest location: " + destIso;
+                            String msg = "Unable to copy systemvm ISO on secondary storage. src location: " + srcIso + ", dest location: " + destIso;
                             s_logger.error(msg);
                             throw new CloudRuntimeException(msg);
                         }
@@ -773,9 +782,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             isoFile = new File("/usr/share/cloudstack-common/vms/systemvm.iso");
         }
 
-        assert (isoFile != null);
         if (!isoFile.exists()) {
-            s_logger.error("Unable to locate systemvm.iso in your setup at " + isoFile.toString());
+            s_logger.error("Unable to locate systemvm.iso in your setup at " + isoFile);
         }
         return isoFile;
     }
@@ -790,16 +798,16 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         if (keyFile == null || !keyFile.exists()) {
             keyFile = new File("/usr/share/cloudstack-common/scripts/vm/systemvm/id_rsa.cloud");
         }
-        assert (keyFile != null);
+
         if (!keyFile.exists()) {
-            s_logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile.toString());
+            s_logger.error("Unable to locate id_rsa.cloud in your setup at " + keyFile);
         }
         return keyFile;
     }
 
     @Override
     public String getMountPoint(String storageUrl, String nfsVersion) {
-        String mountPoint = null;
+        String mountPoint;
         synchronized (_storageMounts) {
             mountPoint = _storageMounts.get(storageUrl);
             if (mountPoint != null) {
@@ -829,7 +837,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         String mountPoint = null;
         long mshostId = ManagementServerNode.getManagementServerId();
         for (int i = 0; i < 10; i++) {
-            String mntPt = parent + File.separator + String.valueOf(mshostId) + "." + Integer.toHexString(_rand.nextInt(Integer.MAX_VALUE));
+            String mntPt = parent + File.separator + mshostId + "." + Integer.toHexString(_rand.nextInt(Integer.MAX_VALUE));
             File file = new File(mntPt);
             if (!file.exists()) {
                 if (_storage.mkdir(mntPt)) {
@@ -854,10 +862,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             for (String mountPoint : mounts) {
                 s_logger.info("umount NFS mount from previous session: " + mountPoint);
 
-                String result = null;
                 Script command = new Script(true, "umount", _timeout, s_logger);
                 command.add(mountPoint);
-                result = command.execute();
+                String result = command.execute();
                 if (result != null) {
                     s_logger.warn("Unable to umount " + mountPoint + " due to " + result);
                 }
@@ -875,7 +882,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         for (String mountPoint : _storageMounts.values()) {
             s_logger.info("umount NFS mount: " + mountPoint);
 
-            String result = null;
+            String result;
             Script command = new Script(true, "umount", _timeout, s_logger);
             command.add(mountPoint);
             result = command.execute();
@@ -896,8 +903,8 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             return null;
         }
 
-        Script script = null;
-        String result = null;
+        Script script;
+        String result;
         Script command = new Script(true, "mount", _timeout, s_logger);
         command.add("-t", "nfs");
         if (nfsVersion != null){
@@ -984,39 +991,14 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) {
-        if (cmd instanceof StartupCommand) {
+        if (cmd != null) {
             if (host.getHypervisorType() == HypervisorType.VMware) {
                 updateClusterNativeHAState(host, cmd);
-            } else {
-                return;
             }
         }
     }
 
     protected final static int DEFAULT_DOMR_SSHPORT = 3922;
-
-    protected boolean shutdownRouterVM(DomainRouterVO router) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Try to shutdown router VM " + router.getInstanceName() + " directly.");
-        }
-
-        Pair<Boolean, String> result;
-        try {
-            result = SshHelper.sshExecute(router.getPrivateIpAddress(), DEFAULT_DOMR_SSHPORT, "root", getSystemVMKeyFile(), null, "poweroff -f");
-
-            if (!result.first()) {
-                s_logger.debug("Unable to shutdown " + router.getInstanceName() + " directly");
-                return false;
-            }
-        } catch (Throwable e) {
-            s_logger.warn("Unable to shutdown router " + router.getInstanceName() + " directly.");
-            return false;
-        }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Shutdown router " + router.getInstanceName() + " successful.");
-        }
-        return true;
-    }
 
     @Override
     public boolean processDisconnect(long agentId, Status state) {
@@ -1058,16 +1040,16 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public Pair<Integer, Integer> getAddiionalVncPortRange() {
-        return new Pair<Integer, Integer>(_additionalPortRangeStart, _additionalPortRangeSize);
+        return new Pair<>(_additionalPortRangeStart, _additionalPortRangeSize);
     }
 
     @Override
     public Map<String, String> getNexusVSMCredentialsByClusterId(Long clusterId) {
-        CiscoNexusVSMDeviceVO nexusVSM = null;
-        ClusterVSMMapVO vsmMapVO = null;
+        CiscoNexusVSMDeviceVO nexusVSM;
+        ClusterVSMMapVO vsmMapVO;
 
         vsmMapVO = _vsmMapDao.findByClusterId(clusterId);
-        long vsmId = 0;
+        long vsmId;
         if (vsmMapVO != null) {
             vsmId = vsmMapVO.getVsmId();
             s_logger.info("vsmId is " + vsmId);
@@ -1078,7 +1060,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             return null;
         }
 
-        Map<String, String> nexusVSMCredentials = new HashMap<String, String>();
+        Map<String, String> nexusVSMCredentials = new HashMap<>();
         if (nexusVSM != null) {
             nexusVSMCredentials.put("vsmip", nexusVSM.getipaddr());
             nexusVSMCredentials.put("vsmusername", nexusVSM.getUserName());
@@ -1105,7 +1087,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public List<Class<?>> getCommands() {
-        List<Class<?>> cmdList = new ArrayList<Class<?>>();
+        List<Class<?>> cmdList = new ArrayList<>();
         cmdList.add(AddVmwareDcCmd.class);
         cmdList.add(UpdateVmwareDcCmd.class);
         cmdList.add(RemoveVmwareDcCmd.class);
@@ -1114,13 +1096,14 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         cmdList.add(ListVsphereStoragePoliciesCmd.class);
         cmdList.add(ListVsphereStoragePolicyCompatiblePoolsCmd.class);
         cmdList.add(ListVmwareDcVmsCmd.class);
+        cmdList.add(ListVmwareDcHostsCmd.class);
         return cmdList;
     }
 
     @Override
     @DB
     public VmwareDatacenterVO addVmwareDatacenter(AddVmwareDcCmd cmd) throws ResourceInUseException {
-        VmwareDatacenterVO vmwareDc = null;
+        VmwareDatacenterVO vmwareDc;
         Long zoneId = cmd.getZoneId();
         String userName = cmd.getUsername();
         String password = cmd.getPassword();
@@ -1176,10 +1159,10 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         checkIfDcIsUsed(vCenterHost, vmwareDcName, zoneId);
 
         VmwareContext context = null;
-        DatacenterMO dcMo = null;
+        DatacenterMO dcMo;
         String dcCustomFieldValue;
         boolean addDcCustomFieldDef = false;
-        boolean dcInUse = false;
+        boolean dcInUse;
         String guid;
         ManagedObjectReference dcMor;
         try {
@@ -1212,7 +1195,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 // Map zone with vmware datacenter
             vmwareDcZoneMap = new VmwareDatacenterZoneMapVO(zoneId, vmwareDc.getId());
 
-            vmwareDcZoneMap = vmwareDatacenterZoneMapDao.persist(vmwareDcZoneMap);
+            vmwareDatacenterZoneMapDao.persist(vmwareDcZoneMap);
 
             // Set custom field for this DC
             if (addDcCustomFieldDef) {
@@ -1232,7 +1215,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             if (context != null) {
                 context.close();
             }
-            context = null;
         }
         importVsphereStoragePoliciesInternal(zoneId, vmwareDc.getId());
         return vmwareDc;
@@ -1257,9 +1239,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
      * Check if DC is already part of zone
      * In that case vmware_data_center table should have the DC and a dc zone mapping should exist
      *
-     * @param vCenterHost
-     * @param vmwareDcName
-     * @param zoneId
+     * @param vCenterHost the vcenter appliance hostname
+     * @param vmwareDcName the name of the vmware DC
+     * @param zoneId zone that the DC should be connected to
      * @throws ResourceInUseException if the DC can not be used.
      */
     private void checkIfDcIsUsed(String vCenterHost, String vmwareDcName, Long zoneId) throws ResourceInUseException {
@@ -1267,7 +1249,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         vmwareDc = vmwareDcDao.getVmwareDatacenterByGuid(vmwareDcName + "@" + vCenterHost);
         if (vmwareDc != null) {
             VmwareDatacenterZoneMapVO mapping = vmwareDatacenterZoneMapDao.findByVmwareDcId(vmwareDc.getId());
-            if (mapping != null && Long.compare(zoneId, mapping.getZoneId()) == 0) {
+            if (mapping != null && zoneId == mapping.getZoneId()) {
                 throw new ResourceInUseException(String.format("This DC (%s) is already part of other CloudStack zone (%d). Cannot add this DC to more zones.", vmwareDc.getUuid(), zoneId));
             }
         }
@@ -1276,7 +1258,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ZONE_EDIT, eventDescription = "updating VMware datacenter")
     public VmwareDatacenter updateVmwareDatacenter(UpdateVmwareDcCmd cmd) {
-        final Long zoneId = cmd.getZoneId();
+        final long zoneId = cmd.getZoneId();
         final String userName = cmd.getUsername();
         final String password = cmd.getPassword();
         final String vCenterHost = cmd.getVcenter();
@@ -1304,7 +1286,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
         vmwareDc.setGuid(String.format("%s@%s", vmwareDc.getVmwareDatacenterName(), vmwareDc.getVcenterHost()));
 
-        return Transaction.execute(new TransactionCallback<VmwareDatacenter>() {
+        return Transaction.execute(new TransactionCallback<>() {
             @Override
             public VmwareDatacenter doInTransaction(TransactionStatus status) {
                 if (vmwareDcDao.update(vmwareDc.getId(), vmwareDc)) {
@@ -1353,7 +1335,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         String vCenterHost;
         String userName;
         String password;
-        DatacenterMO dcMo = null;
+        DatacenterMO dcMo;
         final VmwareDatacenterZoneMapVO vmwareDcZoneMap = vmwareDatacenterZoneMapDao.findByZoneId(zoneId);
         // Check if zone is associated with VMware DC
         if (vmwareDcZoneMap == null) {
@@ -1390,11 +1372,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 throw new DiscoveryException(msg);
             }
 
-            assert (dcMo != null);
-
             // Reset custom field property cloud.zone over this DC
             dcMo.setCustomFieldValue(CustomFieldConstants.CLOUD_ZONE, "false");
-            s_logger.info("Sucessfully reset custom field property cloud.zone over DC " + vmwareDcName);
+            s_logger.info("Successfully reset custom field property cloud.zone over DC " + vmwareDcName);
         } catch (Exception e) {
             String msg = "Unable to reset custom field property cloud.zone over DC " + vmwareDcName + " due to : " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg);
@@ -1403,7 +1383,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             if (context != null) {
                 context.close();
             }
-            context = null;
         }
         return true;
     }
@@ -1424,7 +1403,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private void validateZoneWithResources(Long zoneId, String errStr) throws ResourceInUseException {
         // Check if zone has resources? - For now look for clusters
         List<ClusterVO> clusters = clusterDao.listByZoneId(zoneId);
-        if (clusters != null && clusters.size() > 0) {
+        if (!CollectionUtils.isNullOrEmpty(clusters)) {
             // Look for VMware hypervisor.
             for (ClusterVO cluster : clusters) {
                 if (cluster.getHypervisorType().equals(HypervisorType.VMware)) {
@@ -1445,9 +1424,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
-    public List<? extends VmwareDatacenter> listVmwareDatacenters(ListVmwareDcsCmd cmd) throws CloudRuntimeException, InvalidParameterValueException {
+    public List<? extends VmwareDatacenter> listVmwareDatacenters(ListVmwareDcsCmd cmd) throws CloudRuntimeException {
         Long zoneId = cmd.getZoneId();
-        List<VmwareDatacenterVO> vmwareDcList = new ArrayList<VmwareDatacenterVO>();
+        List<VmwareDatacenterVO> vmwareDcList = new ArrayList<>();
         VmwareDatacenterZoneMapVO vmwareDcZoneMap;
         VmwareDatacenterVO vmwareDatacenter;
         long vmwareDcId;
@@ -1505,7 +1484,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         String vCenterHost = vmwareDatacenter.getVcenterHost();
         String userName = vmwareDatacenter.getUser();
         String password = vmwareDatacenter.getPassword();
-        List<PbmProfile> storageProfiles = null;
+        List<PbmProfile> storageProfiles;
         try {
             s_logger.debug(String.format("Importing vSphere Storage Policies for the vmware DC %d in zone %d", vmwareDcId, zoneId));
             VmwareContext context = VmwareContextFactory.getContext(vCenterHost, userName, password);
@@ -1533,16 +1512,15 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         List<VsphereStoragePolicyVO> allStoragePolicies = vsphereStoragePolicyDao.listAll();
         List<PbmProfile> finalStorageProfiles = storageProfiles;
         List<VsphereStoragePolicyVO> needToMarkRemoved = allStoragePolicies.stream()
-                .filter(existingPolicy -> !finalStorageProfiles.stream()
-                    .anyMatch(storageProfile -> storageProfile.getProfileId().getUniqueId().equals(existingPolicy.getPolicyId())))
+                .filter(existingPolicy -> finalStorageProfiles.stream()
+                    .noneMatch(storageProfile -> storageProfile.getProfileId().getUniqueId().equals(existingPolicy.getPolicyId())))
                 .collect(Collectors.toList());
 
         for (VsphereStoragePolicyVO storagePolicy : needToMarkRemoved) {
             vsphereStoragePolicyDao.remove(storagePolicy.getId());
         }
 
-        List<VsphereStoragePolicyVO> storagePolicies = vsphereStoragePolicyDao.listAll();
-        return storagePolicies;
+        return vsphereStoragePolicyDao.listAll();
     }
 
     @Override
@@ -1588,13 +1566,87 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
-    public List<UnmanagedInstanceTO> listVMsInDatacenter(ListVmwareDcVmsCmd cmd) {
+    public List<HostMO> listHostsInDatacenter(ListVmwareDcHostsCmd cmd) {
+        VcenterData vmwaredc = getVcenterData(cmd);
+
+        try {
+            VmwareContext context = getVmwareContext(vmwaredc);
+            DatacenterMO dcMo = getDatacenterMO(context, vmwaredc);
+            return dcMo.getAllHostsOnDatacenter();
+        } catch (RuntimeFaultFaultMsg | URISyntaxException | VmwareClientException | InvalidLocaleFaultMsg |
+                 InvalidLoginFaultMsg | InvalidPropertyFaultMsg e) {
+            String errorMsg = String.format("Error retrieving stopped VMs from the VMware VC %s datacenter %s: %s",
+                    vmwaredc.vcenter, vmwaredc.datacenterName, e.getMessage());
+            s_logger.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg);
+        }
+
+    }
+
+    @Override
+    public Pair<String, List<UnmanagedInstanceTO>> listVMsInDatacenter(ListVmwareDcVmsCmd cmd) {
+        Integer maxObjects = cmd.getBatchSize();
+        String token = cmd.getToken();
+        String host = cmd.getHost();
+
+        VcenterData vmwaredc = getVcenterData(cmd);
+
+        try {
+            VmwareContext context = getVmwareContext(vmwaredc);
+
+            DatacenterMO dcMo = getDatacenterMO(context, vmwaredc);
+
+            if (com.cloud.utils.StringUtils.isNotBlank(host)) {
+                ManagedObjectReference hostMor = dcMo.findHost(host);
+                if (hostMor == null) {
+                    throw new VmwareClientException(String.format("No host '%s' found on DC: %s.", host, dcMo.getName()));
+                }
+                HostMO hostMo = new HostMO(context, hostMor);
+                return hostMo.getVms(maxObjects, token);
+            } else {
+                return dcMo.getVms(maxObjects, token);
+            }
+        } catch (InvalidParameterValueException | VmwareClientException | InvalidLocaleFaultMsg | InvalidLoginFaultMsg |
+                 RuntimeFaultFaultMsg | URISyntaxException | InvalidPropertyFaultMsg | InvocationTargetException |
+                 NoSuchMethodException | IllegalAccessException e) {
+            String errorMsg = String.format("Error retrieving stopped VMs from the VMware VC %s datacenter %s: %s",
+                    vmwaredc.vcenter, vmwaredc.datacenterName, e.getMessage());
+            s_logger.error(errorMsg, e);
+            throw new CloudRuntimeException(errorMsg);
+        }
+    }
+
+    @NotNull
+    private static DatacenterMO getDatacenterMO(VmwareContext context, VcenterData vmwaredc) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
+        DatacenterMO dcMo = new DatacenterMO(context, vmwaredc.datacenterName);
+        ManagedObjectReference dcMor = dcMo.getMor();
+        if (dcMor == null) {
+            String msg = String.format("Unable to find VMware datacenter %s in vCenter %s",
+                    vmwaredc.datacenterName, vmwaredc.vcenter);
+            s_logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+        return dcMo;
+    }
+
+    @NotNull
+    private static VmwareContext getVmwareContext(VcenterData vmwaredc) throws RuntimeFaultFaultMsg, URISyntaxException, VmwareClientException, InvalidLocaleFaultMsg, InvalidLoginFaultMsg {
+        s_logger.debug(String.format("Connecting to the VMware datacenter %s at vCenter %s to retrieve VMs",
+                vmwaredc.datacenterName, vmwaredc.vcenter));
+        String serviceUrl = String.format("https://%s/sdk/vimService", vmwaredc.vcenter);
+        VmwareClient vimClient = new VmwareClient(vmwaredc.vcenter);
+        vimClient.connect(serviceUrl, vmwaredc.username, vmwaredc.password);
+        VmwareContext context = new VmwareContext(vimClient, vmwaredc.vcenter);
+        return context;
+    }
+
+    @NotNull
+    private VcenterData getVcenterData(ListVmwareDcItems cmd) {
         String vcenter = cmd.getVcenter();
         String datacenterName = cmd.getDatacenterName();
         String username = cmd.getUsername();
         String password = cmd.getPassword();
         Long existingVcenterId = cmd.getExistingVcenterId();
-        String keyword = cmd.getKeyword();
 
         if ((existingVcenterId == null && StringUtils.isBlank(vcenter)) ||
                 (existingVcenterId != null && StringUtils.isNotBlank(vcenter))) {
@@ -1615,37 +1667,27 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             username = vmwareDc.getUser();
             password = vmwareDc.getPassword();
         }
+        VcenterData vmwaredc = new VcenterData(vcenter, datacenterName, username, password);
+        return vmwaredc;
+    }
 
-        try {
-            s_logger.debug(String.format("Connecting to the VMware datacenter %s at vCenter %s to retrieve VMs",
-                    datacenterName, vcenter));
-            String serviceUrl = String.format("https://%s/sdk/vimService", vcenter);
-            VmwareClient vimClient = new VmwareClient(vcenter);
-            vimClient.connect(serviceUrl, username, password);
-            VmwareContext context = new VmwareContext(vimClient, vcenter);
+    private static class VcenterData {
+        public final String vcenter;
+        public final String datacenterName;
+        public final String username;
+        public final String password;
 
-            DatacenterMO dcMo = new DatacenterMO(context, datacenterName);
-            ManagedObjectReference dcMor = dcMo.getMor();
-            if (dcMor == null) {
-                String msg = String.format("Unable to find VMware datacenter %s in vCenter %s",
-                        datacenterName, vcenter);
-                s_logger.error(msg);
-                throw new InvalidParameterValueException(msg);
-            }
-            List<UnmanagedInstanceTO> instances = dcMo.getAllVmsOnDatacenter();
-            return StringUtils.isBlank(keyword) ? instances :
-                    instances.stream().filter(x -> x.getName().toLowerCase().contains(keyword.toLowerCase())).collect(Collectors.toList());
-        } catch (Exception e) {
-            String errorMsg = String.format("Error retrieving stopped VMs from the VMware VC %s datacenter %s: %s",
-                    vcenter, datacenterName, e.getMessage());
-            s_logger.error(errorMsg, e);
-            throw new CloudRuntimeException(errorMsg);
+        public VcenterData(String vcenter, String datacenterName, String username, String password) {
+            this.vcenter = vcenter;
+            this.datacenterName = datacenterName;
+            this.username = username;
+            this.password = password;
         }
     }
 
     @Override
     public boolean hasNexusVSM(Long clusterId) {
-        ClusterVSMMapVO vsmMapVo = null;
+        ClusterVSMMapVO vsmMapVo;
 
         vsmMapVo = _vsmMapDao.findByClusterId(clusterId);
         if (vsmMapVo == null) {
@@ -1695,7 +1737,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     /**
-     * This task is to cleanup templates from primary storage that are otherwise not cleaned by the {@link com.cloud.storage.StorageManagerImpl.StorageGarbageCollector}.
+     * This task is to clean-up templates from primary storage that are otherwise not cleaned by the {@see com.cloud.storage.StorageManagerImpl.StorageGarbageCollector}.
      * it is called at regular intervals when storage.template.cleanup.enabled == true
      * It collect all templates that
      * - are deleted from cloudstack

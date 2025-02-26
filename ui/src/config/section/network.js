@@ -19,6 +19,7 @@ import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import tungsten from '@/assets/icons/tungsten.svg?inline'
 import { isAdmin } from '@/role'
+import { isZoneCreated } from '@/utils/zone'
 
 export default {
   name: 'network',
@@ -123,7 +124,7 @@ export default {
           listView: true,
           popup: true,
           show: () => {
-            if (!store.getters.zones || store.getters.zones.length === 0) {
+            if (!isZoneCreated()) {
               return false
             }
             const AdvancedZones = store.getters.zones.filter(zone => zone.networktype === 'Advanced')
@@ -245,6 +246,7 @@ export default {
           icon: 'plus-outlined',
           label: 'label.add.vpc',
           docHelp: 'adminguide/networking_and_traffic.html#adding-a-virtual-private-cloud',
+          show: isZoneCreated,
           listView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/network/CreateVpc.vue')))
@@ -306,7 +308,7 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/IngressEgressRuleConfigure.vue')))
       }],
       show: () => {
-        if (!store.getters.zones || store.getters.zones.length === 0) {
+        if (!isZoneCreated()) {
           return false
         }
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
@@ -394,6 +396,7 @@ export default {
           label: 'label.vnf.appliance.add',
           docHelp: 'adminguide/networking/vnf_templates_appliances.html#deploying-vnf-appliances',
           listView: true,
+          show: isZoneCreated,
           component: () => import('@/views/compute/DeployVnfAppliance.vue')
         },
         {
@@ -837,10 +840,13 @@ export default {
           message: 'message.action.release.ip',
           docHelp: 'adminguide/networking_and_traffic.html#releasing-an-ip-address-alloted-to-a-vpc',
           dataView: true,
-          show: (record) => { return record.state === 'Allocated' && !record.issourcenat },
+          show: (record) => { return record.state === 'Allocated' && !record.issourcenat && !record.issystem },
           groupAction: true,
           popup: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          groupShow: (selectedIps) => {
+            return selectedIps.every((ip) => ip.state === 'Allocated' && !ip.issourcenat && !ip.issystem)
+          }
         },
         {
           api: 'reserveIpAddress',
@@ -860,7 +866,10 @@ export default {
           show: (record) => { return record.state === 'Reserved' },
           groupAction: true,
           popup: true,
-          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) },
+          groupShow: (selectedIps) => {
+            return selectedIps.every((ip) => ip.state === 'Reserved')
+          }
         }
       ]
     },
@@ -941,6 +950,7 @@ export default {
           label: 'label.add.vpn.gateway',
           docHelp: 'adminguide/networking_and_traffic.html#creating-a-vpn-gateway-for-the-vpc',
           listView: true,
+          show: isZoneCreated,
           args: ['vpcid']
         },
         {
@@ -1116,6 +1126,7 @@ export default {
           icon: 'plus-outlined',
           label: 'label.add.vpn.user',
           listView: true,
+          show: isZoneCreated,
           args: (record, store) => {
             if (store.userInfo.roletype === 'User') {
               return ['username', 'password']
@@ -1195,6 +1206,7 @@ export default {
           docHelp: 'adminguide/networking_and_traffic.html#creating-and-updating-a-vpn-customer-gateway',
           listView: true,
           popup: true,
+          show: isZoneCreated,
           component: shallowRef(defineAsyncComponent(() => import('@/views/network/CreateVpnCustomerGateway.vue')))
         },
         {
@@ -1384,12 +1396,7 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/GuestVlanNetworksTab.vue'))),
         show: (record) => { return (record.allocationstate === 'Allocated') }
       }],
-      show: () => {
-        if (!store.getters.zones || store.getters.zones.length === 0) {
-          return false
-        }
-        return true
-      }
+      show: isZoneCreated
     }
   ]
 }

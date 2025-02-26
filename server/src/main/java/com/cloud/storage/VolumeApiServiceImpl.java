@@ -2426,10 +2426,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return existingVolumeOfVm;
     }
 
-    protected StoragePool getPoolForAllocatedOrUploadedVolumeForAttach(final VolumeInfo volumeToAttach, final UserVmVO vm) {
+    protected StoragePool getSuitablePoolForAllocatedOrUploadedVolumeForAttach(final VolumeInfo volumeToAttach, final UserVmVO vm) {
         DataCenter zone = _dcDao.findById(vm.getDataCenterId());
         Pair<Long, Long> clusterHostId = virtualMachineManager.findClusterAndHostIdForVm(vm, false);
-        long podId = vm.getPodIdToDeployIn();
+        Long podId = vm.getPodIdToDeployIn();
         if (clusterHostId.first() != null) {
             Cluster cluster = clusterDao.findById(clusterHostId.first());
             podId = cluster.getPodId();
@@ -2441,12 +2441,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 offering.isUseLocalStorage(), offering.isRecreatable(),
                 volumeToAttach.getTemplateId());
         diskProfile.setHyperType(vm.getHypervisorType());
-        StoragePool pool = _volumeMgr.findStoragePool(diskProfile, zone, pod, clusterHostId.first(),
+        return _volumeMgr.findStoragePool(diskProfile, zone, pod, clusterHostId.first(),
                 clusterHostId.second(), vm, Collections.emptySet());
-        if (pool == null) {
-            throw new CloudRuntimeException(String.format("Failed to find a primary storage for volume in state: %s", volumeToAttach.getState()));
-        }
-        return pool;
     }
 
     protected VolumeInfo createVolumeOnPrimaryForAttachIfNeeded(final VolumeInfo volumeToAttach, final UserVmVO vm, VolumeVO existingVolumeOfVm) {
@@ -2464,7 +2460,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
         }
         if (destPrimaryStorage == null) {
-            destPrimaryStorage = getPoolForAllocatedOrUploadedVolumeForAttach(volumeToAttach, vm);
+            destPrimaryStorage = getSuitablePoolForAllocatedOrUploadedVolumeForAttach(volumeToAttach, vm);
+            if (destPrimaryStorage == null) {
+                if (Volume.State.Allocated.equals(volumeToAttach.getState()) && State.Stopped.equals(vm.getState())) {
+                    return newVolumeOnPrimaryStorage;
+                }
+                throw new CloudRuntimeException(String.format("Failed to find a primary storage for volume in state: %s", volumeToAttach.getState()));
+            }
         }
         try {
             if (volumeOnSecondary && Storage.StoragePoolType.PowerFlex.equals(destPrimaryStorage.getPoolType())) {
@@ -3517,7 +3519,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if ((destPool.isShared() && newDiskOffering.isUseLocalStorage()) || destPool.isLocal() && newDiskOffering.isShared()) {
             throw new InvalidParameterValueException("You cannot move the volume to a shared storage and assign a disk offering for local storage and vice versa.");
         }
-        if (!doesTargetStorageSupportDiskOffering(destPool, newDiskOffering)) {
+        if (!doesStoragePoolSupportDiskOffering(destPool, newDiskOffering)) {
             throw new InvalidParameterValueException(String.format("Migration failed: target pool [%s, tags:%s] has no matching tags for volume [%s, uuid:%s, tags:%s]", destPool.getName(),
                     storagePoolTagsDao.getStoragePoolTags(destPool.getId()), volume.getName(), volume.getUuid(), newDiskOffering.getTags()));
         }
@@ -3544,7 +3546,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     /**
-     *  Checks if the target storage supports the new disk offering.
+     *  Checks if the storage pool supports the new disk offering.
      *  This validation is consistent with the mechanism used to select a storage pool to deploy a volume when a virtual machine is deployed or when a new data disk is allocated.
      *
      *  The scenarios when this method returns true or false is presented in the following table.
@@ -3575,9 +3577,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      *      </body>
      *   </table>
      */
-    protected boolean doesTargetStorageSupportDiskOffering(StoragePool destPool, DiskOfferingVO diskOffering) {
-        String targetStoreTags = diskOffering.getTags();
-        return doesTargetStorageSupportDiskOffering(destPool, targetStoreTags);
+    protected boolean doesStoragePoolSupportDiskOffering(StoragePool destPool, DiskOfferingVO diskOffering) {
+        String offeringTags = diskOffering.getTags();
+        return doesStoragePoolSupportDiskOfferingTags(destPool, offeringTags);
     }
 
     public static boolean doesNewDiskOfferingHasTagsAsOldDiskOffering(DiskOfferingVO oldDO, DiskOfferingVO newDO) {
@@ -3593,18 +3595,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     @Override
-    public boolean doesTargetStorageSupportDiskOffering(StoragePool destPool, String diskOfferingTags) {
+    public boolean doesStoragePoolSupportDiskOfferingTags(StoragePool destPool, String diskOfferingTags) {
         Pair<List<String>, Boolean> storagePoolTags = getStoragePoolTags(destPool);
         if ((storagePoolTags == null || !storagePoolTags.second()) && org.apache.commons.lang.StringUtils.isBlank(diskOfferingTags)) {
             if (storagePoolTags == null) {
-                s_logger.debug(String.format("Destination storage pool [%s] does not have any tags, and so does the disk offering. Therefore, they are compatible", destPool.getUuid()));
+                s_logger.debug(String.format("Storage pool [%s] does not have any tags, and so does the disk offering. Therefore, they are compatible", destPool.getUuid()));
             } else {
-                s_logger.debug("Destination storage pool has tags [%s], and the disk offering has no tags. Therefore, they are compatible.");
+                s_logger.debug("Storage pool has tags [%s], and the disk offering has no tags. Therefore, they are compatible.");
             }
             return true;
         }
         if (storagePoolTags == null || CollectionUtils.isEmpty(storagePoolTags.first())) {
-            s_logger.debug(String.format("Destination storage pool [%s] has no tags, while disk offering has tags [%s]. Therefore, they are not compatible", destPool.getUuid(),
+            s_logger.debug(String.format("Storage pool [%s] has no tags, while disk offering has tags [%s]. Therefore, they are not compatible", destPool.getUuid(),
                     diskOfferingTags));
             return false;
         }
@@ -3617,7 +3619,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         } else {
             result = CollectionUtils.isSubCollection(Arrays.asList(newDiskOfferingTagsAsStringArray), storageTagsList);
         }
-        s_logger.debug(String.format("Destination storage pool [%s] accepts tags [%s]? %s", destPool.getUuid(), diskOfferingTags, result));
+        s_logger.debug(String.format("Storage pool [%s] accepts tags [%s]? %s", destPool.getUuid(), diskOfferingTags, result));
         return result;
     }
 
