@@ -728,17 +728,27 @@ public class CloudianHyperStoreObjectStoreDriverImpl extends BaseObjectStoreDriv
     }
 
     /**
-     * Set the bucket quota to size bytes.
+     * Set the bucket quota to a size limit specified in GiB.
+     *
+     * Cloudian HyperStore does not currently support bucket quota limits.
+     * CloudStack itself requires a quota to be set. HyperStore may add
+     * Bucket Quota support in a future version. Currently, we only support
+     * setting the quota to zero to indicate no quota.
+     *
      * @param bucket the bucket
      * @param storeId the store
-     * @param size the GB (1000^3) size to set the quota to.
-     * @throws CloudRuntimeException is always thrown as Cloudian does not currently
-     *         implement bucket quotas.
+     * @param size the GiB (1024^3) size to set the quota to. Only 0 is supported.
+     * @throws CloudRuntimeException is thrown for any other value other than 0.
      */
     @Override
     public void setBucketQuota(BucketTO bucket, long storeId, long size) {
-        logger.warn("Unable to set quota for bucket \"{}\" to {}GB. Cloudian does not implement Bucket Quota.", bucket.getName(), size);
-        throw new CloudRuntimeException("This bucket does not support quotas.");
+        if (size == 0) {
+            logger.debug("Bucket \"{}\" quota set to 0 (no quota).", bucket.getName());
+            return;
+        }
+        // Any other setting, throw an exception.
+        logger.warn("Unable to set quota for bucket \"{}\" to {}GiB. Only 0 is supported.", bucket.getName(), size);
+        throw new CloudRuntimeException("This bucket does not support a quota. Use 0 to specify no quota.");
     }
 
     /**

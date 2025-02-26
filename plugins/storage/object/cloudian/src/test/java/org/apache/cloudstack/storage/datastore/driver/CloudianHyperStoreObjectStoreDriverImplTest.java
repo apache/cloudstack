@@ -556,11 +556,18 @@ public class CloudianHyperStoreObjectStoreDriverImplTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testSetBucketQuota() {
+    public void testSetBucketQuotaNonZero() {
         BucketTO bucket = mock(BucketTO.class);
         when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
-        // Quota is not implemented by HyperStore, we throw an CloudRuntimeException.
-        cloudianHyperStoreObjectStoreDriverImpl.setBucketQuota(bucket, TEST_STORE_ID, 5000L);
+        // Quota is not implemented by HyperStore. Throws a CloudRuntimeException if not 0.
+        cloudianHyperStoreObjectStoreDriverImpl.setBucketQuota(bucket, TEST_STORE_ID, 5L);
+    }
+
+    public void testSetBucketQuotaToZero() {
+        BucketTO bucket = mock(BucketTO.class);
+        when(bucket.getName()).thenReturn(TEST_BUCKET_NAME);
+        // A zero quota indicates no quota and should be an accepted value.
+        cloudianHyperStoreObjectStoreDriverImpl.setBucketQuota(bucket, TEST_STORE_ID, 0);
     }
 
     @Test

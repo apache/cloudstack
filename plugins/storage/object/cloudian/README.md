@@ -20,12 +20,12 @@ Cloudian HyperStore is a fully AWS-S3 compatible Object Storage solution. The fo
 
 1. Enable Bucket Usage Statistics
 
-   Bucket Level QoS settings must be set to true. On HyperStore 8+, this can be done as follows. Earlier versions require puppet configuration not documented here.
+   Bucket Level QoS settings must be set to true. On HyperStore 8+, this can be done as follows. Earlier versions require puppet configuration which is not documented here.
 
    ```shell
    hsh$ hsctl config set s3.qos.bucketLevel=true
-   hsh$ hsctl config apply s3
-   hsh$ hsctl service restart --nodes=ALL
+   hsh$ hsctl config apply s3 cmc
+   hsh$ hsctl service restart s3 cmc --nodes=ALL
    ```
 
 2. The Admin API Username and Password
@@ -104,7 +104,7 @@ The following are noteworthy.
 
 ### Bucket Quota is Unsupported
 
-This operation is not supported by this plugin. Cloudian HyperStore does not currently support restricting the size of a bucket to a particular quota.
+Cloudian HyperStore does not currently support restricting the size of a bucket to a particular quota limit. The plugin accepts a quota value of 0 to indicate no quota setting. When creating a bucket in the CloudStack UI, the user is required to set a quota of 0. Any other value will fail.
 
 ### Bucket Usage
 
