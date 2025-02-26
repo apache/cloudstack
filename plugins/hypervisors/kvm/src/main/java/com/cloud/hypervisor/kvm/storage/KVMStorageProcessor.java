@@ -2472,8 +2472,15 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             template = storagePoolMgr.createPhysicalDiskFromDirectDownloadTemplate(tempFilePath, destTemplatePath, destPool, cmd.getFormat(), cmd.getWaitInMillSeconds());
 
-            String templatePath = template.getPath();
-            if (templatePath != null) {
+            String templatePath = null;
+            if (template != null) {
+                templatePath = template.getPath();
+            }
+            if (StringUtils.isEmpty(templatePath)) {
+                logger.warn("Skipped validation whether downloaded file is QCOW2 for template {}, due to downloaded template path is empty", template.getName());
+            } else if (!new File(templatePath).exists()) {
+                logger.warn("Skipped validation whether downloaded file is QCOW2 for template {}, due to downloaded template path is not valid: {}", template.getName(), templatePath);
+            } else {
                 try {
                     Qcow2Inspector.validateQcow2File(templatePath);
                 } catch (RuntimeException e) {

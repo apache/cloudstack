@@ -45,13 +45,13 @@ public final class IpmitoolOutOfBandManagementDriver extends AdapterBase impleme
     private final ExecutorService ipmitoolExecutor = Executors.newFixedThreadPool(OutOfBandManagementService.SyncThreadPoolSize.value(), new NamedThreadFactory("IpmiToolDriver"));
     private final IpmitoolWrapper IPMITOOL = new IpmitoolWrapper(ipmitoolExecutor);
 
-    public final ConfigKey<String> IpmiToolPath = new ConfigKey<String>("Advanced", String.class, "outofbandmanagement.ipmitool.path", "/usr/bin/ipmitool",
+    public final ConfigKey<String> IpmiToolPath = new ConfigKey<>("Advanced", String.class, "outofbandmanagement.ipmitool.path", "/usr/bin/ipmitool",
             "The out of band management ipmitool path used by the IpmiTool driver. Default: /usr/bin/ipmitool.", true, ConfigKey.Scope.Global);
 
-    public final ConfigKey<String> IpmiToolInterface = new ConfigKey<String>("Advanced", String.class, "outofbandmanagement.ipmitool.interface", "lanplus",
+    public final ConfigKey<String> IpmiToolInterface = new ConfigKey<>("Advanced", String.class, "outofbandmanagement.ipmitool.interface", "lanplus",
             "The out of band management IpmiTool driver interface to use. Default: lanplus. Valid values are: lan, lanplus, open etc.", true, ConfigKey.Scope.Global);
 
-    public final ConfigKey<String> IpmiToolRetries = new ConfigKey<String>("Advanced", String.class, "outofbandmanagement.ipmitool.retries", "1",
+    public final ConfigKey<String> IpmiToolRetries = new ConfigKey<>("Advanced", String.class, "outofbandmanagement.ipmitool.retries", "1",
             "The out of band management IpmiTool driver retries option -R. Default 1.", true, ConfigKey.Scope.Global);
 
     private String getIpmiUserId(ImmutableMap<OutOfBandManagement.Option, String> options, final Duration timeOut) {
@@ -120,7 +120,7 @@ public final class IpmitoolOutOfBandManagementDriver extends AdapterBase impleme
 
         final OutOfBandManagementDriverResponse response = IPMITOOL.executeCommands(ipmiToolCommands, cmd.getTimeout());
 
-        String oneLineCommand = StringUtils.join(ipmiToolCommands, " ");
+        String oneLineCommand = StringUtils.join(IPMITOOL.getSanatisedCommandStrings(ipmiToolCommands), " ");
         String result = response.getResult().trim();
 
         if (response.isSuccess()) {

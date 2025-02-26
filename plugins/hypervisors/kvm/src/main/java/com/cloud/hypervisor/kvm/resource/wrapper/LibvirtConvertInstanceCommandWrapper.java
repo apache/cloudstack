@@ -70,7 +70,6 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         Hypervisor.HypervisorType sourceHypervisorType = sourceInstance.getHypervisorType();
         String sourceInstanceName = sourceInstance.getInstanceName();
         Hypervisor.HypervisorType destinationHypervisorType = cmd.getDestinationHypervisorType();
-        List<String> destinationStoragePools = cmd.getDestinationStoragePools();
         DataStoreTO conversionTemporaryLocation = cmd.getConversionTemporaryLocation();
         long timeout = (long) cmd.getWait() * 1000;
 
@@ -193,9 +192,15 @@ public class LibvirtConvertInstanceCommandWrapper extends CommandWrapper<Convert
         String password = vmwareInstance.getVcenterPassword();
         String datacenter = vmwareInstance.getDatacenterName();
         String vm = vmwareInstance.getInstanceName();
+        String path = vmwareInstance.getInstancePath();
 
         String encodedUsername = encodeUsername(username);
         String encodedPassword = encodeUsername(password);
+        if (StringUtils.isNotBlank(path)) {
+            logger.info("VM path: {}", path);
+            return String.format("vi://%s:%s@%s/%s/%s/%s",
+                    encodedUsername, encodedPassword, vcenter, datacenter, path, vm);
+        }
         return String.format("vi://%s:%s@%s/%s/vm/%s",
                 encodedUsername, encodedPassword, vcenter, datacenter, vm);
     }

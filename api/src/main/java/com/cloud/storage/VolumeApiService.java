@@ -22,7 +22,12 @@ import java.net.MalformedURLException;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.offering.DiskOffering;
+import com.cloud.user.Account;
 import com.cloud.utils.Pair;
+import com.cloud.utils.fsm.NoTransitionException;
+
 import org.apache.cloudstack.api.command.user.volume.AssignVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
@@ -37,13 +42,9 @@ import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.user.Account;
-import com.cloud.utils.fsm.NoTransitionException;
-
 public interface VolumeApiService {
 
-    ConfigKey<Long> ConcurrentMigrationsThresholdPerDatastore = new ConfigKey<Long>("Advanced"
+    ConfigKey<Long> ConcurrentMigrationsThresholdPerDatastore = new ConfigKey<>("Advanced"
             , Long.class
             , "concurrent.migrations.per.target.datastore"
             , "0"
@@ -51,7 +52,7 @@ public interface VolumeApiService {
             , true // not sure if this is to be dynamic
             , ConfigKey.Scope.Global);
 
-    ConfigKey<Boolean> UseHttpsToUpload = new ConfigKey<Boolean>("Advanced",
+    ConfigKey<Boolean> UseHttpsToUpload = new ConfigKey<>("Advanced",
             Boolean.class,
             "use.https.to.upload",
             "true",
@@ -85,7 +86,7 @@ public interface VolumeApiService {
      * @param cmd
      *            the API command wrapping the criteria
      * @return the volume object
-     * @throws ResourceAllocationException
+     * @throws ResourceAllocationException no capacity to allocate the new volume size
      */
     Volume resizeVolume(ResizeVolumeCmd cmd) throws ResourceAllocationException;
 
@@ -139,13 +140,13 @@ public interface VolumeApiService {
     Snapshot allocSnapshotForVm(Long vmId, Long volumeId, String snapshotName) throws ResourceAllocationException;
 
     /**
-     *  Checks if the target storage supports the disk offering.
+     *  Checks if the storage pool supports the disk offering tags.
      *  This validation is consistent with the mechanism used to select a storage pool to deploy a volume when a virtual machine is deployed or when a data disk is allocated.
      *
      *  The scenarios when this method returns true or false is presented in the following table.
      *   <table border="1">
      *      <tr>
-     *          <th>#</th><th>Disk offering tags</th><th>Storage tags</th><th>Does the storage support the disk offering?</th>
+     *          <th>#</th><th>Disk offering diskOfferingTags</th><th>Storage diskOfferingTags</th><th>Does the storage support the disk offering?</th>
      *      </tr>
      *      <body>
      *      <tr>
@@ -169,7 +170,8 @@ public interface VolumeApiService {
      *      </body>
      *   </table>
      */
-    boolean doesTargetStorageSupportDiskOffering(StoragePool destPool, String diskOfferingTags);
+    boolean doesStoragePoolSupportDiskOffering(StoragePool destPool, DiskOffering diskOffering);
+    boolean doesStoragePoolSupportDiskOfferingTags(StoragePool destPool, String diskOfferingTags);
 
     Volume destroyVolume(long volumeId, Account caller, boolean expunge, boolean forceExpunge);
 
