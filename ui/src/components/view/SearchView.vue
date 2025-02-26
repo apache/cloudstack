@@ -80,7 +80,7 @@
                           </span>
                           <global-outlined v-else style="margin-right: 5px" />
                         </span>
-                        <span v-if="(field.name.startsWith('domain') || field.name === 'account')">
+                        <span v-if="(field.name.startsWith('domain') || field.name === 'account' || field.name.startsWith('associatednetwork'))">
                           <span v-if="opt.icon">
                             <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                           </span>
@@ -90,13 +90,6 @@
                           <status :text="opt.state" />
                         </span>
                         {{ $t((['storageid'].includes(field.name) || !opt.path) ? opt.name : opt.path) }}
-                        <span v-if="(field.name.startsWith('associatednetwork'))">
-                          <span v-if="opt.icon">
-                            <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                          </span>
-                          <block-outlined v-else style="margin-right: 5px" />
-                        </span>
-                        {{ $t(opt.path || opt.name) }}
                       </div>
                     </a-select-option>
                   </a-select>
@@ -256,7 +249,8 @@ export default {
       this.fetchDynamicFieldData(fieldname, event.target.value)
     },
     onSelectFieldChange (fieldname) {
-      if (fieldname === 'domainid') {
+      const fetchAccountOptions = fieldname === 'domainid' && this.fields.some((field) => field.name === 'account')
+      if (fetchAccountOptions) {
         this.fetchDynamicFieldData('account')
       }
     },
@@ -311,12 +305,10 @@ export default {
         if (item === 'isencrypted' && !('listVolumes' in this.$store.getters.apis)) {
           return true
         }
-        if (item === 'displaynetwork' && this.$store.getters.userInfo.roletype !== 'Admin') {
-          return true
-        }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
-          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'networkid', 'usagetype', 'restartrequired', 'displaynetwork'].includes(item)
+          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'networkid',
+          'usagetype', 'restartrequired', 'displaynetwork', 'guestiptype', 'usersource'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -344,9 +336,9 @@ export default {
         this.fields[typeIndex].opts = this.fetchBoolean()
         this.fields[typeIndex].loading = false
       }
-      if (arrayField.includes('type')) {
-        if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
-          const typeIndex = this.fields.findIndex(item => item.name === 'type')
+      if (arrayField.includes('type') || arrayField.includes('guestiptype')) {
+        if (this.$route.path.includes('/guestnetwork') || this.$route.path.includes('/networkoffering')) {
+          const typeIndex = this.fields.findIndex(item => ['type', 'guestiptype'].includes(item.name))
           this.fields[typeIndex].loading = true
           this.fields[typeIndex].opts = this.fetchGuestNetworkTypes()
           this.fields[typeIndex].loading = false
@@ -682,6 +674,9 @@ export default {
         if (accountIndex > -1) {
           this.fields[accountIndex].loading = false
         }
+        if (hypervisorIndex > -1) {
+          this.fields[hypervisorIndex].loading = false
+        }
         if (imageStoreIndex > -1) {
           this.fields[imageStoreIndex].loading = false
         }
@@ -715,10 +710,6 @@ export default {
         if (Array.isArray(arrayField)) {
           this.fillFormFieldValues()
         }
-        if (networkIndex > -1) {
-          this.fields[networkIndex].loading = false
-        }
-        this.fillFormFieldValues()
       })
     },
     initFormFieldData () {
@@ -786,7 +777,7 @@ export default {
           params.domainid = this.form.domainid
         }
         api('listAccounts', params).then(json => {
-          var account = json.listaccountsresponse.account
+          let account = json?.listaccountsresponse?.account || []
           if (this.form.domainid) {
             account = account.filter(a => a.domainid === this.form.domainid)
           }
@@ -1016,18 +1007,6 @@ export default {
           name: 'label.l2'
         })
       }
-      return types
-    },
-    fetchBoolean () {
-      const types = []
-      types.push({
-        id: 'true',
-        name: 'label.true'
-      })
-      types.push({
-        id: 'false',
-        name: 'label.false'
-      })
       return types
     },
     fetchAccountTypes () {
@@ -1327,7 +1306,7 @@ export default {
       this.searchQuery = value
       this.$emit('search', { searchQuery: this.searchQuery })
     },
-    onClear () {
+    async onClear () {
       this.formRef.value.resetFields()
       this.form = reactive({})
       this.isFiltered = false
@@ -1335,6 +1314,14 @@ export default {
       this.inputValue = null
       this.searchQuery = null
       this.paramsFilter = {}
+
+      const refreshAccountOptions = ['account', 'domainid'].every((field) => {
+        return this.fields.some((searchViewField) => searchViewField.name === field)
+      })
+      if (refreshAccountOptions) {
+        await this.fetchDynamicFieldData('account')
+      }
+
       this.$emit('search', this.paramsFilter)
     },
     handleSubmit () {

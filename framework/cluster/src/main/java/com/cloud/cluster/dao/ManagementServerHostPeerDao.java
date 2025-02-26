@@ -33,4 +33,7 @@ public interface ManagementServerHostPeerDao extends GenericDao<ManagementServer
 
     boolean isPeerUpState(long ownerMshost, long peerMshost, Date cutTime);
 
+    ManagementServerHostPeerVO findByOwnerAndPeerMsHost(long ownerMshost, long peerMshost, ManagementServerHost.State peerState);
+
+    ManagementServerHostPeerVO findByPeerMsAndState(long peerMshost, ManagementServerHost.State peerState);
 }

@@ -275,7 +275,7 @@ public class VolumeImportUnmanageManagerImplTest {
         when(diskOffering.isCustomized()).thenReturn(true);
         doReturn(diskOffering).when(volumeImportUnmanageManager).getOrCreateDiskOffering(account, diskOfferingId, zoneId, isLocal);
         doNothing().when(volumeApiService).validateCustomDiskOfferingSizeRange(anyLong());
-        doReturn(true).when(volumeApiService).doesTargetStorageSupportDiskOffering(any(), isNull());
+        doReturn(true).when(volumeApiService).doesStoragePoolSupportDiskOffering(any(), any());
         doReturn(diskProfile).when(volumeManager).importVolume(any(), anyString(), any(), eq(virtualSize), isNull(), isNull(), anyLong(),
                 any(), isNull(), isNull(), any(), isNull(), anyLong(), anyString(), isNull());
         when(diskProfile.getVolumeId()).thenReturn(volumeId);

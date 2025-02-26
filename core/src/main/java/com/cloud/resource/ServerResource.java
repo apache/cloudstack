@@ -50,6 +50,10 @@ public interface ServerResource extends Manager {
      */
     StartupCommand[] initialize();
 
+    default StartupCommand[] initialize(boolean isTransferredConnection) {
+        return initialize();
+    }
+
     /**
      * @param id id of the server to put in the PingCommand
      * @return PingCommand
@@ -77,5 +81,13 @@ public interface ServerResource extends Manager {
     IAgentControl getAgentControl();
 
     void setAgentControl(IAgentControl agentControl);
+
+    default boolean isExitOnFailures() {
+        return true;
+    }
+
+    default boolean isAppendAgentNameToLogs() {
+        return false;
+    }
 
 }

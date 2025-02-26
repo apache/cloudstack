@@ -26,8 +26,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.Timer;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import javax.inject.Inject;
 import javax.mail.MessagingException;
@@ -75,12 +78,11 @@ import com.cloud.event.AlertGenerator;
 import com.cloud.event.EventTypes;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.network.Ipv6Service;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.resource.ResourceManager;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.StorageManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
@@ -124,9 +126,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     @Inject
     protected ConfigDepot _configDepot;
     @Inject
-    ServiceOfferingDao _offeringsDao;
-    @Inject
     Ipv6Service ipv6Service;
+    @Inject
+    HostDao hostDao;
 
     private Timer _timer = null;
     private long _capacityCheckPeriod = 60L * 60L * 1000L; // One hour by default.
@@ -260,6 +262,66 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         }
     }
 
+    /**
+     * Recalculates the capacities of hosts, including CPU and RAM.
+     */
+    protected void recalculateHostCapacities() {
+        List<Long> hostIds = hostDao.listIdsByType(Host.Type.Routing);
+        if (hostIds.isEmpty()) {
+            return;
+        }
+        ConcurrentHashMap<Long, Future<Void>> futures = new ConcurrentHashMap<>();
+        ExecutorService executorService = Executors.newFixedThreadPool(Math.max(1,
+                Math.min(CapacityManager.CapacityCalculateWorkers.value(), hostIds.size())));
+        for (Long hostId : hostIds) {
+            futures.put(hostId, executorService.submit(() -> {
+                final HostVO host = hostDao.findById(hostId);
+                _capacityMgr.updateCapacityForHost(host);
+                return null;
+            }));
+        }
+        for (Map.Entry<Long, Future<Void>> entry: futures.entrySet()) {
+            try {
+                entry.getValue().get();
+            } catch (InterruptedException | ExecutionException e) {
+                logger.error(String.format("Error during capacity calculation for host: %d due to : %s",
+                        entry.getKey(), e.getMessage()), e);
+            }
+        }
+        executorService.shutdown();
+    }
+
+    protected void recalculateStorageCapacities() {
+        List<Long> storagePoolIds = _storagePoolDao.listAllIds();
+        if (storagePoolIds.isEmpty()) {
+            return;
+        }
+        ConcurrentHashMap<Long, Future<Void>> futures = new ConcurrentHashMap<>();
+        ExecutorService executorService = Executors.newFixedThreadPool(Math.max(1,
+                Math.min(CapacityManager.CapacityCalculateWorkers.value(), storagePoolIds.size())));
+        for (Long poolId: storagePoolIds) {
+            futures.put(poolId, executorService.submit(() -> {
+                final StoragePoolVO pool = _storagePoolDao.findById(poolId);
+                long disk = _capacityMgr.getAllocatedPoolCapacity(pool, null);
+                if (pool.isShared()) {
+                    _storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, disk);
+                } else {
+                    _storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, disk);
+                }
+                return null;
+            }));
+        }
+        for (Map.Entry<Long, Future<Void>> entry: futures.entrySet()) {
+            try {
+                entry.getValue().get();
+            } catch (InterruptedException | ExecutionException e) {
+                logger.error(String.format("Error during capacity calculation for storage pool: %d due to : %s",
+                        entry.getKey(), e.getMessage()), e);
+            }
+        }
+        executorService.shutdown();
+    }
+
     @Override
     public void recalculateCapacity() {
         // FIXME: the right way to do this is to register a listener (see RouterStatsListener, VMSyncListener)
@@ -275,36 +337,14 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 logger.debug("recalculating system capacity");
                 logger.debug("Executing cpu/ram capacity update");
             }
-
             // Calculate CPU and RAM capacities
-            //     get all hosts...even if they are not in 'UP' state
-            List<HostVO> hosts = _resourceMgr.listAllNotInMaintenanceHostsInOneZone(Host.Type.Routing, null);
-            if (hosts != null) {
-                // prepare the service offerings
-                List<ServiceOfferingVO> offerings = _offeringsDao.listAllIncludingRemoved();
-                Map<Long, ServiceOfferingVO> offeringsMap = new HashMap<Long, ServiceOfferingVO>();
-                for (ServiceOfferingVO offering : offerings) {
-                    offeringsMap.put(offering.getId(), offering);
-                }
-                for (HostVO host : hosts) {
-                    _capacityMgr.updateCapacityForHost(host, offeringsMap);
-                }
-            }
+            recalculateHostCapacities();
             if (logger.isDebugEnabled()) {
                 logger.debug("Done executing cpu/ram capacity update");
                 logger.debug("Executing storage capacity update");
             }
             // Calculate storage pool capacity
-            List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
-            for (StoragePoolVO pool : storagePools) {
-                long disk = _capacityMgr.getAllocatedPoolCapacity(pool, null);
-                if (pool.isShared()) {
-                    _storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, disk);
-                } else {
-                    _storageMgr.createCapacityEntry(pool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, disk);
-                }
-            }
-
+            recalculateStorageCapacities();
             if (logger.isDebugEnabled()) {
                 logger.debug("Done executing storage capacity update");
                 logger.debug("Executing capacity updates for public ip and Vlans");

@@ -41,7 +41,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.host.dao.HostDao;
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
@@ -120,6 +119,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.host.dao.HostDao;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
@@ -498,8 +498,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         if (apiNameList == null) {
             long startTime = System.nanoTime();
-            apiNameList = new ArrayList<String>();
-            Set<Class<?>> cmdClasses = new LinkedHashSet<Class<?>>();
+            apiNameList = new ArrayList<>();
+            Set<Class<?>> cmdClasses = new LinkedHashSet<>();
             for (PluggableService service : services) {
                 logger.debug(String.format("getting api commands of service: %s", service.getClass().getName()));
                 cmdClasses.addAll(service.getCommands());
@@ -513,7 +513,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     protected List<String> createApiNameList(Set<Class<?>> cmdClasses) {
-        List<String> apiNameList = new ArrayList<String>();
+        List<String> apiNameList = new ArrayList<>();
 
         for (Class<?> cmdClass : cmdClasses) {
             APICommand apiCmdAnnotation = cmdClass.getAnnotation(APICommand.class);
@@ -698,7 +698,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             return;
         }
 
-        HashMap<Long, List<ControlledEntity>> domains = new HashMap<Long, List<ControlledEntity>>();
+        HashMap<Long, List<ControlledEntity>> domains = new HashMap<>();
 
         for (ControlledEntity entity : entities) {
             long domainId = entity.getDomainId();
@@ -713,7 +713,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
                 // for templates, we don't have to do cross domains check
                 if (toBeChecked == null) {
-                    toBeChecked = new ArrayList<ControlledEntity>();
+                    toBeChecked = new ArrayList<>();
                     domains.put(domainId, toBeChecked);
                 }
                 toBeChecked.add(entity);
@@ -722,7 +722,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (SecurityChecker checker : _securityCheckers) {
                 if (checker.checkAccess(caller, entity, accessType, apiName)) {
                     if (logger.isDebugEnabled()) {
-                        logger.debug("Access to " + entity + " granted to " + caller + " by " + checker.getName());
+                        User user = CallContext.current().getCallingUser();
+                        String userName = "";
+                        if (user != null)
+                            userName = user.getUsername();
+                        logger.debug("Access to {} granted to {} by {} on behalf of user {}", entity, caller, checker.getName(), userName);
                     }
                     granted = true;
                     break;
@@ -1023,12 +1027,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             logger.debug("Deleting networks for account {}", account);
             List<NetworkVO> networks = _networkDao.listByOwner(accountId);
             if (networks != null) {
-                Collections.sort(networks, new Comparator<NetworkVO>() {
+                Collections.sort(networks, new Comparator<>() {
                     @Override
                     public int compare(NetworkVO network1, NetworkVO network2) {
                         if (network1.getGuestType() != network2.getGuestType() && Network.GuestType.Isolated.equals(network2.getGuestType())) {
                             return -1;
-                        };
+                        }
                         return 1;
                     }
                 });
@@ -1300,7 +1304,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         final String accountNameFinal = accountName;
         final Long domainIdFinal = domainId;
         final String accountUUIDFinal = accountUUID;
-        Pair<Long, Account> pair = Transaction.execute(new TransactionCallback<Pair<Long, Account>>() {
+        Pair<Long, Account> pair = Transaction.execute(new TransactionCallback<>() {
             @Override
             public Pair<Long, Account> doInTransaction(TransactionStatus status) {
                 // create account
@@ -1323,7 +1327,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     user.setRegistrationToken(registrationToken);
                 }
 
-                return new Pair<Long, Account>(user.getId(), account);
+                return new Pair<>(user.getId(), account);
             }
         });
 
@@ -1332,7 +1336,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // create correct account and group association based on accountType
         if (accountType != Account.Type.PROJECT) {
-            Map<Long, Long> accountGroupMap = new HashMap<Long, Long>();
+            Map<Long, Long> accountGroupMap = new HashMap<>();
             accountGroupMap.put(account.getId(), (long) (accountType.ordinal() + 1));
             _messageBus.publish(_name, MESSAGE_ADD_ACCOUNT_EVENT, PublishScope.LOCAL, accountGroupMap);
         }
@@ -1378,7 +1382,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      */
     private void checkRoleEscalation(Account caller, Account requested) {
         if (logger.isDebugEnabled()) {
-            logger.debug(String.format("checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
+            logger.debug(String.format("Checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
                     caller.getAccountName(),
                     caller.getUuid(),
                     caller.getRoleId(),
@@ -1392,12 +1396,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 checkApiAccess(apiCheckers, requested, command);
             } catch (PermissionDeniedException pde) {
                 if (logger.isTraceEnabled()) {
-                    logger.trace(String.format("checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
+                    logger.trace(String.format(
+                            "Checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
                             command,
-                            pde.getAccount().getAccountName(),
-                            pde.getAccount().getUuid(),
-                            pde.getEntitiesInViolation()
-                            ));
+                            requested.getAccountName(),
+                            requested.getUuid()
+                        )
+                    );
                 }
                 continue;
             }
@@ -1475,7 +1480,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
             throw new CloudRuntimeException(String.format("The user %s already exists in domain %s", userName, domain));
         }
-        UserVO user = null;
+        UserVO user;
         user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone, userUUID, source);
         return user;
     }
@@ -1730,7 +1735,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 Long callingUserId = CallContext.current().getCallingUserId();
                 Account callingAccount = CallContext.current().getCallingAccount();
                 ActionEventUtils.onActionEvent(callingUserId, callingAccount.getAccountId(), callingAccount.getDomainId(),
-                        EventTypes.API_KEY_ACCESS_UPDATE, "Api key access was changed for the User to " + access.toString(),
+                        EventTypes.API_KEY_ACCESS_UPDATE, "Api key access was changed for the User to " + access,
                         user.getId(), ApiCommandResourceType.User.toString());
             } catch (IllegalArgumentException ex) {
                 throw new InvalidParameterValueException("ApiKeyAccess value can only be Enabled/Disabled/Inherit");
@@ -1746,7 +1751,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 Long callingUserId = CallContext.current().getCallingUserId();
                 Account callingAccount = CallContext.current().getCallingAccount();
                 ActionEventUtils.onActionEvent(callingUserId, callingAccount.getAccountId(), callingAccount.getDomainId(),
-                        EventTypes.API_KEY_ACCESS_UPDATE, "Api key access was changed for the Account to " + access.toString(),
+                        EventTypes.API_KEY_ACCESS_UPDATE, "Api key access was changed for the Account to " + access,
                         account.getId(), ApiCommandResourceType.Account.toString());
             } catch (IllegalArgumentException ex) {
                 throw new InvalidParameterValueException("ApiKeyAccess value can only be Enabled/Disabled/Inherit");
@@ -1836,7 +1841,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         checkAccess(caller, AccessType.OperateEntry, true, account);
 
-        boolean success = Transaction.execute(new TransactionCallback<Boolean>() {
+        boolean success = Transaction.execute(new TransactionCallback<>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 boolean success = doSetUserStatus(userId, State.ENABLED);
@@ -1891,7 +1896,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // make sure the account is enabled too
         // if the user is either locked already or disabled already, don't change state...only lock currently enabled
 // users
-        boolean success = true;
+        boolean success;
         if (user.getState().equals(State.LOCKED)) {
             // already locked...no-op
             return _userAccountDao.findById(userId);
@@ -1994,7 +1999,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public AccountVO enableAccount(String accountName, Long domainId, Long accountId) {
 
         // Check if account exists
-        Account account = null;
+        Account account;
         if (accountId != null) {
             account = _accountDao.findById(accountId);
         } else {
@@ -2020,7 +2025,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             return _accountDao.findById(account.getId());
         } else {
-            throw new CloudRuntimeException(String.format("Unable to enable account %s in domain %s", account, accountName, _domainMgr.getDomain(domainId)));
+            throw new CloudRuntimeException(String.format("Unable to enable account %s[%s] in domain %s", accountName, account.getUuid(), _domainMgr.getDomain(domainId)));
         }
     }
 
@@ -2029,7 +2034,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public AccountVO lockAccount(String accountName, Long domainId, Long accountId) {
         Account caller = getCurrentCallingAccount();
 
-        Account account = null;
+        Account account;
         if (accountId != null) {
             account = _accountDao.findById(accountId);
         } else {
@@ -2050,7 +2055,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             CallContext.current().putContextParameter(Account.class, account.getUuid());
             return _accountDao.findById(account.getId());
         } else {
-            throw new CloudRuntimeException(String.format("Unable to lock account %s by accountId: %d OR by name: %s in domain %d", account, accountId, accountName, _domainMgr.getDomain(domainId)));
+            throw new CloudRuntimeException(String.format("Unable to lock account %s by accountId: %d OR by name: %s in domain %s", account, accountId, accountName, _domainMgr.getDomain(domainId)));
         }
     }
 
@@ -2059,7 +2064,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public AccountVO disableAccount(String accountName, Long domainId, Long accountId) throws ConcurrentOperationException, ResourceUnavailableException {
         Account caller = getCurrentCallingAccount();
 
-        Account account = null;
+        Account account;
         if (accountId != null) {
             account = _accountDao.findById(accountId);
         } else {
@@ -2096,8 +2101,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         String networkDomain = cmd.getNetworkDomain();
         final Map<String, String> details = cmd.getDetails();
 
-        boolean success = false;
-        Account account = null;
+        boolean success;
+        Account account;
         if (accountId != null) {
             account = _accountDao.findById(accountId);
         } else {
@@ -2158,7 +2163,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (roleNotFound) {
                 throw new InvalidParameterValueException(String.format("Role with ID '%s' is not " +
                         "found or not available for the account '%s' in the domain '%s'.",
-                        roleId.toString(), account, _domainMgr.getDomain(domainId)));
+                        roleId, account, _domainMgr.getDomain(domainId)));
             }
 
             Role role = roleService.findRole(roleId);
@@ -2243,7 +2248,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             return true; // no need to create a new user object for this user
         }
 
-        return Transaction.execute(new TransactionCallback<Boolean>() {
+        return Transaction.execute(new TransactionCallback<>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
                 UserVO newUser = new UserVO(user);
@@ -2559,7 +2564,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         // Create the account
-        return Transaction.execute(new TransactionCallback<AccountVO>() {
+        return Transaction.execute(new TransactionCallback<>() {
             @Override
             public AccountVO doInTransaction(TransactionStatus status) {
                 AccountVO account = _accountDao.persist(new AccountVO(accountName, domainId, networkDomain, accountType, roleId, uuid));
@@ -2649,12 +2654,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             long tolerance = Long.parseLong(singleSignOnTolerance);
             String signature = null;
             long timestamp = 0L;
-            String unsignedRequest = null;
+            String unsignedRequest;
             StringBuffer unsignedRequestBuffer = new StringBuffer();
 
             // - build a request string with sorted params, make sure it's all lowercase
             // - sign the request, verify the signature is the same
-            List<String> parameterNames = new ArrayList<String>();
+            List<String> parameterNames = new ArrayList<>();
 
             for (Object paramNameObj : requestParameters.keySet()) {
                 parameterNames.add((String)paramNameObj); // put the name in a list that we'll sort later
@@ -2779,7 +2784,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
 
         boolean authenticated = false;
-        HashSet<ActionOnFailedAuthentication> actionsOnFailedAuthenticaion = new HashSet<ActionOnFailedAuthentication>();
+        HashSet<ActionOnFailedAuthentication> actionsOnFailedAuthenticaion = new HashSet<>();
         User.Source userSource = userAccount != null ? userAccount.getSource() : User.Source.UNKNOWN;
         for (UserAuthenticator authenticator : _userAuthenticators) {
             final String[] secretCodeArray = (String[])requestParameters.get(ApiConstants.SECRET_CODE);
@@ -2885,7 +2890,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         preventRootDomainAdminAccessToRootAdminKeys(caller, account);
         checkAccess(caller, account);
 
-        Map<String, String> keys = new HashMap<String, String>();
+        Map<String, String> keys = new HashMap<>();
         keys.put("apikey", user.getApiKey());
         keys.put("secretkey", user.getSecretKey());
 
@@ -2897,7 +2902,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
         }
 
-        return new Pair<Boolean, Map<String, String>>(apiKeyAccess, keys);
+        return new Pair<>(apiKeyAccess, keys);
     }
 
     protected void preventRootDomainAdminAccessToRootAdminKeys(User caller, ControlledEntity account) {
@@ -2998,8 +3003,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         try {
             UserVO updatedUser = _userDao.createForUpdate();
 
-            String encodedKey = null;
-            Pair<User, Account> userAcct = null;
+            String encodedKey;
+            Pair<User, Account> userAcct;
             int retryLimit = 10;
             do {
                 // FIXME: what algorithm should we use for API keys?
@@ -3025,9 +3030,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private String createUserSecretKey(long userId) {
         try {
             UserVO updatedUser = _userDao.createForUpdate();
-            String encodedKey = null;
+            String encodedKey;
             int retryLimit = 10;
-            UserVO userBySecretKey = null;
+            UserVO userBySecretKey;
             do {
                 KeyGenerator generator = KeyGenerator.getInstance("HmacSHA1");
                 SecretKey key = generator.generateKey();
@@ -3135,8 +3140,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 throw new InvalidParameterValueException("Account and projectId can't be specified together");
             }
 
-            Account userAccount = null;
-            Domain domain = null;
+            Account userAccount;
+            Domain domain;
             if (domainId != null) {
                 userAccount = _accountDao.findActiveAccount(accountName, domainId);
                 domain = _domainDao.findById(domainId);
@@ -3261,7 +3266,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public List<String> listAclGroupsByAccount(Long accountId) {
         if (_querySelectors == null || _querySelectors.size() == 0) {
-            return new ArrayList<String>();
+            return new ArrayList<>();
         }
 
         QuerySelector qs = _querySelectors.get(0);
@@ -3521,7 +3526,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     protected UserTwoFactorAuthenticationSetupResponse disableTwoFactorAuthentication(Long userId, Account caller, Account owner) {
-        UserVO userVO = null;
+        UserVO userVO;
         if (userId != null) {
             userVO = validateUser(userId);
             owner = _accountService.getActiveAccountById(userVO.getAccountId());
@@ -3566,4 +3571,26 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return userTwoFactorAuthenticationProvidersMap.get(name.toLowerCase());
     }
 
+    @Override
+    public UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user) {
+        return Transaction.execute((TransactionCallback<UserAccount>) status -> {
+            if (!user.isUser2faEnabled() && StringUtils.isBlank(user.getUser2faProvider())) {
+                return user;
+            }
+            UserDetailVO userDetailVO = _userDetailsDao.findDetail(user.getId(), UserDetailVO.Setup2FADetail);
+            if (userDetailVO != null && UserAccountVO.Setup2FAstatus.VERIFIED.name().equals(userDetailVO.getValue())) {
+                return user;
+            }
+            logger.info("Clearing 2FA configurations for {} as it is still in setup on a new login request", user);
+            if (userDetailVO != null) {
+                _userDetailsDao.remove(userDetailVO.getId());
+            }
+            UserAccountVO userAccountVO = _userAccountDao.findById(user.getId());
+            userAccountVO.setUser2faEnabled(false);
+            userAccountVO.setUser2faProvider(null);
+            userAccountVO.setKeyFor2fa(null);
+            _userAccountDao.update(user.getId(), userAccountVO);
+            return userAccountVO;
+        });
+    }
 }
