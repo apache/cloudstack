@@ -205,7 +205,7 @@ const user = {
     },
     Login ({ commit }, userInfo) {
       return new Promise((resolve, reject) => {
-        login(userInfo).then(async response => {
+        login(userInfo).then(response => {
           const result = response.loginresponse || {}
           Cookies.set('account', result.account, { expires: 1 })
           Cookies.set('domainid', result.domainid, { expires: 1 })
@@ -247,11 +247,6 @@ const user = {
           const latestVersion = vueProps.$localStorage.get(LATEST_CS_VERSION, { version: '', fetchedTs: 0 })
           commit('SET_LATEST_VERSION', latestVersion)
           notification.destroy()
-
-          await api('listUsers', { userid: result.userid }).then(async response => {
-            await applyCustomGuiTheme(response.listusersresponse.user[0].accountid, result.domainid)
-          })
-
           resolve()
         }).catch(error => {
           reject(error)
@@ -414,6 +409,7 @@ const user = {
 
         api('listUsers', { id: Cookies.get('userid'), showicon: true }).then(response => {
           const result = response.listusersresponse.user[0]
+          applyCustomGuiTheme(result.accountid, result.domainid)
           commit('SET_INFO', result)
           commit('SET_NAME', result.firstname + ' ' + result.lastname)
           commit('SET_AVATAR', result.icon?.base64image || '')
