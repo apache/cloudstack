@@ -180,20 +180,8 @@ public class SAMLUtils {
 
         // AuthnContextClass.  When this is false, the authentication requirements are defered to the SAML IDP and its default or configured workflow
         if (requirePasswordAuthentication) {
-            AuthnContextClassRefBuilder authnContextClassRefBuilder = new AuthnContextClassRefBuilder();
-            AuthnContextClassRef authnContextClassRef = authnContextClassRefBuilder.buildObject(
-                    SAMLConstants.SAML20_NS,
-                    "AuthnContextClassRef", "saml");
-            authnContextClassRef.setAuthnContextClassRef(AuthnContext.PPT_AUTHN_CTX);
-
-            // AuthnContext
-            RequestedAuthnContextBuilder requestedAuthnContextBuilder = new RequestedAuthnContextBuilder();
-            RequestedAuthnContext requestedAuthnContext = requestedAuthnContextBuilder.buildObject();
-            requestedAuthnContext.setComparison(AuthnContextComparisonTypeEnumeration.EXACT);
-            requestedAuthnContext.getAuthnContextClassRefs().add(authnContextClassRef);
-            authnRequest.setRequestedAuthnContext(requestedAuthnContext);
+            setRequestedAuthnContext(authnRequest, requirePasswordAuthentication);
         }
-
 
         authnRequest.setID(authnId);
         authnRequest.setDestination(idpUrl);
@@ -207,6 +195,21 @@ public class SAMLUtils {
         authnRequest.setIssuer(issuer);
 
         return authnRequest;
+    }
+
+    public static void setRequestedAuthnContext(AuthnRequest authnRequest, boolean requirePasswordAuthentication) {
+        AuthnContextClassRefBuilder authnContextClassRefBuilder = new AuthnContextClassRefBuilder();
+        AuthnContextClassRef authnContextClassRef = authnContextClassRefBuilder.buildObject(
+                SAMLConstants.SAML20_NS,
+                "AuthnContextClassRef", "saml");
+        authnContextClassRef.setAuthnContextClassRef(AuthnContext.PPT_AUTHN_CTX);
+
+        // AuthnContext
+        RequestedAuthnContextBuilder requestedAuthnContextBuilder = new RequestedAuthnContextBuilder();
+        RequestedAuthnContext requestedAuthnContext = requestedAuthnContextBuilder.buildObject();
+        requestedAuthnContext.setComparison(AuthnContextComparisonTypeEnumeration.EXACT);
+        requestedAuthnContext.getAuthnContextClassRefs().add(authnContextClassRef);
+        authnRequest.setRequestedAuthnContext(requestedAuthnContext);
     }
 
     public static LogoutRequest buildLogoutRequest(String logoutUrl, String spId, String nameIdString) {
@@ -304,13 +307,8 @@ public class SAMLUtils {
             throw new CloudRuntimeException("Invalid URI: " + redirectUrl);
         }
 
-        resp.addCookie(newCookie(domain, path, "userid", URLEncoder.encode(loginResponse.getUserId(), HttpUtils.UTF_8)));
-        resp.addCookie(newCookie(domain, path,"domainid", URLEncoder.encode(loginResponse.getDomainId(), HttpUtils.UTF_8)));
-        resp.addCookie(newCookie(domain, path,"role", URLEncoder.encode(loginResponse.getType(), HttpUtils.UTF_8)));
-        resp.addCookie(newCookie(domain, path,"username", URLEncoder.encode(loginResponse.getUsername(), HttpUtils.UTF_8)));
-        resp.addCookie(newCookie(domain, path,"account", URLEncoder.encode(loginResponse.getAccount(), HttpUtils.UTF_8)));
-        resp.addCookie(newCookie(domain, path,"isSAML", URLEncoder.encode("true", HttpUtils.UTF_8)));
-        resp.addCookie(newCookie(domain, path,"twoFaEnabled", URLEncoder.encode(loginResponse.is2FAenabled(), HttpUtils.UTF_8)));
+        addBaseCookies(loginResponse, resp, domain, path);
+
         String providerFor2FA = loginResponse.getProviderFor2FA();
         if (StringUtils.isNotEmpty(providerFor2FA)) {
             resp.addCookie(newCookie(domain, path,"twoFaProvider", URLEncoder.encode(loginResponse.getProviderFor2FA(), HttpUtils.UTF_8)));
@@ -319,13 +317,23 @@ public class SAMLUtils {
         if (timezone != null) {
             resp.addCookie(newCookie(domain, path,"timezone", URLEncoder.encode(timezone, HttpUtils.UTF_8)));
         }
-        resp.addCookie(newCookie(domain, path,"userfullname", URLEncoder.encode(loginResponse.getFirstName() + " " + loginResponse.getLastName(), HttpUtils.UTF_8).replace("+", "%20")));
 
         String sameSite = ApiServlet.getApiSessionKeySameSite();
         String sessionKeyCookie = String.format("%s=%s;Domain=%s;Path=%s;%s", ApiConstants.SESSIONKEY, loginResponse.getSessionKey(), domain, path, sameSite);
         s_logger.debug("Adding sessionkey cookie to response: " + sessionKeyCookie);
         resp.addHeader("SET-COOKIE", sessionKeyCookie);
         resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly;Path=/client/api;%s", ApiConstants.SESSIONKEY, loginResponse.getSessionKey(), sameSite));
+    }
+
+    private static void addBaseCookies(final LoginCmdResponse loginResponse, final HttpServletResponse resp, String domain, String path) throws IOException {
+        resp.addCookie(newCookie(domain, path, "userid", URLEncoder.encode(loginResponse.getUserId(), HttpUtils.UTF_8)));
+        resp.addCookie(newCookie(domain, path,"domainid", URLEncoder.encode(loginResponse.getDomainId(), HttpUtils.UTF_8)));
+        resp.addCookie(newCookie(domain, path,"role", URLEncoder.encode(loginResponse.getType(), HttpUtils.UTF_8)));
+        resp.addCookie(newCookie(domain, path,"username", URLEncoder.encode(loginResponse.getUsername(), HttpUtils.UTF_8)));
+        resp.addCookie(newCookie(domain, path,"account", URLEncoder.encode(loginResponse.getAccount(), HttpUtils.UTF_8)));
+        resp.addCookie(newCookie(domain, path,"isSAML", URLEncoder.encode("true", HttpUtils.UTF_8)));
+        resp.addCookie(newCookie(domain, path,"twoFaEnabled", URLEncoder.encode(loginResponse.is2FAenabled(), HttpUtils.UTF_8)));
+        resp.addCookie(newCookie(domain, path,"userfullname", URLEncoder.encode(loginResponse.getFirstName() + " " + loginResponse.getLastName(), HttpUtils.UTF_8).replace("+", "%20")));
     }
 
     private static Cookie newCookie(final String domain, final String path, final String name, final String value) {

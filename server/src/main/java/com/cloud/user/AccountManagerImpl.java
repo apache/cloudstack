@@ -1451,7 +1451,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         List<UserVO> duplicatedUsers = _userDao.findUsersByName(userName);
         for (UserVO duplicatedUser : duplicatedUsers) {
             // users can't exist in same account
-            assertUserAlreadyInAccount(duplicatedUser, account);
+            assertUserNotAlreadyInAccount(duplicatedUser, account);
         }
 
         UserVO user = null;
@@ -1579,7 +1579,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      *  <li> The username must be unique in each domain. Therefore, if there is already another user with the same username, an {@link InvalidParameterValueException} is thrown.
      * </ul>
      */
-    protected void validateAndUpdateUsernameIfNeeded(UpdateUserCmd updateUserCmd, UserVO user, Account account) {
+    protected void validateAndUpdateUsernameIfNeeded(UpdateUserCmd updateUserCmd, UserVO newUser, Account newAccount) {
         String userName = updateUserCmd.getUsername();
         if (userName == null) {
             return;
@@ -1587,25 +1587,21 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (StringUtils.isBlank(userName)) {
             throw new InvalidParameterValueException("Username cannot be empty.");
         }
-        List<UserVO> duplicatedUsers = _userDao.findUsersByName(userName);
-        for (UserVO duplicatedUser : duplicatedUsers) {
-            if (duplicatedUser.getId() == user.getId()) {
+        List<UserVO> existingUsers = _userDao.findUsersByName(userName);
+        for (UserVO existingUser : existingUsers) {
+            if (existingUser.getId() == newUser.getId()) {
                 continue;
             }
 
             // duplicate usernames cannot exist in same domain unless explicitly configured
-            if (!userAllowMultipleAccounts.valueInDomain(account.getDomainId())) {
-                Account duplicatedUserAccountWithUserThatHasTheSameUserName = _accountDao.findById(duplicatedUser.getAccountId());
-                if (duplicatedUserAccountWithUserThatHasTheSameUserName.getDomainId() == account.getDomainId()) {
-                    DomainVO domain = _domainDao.findById(duplicatedUserAccountWithUserThatHasTheSameUserName.getDomainId());
-                    throw new InvalidParameterValueException(String.format("Username [%s] already exists in domain [id=%s,name=%s]", duplicatedUser.getUsername(), domain.getUuid(), domain.getName()));
-                }
+            if (!userAllowMultipleAccounts.valueInDomain(newAccount.getDomainId())) {
+                assertUserNotAlreadyInDomain(existingUser, newAccount);
             }
 
             // can't rename a username to an existing one in the same account
-            assertUserAlreadyInAccount(duplicatedUser, account);
+            assertUserNotAlreadyInAccount(existingUser, newAccount);
         }
-        user.setUsername(userName);
+        newUser.setUsername(userName);
     }
 
     /**
@@ -3526,9 +3522,20 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         });
     }
 
-    private void assertUserAlreadyInAccount(User user, Account account) {
-       if (user.getAccountId() == account.getId()) {
-           throw new InvalidParameterValueException(String.format("Username [%s] already exists in account [id=%s,name=%s]", user.getUsername(), account.getUuid(), account.getAccountName()));
-       }
+    void assertUserNotAlreadyInAccount(User existingUser, Account newAccount) {
+        System.out.println(existingUser.getAccountId());
+        System.out.println(newAccount.getId());
+        if (existingUser.getAccountId() == newAccount.getId()) {
+            AccountVO existingAccount = _accountDao.findById(newAccount.getId());
+            throw new InvalidParameterValueException(String.format("Username [%s] already exists in account [id=%s,name=%s]", existingUser.getUsername(), existingAccount.getUuid(), existingAccount.getAccountName()));
+        }
+    }
+
+    void assertUserNotAlreadyInDomain(User existingUser, Account originalAccount) {
+        Account existingAccount = _accountDao.findById(existingUser.getAccountId());
+        if (existingAccount.getDomainId() == originalAccount.getDomainId()) {
+            DomainVO existingDomain = _domainDao.findById(existingAccount.getDomainId());
+            throw new InvalidParameterValueException(String.format("Username [%s] already exists in domain [id=%s,name=%s] user account [id=%s,name=%s]", existingUser.getUsername(), existingDomain.getUuid(), existingDomain.getName(), existingAccount.getUuid(), existingAccount.getAccountName()));
+        }
     }
 }
