@@ -2660,6 +2660,12 @@ public class KVMStorageProcessor implements StorageProcessor {
             return localPool;
         }
 
+        if (migrationOptions.getScopeType().equals(ScopeType.CLUSTER)
+                && migrationOptions.getSrcPoolClusterId() != null
+                && !migrationOptions.getSrcPoolClusterId().toString().equals(resource.getClusterId())) {
+            return localPool;
+        }
+
         return storagePoolMgr.getStoragePool(migrationOptions.getSrcPoolType(), migrationOptions.getSrcPoolUuid());
     }
 }
