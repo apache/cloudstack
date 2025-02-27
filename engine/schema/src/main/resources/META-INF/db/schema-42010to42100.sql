@@ -102,4 +102,4 @@ JOIN    `cloud`.`account` AS account ON user.account_id = account.id
 WHERE   user.api_key IS NOT NULL
   AND     user.secret_key IS NOT NULL;
 
-ALTER TABLE `cloud`.`user` DROP COLUMN IF EXISTS api_key, DROP COLUMN IF EXISTS secret_key;
+ALTER TABLE `cloud`.`user` DROP COLUMN api_key, DROP COLUMN secret_key;
