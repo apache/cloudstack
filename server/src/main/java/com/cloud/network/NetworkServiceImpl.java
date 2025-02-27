@@ -1635,7 +1635,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         Pair<Integer, Integer> interfaceMTUs = validateMtuConfig(publicMtu, privateMtu, zone.getId());
-        mtuCheckForVpcNetwork(vpcId, interfaceMTUs, publicMtu, privateMtu);
+        mtuCheckForVpcNetwork(vpcId, interfaceMTUs, publicMtu);
 
         Network associatedNetwork = null;
         if (associatedNetworkId != null) {
@@ -1894,7 +1894,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return ntwkOff;
     }
 
-    protected void mtuCheckForVpcNetwork(Long vpcId, Pair<Integer, Integer> interfaceMTUs, Integer publicMtu, Integer privateMtu) {
+    protected void mtuCheckForVpcNetwork(Long vpcId, Pair<Integer, Integer> interfaceMTUs, Integer publicMtu) {
         if (vpcId != null && publicMtu != null) {
             VpcVO vpc = _vpcDao.findById(vpcId);
             if (vpc == null) {
