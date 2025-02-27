@@ -470,6 +470,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     public boolean deleteBackupSchedule(DeleteBackupScheduleCmd cmd) {
         Long vmId = cmd.getVmId();
         Long id = cmd.getId();
+        if (Objects.isNull(vmId) && Objects.isNull(id)) {
+            throw new InvalidParameterValueException("Either instance ID or ID of backup schedule needs to be specified");
+        }
         if (Objects.nonNull(vmId)) {
             final VMInstanceVO vm = findVmById(vmId);
             validateForZone(vm.getDataCenterId());

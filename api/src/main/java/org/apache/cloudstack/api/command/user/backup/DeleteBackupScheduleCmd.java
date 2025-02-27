@@ -55,14 +55,12 @@ public class DeleteBackupScheduleCmd  extends BaseCmd {
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
-            required = true,
             description = "ID of the VM")
     private Long vmId;
 
     @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
             entityType = BackupScheduleResponse.class,
-            required = true,
             description = "ID of the schedule",
             since = "4.20.1")
     private Long id;
