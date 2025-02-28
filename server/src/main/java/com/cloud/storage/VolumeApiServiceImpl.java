@@ -368,15 +368,15 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
-    static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced", Long.class, "vm.job.check.interval", "3000", "Interval in milliseconds to check if the job is complete", false);
+    static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<>("Advanced", Long.class, "vm.job.check.interval", "3000", "Interval in milliseconds to check if the job is complete", false);
 
-    static final ConfigKey<Boolean> VolumeUrlCheck = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.url.check", "true",
+    static final ConfigKey<Boolean> VolumeUrlCheck = new ConfigKey<>("Advanced", Boolean.class, "volume.url.check", "true",
             "Check the url for a volume before downloading it from the management server. Set to false when your management has no internet access.", true);
 
-    public static final ConfigKey<Boolean> AllowUserExpungeRecoverVolume = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.user.expunge.recover.volume", "true",
+    public static final ConfigKey<Boolean> AllowUserExpungeRecoverVolume = new ConfigKey<>("Advanced", Boolean.class, "allow.user.expunge.recover.volume", "true",
             "Determines whether users can expunge or recover their volume", true, ConfigKey.Scope.Account);
 
-    public static final ConfigKey<Boolean> MatchStoragePoolTagsWithDiskOffering = new ConfigKey<Boolean>("Advanced", Boolean.class, "match.storage.pool.tags.with.disk.offering", "true",
+    public static final ConfigKey<Boolean> MatchStoragePoolTagsWithDiskOffering = new ConfigKey<>("Advanced", Boolean.class, "match.storage.pool.tags.with.disk.offering", "true",
             "If true, volume's disk offering can be changed only with the matched storage tags", true, ConfigKey.Scope.Zone);
 
     public static final ConfigKey<Long> WaitDetachDevice = new ConfigKey<>(
@@ -390,7 +390,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     public static ConfigKey<Long> storageTagRuleExecutionTimeout = new ConfigKey<>("Advanced", Long.class, "storage.tag.rule.execution.timeout", "2000", "The maximum runtime,"
             + " in milliseconds, to execute a storage tag rule; if it is reached, a timeout will happen.", true);
 
-    public static final ConfigKey<Boolean> AllowCheckAndRepairVolume = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.check.and.repair.leaks.before.use", "false",
+    public static final ConfigKey<Boolean> AllowCheckAndRepairVolume = new ConfigKey<>("Advanced", Boolean.class, "volume.check.and.repair.leaks.before.use", "false",
             "To check and repair the volume if it has any leaks before performing volume attach or VM start operations", true, ConfigKey.Scope.StoragePool);
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
@@ -639,7 +639,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return Transaction.execute(new TransactionCallbackWithException<VolumeVO, CloudRuntimeException>() {
             @Override
             public VolumeVO doInTransaction(TransactionStatus status) {
-                VolumeVO volume = new VolumeVO(volumeName, zoneId, -1, -1, -1, new Long(-1), null, null, Storage.ProvisioningType.THIN, 0, Volume.Type.DATADISK);
+                VolumeVO volume = new VolumeVO(volumeName, zoneId, -1, -1, -1, -1L, null, null, Storage.ProvisioningType.THIN, 0, Volume.Type.DATADISK);
                 DataCenter zone = _dcDao.findById(zoneId);
                 volume.setPoolId(null);
                 volume.setDataCenterId(zoneId);
@@ -841,7 +841,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 maxIops = diskOffering.getMaxIops();
             }
 
-            if (!validateVolumeSizeInBytes(size)) {
+            if (!validateVolumeSizeInBytes(size == null ? 0 : size)) {
                 throw new InvalidParameterValueException(String.format("Invalid size for custom volume creation: %s, max volume size is: %s GB", NumbersUtil.toReadableSize(size), VolumeOrchestrationService.MaxVolumeSize.value()));
             }
         }
@@ -3592,7 +3592,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if ((destPool.isShared() && newDiskOffering.isUseLocalStorage()) || destPool.isLocal() && newDiskOffering.isShared()) {
             throw new InvalidParameterValueException("You cannot move the volume to a shared storage and assign a disk offering for local storage and vice versa.");
         }
-        if (!doesTargetStorageSupportDiskOffering(destPool, newDiskOffering)) {
+        if (!doesStoragePoolSupportDiskOffering(destPool, newDiskOffering)) {
             throw new InvalidParameterValueException(String.format("Migration failed: target pool [%s, tags:%s] has no matching tags for volume [%s, uuid:%s, tags:%s]", destPool.getName(),
                     storagePoolTagsDao.getStoragePoolTags(destPool.getId()), volume.getName(), volume.getUuid(), newDiskOffering.getTags()));
         }
@@ -3618,7 +3618,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     /**
-     *  Checks if the target storage supports the new disk offering.
+     *  Checks if the storage pool supports the new disk offering.
      *  This validation is consistent with the mechanism used to select a storage pool to deploy a volume when a virtual machine is deployed or when a new data disk is allocated.
      *
      *  The scenarios when this method returns true or false is presented in the following table.
@@ -3649,9 +3649,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      *      </body>
      *   </table>
      */
-    protected boolean doesTargetStorageSupportDiskOffering(StoragePool destPool, DiskOfferingVO diskOffering) {
-        String targetStoreTags = diskOffering.getTags();
-        return doesTargetStorageSupportDiskOffering(destPool, targetStoreTags);
+    public boolean doesStoragePoolSupportDiskOffering(StoragePool destPool, DiskOffering diskOffering) {
+        String offeringTags =  diskOffering != null ? diskOffering.getTags() : null;
+        return doesStoragePoolSupportDiskOfferingTags(destPool, offeringTags);
     }
 
     public static boolean doesNewDiskOfferingHasTagsAsOldDiskOffering(DiskOfferingVO oldDO, DiskOfferingVO newDO) {
@@ -3667,19 +3667,19 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     @Override
-    public boolean doesTargetStorageSupportDiskOffering(StoragePool destPool, String diskOfferingTags) {
+    public boolean doesStoragePoolSupportDiskOfferingTags(StoragePool destPool, String diskOfferingTags) {
         Pair<List<String>, Boolean> storagePoolTags = getStoragePoolTags(destPool);
         if ((storagePoolTags == null || !storagePoolTags.second()) && org.apache.commons.lang.StringUtils.isBlank(diskOfferingTags)) {
             if (storagePoolTags == null) {
-                logger.debug(String.format("Destination storage pool [%s] does not have any tags, and so does the disk offering. Therefore, they are compatible", destPool.getUuid()));
+                logger.debug("Storage pool [{}] does not have any tags, and so does the disk offering. Therefore, they are compatible", destPool.getUuid());
             } else {
-                logger.debug("Destination storage pool has tags [%s], and the disk offering has no tags. Therefore, they are compatible.");
+                logger.debug("Storage pool has tags [%s], and the disk offering has no tags. Therefore, they are compatible.", destPool.getUuid());
             }
             return true;
         }
         if (storagePoolTags == null || CollectionUtils.isEmpty(storagePoolTags.first())) {
-            logger.debug(String.format("Destination storage pool [%s] has no tags, while disk offering has tags [%s]. Therefore, they are not compatible", destPool.getUuid(),
-                    diskOfferingTags));
+            logger.debug("Destination storage pool [{}] has no tags, while disk offering has tags [{}]. Therefore, they are not compatible", destPool.getUuid(),
+                    diskOfferingTags);
             return false;
         }
         List<String> storageTagsList = storagePoolTags.first();
@@ -3691,7 +3691,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         } else {
             result = CollectionUtils.isSubCollection(Arrays.asList(newDiskOfferingTagsAsStringArray), storageTagsList);
         }
-        logger.debug(String.format("Destination storage pool [%s] accepts tags [%s]? %s", destPool.getUuid(), diskOfferingTags, result));
+        logger.debug(String.format("Destination storage pool [{}] accepts tags [{}]? {}", destPool.getUuid(), diskOfferingTags, result));
         return result;
     }
 

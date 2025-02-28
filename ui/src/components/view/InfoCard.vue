@@ -1208,6 +1208,11 @@ export default {
       if (item.value) {
         query[item.param] = this.resource[item.value]
       } else {
+        if (item.name === 'template') {
+          query.templatefilter = 'self'
+          query.filter = 'self'
+        }
+
         if (item.param === 'account') {
           query[item.param] = this.resource.name
           query.domainid = this.resource.domainid

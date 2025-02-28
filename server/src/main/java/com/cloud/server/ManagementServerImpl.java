@@ -44,6 +44,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -1610,6 +1611,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             logger.warn("No suitable hosts found.");
         } else {
             logger.debug("Hosts having capacity and suitable for migration: {}", suitableHosts);
+        }
+
+        // Only list hosts of the same architecture as the source Host in a multi-arch zone
+        if (!suitableHosts.isEmpty()) {
+            List<CPU.CPUArch> clusterArchs = ApiDBUtils.listZoneClustersArchs(vm.getDataCenterId());
+            if (CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1) {
+                suitableHosts = suitableHosts.stream().filter(h -> h.getArch() == srcHost.getArch()).collect(Collectors.toList());
+            }
         }
 
         return new Ternary<>(otherHosts, suitableHosts, requiresStorageMotion);

@@ -65,7 +65,7 @@ export default {
       api: 'addHost',
       icon: 'plus-outlined',
       label: 'label.add.host',
-      docHelp: 'adminguide/installguide/configuration.html#adding-a-host',
+      docHelp: 'installguide/configuration.html#adding-a-host',
       listView: true,
       popup: true,
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostAdd.vue')))
