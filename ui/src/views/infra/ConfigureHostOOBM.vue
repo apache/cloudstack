@@ -121,7 +121,8 @@ export default {
         address: this.resource.outofbandmanagement.address || '',
         port: this.resource.outofbandmanagement.port || '',
         username: this.resource.outofbandmanagement.username || '',
-        password: this.resource.outofbandmanagement.password || ''
+        password: '',
+        driver: this.resource.outofbandmanagement.driver || ''
       })
       this.rules = reactive({
         address: [{ required: true, message: this.$t('message.error.required.input') }],
