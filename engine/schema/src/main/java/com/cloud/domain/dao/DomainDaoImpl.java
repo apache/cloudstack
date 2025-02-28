@@ -262,7 +262,7 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
         SearchCriteria<DomainVO> sc = DomainPairSearch.create();
         sc.setParameters("id", parentId, childId);
 
-        List<DomainVO> domainPair = listBy(sc);
+        List<DomainVO> domainPair = listIncludingRemovedBy(sc);
 
         if ((domainPair != null) && (domainPair.size() == 2)) {
             DomainVO d1 = domainPair.get(0);

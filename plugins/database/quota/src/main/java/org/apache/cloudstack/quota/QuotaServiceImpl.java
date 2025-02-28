@@ -288,4 +288,33 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         }
     }
 
+    protected Long getAccountToWhomQuotaBalancesWillBeListed(Long accountId, String accountName, Long domainId) {
+        if (accountId != null) {
+            Account account = _accountDao.findByIdIncludingRemoved(accountId);
+            if (account == null) {
+                throw new InvalidParameterValueException(String.format("Unable to find account [%s].", accountId));
+            }
+            return accountId;
+        }
+
+        validateIsChildDomain(accountName, domainId);
+
+        Account account = _accountDao.findActiveAccount(accountName, domainId);
+        if (account == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find active account [%s] in domain [%s].", accountName, domainId));
+        }
+        return account.getAccountId();
+    }
+
+    protected void validateIsChildDomain(String accountName, Long domainId) {
+        Account caller = CallContext.current().getCallingAccount();
+
+        long callerDomainId = caller.getDomainId();
+        if (_domainDao.isChildDomain(callerDomainId, domainId)) {
+            return;
+        }
+
+        logger.debug(String.format("Domain with ID [%s] is not a child of the caller's domain [%s].", domainId, callerDomainId));
+        throw new PermissionDeniedException(String.format("Account [%s] or domain [%s] is invalid.", accountName, domainId));
+    }
 }
