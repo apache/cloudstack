@@ -18,6 +18,7 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { isZoneCreated } from '@/utils/zone'
+import { useRoute } from 'vue-router'
 
 export default {
   name: 'compute',
@@ -76,6 +77,12 @@ export default {
           fields.push('project')
         }
         fields.push('zonename')
+        const route = useRoute()
+        if (route !== undefined && route.query !== undefined && route.query.onlyleasedinstances !== undefined && route.query.onlyleasedinstances) {
+          fields.push('leaseduration')
+          fields.push('leaseexpirydate')
+        }
+
         return fields
       },
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'tags'],
@@ -83,7 +90,7 @@ export default {
         var fields = ['name', 'displayname', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
           'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'boottype', 'bootmode', 'account',
           'domain', 'zonename', 'userdataid', 'userdataname', 'userdataparams', 'userdatadetails', 'userdatapolicy',
-          'hostcontrolstate', 'deleteprotection', 'leaseduration', 'leaseexpiryaction']
+          'hostcontrolstate', 'deleteprotection', 'leaseexpirydate', 'leaseexpiryaction']
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
         if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
           return fields

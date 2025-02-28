@@ -74,6 +74,9 @@ import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -461,9 +464,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         }
 
         if (userVm.getExpiryDate() != null) {
-//            String leaseDuration = "Expires in " + userVm.getLeaseDuration() + (userVm.getLeaseDuration() == 1 ? " day" : " days");
             userVmResponse.setLeaseExpiryAction(userVm.getLeaseExpiryAction());
-            userVmResponse.setLeaseDuration(userVm.getExpiryDate().toString());
+            userVmResponse.setLeaseExpiryDate(userVm.getExpiryDate());
+            long leaseDuration = getLeaseDuration(userVmResponse.getCreated(), userVmResponse.getLeaseExpiryDate());
+            userVmResponse.setLeaseDuration(leaseDuration);
         }
 
         addVmRxTxDataToResponse(userVm, userVmResponse);
@@ -473,6 +477,13 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         }
 
         return userVmResponse;
+    }
+
+
+    private long getLeaseDuration(Date created, Date leaseExpiryDate) {
+        LocalDate createdDate = created.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate expiryDate = leaseExpiryDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        return ChronoUnit.DAYS.between(createdDate, expiryDate);
     }
 
     private void addVnfInfoToserVmResponse(UserVmJoinVO userVm, UserVmResponse userVmResponse) {

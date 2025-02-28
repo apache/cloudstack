@@ -560,28 +560,6 @@
                   <div style="margin-top: 15px" v-if="showDetails">
                     <div
                       v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
-                      <a-row :gutter="12" v-if="isLeaseFeatureEnabled">
-                        <a-col :md="12" :lg="12">
-                          <a-form-item name="leaseduration" ref="leaseduration">
-                            <template #label>
-                              <tooltip-label :title="$t('label.instance.lease.duration')" />
-                            </template>
-                            <a-input
-                              v-model:value="form.leaseduration"
-                              :placeholder="$t('label.instance.lease.never')"/>
-                          </a-form-item>
-                        </a-col>
-                        <a-col :md="12" :lg="12">
-                          <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction">
-                            <template #label>
-                              <tooltip-label :title="$t('label.instance.lease.expiry.action')"  />
-                            </template>
-                            <a-input
-                              v-model:value="form.leaseexpiryaction"
-                              :placeholder="$t('label.instance.lease.stop')"/>
-                          </a-form-item>
-                        </a-col>
-                      </a-row>
                       <a-form-item :label="$t('label.boottype')" name="boottype" ref="boottype">
                         <a-select
                           v-model:value="form.boottype"
@@ -625,6 +603,28 @@
                           @change="val => { dynamicscalingenabled = val }"/>
                       </a-form-item>
                     </a-form-item>
+                    <a-row :gutter="12" v-if="isLeaseFeatureEnabled">
+                      <a-col :md="12" :lg="12">
+                        <a-form-item name="leaseduration" ref="leaseduration">
+                          <template #label>
+                            <tooltip-label :title="$t('label.instance.lease.duration')" />
+                          </template>
+                          <a-input
+                            v-model:value="form.leaseduration"
+                            :placeholder="$t('label.instance.lease.never')"/>
+                        </a-form-item>
+                      </a-col>
+                      <a-col :md="12" :lg="12">
+                        <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction" v-if="form.leaseduration > -1">
+                          <template #label>
+                            <tooltip-label :title="$t('label.leaseexpiryaction')"  />
+                          </template>
+                          <a-select v-model:value="form.leaseexpiryaction" :defaultValue="leaseexpiryaction">
+                            <a-select-option v-for="action in expiryActions" :key="action" :label="action" />
+                          </a-select>
+                        </a-form-item>
+                      </a-col>
+                    </a-row>
                     <a-form-item :label="$t('label.userdata')">
                       <a-card>
                         <div v-if="this.template && this.template.userdataid">
@@ -961,7 +961,6 @@ export default {
       clusterId: null,
       zoneSelected: false,
       isZoneSelectedMultiArch: false,
-      isLeaseFeatureEnabled: false,
       dynamicscalingenabled: true,
       templateKey: 0,
       showRegisteredUserdata: true,
@@ -1124,7 +1123,11 @@ export default {
             description: 'ARM 64 bits (aarch64)'
           }
         ]
-      }
+      },
+      isLeaseFeatureEnabled: false,
+      leaseduration: -1,
+      leaseexpiryaction: '',
+      expiryActions: ['STOP', 'DESTROY']
     }
   },
   computed: {
@@ -1624,7 +1627,6 @@ export default {
     this.initForm()
     this.dataPreFill = this.preFillContent && Object.keys(this.preFillContent).length > 0 ? this.preFillContent : {}
     this.fetchData()
-    this.determineLeaseEnabled()
   },
   provide () {
     return {
@@ -1672,17 +1674,37 @@ export default {
         }
       }
     },
-    determineLeaseEnabled () {
+    async populateLeaseFeatureProps () {
       var params = { name: 'instance.lease.enabled' }
       api('listConfigurations', params).then(json => {
         var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
         this.isLeaseFeatureEnabled = value === 'true'
-      })
 
-      if (this.isLeaseFeatureEnabled) {
-        this.leaseduration = 90
-        this.leaseexpiryaction = 'stop'
-      }
+        if (this.isLeaseFeatureEnabled) {
+          var leasedurationParams = { name: 'instance.lease.duration', accountid: store.getters.userInfo.accountid }
+          api('listConfigurations', leasedurationParams).then(json => {
+            var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
+            this.leaseduration = value
+
+            if (value > -1) {
+              var leaseActionParams = { name: 'instance.lease.expiryaction', accountid: store.getters.userInfo.accountid }
+              api('listConfiguration', leaseActionParams).then(json => {
+                var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
+                this.leaseexpiryaction = value
+              }).catch(() => {
+                this.leaseexiryaction = 'STOP'
+              })
+            }
+          }).catch(() => {
+            this.leaseduration = -1
+          }).finally(() => {
+            this.form.leaseduration = this.leaseduration
+          })
+        }
+      }).catch((error) => {
+        this.$notifyError(error)
+        this.isLeaseFeatureEnabled = false
+      })
     },
     getPropertyQualifiers (qualifiers, type) {
       var result = ''
@@ -1784,6 +1806,7 @@ export default {
         this.form.bootmode = this.defaultBootMode ? this.defaultBootMode : this.options.bootModes && this.options.bootModes.length > 0 ? this.options.bootModes[0].id : undefined
         this.instanceConfig = toRaw(this.form)
       })
+      this.populateLeaseFeatureProps()
     },
     isDynamicallyScalable () {
       return this.serviceOffering && this.serviceOffering.dynamicscalingenabled && this.template && this.template.isdynamicallyscalable && this.dynamicScalingVmConfigValue
@@ -2873,6 +2896,16 @@ export default {
         this.rootDiskSizeFixed = offering.rootdisksize
         this.showRootDiskSizeChanger = false
       }
+      if (offering && offering.leaseduration > -1) {
+        this.form.leaseduration = offering.leaseduration
+
+        if (offering.leaseexpiryaction !== undefined) {
+          this.form.leaseexpiryaction = offering.leaseexpiryaction
+        }
+      } else {
+        this.form.leaseduration = this.leaseduration
+        this.form.leaseexpiryaction = this.leaseexpiryaction
+      }
       this.form.rootdisksizeitem = this.showRootDiskSizeChanger && this.rootDiskSizeFixed > 0
       this.formModel = toRaw(this.form)
     },
@@ -2968,7 +3001,7 @@ export default {
   .vm-info-card {
     .ant-card-body {
       min-height: 250px;
-      max-height: calc(100vh - 150px);
+      max-height: calc(100vh - 140px);
       overflow-y: auto;
       scroll-behavior: smooth;
     }

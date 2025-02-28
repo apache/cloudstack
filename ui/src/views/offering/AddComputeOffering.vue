@@ -34,28 +34,6 @@
             v-model:value="form.name"
             :placeholder="$t('label.name')"/>
         </a-form-item>
-        <a-row :gutter="12" v-if="isLeaseFeatureEnabled">
-          <a-col :md="12" :lg="12">
-            <a-form-item name="leaseduration" ref="leaseduration">
-              <template #label>
-                <tooltip-label :title="$t('label.instance.lease.duration')" :tooltip="apiParams.leaseduration.description" />
-              </template>
-              <a-input
-                v-model:value="form.leaseduration"
-                :placeholder="$t('label.instance.lease.never')"/>
-            </a-form-item>
-          </a-col>
-          <a-col :md="12" :lg="12">
-            <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction">
-              <template #label>
-                <tooltip-label :title="$t('label.instance.lease.expiry.action')" :tooltip="apiParams.leaseexpiryaction.description" />
-              </template>
-              <a-input
-                v-model:value="form.leaseexpiryaction"
-                :placeholder="$t('label.instance.lease.stop')"/>
-            </a-form-item>
-          </a-col>
-        </a-row>
         <a-form-item name="displaytext" ref="displaytext">
           <template #label>
             <tooltip-label :title="$t('label.displaytext')" :tooltip="apiParams.displaytext.description"/>
@@ -371,6 +349,28 @@
           </template>
           <a-switch v-model:checked="form.purgeresources"/>
         </a-form-item>
+        <a-row :gutter="12" v-if="isLeaseFeatureEnabled">
+          <a-col :md="12" :lg="12">
+            <a-form-item name="leaseduration" ref="leaseduration">
+              <template #label>
+                <tooltip-label :title="$t('label.instance.lease.duration')"/>
+              </template>
+              <a-input
+                v-model:value="form.leaseduration"
+                :placeholder="$t('label.instance.lease.never')"/>
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12">
+            <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction"  v-if="form.leaseduration > -1">
+              <template #label>
+                <tooltip-label :title="$t('label.leaseexpiryaction')" />
+              </template>
+              <a-select v-model:value="form.leaseexpiryaction" :defaultValue="expiryActions">
+                <a-select-option v-for="action in expiryActions" :key="action" :label="action"/>
+              </a-select>
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item name="computeonly" ref="computeonly">
           <template #label>
             <tooltip-label :title="$t('label.computeonly.offering')" :tooltip="$t('label.computeonly.offering.tooltip')"/>
@@ -669,7 +669,6 @@ export default {
       plannerMode: '',
       selectedGpu: '',
       showDiskOfferingModal: false,
-      isLeaseFeatureEnabled: false,
       gpuTypes: [
         {
           value: '',
@@ -719,8 +718,9 @@ export default {
       selectedDiskOfferingId: '',
       qosType: '',
       isDomainAdminAllowedToInformTags: false,
+      isLeaseFeatureEnabled: false,
       leaseduration: -1,
-      leaseexpiryaction: ''
+      expiryActions: ['STOP', 'DESTROY']
     }
   },
   beforeCreate () {
@@ -738,7 +738,7 @@ export default {
     }
     this.initForm()
     this.fetchData()
-    this.determineLeaseEnabled()
+    this.populateLeaseFeatureProps()
     this.isPublic = isAdmin()
     this.form.ispublic = this.isPublic
   },
@@ -830,17 +830,27 @@ export default {
       }
       this.fetchDiskOfferings()
     },
-    determineLeaseEnabled () {
+    async populateLeaseFeatureProps () {
       var params = { name: 'instance.lease.enabled' }
       api('listConfigurations', params).then(json => {
         var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
         this.isLeaseFeatureEnabled = value === 'true'
-      })
 
-      if (this.isLeaseFeatureEnabled) {
-        this.leaseduration = 90
-        this.leaseexpiryaction = 'stop'
-      }
+        if (this.isLeaseFeatureEnabled) {
+          var leasedurationParams = { name: 'instance.lease.duration', accountid: store.getters.userInfo.accountid }
+          api('listConfigurations', leasedurationParams).then(json => {
+            var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
+            this.leaseduration = value
+          }).catch(() => {
+            this.leaseduration = -1
+          }).finally(() => {
+            this.form.leaseduration = this.leaseduration
+          })
+        }
+      }).catch((error) => {
+        this.$notifyError(error)
+        this.isLeaseFeatureEnabled = false
+      })
     },
     addDiskOffering () {
       this.showDiskOfferingModal = true

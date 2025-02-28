@@ -166,6 +166,18 @@
               </a-statistic>
             </router-link>
           </a-col>
+          <a-col :span="12">
+            <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1', onlyleasedinstances: true } }">
+              <a-statistic
+                :title="$t('label.leasedinstances')"
+                :value="data.leasedinstances"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <cloud-server-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
         </a-row>
       </chart-card>
     </a-col>
@@ -556,6 +568,13 @@ export default {
         this.data.instances = json?.listvirtualmachinesresponse?.count
         if (!this.data.instances) {
           this.data.instances = 0
+        }
+      })
+      api('listVirtualMachines', { zoneid: zone.id, onlyleasedinstances: true, listall: true, projectid: '-1', details: 'min', page: 1, pagesize: 1 }).then(json => {
+        this.loading = false
+        this.data.leasedinstances = json?.listvirtualmachinesresponse?.count
+        if (!this.data.leasedinstances) {
+          this.data.leasedinstances = 0
         }
       })
     },

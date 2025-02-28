@@ -223,6 +223,16 @@
             </span>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="'leaseduration' in resource && resource.leaseduration > -1">
+          <div class="resource-detail-item__label">{{ $t('label.instance.lease.duration') }}</div>
+          <div class="resource-detail-item__details">
+            <font-awesome-icon
+              :icon="['fa-solid', 'fa-clock']"
+              class="anticon"
+              :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+            {{ resource.leaseduration + ' ' + $t('label.days') }}
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="'memory' in resource">
           <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
           <div class="resource-detail-item__details">

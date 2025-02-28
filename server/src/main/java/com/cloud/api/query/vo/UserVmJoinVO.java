@@ -992,13 +992,4 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     public String getLeaseExpiryAction() {
         return leaseExpiryAction;
     }
-
-//    public long getLeaseDuration() {
-//        if (leaseExpiryDate == null) {
-//            return -1L;
-//        }
-//        LocalDate createdDate = created.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-//        LocalDate expiryDate = leaseExpiryDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-//        return ChronoUnit.DAYS.between(createdDate, expiryDate);
-//    }
 }
