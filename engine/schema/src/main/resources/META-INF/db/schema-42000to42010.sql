@@ -54,6 +54,23 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.op_ha_work', 'reason', 'varchar(32) 
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported) VALUES (UUID(), 'XenServer', '8.3.0', 1000, 254, 64, 1);
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, max_data_volumes_limit, max_hosts_per_cluster, storage_motion_supported) VALUES (UUID(), 'XenServer', '8.4.0', 1000, 240, 64, 1);
 
+-- Add missing and new Guest OS mappings
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (10, 'Ubuntu 24.04 LTS', 'KVM', 'default', 'Ubuntu 24.04 LTS');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (2, 'Debian GNU/Linux 10 (64-bit)', 'XenServer', '8.2.1', 'Debian Buster 10');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (10, 'Ubuntu 20.04 LTS', 'XenServer', '8.2.1', 'Ubuntu Focal Fossa 20.04');
+
 -- Copy XS 8.2.1 hypervisor guest OS mappings to XS 8.3 and 8.3 mappings to 8.4
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '8.3.0', guest_os_name, guest_os_id, utc_timestamp(), 0 FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='8.2.1';
+
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Rocky Linux 9', 'XenServer', '8.3.0', 'Rocky Linux 9');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Rocky Linux 8', 'XenServer', '8.3.0', 'Rocky Linux 8');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 9', 'XenServer', '8.3.0', 'AlmaLinux 9');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'AlmaLinux 8', 'XenServer', '8.3.0', 'AlmaLinux 8');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (3, 'Oracle Linux 9', 'XenServer', '8.3.0', 'Oracle Linux 9');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (3, 'Oracle Linux 8', 'XenServer', '8.3.0', 'Oracle Linux 8');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (4, 'Red Hat Enterprise Linux 8.0', 'XenServer', '8.3.0', 'Red Hat Enterprise Linux 8');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (4, 'Red Hat Enterprise Linux 9.0', 'XenServer', '8.3.0', 'Red Hat Enterprise Linux 9');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (2, 'Debian GNU/Linux 12 (64-bit)', 'XenServer', '8.3.0', 'Debian Bookworm 12');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (10, 'Ubuntu 22.04 LTS', 'XenServer', '8.3.0', 'Ubuntu Jammy Jellyfish 22.04');
+
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '8.4.0', guest_os_name, guest_os_id, utc_timestamp(), 0 FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='8.3.0';
