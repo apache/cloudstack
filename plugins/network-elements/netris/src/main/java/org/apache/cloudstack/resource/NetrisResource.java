@@ -362,7 +362,7 @@ public class NetrisResource implements ServerResource {
         boolean result = netrisApiClient.createOrUpdateLbRule(cmd);
         if (!result) {
             return new NetrisAnswer(cmd, false, String.format("Failed to create Netris LB rule for %s: %s, " +
-                    "for private port: %s and public port: %s", getNetworkType(cmd.isVpc()), cmd.getName(), cmd.getPrivatePort(), cmd.getPublicPort(), cmd.getPublicPort()));
+                    "for private port: %s and public port: %s", getNetworkType(cmd.isVpc()), cmd.getName(), cmd.getPrivatePort(), cmd.getPublicPort()));
         }
         return new NetrisAnswer(cmd, true, "OK");
     }
@@ -370,8 +370,7 @@ public class NetrisResource implements ServerResource {
     private Answer executeRequest(DeleteNetrisLoadBalancerRuleCommand cmd) {
         boolean result = netrisApiClient.deleteLbRule(cmd);
         if (!result) {
-            return new NetrisAnswer(cmd, false, String.format("Failed to delete Netris LB rule for %s: %s, " +
-                    "for private port: %s and public port: %s", getNetworkType(cmd.isVpc()), cmd.getName()));
+            return new NetrisAnswer(cmd, false, String.format("Failed to delete Netris LB rule for %s: %s", getNetworkType(cmd.isVpc()), cmd.getName()));
         }
         return new NetrisAnswer(cmd, true, "OK");
     }

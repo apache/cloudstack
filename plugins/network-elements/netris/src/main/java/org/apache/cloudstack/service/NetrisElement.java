@@ -159,7 +159,7 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
         return counterList;
     }
 
-    private static Map<Network.Service, Map<Network.Capability, String>> initCapabilities() {
+    protected static Map<Network.Service, Map<Network.Capability, String>> initCapabilities() {
         Map<Network.Service, Map<Network.Capability, String>> capabilities = new HashMap<>();
 
         Map<Network.Capability, String> dhcpCapabilities = Map.of(Network.Capability.DhcpAccrossMultipleSubnets, "true");

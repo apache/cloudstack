@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.resource;
 
+import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisNatCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
@@ -28,7 +29,7 @@ public class NetrisResourceObjectUtilsTest {
     private static final long accountId = 2;
     private static final long domainId = 2;
 
-    private static final long vpcId = 10;
+    private static final long vpcId = 8;
     private static final String vpcName = "testVpc";
     private static final String vpcCidr = "10.10.0.0/16";
 
@@ -37,6 +38,14 @@ public class NetrisResourceObjectUtilsTest {
         CreateNetrisVpcCommand cmd = new CreateNetrisVpcCommand(zoneId, accountId, domainId, vpcName, vpcCidr, vpcId, true);
         String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC);
         String expectedNetrisVpcName = String.format("D%s-A%s-Z%s-V%s-%s", domainId, accountId, zoneId, vpcId, vpcName);
+        Assert.assertEquals(expectedNetrisVpcName, netrisVpcName);
+    }
+
+    @Test
+    public void testCreateVpcNameWithSuffix() {
+        CreateNetrisVpcCommand cmd = new CreateNetrisVpcCommand(zoneId, accountId, domainId, vpcName, vpcCidr, vpcId, true);
+        String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, String.valueOf(vpcId));
+        String expectedNetrisVpcName = String.format("D%s-A%s-Z%s-V%s", domainId, accountId, zoneId, vpcId);
         Assert.assertEquals(expectedNetrisVpcName, netrisVpcName);
     }
 
@@ -65,5 +74,25 @@ public class NetrisResourceObjectUtilsTest {
                 String.valueOf(vpcId), String.format("R%s", ruleId));
         String expectedNetrisRuleName = String.format("D%s-A%s-Z%s-V%s-DNAT-R%s", domainId, accountId, zoneId, vpcId, ruleId);
         Assert.assertEquals(expectedNetrisRuleName, ruleName);
+    }
+
+    @Test
+    public void testSubnetName() {
+        String vNetName = "<NETRIS_VNET_NAME>";
+        Long vpcTierNetworkId = 240L;
+        String vpcTierNetworkCidr = "10.10.30.0/24";
+        String vpcTierNetworkGateway = "10.10.30.1";
+        CreateNetrisVnetCommand cmd = new CreateNetrisVnetCommand(zoneId, accountId, domainId, vpcName, vpcId, vNetName, vpcTierNetworkId, vpcTierNetworkCidr, vpcTierNetworkGateway, true);
+        String subnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(vpcId), vpcTierNetworkCidr);
+        String expectedName = String.format("D%s-A%s-Z%s-V%s-%s", domainId, accountId, zoneId, vpcId, vpcTierNetworkCidr);
+        Assert.assertEquals(expectedName, subnetName);
+    }
+
+    @Test
+    public void testSourceNatName() {
+        CreateOrUpdateNetrisNatCommand cmd = new CreateOrUpdateNetrisNatCommand(zoneId, accountId, domainId, vpcName, vpcId, null, null, true, vpcCidr);
+        String snatRuleName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.SNAT, String.valueOf(vpcId));
+        String expectedName = String.format("D%s-A%s-Z%s-V%s-SNAT", domainId, accountId, zoneId, vpcId);
+        Assert.assertEquals(expectedName, snatRuleName);
     }
 }
