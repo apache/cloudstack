@@ -3066,6 +3066,7 @@
 "message.no.description": "No description entered.",
 "message.offering.internet.protocol.warning": "WARNING: IPv6 supported Networks use static routing and will require upstream routes to be configured manually.",
 "message.offering.ipv6.warning": "Please refer documentation for creating IPv6 enabled Network/VPC offering <a href='http://docs.cloudstack.apache.org/en/latest/plugins/ipv6.html#isolated-network-and-vpc-tier'>IPv6 support in CloudStack - Isolated Networks and VPC Network Tiers</a>",
+"message.oobm.configured": "Successfully configured Out of Band Management for host",
 "message.ovf.configurations": "OVF configurations available for the selected appliance. Please select the desired value. Incompatible compute offerings will get disabled.",
 "message.path.description": "NFS: exported path from the server. VMFS: /datacenter name/datastore name. SharedMountPoint: path where primary storage is mounted, such as /mnt/primary.",
 "message.please.confirm.remove.ssh.key.pair": "Please confirm that you want to remove this SSH key pair.",
