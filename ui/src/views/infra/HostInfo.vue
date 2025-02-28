@@ -83,6 +83,14 @@
       <span v-if="host?.outofbandmanagement?.enabled">
         <a-list-item>
           <div>
+            <strong>{{ $t('label.oobm.username') }}</strong>
+            <div>
+              {{ host.outofbandmanagement.username }}
+            </div>
+          </div>
+        </a-list-item>
+        <a-list-item>
+          <div>
             <strong>{{ $t('label.oobm.powerstate') }}</strong>
             <div>
               {{ host.outofbandmanagement.powerstate }}

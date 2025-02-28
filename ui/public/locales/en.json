@@ -2423,6 +2423,7 @@
 "label.oobm.driver": "Out-of-band management driver",
 "label.oobm.port": "Out-of-band management port",
 "label.oobm.powerstate": "Out-of-band management Power state",
+"label.oobm.username": "Out-of-band management username",
 "label.bucket.update": "Update Bucket",
 "label.bucket.delete": "Delete Bucket",
 "label.quotagb": "Quota in GB",
