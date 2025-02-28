@@ -139,11 +139,11 @@ public class NetrisApiClientImpl implements NetrisApiClient {
     private static final String ANY_IP = "0.0.0.0/0";
     private static final String[] PROTOCOL_LIST = new String[]{"TCP", "UDP", "ICMP", "ALL"};
 
-    private static ApiClient apiClient;
+    protected ApiClient apiClient;
 
-    private final int siteId;
+    protected final int siteId;
     private final String siteName;
-    private final int tenantId;
+    protected final int tenantId;
     private final String tenantName;
 
     public NetrisApiClientImpl(String endpointBaseUrl, String username, String password, String siteName, String adminTenantName) {
