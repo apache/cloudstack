@@ -3010,7 +3010,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         long totalSize = pool.getCapacityBytes();
         long usedSize = getUsedSize(pool);
         double usedPercentage = ((double)usedSize / (double)totalSize);
-        double storageUsedThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(pool.getDataCenterId());
+        double storageUsedThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(pool.getId());
         if (logger.isDebugEnabled()) {
             logger.debug("Checking pool {} for storage, totalSize: {}, usedBytes: {}, usedPct: {}, disable threshold: {}", pool, pool.getCapacityBytes(), pool.getUsedBytes(), usedPercentage, storageUsedThreshold);
         }
@@ -3282,7 +3282,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         logger.debug("Total capacity of the pool {} is {}", poolVO, toHumanReadableSize(totalOverProvCapacity));
 
-        double storageAllocatedThreshold = CapacityManager.StorageAllocatedCapacityDisableThreshold.valueIn(pool.getDataCenterId());
+        double storageAllocatedThreshold = CapacityManager.StorageAllocatedCapacityDisableThreshold.valueIn(pool.getId());
 
         if (logger.isDebugEnabled()) {
             logger.debug("Checking pool: {} for storage allocation , maxSize : {}, " +
@@ -3302,12 +3302,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (!forVolumeResize) {
                 return false;
             }
-            if (!AllowVolumeReSizeBeyondAllocation.valueIn(pool.getDataCenterId())) {
+            if (!AllowVolumeReSizeBeyondAllocation.valueIn(pool.getId())) {
                 logger.debug(String.format("Skipping the pool %s as %s is false", pool, AllowVolumeReSizeBeyondAllocation.key()));
                 return false;
             }
 
-            double storageAllocatedThresholdForResize = CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.valueIn(pool.getDataCenterId());
+            double storageAllocatedThresholdForResize = CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.valueIn(pool.getId());
             if (usedPercentage > storageAllocatedThresholdForResize) {
                 logger.debug(String.format("Skipping the pool %s since its allocated percentage: %s has crossed the allocated %s: %s",
                         pool, usedPercentage, CapacityManager.StorageAllocatedCapacityDisableThresholdForVolumeSize.key(), storageAllocatedThresholdForResize));

@@ -160,6 +160,10 @@
           &nbsp;
           <a-tag>static-nat</a-tag>
         </span>
+        <span v-if="record.issystem">
+          &nbsp;
+          <a-tag>system</a-tag>
+        </span>
       </template>
       <template v-if="column.key === 'ip6address'" href="javascript:;">
         <span>{{ ipV6Address(text, record) }}</span>
@@ -421,8 +425,8 @@
         <status :text="record.enabled ? record.enabled.toString() : 'false'" />
         {{ record.enabled ? 'Enabled' : 'Disabled' }}
       </template>
-      <template v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)">
-        {{ $toLocaleDate(text) }}
+      <template v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate', 'allocated'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)">
+        {{ text && $toLocaleDate(text) }}
       </template>
       <template v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp'].includes($route.path.split('/')[1])">
         {{ getDateAtTimeZone(text, record.timezone) }}

@@ -44,6 +44,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.cpu.CPU;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -892,7 +893,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     protected UserVmDao _userVmDao;
     @Inject
-    private ConfigurationDao _configDao;
+    protected ConfigurationDao _configDao;
     @Inject
     private ConfigurationGroupDao _configGroupDao;
     @Inject
@@ -904,7 +905,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private DiskOfferingDao _diskOfferingDao;
     @Inject
-    private DomainDao _domainDao;
+    protected DomainDao _domainDao;
     @Inject
     private AccountDao _accountDao;
     @Inject
@@ -960,7 +961,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private HostTagsDao _hostTagsDao;
     @Inject
-    private ConfigDepot _configDepot;
+    protected ConfigDepot _configDepot;
     @Inject
     private UserVmManager _userVmMgr;
     @Inject
@@ -1612,6 +1613,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             logger.debug("Hosts having capacity and suitable for migration: {}", suitableHosts);
         }
 
+        // Only list hosts of the same architecture as the source Host in a multi-arch zone
+        if (!suitableHosts.isEmpty()) {
+            List<CPU.CPUArch> clusterArchs = ApiDBUtils.listZoneClustersArchs(vm.getDataCenterId());
+            if (CollectionUtils.isNotEmpty(clusterArchs) && clusterArchs.size() > 1) {
+                suitableHosts = suitableHosts.stream().filter(h -> h.getArch() == srcHost.getArch()).collect(Collectors.toList());
+            }
+        }
+
         return new Ternary<>(otherHosts, suitableHosts, requiresStorageMotion);
     }
 
@@ -2192,7 +2201,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final String groupName = cmd.getGroupName();
         final String subGroupName = cmd.getSubGroupName();
         final String parentName = cmd.getParentName();
-        String scope = null;
+        ConfigKey.Scope scope = null;
         Long id = null;
         int paramCountCheck = 0;
 
@@ -2208,35 +2217,35 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (zoneId != null) {
-            scope = ConfigKey.Scope.Zone.toString();
+            scope = ConfigKey.Scope.Zone;
             id = zoneId;
             paramCountCheck++;
         }
         if (clusterId != null) {
-            scope = ConfigKey.Scope.Cluster.toString();
+            scope = ConfigKey.Scope.Cluster;
             id = clusterId;
             paramCountCheck++;
         }
         if (accountId != null) {
             Account account = _accountMgr.getAccount(accountId);
             _accountMgr.checkAccess(caller, null, false, account);
-            scope = ConfigKey.Scope.Account.toString();
+            scope = ConfigKey.Scope.Account;
             id = accountId;
             paramCountCheck++;
         }
         if (domainId != null) {
             _accountMgr.checkAccess(caller, _domainDao.findById(domainId));
-            scope = ConfigKey.Scope.Domain.toString();
+            scope = ConfigKey.Scope.Domain;
             id = domainId;
             paramCountCheck++;
         }
         if (storagepoolId != null) {
-            scope = ConfigKey.Scope.StoragePool.toString();
+            scope = ConfigKey.Scope.StoragePool;
             id = storagepoolId;
             paramCountCheck++;
         }
         if (imageStoreId != null) {
-            scope = ConfigKey.Scope.ImageStore.toString();
+            scope = ConfigKey.Scope.ImageStore;
             id = imageStoreId;
             paramCountCheck++;
         }
@@ -2291,19 +2300,19 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // hidden configurations are not displayed using the search API
         sc.addAnd("category", SearchCriteria.Op.NEQ, "Hidden");
 
-        if (scope != null && !scope.isEmpty()) {
+        if (scope != null) {
             // getting the list of parameters at requested scope
             if (ConfigurationManagerImpl.ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN.value()
-                && scope.equals(ConfigKey.Scope.Domain.toString())) {
-                sc.addAnd("scope", SearchCriteria.Op.IN, ConfigKey.Scope.Domain.toString(), ConfigKey.Scope.Account.toString());
+                && scope.equals(ConfigKey.Scope.Domain)) {
+                sc.addAnd("scope", SearchCriteria.Op.BINARY_OR, (ConfigKey.Scope.Domain.getBitValue() | ConfigKey.Scope.Account.getBitValue()));
             } else {
-                sc.addAnd("scope", SearchCriteria.Op.EQ, scope);
+                sc.addAnd("scope", SearchCriteria.Op.BINARY_OR, scope.getBitValue());
             }
         }
 
         final Pair<List<ConfigurationVO>, Integer> result = _configDao.searchAndCount(sc, searchFilter);
 
-        if (scope != null && !scope.isEmpty()) {
+        if (scope != null) {
             // Populate values corresponding the resource id
             final List<ConfigurationVO> configVOList = new ArrayList<>();
             for (final ConfigurationVO param : result.first()) {
@@ -2311,13 +2320,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (configVo != null) {
                     final ConfigKey<?> key = _configDepot.get(param.getName());
                     if (key != null) {
-                        if (scope.equals(ConfigKey.Scope.Domain.toString())) {
-                            Object value = key.valueInDomain(id);
-                            configVo.setValue(value == null ? null : value.toString());
-                        } else {
-                            Object value = key.valueIn(id);
-                            configVo.setValue(value == null ? null : value.toString());
-                        }
+                        Object value = key.valueInScope(scope, id);
+                        configVo.setValue(value == null ? null : value.toString());
                         configVOList.add(configVo);
                     } else {
                         logger.warn("ConfigDepot could not find parameter " + param.getName() + " for scope " + scope);
