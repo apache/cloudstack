@@ -165,6 +165,10 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
     Backup.Status getStatus();
     Long getSize();
     Long getProtectedSize();
+    void setName(String name);
+    String getDescription();
+    void setDescription(String description);
+    short getBackupIntervalType();
     List<VolumeInfo> getBackedUpVolumes();
     long getZoneId();
     Map<String, String> getDetails();

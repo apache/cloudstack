@@ -19,9 +19,13 @@
 -- Schema upgrade from 4.20.1.0 to 4.21.0.0
 --;
 
--- Add columns max_backup and backup_interval_type to backup table
+-- Add column max_backup to backup_schedule table
 ALTER TABLE `cloud`.`backup_schedule` ADD COLUMN `max_backups` int(8) default NULL COMMENT 'maximum number of backups to maintain';
+
+-- Add columns name, description and backup_interval_type to backup table
 ALTER TABLE `cloud`.`backups` ADD COLUMN `backup_interval_type` int(5) COMMENT 'type of backup, e.g. manual, recurring - hourly, daily, weekly or monthly';
+ALTER TABLE `cloud`.`backups` ADD COLUMN `name` varchar(255) COMMENT 'name of the backup';
+ALTER TABLE `cloud`.`backups` ADD COLUMN `description` varchar(1024) COMMENT 'description for the backup';
 
 -- Add console_endpoint_creator_address column to cloud.console_session table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.console_session', 'console_endpoint_creator_address', 'VARCHAR(45)');

@@ -50,6 +50,12 @@ public class BackupVO implements Backup {
     @Column(name = "id")
     private long id;
 
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "description")
+    private String description;
+
     @Column(name = "uuid")
     private String uuid;
 
@@ -217,6 +223,7 @@ public class BackupVO implements Backup {
         this.zoneId = zoneId;
     }
 
+    @Override
     public short getBackupIntervalType() {
         return backupIntervalType;
     }
@@ -232,7 +239,22 @@ public class BackupVO implements Backup {
 
     @Override
     public String getName() {
-        return null;
+        return name;
+    }
+
+    @Override
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+    @Override
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public List<VolumeInfo> getBackedUpVolumes() {

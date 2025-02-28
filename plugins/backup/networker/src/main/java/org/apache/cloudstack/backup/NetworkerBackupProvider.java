@@ -33,9 +33,6 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VMInstanceVO;
@@ -43,7 +40,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDaoImpl;
 import org.apache.cloudstack.backup.networker.NetworkerClient;
@@ -615,6 +611,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             backup.setAccountId(vm.getAccountId());
             backup.setDomainId(vm.getDomainId());
             backup.setZoneId(vm.getDataCenterId());
+            backup.setName(vm.getHostName() + '-' + new SimpleDateFormat("yyyy-MM-dd'T'HH:mmX").format(new Date()));
 
             HashMap<String, String> details = new HashMap<>();
             details.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());

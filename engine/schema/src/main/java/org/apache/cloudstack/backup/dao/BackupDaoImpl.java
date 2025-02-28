@@ -256,6 +256,12 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
 
         BackupResponse response = new BackupResponse();
         response.setId(backup.getUuid());
+        if (backup.getName() != null) {
+            response.setName(backup.getName());
+        } else {
+            response.setName(vm.getHostName());
+        }
+        response.setDescription(backup.getDescription());
         response.setVmId(vm.getUuid());
         response.setVmName(vm.getHostName());
         response.setExternalId(backup.getExternalId());
@@ -264,6 +270,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         response.setSize(backup.getSize());
         response.setProtectedSize(backup.getProtectedSize());
         response.setStatus(backup.getStatus());
+        response.setIntervalType(Backup.Type.values()[backup.getBackupIntervalType()].toString());
         // ACS 4.20: For backups taken prior this release the backup.backed_volumes column would be empty hence use vm_instance.backup_volumes
         String backedUpVolumes;
         if (Objects.isNull(backup.getBackedUpVolumes())) {

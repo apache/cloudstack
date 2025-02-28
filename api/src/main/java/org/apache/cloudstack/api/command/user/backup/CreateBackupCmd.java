@@ -62,6 +62,18 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
             description = "ID of the VM")
     private Long vmId;
 
+    @Parameter(name = ApiConstants.NAME,
+            type = CommandType.STRING,
+            description = "the name of the backup",
+            since = "4.21.0")
+    private String name;
+
+    @Parameter(name = ApiConstants.DESCRIPTION,
+            type = CommandType.STRING,
+            description = "the description for the backup",
+            since = "4.21.0")
+    private String description;
+
     @Parameter(name = ApiConstants.SCHEDULE_ID,
             type = CommandType.LONG,
             entityType = BackupScheduleResponse.class,
@@ -75,6 +87,14 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
 
     public Long getVmId() {
         return vmId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     public Long getScheduleId() {
@@ -92,7 +112,7 @@ public class CreateBackupCmd extends BaseAsyncCreateCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.createBackup(getVmId(), getScheduleId());
+            boolean result = backupManager.createBackup(this);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());

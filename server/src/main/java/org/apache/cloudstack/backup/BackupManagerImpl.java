@@ -623,7 +623,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_CREATE, eventDescription = "creating VM backup", async = true)
-    public boolean createBackup(final Long vmId, final Long scheduleId) throws ResourceAllocationException {
+    public boolean createBackup(CreateBackupCmd cmd) throws ResourceAllocationException {
+        Long vmId = cmd.getVmId();
+        Long scheduleId = cmd.getScheduleId();
+
         final VMInstanceVO vm = findVmById(vmId);
         validateBackupForZone(vm.getDataCenterId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
@@ -693,6 +696,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             if (backup != null) {
                 BackupVO vmBackup = backupDao.findById(result.second().getId());
                 vmBackup.setBackupIntervalType((short) type.ordinal());
+                if (cmd.getName() != null) {
+                    vmBackup.setName(cmd.getName());
+                }
+                vmBackup.setDescription(cmd.getDescription());
                 backupDao.update(vmBackup.getId(), vmBackup);
                 resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
                 resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());

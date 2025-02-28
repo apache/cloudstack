@@ -35,6 +35,14 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "ID of the VM backup")
     private String id;
 
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "name of the backup")
+    private String name;
+
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "description for the backup")
+    private String description;
+
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
     @Param(description = "ID of the VM")
     private String vmId;
@@ -107,12 +115,32 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "Lists the vm specific details for the backup", since = "4.21.0")
     private Map<String, String> vmDetails;
 
+    @SerializedName(ApiConstants.INTERVAL_TYPE)
+    @Param(description = "the interval type of the backup schedule")
+    private String intervalType;
+
     public String getId() {
         return id;
     }
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public String getVmId() {
@@ -257,5 +285,13 @@ public class BackupResponse extends BaseResponse {
 
     public void setVmDetails(Map<String, String> vmDetails) {
         this.vmDetails = vmDetails;
+    }
+
+    public String getIntervalType() {
+        return this.intervalType;
+    }
+
+    public void setIntervalType(String intervalType) {
+        this.intervalType = intervalType;
     }
 }

@@ -63,6 +63,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
+import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
@@ -88,9 +89,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -576,13 +574,16 @@ public class BackupManagerTest {
         when(backupProvider.deleteBackup(oldestBackupVO, false)).thenReturn(true);
         when(backupDao.remove(oldestBackupVO.getId())).thenReturn(true);
 
+        CreateBackupCmd cmd = Mockito.mock(CreateBackupCmd.class);
+        when(cmd.getVmId()).thenReturn(vmId);
+
         try (MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
             Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
                     Mockito.anyLong(),
                     Mockito.anyString(), Mockito.anyString(),
                     Mockito.anyLong(), Mockito.anyString())).thenReturn(1L);
 
-            Assert.assertEquals(backupManager.createBackup(vmId, scheduleId), true);
+            Assert.assertEquals(backupManager.createBackup(cmd), true);
 
             Mockito.verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup);
             Mockito.verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup_storage, newBackupSize);
@@ -622,7 +623,10 @@ public class BackupManagerTest {
         when(accountManager.getAccount(accountId)).thenReturn(account);
         Mockito.doThrow(new ResourceAllocationException("", Resource.ResourceType.backup_storage)).when(resourceLimitMgr).checkResourceLimit(account, Resource.ResourceType.backup_storage, 0L);
 
-        backupManager.createBackup(vmId, scheduleId);
+        CreateBackupCmd cmd = Mockito.mock(CreateBackupCmd.class);
+        when(cmd.getVmId()).thenReturn(vmId);
+
+        backupManager.createBackup(cmd);
 
         String msg = "Backup storage space resource limit exceeded for account id : " + accountId + ". Failed to create backup";
         Mockito.verify(alertManager, times(1)).sendAlert(AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg, "Backup storage space resource limit exceeded for account id : " + accountId
