@@ -3795,7 +3795,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             DataCenter zone = _dcDao.findById(vpc.getZoneId());
             try {
                 IpAddress ip = _ipAddrMgr.allocateIp(account, false, CallContext.current().getCallingAccount(),
-                        CallContext.current().getCallingUserId(), zone, null, null);
+                        CallContext.current().getCallingUser(), zone, null, null);
                 this.associateIPToVpc(ip.getId(), vpc.getId());
                 return _ipAddressDao.findById(ip.getId());
             } catch (InsufficientAddressCapacityException | ResourceAllocationException |
