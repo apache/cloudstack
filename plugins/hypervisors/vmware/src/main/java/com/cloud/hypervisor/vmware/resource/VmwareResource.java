@@ -6059,6 +6059,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     @Override
     public StartupCommand[] initialize() {
+        return initialize(false);
+    }
+
+    @Override
+    public StartupCommand[] initialize(boolean isTransferredConnection) {
         try {
             String hostApiVersion = "4.1";
             VmwareContext context = getServiceContext();
@@ -6087,6 +6092,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             cmd.setHypervisorType(HypervisorType.VMware);
             cmd.setCluster(_cluster);
             cmd.setHypervisorVersion(hostApiVersion);
+            cmd.setConnectionTransferred(isTransferredConnection);
 
             List<StartupStorageCommand> storageCmds = initializeLocalStorage();
             StartupCommand[] answerCmds = new StartupCommand[1 + storageCmds.size()];

@@ -24,7 +24,7 @@
     <parent>
         <groupId>org.apache.cloudstack</groupId>
         <artifactId>cloudstack</artifactId>
-        <version>4.20.1.0-SNAPSHOT</version>
+        <version>4.21.0.0-SNAPSHOT</version>
     </parent>
     <build>
         <plugins>
@@ -119,7 +119,7 @@
         <module>outofbandmanagement-drivers/nested-cloudstack</module>
         <module>outofbandmanagement-drivers/redfish</module>
 
-        <module>shutdown</module>
+        <module>maintenance</module>
 
         <module>storage/sharedfs/storagevm</module>
         <module>storage/image/default</module>

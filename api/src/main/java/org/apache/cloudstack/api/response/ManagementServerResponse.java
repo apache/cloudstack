@@ -82,6 +82,14 @@ public class ManagementServerResponse extends BaseResponse {
     @Param(description = "the Management Server Peers")
     private List<PeerManagementServerNodeResponse> peers;
 
+    @SerializedName(ApiConstants.AGENTS_COUNT)
+    @Param(description = "the number of host agents this Management Server is responsible for", since = "4.21.0.0")
+    private Long agentsCount;
+
+    @SerializedName(ApiConstants.PENDING_JOBS_COUNT)
+    @Param(description = "the number of pending jobs in this Management Server", since = "4.21.0.0")
+    private Long pendingJobsCount;
+
     public String getId() {
         return this.id;
     }
@@ -124,6 +132,14 @@ public class ManagementServerResponse extends BaseResponse {
 
     public String getIpAddress() {
         return ipAddress;
+    }
+
+    public Long getAgentsCount() {
+        return this.agentsCount;
+    }
+
+    public Long getPendingJobsCount() {
+        return this.pendingJobsCount;
     }
 
     public void setId(String id) {
@@ -172,6 +188,14 @@ public class ManagementServerResponse extends BaseResponse {
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
+    }
+
+    public void setAgentsCount(Long agentsCount) {
+        this.agentsCount = agentsCount;
+    }
+
+    public void setPendingJobsCount(Long pendingJobsCount) {
+        this.pendingJobsCount = pendingJobsCount;
     }
 
     public String getKernelVersion() {

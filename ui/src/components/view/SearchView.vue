@@ -305,12 +305,10 @@ export default {
         if (item === 'isencrypted' && !('listVolumes' in this.$store.getters.apis)) {
           return true
         }
-        if (item === 'displaynetwork' && this.$store.getters.userInfo.roletype !== 'Admin') {
-          return true
-        }
         if (['zoneid', 'domainid', 'imagestoreid', 'storageid', 'state', 'account', 'hypervisor', 'level',
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
-          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'networkid', 'usagetype', 'restartrequired', 'displaynetwork'].includes(item)
+          'type', 'scope', 'managementserverid', 'serviceofferingid', 'diskofferingid', 'networkid',
+          'usagetype', 'restartrequired', 'displaynetwork', 'guestiptype', 'usersource'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -338,9 +336,9 @@ export default {
         this.fields[typeIndex].opts = this.fetchBoolean()
         this.fields[typeIndex].loading = false
       }
-      if (arrayField.includes('type')) {
-        if (this.$route.path === '/guestnetwork' || this.$route.path.includes('/guestnetwork/')) {
-          const typeIndex = this.fields.findIndex(item => item.name === 'type')
+      if (arrayField.includes('type') || arrayField.includes('guestiptype')) {
+        if (this.$route.path.includes('/guestnetwork') || this.$route.path.includes('/networkoffering')) {
+          const typeIndex = this.fields.findIndex(item => ['type', 'guestiptype'].includes(item.name))
           this.fields[typeIndex].loading = true
           this.fields[typeIndex].opts = this.fetchGuestNetworkTypes()
           this.fields[typeIndex].loading = false
@@ -1009,18 +1007,6 @@ export default {
           name: 'label.l2'
         })
       }
-      return types
-    },
-    fetchBoolean () {
-      const types = []
-      types.push({
-        id: 'true',
-        name: 'label.true'
-      })
-      types.push({
-        id: 'false',
-        name: 'label.false'
-      })
       return types
     },
     fetchAccountTypes () {

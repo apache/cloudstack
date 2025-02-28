@@ -107,13 +107,13 @@ import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
-import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
 import org.apache.cloudstack.api.command.admin.host.DeleteHostCmd;
 import org.apache.cloudstack.api.command.admin.host.FindHostsForMigrationCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostTagsCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
-import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForHostMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.ReleaseHostReservationCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
@@ -901,7 +901,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     protected UserVmDao _userVmDao;
     @Inject
-    private ConfigurationDao _configDao;
+    protected ConfigurationDao _configDao;
     @Inject
     private ConfigurationGroupDao _configGroupDao;
     @Inject
@@ -913,7 +913,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private DiskOfferingDao _diskOfferingDao;
     @Inject
-    private DomainDao _domainDao;
+    protected DomainDao _domainDao;
     @Inject
     private AccountDao _accountDao;
     @Inject
@@ -969,7 +969,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private HostTagsDao _hostTagsDao;
     @Inject
-    private ConfigDepot _configDepot;
+    protected ConfigDepot _configDepot;
     @Inject
     private UserVmManager _userVmMgr;
     @Inject
@@ -2213,7 +2213,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final String groupName = cmd.getGroupName();
         final String subGroupName = cmd.getSubGroupName();
         final String parentName = cmd.getParentName();
-        String scope = null;
+        ConfigKey.Scope scope = null;
         Long id = null;
         int paramCountCheck = 0;
 
@@ -2229,35 +2229,35 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (zoneId != null) {
-            scope = ConfigKey.Scope.Zone.toString();
+            scope = ConfigKey.Scope.Zone;
             id = zoneId;
             paramCountCheck++;
         }
         if (clusterId != null) {
-            scope = ConfigKey.Scope.Cluster.toString();
+            scope = ConfigKey.Scope.Cluster;
             id = clusterId;
             paramCountCheck++;
         }
         if (accountId != null) {
             Account account = _accountMgr.getAccount(accountId);
             _accountMgr.checkAccess(caller, null, false, account);
-            scope = ConfigKey.Scope.Account.toString();
+            scope = ConfigKey.Scope.Account;
             id = accountId;
             paramCountCheck++;
         }
         if (domainId != null) {
             _accountMgr.checkAccess(caller, _domainDao.findById(domainId));
-            scope = ConfigKey.Scope.Domain.toString();
+            scope = ConfigKey.Scope.Domain;
             id = domainId;
             paramCountCheck++;
         }
         if (storagepoolId != null) {
-            scope = ConfigKey.Scope.StoragePool.toString();
+            scope = ConfigKey.Scope.StoragePool;
             id = storagepoolId;
             paramCountCheck++;
         }
         if (imageStoreId != null) {
-            scope = ConfigKey.Scope.ImageStore.toString();
+            scope = ConfigKey.Scope.ImageStore;
             id = imageStoreId;
             paramCountCheck++;
         }
@@ -2312,19 +2312,19 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // hidden configurations are not displayed using the search API
         sc.addAnd("category", SearchCriteria.Op.NEQ, "Hidden");
 
-        if (scope != null && !scope.isEmpty()) {
+        if (scope != null) {
             // getting the list of parameters at requested scope
             if (ConfigurationManagerImpl.ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN.value()
-                && scope.equals(ConfigKey.Scope.Domain.toString())) {
-                sc.addAnd("scope", SearchCriteria.Op.IN, ConfigKey.Scope.Domain.toString(), ConfigKey.Scope.Account.toString());
+                && scope.equals(ConfigKey.Scope.Domain)) {
+                sc.addAnd("scope", SearchCriteria.Op.BINARY_OR, (ConfigKey.Scope.Domain.getBitValue() | ConfigKey.Scope.Account.getBitValue()));
             } else {
-                sc.addAnd("scope", SearchCriteria.Op.EQ, scope);
+                sc.addAnd("scope", SearchCriteria.Op.BINARY_OR, scope.getBitValue());
             }
         }
 
         final Pair<List<ConfigurationVO>, Integer> result = _configDao.searchAndCount(sc, searchFilter);
 
-        if (scope != null && !scope.isEmpty()) {
+        if (scope != null) {
             // Populate values corresponding the resource id
             final List<ConfigurationVO> configVOList = new ArrayList<>();
             for (final ConfigurationVO param : result.first()) {
@@ -2332,13 +2332,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (configVo != null) {
                     final ConfigKey<?> key = _configDepot.get(param.getName());
                     if (key != null) {
-                        if (scope.equals(ConfigKey.Scope.Domain.toString())) {
-                            Object value = key.valueInDomain(id);
-                            configVo.setValue(value == null ? null : value.toString());
-                        } else {
-                            Object value = key.valueIn(id);
-                            configVo.setValue(value == null ? null : value.toString());
-                        }
+                        Object value = key.valueInScope(scope, id);
+                        configVo.setValue(value == null ? null : value.toString());
                         configVOList.add(configVo);
                     } else {
                         logger.warn("ConfigDepot could not find parameter " + param.getName() + " for scope " + scope);
@@ -3544,14 +3539,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(MoveDomainCmd.class);
         cmdList.add(AddHostCmd.class);
         cmdList.add(AddSecondaryStorageCmd.class);
-        cmdList.add(CancelMaintenanceCmd.class);
+        cmdList.add(CancelHostMaintenanceCmd.class);
         cmdList.add(CancelHostAsDegradedCmd.class);
         cmdList.add(DeclareHostAsDegradedCmd.class);
         cmdList.add(DeleteHostCmd.class);
         cmdList.add(ListHostsCmd.class);
         cmdList.add(ListHostTagsCmd.class);
         cmdList.add(FindHostsForMigrationCmd.class);
-        cmdList.add(PrepareForMaintenanceCmd.class);
+        cmdList.add(PrepareForHostMaintenanceCmd.class);
         cmdList.add(ReconnectHostCmd.class);
         cmdList.add(UpdateHostCmd.class);
         cmdList.add(UpdateHostPasswordCmd.class);
