@@ -353,7 +353,7 @@
           <a-col :md="12" :lg="12">
             <a-form-item name="leaseduration" ref="leaseduration">
               <template #label>
-                <tooltip-label :title="$t('label.instance.lease.duration')"/>
+                <tooltip-label :title="$t('label.leaseduration')"/>
               </template>
               <a-input
                 v-model:value="form.leaseduration"

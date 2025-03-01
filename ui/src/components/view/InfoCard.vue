@@ -93,6 +93,9 @@
               <a-tag v-if="resource.archived" :color="this.$config.theme['@warning-color']">
                 {{ $t('label.archived') }}
               </a-tag>
+              <a-tag v-if="resource.leaseduration">
+                {{ resource.leaseduration }}
+              </a-tag>
               <a-tooltip placement="right" >
                 <template #title>
                   <span>{{ $t('label.view.console') }}</span>
@@ -224,13 +227,23 @@
           </div>
         </div>
         <div class="resource-detail-item" v-if="'leaseduration' in resource && resource.leaseduration > -1">
-          <div class="resource-detail-item__label">{{ $t('label.instance.lease.duration') }}</div>
+          <div class="resource-detail-item__label">{{ $t('label.leaseduration') }}</div>
           <div class="resource-detail-item__details">
             <font-awesome-icon
               :icon="['fa-solid', 'fa-clock']"
               class="anticon"
               :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
             {{ resource.leaseduration + ' ' + $t('label.days') }}
+          </div>
+        </div>
+        <div class="resource-detail-item" v-if="'leaseexpiryaction' in resource && resource.leaseexpiryaction != ''">
+          <div class="resource-detail-item__label">{{ $t('label.leaseexpiryaction') }}</div>
+          <div class="resource-detail-item__details">
+            <font-awesome-icon
+              :icon="['fa-solid', 'fa-circle-xmark']"
+              class="anticon"
+              :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+            {{ resource.leaseexpiryaction }}
           </div>
         </div>
         <div class="resource-detail-item" v-if="'memory' in resource">

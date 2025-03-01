@@ -27,6 +27,7 @@ import com.cloud.user.User;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -55,6 +56,8 @@ import static com.cloud.vm.VirtualMachine.State.Expunging;
 import static com.cloud.vm.VirtualMachine.State.Unknown;
 
 public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, Configurable {
+
+    private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;   // 5 seconds
 
     @Inject
     private UserVmJoinDao userVmJoinDao;
@@ -135,6 +138,21 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
 
     @Override
     public void poll(Date currentTimestamp) {
+        GlobalLock scanLock = GlobalLock.getInternLock("VMLeaseScheduler");
+        try {
+            if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
+                try {
+                    reallyRun();
+                } finally {
+                    scanLock.unlock();
+                }
+            }
+        } finally {
+            scanLock.releaseRef();
+        }
+    }
+
+    private void reallyRun() {
         // fetch user_instances having leaseDuration configured and has expired
         List<UserVmJoinVO> leaseExpiredInstances = userVmJoinDao.listExpiredInstancesIds();
         List<Long> actionableInstanceIds = new ArrayList<>();
