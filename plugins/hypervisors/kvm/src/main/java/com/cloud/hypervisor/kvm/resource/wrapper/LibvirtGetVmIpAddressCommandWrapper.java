@@ -70,6 +70,8 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
         String sanitizedVmName = sanitizeBashCommandArgument(vmName);
         String networkCidr = command.getVmNetworkCidr();
 
+        init();
+
         ip = ipFromDomIf(sanitizedVmName, networkCidr);
 
         if (ip == null) {
