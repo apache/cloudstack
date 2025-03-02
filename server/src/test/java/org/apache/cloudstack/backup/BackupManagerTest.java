@@ -626,6 +626,7 @@ public class BackupManagerTest {
 
         CreateBackupCmd cmd = Mockito.mock(CreateBackupCmd.class);
         when(cmd.getVmId()).thenReturn(vmId);
+        when(cmd.getScheduleId()).thenReturn(scheduleId);
 
         backupManager.createBackup(cmd);
 
