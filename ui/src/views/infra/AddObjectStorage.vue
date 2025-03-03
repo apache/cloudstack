@@ -25,10 +25,16 @@
         layout="vertical"
         @finish="handleSubmit"
        >
-        <a-form-item name="name" ref="name" :label="$t('label.name')">
+        <a-form-item name="name" ref="name">
+          <template #label>
+            <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
+          </template>
           <a-input v-model:value="form.name" v-focus="true" />
         </a-form-item>
-        <a-form-item name="provider" ref="provider" :label="$t('label.providername')">
+        <a-form-item name="provider" ref="provider">
+          <template #label>
+            <tooltip-label :title="$t('label.providername')" :tooltip="apiParams.provider.description"/>
+          </template>
           <a-select
             v-model:value="form.provider"
             @change="val => { form.provider = val }"
@@ -44,7 +50,10 @@
             >{{ prov }}</a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item name="url" ref="url" :label="$t('label.url')">
+        <a-form-item name="url" ref="url">
+          <template #label>
+            <tooltip-label :title="$t('label.url')" :tooltip="apiParams.url.description"/>
+          </template>
           <a-input v-model:value="form.url" />
         </a-form-item>
         <a-form-item name="accessKey" ref="accessKey" :label="$t('label.access.key')">
@@ -52,6 +61,12 @@
         </a-form-item>
         <a-form-item name="secretKey" ref="secretKey" :label="$t('label.secret.key')">
           <a-input v-model:value="form.secretKey" />
+        </a-form-item>
+        <a-form-item name="size" ref="size">
+          <template #label>
+            <tooltip-label :title="$t('label.size')" :tooltip="apiParams.size.description"/>
+          </template>
+          <a-input v-model:value="form.size" />
         </a-form-item>
         <div :span="24" class="action-button">
           <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
@@ -66,6 +81,7 @@ import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
   name: 'AddObjectStorage',
@@ -77,7 +93,8 @@ export default {
     }
   },
   components: {
-    ResourceIcon
+    ResourceIcon,
+    TooltipLabel
   },
   inject: ['parentFetchData'],
   data () {
@@ -86,6 +103,9 @@ export default {
       zones: [],
       loading: false
     }
+  },
+  beforeCreate () {
+    this.apiParams = this.$getApiParams('addObjectStoragePool')
   },
   created () {
     this.initForm()

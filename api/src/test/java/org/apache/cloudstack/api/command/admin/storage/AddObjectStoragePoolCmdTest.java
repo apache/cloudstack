@@ -61,6 +61,8 @@ public class AddObjectStoragePoolCmdTest {
 
     String provider = "Simulator";
 
+    Long size = 10L;
+
     Map<String, String> details;
 
     private AutoCloseable closeable;
@@ -74,6 +76,7 @@ public class AddObjectStoragePoolCmdTest {
         ReflectionTestUtils.setField(addObjectStoragePoolCmdSpy, "url", url);
         ReflectionTestUtils.setField(addObjectStoragePoolCmdSpy, "providerName", provider);
         ReflectionTestUtils.setField(addObjectStoragePoolCmdSpy, "details", details);
+        ReflectionTestUtils.setField(addObjectStoragePoolCmdSpy, "size", size);
         addObjectStoragePoolCmdSpy._storageService = storageService;
         addObjectStoragePoolCmdSpy._responseGenerator = responseGenerator;
     }
@@ -87,12 +90,12 @@ public class AddObjectStoragePoolCmdTest {
     @Test
     public void testAddObjectStore() throws DiscoveryException {
         Mockito.doReturn(objectStore).when(storageService).discoverObjectStore(Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyString(), any());
+                Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), any());
         ObjectStoreResponse objectStoreResponse = new ObjectStoreResponse();
         Mockito.doReturn(objectStoreResponse).when(responseGenerator).createObjectStoreResponse(any());
         addObjectStoragePoolCmdSpy.execute();
 
         Mockito.verify(storageService, Mockito.times(1))
-                .discoverObjectStore(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+                .discoverObjectStore(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 }

@@ -29,6 +29,7 @@ public class ApiConstants {
     public static final String ADDRESS = "address";
     public static final String ALGORITHM = "algorithm";
     public static final String ALIAS = "alias";
+    public static final String ALLOCATED = "allocated";
     public static final String ALLOCATED_DATE = "allocateddate";
     public static final String ALLOCATED_ONLY = "allocatedonly";
     public static final String ALLOCATED_TIME = "allocated";
@@ -521,6 +522,7 @@ public class ApiConstants {
     public static final String TRUST_STORE_PASSWORD = "truststorepass";
     public static final String URL = "url";
     public static final String USAGE_INTERFACE = "usageinterface";
+    public static final String USED = "used";
     public static final String USED_SUBNETS = "usedsubnets";
     public static final String USED_IOPS = "usediops";
     public static final String USER_DATA = "userdata";

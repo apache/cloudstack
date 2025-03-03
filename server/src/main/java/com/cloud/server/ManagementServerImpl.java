@@ -3352,7 +3352,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     List<SummedCapacity> getStorageCapacities(Long clusterId, Long podId, Long zoneId, List<Long> poolIds, Short capacityType) {
-        List<Short> capacityTypes = Arrays.asList(Capacity.CAPACITY_TYPE_STORAGE, Capacity.CAPACITY_TYPE_SECONDARY_STORAGE);
+        List<Short> capacityTypes = Arrays.asList(Capacity.CAPACITY_TYPE_STORAGE, Capacity.CAPACITY_TYPE_SECONDARY_STORAGE,
+                Capacity.CAPACITY_TYPE_BACKUP_STORAGE, Capacity.CAPACITY_TYPE_OBJECT_STORAGE);
         if (capacityType != null && !capacityTypes.contains(capacityType)) {
             return null;
         }
@@ -3360,7 +3361,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             capacityTypes = capacityTypes.stream().filter(x -> x.equals(capacityType)).collect(Collectors.toList());
         }
         if (CollectionUtils.isNotEmpty(poolIds)) {
-            capacityTypes = capacityTypes.stream().filter(x -> x != Capacity.CAPACITY_TYPE_SECONDARY_STORAGE).collect(Collectors.toList());
+            capacityTypes = capacityTypes.stream().filter(x -> x == Capacity.CAPACITY_TYPE_STORAGE).collect(Collectors.toList());
         }
         if (CollectionUtils.isEmpty(capacityTypes)) {
             return null;
@@ -3385,6 +3386,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
             if (capacityTypes.contains(Capacity.CAPACITY_TYPE_STORAGE)) {
                 capacities.add(_storageMgr.getStoragePoolUsedStats(dc.getId(), podId, clusterId, poolIds));
+            }
+            if (capacityTypes.contains(Capacity.CAPACITY_TYPE_OBJECT_STORAGE)) {
+                capacities.add(_storageMgr.getObjectStorageUsedStats(dc.getId()));
             }
             for (CapacityVO capacity : capacities) {
                 if (capacity.getTotalCapacity() != 0) {
@@ -3428,11 +3432,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             for (final Long zId : dcList) {
                 // op_host_Capacity contains only allocated stats and the real time
                 // stats are stored "in memory".
-                // List secondary storage capacity only when the api is invoked for the zone layer.
-                if ((capacityType == null || capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) &&
+                // List secondary and object storage capacities only when the api is invoked for the zone layer.
+                if ((capacityType == null ||
+                        (capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE || capacityType == Capacity.CAPACITY_TYPE_OBJECT_STORAGE)) &&
                         podId == null && clusterId == null &&
                         StringUtils.isEmpty(t)) {
                     taggedCapacities.add(_storageMgr.getSecondaryStorageUsedStats(null, zId));
+                    taggedCapacities.add(_storageMgr.getObjectStorageUsedStats(zId));
                 }
                 if ((capacityType == null || capacityType == Capacity.CAPACITY_TYPE_STORAGE) && storagePoolIdsForCapacity.first()) {
                     taggedCapacities.add(_storageMgr.getStoragePoolUsedStats(zId, podId, clusterId, storagePoolIdsForCapacity.second()));

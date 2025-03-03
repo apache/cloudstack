@@ -59,7 +59,7 @@ export default {
       api: 'updateObjectStoragePool',
       icon: 'edit-outlined',
       label: 'label.action.update.object.storage',
-      args: ['name', 'url'],
+      args: ['name', 'url', 'size'],
       dataView: true
     },
     {

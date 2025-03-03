@@ -1430,6 +1430,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         capacities.add(ApiDBUtils.getStoragePoolUsedStats(poolId, clusterId, podId, zoneId));
         if (clusterId == null && podId == null) {
             capacities.add(ApiDBUtils.getSecondaryStorageUsedStats(poolId, zoneId));
+            capacities.add(ApiDBUtils.getObjectStorageUsedStats(zoneId));
         }
 
         List<CapacityResponse> capacityResponses = new ArrayList<CapacityResponse>();

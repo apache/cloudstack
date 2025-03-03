@@ -52,3 +52,16 @@ WHERE rp.rule = 'quotaStatement'
 AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaCreditsList');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'last_mgmt_server_id', 'bigint unsigned DEFAULT NULL COMMENT "last management server this host is connected to" AFTER `mgmt_server_id`');
+
+-- Add column allocated_size to object_store table. Rename column 'used_bytes' to 'used_size'
+ALTER TABLE `cloud`.`object_store` ADD COLUMN `allocated_size` bigint unsigned COMMENT 'allocated size in bytes';
+ALTER TABLE `cloud`.`object_store` CHANGE COLUMN `used_bytes` `used_size` BIGINT UNSIGNED COMMENT 'used size in bytes';
+ALTER TABLE `cloud`.`object_store` MODIFY COLUMN `total_size` bigint unsigned COMMENT 'total size in bytes';
+UPDATE `cloud`.`object_store`
+JOIN (
+    SELECT object_store_id, SUM(quota) AS total_quota
+    FROM `cloud`.`bucket`
+    WHERE removed IS NULL
+    GROUP BY object_store_id
+) buckets_quota_sum_view ON `object_store`.id = buckets_quota_sum_view.object_store_id
+SET `object_store`.allocated_size = buckets_quota_sum_view.total_quota;

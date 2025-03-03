@@ -1065,6 +1065,10 @@ public class ApiDBUtils {
         return s_storageMgr.getSecondaryStorageUsedStats(hostId, zoneId);
     }
 
+    public static CapacityVO getObjectStorageUsedStats(Long zoneId) {
+        return s_storageMgr.getObjectStorageUsedStats(zoneId);
+    }
+
     // ///////////////////////////////////////////////////////////
     // Dao methods //
     // ///////////////////////////////////////////////////////////
