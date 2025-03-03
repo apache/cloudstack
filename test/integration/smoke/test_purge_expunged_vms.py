@@ -358,6 +358,7 @@ class TestPurgeExpungedVms(cloudstackTestCase):
         self.changeConfiguration('expunged.resources.purge.delay', purge_task_delay)
         self.changeConfiguration('expunged.resources.purge.interval', int(purge_task_delay/2))
         self.changeConfiguration('expunged.resources.purge.keep.past.days', 1)
+        self.changeConfiguration('expunged.resources.purge.resources', 'VirtualMachine')
         if len(self.staticConfigurations) > 0:
             self.restartAllManagementServers()
         wait_multiple = 2
