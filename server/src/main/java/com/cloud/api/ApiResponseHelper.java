@@ -1158,7 +1158,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             vpcAccessSetter.accept(true);
         } catch (PermissionDeniedException e) {
             vpcAccessSetter.accept(false);
-            logger.debug("Setting [%s] as false because the caller does not have access to the VPC [%s].", ApiConstants.VPC_ACCESS, vpc);
+            logger.debug("Setting [{}] as false because the caller does not have access to the VPC [{}].", ApiConstants.VPC_ACCESS, vpc);
         }
         vpcNameSetter.accept(vpc.getName());
         vpcUuidSetter.accept(vpc.getUuid());

@@ -714,9 +714,9 @@ export default {
         this.showCreateNetworkModal = false
         var params = {
           vpcid: this.resource.id,
-          domainid: this.owner?.domainid ? this.owner.domainid : this.resource.domainid,
+          domainid: this.owner?.domainid || this.resource.domainid,
           account: this.owner?.projectid ? null : (this.owner?.account ? this.owner.account : this.resource.account),
-          projectid: this.owner?.projectid ? this.owner.projectid : null,
+          projectid: this.owner?.projectid || null,
           networkOfferingId: values.networkOffering,
           name: values.name,
           displayText: values.name,

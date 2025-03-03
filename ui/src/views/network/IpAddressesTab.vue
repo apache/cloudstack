@@ -458,7 +458,7 @@ export default {
         if (this.owner) {
           params.domainid = this.owner.domainid
           params.account = this.owner.projectid ? null : this.owner.account
-          params.projectid = this.owner.projectid ? this.owner.projectid : null
+          params.projectid = this.owner.projectid || null
         }
       } else {
         params.networkid = this.resource.id

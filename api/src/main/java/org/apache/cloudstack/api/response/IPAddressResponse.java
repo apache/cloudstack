@@ -144,7 +144,7 @@ public class IPAddressResponse extends BaseResponseWithAnnotations implements Co
     private String purpose;
 
     @SerializedName(ApiConstants.VPC_ACCESS)
-    @Param(description = "Whether the calling account has access to this network's VPC", since = "4.20")
+    @Param(description = "Whether the calling account has access to this network's VPC", since = "4.21.0")
     private boolean vpcAccess;
 
     @SerializedName(ApiConstants.VPC_ID)
