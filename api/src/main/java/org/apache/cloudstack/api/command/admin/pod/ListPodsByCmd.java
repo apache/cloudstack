@@ -55,6 +55,9 @@ public class ListPodsByCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.SHOW_CAPACITIES, type = CommandType.BOOLEAN, description = "flag to display the capacity of the pods")
     private Boolean showCapacities;
 
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUP, type = CommandType.STRING, description = "the name of the storage access group")
+    private String storageAccessGroup;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -77,6 +80,18 @@ public class ListPodsByCmd extends BaseListCmd {
 
     public Boolean getShowCapacities() {
         return showCapacities;
+    }
+
+    public String getStorageAccessGroup() {
+        return storageAccessGroup;
+    }
+
+    public ListPodsByCmd() {
+
+    }
+
+    public ListPodsByCmd(String storageAccessGroup) {
+        this.storageAccessGroup = storageAccessGroup;
     }
 
     /////////////////////////////////////////////////////

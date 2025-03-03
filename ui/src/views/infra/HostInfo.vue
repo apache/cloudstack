@@ -70,6 +70,14 @@
           </div>
         </div>
       </a-list-item>
+      <a-list-item v-if="host.storageaccessgroups">
+        <div>
+          <strong>{{ $t('label.storageaccessgroups') }}</strong>
+          <div>
+            {{ host.storageaccessgroups }}
+          </div>
+        </div>
+      </a-list-item>
       <a-list-item v-if="host.oscategoryid">
         <div>
           <strong>{{ $t('label.oscategoryid') }}</strong>
