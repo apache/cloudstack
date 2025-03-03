@@ -314,7 +314,7 @@ export default {
         api('listAccounts', {
           domainid: this.domainid
         }).then(response => {
-          this.accounts = response.listaccountsresponse.account || []
+          this.accounts = response?.listaccountsresponse?.account || []
           resolve(this.accounts)
         }).catch(error => {
           this.$notifyError(error)
