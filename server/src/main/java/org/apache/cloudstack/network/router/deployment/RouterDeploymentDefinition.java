@@ -23,15 +23,18 @@ import java.util.Objects;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Vlan;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NsxProviderDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
@@ -94,6 +97,7 @@ public class RouterDeploymentDefinition {
     protected NetworkDao networkDao;
     protected DomainRouterDao routerDao;
     protected NsxProviderDao nsxProviderDao;
+    protected NetrisProviderDao netrisProviderDao;
     protected PhysicalNetworkServiceProviderDao physicalProviderDao;
     protected PhysicalNetworkDao pNtwkDao;
     protected NetworkModel networkModel;
@@ -397,15 +401,26 @@ public class RouterDeploymentDefinition {
         if (Objects.nonNull(zone)) {
             zoneId = zone.getId();
         }
-        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+
+        boolean isExternalProvider = isExternalProviderPresent(zoneId);
 
         if (isPublicNetwork) {
-            if (Objects.isNull(nsxProvider)) {
+            if (!isExternalProvider) {
                 sourceNatIp = ipAddrMgr.assignSourceNatIpAddressToGuestNetwork(owner, guestNetwork);
             } else {
                 sourceNatIp = ipAddrMgr.assignPublicIpAddress(zoneId, getPodId(), owner, Vlan.VlanType.VirtualNetwork, null, null, false, true);
             }
         }
+    }
+
+    protected boolean isExternalProviderPresent(Long zoneId) {
+        NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(zoneId);
+        NetrisProviderVO netrisProviderVO = netrisProviderDao.findByZoneId(zoneId);
+
+        if (ObjectUtils.anyNotNull(nsxProvider, netrisProviderVO)) {
+            return true;
+        }
+        return false;
     }
 
     protected void findDefaultServiceOfferingId() {

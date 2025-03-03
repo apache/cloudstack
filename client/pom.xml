@@ -1099,6 +1099,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.apache.cloudstack</groupId>
+                    <artifactId>cloud-plugin-network-netris</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.cloudstack</groupId>
                     <artifactId>cloud-plugin-network-tungsten</artifactId>
                     <version>${project.version}</version>
                 </dependency>
