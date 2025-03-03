@@ -81,7 +81,7 @@
         </a-form-item>
       </div>
       <div :span="24" class="action-button">
-        <a-button @click="$emit('close-action')">{{ $t('label.cancel') }}</a-button>
+        <a-button @click="onCloseAction">{{ $t('label.cancel') }}</a-button>
         <a-button type="primary" @click="handleSubmit" ref="submit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-form>
@@ -136,7 +136,7 @@ export default {
       e.preventDefault()
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
-        var params = {
+        const params = {
           hostid: this.resource.id,
           address: values.address,
           port: values.port,
@@ -146,22 +146,22 @@ export default {
         }
 
         api('configureOutOfBandManagement', {}, 'POST', params).then(_ => {
-          this.$message.success(`${this.$t('message.oobm.configured')}`)
-          this.$emit('close-action')
+          this.$message.success(this.$t('message.oobm.configured'))
+          this.$emit('refresh-data')
+          this.onCloseAction()
         }).catch(error => {
           this.$notifyError(error)
         })
       })
+    },
+    onCloseAction () {
+      this.$emit('close-action')
     }
   }
 }
 </script>
 
 <style scoped>
-.reason {
-  padding-top: 20px
-}
-
 .form-layout {
     width: 30vw;
 
