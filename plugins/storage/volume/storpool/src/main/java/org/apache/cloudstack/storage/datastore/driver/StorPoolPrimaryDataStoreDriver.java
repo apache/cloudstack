@@ -24,6 +24,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.dao.SnapshotDetailsVO;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -110,7 +111,6 @@ import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
-import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -640,57 +640,16 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     SnapshotDataStoreVO snap = getSnapshotImageStoreRef(sinfo.getId(), vinfo.getDataCenterId());
                     SnapshotDetailsVO snapshotDetail = snapshotDetailsDao.findDetail(sinfo.getId(), StorPoolUtil.SP_DELAY_DELETE);
                     if (snapshotDetail != null) {
-                        err = String.format("Could not create volume from snapshot due to: %s", resp.getError());
+                        err = String.format("Could not create volume from snapshot due to: %s. The snapshot was created with the delayDelete option.", resp.getError());
                     } else if (snap != null && StorPoolStorageAdaptor.getVolumeNameFromPath(snap.getInstallPath(), false) == null) {
-                        resp = StorPoolUtil.volumeCreate(srcData.getUuid(), null, size, null, "no", "snapshot", sinfo.getBaseVolume().getMaxIops(), conn);
-                        if (resp.getError() == null) {
-                            VolumeObjectTO dstTO = (VolumeObjectTO) dstData.getTO();
-                            dstTO.setSize(size);
-                            dstTO.setPath(StorPoolUtil.devPath(StorPoolUtil.getNameFromResponse(resp, false)));
-                            cmd = new StorPoolDownloadTemplateCommand(srcData.getTO(), dstTO, StorPoolHelper.getTimeout(StorPoolHelper.PrimaryStorageDownloadWait, configDao), VirtualMachineManager.ExecuteInSequence.value(), "volume");
-
-                            EndPoint ep = selector.select(srcData, dstData);
-                            if (ep == null) {
-                                err = "No remote endpoint to send command, check if host or ssvm is down?";
-                            } else {
-                                answer = ep.sendMessage(cmd);
-                            }
-
-                            if (answer != null && answer.getResult()) {
-                                SpApiResponse resp2 = StorPoolUtil.volumeFreeze(StorPoolUtil.getNameFromResponse(resp, true), conn);
-                                if (resp2.getError() != null) {
-                                    err = String.format("Could not freeze Storpool volume %s. Error: %s", srcData.getUuid(), resp2.getError());
-                                } else {
-                                    String name = StorPoolUtil.getNameFromResponse(resp, false);
-                                    SnapshotDetailsVO snapshotDetails = snapshotDetailsDao.findDetail(sinfo.getId(), sinfo.getUuid());
-                                    if (snapshotDetails != null) {
-                                        StorPoolHelper.updateSnapshotDetailsValue(snapshotDetails.getId(), StorPoolUtil.devPath(name), "snapshot");
-                                    }else {
-                                        StorPoolHelper.addSnapshotDetails(sinfo.getId(), sinfo.getUuid(), StorPoolUtil.devPath(name), snapshotDetailsDao);
-                                    }
-                                    resp = StorPoolUtil.volumeCreate(volumeName, StorPoolUtil.getNameFromResponse(resp, true), size, null, null, "volume", sinfo.getBaseVolume().getMaxIops(), conn);
-                                    if (resp.getError() == null) {
-                                        updateStoragePool(dstData.getDataStore().getId(), size);
-
-                                        VolumeObjectTO to = (VolumeObjectTO) dstData.getTO();
-                                        to.setPath(StorPoolUtil.devPath(StorPoolUtil.getNameFromResponse(resp, false)));
-                                        to.setSize(size);
-                                        // successfully downloaded snapshot to primary storage
-                                        answer = new CopyCmdAnswer(to);
-                                        StorPoolUtil.spLog("Created volume=%s with uuid=%s from snapshot=%s with uuid=%s", name, to.getUuid(), snapshotName, sinfo.getUuid());
-
-                                    } else {
-                                        err = String.format("Could not create Storpool volume %s from snapshot %s. Error: %s", volumeName, snapshotName, resp.getError());
-                                    }
-                                }
-                            } else {
-                                err = answer != null ? answer.getDetails() : "Unknown error while downloading template. Null answer returned.";
-                            }
+                        SpApiResponse emptyVolumeCreateResp = StorPoolUtil.volumeCreate(volumeName, null, size, null, null, "volume", null, conn);
+                        if (emptyVolumeCreateResp.getError() == null) {
+                            answer = createVolumeFromSnapshot(srcData, dstData, size, emptyVolumeCreateResp);
                         } else {
-                            err = String.format("Could not create Storpool volume %s from snapshot %s. Error: %s", volumeName, snapshotName, resp.getError());
+                            answer = new Answer(cmd, false, String.format("Could not create Storpool volume %s from snapshot %s. Error: %s", volumeName, snapshotName, emptyVolumeCreateResp.getError()));
                         }
                     } else {
-                        err = String.format("The snapshot %s does not exists neither on primary, neither on secondary storage. Cannot create volume from snapshot", snapshotName);
+                        answer = new Answer(cmd, false, String.format("The snapshot %s does not exists neither on primary, neither on secondary storage. Cannot create volume from snapshot", snapshotName));
                     }
                 } else {
                     err = String.format("Could not create Storpool volume %s from snapshot %s. Error: %s", volumeName, snapshotName, resp.getError());
@@ -791,22 +750,17 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                         err = String.format("Could not create Storpool volume for CS template %s. Error: %s", name, resp.getError());
                     } else {
                         String volumeNameToSnapshot = StorPoolUtil.getNameFromResponse(resp, true);
-                        SpApiResponse resp2 = StorPoolUtil.volumeFreeze(volumeNameToSnapshot, conn);
-                        if (resp2.getError() != null) {
-                            err = String.format("Could not freeze Storpool volume %s. Error: %s", name, resp2.getError());
-                        } else {
-                            StorPoolUtil.spLog("Storpool snapshot [%s] for a template exists. Creating template on Storpool with name [%s]", tinfo.getUuid(), name);
-                            TemplateObjectTO dstTO = (TemplateObjectTO) dstData.getTO();
-                            dstTO.setPath(StorPoolUtil.devPath(StorPoolUtil.getNameFromResponse(resp, false)));
-                            dstTO.setSize(size);
-                            answer = new CopyCmdAnswer(dstTO);
-                        }
+                        TemplateObjectTO dstTO = (TemplateObjectTO) dstData.getTO();
+
+                        answer = createVolumeSnapshot(cmd, size, conn, volumeNameToSnapshot, dstTO);
+                        StorPoolUtil.volumeDelete(volumeNameToSnapshot, conn);
                     }
                 } else {
                     resp = StorPoolUtil.volumeCreate(name, null, size, null, "no", "template", null, conn);
                     if (resp.getError() != null) {
                         err = String.format("Could not create Storpool volume for CS template %s. Error: %s", name, resp.getError());
                     } else {
+                        String volName = StorPoolUtil.getNameFromResponse(resp, true);
                         TemplateObjectTO dstTO = (TemplateObjectTO)dstData.getTO();
                         dstTO.setPath(StorPoolUtil.devPath(StorPoolUtil.getNameFromResponse(resp, false)));
                         dstTO.setSize(size);
@@ -822,19 +776,12 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                         if (answer != null && answer.getResult()) {
                             // successfully downloaded template to primary storage
-                            SpApiResponse resp2 = StorPoolUtil.volumeFreeze(StorPoolUtil.getNameFromResponse(resp, true), conn);
-                            if (resp2.getError() != null) {
-                                err = String.format("Could not freeze Storpool volume %s. Error: %s", name, resp2.getError());
-                            }
+                            answer = createVolumeSnapshot(cmd, size, conn, volName, dstTO);
                         } else {
                             err = answer != null ? answer.getDetails() : "Unknown error while downloading template. Null answer returned.";
                         }
-                    }
-                }
-                if (err != null) {
-                    resp = StorPoolUtil.volumeDelete(StorPoolUtil.getNameFromResponse(resp, true), conn);
-                    if (resp.getError() != null) {
-                        logger.warn(String.format("Could not clean-up Storpool volume %s. Error: %s", name, resp.getError()));
+
+                        StorPoolUtil.volumeDelete(volName, conn);
                     }
                 }
             } else if (srcType == DataObjectType.TEMPLATE && dstType == DataObjectType.VOLUME) {
@@ -1025,6 +972,42 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         CopyCommandResult res = new CopyCommandResult(null, answer);
         res.setResult(err);
         callback.complete(res);
+    }
+
+    private Answer createVolumeSnapshot(StorageSubSystemCommand cmd, Long size, SpConnectionDesc conn,
+            String volName, TemplateObjectTO dstTO) {
+        Answer answer;
+        SpApiResponse resp = StorPoolUtil.volumeSnapshot(volName, dstTO.getUuid(), null, "template", null, conn);
+        if (resp.getError() != null) {
+            answer = new Answer(cmd, false, String.format("Could not snapshot volume. Error: %s", resp.getError()));
+        } else {
+            dstTO.setPath(StorPoolUtil.devPath(
+                    StorPoolUtil.getSnapshotNameFromResponse(resp, false, StorPoolUtil.GLOBAL_ID)));
+            dstTO.setSize(size);
+            answer = new CopyCmdAnswer(dstTO);
+        }
+        return answer;
+    }
+
+    private Answer createVolumeFromSnapshot(DataObject srcData, DataObject dstData, final Long size,
+            SpApiResponse emptyVolumeCreateResp) {
+        Answer answer;
+        String name = StorPoolUtil.getNameFromResponse(emptyVolumeCreateResp, false);
+        VolumeObjectTO dstTO = (VolumeObjectTO) dstData.getTO();
+        dstTO.setSize(size);
+        dstTO.setPath(StorPoolUtil.devPath(name));
+        StorageSubSystemCommand cmd = new StorPoolDownloadTemplateCommand(srcData.getTO(), dstTO, StorPoolHelper.getTimeout(StorPoolHelper.PrimaryStorageDownloadWait, configDao), VirtualMachineManager.ExecuteInSequence.value(), "volume");
+
+        EndPoint ep = selector.select(srcData, dstData);
+        if (ep == null) {
+            answer = new Answer(cmd, false, "\"No remote endpoint to send command, check if host or ssvm is down?\"");
+        } else {
+            answer = ep.sendMessage(cmd);
+        }
+        if (answer == null || !answer.getResult()) {
+            answer = new Answer(cmd, false, answer != null ? answer.getDetails() : "Unknown error while downloading template. Null answer returned.");
+        }
+        return answer;
     }
 
     private void updateVolumePoolType(VolumeInfo vinfo) {
