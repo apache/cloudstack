@@ -32,6 +32,8 @@ import java.util.stream.Collectors;
 
 import com.amazonaws.util.CollectionUtils;
 import com.cloud.alert.AlertManager;
+import com.cloud.capacity.Capacity;
+import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.Resource;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
@@ -1776,4 +1778,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return response;
     }
 
+    @Override
+    public CapacityVO getBackupStorageUsedStats(Long zoneId) {
+        final BackupProvider backupProvider = getBackupProvider(zoneId);
+        Pair<Long, Long> backupUsage = backupProvider.getBackupStorageStats(zoneId);
+        return new CapacityVO(null, zoneId, null, null, backupUsage.first(), backupUsage.second(), Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
+    }
 }

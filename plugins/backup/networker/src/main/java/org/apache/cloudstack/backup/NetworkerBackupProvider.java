@@ -641,6 +641,11 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
+    public Pair<Long, Long> getBackupStorageStats(Long zoneId) {
+        return new Pair<>(0L, 0L);
+    }
+
+    @Override
     public boolean willDeleteBackupsOnOfferingRemoval() { return false; }
 
     @Override

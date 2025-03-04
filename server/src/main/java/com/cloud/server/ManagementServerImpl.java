@@ -606,6 +606,7 @@ import org.apache.cloudstack.api.command.user.vpn.UpdateVpnGatewayCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.auth.UserAuthenticator;
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
+import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.config.ConfigurationGroup;
@@ -1012,6 +1013,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     UserDataManager userDataManager;
     @Inject
     StoragePoolTagsDao storagePoolTagsDao;
+    @Inject
+    BackupManager backupManager;
 
     @Inject
     private PublicIpQuarantineDao publicIpQuarantineDao;
@@ -3390,6 +3393,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             if (capacityTypes.contains(Capacity.CAPACITY_TYPE_OBJECT_STORAGE)) {
                 capacities.add(_storageMgr.getObjectStorageUsedStats(dc.getId()));
             }
+            if (capacityTypes.contains(Capacity.CAPACITY_TYPE_OBJECT_STORAGE)) {
+                capacities.add((CapacityVO) backupManager.getBackupStorageUsedStats(dc.getId()));
+            }
             for (CapacityVO capacity : capacities) {
                 if (capacity.getTotalCapacity() != 0) {
                     capacity.setUsedPercentage((float)capacity.getUsedCapacity() / capacity.getTotalCapacity());
@@ -3433,12 +3439,18 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 // op_host_Capacity contains only allocated stats and the real time
                 // stats are stored "in memory".
                 // List secondary and object storage capacities only when the api is invoked for the zone layer.
-                if ((capacityType == null ||
-                        (capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE || capacityType == Capacity.CAPACITY_TYPE_OBJECT_STORAGE)) &&
-                        podId == null && clusterId == null &&
-                        StringUtils.isEmpty(t)) {
-                    taggedCapacities.add(_storageMgr.getSecondaryStorageUsedStats(null, zId));
-                    taggedCapacities.add(_storageMgr.getObjectStorageUsedStats(zId));
+                if (podId == null && clusterId == null && StringUtils.isEmpty(t)) {
+                    if (capacityType == null) {
+                        taggedCapacities.add(_storageMgr.getSecondaryStorageUsedStats(null, zId));
+                        taggedCapacities.add(_storageMgr.getObjectStorageUsedStats(zId));
+                        taggedCapacities.add((CapacityVO) backupManager.getBackupStorageUsedStats(zId));
+                    } else if (capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE) {
+                        taggedCapacities.add(_storageMgr.getSecondaryStorageUsedStats(null, zId));
+                    } else if (capacityType == Capacity.CAPACITY_TYPE_OBJECT_STORAGE) {
+                        taggedCapacities.add(_storageMgr.getObjectStorageUsedStats(zId));
+                    } else if (capacityType == Capacity.CAPACITY_TYPE_BACKUP_STORAGE) {
+                        taggedCapacities.add((CapacityVO) backupManager.getBackupStorageUsedStats(zId));
+                    }
                 }
                 if ((capacityType == null || capacityType == Capacity.CAPACITY_TYPE_STORAGE) && storagePoolIdsForCapacity.first()) {
                     taggedCapacities.add(_storageMgr.getStoragePoolUsedStats(zId, podId, clusterId, storagePoolIdsForCapacity.second()));

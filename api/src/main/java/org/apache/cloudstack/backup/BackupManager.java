@@ -20,6 +20,7 @@ package org.apache.cloudstack.backup;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.capacity.Capacity;
 import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
@@ -251,4 +252,6 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     Map<String, String> getVmDetailsForBackup(VirtualMachine vm);
 
     Map<String, String> getDiskOfferingDetailsForBackup(Long vmId);
+
+    Capacity getBackupStorageUsedStats(Long zoneId);
 }

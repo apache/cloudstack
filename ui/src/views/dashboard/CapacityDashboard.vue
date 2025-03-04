@@ -217,7 +217,7 @@
           </div>
         </template>
         <div>
-          <div v-for="ctype in ['STORAGE', 'STORAGE_ALLOCATED', 'LOCAL_STORAGE', 'SECONDARY_STORAGE', 'OBJECT_STORAGE']" :key="ctype" >
+          <div v-for="ctype in ['STORAGE', 'STORAGE_ALLOCATED', 'LOCAL_STORAGE', 'SECONDARY_STORAGE', 'BACKUP_STORAGE', 'OBJECT_STORAGE']" :key="ctype" >
             <div v-if="statsMap[ctype]">
               <div>
                 <strong>{{ $t(ts[ctype]) }}</strong>
@@ -377,6 +377,7 @@ export default {
         MEMORY: 'label.memory',
         PRIVATE_IP: 'label.management.ips',
         SECONDARY_STORAGE: 'label.secondary.storage',
+        BACKUP_STORAGE: 'label.backup.storage',
         OBJECT_STORAGE: 'label.object.storage',
         STORAGE: 'label.primary.storage.used',
         STORAGE_ALLOCATED: 'label.primary.storage.allocated',
@@ -439,6 +440,7 @@ export default {
         case 'STORAGE':
         case 'STORAGE_ALLOCATED':
         case 'SECONDARY_STORAGE':
+        case 'BACKUP_STORAGE':
         case 'OBJECT_STORAGE':
         case 'LOCAL_STORAGE':
           value = parseFloat(value / (1024 * 1024 * 1024.0), 10).toFixed(2)

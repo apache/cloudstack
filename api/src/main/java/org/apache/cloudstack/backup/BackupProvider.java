@@ -123,4 +123,10 @@ public interface BackupProvider {
      */
     boolean supportsInstanceFromBackup();
 
+    /**
+     * Returns the backup storage usage (Used, Total) for a backup provider
+     * @param zoneId the zone for which to return metrics
+     * @return a pair of Used size and Total size for the backup storage
+     */
+    Pair<Long, Long> getBackupStorageStats(Long zoneId);
 }

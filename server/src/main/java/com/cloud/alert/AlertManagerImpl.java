@@ -39,6 +39,8 @@ import javax.naming.ConfigurationException;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.org.Cluster;
+
+import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -124,6 +126,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     private ResourceManager _resourceMgr;
     @Inject
     private ConfigurationManager _configMgr;
+    @Inject
+    protected BackupManager backupManager;
     @Inject
     protected ConfigDepot _configDepot;
     @Inject
@@ -543,7 +547,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 capacity = _capacityDao.findCapacityBy(capacityType.intValue(), dc.getId(), null, null);
 
                 if (capacityType == Capacity.CAPACITY_TYPE_SECONDARY_STORAGE ||
-                    capacityType == Capacity.CAPACITY_TYPE_OBJECT_STORAGE) {
+                    capacityType == Capacity.CAPACITY_TYPE_OBJECT_STORAGE ||
+                    capacityType == Capacity.CAPACITY_TYPE_BACKUP_STORAGE) {
                     capacity.add(getUsedStats(capacityType, dc.getId(), null, null));
                 }
                 if (capacity == null || capacity.size() == 0) {
@@ -621,6 +626,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             capacity = _storageMgr.getStoragePoolUsedStats(null, clusterId, podId, zoneId);
         } else if (capacityType == Capacity.CAPACITY_TYPE_OBJECT_STORAGE) {
             capacity = _storageMgr.getObjectStorageUsedStats(zoneId);
+        } else if (capacityType == Capacity.CAPACITY_TYPE_BACKUP_STORAGE) {
+            capacity = (CapacityVO) backupManager.getBackupStorageUsedStats(zoneId);
         }
         if (capacity != null) {
             return new SummedCapacity(capacity.getUsedCapacity(), 0, capacity.getTotalCapacity(), capacityType, clusterId, podId);
@@ -726,20 +733,20 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             msgContent = "Number of unallocated virtual network guest IPv6 subnets is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
             alertType = AlertManager.AlertType.ALERT_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET;
             break;
-            case Capacity.CAPACITY_TYPE_BACKUP_STORAGE:
-                msgSubject = "System Alert: Low Available Backup Storage in availability zone " + dc.getName();
-                totalStr = Double.toString(totalCapacity);
-                usedStr = Double.toString(usedCapacity);
-                msgContent = "Available backup storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
-                alertType = AlertManager.AlertType.ALERT_TYPE_BACKUP_STORAGE;
-                break;
-            case Capacity.CAPACITY_TYPE_OBJECT_STORAGE:
-                msgSubject = "System Alert: Low Available Object Storage in availability zone " + dc.getName();
-                totalStr = Double.toString(totalCapacity);
-                usedStr = Double.toString(usedCapacity);
-                msgContent = "Available object storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
-                alertType = AlertManager.AlertType.ALERT_TYPE_OBJECT_STORAGE;
-                break;
+        case Capacity.CAPACITY_TYPE_BACKUP_STORAGE:
+            msgSubject = "System Alert: Low Available Backup Storage in availability zone " + dc.getName();
+            totalStr = Double.toString(totalCapacity);
+            usedStr = Double.toString(usedCapacity);
+            msgContent = "Available backup storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
+            alertType = AlertManager.AlertType.ALERT_TYPE_BACKUP_STORAGE;
+            break;
+        case Capacity.CAPACITY_TYPE_OBJECT_STORAGE:
+            msgSubject = "System Alert: Low Available Object Storage in availability zone " + dc.getName();
+            totalStr = Double.toString(totalCapacity);
+            usedStr = Double.toString(usedCapacity);
+            msgContent = "Available object storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
+            alertType = AlertManager.AlertType.ALERT_TYPE_OBJECT_STORAGE;
+            break;
         }
 
         try {
