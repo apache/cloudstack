@@ -20,7 +20,9 @@ package org.apache.cloudstack.backup;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,6 +103,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     private AgentManager agentMgr;
     @Inject
     private VirtualMachineManager virtualMachineManager;
+    @Inject
+    private BackupManager backupManager;
     @Inject
     private VolumeDao volumeDao;
 
@@ -289,7 +293,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
         final Long zoneId = backup.getZoneId();
         final String restorePointId = backup.getExternalId();
-        return getClient(zoneId).restoreVMToDifferentLocation(restorePointId, hostIp, dataStoreUuid);
+        return getClient(zoneId).restoreVMToDifferentLocation(restorePointId, null, hostIp, dataStoreUuid);
     }
 
     @Override
@@ -333,7 +337,12 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         backup.setAccountId(vm.getAccountId());
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
+        backup.setName(vm.getHostName() + '-' + new SimpleDateFormat("yyyy-MM-dd'T'HH:mmX").format(new Date()));
         backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+        Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
+        backup.setDetails(details);
+        details = backupManager.getDiskOfferingDetailsForBackup(vm.getId());
+        backup.addDetails(details);
         backupDao.persist(backup);
         return backup;
     }
@@ -342,6 +351,24 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     public List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
         String backupName = getGuestBackupName(vm.getInstanceName(), vm.getUuid());
         return getClient(vm.getDataCenterId()).listRestorePoints(backupName, vm.getInstanceName());
+    }
+
+    @Override
+    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
+        final Long zoneId = backup.getZoneId();
+        final String restorePointId = backup.getExternalId();
+        final String restoreLocation = vm.getInstanceName();
+        return getClient(zoneId).restoreVMToDifferentLocation(restorePointId, restoreLocation, hostIp, dataStoreUuid).first();
+    }
+
+    @Override
+    public boolean supportsInstanceFromBackup() {
+        return true;
+    }
+
+    @Override
+    public Pair<Long, Long> getBackupStorageStats(Long zoneId) {
+        return new Pair<>(0L, 0L);
     }
 
     @Override

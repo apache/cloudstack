@@ -18,19 +18,25 @@
 package org.apache.cloudstack.backup;
 
 import java.util.List;
+import java.util.Map;
 
+import com.cloud.capacity.Capacity;
 import com.cloud.exception.ResourceAllocationException;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
+import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.vm.VirtualMachine;
 
 /**
  * Backup and Recover Manager Interface
@@ -199,11 +205,11 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     /**
      * Creates backup of a VM
-     * @param vmId Virtual Machine ID
-     * @param scheduleId Virtual Machine Backup Schedule ID
+     *
+     * @param cmd
      * @return returns operation success
      */
-    boolean createBackup(final Long vmId, final Long scheduleId) throws ResourceAllocationException;
+    boolean createBackup(CreateBackupCmd cmd) throws ResourceAllocationException;
 
     /**
      * List existing backups for a VM
@@ -214,6 +220,11 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * Restore a full VM from backup
      */
     boolean restoreBackup(final Long backupId);
+
+    /**
+     * Restore a backup to a new Instance
+     */
+    boolean restoreBackupToVM(Long backupId, Long vmId) throws ResourceUnavailableException;
 
     /**
      * Restore a backed up volume and attach it to a VM
@@ -228,5 +239,19 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      */
     boolean deleteBackup(final Long backupId, final Boolean forced);
 
+    void validateBackupForZone(Long zoneId);
+
     BackupOffering updateBackupOffering(UpdateBackupOfferingCmd updateBackupOfferingCmd);
+
+    DiskOfferingInfo getRootDiskOfferingInfoFromBackup(Backup backup);
+
+    List<DiskOfferingInfo> getDataDiskOfferingListFromBackup(Backup backup);
+
+    void updateDiskOfferingSizeFromBackup(List<DiskOfferingInfo> dataDiskOfferingsInfo, Backup backup);
+
+    Map<String, String> getVmDetailsForBackup(VirtualMachine vm);
+
+    Map<String, String> getDiskOfferingDetailsForBackup(Long vmId);
+
+    Capacity getBackupStorageUsedStats(Long zoneId);
 }

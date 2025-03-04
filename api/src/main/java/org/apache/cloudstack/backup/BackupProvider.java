@@ -84,6 +84,8 @@ public interface BackupProvider {
      */
     boolean deleteBackup(Backup backup, boolean forced);
 
+    boolean restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid);
+
     /**
      * Restore VM from backup
      */
@@ -115,4 +117,16 @@ public interface BackupProvider {
      * @param metric the metric object to update with the new backup data
      */
     Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric);
+
+    /**
+     * Returns if the backup provider supports creating new instance from backup
+     */
+    boolean supportsInstanceFromBackup();
+
+    /**
+     * Returns the backup storage usage (Used, Total) for a backup provider
+     * @param zoneId the zone for which to return metrics
+     * @return a pair of Used size and Total size for the backup storage
+     */
+    Pair<Long, Long> getBackupStorageStats(Long zoneId);
 }
