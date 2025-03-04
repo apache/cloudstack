@@ -437,6 +437,8 @@ class cgroupConfig(serviceCfgBase):
 
     def config(self):
         try:
+            # TODO: /etc/cgconfig.conf & /etc/cgrules.conf not available on F40/EL10
+            # had to install: dnf install libcgroup libcgroup-tools
             cfo = configFileOps("/etc/cgconfig.conf", self)
             addConfig = "group virt {\n \
                             cpu {\n \
@@ -452,6 +454,7 @@ class cgroupConfig(serviceCfgBase):
             cfgline = "root:/usr/sbin/libvirtd  cpu virt/\n"
             cfo.add_lines(cfgline)
 
+            # TODO: This doesn't work on EL10/Fedora 40
             self.syscfg.svo.stopService("cgred", True)
             if not self.syscfg.svo.enableService("cgred"):
                 return False
