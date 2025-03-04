@@ -933,7 +933,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         isForceDeleteStorage);
 
         if (answer == null) {
-            String errorMessage = String.format("No resource adapter answer was returned to DELETE_HOST event for host [%s] with ID [%s], hypervisor type [%s] and host type [%s]. ",
+            String errorMessage = String.format("No resource adapter answer was returned to DELETE_HOST event for host [%s] with ID [%s], hypervisor type [%s] and host type [%s].",
                     host.getUuid(), hostId, host.getHypervisorType(), host.getType());
             logger.warn(errorMessage);
             throw new CloudRuntimeException(errorMessage);
@@ -1019,7 +1019,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         storagePool.setClusterId(null);
                         _storagePoolDao.update(poolId, storagePool);
                         _storagePoolDao.remove(poolId);
-                        logger.debug("Local storage [id: {}] is removed as a part of host [{}] removal", poolId, hostRemoved.toString());
+                        logger.debug("Local storage [ID: {}] is removed as a part of host [{}] removal", poolId, hostRemoved.toString());
                     }
                 }
 
