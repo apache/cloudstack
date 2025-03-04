@@ -245,6 +245,10 @@ public class KubernetesClusterDestroyWorker extends KubernetesClusterResourceMod
         init();
         validateClusterSate();
         this.clusterVMs = kubernetesClusterVmMapDao.listByClusterId(kubernetesCluster.getId());
+        List<VMInstanceVO> vms = this.clusterVMs.stream().map(vmMap -> vmInstanceDao.findById(vmMap.getVmId())).collect(Collectors.toList());
+        if (KubernetesClusterManagerImpl.checkIfVmsAssociatedWithBackupOffering(vms)) {
+            throw new CloudRuntimeException("Unable to delete Kubernetes cluster, as node(s) are associated to a backup offering");
+        }
         boolean cleanupNetwork = true;
         final KubernetesClusterDetailsVO clusterDetails = kubernetesClusterDetailsDao.findDetail(kubernetesCluster.getId(), "networkCleanup");
         if (clusterDetails != null) {
