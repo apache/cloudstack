@@ -16,58 +16,6 @@
 // under the License.
 package com.cloud.vm;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
-import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
-import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
-import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.template.VnfTemplateManager;
-import org.apache.cloudstack.userdata.UserDataManager;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
-
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Resource;
@@ -78,6 +26,9 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanningManager;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
@@ -89,12 +40,28 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.LoadBalancerVMMapVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -134,31 +101,64 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
+import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
+import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.template.VnfTemplateManager;
+import org.apache.cloudstack.userdata.UserDataManager;
+import org.apache.cloudstack.vm.lease.VMLeaseManagerImpl;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.network.Network;
-import com.cloud.network.dao.FirewallRulesDao;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.LoadBalancerVMMapDao;
-import com.cloud.network.dao.LoadBalancerVMMapVO;
-import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.guru.NetworkGuru;
-import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.network.rules.dao.PortForwardingRulesDao;
-import com.cloud.network.security.SecurityGroupManager;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.NetworkOfferingVO;
-import com.cloud.offerings.dao.NetworkOfferingDao;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserVmManagerImplTest {
@@ -612,6 +612,8 @@ public class UserVmManagerImplTest {
         Mockito.doNothing().when(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
         Mockito.doNothing().when(userVmManagerImpl).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
+
+        Mockito.doNothing().when(userVmManagerImpl).validateLeaseProperties(Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -3124,5 +3126,77 @@ public class UserVmManagerImplTest {
             Mockito.verify(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl, Mockito.never()).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
         }
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateLeasePropertiesInvalidDuration() {
+        ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
+        VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
+        Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
+        userVmManagerImpl.validateLeaseProperties(-2L, "STOP");
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateLeasePropertiesNullActionValue() {
+        ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
+        VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
+        Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
+        userVmManagerImpl.validateLeaseProperties(20L, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateLeasePropertiesNullDurationValue() {
+        ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
+        VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
+        Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
+        userVmManagerImpl.validateLeaseProperties(null, "STOP");
+    }
+
+    @Test
+    public void testValidateLeasePropertiesMinusOneDuration() {
+        ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
+        VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
+        Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
+        userVmManagerImpl.validateLeaseProperties(-1L, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateLeasePropertiesValidActionValue() {
+        ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
+        VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
+        Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
+        userVmManagerImpl.validateLeaseProperties(20L, "RUN");
+    }
+
+    @Test
+    public void testValidateLeasePropertiesValidValues() {
+        ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
+        VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
+        Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
+        userVmManagerImpl.validateLeaseProperties(20L, "STOP");
+    }
+
+    @Test
+    public void testValidateLeasePropertiesBothNUll() {
+        ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
+        VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
+        Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
+        userVmManagerImpl.validateLeaseProperties(null, null);
+    }
+
+    @Test
+    public void testValidateLeasePropertiesDisabledFeatureNullActionValue() {
+        ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
+        VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
+        Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.FALSE);
+        userVmManagerImpl.validateLeaseProperties(20L, null);
+    }
+
+    @Test
+    public void testValidateLeasePropertiesDisabledFeatureInvalidDuration() {
+        ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
+        VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
+        Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.FALSE);
+        userVmManagerImpl.validateLeaseProperties(null, "DESTROY");
     }
 }

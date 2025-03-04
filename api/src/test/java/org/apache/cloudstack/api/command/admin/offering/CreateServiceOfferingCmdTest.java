@@ -55,4 +55,19 @@ public class CreateServiceOfferingCmdTest {
         ReflectionTestUtils.setField(createServiceOfferingCmd, "purgeResources", true);
         Assert.assertTrue(createServiceOfferingCmd.isPurgeResources());
     }
+
+    @Test
+    public void testGetLeaseDuration() {
+        ReflectionTestUtils.setField(createServiceOfferingCmd, "leaseDuration", 10L);
+        Assert.assertEquals(10, createServiceOfferingCmd.getLeaseDuration().longValue());
+    }
+
+    @Test
+    public void testGetLeaseExpiryAction() {
+        ReflectionTestUtils.setField(createServiceOfferingCmd, "leaseExpiryAction", "stop");
+        Assert.assertEquals("stop", createServiceOfferingCmd.getLeaseExpiryAction());
+
+        ReflectionTestUtils.setField(createServiceOfferingCmd, "leaseExpiryAction", "DESTROY");
+        Assert.assertEquals("DESTROY", createServiceOfferingCmd.getLeaseExpiryAction());
+    }
 }

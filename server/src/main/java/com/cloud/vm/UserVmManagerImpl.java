@@ -214,6 +214,7 @@ import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.VmDiskStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.EnumUtils;
 import com.cloud.utils.Journal;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -332,6 +333,7 @@ import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
+import org.apache.cloudstack.vm.lease.VMLeaseManagerImpl;
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -2913,9 +2915,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        if (VMLeaseManager.InstanceLeaseEnabled.value() && cmd.getLeaseDuration() != null) {
-            applyLeaseOnUpdateInstance(vmInstance, cmd.getLeaseDuration(), cmd.getLeaseExpiryAction());
-        }
+        Long leaseDuration = cmd.getLeaseDuration();
+        String leaseExpiryAction = cmd.getLeaseExpiryAction();
+        validateLeaseProperties(leaseDuration, leaseExpiryAction);
+        applyLeaseOnUpdateInstance(vmInstance, leaseDuration, leaseExpiryAction);
 
         return updateVirtualMachine(id, displayName, group, ha, isDisplayVm,
                 cmd.getDeleteProtection(), osTypeId, userData,
@@ -6161,6 +6164,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        Long leaseDuration = cmd.getLeaseDuration();
+        String leaseExpiryAction = cmd.getLeaseExpiryAction();
+        validateLeaseProperties(leaseDuration, leaseExpiryAction);
+
         List<Long> networkIds = cmd.getNetworkIds();
         LinkedHashMap<Integer, Long> userVmNetworkMap = getVmOvfNetworkMapping(zone, owner, template, cmd.getVmNetworkMap());
         if (MapUtils.isNotEmpty(userVmNetworkMap)) {
@@ -6228,11 +6235,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        // Store lease related info in the user_vm_details
-        if (VMLeaseManager.InstanceLeaseEnabled.value() && cmd.getLeaseDuration() != null) {
-            applyLeaseOnCreateInstance(vm, cmd.getLeaseDuration(), cmd.getLeaseExpiryAction(), svcOffering);
-        }
-
         // check if this templateId has a child ISO
         List<VMTemplateVO> child_templates = _templateDao.listByParentTemplatetId(templateId);
         for (VMTemplateVO tmpl: child_templates){
@@ -6264,20 +6266,75 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
             }
         }
+
+        applyLeaseOnCreateInstance(vm, leaseDuration, leaseExpiryAction, svcOffering);
         return vm;
+    }
+
+    protected void validateLeaseProperties(Long leaseDuration, String leaseExpiryAction) {
+        if (!VMLeaseManagerImpl.InstanceLeaseEnabled.value()
+                || (leaseDuration == null && StringUtils.isEmpty(leaseExpiryAction))) { // if both are null
+            return;
+        }
+
+        boolean bothValuesSet = true;
+        if (leaseDuration != null) {
+            if (leaseDuration == -1) {   // special condition used to disable lease for instance
+                return;
+            }
+            // both params have value
+            if (leaseDuration < -1) {
+                throw new InvalidParameterValueException("Invalid value given for leaseduration, lesser than -1 is not supported ");
+            }
+
+            if (StringUtils.isEmpty(leaseExpiryAction)) {
+                bothValuesSet = false;
+            }
+        } else {
+            bothValuesSet = false;
+        }
+
+        if (!bothValuesSet) {
+            throw new InvalidParameterValueException("Provide values for both: leaseduration and leaseexpiryaction");
+        }
+
+//        // at this point any one of them have value, error out
+//        if (leaseDuration == null || StringUtils.isEmpty(leaseExpiryAction)) {
+//            throw new InvalidParameterValueException("Provide values for both: leaseduration and leaseexpiryaction");
+//        }
+//
+//        // both params have value
+//        if (leaseDuration < -1) {
+//            throw new InvalidParameterValueException("Invalid value given for leaseduration, lesser than -1 is not supported ");
+//        }
+//        if (leaseDuration == -1 ) {
+//            return;
+//        }
+        try {
+            VMLeaseManager.ExpiryAction.valueOf(leaseExpiryAction);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidParameterValueException("Invalid value provided for leaseexpiryaction, valid values are: " +
+                    EnumUtils.listValues(VMLeaseManager.ExpiryAction.values()));
+        }
     }
 
     /**
      * if feature is enabled
      * use leaseDuration and leaseExpiryAction passed in the cmd
-     * if passed leaseDuration is -1, try to get both parameters from service_offering
+     * if passed leaseDuration is -1, get leaseDuration from service_offering
      * @param vm
      * @param leaseDuration
      * @param leaseExpiryAction
      * @param serviceOfferingJoinVO
      */
     private void applyLeaseOnCreateInstance(UserVm vm, Long leaseDuration, String leaseExpiryAction, ServiceOfferingJoinVO serviceOfferingJoinVO) {
-        leaseDuration = leaseDuration != -1 ? leaseDuration : serviceOfferingJoinVO.getLeaseDuration();
+        if (!VMLeaseManagerImpl.InstanceLeaseEnabled.value()) {
+            return;
+        }
+
+        if (leaseDuration == null) {
+            leaseDuration = serviceOfferingJoinVO.getLeaseDuration();
+        }
         // if leaseDuration is null or -1, instance will never expire, nothing to be done
         if  (leaseDuration == null || leaseDuration == -1) {
             return;
@@ -6287,28 +6344,48 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (StringUtils.isEmpty(leaseExpiryAction)) {
             leaseExpiryAction = VMLeaseManager.InstanceLeaseExpiryAction.valueIn(vm.getAccountId());
         }
-        updateLeaseDetailsForInstance(vm, leaseDuration, leaseExpiryAction);
+        addLeaseDetailsForInstance(vm, leaseDuration, leaseExpiryAction);
     }
 
-    private void applyLeaseOnUpdateInstance(UserVm vm, Long leaseDuration, String leaseExpiryAction) {
-        if (leaseDuration == -1L) {
-            userVmDetailsDao.removeDetail(vm.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
-            userVmDetailsDao.removeDetail(vm.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION);
+
+    protected void applyLeaseOnUpdateInstance(UserVm instance, Long leaseDuration, String leaseExpiryAction) {
+        if (leaseDuration == null) {
             return;
         }
-        leaseExpiryAction = Strings.isNotEmpty(leaseExpiryAction) ? leaseExpiryAction : VMLeaseManager.InstanceLeaseExpiryAction.valueIn(vm.getAccountId());
-        updateLeaseDetailsForInstance(vm, leaseDuration, leaseExpiryAction);
+
+        // find if lease feature is or was enabled for instance
+        boolean shouldApplyLease = VMLeaseManagerImpl.InstanceLeaseEnabled.value();
+        if (!shouldApplyLease) {
+            UserVmDetailVO vmDetail = userVmDetailsDao.findDetail(instance.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
+            if (vmDetail != null && StringUtils.isNotEmpty(vmDetail.getValue())) {
+                shouldApplyLease = true;
+            }
+        }
+
+        // nothing to be done if lease feature is/was not enabled for vm
+        if (!shouldApplyLease) {
+            return;
+        }
+
+        if (leaseDuration == -1L) {
+            userVmDetailsDao.removeDetail(instance.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
+            userVmDetailsDao.removeDetail(instance.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION);
+            return;
+        }
+
+        leaseExpiryAction = Strings.isNotEmpty(leaseExpiryAction) ? leaseExpiryAction : VMLeaseManager.InstanceLeaseExpiryAction.valueIn(instance.getAccountId());
+        addLeaseDetailsForInstance(instance, leaseDuration, leaseExpiryAction);
     }
 
-    private void updateLeaseDetailsForInstance(UserVm vm, Long leaseDuration, String leaseExpiryAction) {
+    private void addLeaseDetailsForInstance(UserVm vm, Long leaseDuration, String leaseExpiryAction) {
         LocalDate today = LocalDate.now();
         Date leaseExpiryDate = Date.from(today.plusDays(leaseDuration).atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
-
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String formattedLeaseExpiryDate = sdf.format(leaseExpiryDate);
-
         userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE, formattedLeaseExpiryDate, false);
         userVmDetailsDao.addDetail(vm.getId(),  VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION, leaseExpiryAction, false);
+
+        logger.debug("Instance lease for instanceId: {} is configured to expire on: {} with action: {}", vm.getUuid(), formattedLeaseExpiryDate, leaseExpiryAction);
     }
 
     /**

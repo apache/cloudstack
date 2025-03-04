@@ -121,7 +121,7 @@
         <a-col :md="12" :lg="12">
           <a-form-item name="leaseduration" ref="leaseduration">
             <template #label>
-              <tooltip-label :title="$t('label.instance.lease.duration')" />
+              <tooltip-label :title="$t('label.leaseduration')" />
             </template>
             <a-input
               v-model:value="form.leaseduration"
@@ -357,14 +357,14 @@ export default {
       })
     },
     async populateLeaseFeatureProps () {
-      if (this.form.leaseduration && this.form.leaseduration > -1) {
-        return
-      }
-
       var params = { name: 'instance.lease.enabled' }
       api('listConfigurations', params).then(json => {
         var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
         this.isLeaseFeatureEnabled = value === 'true'
+
+        if (this.form.leaseduration >= -1) {
+          return
+        }
 
         if (this.isLeaseFeatureEnabled) {
           var leasedurationParams = { name: 'instance.lease.duration', accountid: this.$store.getters.userInfo.accountid }

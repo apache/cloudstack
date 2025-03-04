@@ -78,6 +78,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -85,7 +86,6 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.Calendar;
 import java.util.stream.Collectors;
 
 @Component
@@ -133,12 +133,12 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         leaseOverInstanceSearch = createSearchBuilder();
         leaseOverInstanceSearch.selectFields(leaseOverInstanceSearch.entity().getId(), leaseOverInstanceSearch.entity().getState(),
                 leaseOverInstanceSearch.entity().isDeleteProtection(), leaseOverInstanceSearch.entity().getUuid());
-        leaseOverInstanceSearch.and("leaseExpired", leaseOverInstanceSearch.entity().getExpiryDate(), Op.LT);
+        leaseOverInstanceSearch.and("leaseExpired", leaseOverInstanceSearch.entity().getLeaseExpiryDate(), Op.LT);
         leaseOverInstanceSearch.done();
 
         leaseExpiringInstanceSearch = createSearchBuilder();
-        leaseExpiringInstanceSearch.and("leaseExpiringToday", leaseExpiringInstanceSearch.entity().getExpiryDate(), Op.GTEQ);
-        leaseExpiringInstanceSearch.and("leaseExpiresOnDate", leaseExpiringInstanceSearch.entity().getExpiryDate(), Op.LT);
+        leaseExpiringInstanceSearch.and("leaseExpiringToday", leaseExpiringInstanceSearch.entity().getLeaseExpiryDate(), Op.GTEQ);
+        leaseExpiringInstanceSearch.and("leaseExpiresOnDate", leaseExpiringInstanceSearch.entity().getLeaseExpiryDate(), Op.LT);
         leaseExpiringInstanceSearch.done();
 
     }
@@ -463,10 +463,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setUserDataPolicy(userVm.getUserDataPolicy());
         }
 
-        if (userVm.getExpiryDate() != null) {
+        if (userVm.getLeaseExpiryDate() != null) {
             userVmResponse.setLeaseExpiryAction(userVm.getLeaseExpiryAction());
-            userVmResponse.setLeaseExpiryDate(userVm.getExpiryDate());
             long leaseDuration = getLeaseDuration(userVmResponse.getCreated(), userVmResponse.getLeaseExpiryDate());
+            userVmResponse.setLeaseExpiryDate(userVm.getLeaseExpiryDate());
             userVmResponse.setLeaseDuration(leaseDuration);
         }
 

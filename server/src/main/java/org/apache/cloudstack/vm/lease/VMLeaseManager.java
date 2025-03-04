@@ -31,10 +31,6 @@ public interface VMLeaseManager extends Manager, Scheduler {
         DESTROY
     }
 
-    ConfigKey<Boolean> InstanceLeaseEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
-            "instance.lease.enabled", "false", "Indicates whether to enable the Instance Lease feature",
-            true, List.of(ConfigKey.Scope.Global));
-
     ConfigKey<Long> InstanceLeaseDuration = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
             "instance.lease.duration", "90", "The default lease duration in days for the instance",
             true, List.of(ConfigKey.Scope.Account, ConfigKey.Scope.Domain));

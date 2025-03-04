@@ -2647,7 +2647,7 @@
 "label.usersecretkey": "Secret Key",
 "label.create.bucket": "Create Bucket",
 "label.instance.lease": "Instance lease",
-"label.instance.lease.never": "Never expires",
+"label.instance.lease.never": "Never expires (use -1)",
 "label.instance.lease.stop": "stop",
 "label.leaseduration": "Lease duration",
 "label.leaseexpirydate": "Lease expiry date",

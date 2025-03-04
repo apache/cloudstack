@@ -442,7 +442,7 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     @Column(name = "lease_expiry_date")
     @Temporal(value = TemporalType.TIMESTAMP)
-    private Date expiryDate;
+    private Date leaseExpiryDate;
 
     @Column(name = "lease_expiry_action")
     private String leaseExpiryAction;
@@ -985,11 +985,15 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return userDataDetails;
     }
 
-    public Date getExpiryDate() {
-        return expiryDate;
+    public Date getLeaseExpiryDate() {
+        return leaseExpiryDate;
     }
 
     public String getLeaseExpiryAction() {
         return leaseExpiryAction;
+    }
+
+    public void setLeaseExpiryAction(String leaseExpiryAction) {
+        this.leaseExpiryAction = leaseExpiryAction;
     }
 }
