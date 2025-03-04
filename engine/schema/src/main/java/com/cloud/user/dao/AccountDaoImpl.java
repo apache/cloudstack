@@ -305,6 +305,13 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     }
 
     @Override
+    public AccountVO findAccountByNameAndDomainIncludingRemoved(String accountName, Long domainId) {
+        SearchCriteria<AccountVO> sc = AllFieldsSearch.create("accountName", accountName);
+        sc.setParameters("domainId", domainId);
+        return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
     public void markForCleanup(long accountId) {
         AccountVO account = findByIdIncludingRemoved(accountId);
         if (!account.getNeedsCleanup()) {

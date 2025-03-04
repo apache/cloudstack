@@ -29,7 +29,7 @@ public class QuotaStatementResponse  extends BaseResponse {
 
     @SerializedName("accountid")
     @Param(description = "account id")
-    private Long accountId;
+    private String accountId;
 
     @SerializedName("account")
     @Param(description = "account name")
@@ -37,7 +37,7 @@ public class QuotaStatementResponse  extends BaseResponse {
 
     @SerializedName("domain")
     @Param(description = "domain id")
-    private Long domainId;
+    private String domainId;
 
     @SerializedName("quotausage")
     @Param(description = "list of quota usage under various types", responseObject = QuotaStatementItemResponse.class)
@@ -63,11 +63,11 @@ public class QuotaStatementResponse  extends BaseResponse {
         super();
     }
 
-    public Long getAccountId() {
+    public String getAccountId() {
         return accountId;
     }
 
-    public void setAccountId(Long accountId) {
+    public void setAccountId(String accountId) {
         this.accountId = accountId;
     }
 
@@ -79,16 +79,12 @@ public class QuotaStatementResponse  extends BaseResponse {
         this.accountName = accountName;
     }
 
-    public Long getDomainId() {
+    public String getDomainId() {
         return domainId;
     }
 
-    public void setDomainId(Long domainId) {
+    public void setDomainId(String domainId) {
         this.domainId = domainId;
-    }
-
-    public List<QuotaStatementItemResponse> getLineItem() {
-        return lineItem;
     }
 
     public void setLineItem(List<QuotaStatementItemResponse> lineItem) {
@@ -96,28 +92,23 @@ public class QuotaStatementResponse  extends BaseResponse {
     }
 
     public Date getStartDate() {
-        return startDate == null ? null : new Date(startDate.getTime());
+        return startDate;
     }
 
     public void setStartDate(Date startDate) {
-        this.startDate = startDate == null ? null : new Date(startDate.getTime());
+        this.startDate = startDate;
     }
 
     public Date getEndDate() {
-        return endDate == null ? null : new Date(endDate.getTime());
+        return endDate;
     }
 
     public void setEndDate(Date endDate) {
-        this.endDate = endDate == null ? null : new Date(endDate.getTime());
-    }
-
-
-    public BigDecimal getTotalQuota() {
-        return totalQuota;
+        this.endDate = endDate;
     }
 
     public void setTotalQuota(BigDecimal totalQuota) {
-        this.totalQuota = totalQuota.setScale(2, RoundingMode.HALF_EVEN);
+        this.totalQuota = totalQuota;
     }
 
     public String getCurrency() {
