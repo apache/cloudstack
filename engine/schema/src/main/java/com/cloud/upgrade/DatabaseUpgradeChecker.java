@@ -499,7 +499,8 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             String sql = "CREATE TABLE IF NOT EXISTS `cloud`.`distributed_lock` (" +
                          "  `name` varchar(1024) NOT NULL," +
                          "  `thread` varchar(1024) NOT NULL," +
-                         "  `ms_id` bigint NOT NULL, `pid` int NOT NULL," +
+                         "  `ms_id` bigint NOT NULL," +
+                         "  `pid` int NOT NULL," +
                          "  `created` datetime DEFAULT NULL," +
                          "  PRIMARY KEY (`name`)," +
                          "  UNIQUE KEY `name` (`name`)" +
