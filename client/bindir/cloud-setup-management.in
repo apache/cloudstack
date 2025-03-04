@@ -16,13 +16,27 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import os
 import sys
+# ---- This snippet of code adds the sources path and the waf configured PYTHONDIR to the Python path ----
+# ---- We do this so cloud_utils can be looked up in the following order:
+# ---- 1) Sources directory
+# ---- 2) waf configured PYTHONDIR
+# ---- 3) System Python path
+for pythonpath in (
+        "@PYTHONDIR@",
+        os.path.join(os.path.dirname(__file__),os.path.pardir,os.path.pardir,"python","lib"),
+    ):
+        if os.path.isdir(pythonpath): sys.path.insert(0,pythonpath)
+# ---- End snippet of code ----
+
 from cloudutils.syscfg import sysConfigFactory
 from cloudutils.utilities import initLoging, UnknownSystemException
 from cloudutils.cloudException import CloudRuntimeException, CloudInternalException
 from cloudutils.globalEnv import globalEnv
 from cloudutils.serviceConfigServer import cloudManagementConfig
 from optparse import OptionParser
+
 if __name__ == '__main__':
     initLoging("@MSLOGDIR@/setupManagement.log")
     glbEnv = globalEnv()
