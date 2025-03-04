@@ -237,7 +237,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     void reorderRandomPools(List<StoragePool> pools) {
         StorageUtil.traceLogStoragePools(pools, logger, "pools to choose from: ");
         if (logger.isTraceEnabled()) {
-            logger.trace("Shuffle this so that we don't check the pools in the same order. Algorithm == '[{}]' (or no account?)", allocationAlgorithm);
+            logger.trace("Shuffling the list of storage pools, since the algorithm is '[{}]' or no account has been specified", allocationAlgorithm);
         }
         logger.debug("Pools to shuffle: [{}]", pools);
         Collections.shuffle(pools, secureRandom);
