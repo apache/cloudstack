@@ -66,7 +66,7 @@ public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
             StoragePool pol = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
 
             if (filter(avoid, pol, dskCh, plan)) {
-                logger.trace("Found suitable random storage pool [{}], adding to list.", pool);
+                logger.trace("Found suitable primary storage pool [{}], adding to list.", pool);
                 suitablePools.add(pol);
             }
         }
