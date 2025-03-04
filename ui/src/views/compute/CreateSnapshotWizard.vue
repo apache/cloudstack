@@ -61,7 +61,7 @@
           </template>
           <a-switch v-model:checked="form.quiescevm"/>
         </a-form-item>
-        <a-form-item name="asyncbackup" ref="asyncbackup">
+        <a-form-item name="asyncbackup" ref="asyncbackup" v-if="!supportsStorageSnapshot">
           <template #label>
             <tooltip-label :title="$t('label.asyncbackup')" :tooltip="apiParams.asyncbackup.description"/>
           </template>
