@@ -508,6 +508,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.execute();
             }
+            LOGGER.info("Deleting existing distributed locks with ms_id = " + ManagementServerNode.getManagementServerId());
             try (PreparedStatement pstmt = conn.prepareStatement("DELETE FROM cloud.distributed_lock WHERE ms_id=?")) {
                 pstmt.setLong(1, ManagementServerNode.getManagementServerId());
                 pstmt.execute();
