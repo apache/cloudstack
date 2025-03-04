@@ -718,7 +718,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                  getDynamicDataFromDB();
                  long interval = (Long) dbStats.get(uptime) - lastUptime;
                  long activity = (Long) dbStats.get(queries) - lastQueries;
-                 loadHistory.add(0, Double.valueOf(activity / interval));
+                 loadHistory.add(0, interval == 0 ? 0 : Double.valueOf(activity / interval));
                  int maxsize = DATABASE_SERVER_LOAD_HISTORY_RETENTION_NUMBER.value();
                  while (loadHistory.size() > maxsize) {
                      loadHistory.remove(maxsize - 1);
