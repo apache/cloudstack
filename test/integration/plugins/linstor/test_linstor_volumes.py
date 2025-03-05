@@ -1309,7 +1309,7 @@ class TestLinstorVolumes(cloudstackTestCase):
         self.assertEqual(
             "hello world",
             result[0],
-            "Check the content is the same as originaly written"
+            "Check the content is the same as originally written"
         )
 
     @attr(tags=["basic"], required_hardware=False)
