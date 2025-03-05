@@ -93,8 +93,8 @@
               <a-tag v-if="resource.archived" :color="this.$config.theme['@warning-color']">
                 {{ $t('label.archived') }}
               </a-tag>
-              <a-tag v-if="resource.leaseduration">
-                {{ resource.leaseduration }}
+              <a-tag v-if="resource.leaseduration" :color="this.$config.theme['@warning-color']">
+                {{ $t('label.remainingdays') + ': '+ (resource.leaseduration) }}
               </a-tag>
               <a-tooltip placement="right" >
                 <template #title>
@@ -236,7 +236,7 @@
             {{ resource.leaseduration + ' ' + $t('label.days') }}
           </div>
         </div>
-        <div class="resource-detail-item" v-if="'leaseexpiryaction' in resource && resource.leaseexpiryaction != ''">
+        <div class="resource-detail-item" v-if="'leaseexpiryaction' in resource && resource.leaseexpiryaction !== undefined">
           <div class="resource-detail-item__label">{{ $t('label.leaseexpiryaction') }}</div>
           <div class="resource-detail-item__details">
             <font-awesome-icon

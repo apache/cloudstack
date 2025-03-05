@@ -65,7 +65,6 @@
           <span v-else :style="{ 'margin-right': record.ostypename ? '5px' : '0' }">
             <os-logo v-if="record.ostypename" :osName="record.ostypename" size="xl" />
           </span>
-
           <span v-if="record.hasannotations">
             <span v-if="record.id">
               <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
@@ -100,6 +99,11 @@
                 <warning-outlined style="color: #f5222d"/>
               </a-tooltip>
             </span>
+            <font-awesome-icon
+              v-if="record.leaseduration"
+              :icon="['fa-solid', 'fa-bomb']"
+              class="anticon leaseduration"
+              :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
           </span>
         </span>
       </template>
@@ -1126,5 +1130,9 @@ export default {
     background-color: rgba(255, 190, 190, 0.75);
     color: #f50000;
     padding: 10%;
+  }
+
+  .leaseduration {
+    margin-left: 5px;
   }
 </style>

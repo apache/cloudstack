@@ -349,7 +349,13 @@
           </template>
           <a-switch v-model:checked="form.purgeresources"/>
         </a-form-item>
-        <a-row :gutter="12" v-if="isLeaseFeatureEnabled">
+        <a-form-item name="showLeaseOptions" ref="showLeaseOptions" v-if="isLeaseFeatureEnabled">
+          <template #label>
+            <tooltip-label :title="$t('label.isLeaseFeatureEnabled')"/>
+          </template>
+          <a-switch v-model:checked="showLeaseOptions" @change="onToggleLeaseData"/>
+        </a-form-item>
+        <a-row :gutter="12" v-if="showLeaseOptions">
           <a-col :md="12" :lg="12">
             <a-form-item name="leaseduration" ref="leaseduration">
               <template #label>
@@ -719,7 +725,7 @@ export default {
       qosType: '',
       isDomainAdminAllowedToInformTags: false,
       isLeaseFeatureEnabled: false,
-      leaseduration: -1,
+      showLeaseOptions: false,
       expiryActions: ['STOP', 'DESTROY']
     }
   },
@@ -835,16 +841,25 @@ export default {
       api('listConfigurations', params).then(json => {
         var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
         this.isLeaseFeatureEnabled = value === 'true'
-
         if (this.isLeaseFeatureEnabled) {
           var leasedurationParams = { name: 'instance.lease.duration', accountid: store.getters.userInfo.accountid }
           api('listConfigurations', leasedurationParams).then(json => {
             var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
             this.leaseduration = value
           }).catch(() => {
-            this.leaseduration = -1
+            this.leaseduration = undefined
           }).finally(() => {
             this.form.leaseduration = this.leaseduration
+          })
+
+          var leaseactionParams = { name: 'instance.lease.expiryaction', accountid: store.getters.userInfo.accountid }
+          api('listConfigurations', leaseactionParams).then(json => {
+            var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
+            this.leaseexpiryaction = value
+          }).catch(() => {
+            this.leaseexpiryaction = undefined
+          }).finally(() => {
+            this.form.leaseexpiryaction = this.leaseexpiryaction
           })
         }
       }).catch((error) => {
@@ -1002,7 +1017,6 @@ export default {
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
-        console.log('test values: ', values)
         var params = {
           issystem: this.isSystem,
           name: values.name,
@@ -1174,6 +1188,19 @@ export default {
         return Promise.reject(this.$t('message.error.number'))
       }
       return Promise.resolve()
+    },
+    onToggleLeaseData () {
+      if (this.showLeaseOptions === false) {
+        this.form.leaseduration = undefined
+        this.form.leaseexpiryaction = undefined
+      } else {
+        if (this.form.leaseduration === undefined) {
+          this.form.leaseduration = this.leaseduration
+        }
+        if (this.form.leaseexpiryaction === undefined) {
+          this.form.leaseexpiryaction = this.leaseexpiryaction
+        }
+      }
     }
   }
 }

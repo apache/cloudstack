@@ -117,7 +117,13 @@
         </template>
         <a-switch v-model:checked="form.deleteprotection" />
       </a-form-item>
-      <a-row :gutter="12" v-if="isLeaseFeatureEnabled">
+      <a-form-item name="showLeaseOptions" ref="showLeaseOptions" v-if="isLeaseFeatureEnabled">
+        <template #label>
+          <tooltip-label :title="$t('label.isLeaseFeatureEnabled')" />
+        </template>
+        <a-switch v-model:checked="showLeaseOptions" @change="onToggleLeaseData"/>
+      </a-form-item>
+      <a-row :gutter="12" v-if="showLeaseOptions">
         <a-col :md="12" :lg="12">
           <a-form-item name="leaseduration" ref="leaseduration">
             <template #label>
@@ -133,7 +139,7 @@
             <template #label>
               <tooltip-label :title="$t('label.leaseexpiryaction')"  />
             </template>
-            <a-select v-model:value="form.leaseexpiryaction">
+            <a-select v-model:value="form.leaseexpiryaction" :defaultValue="expiryActions">
               <a-select-option v-for="action in expiryActions" :key="action" :label="action" />
             </a-select>
           </a-form-item>
@@ -188,8 +194,10 @@ export default {
         loading: false,
         opts: []
       },
-      leaseduration: -1,
-      leaseexpiryaction: '',
+      isLeaseFeatureEnabled: false,
+      showLeaseOptions: false,
+      leaseduration: undefined,
+      leaseexpiryaction: undefined,
       expiryActions: ['STOP', 'DESTROY']
     }
   },
@@ -357,15 +365,16 @@ export default {
       })
     },
     async populateLeaseFeatureProps () {
+      if (this.resource.leaseduration !== undefined && this.resource.leaseduration >= 0) {
+        this.showLeaseOptions = this.isLeaseFeatureEnabled = true
+        this.leaseduration = this.resource.leaseduration
+        this.leaseexpiryaction = this.resource.leaseexpiryaction
+        return
+      }
       var params = { name: 'instance.lease.enabled' }
       api('listConfigurations', params).then(json => {
         var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
         this.isLeaseFeatureEnabled = value === 'true'
-
-        if (this.form.leaseduration >= -1) {
-          return
-        }
-
         if (this.isLeaseFeatureEnabled) {
           var leasedurationParams = { name: 'instance.lease.duration', accountid: this.$store.getters.userInfo.accountid }
           api('listConfigurations', leasedurationParams).then(json => {
@@ -378,7 +387,7 @@ export default {
                 var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
                 this.leaseexpiryaction = value
               }).catch(() => {
-                this.leaseexiryaction = 'STOP'
+                this.leaseexpiryaction = 'STOP'
               })
             }
           }).catch(() => {
@@ -445,6 +454,15 @@ export default {
     },
     onCloseAction () {
       this.$emit('close-action')
+    },
+    onToggleLeaseData () {
+      if (this.showLeaseOptions === false) {
+        this.form.leaseduration = -1
+        this.form.leaseexpiryaction = undefined
+      } else {
+        this.form.leaseduration = this.leaseduration
+        this.form.leaseexpiryaction = this.leaseexpiryaction
+      }
     }
   }
 }

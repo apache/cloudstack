@@ -36,6 +36,12 @@
         <template v-if="column.key === 'cpu'"><appstore-outlined /> {{ $t('label.cpu') }}</template>
         <template v-if="column.key === 'ram'"><bulb-outlined /> {{ $t('label.memory') }}</template>
       </template>
+      <template #displayText="{ record }">
+        <span>{{ record.name }}</span>
+        <a-tag v-if="record.leaseduration" :color="this.$config.theme['@warning-color']" style="margin-left: 5px">
+                {{ $t('label.remainingdays') + ': '+ (record.leaseduration) }}
+        </a-tag>
+      </template>
     </a-table>
 
     <div style="display: block; text-align: right;">
@@ -119,7 +125,8 @@ export default {
           key: 'name',
           dataIndex: 'name',
           title: this.$t('label.serviceofferingid'),
-          width: '40%'
+          width: '40%',
+          slots: { customRender: 'displayText' }
         },
         {
           key: 'cpu',
@@ -186,12 +193,14 @@ export default {
         if (this.allowAllOfferings) {
           disabled = false
         }
+        // var computedName = (item.leaseduration !== undefined) ? item.name + ': ' + item.leaseduration : item.name
         return {
           key: item.id,
           name: item.name,
           cpu: cpuNumberValue.length > 0 ? `${cpuNumberValue} CPU x ${cpuSpeedValue} Ghz` : '',
           ram: ramValue.length > 0 ? `${ramValue} MB` : '',
-          disabled: disabled
+          disabled: disabled,
+          leaseduration: item.leaseduration
         }
       })
     },
