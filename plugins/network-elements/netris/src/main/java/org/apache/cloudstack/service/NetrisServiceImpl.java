@@ -405,7 +405,7 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         return answer.getResult();
     }
 
-    private String getPrefix(String prefix) {
+    public static String getPrefix(String prefix) {
         if ("ANY".equals(prefix)) {
             return NetUtils.ALL_IP4_CIDRS;
         }
@@ -464,6 +464,10 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
                 baseRule.getDomainId(), baseRule.getNetworkResourceName(), baseRule.getNetworkResourceId(), baseRule.isVpcResource(),
                 rule.getLbBackends(), baseRule.getRuleId(), baseRule.getPublicIp(), baseRule.getPublicPort(),
                 baseRule.getPrivatePort(), baseRule.getAlgorithm(), baseRule.getProtocol());
+        if (Objects.nonNull(rule.getLbCidrList())) {
+            cmd.setCidrList(rule.getLbCidrList());
+        }
+        cmd.setRuleName(rule.getLbRuleName());
         NetrisAnswer answer = sendNetrisCommand(cmd, baseRule.getZoneId());
         return answer.getResult();
     }
@@ -474,6 +478,10 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         DeleteNetrisLoadBalancerRuleCommand cmd = new DeleteNetrisLoadBalancerRuleCommand(baseRule.getZoneId(), baseRule.getAccountId(),
                 baseRule.getDomainId(), baseRule.getNetworkResourceName(), baseRule.getNetworkResourceId(), baseRule.isVpcResource(),
                 baseRule.getRuleId());
+        if (Objects.nonNull(rule.getLbCidrList())) {
+            cmd.setCidrList(rule.getLbCidrList());
+        }
+        cmd.setRuleName(rule.getLbRuleName());
         NetrisAnswer answer = sendNetrisCommand(cmd, baseRule.getZoneId());
         return answer.getResult();
     }

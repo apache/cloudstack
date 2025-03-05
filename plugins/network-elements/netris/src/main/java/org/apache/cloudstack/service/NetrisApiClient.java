@@ -81,8 +81,8 @@ public interface NetrisApiClient {
     boolean createOrUpdateDNATRule(CreateOrUpdateNetrisNatCommand cmd);
     boolean createStaticNatRule(CreateOrUpdateNetrisNatCommand cmd);
     boolean deleteNatRule(DeleteNetrisNatRuleCommand cmd);
-    boolean addAclRule(CreateNetrisACLCommand cmd);
-    boolean deleteAclRule(DeleteNetrisACLCommand cmd);
+    boolean addAclRule(CreateNetrisACLCommand cmd, boolean forLb);
+    boolean deleteAclRule(DeleteNetrisACLCommand cmd, boolean forLb);
     boolean addOrUpdateStaticRoute(AddOrUpdateNetrisStaticRouteCommand cmd);
     boolean deleteStaticRoute(DeleteNetrisStaticRouteCommand cmd);
     boolean releaseNatIp(ReleaseNatIpCommand cmd);

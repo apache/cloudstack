@@ -28,6 +28,8 @@ public class CreateOrUpdateNetrisLoadBalancerRuleCommand extends NetrisCommand {
     List<NetrisLbBackend> lbBackends;
     private String publicIp;
     private final Long lbId;
+    private String cidrList;
+    private String ruleName;
 
     public CreateOrUpdateNetrisLoadBalancerRuleCommand(long zoneId, Long accountId, Long domainId, String name, Long id, boolean isVpc,
                                                        List<NetrisLbBackend> lbBackends, long lbId, String publicIp, String publicPort,
@@ -68,5 +70,21 @@ public class CreateOrUpdateNetrisLoadBalancerRuleCommand extends NetrisCommand {
 
     public String getPublicIp() {
         return publicIp;
+    }
+
+    public String getCidrList() {
+        return cidrList;
+    }
+
+    public void setCidrList(String cidrList) {
+        this.cidrList = cidrList;
+    }
+
+    public String getRuleName() {
+        return ruleName;
+    }
+
+    public void setRuleName(String ruleName) {
+        this.ruleName = ruleName;
     }
 }

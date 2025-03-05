@@ -29,6 +29,8 @@ public class NetrisNetworkRule {
     private SDNProviderNetworkRule baseRule;
     private NetrisRuleAction aclAction;
     private List<NetrisLbBackend> lbBackends;
+    private String lbRuleName;
+    private String lbCidrList;
     private String reason;
 
     public NetrisNetworkRule(Builder builder) {
@@ -36,6 +38,8 @@ public class NetrisNetworkRule {
         this.aclAction = builder.aclAction;
         this.lbBackends = builder.lbBackends;
         this.reason = builder.reason;
+        this.lbCidrList = builder.lbCidrList;
+        this.lbRuleName = builder.lbRuleName;
     }
 
     public NetrisRuleAction getAclAction() {
@@ -50,6 +54,10 @@ public class NetrisNetworkRule {
         return reason;
     }
 
+    public String getLbCidrList() {return lbCidrList; }
+
+    public String getLbRuleName() { return lbRuleName; }
+
     public SDNProviderNetworkRule getBaseRule() {
         return baseRule;
     }
@@ -60,6 +68,8 @@ public class NetrisNetworkRule {
         private NetrisRuleAction aclAction;
         private List<NetrisLbBackend> lbBackends;
         private String reason;
+        private String lbCidrList;
+        private String lbRuleName;
 
         public Builder baseRule(SDNProviderNetworkRule baseRule) {
             this.baseRule = baseRule;
@@ -78,6 +88,16 @@ public class NetrisNetworkRule {
 
         public Builder reason(String reason) {
             this.reason = reason;
+            return this;
+        }
+
+        public Builder lbCidrList(String lbCidrList) {
+            this.lbCidrList = lbCidrList;
+            return this;
+        }
+
+        public Builder lbRuleName(String lbRuleName) {
+            this.lbRuleName = lbRuleName;
             return this;
         }
 

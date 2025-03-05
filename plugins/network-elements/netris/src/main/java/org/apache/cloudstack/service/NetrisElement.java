@@ -764,6 +764,8 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
             NetrisNetworkRule networkRule = new NetrisNetworkRule.Builder()
                     .baseRule(baseNetworkRule)
                     .lbBackends(lbBackends)
+                    .lbCidrList(loadBalancingRule.getCidrList())
+                    .lbRuleName(loadBalancingRule.getName())
                     .build();
             if (Arrays.asList(FirewallRule.State.Add, FirewallRule.State.Active).contains(loadBalancingRule.getState())) {
                 result &= netrisService.createOrUpdateLbRule(networkRule);

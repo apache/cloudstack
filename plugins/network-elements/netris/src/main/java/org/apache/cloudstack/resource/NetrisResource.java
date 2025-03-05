@@ -319,7 +319,7 @@ public class NetrisResource implements ServerResource {
     }
 
     private Answer executeRequest(CreateNetrisACLCommand cmd) {
-        boolean result = netrisApiClient.addAclRule(cmd);
+        boolean result = netrisApiClient.addAclRule(cmd, false);
         if (!result) {
             return new NetrisAnswer(cmd, false, String.format("Creation of Netris ACL rule: %s failed", cmd.getNetrisAclName()));
         }
@@ -327,7 +327,7 @@ public class NetrisResource implements ServerResource {
     }
 
     private Answer executeRequest(DeleteNetrisACLCommand cmd) {
-        boolean result = netrisApiClient.deleteAclRule(cmd);
+        boolean result = netrisApiClient.deleteAclRule(cmd, false);
         if (!result) {
             return new NetrisAnswer(cmd, false, String.format("Failed to delete Netris ACLs: %s", String.join("'", cmd.getAclRuleNames())));
         }

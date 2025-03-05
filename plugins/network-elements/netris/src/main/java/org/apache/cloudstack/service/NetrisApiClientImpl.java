@@ -17,6 +17,7 @@
 package org.apache.cloudstack.service;
 
 import com.cloud.network.netris.NetrisLbBackend;
+import com.cloud.network.netris.NetrisNetworkRule;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -131,6 +132,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 public class NetrisApiClientImpl implements NetrisApiClient {
@@ -330,7 +332,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
     }
 
     @Override
-    public boolean addAclRule(CreateNetrisACLCommand cmd) {
+    public boolean addAclRule(CreateNetrisACLCommand cmd, boolean forLb) {
         String aclName = cmd.getNetrisAclName();
         try {
             AclApi aclApi = apiClient.getApiStubForMethod(AclApi.class);
@@ -366,10 +368,18 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             if (NatPutBody.ProtocolEnum.ICMP.name().equalsIgnoreCase(protocol)) {
                 aclAddItem.setIcmpType(cmd.getIcmpType());
             }
-            String netrisVpcName = getNetrisVpcName(cmd, cmd.getVpcId(), cmd.getVpcName());
-            VPCListing vpcResource = getNetrisVpcResource(netrisVpcName);
-            if (Objects.isNull(vpcResource)) {
-                return false;
+            VPCListing vpcResource;
+            String netrisVpcName;
+            if (forLb) {
+                vpcResource = getSystemVpc();
+                netrisVpcName = vpcResource.getName();
+
+            } else {
+                netrisVpcName = getNetrisVpcName(cmd, cmd.getVpcId(), cmd.getVpcName());
+                vpcResource = getNetrisVpcResource(netrisVpcName);
+                if (Objects.isNull(vpcResource)) {
+                    return false;
+                }
             }
             AclBodyVpc vpc = new AclBodyVpc().id(vpcResource.getId());
             aclAddItem.setVpc(vpc);
@@ -387,13 +397,19 @@ public class NetrisApiClientImpl implements NetrisApiClient {
     }
 
     @Override
-    public boolean deleteAclRule(DeleteNetrisACLCommand cmd) {
+    public boolean deleteAclRule(DeleteNetrisACLCommand cmd, boolean forLb) {
         List<String> aclNames = cmd.getAclRuleNames();
         try {
             AclApi aclApi = apiClient.getApiStubForMethod(AclApi.class);
 
-            String suffix = getNetrisVpcNameSuffix(cmd.getVpcId(), cmd.getVpcName(), cmd.getId(), cmd.getName(), cmd.isVpc());
-            String vpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, suffix);
+            String vpcName;
+            if (!forLb) {
+                String suffix = getNetrisVpcNameSuffix(cmd.getVpcId(), cmd.getVpcName(), cmd.getId(), cmd.getName(), cmd.isVpc());
+                vpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, suffix);
+            } else {
+                VPCListing vpcResource = getSystemVpc();
+                vpcName = vpcResource.getName();
+            }
             Pair<Boolean, List<BigDecimal>> resultAndMatchingAclIds = getMatchingAclIds(aclNames, vpcName);
             Boolean result = resultAndMatchingAclIds.first();
             List<BigDecimal> matchingAclIds = resultAndMatchingAclIds.second();
@@ -661,10 +677,63 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             if (ObjectUtils.allNull(editResponse, createResponse) || Boolean.FALSE.equals(success)) {
                 throw new CloudRuntimeException(String.format("Failed to %s Netris LB rule", updateRule ? "update" : "create"));
             }
+            if (Objects.nonNull(cmd.getCidrList())) {
+                applyAclRulesForLb(cmd, lbName);
+            }
         } catch (ApiException e) {
             logAndThrowException("Failed to create Netris load balancer rule", e);
         }
         return true;
+    }
+
+    private void applyAclRulesForLb(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd, String lbName) {
+        // Add deny all rule first
+        addAclRule(createNetrisACLRuleCommand(cmd, lbName, "ANY",
+                NetrisNetworkRule.NetrisRuleAction.DENY.name().toLowerCase(Locale.ROOT), 0), true);
+        AtomicInteger cidrIndex = new AtomicInteger(1);
+        for (String cidr : cmd.getCidrList().split(" ")) {
+            try {
+                addAclRule(createNetrisACLRuleCommand(cmd, lbName, cidr,
+                        NetrisNetworkRule.NetrisRuleAction.PERMIT.name().toLowerCase(Locale.ROOT),
+                        cidrIndex.getAndIncrement()), true);
+            } catch (Exception e) {
+                throw new CloudRuntimeException(String.format("Failed to add Netris ACL rule for LB CIDR %s", cidr), e);
+            }
+        }
+    }
+
+    private CreateNetrisACLCommand createNetrisACLRuleCommand(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd, String netrisLbName, String cidr, String action, int index) {
+        Long zoneId = cmd.getZoneId();
+        Long accountId = cmd.getAccountId();
+        Long domainId = cmd.getDomainId();
+        String networkName = null;
+        Long networkId = null;
+        String vpcName = null;
+        Long vpcId = null;
+        boolean isVpc = cmd.isVpc();
+        if (isVpc) {
+            vpcId = cmd.getId();
+            vpcName = cmd.getName();
+        } else {
+            networkName = cmd.getName();
+            networkId = cmd.getId();
+        }
+        String destinationPrefix = cmd.getPublicIp() + "/32";
+        String srcPort = cmd.getPublicPort();
+        String dstPort = cmd.getPublicPort();
+        CreateNetrisACLCommand aclCommand = new CreateNetrisACLCommand(zoneId, accountId, domainId, networkName, networkId,
+                vpcName, vpcId, Objects.nonNull(vpcId), action, NetrisServiceImpl.getPrefix(cidr), NetrisServiceImpl.getPrefix(destinationPrefix),
+                Integer.parseInt(srcPort), Integer.parseInt(dstPort), cmd.getProtocol());
+        String aclName;
+        if (isVpc) {
+            aclName =  String.format("V%s-LBACL%s-%s", vpcId, index, cmd.getRuleName());
+        } else {
+            aclName = String.format("N%s-LBACL%s-%s", networkId, index, cmd.getRuleName());
+        }
+        String netrisAclName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.ACL, aclName);
+        aclCommand.setNetrisAclName(netrisAclName);
+        aclCommand.setReason(String.format("ACL Rule for CIDR %s of LB %s ", aclName, netrisLbName));
+        return aclCommand;
     }
 
     private L4lbAddOrUpdateItem getL4LbRule(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd, VPCListing vpcResource, String lbName,
@@ -729,6 +798,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             networkId = cmd.getId();
         }
         Long lbId = cmd.getLbId();
+        String cidrList = cmd.getCidrList();
         try {
             String suffix = getNetrisVpcNameSuffix(vpcId, vpcName, networkId, networkName, isVpc);
             String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, suffix);
@@ -748,10 +818,54 @@ public class NetrisApiClientImpl implements NetrisApiClient {
 
             L4LoadBalancerApi lbApi = apiClient.getApiStubForMethod(L4LoadBalancerApi.class);
             lbApi.apiV2L4lbIdDelete(matchingLbId.get(0).intValue());
+            if (Objects.nonNull(cidrList)) {
+                deleteAclRulesForLb(cmd);
+            }
         } catch (ApiException e) {
             logAndThrowException("Failed to delete Netris load balancer rule", e);
         }
         return true;
+    }
+
+    private void deleteAclRulesForLb(DeleteNetrisLoadBalancerRuleCommand cmd) {
+        // delete the deny rule
+        deleteAclRule(deleteNetrisACLCommand(cmd, 0), true);
+        AtomicInteger cidrIndex = new AtomicInteger(1);
+        for (String cidr : cmd.getCidrList().split(" ")) {
+            try {
+                deleteAclRule(deleteNetrisACLCommand(cmd, cidrIndex.getAndIncrement()), true);
+            } catch (Exception e) {
+                throw new CloudRuntimeException(String.format("Failed to delete Netris ACL rule for LB CIDR %s", cidr), e);
+            }
+        }
+    }
+
+    private DeleteNetrisACLCommand deleteNetrisACLCommand(DeleteNetrisLoadBalancerRuleCommand cmd, int index) {
+        Long zoneId = cmd.getZoneId();
+        Long accountId = cmd.getAccountId();
+        Long domainId = cmd.getDomainId();
+        String networkName = null;
+        Long networkId = null;
+        String vpcName = null;
+        Long vpcId = null;
+        boolean isVpc = cmd.isVpc();
+        if (isVpc) {
+            vpcId = cmd.getId();
+            vpcName = cmd.getName();
+        } else {
+            networkName = cmd.getName();
+            networkId = cmd.getId();
+        }
+        DeleteNetrisACLCommand deleteAclCommand = new DeleteNetrisACLCommand(zoneId, accountId, domainId, networkName, networkId, isVpc, vpcId, vpcName);
+        String aclName;
+        if (isVpc) {
+            aclName =  String.format("V%s-LBACL%s-%s", vpcId, index, cmd.getRuleName());
+        } else {
+            aclName = String.format("N%s-LBACL%s-%s", networkId, index, cmd.getRuleName());
+        }
+        String netrisAclName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.ACL, aclName);
+        deleteAclCommand.setAclRuleNames(Collections.singletonList(netrisAclName));
+        return deleteAclCommand;
     }
 
     private Pair<Boolean, List<BigDecimal>> getMatchingLbRule(String lbName, String vpcName) {

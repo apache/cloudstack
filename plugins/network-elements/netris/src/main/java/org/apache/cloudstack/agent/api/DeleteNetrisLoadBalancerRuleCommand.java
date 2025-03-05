@@ -18,6 +18,8 @@ package org.apache.cloudstack.agent.api;
 
 public class DeleteNetrisLoadBalancerRuleCommand extends NetrisCommand {
     private Long lbId;
+    private String ruleName;
+    private String cidrList;
 
     public DeleteNetrisLoadBalancerRuleCommand(long zoneId, Long accountId, Long domainId, String name, Long id, boolean isVpc, Long lbId) {
         super(zoneId, accountId, domainId, name, id, isVpc);
@@ -30,5 +32,21 @@ public class DeleteNetrisLoadBalancerRuleCommand extends NetrisCommand {
 
     public void setLbId(Long lbId) {
         this.lbId = lbId;
+    }
+
+    public String getRuleName() {
+        return ruleName;
+    }
+
+    public void setRuleName(String ruleName) {
+        this.ruleName = ruleName;
+    }
+
+    public String getCidrList() {
+        return cidrList;
+    }
+
+    public void setCidrList(String cidrList) {
+        this.cidrList = cidrList;
     }
 }
