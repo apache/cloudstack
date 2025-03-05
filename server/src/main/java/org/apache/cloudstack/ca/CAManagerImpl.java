@@ -40,6 +40,7 @@ import javax.naming.ConfigurationException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
+import com.cloud.utils.db.GlobalLock;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.ca.IssueCertificateCmd;
@@ -295,6 +296,42 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
     /////////////// CA Manager Setup ///////////////////
     ////////////////////////////////////////////////////
 
+    public static final class DummyBGTask extends ManagedContextRunnable implements BackgroundPollTask {
+
+        public DummyBGTask() {
+        }
+
+        @Override
+        protected void runInContext() {
+            final GlobalLock lock = GlobalLock.getInternLock("DummyBGTask");
+            try {
+                logger.info("DummyBGTask: Grabbing lock to check for DB HA at " + DateTime.now(DateTimeZone.UTC));
+                if (lock.lock(5)) {
+                    try {
+                        logger.info("DummyBGTask: Lock acquired, now sleeping for 5 seconds");
+                        try {
+                            Thread.sleep(5 * 1000L);
+                        } catch (InterruptedException ignore) {
+                        }
+                    } finally {
+                        logger.info("DummyBGTask: Unlocking now");
+                        lock.unlock();
+                    }
+                } else {
+                    logger.info("DummyBGTask: Could not get lock");
+                }
+                logger.info("DummyBGTask: One round of lock-grab for DB HA over at " + DateTime.now(DateTimeZone.UTC));
+            } finally {
+                lock.releaseRef();
+            }
+        }
+
+        @Override
+        public Long getDelay() {
+            return 2000L;
+        }
+    }
+
     public static final class CABackgroundTask extends ManagedContextRunnable implements BackgroundPollTask {
         private CAManager caManager;
         private HostDao hostDao;
@@ -405,6 +442,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
+        backgroundPollManager.submitTask(new DummyBGTask());
         backgroundPollManager.submitTask(new CABackgroundTask(this, hostDao));
         return true;
     }
