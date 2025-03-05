@@ -114,8 +114,8 @@ public class NetrisResourceTest {
         Mockito.verify(netrisApiClient, Mockito.times(2)).deleteVpc(deleteNetrisVpcCommand);
         Mockito.verify(netrisApiClient, Mockito.times(2)).setupZoneLevelPublicRange(setupNetrisPublicRangeCommand);
         Mockito.verify(netrisApiClient, Mockito.times(2)).deleteNatRule(deleteNetrisNatRuleCommand);
-        Mockito.verify(netrisApiClient, Mockito.times(2)).addAclRule(createNetrisACLCommand);
-        Mockito.verify(netrisApiClient, Mockito.times(2)).deleteAclRule(deleteNetrisACLCommand);
+        Mockito.verify(netrisApiClient, Mockito.times(2)).addAclRule(Mockito.eq(createNetrisACLCommand), Mockito.anyBoolean());
+        Mockito.verify(netrisApiClient, Mockito.times(2)).deleteAclRule(Mockito.eq(deleteNetrisACLCommand), Mockito.anyBoolean());
         Mockito.verify(netrisApiClient, Mockito.times(2)).addOrUpdateStaticRoute(addOrUpdateNetrisStaticRouteCommand);
         Mockito.verify(netrisApiClient, Mockito.times(2)).deleteStaticRoute(deleteNetrisStaticRouteCommand);
         Mockito.verify(netrisApiClient, Mockito.times(2)).releaseNatIp(releaseNatIpCommand);
@@ -130,8 +130,8 @@ public class NetrisResourceTest {
         Mockito.when(netrisApiClient.deleteVpc(deleteNetrisVpcCommand)).thenReturn(value);
         Mockito.when(netrisApiClient.setupZoneLevelPublicRange(setupNetrisPublicRangeCommand)).thenReturn(value);
         Mockito.when(netrisApiClient.deleteNatRule(deleteNetrisNatRuleCommand)).thenReturn(value);
-        Mockito.when(netrisApiClient.addAclRule(createNetrisACLCommand)).thenReturn(value);
-        Mockito.when(netrisApiClient.deleteAclRule(deleteNetrisACLCommand)).thenReturn(value);
+        Mockito.when(netrisApiClient.addAclRule(Mockito.eq(createNetrisACLCommand), Mockito.anyBoolean())).thenReturn(value);
+        Mockito.when(netrisApiClient.deleteAclRule(Mockito.eq(deleteNetrisACLCommand), Mockito.anyBoolean())).thenReturn(value);
         Mockito.when(netrisApiClient.addOrUpdateStaticRoute(addOrUpdateNetrisStaticRouteCommand)).thenReturn(value);
         Mockito.when(netrisApiClient.deleteStaticRoute(deleteNetrisStaticRouteCommand)).thenReturn(value);
         Mockito.when(netrisApiClient.releaseNatIp(releaseNatIpCommand)).thenReturn(value);
