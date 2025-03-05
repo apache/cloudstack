@@ -165,7 +165,7 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
         ClusterDetailsVO tagEntity = clusterDetails.entity();
         clusterDetails.and("provisioner", tagEntity.getName(), SearchCriteria.Op.EQ);
         clusterDetails.and("value", tagEntity.getValue(), SearchCriteria.Op.EQ);
-        ZoneExternalHyTypeSearch.join("clusterDetails", clusterDetails, ZoneExternalHyTypeSearch.entity().getId(), tagEntity.getClusterId(), JoinBuilder.JoinType.INNER);
+        ZoneExternalHyTypeSearch.join("clusterDetails", clusterDetails, ZoneExternalHyTypeSearch.entity().getId(), tagEntity.getResourceId(), JoinBuilder.JoinType.INNER);
         ZoneExternalHyTypeSearch.done();
 
         SearchCriteria<ClusterVO> sc = ZoneExternalHyTypeSearch.create();
