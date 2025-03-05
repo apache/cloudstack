@@ -137,7 +137,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             storageType = "shared";
         }
 
-        logger.debug(
+        logger.info(
                 "Filtering storage pools by capacity type [{}] as the first storage pool of the list, with name [{}] and ID [{}], is a [{}] storage.",
                 capacityType, storagePool.getName(), storagePool.getUuid(), storageType
         );
@@ -195,10 +195,10 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Override
     public List<StoragePool> reorderPools(List<StoragePool> pools, VirtualMachineProfile vmProfile, DeploymentPlan plan, DiskProfile dskCh) {
         if (pools == null) {
-            logger.debug("There are no pools to reorder; returning null.");
+            logger.info("There are no pools to reorder; returning null.");
             return null;
         }
-        logger.debug("Reordering [{}] pools", pools.size());
+        logger.info("Reordering [{}] pools", pools.size());
         Account account = null;
         if (vmProfile.getVirtualMachine() != null) {
             account = vmProfile.getOwner();
@@ -207,7 +207,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         pools = reorderStoragePoolsBasedOnAlgorithm(pools, plan, account);
 
         if (vmProfile.getVirtualMachine() == null) {
-            logger.debug("The VM is null, skipping pool reordering by disk provisioning type.");
+            logger.info("The VM is null, skipping pool reordering by disk provisioning type.");
             return pools;
         }
 
@@ -220,7 +220,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     }
 
     List<StoragePool> reorderStoragePoolsBasedOnAlgorithm(List<StoragePool> pools, DeploymentPlan plan, Account account) {
-        logger.debug("Using allocation algorithm [{}] to reorder pools.", allocationAlgorithm);
+        logger.info("Using allocation algorithm [{}] to reorder pools.", allocationAlgorithm);
 
         if (allocationAlgorithm.equals("random") || allocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
             reorderRandomPools(pools);
@@ -246,7 +246,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
     private List<StoragePool> reorderPoolsByDiskProvisioningType(List<StoragePool> pools, DiskProfile diskProfile) {
         if (diskProfile != null && diskProfile.getProvisioningType() != null && !diskProfile.getProvisioningType().equals(Storage.ProvisioningType.THIN)) {
-            logger.debug("Reordering [{}] pools by disk provisioning type [{}].", pools.size(), diskProfile.getProvisioningType());
+            logger.info("Reordering [{}] pools by disk provisioning type [{}].", pools.size(), diskProfile.getProvisioningType());
             List<StoragePool> reorderedPools = new ArrayList<>();
             int preferredIndex = 0;
             for (StoragePool pool : pools) {
@@ -263,7 +263,11 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             logger.debug("Reordered list of pools by disk provisioning type [{}]: [{}]", diskProfile.getProvisioningType(), pools);
             return reorderedPools;
         } else {
-            logger.debug("Reordering pools by disk provisioning type wasn't necessary.");
+            if (diskProfile == null) {
+                logger.info("Reordering pools by disk provisioning type wasn't necessary, since no disk profile was found.");
+            } else {
+                logger.debug("Reordering pools by disk provisioning type wasn't necessary, since the provisioning type is [{}].", diskProfile.getProvisioningType());
+            }
             return pools;
         }
     }
