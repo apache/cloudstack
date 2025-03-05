@@ -1107,9 +1107,18 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         if (_mshostId != null) {
             final ManagementServerHostVO mshost = _mshostDao.findByMsid(_msId);
             if (mshost != null) {
-                final ManagementServerStatusVO mshostStatus = mshostStatusDao.findByMsId(mshost.getUuid());
-                mshostStatus.setLastJvmStop(new Date());
-                mshostStatusDao.update(mshostStatus.getId(), mshostStatus);
+                ManagementServerStatusVO mshostStatus = mshostStatusDao.findByMsId(mshost.getUuid());
+                if (mshostStatus != null) {
+                    mshostStatus.setLastJvmStop(new Date());
+                    mshostStatusDao.update(mshostStatus.getId(), mshostStatus);
+                } else {
+                    mshostStatus = new ManagementServerStatusVO();
+                    mshostStatus.setMsId(mshost.getUuid());
+                    mshostStatus.setLastSystemBoot(new Date());
+                    mshostStatus.setLastJvmStart(new Date());
+                    mshostStatus.setUpdated(new Date());
+                    mshostStatusDao.persist(mshostStatus);
+                }
 
                 ManagementServerHost.State msHostState = ManagementServerHost.State.Down;
                 if (ManagementServerHost.State.Maintenance.equals(mshost.getState()) || ManagementServerHost.State.PreparingForMaintenance.equals(mshost.getState())) {
