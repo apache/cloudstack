@@ -390,22 +390,25 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         boolean result = snapshotStrategy.revertSnapshot(snapshotInfo);
         if (result) {
-            Long differenceBetweenVolumeAndSnapshotSize = new Long(volume.getSize() - snapshot.getSize());
-            // update volume size and primary storage count
-            if (differenceBetweenVolumeAndSnapshotSize != 0) {
-                if (differenceBetweenVolumeAndSnapshotSize > 0) {
-                    _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.primary_storage, differenceBetweenVolumeAndSnapshotSize);
-                } else if (differenceBetweenVolumeAndSnapshotSize < 0) {
-                    _resourceLimitMgr.incrementResourceCount(snapshot.getAccountId(), ResourceType.primary_storage, differenceBetweenVolumeAndSnapshotSize * -1L);
-                }
-                volume.setSize(snapshot.getSize());
-                _volsDao.update(volume.getId(), volume);
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
-                        volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
-            }
+            updateVolumeSizeAndPrimaryStorageCount(volume, snapshot);
             return snapshotInfo;
         }
         return null;
+    }
+
+    public void updateVolumeSizeAndPrimaryStorageCount(VolumeVO volume, SnapshotVO snapshot) {
+        Long differenceBetweenVolumeAndSnapshotSize = new Long(volume.getSize() - snapshot.getSize());
+        if (differenceBetweenVolumeAndSnapshotSize != 0) {
+            if (differenceBetweenVolumeAndSnapshotSize > 0) {
+                _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.primary_storage, differenceBetweenVolumeAndSnapshotSize);
+            } else if (differenceBetweenVolumeAndSnapshotSize < 0) {
+                _resourceLimitMgr.incrementResourceCount(snapshot.getAccountId(), ResourceType.primary_storage, differenceBetweenVolumeAndSnapshotSize * -1L);
+            }
+            volume.setSize(snapshot.getSize());
+            _volsDao.update(volume.getId(), volume);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
+        }
     }
 
     @Override
