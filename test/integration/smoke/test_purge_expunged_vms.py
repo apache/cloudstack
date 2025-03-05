@@ -259,8 +259,8 @@ class TestPurgeExpungedVms(cloudstackTestCase):
         active_server_ips = []
         active_server_ips.append(self.mgtSvrDetails["mgtSvrIp"])
         for idx, server in enumerate(servers):
-            if server.state == 'Up' and server.serviceip != self.mgtSvrDetails["mgtSvrIp"]:
-                active_server_ips.append(server.serviceip)
+            if server.state == 'Up' and server.ipaddress != self.mgtSvrDetails["mgtSvrIp"]:
+                active_server_ips.append(server.ipaddress)
         return active_server_ips
 
     def restartAllManagementServers(self):
