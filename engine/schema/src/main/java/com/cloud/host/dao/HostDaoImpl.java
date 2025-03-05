@@ -129,6 +129,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> ResponsibleMsSearch;
     protected SearchBuilder<HostVO> ResponsibleMsDcSearch;
     protected GenericSearchBuilder<HostVO, String> ResponsibleMsIdSearch;
+    protected GenericSearchBuilder<HostVO, String> LastMsIdSearch;
     protected SearchBuilder<HostVO> HostTypeClusterCountSearch;
     protected SearchBuilder<HostVO> HostTypeZoneCountSearch;
     protected SearchBuilder<HostVO> ClusterStatusSearch;
@@ -208,6 +209,11 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         ResponsibleMsIdSearch.selectFields(ResponsibleMsIdSearch.entity().getUuid());
         ResponsibleMsIdSearch.and("managementServerId", ResponsibleMsIdSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
         ResponsibleMsIdSearch.done();
+
+        LastMsIdSearch = createSearchBuilder(String.class);
+        LastMsIdSearch.selectFields(LastMsIdSearch.entity().getUuid());
+        LastMsIdSearch.and("lastManagementServerId", LastMsIdSearch.entity().getLastManagementServerId(), SearchCriteria.Op.EQ);
+        LastMsIdSearch.done();
 
         HostTypeClusterCountSearch = createSearchBuilder();
         HostTypeClusterCountSearch.and("cluster", HostTypeClusterCountSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
@@ -1566,6 +1572,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public List<String> listByMs(long msId) {
         SearchCriteria<String> sc = ResponsibleMsIdSearch.create();
         sc.addAnd("managementServerId", SearchCriteria.Op.EQ, msId);
+        return customSearch(sc, null);
+    }
+
+    @Override
+    public List<String> listByLastMs(long msId) {
+        SearchCriteria<String> sc = LastMsIdSearch.create();
+        sc.addAnd("lastManagementServerId", SearchCriteria.Op.EQ, msId);
         return customSearch(sc, null);
     }
 

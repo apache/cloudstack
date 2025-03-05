@@ -214,13 +214,13 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     protected final ConfigKey<Integer> Workers = new ConfigKey<>("Advanced", Integer.class, "workers", "5",
             "Number of worker threads handling remote agent connections.", false);
-    protected final ConfigKey<Integer> Port = new ConfigKey<>("Advanced", Integer.class, "port", "8250", "Port to listen on for remote agent connections.", false);
+    protected final ConfigKey<Integer> Port = new ConfigKey<>("Advanced", Integer.class, "port", "8250", "Port to listen on for remote (indirect) agent connections.", false);
     protected final ConfigKey<Integer> RemoteAgentSslHandshakeTimeout = new ConfigKey<>("Advanced",
             Integer.class, "agent.ssl.handshake.timeout", "30",
-            "Seconds after which SSL handshake times out during remote agent connections.", false);
+            "Seconds after which SSL handshake times out during remote (indirect) agent connections.", false);
     protected final ConfigKey<Integer> RemoteAgentMaxConcurrentNewConnections = new ConfigKey<>("Advanced",
             Integer.class, "agent.max.concurrent.new.connections", "0",
-            "Number of maximum concurrent new connections server allows for remote agents. " +
+            "Number of maximum concurrent new connections server allows for remote (indirect) agents. " +
                     "If set to zero (default value) then no limit will be enforced on concurrent new connections",
             false);
     protected final ConfigKey<Integer> AlertWait = new ConfigKey<>("Advanced", Integer.class, "alert.wait", "1800",
@@ -352,9 +352,26 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     }
 
     @Override
+    public void onManagementServerPreparingForMaintenance() {
+        logger.debug("Management server preparing for maintenance");
+        if (_connection != null) {
+            _connection.block();
+        }
+    }
+
+    @Override
+    public void onManagementServerCancelPreparingForMaintenance() {
+        logger.debug("Management server cancel preparing for maintenance");
+        if (_connection != null) {
+            _connection.unblock();
+        }
+    }
+
+    @Override
     public void onManagementServerMaintenance() {
         logger.debug("Management server maintenance enabled");
         _monitorExecutor.shutdownNow();
+        newAgentConnectionsMonitor.shutdownNow();
         if (_connection != null) {
             _connection.stop();
 
@@ -387,6 +404,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         if (_monitorExecutor.isShutdown()) {
             _monitorExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("AgentMonitor"));
             _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), mgmtServiceConf.getPingInterval(), mgmtServiceConf.getPingInterval(), TimeUnit.SECONDS);
+        }
+        if (newAgentConnectionsMonitor.isShutdown()) {
+            final int cleanupTimeInSecs = Wait.value();
+            newAgentConnectionsMonitor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NewAgentConnectionsMonitor"));
+            newAgentConnectionsMonitor.scheduleAtFixedRate(new AgentNewConnectionsMonitorTask(), cleanupTimeInSecs, cleanupTimeInSecs, TimeUnit.SECONDS);
         }
     }
 
@@ -424,16 +446,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             attache = _agents.get(hostId);
         }
         return attache;
-    }
-
-    @Override
-    public List<String> getLastAgents() {
-        return lastAgents;
-    }
-
-    @Override
-    public void setLastAgents(List<String> lastAgents) {
-        this.lastAgents = lastAgents;
     }
 
     @Override
@@ -779,6 +791,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         ManagementServerHostVO msHost = _mshostDao.findByMsid(_nodeId);
         if (msHost != null && (ManagementServerHost.State.Maintenance.equals(msHost.getState()) || ManagementServerHost.State.PreparingForMaintenance.equals(msHost.getState()))) {
             _monitorExecutor.shutdownNow();
+            newAgentConnectionsMonitor.shutdownNow();
             return true;
         }
 
@@ -794,9 +807,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), mgmtServiceConf.getPingInterval(), mgmtServiceConf.getPingInterval(), TimeUnit.SECONDS);
 
-        final int cleanupTime = Wait.value();
-        newAgentConnectionsMonitor.scheduleAtFixedRate(new AgentNewConnectionsMonitorTask(), cleanupTime,
-                cleanupTime, TimeUnit.MINUTES);
+        final int cleanupTimeInSecs = Wait.value();
+        newAgentConnectionsMonitor.scheduleAtFixedRate(new AgentNewConnectionsMonitorTask(), cleanupTimeInSecs,
+                cleanupTimeInSecs, TimeUnit.SECONDS);
 
         return true;
     }
@@ -1304,6 +1317,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 if (!indirectAgentLB.compareManagementServerList(host.getId(), host.getDataCenterId(), agentMSHostList, lbAlgorithm)) {
                     final List<String> newMSList = indirectAgentLB.getManagementServerList(host.getId(), host.getDataCenterId(), null);
                     ready.setMsHostList(newMSList);
+                    final List<String> avoidMsList = _mshostDao.listNonUpStateMsIPs();
+                    ready.setAvoidMsHostList(avoidMsList);
                     ready.setLbAlgorithm(indirectAgentLB.getLBAlgorithmName());
                     ready.setLbCheckInterval(indirectAgentLB.getLBPreferredHostCheckInterval(host.getClusterId()));
                     logger.debug("Agent's management server host list is not up to date, sending list update: {}", newMSList);
@@ -1608,7 +1623,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                             if (host!= null && host.getStatus() != Status.Up && gatewayAccessible) {
                                 requestStartupCommand = true;
                             }
-                            answer = new PingAnswer((PingCommand)cmd, requestStartupCommand);
+                            final List<String> avoidMsList = _mshostDao.listNonUpStateMsIPs();
+                            answer = new PingAnswer((PingCommand)cmd, avoidMsList, requestStartupCommand);
                         } else if (cmd instanceof ReadyAnswer) {
                             final HostVO host = _hostDao.findById(attache.getId());
                             if (host == null) {
