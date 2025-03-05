@@ -120,7 +120,7 @@ public interface TemplateManager {
 
     DataStore getImageStore(long tmpltId);
 
-    Long getTemplateSize(long templateId, long zoneId);
+    Long getTemplateSize(VirtualMachineTemplate template, long zoneId);
 
     DataStore getImageStore(String storeUuid, Long zoneId, VolumeVO volume);
 
@@ -143,7 +143,7 @@ public interface TemplateManager {
 
     TemplateType validateTemplateType(BaseCmd cmd, boolean isAdmin, boolean isCrossZones);
 
-    List<DatadiskTO> getTemplateDisksOnImageStore(Long templateId, DataStoreRole role, String configurationId);
+    List<DatadiskTO> getTemplateDisksOnImageStore(VirtualMachineTemplate template, DataStoreRole role, String configurationId);
 
     static Boolean getValidateUrlIsResolvableBeforeRegisteringTemplateValue() {
         return ValidateUrlIsResolvableBeforeRegisteringTemplate.value();

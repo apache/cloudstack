@@ -180,8 +180,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
                     if (!_firewallDao.setStateToAdd(newRule)) {
                         throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
                     }
-                    logger.debug("Load balancer " + newRule.getId() + " for Ip address " + newRule.getSourceIp().addr() + ", source port " +
-                        newRule.getSourcePortStart().intValue() + ", instance port " + newRule.getDefaultPortStart() + " is added successfully.");
+                    logger.debug("Load balancer rule {} for Ip address {}, source port {}, instance port {} is added successfully.", newRule, newRule.getSourceIp().addr(), newRule.getSourcePortStart(), newRule.getDefaultPortStart());
                     CallContext.current().setEventDetails("Load balancer Id: " + newRule.getId());
                     Network ntwk = _networkModel.getNetwork(newRule.getNetworkId());
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_LOAD_BALANCER_CREATE, newRule.getAccountId(), ntwk.getDataCenterId(), newRule.getId(), null,
@@ -524,7 +523,7 @@ public class ApplicationLoadBalancerManagerImpl extends ManagerBase implements A
                     .intValue())) {
 
                 throw new NetworkRuleConflictException("The range specified, " + newLbRule.getSourcePortStart().intValue() + "-" + newLbRule.getSourcePortEnd().intValue() +
-                    ", conflicts with rule " + lbRule.getId() + " which has " + lbRule.getSourcePortStart().intValue() + "-" + lbRule.getSourcePortEnd().intValue());
+                    ", conflicts with rule " + lbRule + " which has " + lbRule.getSourcePortStart().intValue() + "-" + lbRule.getSourcePortEnd().intValue());
             }
         }
 

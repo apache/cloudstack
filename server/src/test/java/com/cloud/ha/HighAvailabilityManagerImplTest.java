@@ -135,6 +135,9 @@ public class HighAvailabilityManagerImplTest {
     @Mock
     UserVmManager userVmManager;
 
+    @Mock
+    private HaWorkVO mockWork;
+
     HighAvailabilityManagerImpl highAvailabilityManager;
     HighAvailabilityManagerImpl highAvailabilityManagerSpy;
     static Method processWorkMethod = null;
@@ -185,7 +188,7 @@ public class HighAvailabilityManagerImplTest {
         highAvailabilityManager.VmHaEnabled = haEnabled;
         Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(true);
 
-        highAvailabilityManager.scheduleRestartForVmsOnHost(hostVO, true);
+        highAvailabilityManager.scheduleRestartForVmsOnHost(hostVO, true, HighAvailabilityManager.ReasonType.HostDown);
     }
 
     @Test
@@ -193,7 +196,7 @@ public class HighAvailabilityManagerImplTest {
         Mockito.when(hostVO.getType()).thenReturn(Host.Type.Routing);
         Mockito.when(hostVO.getHypervisorType()).thenReturn(HypervisorType.VMware);
 
-        highAvailabilityManager.scheduleRestartForVmsOnHost(hostVO, true);
+        highAvailabilityManager.scheduleRestartForVmsOnHost(hostVO, true, HighAvailabilityManager.ReasonType.HostDown);
     }
 
     @Test
@@ -206,7 +209,7 @@ public class HighAvailabilityManagerImplTest {
         highAvailabilityManager.VmHaEnabled = haEnabled;
         Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(false);
 
-        highAvailabilityManager.scheduleRestartForVmsOnHost(hostVO, true);
+        highAvailabilityManager.scheduleRestartForVmsOnHost(hostVO, true, HighAvailabilityManager.ReasonType.HostDown);
     }
 
     @Test
@@ -218,13 +221,11 @@ public class HighAvailabilityManagerImplTest {
         List<VMInstanceVO> vms = new ArrayList<VMInstanceVO>();
         VMInstanceVO vm1 = Mockito.mock(VMInstanceVO.class);
         Mockito.lenient().when(vm1.getHostId()).thenReturn(1l);
-        //Mockito.when(vm1.getInstanceName()).thenReturn("i-2-3-VM");
         Mockito.when(vm1.getType()).thenReturn(VirtualMachine.Type.User);
         Mockito.when(vm1.isHaEnabled()).thenReturn(true);
         vms.add(vm1);
         VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm2.getHostId()).thenReturn(1l);
-        //Mockito.when(vm2.getInstanceName()).thenReturn("r-2-VM");
         Mockito.when(vm2.getType()).thenReturn(VirtualMachine.Type.DomainRouter);
         Mockito.when(vm2.isHaEnabled()).thenReturn(true);
         Mockito.when(vm2.getDataCenterId()).thenReturn(1L);
@@ -242,7 +243,7 @@ public class HighAvailabilityManagerImplTest {
         highAvailabilityManager.VmHaEnabled = haEnabled;
         Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(true);
 
-        highAvailabilityManager.scheduleRestartForVmsOnHost(hostVO, true);
+        highAvailabilityManager.scheduleRestartForVmsOnHost(hostVO, true, HighAvailabilityManager.ReasonType.HostDown);
     }
 
     @Test
@@ -338,7 +339,7 @@ public class HighAvailabilityManagerImplTest {
         Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Running);
         Mockito.when(_haDao.persist((HaWorkVO)Mockito.any())).thenReturn(Mockito.mock(HaWorkVO.class));
 
-        assertTrue(highAvailabilityManager.scheduleDestroy(vm, 1L));
+        assertTrue(highAvailabilityManager.scheduleDestroy(vm, 1L, HighAvailabilityManager.ReasonType.HostMaintenance));
     }
 
     @Test
@@ -350,7 +351,7 @@ public class HighAvailabilityManagerImplTest {
         highAvailabilityManager.VmHaEnabled = haEnabled;
         Mockito.when(highAvailabilityManager.VmHaEnabled.valueIn(1L)).thenReturn(false);
 
-        assertFalse(highAvailabilityManager.scheduleDestroy(vm, 1L));
+        assertFalse(highAvailabilityManager.scheduleDestroy(vm, 1L, HighAvailabilityManager.ReasonType.HostMaintenance));
     }
 
     @Test
@@ -404,7 +405,7 @@ public class HighAvailabilityManagerImplTest {
 
     private void processWorkWithRetryCount(int count, Step expectedStep) {
         assertNotNull(processWorkMethod);
-        HaWorkVO work = new HaWorkVO(1l, VirtualMachine.Type.User, WorkType.Migration, Step.Scheduled, 1l, VirtualMachine.State.Running, count, 12345678l);
+        HaWorkVO work = new HaWorkVO(1l, VirtualMachine.Type.User, WorkType.Migration, Step.Scheduled, 1l, VirtualMachine.State.Running, count, 12345678l, null);
         Mockito.doReturn(12345678l).when(highAvailabilityManagerSpy).migrate(work);
         try {
             processWorkMethod.invoke(highAvailabilityManagerSpy, work);
@@ -426,5 +427,54 @@ public class HighAvailabilityManagerImplTest {
     @Test
     public void processWorkWithRetryCountNotExceeded() {
         processWorkWithRetryCount(3, Step.Scheduled);
+    }
+
+    @Test
+    public void testCheckAndCancelWorkIfNeeded_Success() {
+        Mockito.when(mockWork.getStep()).thenReturn(Step.Investigating);
+        Mockito.when(mockWork.getReasonType()).thenReturn(HighAvailabilityManager.ReasonType.HostMaintenance);
+        Mockito.when(mockWork.getHostId()).thenReturn(1L);
+        Mockito.doReturn(Status.Up).when(highAvailabilityManagerSpy).investigate(1L);
+        Mockito.doNothing().when(mockWork).setStep(Step.Cancelled);
+        boolean result = highAvailabilityManagerSpy.checkAndCancelWorkIfNeeded(mockWork);
+        assertTrue(result);
+        Mockito.verify(mockWork).setStep(Step.Cancelled);
+    }
+
+    @Test
+    public void testCheckAndCancelWorkIfNeeded_StepNotInvestigating() {
+        Mockito.when(mockWork.getStep()).thenReturn(Step.Cancelled);
+        boolean result = highAvailabilityManagerSpy.checkAndCancelWorkIfNeeded(mockWork);
+        assertFalse(result);
+        Mockito.verify(mockWork, Mockito.never()).setStep(Mockito.any());
+    }
+
+    private void runInvalidReasonCheckAndCancelWorkIfNeeded(HighAvailabilityManager.ReasonType reasonType) {
+        Mockito.when(mockWork.getStep()).thenReturn(Step.Investigating);
+        Mockito.when(mockWork.getReasonType()).thenReturn(reasonType);
+        boolean result = highAvailabilityManagerSpy.checkAndCancelWorkIfNeeded(mockWork);
+        assertFalse(result);
+        Mockito.verify(mockWork, Mockito.never()).setStep(Mockito.any());
+    }
+
+    @Test
+    public void testCheckAndCancelWorkIfNeeded_InvalidReasonType() {
+        runInvalidReasonCheckAndCancelWorkIfNeeded(HighAvailabilityManager.ReasonType.Unknown);
+    }
+
+    @Test
+    public void testCheckAndCancelWorkIfNeeded_NullReasonType() {
+        runInvalidReasonCheckAndCancelWorkIfNeeded(null);
+    }
+
+    @Test
+    public void testCheckAndCancelWorkIfNeeded_HostStatusNotUp() {
+        Mockito.when(mockWork.getStep()).thenReturn(Step.Investigating);
+        Mockito.when(mockWork.getReasonType()).thenReturn(HighAvailabilityManager.ReasonType.HostDown);
+        Mockito.when(mockWork.getHostId()).thenReturn(1L);
+        Mockito.doReturn(Status.Down).when(highAvailabilityManagerSpy).investigate(1L);
+        boolean result = highAvailabilityManagerSpy.checkAndCancelWorkIfNeeded(mockWork);
+        assertFalse(result);
+        Mockito.verify(mockWork, Mockito.never()).setStep(Mockito.any());
     }
 }

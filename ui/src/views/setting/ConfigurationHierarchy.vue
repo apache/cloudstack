@@ -28,11 +28,10 @@
 
     <template #bodyCell="{ column, record }">
       <template v-if="column.key === 'name'">
-    <span :style="hierarchyExists ? 'padding-left: 0px;' : 'padding-left: 25px;'">
-      <b><span v-if="record.parent">└─ &nbsp;</span>{{record.displaytext }} </b> {{ ' (' + record.name + ')' }}
-    </span>
-    <br/>
-    <span :style="record.parent ? 'padding-left: 50px; display:block' : 'padding-left: 25px; display:block'">{{ record.description }}</span>
+        <a-row :style="hierarchyExists ? 'padding-left: 0px;' : 'padding-left: 25px;'">
+          <b><span v-if="record.parent">└─ &nbsp;</span>{{record.displaytext }}&nbsp</b> {{ '(' + record.name + ')' }}
+        </a-row>
+        <span :style="record.parent ? 'padding-left: 50px; display:block' : 'padding-left: 25px; display:block'">{{ record.description }}</span>
       </template>
       <template v-if="column.key === 'value'">
         <ConfigurationValue :configrecord="record" />

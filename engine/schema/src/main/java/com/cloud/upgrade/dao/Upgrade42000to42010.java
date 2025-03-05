@@ -53,6 +53,7 @@ public class Upgrade42000to42010 extends DbUpgradeAbstractImpl implements DbUpgr
 
     @Override
     public void performDataMigration(Connection conn) {
+        addIndexes(conn);
     }
 
     @Override
@@ -79,5 +80,43 @@ public class Upgrade42000to42010 extends DbUpgradeAbstractImpl implements DbUpgr
         } catch (Exception e) {
             throw new CloudRuntimeException("Failed to find / register SystemVM template(s)");
         }
+    }
+
+    private void addIndexes(Connection conn) {
+        DbUpgradeUtils.addIndexIfNeeded(conn, "host", "mgmt_server_id");
+        DbUpgradeUtils.addIndexIfNeeded(conn, "host", "resource");
+        DbUpgradeUtils.addIndexIfNeeded(conn, "host", "resource_state");
+        DbUpgradeUtils.addIndexIfNeeded(conn, "host", "type");
+
+        DbUpgradeUtils.renameIndexIfNeeded(conn, "user_ip_address", "public_ip_address", "uk_public_ip_address");
+        DbUpgradeUtils.addIndexIfNeeded(conn, "user_ip_address", "public_ip_address");
+        DbUpgradeUtils.addIndexIfNeeded(conn, "user_ip_address", "data_center_id");
+        DbUpgradeUtils.addIndexIfNeeded(conn, "user_ip_address", "vlan_db_id");
+        DbUpgradeUtils.addIndexIfNeeded(conn, "user_ip_address", "removed");
+
+        DbUpgradeUtils.addIndexIfNeeded(conn, "vlan", "vlan_type");
+        DbUpgradeUtils.addIndexIfNeeded(conn, "vlan", "data_center_id");
+        DbUpgradeUtils.addIndexIfNeeded(conn, "vlan", "removed");
+
+        DbUpgradeUtils.addIndexIfNeeded(conn, "network_offering_details", "name");
+
+        DbUpgradeUtils.addIndexIfNeeded(conn, "network_offering_details", "resource_id", "resource_type");
+
+        DbUpgradeUtils.addIndexIfNeeded(conn, "service_offering", "cpu");
+        DbUpgradeUtils.addIndexIfNeeded(conn, "service_offering", "speed");
+        DbUpgradeUtils.addIndexIfNeeded(conn, "service_offering", "ram_size");
+
+        DbUpgradeUtils.addIndexIfNeeded(conn, "op_host_planner_reservation", "resource_usage");
+
+        DbUpgradeUtils.addIndexIfNeeded(conn, "storage_pool", "pool_type");
+        DbUpgradeUtils.addIndexIfNeeded(conn, "storage_pool", "data_center_id", "status", "scope", "hypervisor");
+
+        DbUpgradeUtils.addIndexIfNeeded(conn, "router_network_ref", "guest_type");
+
+        DbUpgradeUtils.addIndexIfNeeded(conn, "domain_router", "role");
+
+        DbUpgradeUtils.addIndexIfNeeded(conn, "async_job", "instance_type", "job_status");
+
+        DbUpgradeUtils.addIndexIfNeeded(conn, "cluster", "managed_state");
     }
 }

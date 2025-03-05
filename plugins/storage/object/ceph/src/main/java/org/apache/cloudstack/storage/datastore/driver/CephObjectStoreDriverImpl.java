@@ -215,7 +215,7 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         RgwAdmin rgwAdmin = getRgwAdminClient(storeId);
         String username = account.getUuid();
 
-        logger.debug("Attempting to create Ceph RGW user for account " + account.getAccountName() + " with UUID " + username);
+        logger.debug("Attempting to create Ceph RGW user for account {} with UUID {}", account, username);
         try {
             Optional<User> user = rgwAdmin.getUserInfo(username);
             if (user.isPresent()) {
@@ -290,7 +290,7 @@ public class CephObjectStoreDriverImpl extends BaseObjectStoreDriverImpl {
         RgwAdmin rgwAdmin = getRgwAdminClient(storeId);
 
         try {
-            rgwAdmin.setBucketQuota(bucket.getName(), -1, size);
+            rgwAdmin.setIndividualBucketQuota(null, bucket.getName(), -1, size * 1024 * 1024);
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }

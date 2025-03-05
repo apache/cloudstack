@@ -19,10 +19,11 @@ package org.apache.cloudstack.resourcedetail;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.commons.collections.CollectionUtils;
 
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -30,7 +31,17 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 
+import org.apache.cloudstack.api.ResourceDetail;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+
+import javax.inject.Inject;
+
 public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends GenericDaoBase<R, Long> implements ResourceDetailsDao<R> {
+
+    @Inject
+    private ConfigurationDao configDao;
+
     private SearchBuilder<R> AllFieldsSearch;
 
     public ResourceDetailsDaoBase() {
@@ -75,8 +86,7 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
             sc.setParameters("value", value);
         }
 
-        List<R> results = search(sc, null);
-        return results;
+        return search(sc, null);
     }
 
     public Map<String, String> listDetailsKeyPairs(long resourceId) {
@@ -84,11 +94,25 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         sc.setParameters("resourceId", resourceId);
 
         List<R> results = search(sc, null);
-        Map<String, String> details = new HashMap<String, String>(results.size());
+        Map<String, String> details = new HashMap<>(results.size());
         for (R result : results) {
             details.put(result.getName(), result.getValue());
         }
         return details;
+    }
+
+    @Override
+    public Map<String, String> listDetailsKeyPairs(long resourceId, List<String> keys) {
+        SearchBuilder<R> sb = createSearchBuilder();
+        sb.and("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.IN);
+        sb.done();
+        SearchCriteria<R> sc = sb.create();
+        sc.setParameters("resourceId", resourceId);
+        sc.setParameters("name", keys.toArray());
+
+        List<R> results = search(sc, null);
+        return results.stream().collect(Collectors.toMap(R::getName, R::getValue));
     }
 
     public Map<String, Boolean> listDetailsVisibility(long resourceId) {
@@ -107,8 +131,7 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         SearchCriteria<R> sc = AllFieldsSearch.create();
         sc.setParameters("resourceId", resourceId);
 
-        List<R> results = search(sc, null);
-        return results;
+        return search(sc, null);
     }
 
     public void removeDetails(long resourceId) {
@@ -170,7 +193,7 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         sc.setParameters("display", forDisplay);
 
         List<R> results = search(sc, null);
-        Map<String, String> details = new HashMap<String, String>(results.size());
+        Map<String, String> details = new HashMap<>(results.size());
         for (R result : results) {
             details.put(result.getName(), result.getValue());
         }
@@ -182,8 +205,7 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         sc.setParameters("resourceId", resourceId);
         sc.setParameters("display", forDisplay);
 
-        List<R> results = search(sc, null);
-        return results;
+        return search(sc, null);
     }
 
     @Override
@@ -214,5 +236,14 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         SearchCriteria<R> sc = sb.create();
         sc.setParameters("ids", ids.toArray());
         return batchExpunge(sc, batchSize);
+    }
+
+    @Override
+    public String getActualValue(ResourceDetail resourceDetail) {
+        ConfigurationVO configurationVO = configDao.findByName(resourceDetail.getName());
+        if (configurationVO != null && configurationVO.isEncrypted()) {
+            return DBEncryptionUtil.decrypt(resourceDetail.getValue());
+        }
+        return resourceDetail.getValue();
     }
 }

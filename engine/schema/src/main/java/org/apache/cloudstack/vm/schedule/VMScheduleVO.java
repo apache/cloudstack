@@ -19,6 +19,7 @@
 package org.apache.cloudstack.vm.schedule;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -93,6 +94,11 @@ public class VMScheduleVO implements VMSchedule {
         this.startDate = startDate;
         this.endDate = endDate;
         this.enabled = enabled;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("VMSchedule %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "action", "description"));
     }
 
     @Override

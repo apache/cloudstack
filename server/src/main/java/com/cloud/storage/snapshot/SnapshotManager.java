@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage.snapshot;
 
+import com.cloud.user.Account;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -68,7 +69,7 @@ public interface SnapshotManager extends Configurable {
      * @param accountId
      *            The account which is to be deleted.
      */
-    boolean deleteSnapshotDirsForAccount(long accountId);
+    boolean deleteSnapshotDirsForAccount(Account account);
 
     //void deleteSnapshotsDirForVolume(String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId);
 
