@@ -44,6 +44,7 @@ import org.apache.cloudstack.agent.api.NetrisAnswer;
 import org.apache.cloudstack.StartupNetrisCommand;
 import org.apache.cloudstack.agent.api.ReleaseNatIpCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
+import org.apache.cloudstack.agent.api.UpdateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.UpdateNetrisVpcCommand;
 import org.apache.cloudstack.service.NetrisApiClient;
 import org.apache.cloudstack.service.NetrisApiClientImpl;
@@ -105,6 +106,8 @@ public class NetrisResource implements ServerResource {
             return executeRequest((DeleteNetrisVpcCommand) cmd);
         } else if (cmd instanceof CreateNetrisVnetCommand) {
             return executeRequest((CreateNetrisVnetCommand) cmd);
+        } else if (cmd instanceof UpdateNetrisVnetCommand) {
+          return executeRequest((UpdateNetrisVnetCommand) cmd);
         } else if (cmd instanceof DeleteNetrisVnetCommand) {
           return executeRequest((DeleteNetrisVnetCommand) cmd);
         } else if (cmd instanceof SetupNetrisPublicRangeCommand) {
@@ -269,6 +272,22 @@ public class NetrisResource implements ServerResource {
             return new NetrisAnswer(cmd, true, "OK");
         } catch (CloudRuntimeException e) {
             String msg = String.format("Error creating Netris VPC: %s", e.getMessage());
+            logger.error(msg, e);
+            return new NetrisAnswer(cmd, new CloudRuntimeException(msg));
+        }
+    }
+
+    private Answer executeRequest(UpdateNetrisVnetCommand cmd) {
+        try {
+            String networkName = cmd.getName();
+            String prevNetworkName = cmd.getPrevNetworkName();
+            boolean result = netrisApiClient.updateVnet(cmd);
+            if (!result) {
+                return new NetrisAnswer(cmd, false, String.format("Failed to update network name from %s to %s", prevNetworkName, networkName));
+            }
+            return new NetrisAnswer(cmd, true, "OK");
+        } catch (CloudRuntimeException e) {
+            String msg = String.format("Error updating Netris vNet: %s", e.getMessage());
             logger.error(msg, e);
             return new NetrisAnswer(cmd, new CloudRuntimeException(msg));
         }

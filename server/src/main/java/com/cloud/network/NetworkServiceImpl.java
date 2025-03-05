@@ -51,6 +51,7 @@ import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.element.VirtualRouterProviderVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.utils.component.AdapterBase;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.alert.AlertService;
@@ -3087,7 +3088,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         // verify input parameters
         final NetworkVO network = getNetworkVO(networkId, "Specified network id doesn't exist in the system");
-
+        String prevNetworkName = network.getName();
         //perform below validation if the network is vpc network
         if (network.getVpcId() != null && networkOfferingId != null) {
             Vpc vpc = _entityMgr.findById(Vpc.class, network.getVpcId());
@@ -3572,7 +3573,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Network updatedNetwork = getNetwork(network.getId());
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_UPDATE, updatedNetwork.getAccountId(), updatedNetwork.getDataCenterId(), updatedNetwork.getId(),
                 updatedNetwork.getName(), updatedNetwork.getNetworkOfferingId(), null, updatedNetwork.getState().name(), Network.class.getName(), updatedNetwork.getUuid(), true);
+        updateProviderNetwork(updatedNetwork, prevNetworkName);
         return updatedNetwork;
+    }
+
+    private void updateProviderNetwork(Network network, String prevNetworkName) {
+        final NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
+        if (Objects.nonNull(guru) && !guru.update(network, prevNetworkName)) {
+            logger.error("Failed to update name of network on provider");
+        }
     }
 
     protected Pair<Integer, Integer> validateMtuOnUpdate(NetworkVO network, Long zoneId, Integer publicMtu, Integer privateMtu) {

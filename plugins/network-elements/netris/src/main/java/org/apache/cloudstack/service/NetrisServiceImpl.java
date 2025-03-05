@@ -58,6 +58,7 @@ import org.apache.cloudstack.agent.api.NetrisAnswer;
 import org.apache.cloudstack.agent.api.NetrisCommand;
 import org.apache.cloudstack.agent.api.ReleaseNatIpCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
+import org.apache.cloudstack.agent.api.UpdateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.UpdateNetrisVpcCommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -229,6 +230,16 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
                 cmd.setIpv6Cidr(ipv6PrefixNetworkMapVO.getSubnet());
             }
         }
+        NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
+        return answer.getResult();
+    }
+
+    @Override
+    public boolean updateVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String prevNetworkName) {
+        UpdateNetrisVnetCommand cmd = new UpdateNetrisVnetCommand(zoneId, accountId, domainId, networkName, networkId, Objects.nonNull(vpcId));
+        cmd.setPrevNetworkName(prevNetworkName);
+        cmd.setVpcId(vpcId);
+        cmd.setVpcName(vpcName);
         NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
         return answer.getResult();
     }

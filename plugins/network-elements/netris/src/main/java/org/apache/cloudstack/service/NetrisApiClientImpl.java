@@ -94,6 +94,9 @@ import io.netris.model.VnetAddBodyDhcp;
 import io.netris.model.VnetAddBodyDhcpOptionSet;
 import io.netris.model.VnetAddBodyGateways;
 import io.netris.model.VnetAddBodyVpc;
+import io.netris.model.VnetEditBody;
+import io.netris.model.VnetEditBodyDhcp;
+import io.netris.model.VnetEditBodyGateways;
 import io.netris.model.VnetResAddBody;
 import io.netris.model.VnetResDeleteBody;
 import io.netris.model.VnetResListBody;
@@ -119,6 +122,7 @@ import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.NetrisCommand;
 import org.apache.cloudstack.agent.api.ReleaseNatIpCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
+import org.apache.cloudstack.agent.api.UpdateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.UpdateNetrisVpcCommand;
 import org.apache.cloudstack.resource.NetrisResourceObjectUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -990,6 +994,127 @@ public class NetrisApiClientImpl implements NetrisApiClient {
     }
 
     @Override
+    public boolean updateVnet(UpdateNetrisVnetCommand cmd) {
+        String networkName = cmd.getName();
+        Long networkId = cmd.getId();
+        String prevNetworkName = cmd.getPrevNetworkName();
+        String vpcName = cmd.getVpcName();
+        Long vpcId = cmd.getVpcId();
+        boolean isVpc = cmd.isVpc();
+
+        String netrisVpcName = getNetrisVpcName(cmd, vpcId, vpcName);
+        VPCListing associatedVpc = getNetrisVpcResource(netrisVpcName);
+        if (associatedVpc == null) {
+            logger.error("Failed to find Netris VPC with name: {}, to create the corresponding vNet for network {}", netrisVpcName, networkName);
+            return false;
+        }
+
+        String vNetName;
+        String prevVnetName;
+        if (isVpc) {
+            vNetName = String.format("V%s-N%s-%s", vpcId, networkId, networkName);
+            prevVnetName = String.format("V%s-N%s-%s", vpcId, networkId, prevNetworkName);
+        } else {
+            vNetName = String.format("N%s-%s", networkId, networkName);
+            prevVnetName = String.format("N%s-%s", networkId, prevNetworkName);
+        }
+        String netrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, vNetName) ;
+        String prevNetrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, prevVnetName) ;
+
+        VnetResAddBody response = updateVnetInternal(associatedVpc, netrisVnetName, prevNetrisVnetName);
+        if (response == null || !response.isIsSuccess()) {
+            String reason = response == null ? "Empty response" : "Operation failed on Netris";
+            logger.debug("Netris vNet: {} update failed: {}", vNetName, reason);
+            return false;
+        }
+        return true;
+    }
+
+
+    private VnetResAddBody updateVnetInternal(VPCListing associatedVpc, String netrisVnetName, String prevVnetName) {
+        logger.debug("Updating Netris vNet name from {} to {} ", netrisVnetName, prevVnetName);
+        try {
+            FilterByVpc vpcFilter = new FilterByVpc();
+            vpcFilter.add(associatedVpc.getId());
+            FilterBySites siteFilter = new FilterBySites();
+            siteFilter.add(siteId);
+            List<VnetsBody> vnetsList = getVnets(associatedVpc, prevVnetName, siteFilter, vpcFilter);
+            if (CollectionUtils.isEmpty(vnetsList)) {
+                String errorMsg = String.format("Could not find vNet with name: %s", prevVnetName);
+                logger.error(errorMsg);
+                throw new CloudRuntimeException(errorMsg);
+            }
+            VnetsBody vnetsBody = vnetsList.get(0);
+
+            VnetEditBody vnetBody = new VnetEditBody();
+
+            vnetBody.setCustomAnycastMac(vnetBody.getCustomAnycastMac());
+
+            VnetEditBodyGateways gatewayV4 = new VnetEditBodyGateways();
+            gatewayV4.prefix(vnetsBody.getGateways().get(0).getPrefix());
+            gatewayV4.setDhcpEnabled(false);
+            VnetEditBodyDhcp dhcp = new VnetEditBodyDhcp();
+            dhcp.setEnd("");
+            dhcp.setStart("");
+            dhcp.setOptionSet(new VnetAddBodyDhcpOptionSet());
+            gatewayV4.setDhcp(dhcp);
+            List<VnetEditBodyGateways> gatewaysList = new ArrayList<>();
+            gatewaysList.add(gatewayV4);
+
+
+            if (vnetsBody.getGateways().size() > 1 && Objects.nonNull(vnetsBody.getGateways().get(1))) {
+                String netrisV6Gateway = vnetsBody.getGateways().get(1).getPrefix();
+                VnetEditBodyGateways gatewayV6 = new VnetEditBodyGateways();
+                gatewayV6.prefix(netrisV6Gateway);
+                gatewayV6.setDhcpEnabled(false);
+                gatewayV6.setDhcp(dhcp);
+                gatewaysList.add(gatewayV6);
+            }
+
+            vnetBody.setGateways(gatewaysList);
+            vnetBody.setGuestTenants(new ArrayList<>());
+            vnetBody.setL3vpn(false);
+            vnetBody.setName(netrisVnetName);
+            vnetBody.setNativeVlan(0);
+            vnetBody.setVxlanID(vnetsBody.getVxlanID());
+            vnetBody.setPorts(new ArrayList<>());
+
+            IpTreeSubnetSites subnetSites = new IpTreeSubnetSites();
+            subnetSites.setId(new BigDecimal(siteId));
+            subnetSites.setName(siteName);
+            List<IpTreeSubnetSites> subnetSitesList = new ArrayList<>();
+            subnetSitesList.add(subnetSites);
+            vnetBody.setSites(subnetSitesList);
+
+            vnetBody.setState(VnetEditBody.StateEnum.ACTIVE);
+
+            vnetBody.setTags(new ArrayList<>());
+
+            IpTreeAllocationTenant allocationTenant = new IpTreeAllocationTenant();
+            allocationTenant.setId(new BigDecimal(tenantId));
+            allocationTenant.setName(tenantName);
+            vnetBody.setTenant(allocationTenant);
+
+            vnetBody.setVlan(0);
+            vnetBody.setVlanAware(false);
+            vnetBody.setVlans("");
+
+            VnetAddBodyVpc vpc = new VnetAddBodyVpc();
+            vpc.setName(associatedVpc.getName());
+            vpc.setId(associatedVpc.getId());
+            vnetBody.setVpc(vpc);
+
+            vnetBody.setTags(vnetsBody.getTags());
+
+            VNetApi vnetApi = apiClient.getApiStubForMethod(VNetApi.class);
+            return vnetApi.apiV2VnetIdPut(vnetBody, vnetsBody.getId().intValue());
+        } catch (ApiException e) {
+            logAndThrowException(String.format("Error creating Netris vNet %s for VPC %s", netrisVnetName, associatedVpc.getName()), e);
+            return null;
+        }
+    }
+
+    @Override
     public boolean deleteVnet(DeleteNetrisVnetCommand cmd) {
         String vpcName = cmd.getVpcName();
         Long vpcId = cmd.getVpcId();
@@ -1400,14 +1525,24 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return true;
     }
 
-    private void deleteVnetInternal(VPCListing associatedVpc, FilterBySites siteFilter, FilterByVpc vpcFilter, String netrisVnetName, String vNetName) {
+    private List<VnetsBody> getVnets(VPCListing associatedVpc, String netrisVnetName, FilterBySites siteFilter, FilterByVpc vpcFilter) {
         try {
             VNetApi vNetApi = apiClient.getApiStubForMethod(VNetApi.class);
             VnetResListBody vnetList = vNetApi.apiV2VnetGet(siteFilter, vpcFilter);
             if (vnetList == null || !vnetList.isIsSuccess()) {
                 throw new CloudRuntimeException(String.format("Failed to list vNets for the given VPC: %s and site: %s", associatedVpc.getName(), siteName));
             }
-            List<VnetsBody> vnetsList = vnetList.getData().stream().filter(vnet -> vnet.getName().equals(netrisVnetName)).collect(Collectors.toList());
+            return vnetList.getData().stream().filter(vnet -> vnet.getName().equals(netrisVnetName)).collect(Collectors.toList());
+        } catch (ApiException e) {
+            logAndThrowException(String.format("Failed to get vNets: %s", netrisVnetName), e);
+        }
+        return Collections.emptyList();
+    }
+
+    private void deleteVnetInternal(VPCListing associatedVpc, FilterBySites siteFilter, FilterByVpc vpcFilter, String netrisVnetName, String vNetName) {
+        try {
+            VNetApi vNetApi = apiClient.getApiStubForMethod(VNetApi.class);
+            List<VnetsBody> vnetsList = getVnets(associatedVpc, netrisVnetName, siteFilter, vpcFilter);
             if (CollectionUtils.isEmpty(vnetsList)) {
                 logger.debug("vNet: {} for the given VPC: {} appears to already be deleted on Netris", vNetName, associatedVpc.getName());
                 return;
