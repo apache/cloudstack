@@ -44,6 +44,7 @@ import org.apache.cloudstack.agent.api.NetrisAnswer;
 import org.apache.cloudstack.StartupNetrisCommand;
 import org.apache.cloudstack.agent.api.ReleaseNatIpCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
+import org.apache.cloudstack.agent.api.UpdateNetrisVpcCommand;
 import org.apache.cloudstack.service.NetrisApiClient;
 import org.apache.cloudstack.service.NetrisApiClientImpl;
 import org.apache.logging.log4j.LogManager;
@@ -98,6 +99,8 @@ public class NetrisResource implements ServerResource {
             return executeRequest((CheckHealthCommand) cmd);
         } else if (cmd instanceof CreateNetrisVpcCommand) {
             return executeRequest((CreateNetrisVpcCommand) cmd);
+        } else if (cmd instanceof UpdateNetrisVpcCommand) {
+          return executeRequest((UpdateNetrisVpcCommand) cmd);
         } else if (cmd instanceof DeleteNetrisVpcCommand) {
             return executeRequest((DeleteNetrisVpcCommand) cmd);
         } else if (cmd instanceof CreateNetrisVnetCommand) {
@@ -231,6 +234,20 @@ public class NetrisResource implements ServerResource {
     private Answer executeRequest(CreateNetrisVpcCommand cmd) {
         try {
             boolean result = netrisApiClient.createVpc(cmd);
+            if (!result) {
+                return new NetrisAnswer(cmd, false, String.format("Netris VPC %s creation failed", cmd.getName()));
+            }
+            return new NetrisAnswer(cmd, true, "OK");
+        } catch (CloudRuntimeException e) {
+            String msg = String.format("Error creating Netris VPC: %s", e.getMessage());
+            logger.error(msg, e);
+            return new NetrisAnswer(cmd, new CloudRuntimeException(msg));
+        }
+    }
+
+    private Answer executeRequest(UpdateNetrisVpcCommand cmd) {
+        try {
+            boolean result = netrisApiClient.updateVpc(cmd);
             if (!result) {
                 return new NetrisAnswer(cmd, false, String.format("Netris VPC %s creation failed", cmd.getName()));
             }

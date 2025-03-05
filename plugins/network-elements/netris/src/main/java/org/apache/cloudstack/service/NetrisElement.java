@@ -467,6 +467,11 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
     }
 
     @Override
+    public boolean updateVpc(Vpc vpc, String previousVpcName) {
+        return netrisService.updateVpcResource(vpc.getZoneId(), vpc.getAccountId(), vpc.getDomainId(), vpc.getId(), vpc.getName(), previousVpcName);
+    }
+
+    @Override
     public boolean applyNetworkACLs(Network network, List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
         if (!canHandle(network, Network.Service.NetworkACL)) {
             return false;

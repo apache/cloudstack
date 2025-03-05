@@ -98,6 +98,8 @@ import io.netris.model.VnetResAddBody;
 import io.netris.model.VnetResDeleteBody;
 import io.netris.model.VnetResListBody;
 import io.netris.model.VnetsBody;
+import io.netris.model.VpcEditResponseOK;
+import io.netris.model.VpcVpcIdBody;
 import io.netris.model.response.AuthResponse;
 import io.netris.model.response.L4LbEditResponse;
 import io.netris.model.response.TenantResponse;
@@ -117,6 +119,7 @@ import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.NetrisCommand;
 import org.apache.cloudstack.agent.api.ReleaseNatIpCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
+import org.apache.cloudstack.agent.api.UpdateNetrisVpcCommand;
 import org.apache.cloudstack.resource.NetrisResourceObjectUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -257,6 +260,30 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return response;
     }
 
+    private VpcEditResponseOK updateVpcInternal(String vpcName, String prevVpcName, int adminTenantId, String adminTenantName) {
+        VpcEditResponseOK response;
+        logger.debug(String.format("Updating Netris VPC name from %s to %s", prevVpcName, vpcName));
+        try {
+            VPCListing vpcResource = getVpcByNameAndTenant(prevVpcName);
+            if (vpcResource == null) {
+                logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", prevVpcName, tenantId);
+                return null;
+            }
+            VpcApi vpcApi = apiClient.getApiStubForMethod(VpcApi.class);
+            VpcVpcIdBody body = new VpcVpcIdBody();
+            body.setName(vpcName);
+            VPCAdminTenant vpcAdminTenant = new VPCAdminTenant();
+            vpcAdminTenant.setId(adminTenantId);
+            vpcAdminTenant.name(adminTenantName);
+            body.setAdminTenant(vpcAdminTenant);
+            response = vpcApi.apiV2VpcVpcIdPut(body, vpcResource.getId());
+        } catch (ApiException e) {
+            logAndThrowException("Error updating Netris VPC", e);
+            return null;
+        }
+        return response;
+    }
+
     private InlineResponse2004Data createIpamAllocationInternal(String ipamName, String ipamPrefix, VPCListing vpc) {
         logger.debug(String.format("Creating Netris IPAM Allocation %s for VPC %s", ipamPrefix, vpc.getName()));
         try {
@@ -300,6 +327,24 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String vpcCidr = cmd.getCidr();
         InlineResponse2004Data createdIpamAllocation = createIpamAllocationInternal(netrisIpamAllocationName, vpcCidr, createdVpc.getData());
         return createdIpamAllocation != null;
+    }
+
+    @Override
+    public boolean updateVpc(UpdateNetrisVpcCommand cmd) {
+        Long domainId = cmd.getDomainId();
+        Long zoneId = cmd.getZoneId();
+        Long accountId = cmd.getAccountId();
+        Long vpcId = cmd.getId();
+        String prevVpcName = cmd.getPreviousVpcName();
+        String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC);
+        String netrisPrevVpcName = String.format("D%s-A%s-Z%s-V%s-%s", domainId, accountId, zoneId, vpcId, prevVpcName);
+        VpcEditResponseOK updatedVpc = updateVpcInternal(netrisVpcName, netrisPrevVpcName, tenantId, tenantName);
+        if (updatedVpc == null || !updatedVpc.isIsSuccess()) {
+            String reason = updatedVpc == null ? "Empty response" : "Operation failed on Netris";
+            logger.debug("The update of Netris VPC {} failed: {}", cmd.getPreviousVpcName(), reason);
+            return false;
+        }
+        return true;
     }
 
     @Override

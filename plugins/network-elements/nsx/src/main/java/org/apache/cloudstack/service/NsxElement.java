@@ -945,4 +945,9 @@ public class NsxElement extends AdapterBase implements  DhcpServiceProvider, Dns
     public boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address) {
         return nsxService.updateVpcSourceNatIp(vpc, address);
     }
+
+    @Override
+    public boolean updateVpc(Vpc vpc, String previousVpcName) {
+        return true;
+    }
 }

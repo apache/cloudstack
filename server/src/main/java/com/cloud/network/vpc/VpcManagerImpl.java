@@ -1582,6 +1582,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         _accountMgr.checkAccess(caller, null, false, vpcToUpdate);
 
         final VpcVO vpc = vpcDao.createForUpdate(vpcId);
+        String previousVpcName = vpcToUpdate.getName();
 
         if (vpcName != null) {
             vpc.setName(vpcName);
@@ -1617,6 +1618,16 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             } else {
                 if (logger.isDebugEnabled()) {
                     logger.debug("no restart needed.");
+                    if (isVpcForProvider(Provider.Netris, vpcToUpdate)) {
+                        final String sourceNatProvider = _vpcSrvcDao.getProviderForServiceInVpc(vpc.getId(), Service.SourceNat);
+                        for (final VpcProvider provider : getVpcElements()) {
+                            if ((provider instanceof StaticNatServiceProvider && provider.getName().equalsIgnoreCase(sourceNatProvider))) {
+                                vpcToUpdate.setName(vpcName);
+                                provider.updateVpc(vpcToUpdate, previousVpcName);
+                                break;
+                            }
+                        }
+                    }
                 }
             }
             return vpcDao.findById(vpcId);
