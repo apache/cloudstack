@@ -162,6 +162,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.vm.lease.VMLeaseManagerImpl;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
@@ -1477,7 +1478,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             userVmSearchBuilder.join("tags", resourceTagSearch, resourceTagSearch.entity().getResourceId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
-        if (cmd.getOnlyLeasedInstances() != null && cmd.getOnlyLeasedInstances()) {
+        if (VMLeaseManagerImpl.InstanceLeaseEnabled.value() && cmd.getOnlyLeasedInstances() != null && cmd.getOnlyLeasedInstances()) {
             SearchBuilder<UserVmDetailVO> leasedInstancesSearch = userVmDetailsDao.createSearchBuilder();
             leasedInstancesSearch.and(VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE, leasedInstancesSearch.entity().getName(), SearchCriteria.Op.NNULL);
             userVmSearchBuilder.join("userVmToLeased", leasedInstancesSearch, leasedInstancesSearch.entity().getResourceId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);

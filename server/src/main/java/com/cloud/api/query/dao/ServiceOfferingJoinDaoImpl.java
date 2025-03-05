@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.vm.lease.VMLeaseManagerImpl;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -176,7 +177,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
             }
         }
 
-        if (offering.getLeaseDuration() != null && offering.getLeaseDuration() != -1L) {
+        if (VMLeaseManagerImpl.InstanceLeaseEnabled.value() && offering.getLeaseDuration() != null && offering.getLeaseDuration() != -1L) {
             offeringResponse.setLeaseDuration(offering.getLeaseDuration());
             offeringResponse.setLeaseExpiryAction(offering.getLeaseExpiryAction());
         }

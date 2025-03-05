@@ -166,7 +166,7 @@
               </a-statistic>
             </router-link>
           </a-col>
-          <a-col :span="12">
+          <a-col :span="12" v-if="isLeaseFeatureEnabled">
             <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1', onlyleasedinstances: true } }">
               <a-statistic
                 :title="$t('label.leasedinstances')"
@@ -394,7 +394,8 @@ export default {
         VIRTUAL_NETWORK_PUBLIC_IP: 'label.public.ips',
         VLAN: 'label.vlan',
         VIRTUAL_NETWORK_IPV6_SUBNET: 'label.ipv6.subnets'
-      }
+      },
+      isLeaseFeatureEnabled: false
     }
   },
   computed: {
@@ -465,6 +466,7 @@ export default {
       this.listZones()
       this.listAlerts()
       this.listEvents()
+      this.determineIfLeaseEnabled()
     },
     listCapacity (zone, latest = false, additive = false) {
       this.capacityLoading = true
@@ -570,13 +572,16 @@ export default {
           this.data.instances = 0
         }
       })
-      api('listVirtualMachines', { zoneid: zone.id, onlyleasedinstances: true, listall: true, projectid: '-1', details: 'min', page: 1, pagesize: 1 }).then(json => {
-        this.loading = false
-        this.data.leasedinstances = json?.listvirtualmachinesresponse?.count
-        if (!this.data.leasedinstances) {
-          this.data.leasedinstances = 0
-        }
-      })
+
+      if (this.isLeaseFeatureEnabled) {
+        api('listVirtualMachines', { zoneid: zone.id, onlyleasedinstances: true, listall: true, projectid: '-1', details: 'min', page: 1, pagesize: 1 }).then(json => {
+          this.loading = false
+          this.data.leasedinstances = json?.listvirtualmachinesresponse?.count
+          if (!this.data.leasedinstances) {
+            this.data.leasedinstances = 0
+          }
+        })
+      }
     },
     listAlerts () {
       const params = {
@@ -635,6 +640,13 @@ export default {
     },
     filterZone (input, option) {
       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+    },
+    determineIfLeaseEnabled () {
+      var params = { name: 'instance.lease.enabled' }
+      api('listConfigurations', params).then(json => {
+        var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
+        this.isLeaseFeatureEnabled = value === 'true'
+      })
     }
   }
 }
