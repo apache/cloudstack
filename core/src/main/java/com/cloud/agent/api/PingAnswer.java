@@ -19,10 +19,15 @@
 
 package com.cloud.agent.api;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class PingAnswer extends Answer {
     private PingCommand _command = null;
 
     private boolean sendStartup = false;
+
+    private List<String> reconcileCommands = new ArrayList<>();
 
     protected PingAnswer() {
     }
@@ -43,5 +48,17 @@ public class PingAnswer extends Answer {
 
     public void setSendStartup(boolean sendStartup) {
         this.sendStartup = sendStartup;
+    }
+
+    public List<String> getReconcileCommands() {
+        return reconcileCommands;
+    }
+
+    public void setReconcileCommands(List<String> reconcileCommands) {
+        this.reconcileCommands = reconcileCommands;
+    }
+
+    public void addReconcileCommand(String reconcileCommand) {
+        this.reconcileCommands.add(reconcileCommand);
     }
 }
