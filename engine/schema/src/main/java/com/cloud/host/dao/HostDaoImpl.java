@@ -21,6 +21,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -42,6 +44,7 @@ import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.cluster.agentlb.HostTransferMapVO;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.configuration.ManagementServiceConfiguration;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
@@ -1754,6 +1757,29 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
         sc.setParameters("type", Type.Routing);
         return customSearch(sc, null);
+    }
+
+    @Override
+    public List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorArchTypes(final Long zoneId) {
+        List<Pair<HypervisorType, CPU.CPUArch>> hypervisorArchList = new ArrayList<>();
+        String selectSql = "SELECT DISTINCT hypervisor_type, arch FROM cloud.host WHERE removed IS NULL";
+        if (zoneId != null) {
+            selectSql += " AND data_center_id=" + zoneId;
+        }
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try {
+            PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                HypervisorType hypervisorType = HypervisorType.valueOf(rs.getString("hypervisor_type"));
+                CPU.CPUArch arch = CPU.CPUArch.fromType(rs.getString("arch"));
+                hypervisorArchList.add(new Pair<>(hypervisorType, arch));
+            }
+        } catch (SQLException ex) {
+            logger.error("DB exception {}", ex.getMessage(), ex);
+            return Collections.emptyList();
+        }
+        return hypervisorArchList;
     }
 
     @Override

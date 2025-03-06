@@ -618,6 +618,25 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         return defaultNetworks.get(0);
     }
 
+    protected SecondaryStorageVmVO createOrUpdateSecondaryStorageVm(SecondaryStorageVmVO ssvm, long dataCenterId,
+                long id, String name, ServiceOffering serviceOffering, VMTemplateVO template, Account systemAccount,
+                SecondaryStorageVm.Role role) {
+        if (ssvm == null) {
+            ssvm = new SecondaryStorageVmVO(id, serviceOffering.getId(), name, template.getId(),
+                    template.getHypervisorType(), template.getGuestOSId(), dataCenterId, systemAccount.getDomainId(),
+                    systemAccount.getId(), _accountMgr.getSystemUser().getId(), role, serviceOffering.isOfferHA());
+            ssvm.setDynamicallyScalable(template.isDynamicallyScalable());
+            ssvm.setLimitCpuUse(serviceOffering.getLimitCpuUse());
+            return _secStorageVmDao.persist(ssvm);
+        }
+        ssvm.setTemplateId(template.getId());
+        ssvm.setHypervisorType(template.getHypervisorType());
+        ssvm.setGuestOSId(template.getGuestOSId());
+        ssvm.setDynamicallyScalable(template.isDynamicallyScalable());
+        _secStorageVmDao.update(ssvm.getId(), ssvm);
+        return ssvm;
+    }
+
     protected Map<String, Object> createSecStorageVmInstance(long dataCenterId, SecondaryStorageVm.Role role) {
         DataStore secStore = _dataStoreMgr.getImageStoreWithFreeCapacity(dataCenterId);
         if (secStore == null) {
@@ -657,28 +676,34 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
 
         HypervisorType availableHypervisor = _resourceMgr.getAvailableHypervisor(dataCenterId);
-        VMTemplateVO template = _templateDao.findSystemVMReadyTemplate(dataCenterId, availableHypervisor);
-        if (template == null) {
-            throw new CloudRuntimeException(String.format("Unable to find the system templates or it was not downloaded in %s.", dc.toString()));
+        List<VMTemplateVO> templates = _templateDao.findSystemVMReadyTemplates(dataCenterId, availableHypervisor);
+        if (CollectionUtils.isEmpty(templates)) {
+            throw new CloudRuntimeException(String.format("Unable to find the system templates or it was not downloaded in %s.", dc));
         }
 
         ServiceOfferingVO serviceOffering = _serviceOffering;
         if (serviceOffering == null) {
             serviceOffering = _offeringDao.findDefaultSystemOffering(ServiceOffering.ssvmDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
         }
-        SecondaryStorageVmVO secStorageVm =
-            new SecondaryStorageVmVO(id, serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
-                systemAcct.getDomainId(), systemAcct.getId(), _accountMgr.getSystemUser().getId(), role, serviceOffering.isOfferHA());
-        secStorageVm.setDynamicallyScalable(template.isDynamicallyScalable());
-        secStorageVm.setLimitCpuUse(serviceOffering.getLimitCpuUse());
-        secStorageVm = _secStorageVmDao.persist(secStorageVm);
-        try {
-            _itMgr.allocate(name, template, serviceOffering, networks, plan, null);
-            secStorageVm = _secStorageVmDao.findById(secStorageVm.getId());
-        } catch (InsufficientCapacityException e) {
-            String errorMessage = String.format("Unable to allocate secondary storage VM [%s] due to [%s].", name, e.getMessage());
-            logger.warn(errorMessage, e);
-            throw new CloudRuntimeException(errorMessage, e);
+        SecondaryStorageVmVO secStorageVm = null;
+        InsufficientCapacityException lastException = null;
+        for (VMTemplateVO template : templates) {
+            secStorageVm = createOrUpdateSecondaryStorageVm(secStorageVm, id, dataCenterId, name, serviceOffering,
+                    template, systemAcct, role);
+            try {
+                _itMgr.allocate(name, template, serviceOffering, networks, plan, null);
+                secStorageVm = _secStorageVmDao.findById(secStorageVm.getId());
+                lastException = null;
+                break;
+            } catch (InsufficientCapacityException e) {
+                String errorMessage = String.format("Unable to allocate secondary storage VM [%s] due to [%s].", name, e.getMessage());
+                logger.warn(errorMessage, e);
+                lastException = e;
+            }
+        }
+
+        if (lastException != null) {
+            throw new CloudRuntimeException("Failed to allocate secondary storage VM [%s] on zone [%s] with available templates");
         }
 
         Map<String, Object> context = new HashMap<>();
@@ -820,8 +845,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
         if (zoneHostInfo != null && (zoneHostInfo.getFlags() & RunningHostInfoAgregator.ZoneHostInfo.ROUTING_HOST_MASK) != 0) {
-            VMTemplateVO template = _templateDao.findSystemVMReadyTemplate(dataCenterId, HypervisorType.Any);
-            if (template == null) {
+            List<VMTemplateVO> templates = _templateDao.findSystemVMReadyTemplates(dataCenterId, HypervisorType.Any);
+            if (CollectionUtils.isEmpty(templates)) {
                 if (logger.isDebugEnabled()) {
                     logger.debug(String.format("System VM template is not ready at zone [%s], wait until it is ready to launch secondary storage VM.", dataCenterId));
                 }
@@ -831,13 +856,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             List<DataStore> stores = _dataStoreMgr.getImageStoresByScopeExcludingReadOnly(new ZoneScope(dataCenterId));
             if (CollectionUtils.isEmpty(stores)) {
                 logger.debug(String.format("No image store added in zone [%s], wait until it is ready to launch secondary storage VM.", dataCenterId));
-                return false;
-            }
-
-            if (!template.isDirectDownload() && templateMgr.getImageStore(dataCenterId, template.getId()) == null) {
-                if (logger.isDebugEnabled()) {
-                    logger.debug(String.format("No secondary storage available in zone [%s], wait until it is ready to launch secondary storage VM.", dataCenterId));
-                }
                 return false;
             }
 
