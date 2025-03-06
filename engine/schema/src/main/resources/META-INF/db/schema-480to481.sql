@@ -18,3 +18,7 @@
 --;
 -- Schema upgrade from 4.8.0 to 4.8.1;
 --;
+
+-- Add description
+alter table `cloud`.`vpc_gateways` add column `description` varchar(255) default '';
+alter table `cloud`.`networks` add column `description` varchar(255) default '';
