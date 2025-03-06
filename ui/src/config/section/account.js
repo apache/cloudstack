@@ -61,6 +61,10 @@ export default {
     name: 'template',
     title: 'label.templates',
     param: 'account'
+  }, {
+    name: 'iso',
+    title: 'label.isos',
+    param: 'account'
   }],
   filters: () => {
     const filters = ['enabled', 'disabled', 'locked']
