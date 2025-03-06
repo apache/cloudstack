@@ -59,6 +59,8 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVMMapDao;
 import com.cloud.network.dao.LoadBalancerVMMapVO;
+import com.cloud.network.dao.RemoteAccessVpnDao;
+import com.cloud.network.dao.Site2SiteVpnGatewayDao;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRule.State;
@@ -155,6 +157,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
     VpcService _vpcSvc;
     @Inject
     VMTemplateDao _templateDao;
+    @Inject
+    RemoteAccessVpnDao remoteAccessVpnDao;
+    @Inject
+    Site2SiteVpnGatewayDao site2SiteVpnGatewayDao;
 
     protected void checkIpAndUserVm(IpAddress ipAddress, UserVm userVm, Account caller, Boolean ignoreVmState) {
         if (ipAddress == null || ipAddress.getAllocatedTime() == null || ipAddress.getAllocatedToAccountId() == null) {
@@ -1270,6 +1276,25 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             throw ex;
         }
 
+        if (ipAddress.isForRouter()) {
+            if (remoteAccessVpnDao.findByPublicIpAddress(ipAddress.getId()) != null) {
+                InvalidParameterValueException ex = new InvalidParameterValueException("Can't disable static nat as the IP address is used by a Remote Access VPN");
+                ex.addProxyObject(ipAddress.getUuid(), "ipId");
+                throw ex;
+
+            }
+            if (site2SiteVpnGatewayDao.findByPublicIpAddress(ipAddress.getId()) != null) {
+                InvalidParameterValueException ex = new InvalidParameterValueException("Can't disable static nat as the IP address is used by a VPC gateway");
+                ex.addProxyObject(ipAddress.getUuid(), "ipId");
+                throw ex;
+
+            }
+            if (disableStaticNat(ipId, caller, ctx.getCallingUserId(), false)) {
+                return true;
+            }
+            return false;
+        }
+
         Long vmId = ipAddress.getAssociatedWithVmId();
         if (vmId == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Specified IP address id is not associated with any vm Id");
@@ -1302,7 +1327,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
         checkIpAndUserVm(ipAddress, null, caller, false);
-        long networkId = ipAddress.getAssociatedWithNetworkId();
+        Long networkId = ipAddress.getAssociatedWithNetworkId();
 
         if (!ipAddress.isOneToOneNat()) {
             InvalidParameterValueException ex = new InvalidParameterValueException("One to one nat is not enabled for the specified ip id");
@@ -1337,11 +1362,14 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             ipAddress.setAssociatedWithVmId(null);
             ipAddress.setRuleState(null);
             ipAddress.setVmIp(null);
+            ipAddress.setForRouter(false);
             if (isIpSystem && !releaseIpIfElastic) {
                 ipAddress.setSystem(false);
             }
             _ipAddressDao.update(ipAddress.getId(), ipAddress);
-            _vpcMgr.unassignIPFromVpcNetwork(ipAddress.getId(), networkId);
+            if (networkId != null) {
+                _vpcMgr.unassignIPFromVpcNetwork(ipAddress.getId(), networkId);
+            }
 
             if (isIpSystem && releaseIpIfElastic && !_ipAddrMgr.handleSystemIpRelease(ipAddress)) {
                 logger.warn("Failed to release system ip address " + ipAddress);
@@ -1379,7 +1407,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         return new StaticNatRuleImpl(ruleVO, dstIp);
     }
 
-    protected boolean applyStaticNatForIp(long sourceIpId, boolean continueOnError, Account caller, boolean forRevoke) {
+    @Override
+    public boolean applyStaticNatForIp(long sourceIpId, boolean continueOnError, Account caller, boolean forRevoke) {
         IpAddress sourceIp = _ipAddressDao.findById(sourceIpId);
 
         List<StaticNat> staticNats = createStaticNatForIp(sourceIp, caller, forRevoke);
