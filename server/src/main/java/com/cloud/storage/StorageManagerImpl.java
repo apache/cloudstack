@@ -4248,7 +4248,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         params.put("url", url);
         params.put("name", name);
         if (size == null) {
-            params.put("size", 0);
+            params.put("size", 0L);
         } else {
             params.put("size", size);
         }
@@ -4347,11 +4347,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Long allocated = 0L;
         Long total = 0L;
         for (ObjectStoreVO objectStore: objectStores) {
-            if (objectStore.getAllocatedSize() == null || objectStore.getTotalSize() == null) {
-                continue;
+            if (objectStore.getAllocatedSize() != null) {
+                allocated += objectStore.getAllocatedSize();
             }
-            allocated += objectStore.getAllocatedSize();
-            total += objectStore.getTotalSize();
+            if (objectStore.getTotalSize() != null) {
+                total += objectStore.getTotalSize();
+            }
         }
         CapacityVO capacity = new CapacityVO(null, zoneId, null, null, allocated, total, Capacity.CAPACITY_TYPE_OBJECT_STORAGE);
         return capacity;
