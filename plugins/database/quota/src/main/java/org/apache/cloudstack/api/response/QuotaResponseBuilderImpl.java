@@ -50,7 +50,19 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.*;
+
+import org.apache.cloudstack.api.command.QuotaBalanceCmd;
+import org.apache.cloudstack.api.command.QuotaConfigureEmailCmd;
+import org.apache.cloudstack.api.command.QuotaCreditsListCmd;
+import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
+import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
+import org.apache.cloudstack.api.command.QuotaPresetVariablesListCmd;
+import org.apache.cloudstack.api.command.QuotaStatementCmd;
+import org.apache.cloudstack.api.command.QuotaSummaryCmd;
+import org.apache.cloudstack.api.command.QuotaTariffCreateCmd;
+import org.apache.cloudstack.api.command.QuotaTariffListCmd;
+import org.apache.cloudstack.api.command.QuotaTariffUpdateCmd;
+import org.apache.cloudstack.api.command.QuotaValidateActivationRuleCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.discovery.ApiDiscoveryService;
 import org.apache.cloudstack.jsinterpreter.JsInterpreterHelper;
@@ -65,8 +77,23 @@ import org.apache.cloudstack.quota.activationrule.presetvariables.PresetVariable
 import org.apache.cloudstack.quota.activationrule.presetvariables.Value;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
-import org.apache.cloudstack.quota.dao.*;
-import org.apache.cloudstack.quota.vo.*;
+
+import org.apache.cloudstack.quota.dao.QuotaAccountDao;
+import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
+import org.apache.cloudstack.quota.dao.QuotaCreditsDao;
+import org.apache.cloudstack.quota.dao.QuotaEmailConfigurationDao;
+import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
+import org.apache.cloudstack.quota.dao.QuotaSummaryDao;
+import org.apache.cloudstack.quota.dao.QuotaTariffDao;
+import org.apache.cloudstack.quota.dao.QuotaUsageDao;
+import org.apache.cloudstack.quota.vo.QuotaAccountVO;
+import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
+import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
+import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
+import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
+import org.apache.cloudstack.quota.vo.QuotaSummaryVO;
+import org.apache.cloudstack.quota.vo.QuotaTariffVO;
+import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections4.CollectionUtils;
@@ -330,14 +357,14 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
         if (account != null) {
             QuotaSummaryResponse qr = new QuotaSummaryResponse();
-            DomainVO domain = _domainDao.findById(account.getDomainId());
+            DomainVO domain = domainDao.findById(account.getDomainId());
             BigDecimal curBalance = _quotaBalanceDao.lastQuotaBalance(account.getAccountId(), account.getDomainId(), period[1].getTime());
             BigDecimal quotaUsage = quotaUsageDao.findTotalQuotaUsage(account.getAccountId(), account.getDomainId(), null, period[0].getTime(), period[1].getTime());
 
             qr.setAccountId(account.getUuid());
             qr.setAccountName(account.getAccountName());
             qr.setDomainId(domain.getUuid());
-            qr.setDomainName(domain.getName());
+            qr.setDomainPath(domain.getName());
             qr.setBalance(curBalance);
             qr.setQuotaUsage(quotaUsage);
             qr.setState(account.getState());
