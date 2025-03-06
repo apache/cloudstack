@@ -14,20 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 package org.apache.cloudstack.backup.dao;
 
-import java.util.List;
-
-import org.apache.cloudstack.backup.BackupRepository;
-import org.apache.cloudstack.backup.BackupRepositoryVO;
+import org.apache.cloudstack.backup.BackupDetailVO;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
 import com.cloud.utils.db.GenericDao;
 
-public interface BackupRepositoryDao extends GenericDao<BackupRepositoryVO, Long> {
-    List<BackupRepository> listByZoneAndProvider(Long zoneId, String provider);
+public interface BackupDetailsDao extends GenericDao<BackupDetailVO, Long>, ResourceDetailsDao<BackupDetailVO> {
 
-    BackupRepository findByBackupOfferingId(Long backupOfferingId);
-
-    boolean updateCapacity(BackupRepository backupRepository, Long capacityBytes, Long usedBytes);
 }

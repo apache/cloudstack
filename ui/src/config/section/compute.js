@@ -243,7 +243,7 @@ export default {
           message: 'message.backup.create',
           docHelp: 'adminguide/virtual_machines.html#creating-vm-backups',
           dataView: true,
-          args: ['virtualmachineid'],
+          args: ['name', 'description', 'virtualmachineid'],
           show: (record) => { return record.backupofferingid },
           mapping: {
             virtualmachineid: {

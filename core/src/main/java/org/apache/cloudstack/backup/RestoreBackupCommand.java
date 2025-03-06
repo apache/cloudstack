@@ -30,7 +30,8 @@ public class RestoreBackupCommand extends Command  {
     private String backupPath;
     private String backupRepoType;
     private String backupRepoAddress;
-    private List<String> volumePaths;
+    private List<String> backupVolumesUUIDs;
+    private List<String> restoreVolumePaths;
     private String diskType;
     private Boolean vmExists;
     private String restoreVolumeUUID;
@@ -72,12 +73,12 @@ public class RestoreBackupCommand extends Command  {
         this.backupRepoAddress = backupRepoAddress;
     }
 
-    public List<String> getVolumePaths() {
-        return volumePaths;
+    public List<String> getRestoreVolumePaths() {
+        return restoreVolumePaths;
     }
 
-    public void setVolumePaths(List<String> volumePaths) {
-        this.volumePaths = volumePaths;
+    public void setRestoreVolumePaths(List<String> restoreVolumePaths) {
+        this.restoreVolumePaths = restoreVolumePaths;
     }
 
     public Boolean isVmExists() {
@@ -126,5 +127,13 @@ public class RestoreBackupCommand extends Command  {
 
     public boolean executeInSequence() {
         return true;
+    }
+
+    public List<String> getBackupVolumesUUIDs() {
+        return backupVolumesUUIDs;
+    }
+
+    public void setBackupVolumesUUIDs(List<String> backupVolumesUUIDs) {
+        this.backupVolumesUUIDs = backupVolumesUUIDs;
     }
 }

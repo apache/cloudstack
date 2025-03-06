@@ -14,20 +14,18 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-
 package org.apache.cloudstack.backup.dao;
 
-import java.util.List;
 
-import org.apache.cloudstack.backup.BackupRepository;
-import org.apache.cloudstack.backup.BackupRepositoryVO;
+import org.apache.cloudstack.backup.BackupDetailVO;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
+import org.springframework.stereotype.Component;
 
-import com.cloud.utils.db.GenericDao;
+@Component
+public class BackupDetailsDaoImpl extends ResourceDetailsDaoBase<BackupDetailVO> implements BackupDetailsDao {
 
-public interface BackupRepositoryDao extends GenericDao<BackupRepositoryVO, Long> {
-    List<BackupRepository> listByZoneAndProvider(Long zoneId, String provider);
-
-    BackupRepository findByBackupOfferingId(Long backupOfferingId);
-
-    boolean updateCapacity(BackupRepository backupRepository, Long capacityBytes, Long usedBytes);
+    @Override
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new BackupDetailVO(resourceId, key, value, display));
+    }
 }
