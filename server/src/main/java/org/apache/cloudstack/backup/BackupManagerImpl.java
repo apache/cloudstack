@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.Timer;
@@ -51,7 +52,6 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.UserVmService;
 import com.cloud.vm.VirtualMachineManager;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -84,7 +84,6 @@ import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -194,10 +193,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private VirtualMachineManager virtualMachineManager;
     @Inject
     private VolumeApiService volumeApiService;
-    @Inject
-    private VolumeOrchestrationService volumeOrchestrationService;
-    @Inject
-    public UserVmService userVmService;
     @Inject
     private ResourceLimitService resourceLimitMgr;
     @Inject
@@ -590,16 +585,33 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_SCHEDULE_DELETE, eventDescription = "deleting VM backup schedule")
-    public boolean deleteBackupSchedule(Long vmId) {
-        final VMInstanceVO vm = findVmById(vmId);
-        validateBackupForZone(vm.getDataCenterId());
-        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
-
-        final BackupSchedule schedule = backupScheduleDao.findByVM(vmId);
-        if (schedule == null) {
-            throw new CloudRuntimeException("VM has no backup schedule defined, no need to delete anything.");
+    public boolean deleteBackupSchedule(DeleteBackupScheduleCmd cmd) {
+        Long vmId = cmd.getVmId();
+        Long id = cmd.getId();
+        if (Objects.isNull(vmId) && Objects.isNull(id)) {
+            throw new InvalidParameterValueException("Either instance ID or ID of backup schedule needs to be specified");
         }
-        return backupScheduleDao.remove(schedule.getId());
+        if (Objects.nonNull(vmId)) {
+            final VMInstanceVO vm = findVmById(vmId);
+            validateBackupForZone(vm.getDataCenterId());
+            accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+            return deleteAllVMBackupSchedules(vm.getId());
+        } else {
+            final BackupSchedule schedule = backupScheduleDao.findById(id);
+            if (schedule == null) {
+                throw new CloudRuntimeException("Could not find the requested backup schedule.");
+            }
+            return backupScheduleDao.remove(schedule.getId());
+        }
+    }
+
+    private boolean deleteAllVMBackupSchedules(long vmId) {
+        List<BackupScheduleVO> vmBackupSchedules = backupScheduleDao.listByVM(vmId);
+        boolean success = true;
+        for (BackupScheduleVO vmBackupSchedule : vmBackupSchedules) {
+            success = success && backupScheduleDao.remove(vmBackupSchedule.getId());
+        }
+        return success;
     }
 
     private void postCreateScheduledBackup(Backup.Type backupType, Long vmId) {
@@ -823,6 +835,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 !vm.getState().equals(VirtualMachine.State.Destroyed)) {
             throw new CloudRuntimeException("Existing VM should be stopped before being restored from backup");
         }
+
         // This is done to handle historic backups if any with Veeam / Networker plugins
         List<Backup.VolumeInfo> backupVolumes = CollectionUtils.isNullOrEmpty(backup.getBackedUpVolumes()) ?
                 vm.getBackupVolumeList() : backup.getBackedUpVolumes();

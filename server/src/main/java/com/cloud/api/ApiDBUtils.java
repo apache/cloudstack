@@ -2149,7 +2149,7 @@ public class ApiDBUtils {
         for (DiskOfferingJoinVO offering : offerings) {
             DiskOfferingResponse response = s_diskOfferingJoinDao.newDiskOfferingResponse(offering);
             if (vmId != null) {
-                response.setSuitableForVm(suitability.get(offering.getId()));
+                response.setSuitableForVm(suitability.getOrDefault(offering.getId(), true));
             }
             list.add(response);
         }

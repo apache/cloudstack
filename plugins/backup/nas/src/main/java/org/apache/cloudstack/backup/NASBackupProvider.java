@@ -249,6 +249,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setBackupPath(backup.getExternalId());
         restoreCommand.setBackupRepoType(backupRepository.getType());
         restoreCommand.setBackupRepoAddress(backupRepository.getAddress());
+        restoreCommand.setMountOptions(backupRepository.getMountOptions());
         restoreCommand.setVmName(vm.getName());
         restoreCommand.setBackupVolumesUUIDs(backedVolumesUUIDs);
         restoreCommand.setRestoreVolumePaths(getVolumePaths(restoreVolumes));
@@ -318,6 +319,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoreCommand.setVmName(vmNameAndState.first());
         restoreCommand.setRestoreVolumePaths(Collections.singletonList(String.format("%s/%s", dataStore.getLocalPath(), volumeUUID)));
         restoreCommand.setDiskType(volume.getVolumeType().name().toLowerCase(Locale.ROOT));
+        restoreCommand.setMountOptions(backupRepository.getMountOptions());
         restoreCommand.setVmExists(null);
         restoreCommand.setVmState(vmNameAndState.second());
         restoreCommand.setRestoreVolumeUUID(volumeUuid);
@@ -403,8 +405,12 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             Long vmBackupSize = 0L;
             Long vmBackupProtectedSize = 0L;
             for (final Backup backup: backupDao.listByVmId(null, vm.getId())) {
-                vmBackupSize += backup.getSize();
-                vmBackupProtectedSize += backup.getProtectedSize();
+                if (Objects.nonNull(backup.getSize())) {
+                    vmBackupSize += backup.getSize();
+                }
+                if (Objects.nonNull(backup.getProtectedSize())) {
+                    vmBackupProtectedSize += backup.getProtectedSize();
+                }
             }
             Backup.Metric vmBackupMetric = new Backup.Metric(vmBackupSize,vmBackupProtectedSize);
             LOG.debug("Metrics for VM {} is [backup size: {}, data size: {}].", vm, vmBackupMetric.getBackupSize(), vmBackupMetric.getDataSize());
