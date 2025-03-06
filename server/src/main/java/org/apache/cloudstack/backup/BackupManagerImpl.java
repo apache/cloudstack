@@ -23,21 +23,12 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.Collectors;
 
-import com.amazonaws.util.CollectionUtils;
-import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Resource;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.VolumeApiService;
-import com.cloud.user.DomainManager;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.VirtualMachineManager;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -68,7 +59,6 @@ import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -83,8 +73,11 @@ import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToSt
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import com.amazonaws.util.CollectionUtils;
+import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDispatcher;
 import com.cloud.api.ApiGsonHelper;
+import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEvent;
@@ -94,6 +87,7 @@ import com.cloud.event.EventVO;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
@@ -101,13 +95,17 @@ import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.projects.Project;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
+import com.cloud.user.DomainManager;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
@@ -126,8 +124,10 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
@@ -172,8 +172,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private VirtualMachineManager virtualMachineManager;
     @Inject
     private VolumeApiService volumeApiService;
-    @Inject
-    private VolumeOrchestrationService volumeOrchestrationService;
     @Inject
     private ResourceLimitService resourceLimitMgr;
     @Inject
@@ -514,16 +512,33 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_SCHEDULE_DELETE, eventDescription = "deleting VM backup schedule")
-    public boolean deleteBackupSchedule(Long vmId) {
-        final VMInstanceVO vm = findVmById(vmId);
-        validateForZone(vm.getDataCenterId());
-        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
-
-        final BackupSchedule schedule = backupScheduleDao.findByVM(vmId);
-        if (schedule == null) {
-            throw new CloudRuntimeException("VM has no backup schedule defined, no need to delete anything.");
+    public boolean deleteBackupSchedule(DeleteBackupScheduleCmd cmd) {
+        Long vmId = cmd.getVmId();
+        Long id = cmd.getId();
+        if (Objects.isNull(vmId) && Objects.isNull(id)) {
+            throw new InvalidParameterValueException("Either instance ID or ID of backup schedule needs to be specified");
         }
-        return backupScheduleDao.remove(schedule.getId());
+        if (Objects.nonNull(vmId)) {
+            final VMInstanceVO vm = findVmById(vmId);
+            validateForZone(vm.getDataCenterId());
+            accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+            return deleteAllVMBackupSchedules(vm.getId());
+        } else {
+            final BackupSchedule schedule = backupScheduleDao.findById(id);
+            if (schedule == null) {
+                throw new CloudRuntimeException("Could not find the requested backup schedule.");
+            }
+            return backupScheduleDao.remove(schedule.getId());
+        }
+    }
+
+    private boolean deleteAllVMBackupSchedules(long vmId) {
+        List<BackupScheduleVO> vmBackupSchedules = backupScheduleDao.listByVM(vmId);
+        boolean success = true;
+        for (BackupScheduleVO vmBackupSchedule : vmBackupSchedules) {
+            success = success && backupScheduleDao.remove(vmBackupSchedule.getId());
+        }
+        return success;
     }
 
     private void postCreateScheduledBackup(Backup.Type backupType, Long vmId) {
@@ -740,6 +755,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 !vm.getState().equals(VirtualMachine.State.Destroyed)) {
             throw new CloudRuntimeException("Existing VM should be stopped before being restored from backup");
         }
+
         // This is done to handle historic backups if any with Veeam / Networker plugins
         List<Backup.VolumeInfo> backupVolumes = CollectionUtils.isNullOrEmpty(backup.getBackedUpVolumes()) ?
                 vm.getBackupVolumeList() : backup.getBackedUpVolumes();
