@@ -45,6 +45,7 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
     protected final SearchBuilder<StoragePoolHostVO> PoolSearch;
     protected final SearchBuilder<StoragePoolHostVO> HostSearch;
     protected final SearchBuilder<StoragePoolHostVO> PoolHostSearch;
+    protected final SearchBuilder<StoragePoolHostVO> LocalPathSearch;
 
     protected SearchBuilder<StoragePoolHostVO> poolNotInClusterSearch;
 
@@ -77,6 +78,9 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
         PoolHostSearch.and("host_id", PoolHostSearch.entity().getHostId(), SearchCriteria.Op.EQ);
         PoolHostSearch.done();
 
+        LocalPathSearch = createSearchBuilder();
+        LocalPathSearch.and("local_path", LocalPathSearch.entity().getLocalPath(), SearchCriteria.Op.EQ);
+        LocalPathSearch.done();
     }
 
     @PostConstruct
@@ -115,6 +119,13 @@ public class StoragePoolHostDaoImpl extends GenericDaoBase<StoragePoolHostVO, Lo
         sc.setParameters("pool_id", poolId);
         sc.setParameters("host_id", hostId);
         return findOneIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public List<StoragePoolHostVO> findByLocalPath(String path) {
+        SearchCriteria<StoragePoolHostVO> sc = LocalPathSearch.create();
+        sc.setParameters("local_path", path);
+        return listBy(sc);
     }
 
     @Override
