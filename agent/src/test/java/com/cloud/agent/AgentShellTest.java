@@ -358,7 +358,7 @@ public class AgentShellTest {
         AgentShell shell = new AgentShell();
         shell.setHosts("test");
         shell.getNextHost();
-        shell.updateConnectedHost();
+        shell.updateConnectedHost("test");
 
         Assert.assertEquals(expected, shell.getConnectedHost());
     }

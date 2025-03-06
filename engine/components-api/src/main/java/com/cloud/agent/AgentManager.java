@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.agent;
 
-import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -173,8 +172,4 @@ public interface AgentManager {
     void propagateChangeToAgents(Map<String, String> params);
 
     boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs);
-
-    List<String> getLastAgents();
-
-    void setLastAgents(List<String> lastAgents);
 }

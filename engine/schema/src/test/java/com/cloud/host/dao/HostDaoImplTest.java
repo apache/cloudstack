@@ -104,6 +104,7 @@ public class HostDaoImplTest {
     public void testFindHostIdsByZoneClusterResourceStateTypeAndHypervisorType() {
         Long zoneId = 1L;
         Long clusterId = 2L;
+        Long msId = 1L;
         List<ResourceState> resourceStates = List.of(ResourceState.Enabled);
         List<Host.Type> types = List.of(Host.Type.Routing);
         List<Hypervisor.HypervisorType> hypervisorTypes = List.of(Hypervisor.HypervisorType.KVM);
@@ -117,10 +118,11 @@ public class HostDaoImplTest {
         Mockito.doReturn(sb).when(hostDao).createSearchBuilder(Long.class);
         Mockito.doReturn(mockResults).when(hostDao).customSearch(Mockito.any(SearchCriteria.class), Mockito.any());
         List<Long> hostIds = hostDao.findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(
-                zoneId, clusterId, resourceStates, types, hypervisorTypes);
+                zoneId, clusterId, msId, resourceStates, types, hypervisorTypes);
         Assert.assertEquals(mockResults, hostIds);
         Mockito.verify(sc).setParameters("zoneId", zoneId);
         Mockito.verify(sc).setParameters("clusterId", clusterId);
+        Mockito.verify(sc).setParameters("msId", msId);
         Mockito.verify(sc).setParameters("resourceState", resourceStates.toArray());
         Mockito.verify(sc).setParameters("type", types.toArray());
         Mockito.verify(sc).setParameters("hypervisorTypes", hypervisorTypes.toArray());

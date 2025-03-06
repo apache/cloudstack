@@ -18,6 +18,10 @@
 package org.apache.cloudstack.maintenance;
 
 public interface ManagementServerMaintenanceListener {
+    void onManagementServerPreparingForMaintenance();
+
+    void onManagementServerCancelPreparingForMaintenance();
+
     void onManagementServerMaintenance();
 
     void onManagementServerCancelMaintenance();

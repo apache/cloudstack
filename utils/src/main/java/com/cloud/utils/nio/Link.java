@@ -617,8 +617,8 @@ public class Link {
             final long timeTaken = System.currentTimeMillis() - startTimeMills;
 
             if (timeTaken > timeoutMillis) {
-                LOGGER.warn("SSL Handshake has taken more than {}ms to connect to: {}" +
-                        " while status: {}. Please investigate this connection.", socketChannel.getRemoteAddress(),
+                LOGGER.warn("SSL Handshake has taken more than {} ms to connect to: {}" +
+                        " while status: {}. Please investigate this connection.", timeoutMillis, socketChannel.getRemoteAddress(),
                         handshakeStatus);
                 return false;
             }

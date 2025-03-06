@@ -19,18 +19,22 @@
 
 package com.cloud.agent.api;
 
+import java.util.List;
+
 public class PingAnswer extends Answer {
     private PingCommand _command = null;
 
     private boolean sendStartup = false;
+    private List<String> avoidMsList;
 
     protected PingAnswer() {
     }
 
-    public PingAnswer(PingCommand cmd, boolean sendStartup) {
+    public PingAnswer(PingCommand cmd, List<String> avoidMsList, boolean sendStartup) {
         super(cmd);
         _command = cmd;
         this.sendStartup = sendStartup;
+        this.avoidMsList = avoidMsList;
     }
 
     public PingCommand getCommand() {
@@ -43,5 +47,9 @@ public class PingAnswer extends Answer {
 
     public void setSendStartup(boolean sendStartup) {
         this.sendStartup = sendStartup;
+    }
+
+    public List<String> getAvoidMsList() {
+        return avoidMsList;
     }
 }
