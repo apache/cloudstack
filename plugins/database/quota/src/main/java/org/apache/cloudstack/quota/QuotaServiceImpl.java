@@ -51,10 +51,10 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
 import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaBalanceDao;
-import org.apache.cloudstack.quota.dao.QuotaUsageDao;
+import org.apache.cloudstack.quota.dao.QuotaUsageJoinDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
-import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.cloudstack.quota.vo.QuotaUsageJoinVO;
 import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.stereotype.Component;
 
@@ -76,7 +76,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     @Inject
     private QuotaAccountDao _quotaAcc;
     @Inject
-    private QuotaUsageDao _quotaUsageDao;
+    private QuotaUsageJoinDao quotaUsageJoinDao;
     @Inject
     private DomainDao _domainDao;
     @Inject
@@ -207,7 +207,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
     }
 
     @Override
-    public List<QuotaUsageVO> getQuotaUsage(Long accountId, String accountName, Long domainId, Integer usageType, Date startDate, Date endDate) {
+    public List<QuotaUsageJoinVO> getQuotaUsage(Long accountId, String accountName, Long domainId, Integer usageType, Date startDate, Date endDate) {
         // if accountId is not specified, use accountName and domainId
         if ((accountId == null) && (accountName != null) && (domainId != null)) {
             Account userAccount = null;
@@ -235,7 +235,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         logger.debug("Getting quota records of type [{}] for account [{}] in domain [{}], between [{}] and [{}].",
                 usageType, accountId, domainId, startDate, endDate);
 
-        return _quotaUsageDao.findQuotaUsage(accountId, domainId, usageType, startDate, endDate);
+        return quotaUsageJoinDao.findQuotaUsage(accountId, domainId, usageType, null, null, null, startDate, endDate);
     }
 
     @Override
