@@ -662,6 +662,36 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
+    public List<VMTemplateVO> findRoutingTemplates(HypervisorType hType, String templateName) {
+        SearchCriteria<VMTemplateVO> sc = tmpltTypeHyperSearch2.create();
+        sc.setParameters("templateType", TemplateType.ROUTING);
+        sc.setParameters("hypervisorType", hType);
+        sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
+        if (templateName != null) {
+            sc.setParameters("templateName", templateName);
+        }
+        List<VMTemplateVO> templates = listBy(sc, new Filter(VMTemplateVO.class, "id", false, null, 1L));
+        if (CollectionUtils.isEmpty(templates)) {
+            sc = tmpltTypeHyperSearch2.create();
+            sc.setParameters("templateType", TemplateType.SYSTEM);
+            sc.setParameters("hypervisorType", hType);
+            sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
+            if (templateName != null) {
+                sc.setParameters("templateName", templateName);
+            }
+            templates = listBy(sc, new Filter(VMTemplateVO.class, "id", false, null, 1L));
+        }
+        Map<Pair<HypervisorType, CPU.CPUArch>, VMTemplateVO> uniqueTemplates = new HashMap<>();
+        for (VMTemplateVO template : templates) {
+            Pair<HypervisorType, CPU.CPUArch> key = new Pair<>(template.getHypervisorType(), template.getArch());
+            if (!uniqueTemplates.containsKey(key)) {
+                uniqueTemplates.put(key, template);
+            }
+        }
+        return new ArrayList<>(uniqueTemplates.values());
+    }
+
+    @Override
     public VMTemplateVO findLatestTemplateByTypeAndHypervisorAndArch(HypervisorType hypervisorType, CPU.CPUArch arch, TemplateType type) {
         SearchCriteria<VMTemplateVO> sc = LatestTemplateByHypervisorTypeSearch.create();
         sc.setParameters("hypervisorType", hypervisorType);
