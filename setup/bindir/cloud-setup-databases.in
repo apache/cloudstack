@@ -221,18 +221,16 @@ for full help
             )
 
         queriesToSkip = (
-            "CREATE USER cloud@`localhost` identified by 'cloud';",
-            "CREATE USER cloud@`%` identified by 'cloud';",
-            "GRANT ALL ON cloud.* to cloud@`localhost`;",
-            "GRANT ALL ON cloud.* to cloud@`%`;",
-            "GRANT ALL ON cloud_usage.* to cloud@`localhost`;",
-            "GRANT ALL ON cloud_usage.* to cloud@`%`;",
-            "GRANT process ON *.* TO cloud@`localhost`;",
-            "GRANT process ON *.* TO cloud@`%`;",
-            "IF foo > 0 THEN",
-            "DROP USER 'cloud'@'localhost' ;",
-            "END IF;",
-            "DROP USER 'cloud'@'%' ;"
+            ("CREATE USER cloud@`localhost` identified by 'cloud';", ""),
+            ("CREATE USER cloud@`%` identified by 'cloud';", ""),
+            ("GRANT ALL ON cloud.* to cloud@`localhost`;", ""),
+            ("GRANT ALL ON cloud.* to cloud@`%`;", ""),
+            ("GRANT ALL ON cloud_usage.* to cloud@`localhost`;", ""),
+            ("GRANT ALL ON cloud_usage.* to cloud@`%`;", ""),
+            ("GRANT process ON *.* TO cloud@`localhost`;", ""),
+            ("GRANT process ON *.* TO cloud@`%`;", ""),
+            ("DROP USER 'cloud'@'localhost' ;", "DO NULL;"),
+            ("DROP USER 'cloud'@'%' ;", "DO NULL;")
         )
 
         scriptsToRun = ["create-database","create-schema", "create-database-premium","create-schema-premium"]
@@ -244,7 +242,7 @@ for full help
             if not os.path.exists(p): continue
             text = open(p).read()
             if self.options.skipUsersAutoCreation:
-                for t in queriesToSkip: text = text.replace(t,"")
+                for t, r in queriesToSkip: text = text.replace(t,r)
             for t, r in replacements: text = text.replace(t,r)
             self.info("Applying %s"%p)
             self.runMysql(text, p, self.rootuser != None)
