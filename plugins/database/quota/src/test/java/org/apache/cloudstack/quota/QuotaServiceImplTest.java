@@ -18,6 +18,7 @@ package org.apache.cloudstack.quota;
 
 import com.cloud.configuration.Config;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.TransactionLegacy;
 import junit.framework.TestCase;
@@ -30,6 +31,7 @@ import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.joda.time.DateTime;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -48,7 +50,7 @@ import java.util.List;
 public class QuotaServiceImplTest extends TestCase {
 
     @Mock
-    AccountDao accountDao;
+    AccountDao accountDaoMock;
     @Mock
     QuotaAccountDao quotaAcc;
     @Mock
@@ -61,8 +63,10 @@ public class QuotaServiceImplTest extends TestCase {
     QuotaBalanceDao quotaBalanceDao;
     @Mock
     QuotaResponseBuilder respBldr;
+    @Mock
+    private AccountVO accountVoMock;
 
-    QuotaServiceImpl quotaService = new QuotaServiceImpl();
+    QuotaServiceImpl quotaServiceImplSpy = new QuotaServiceImpl();
 
     @Before
     public void setup() throws IllegalAccessException, NoSuchFieldException, ConfigurationException {
@@ -71,34 +75,34 @@ public class QuotaServiceImplTest extends TestCase {
 
         Field accountDaoField = QuotaServiceImpl.class.getDeclaredField("_accountDao");
         accountDaoField.setAccessible(true);
-        accountDaoField.set(quotaService, accountDao);
+        accountDaoField.set(quotaServiceImplSpy, accountDaoMock);
 
         Field quotaAccountDaoField = QuotaServiceImpl.class.getDeclaredField("_quotaAcc");
         quotaAccountDaoField.setAccessible(true);
-        quotaAccountDaoField.set(quotaService, quotaAcc);
+        quotaAccountDaoField.set(quotaServiceImplSpy, quotaAcc);
 
         Field quotaUsageDaoField = QuotaServiceImpl.class.getDeclaredField("_quotaUsageDao");
         quotaUsageDaoField.setAccessible(true);
-        quotaUsageDaoField.set(quotaService, quotaUsageDao);
+        quotaUsageDaoField.set(quotaServiceImplSpy, quotaUsageDao);
 
         Field domainDaoField = QuotaServiceImpl.class.getDeclaredField("_domainDao");
         domainDaoField.setAccessible(true);
-        domainDaoField.set(quotaService, domainDao);
+        domainDaoField.set(quotaServiceImplSpy, domainDao);
 
         Field configDaoField = QuotaServiceImpl.class.getDeclaredField("_configDao");
         configDaoField.setAccessible(true);
-        configDaoField.set(quotaService, configDao);
+        configDaoField.set(quotaServiceImplSpy, configDao);
 
         Field balanceDaoField = QuotaServiceImpl.class.getDeclaredField("_quotaBalanceDao");
         balanceDaoField.setAccessible(true);
-        balanceDaoField.set(quotaService, quotaBalanceDao);
+        balanceDaoField.set(quotaServiceImplSpy, quotaBalanceDao);
 
         Field QuotaResponseBuilderField = QuotaServiceImpl.class.getDeclaredField("_respBldr");
         QuotaResponseBuilderField.setAccessible(true);
-        QuotaResponseBuilderField.set(quotaService, respBldr);
+        QuotaResponseBuilderField.set(quotaServiceImplSpy, respBldr);
 
         Mockito.when(configDao.getValue(Mockito.eq(Config.UsageAggregationTimezone.toString()))).thenReturn("IST");
-        quotaService.configure("randomName", null);
+        quotaServiceImplSpy.configure("randomName", null);
     }
 
     @Test
@@ -120,9 +124,9 @@ public class QuotaServiceImplTest extends TestCase {
         Mockito.when(quotaBalanceDao.lastQuotaBalanceVO(Mockito.eq(accountId), Mockito.eq(domainId), Mockito.any(Date.class))).thenReturn(records);
 
         // with enddate
-        assertTrue(quotaService.findQuotaBalanceVO(accountId, accountName, domainId, startDate, endDate).get(0).equals(qb));
+        assertTrue(quotaServiceImplSpy.findQuotaBalanceVO(accountId, accountName, domainId, startDate, endDate).get(0).equals(qb));
         // without enddate
-        assertTrue(quotaService.findQuotaBalanceVO(accountId, accountName, domainId, startDate, null).get(0).equals(qb));
+        assertTrue(quotaServiceImplSpy.findQuotaBalanceVO(accountId, accountName, domainId, startDate, null).get(0).equals(qb));
     }
 
     @Test
@@ -133,7 +137,9 @@ public class QuotaServiceImplTest extends TestCase {
         final Date startDate = new DateTime().minusDays(2).toDate();
         final Date endDate = new Date();
 
-        quotaService.getQuotaUsage(accountId, accountName, domainId, QuotaTypes.IP_ADDRESS, startDate, endDate);
+        Mockito.doReturn(accountId).when(quotaServiceImplSpy).getAccountToWhomQuotaBalancesWillBeListed(Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong());
+
+        quotaServiceImplSpy.getQuotaUsage(accountId, accountName, domainId, QuotaTypes.IP_ADDRESS, startDate, endDate);
         Mockito.verify(quotaUsageDao, Mockito.times(1)).findQuotaUsage(Mockito.eq(accountId), Mockito.eq(domainId), Mockito.eq(QuotaTypes.IP_ADDRESS), Mockito.any(Date.class), Mockito.any(Date.class));
     }
 
@@ -142,13 +148,13 @@ public class QuotaServiceImplTest extends TestCase {
         // existing account
         QuotaAccountVO quotaAccountVO = new QuotaAccountVO();
         Mockito.when(quotaAcc.findByIdQuotaAccount(Mockito.anyLong())).thenReturn(quotaAccountVO);
-        quotaService.setLockAccount(2L, true);
+        quotaServiceImplSpy.setLockAccount(2L, true);
         Mockito.verify(quotaAcc, Mockito.times(0)).persistQuotaAccount(Mockito.any(QuotaAccountVO.class));
         Mockito.verify(quotaAcc, Mockito.times(1)).updateQuotaAccount(Mockito.anyLong(), Mockito.any(QuotaAccountVO.class));
 
         // new account
         Mockito.when(quotaAcc.findByIdQuotaAccount(Mockito.anyLong())).thenReturn(null);
-        quotaService.setLockAccount(2L, true);
+        quotaServiceImplSpy.setLockAccount(2L, true);
         Mockito.verify(quotaAcc, Mockito.times(1)).persistQuotaAccount(Mockito.any(QuotaAccountVO.class));
     }
 
@@ -160,13 +166,22 @@ public class QuotaServiceImplTest extends TestCase {
         // existing account setting
         QuotaAccountVO quotaAccountVO = new QuotaAccountVO();
         Mockito.when(quotaAcc.findByIdQuotaAccount(Mockito.anyLong())).thenReturn(quotaAccountVO);
-        quotaService.setMinBalance(accountId, balance);
+        quotaServiceImplSpy.setMinBalance(accountId, balance);
         Mockito.verify(quotaAcc, Mockito.times(0)).persistQuotaAccount(Mockito.any(QuotaAccountVO.class));
         Mockito.verify(quotaAcc, Mockito.times(1)).updateQuotaAccount(Mockito.anyLong(), Mockito.any(QuotaAccountVO.class));
 
         // no account with limit set
         Mockito.when(quotaAcc.findByIdQuotaAccount(Mockito.anyLong())).thenReturn(null);
-        quotaService.setMinBalance(accountId, balance);
+        quotaServiceImplSpy.setMinBalance(accountId, balance);
         Mockito.verify(quotaAcc, Mockito.times(1)).persistQuotaAccount(Mockito.any(QuotaAccountVO.class));
     }
+
+    @Test
+    public void getAccountToWhomQuotaBalancesWillBeListedTestAccountIdIsNotNullReturnsExistingAccount() {
+        long expected = 1L;
+        Mockito.doReturn(accountVoMock).when(accountDaoMock).findByIdIncludingRemoved(Mockito.anyLong());
+        long result = quotaServiceImplSpy.getAccountToWhomQuotaBalancesWillBeListed(expected, "test", 2L);
+        Assert.assertEquals(expected, result);
+    }
+
 }
