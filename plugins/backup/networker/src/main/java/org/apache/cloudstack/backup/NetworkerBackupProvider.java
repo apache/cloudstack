@@ -646,6 +646,10 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
+    public void syncBackupStorageStats(Long zoneId) {
+    }
+
+    @Override
     public boolean willDeleteBackupsOnOfferingRemoval() { return false; }
 
     @Override

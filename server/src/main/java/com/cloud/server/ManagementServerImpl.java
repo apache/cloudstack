@@ -3393,7 +3393,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             if (capacityTypes.contains(Capacity.CAPACITY_TYPE_OBJECT_STORAGE)) {
                 capacities.add(_storageMgr.getObjectStorageUsedStats(dc.getId()));
             }
-            if (capacityTypes.contains(Capacity.CAPACITY_TYPE_OBJECT_STORAGE)) {
+            if (capacityTypes.contains(Capacity.CAPACITY_TYPE_BACKUP_STORAGE)) {
                 capacities.add((CapacityVO) backupManager.getBackupStorageUsedStats(dc.getId()));
             }
             for (CapacityVO capacity : capacities) {

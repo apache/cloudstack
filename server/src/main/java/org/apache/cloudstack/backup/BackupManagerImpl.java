@@ -1619,6 +1619,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                         continue;
                     }
 
+                    backupProvider.syncBackupStorageStats(dataCenter.getId());
+
                     List<VMInstanceVO> vms = vmInstanceDao.listByZoneWithBackups(dataCenter.getId(), null);
                     if (vms == null || vms.isEmpty()) {
                         logger.debug("Can't find any VM to sync backups in zone {}", dataCenter);

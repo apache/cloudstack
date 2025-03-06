@@ -129,4 +129,11 @@ public interface BackupProvider {
      * @return a pair of Used size and Total size for the backup storage
      */
     Pair<Long, Long> getBackupStorageStats(Long zoneId);
+
+    /**
+     * Gets the backup storage usage (Used, Total) from the plugin and stores it in db
+     * @param zoneId the zone for which to return metrics
+     */
+    void syncBackupStorageStats(Long zoneId);
+
 }

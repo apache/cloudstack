@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,20 +15,36 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+//
 
-package org.apache.cloudstack.backup.dao;
+package org.apache.cloudstack.backup;
 
-import java.util.List;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 
-import org.apache.cloudstack.backup.BackupRepository;
-import org.apache.cloudstack.backup.BackupRepositoryVO;
+public class BackupStorageStatsAnswer extends Answer {
+    private Long totalSize;
+    private Long usedSize;
 
-import com.cloud.utils.db.GenericDao;
+    public BackupStorageStatsAnswer(final Command command, final boolean success, final String details) {
+        super(command, success, details);
+        this.totalSize = 0L;
+        this.usedSize = 0L;
+    }
 
-public interface BackupRepositoryDao extends GenericDao<BackupRepositoryVO, Long> {
-    List<BackupRepository> listByZoneAndProvider(Long zoneId, String provider);
+    public Long getTotalSize() {
+        return totalSize;
+    }
 
-    BackupRepository findByBackupOfferingId(Long backupOfferingId);
+    public void setTotalSize(Long totalSize) {
+        this.totalSize = totalSize;
+    }
 
-    boolean updateCapacity(BackupRepository backupRepository, Long capacityBytes, Long usedBytes);
+    public Long getUsedSize() {
+        return usedSize;
+    }
+
+    public void setUsedSize(Long usedSize) {
+        this.usedSize = usedSize;
+    }
 }
