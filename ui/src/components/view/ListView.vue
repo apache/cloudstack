@@ -101,9 +101,12 @@
             </span>
             <font-awesome-icon
               v-if="record.leaseduration"
-              :icon="['fa-solid', 'fa-bomb']"
+              :icon="['fa-solid', 'fa-clock']"
               class="anticon leaseduration"
-              :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+              :style="{
+                color: $store.getters.darkMode ? 'rgba(255, 255, 255, 0.65)' : '#888',
+                margin: '5px'
+              }"/>
           </span>
         </span>
       </template>
@@ -1130,9 +1133,5 @@ export default {
     background-color: rgba(255, 190, 190, 0.75);
     color: #f50000;
     padding: 10%;
-  }
-
-  .leaseduration {
-    margin-left: 5px;
   }
 </style>

@@ -269,6 +269,7 @@ public class ApiConstants {
     public static final String INTERNAL_DNS2 = "internaldns2";
     public static final String INTERNET_PROTOCOL = "internetprotocol";
     public static final String INTERVAL_TYPE = "intervaltype";
+    public static final String INSTANCE_LEASE_ENABLED = "instanceleaseenabled";
     public static final String LOCATION_TYPE = "locationtype";
     public static final String IOPS_READ_RATE = "iopsreadrate";
     public static final String IOPS_READ_RATE_MAX = "iopsreadratemax";

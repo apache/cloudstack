@@ -133,6 +133,11 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
     }
 
     protected void alert() {
+        // as feature is disabled, no action is required
+        if (!InstanceLeaseEnabled.value()) {
+            return;
+        }
+
         List<UserVmJoinVO> leaseExpiringForInstances = userVmJoinDao.listExpiringInstancesInDays(InstanceLeaseAlertStartsAt.value().intValue());
         for (UserVmJoinVO instance : leaseExpiringForInstances) {
             alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, instance.getDataCenterId(), instance.getPodId(),
@@ -142,6 +147,11 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
 
     @Override
     public void poll(Date currentTimestamp) {
+        // as feature is disabled, no action is required
+        if (!InstanceLeaseEnabled.value()) {
+            return;
+        }
+
         GlobalLock scanLock = GlobalLock.getInternLock("VMLeaseScheduler");
         try {
             if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
@@ -157,11 +167,6 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
     }
 
     protected void reallyRun() {
-        // as feature is disabled, no action is required
-        if (!InstanceLeaseEnabled.value()) {
-            return;
-        }
-
         // fetch user_instances having leaseDuration configured and has expired
         List<UserVmJoinVO> leaseExpiredInstances = userVmJoinDao.listExpiredInstancesIds();
         List<Long> actionableInstanceIds = new ArrayList<>();

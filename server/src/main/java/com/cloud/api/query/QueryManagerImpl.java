@@ -1478,10 +1478,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             userVmSearchBuilder.join("tags", resourceTagSearch, resourceTagSearch.entity().getResourceId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
-        if (VMLeaseManagerImpl.InstanceLeaseEnabled.value() && cmd.getOnlyLeasedInstances() != null && cmd.getOnlyLeasedInstances()) {
-            SearchBuilder<UserVmDetailVO> leasedInstancesSearch = userVmDetailsDao.createSearchBuilder();
-            leasedInstancesSearch.and(VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE, leasedInstancesSearch.entity().getName(), SearchCriteria.Op.NNULL);
-            userVmSearchBuilder.join("userVmToLeased", leasedInstancesSearch, leasedInstancesSearch.entity().getResourceId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
+        if (cmd.getOnlyLeasedInstances() != null && cmd.getOnlyLeasedInstances()) {
+            if (VMLeaseManagerImpl.InstanceLeaseEnabled.value()) {
+                SearchBuilder<UserVmDetailVO> leasedInstancesSearch = userVmDetailsDao.createSearchBuilder();
+                leasedInstancesSearch.and(leasedInstancesSearch.entity().getName(), SearchCriteria.Op.EQ).values(VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
+                userVmSearchBuilder.join("userVmToLeased", leasedInstancesSearch, leasedInstancesSearch.entity().getResourceId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
+            } else {
+                logger.warn("Lease feature is not enabled, onlyleasedinstances will be considered as false");
+            }
         }
 
         if (keyPairName != null) {

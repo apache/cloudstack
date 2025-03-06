@@ -467,7 +467,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         if (VMLeaseManagerImpl.InstanceLeaseEnabled.value() && userVm.getLeaseExpiryDate() != null) {
             userVmResponse.setLeaseExpiryAction(userVm.getLeaseExpiryAction());
             userVmResponse.setLeaseExpiryDate(userVm.getLeaseExpiryDate());
-            long leaseDuration = getLeaseDuration(userVm.getCreated(), userVm.getLeaseExpiryDate());
+            long leaseDuration = getLeaseDuration(new Date(), userVm.getLeaseExpiryDate());
             userVmResponse.setLeaseDuration(leaseDuration);
         }
 
@@ -484,7 +484,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     private long getLeaseDuration(Date created, Date leaseExpiryDate) {
         LocalDate createdDate = created.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
         LocalDate expiryDate = leaseExpiryDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
-        return ChronoUnit.DAYS.between(createdDate, expiryDate) - 1;
+        return ChronoUnit.DAYS.between(createdDate, expiryDate);
     }
 
     private void addVnfInfoToserVmResponse(UserVmJoinVO userVm, UserVmResponse userVmResponse) {

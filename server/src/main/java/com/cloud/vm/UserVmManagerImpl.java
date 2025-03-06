@@ -6297,19 +6297,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (!bothValuesSet) {
             throw new InvalidParameterValueException("Provide values for both: leaseduration and leaseexpiryaction");
         }
-
-//        // at this point any one of them have value, error out
-//        if (leaseDuration == null || StringUtils.isEmpty(leaseExpiryAction)) {
-//            throw new InvalidParameterValueException("Provide values for both: leaseduration and leaseexpiryaction");
-//        }
-//
-//        // both params have value
-//        if (leaseDuration < -1) {
-//            throw new InvalidParameterValueException("Invalid value given for leaseduration, lesser than -1 is not supported ");
-//        }
-//        if (leaseDuration == -1 ) {
-//            return;
-//        }
         try {
             VMLeaseManager.ExpiryAction.valueOf(leaseExpiryAction);
         } catch (IllegalArgumentException e) {

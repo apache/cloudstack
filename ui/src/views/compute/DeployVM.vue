@@ -609,7 +609,7 @@
                       </template>
                       <a-switch v-model:checked="showLeaseOptions" @change="onToggleLeaseData"/>
                     </a-form-item>
-                    <a-row :gutter="12" v-if="showLeaseOptions">
+                    <a-row :gutter="12" v-if="showLeaseOptions && isLeaseFeatureEnabled">
                       <a-col :md="12" :lg="12">
                         <a-form-item name="leaseduration" ref="leaseduration">
                           <template #label>
@@ -1130,12 +1130,13 @@ export default {
           }
         ]
       },
-      isLeaseFeatureEnabled: false,
+      isLeaseFeatureEnabled: this.$store.getters.features.instanceleaseenabled,
       showLeaseOptions: false,
-      leaseduration: undefined,
-      leaseexpiryaction: '',
+      leaseduration: -1,
+      leaseexpiryaction: undefined,
       expiryActions: ['STOP', 'DESTROY'],
-      defaultLeaseDuration: undefined
+      defaultLeaseDuration: 90,
+      defaultLeaseExpiryAction: 'STOP'
     }
   },
   computed: {
@@ -1682,35 +1683,6 @@ export default {
         }
       }
     },
-    async populateLeaseFeatureProps () {
-      var params = { name: 'instance.lease.enabled' }
-      api('listConfigurations', params).then(json => {
-        var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
-        this.isLeaseFeatureEnabled = value === 'true'
-
-        if (this.isLeaseFeatureEnabled) {
-          var leasedurationParams = { name: 'instance.lease.duration', accountid: store.getters.userInfo.accountid }
-          api('listConfigurations', leasedurationParams).then(json => {
-            var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
-            this.defaultLeaseDuration = value
-            if (value > -1) {
-              var leaseActionParams = { name: 'instance.lease.expiryaction', accountid: store.getters.userInfo.accountid }
-              api('listConfiguration', leaseActionParams).then(json => {
-                var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
-                this.defaultLeaseExpiryaction = value
-              }).catch(() => {
-                this.defaultLeaseExpiryaction = 'STOP'
-              })
-            }
-          }).catch(() => {
-            this.defaultLeaseDuration = -1
-          })
-        }
-      }).catch((error) => {
-        this.$notifyError(error)
-        this.isLeaseFeatureEnabled = false
-      })
-    },
     getPropertyQualifiers (qualifiers, type) {
       var result = ''
       switch (type) {
@@ -1805,7 +1777,6 @@ export default {
       this.fetchBootModes()
       this.fetchInstaceGroups()
       this.fetchIoPolicyTypes()
-      this.populateLeaseFeatureProps()
       nextTick().then(() => {
         ['name', 'keyboard', 'boottype', 'bootmode', 'userdata', 'iothreadsenabled', 'iodriverpolicy', 'nicmultiqueuenumber', 'nicpackedvirtqueues'].forEach(this.fillValue)
         this.form.boottype = this.defaultBootType ? this.defaultBootType : this.options.bootTypes && this.options.bootTypes.length > 0 ? this.options.bootTypes[0].id : undefined
@@ -2901,18 +2872,16 @@ export default {
         this.rootDiskSizeFixed = offering.rootdisksize
         this.showRootDiskSizeChanger = false
       }
-      if (offering && offering.leaseduration > -1) {
-        this.leaseduration = offering.leaseduration
-        this.form.leaseduration = offering.leaseduration
-        if (offering.leaseexpiryaction !== undefined) {
-          this.leaseexpiryaction = offering.leaseexpiryaction
-          this.form.leaseexpiryaction = offering.leaseexpiryaction
+
+      if (this.isLeaseFeatureEnabled) {
+        if (offering && offering.leaseduration > -1) {
+          this.showLeaseOptions = true
+        } else {
+          this.showLeaseOptions = false
         }
-        this.showLeaseOptions = true
-      } else {
-        this.showLeaseOptions = false
         this.onToggleLeaseData()
       }
+
       this.form.rootdisksizeitem = this.showRootDiskSizeChanger && this.rootDiskSizeFixed > 0
       this.formModel = toRaw(this.form)
     },
@@ -2959,12 +2928,14 @@ export default {
     },
     onToggleLeaseData () {
       if (this.showLeaseOptions === false) {
-        this.form.leaseduration = undefined
-        this.form.leaseexpiryaction = undefined
+        this.leaseduration = -1
+        this.leaseexpiryaction = undefined
       } else {
-        this.form.leaseduration = this.leaseduration === undefined ? this.defaultLeaseDuration : this.leaseduration
-        this.form.leaseexpiryaction = this.leaseexpiryaction
+        this.leaseduration = this.serviceOffering.leaseduration ? this.serviceOffering.leaseduration : this.defaultLeaseDuration
+        this.leaseexpiryaction = this.serviceOffering.leaseexpiryaction ? this.serviceOffering.leaseexpiryaction : this.defaultLeaseExpiryAction
       }
+      this.form.leaseduration = this.leaseduration
+      this.form.leaseexpiryaction = this.leaseexpiryaction
     }
   }
 }

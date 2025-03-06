@@ -194,7 +194,7 @@ export default {
         loading: false,
         opts: []
       },
-      isLeaseFeatureEnabled: false,
+      isLeaseFeatureEnabled: this.$store.getters.features.instanceleaseenabled,
       showLeaseOptions: false,
       leaseduration: undefined,
       leaseexpiryaction: undefined,
@@ -235,7 +235,7 @@ export default {
       this.fetchTemplateData()
       this.fetchDynamicScalingVmConfig()
       this.fetchUserData()
-      this.populateLeaseFeatureProps()
+      // this.populateLeaseFeatureProps()
     },
     fetchZoneDetails () {
       api('listZones', {

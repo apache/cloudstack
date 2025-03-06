@@ -173,7 +173,7 @@
                 :value="data.leasedinstances"
                 :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
-                  <cloud-server-outlined/>&nbsp;
+                  <field-time-outlined/>&nbsp;
                 </template>
               </a-statistic>
             </router-link>
@@ -395,7 +395,7 @@ export default {
         VLAN: 'label.vlan',
         VIRTUAL_NETWORK_IPV6_SUBNET: 'label.ipv6.subnets'
       },
-      isLeaseFeatureEnabled: false
+      isLeaseFeatureEnabled: this.$store.getters.features.instanceleaseenabled
     }
   },
   computed: {
@@ -466,7 +466,6 @@ export default {
       this.listZones()
       this.listAlerts()
       this.listEvents()
-      this.determineIfLeaseEnabled()
     },
     listCapacity (zone, latest = false, additive = false) {
       this.capacityLoading = true
@@ -572,7 +571,6 @@ export default {
           this.data.instances = 0
         }
       })
-
       if (this.isLeaseFeatureEnabled) {
         api('listVirtualMachines', { zoneid: zone.id, onlyleasedinstances: true, listall: true, projectid: '-1', details: 'min', page: 1, pagesize: 1 }).then(json => {
           this.loading = false
@@ -640,13 +638,6 @@ export default {
     },
     filterZone (input, option) {
       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-    },
-    determineIfLeaseEnabled () {
-      var params = { name: 'instance.lease.enabled' }
-      api('listConfigurations', params).then(json => {
-        var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
-        this.isLeaseFeatureEnabled = value === 'true'
-      })
     }
   }
 }

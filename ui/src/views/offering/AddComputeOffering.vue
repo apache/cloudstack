@@ -724,9 +724,13 @@ export default {
       selectedDiskOfferingId: '',
       qosType: '',
       isDomainAdminAllowedToInformTags: false,
-      isLeaseFeatureEnabled: false,
+      isLeaseFeatureEnabled: this.$store.getters.features.instanceleaseenabled,
       showLeaseOptions: false,
-      expiryActions: ['STOP', 'DESTROY']
+      expiryActions: ['STOP', 'DESTROY'],
+      defaultLeaseDuration: 90,
+      defaultLeaseExpiryAction: 'STOP',
+      leaseduration: undefined,
+      leaseexpiryaction: undefined
     }
   },
   beforeCreate () {
@@ -744,7 +748,6 @@ export default {
     }
     this.initForm()
     this.fetchData()
-    this.populateLeaseFeatureProps()
     this.isPublic = isAdmin()
     this.form.ispublic = this.isPublic
   },
@@ -835,37 +838,6 @@ export default {
         }
       }
       this.fetchDiskOfferings()
-    },
-    async populateLeaseFeatureProps () {
-      var params = { name: 'instance.lease.enabled' }
-      api('listConfigurations', params).then(json => {
-        var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
-        this.isLeaseFeatureEnabled = value === 'true'
-        if (this.isLeaseFeatureEnabled) {
-          var leasedurationParams = { name: 'instance.lease.duration', accountid: store.getters.userInfo.accountid }
-          api('listConfigurations', leasedurationParams).then(json => {
-            var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
-            this.leaseduration = value
-          }).catch(() => {
-            this.leaseduration = undefined
-          }).finally(() => {
-            this.form.leaseduration = this.leaseduration
-          })
-
-          var leaseactionParams = { name: 'instance.lease.expiryaction', accountid: store.getters.userInfo.accountid }
-          api('listConfigurations', leaseactionParams).then(json => {
-            var value = json?.listconfigurationsresponse?.configuration?.[0].value || null
-            this.leaseexpiryaction = value
-          }).catch(() => {
-            this.leaseexpiryaction = undefined
-          }).finally(() => {
-            this.form.leaseexpiryaction = this.leaseexpiryaction
-          })
-        }
-      }).catch((error) => {
-        this.$notifyError(error)
-        this.isLeaseFeatureEnabled = false
-      })
     },
     addDiskOffering () {
       this.showDiskOfferingModal = true
@@ -1191,16 +1163,14 @@ export default {
     },
     onToggleLeaseData () {
       if (this.showLeaseOptions === false) {
-        this.form.leaseduration = undefined
-        this.form.leaseexpiryaction = undefined
+        this.leaseduration = undefined
+        this.leaseexpiryaction = undefined
       } else {
-        if (this.form.leaseduration === undefined) {
-          this.form.leaseduration = this.leaseduration
-        }
-        if (this.form.leaseexpiryaction === undefined) {
-          this.form.leaseexpiryaction = this.leaseexpiryaction
-        }
+        this.leaseduration = this.leaseduration !== undefined ? this.leaseduration : this.defaultLeaseDuration
+        this.leaseexpiryaction = this.leaseexpiryaction !== undefined ? this.leaseexpiryaction : this.defaultLeaseExpiryAction
       }
+      this.form.leaseduration = this.leaseduration
+      this.form.leaseexpiryaction = this.leaseexpiryaction
     }
   }
 }
