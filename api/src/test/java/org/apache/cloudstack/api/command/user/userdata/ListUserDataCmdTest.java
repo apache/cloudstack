@@ -68,7 +68,7 @@ public class ListUserDataCmdTest {
         Pair<List<? extends UserData>, Integer> result = new Pair<List<? extends UserData>, Integer>(userDataList, 1);
         UserDataResponse userDataResponse = Mockito.mock(UserDataResponse.class);
 
-        Mockito.when(_mgr.listUserDatas(cmd)).thenReturn(result);
+        Mockito.when(_mgr.listUserDatas(cmd, false)).thenReturn(result);
         Mockito.when(_responseGenerator.createUserDataResponse(userData)).thenReturn(userDataResponse);
 
         cmd.execute();
@@ -82,7 +82,7 @@ public class ListUserDataCmdTest {
         List<UserData> userDataList = new ArrayList<UserData>();
         Pair<List<? extends UserData>, Integer> result = new Pair<List<? extends UserData>, Integer>(userDataList, 0);
 
-        Mockito.when(_mgr.listUserDatas(cmd)).thenReturn(result);
+        Mockito.when(_mgr.listUserDatas(cmd, false)).thenReturn(result);
 
         cmd.execute();
 
