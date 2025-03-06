@@ -1461,13 +1461,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         ServiceOfferingVO offeringVO = serviceOfferingDao.findById(vm.getServiceOfferingId());
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm, null, offeringVO, null, null);
         plan.setMigrationPlan(true);
-        DeployDestination dest = null;
-        try {
-            dest = deploymentManager.planDeployment(profile, plan, new DeploymentPlanner.ExcludeList(), null);
-        } catch (InsufficientServerCapacityException e) {
-            throw new CloudRuntimeException(String.format("Maintenance failed, could not find deployment destination for VM [id=%s, name=%s].", vm.getId(), vm.getInstanceName()),
-                    e);
-        }
+        DeployDestination dest = getDeployDestination(vm, profile, plan);
         Host destHost = dest.getHost();
 
         try {
@@ -1477,6 +1471,20 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     String.format("Maintenance failed, could not migrate VM [id=%s, name=%s] with local storage from host [id=%s, name=%s] to host [id=%s, name=%s].", vm.getId(),
                             vm.getInstanceName(), host.getId(), host.getName(), destHost.getId(), destHost.getName()), e);
         }
+    }
+
+    private DeployDestination getDeployDestination(VMInstanceVO vm, VirtualMachineProfile profile, DataCenterDeployment plan) {
+        DeployDestination dest = null;
+        try {
+            dest = deploymentManager.planDeployment(profile, plan, new DeploymentPlanner.ExcludeList(), null);
+        } catch (InsufficientServerCapacityException e) {
+            throw new CloudRuntimeException(String.format("Maintenance failed, could not find deployment destination for VM [id=%s, name=%s].", vm.getId(), vm.getInstanceName()),
+                    e);
+        }
+        if (dest == null) {
+            throw new CloudRuntimeException(String.format("Maintenance failed, could not find deployment destination for VM [id=%s, name=%s], using plan: %s.", vm.getId(), vm.getInstanceName(), plan));
+        }
+        return dest;
     }
 
     @Override
