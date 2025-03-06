@@ -27,9 +27,13 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import com.cloud.host.HostVO;
+import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
@@ -99,6 +103,8 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
     private TemplateManager templateMgr;
     @Inject
     private AgentManager agentMgr;
+    @Inject
+    private StoragePoolAndAccessGroupMapDao storagePoolAndAccessGroupMapDao;
 
     public ScaleIOPrimaryDataStoreLifeCycle() {
     }
@@ -139,6 +145,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
         Long capacityBytes = (Long)dsInfos.get("capacityBytes");
         Long capacityIops = (Long)dsInfos.get("capacityIops");
         String tags = (String)dsInfos.get("tags");
+        String storageAccessGroups = (String)dsInfos.get(ApiConstants.STORAGE_ACCESS_GROUPS);
         Boolean isTagARule = (Boolean) dsInfos.get("isTagARule");
         Map<String, String> details = (Map<String, String>) dsInfos.get("details");
 
@@ -225,6 +232,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
         parameters.setHypervisorType(Hypervisor.HypervisorType.KVM);
         parameters.setUuid(UUID.randomUUID().toString());
         parameters.setTags(tags);
+        parameters.setStorageAccessGroups(storageAccessGroups);
         parameters.setIsTagARule(isTagARule);
 
         StoragePoolStatistics poolStatistics = scaleIOPool.getStatistics();
@@ -261,14 +269,10 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
         }
 
         PrimaryDataStoreInfo primaryDataStoreInfo = (PrimaryDataStoreInfo) dataStore;
-        List<Long> hostIds = hostDao.listIdsForUpRouting(primaryDataStoreInfo.getDataCenterId(),
-                primaryDataStoreInfo.getPodId(), primaryDataStoreInfo.getClusterId());
-        if (hostIds.isEmpty()) {
-            primaryDataStoreDao.expunge(primaryDataStoreInfo.getId());
-            throw new CloudRuntimeException("No hosts are Up to associate a storage pool with in cluster: " + cluster);
-        }
+        List<HostVO> hostsToConnect = resourceManager.getEligibleUpAndEnabledHostsInClusterForStorageConnection(primaryDataStoreInfo);
+        logger.debug(String.format("Attaching the pool to each of the hosts %s in the cluster: %s", hostsToConnect, cluster));
+        List<Long> hostIds = hostsToConnect.stream().map(HostVO::getId).collect(Collectors.toList());
 
-        logger.debug("Attaching the pool to each of the hosts in the {}", cluster);
         storageMgr.connectHostsToPool(dataStore, hostIds, scope, false, false);
 
         dataStoreHelper.attachCluster(dataStore);
@@ -288,7 +292,10 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
 
         logger.debug("Attaching the pool to each of the hosts in the {}",
                 dataCenterDao.findById(scope.getScopeId()));
-        List<Long> hostIds = hostDao.listIdsForUpEnabledByZoneAndHypervisor(scope.getScopeId(), hypervisorType);
+        List<HostVO> hostsToConnect = resourceManager.getEligibleUpAndEnabledHostsInZoneForStorageConnection(dataStore, scope.getScopeId(), hypervisorType);
+        logger.debug(String.format("Attaching the pool to each of the hosts %s in the zone: %s", hostsToConnect, scope.getScopeId()));
+        List<Long> hostIds = hostsToConnect.stream().map(HostVO::getId).collect(Collectors.toList());
+
         storageMgr.connectHostsToPool(dataStore, hostIds, scope, false, false);
 
         dataStoreHelper.attachZone(dataStore);
