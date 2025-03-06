@@ -207,7 +207,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Override
     public List<StoragePool> reorderPools(List<StoragePool> pools, VirtualMachineProfile vmProfile, DeploymentPlan plan, DiskProfile dskCh) {
         if (pools == null) {
-            logger.info("There are no pools to reorder; returning null.");
+            logger.info("There are no pools to reorder.");
             return null;
         }
         logger.info("Reordering [{}] pools", pools.size());
