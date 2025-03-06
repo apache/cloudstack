@@ -305,12 +305,12 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         protected void runInContext() {
             final GlobalLock lock = GlobalLock.getInternLock("DummyBGTask");
             try {
-                logger.info("DummyBGTask: Grabbing lock to check for DB HA at " + DateTime.now(DateTimeZone.UTC));
-                if (lock.lock(5)) {
+                logger.info("DummyBGTask: Trying to get lock at " + DateTime.now(DateTimeZone.UTC));
+                if (lock.lock(50)) {
                     try {
                         logger.info("DummyBGTask: Lock acquired, now sleeping for 5 seconds");
                         try {
-                            Thread.sleep(5 * 1000L);
+                            Thread.sleep(10 * 1000L);
                         } catch (InterruptedException ignore) {
                         }
                     } finally {
@@ -318,9 +318,9 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
                         lock.unlock();
                     }
                 } else {
-                    logger.info("DummyBGTask: Could not get lock");
+                    logger.info("DummyBGTask: Could not get lock, retrying...");
                 }
-                logger.info("DummyBGTask: One round of lock-grab for DB HA over at " + DateTime.now(DateTimeZone.UTC));
+                logger.info("DummyBGTask: One round of lock-grab over at " + DateTime.now(DateTimeZone.UTC));
             } finally {
                 lock.releaseRef();
             }
@@ -328,7 +328,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
 
         @Override
         public Long getDelay() {
-            return 2000L;
+            return 5000L;
         }
     }
 
