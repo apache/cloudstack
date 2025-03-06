@@ -27,12 +27,33 @@ import com.cloud.agent.api.GetVmIpAddressCommand;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
 
 @ResourceWrapper(handles =  GetVmIpAddressCommand.class)
 public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<GetVmIpAddressCommand, Answer, LibvirtComputingResource> {
 
+
+    static String virsh_path = null;
+    static String virt_win_reg_path = null;
+    static String grep_path = null;
+    static String awk_path = null;
+    static String sed_path = null;
+    static String virt_ls_path = null;
+    static String virt_cat_path = null;
+    static String tail_path = null;
+
+    static void init() {
+        virt_ls_path = Script.getExecutableAbsolutePath("virt-ls");
+        virt_cat_path = Script.getExecutableAbsolutePath("virt-cat");
+        virt_win_reg_path = Script.getExecutableAbsolutePath("virt-win-reg");
+        tail_path = Script.getExecutableAbsolutePath("tail");
+        grep_path = Script.getExecutableAbsolutePath("grep");
+        awk_path = Script.getExecutableAbsolutePath("awk");
+        sed_path = Script.getExecutableAbsolutePath("sed");
+        virsh_path = Script.getExecutableAbsolutePath("virsh");
+    }
 
     @Override
     public Answer execute(final GetVmIpAddressCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -42,65 +63,113 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
         if (!NetUtils.verifyDomainNameLabel(vmName, true)) {
             return new Answer(command, result, ip);
         }
+
         String sanitizedVmName = sanitizeBashCommandArgument(vmName);
         String networkCidr = command.getVmNetworkCidr();
-        List<String[]> commands = new ArrayList<>();
-        final String virt_ls_path = Script.getExecutableAbsolutePath("virt-ls");
-        final String virt_cat_path = Script.getExecutableAbsolutePath("virt-cat");
-        final String virt_win_reg_path = Script.getExecutableAbsolutePath("virt-win-reg");
-        final String tail_path = Script.getExecutableAbsolutePath("tail");
-        final String grep_path = Script.getExecutableAbsolutePath("grep");
-        final String awk_path = Script.getExecutableAbsolutePath("awk");
-        final String sed_path = Script.getExecutableAbsolutePath("sed");
-        if(!command.isWindows()) {
-            //List all dhcp lease files inside guestVm
-            commands.add(new String[]{virt_ls_path, sanitizedVmName, "/var/lib/dhclient/"});
-            commands.add(new String[]{grep_path, ".*\\*.leases"});
-            String leasesList = Script.executePipedCommands(commands, 0).second();
-            if(leasesList != null) {
-                String[] leasesFiles = leasesList.split("\n");
-                for(String leaseFile : leasesFiles){
-                    //Read from each dhclient lease file inside guest Vm using virt-cat libguestfs utility
-                    commands = new ArrayList<>();
-                    commands.add(new String[]{virt_cat_path, sanitizedVmName, "/var/lib/dhclient/" + leaseFile});
-                    commands.add(new String[]{tail_path, "-16"});
-                    commands.add(new String[]{grep_path, "fixed-address"});
-                    commands.add(new String[]{awk_path, "{print $2}"});
-                    commands.add(new String[]{sed_path, "-e", "s/;//"});
-                    String ipAddr = Script.executePipedCommands(commands, 0).second();
-                    // Check if the IP belongs to the network
-                    if((ipAddr != null) && NetUtils.isIpWithInCidrRange(ipAddr, networkCidr)) {
-                        ip = ipAddr;
-                        break;
-                    }
-                    logger.debug("GetVmIp: "+ vmName + " Ip: "+ipAddr+" does not belong to network "+networkCidr);
-                }
-            }
-        } else {
-            // For windows, read from guest Vm registry using virt-win-reg libguestfs ulitiy. Registry Path: HKEY_LOCAL_MACHINE\SYSTEM\ControlSet001\Services\Tcpip\Parameters\Interfaces\<service>\DhcpIPAddress
-            commands = new ArrayList<>();
-            commands.add(new String[]{virt_win_reg_path, "--unsafe-printable-strings", sanitizedVmName, "HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\Tcpip\\Parameters\\Interfaces"});
-            commands.add(new String[]{grep_path, "DhcpIPAddress"});
-            commands.add(new String[]{awk_path, "-F", ":", "{print $2}"});
-            commands.add(new String[]{sed_path, "-e", "s/^\"//", "-e", "s/\"$//"});
-            String ipList = Script.executePipedCommands(commands, 0).second();
-            if(ipList != null) {
-                logger.debug("GetVmIp: "+ vmName + "Ips: "+ipList);
-                String[] ips = ipList.split("\n");
-                for (String ipAddr : ips){
-                    // Check if the IP belongs to the network
-                    if((ipAddr != null) && NetUtils.isIpWithInCidrRange(ipAddr, networkCidr)){
-                        ip = ipAddr;
-                        break;
-                    }
-                    logger.debug("GetVmIp: "+ vmName + " Ip: "+ipAddr+" does not belong to network "+networkCidr);
-                }
+
+        ip = ipFromDomIf(sanitizedVmName, networkCidr);
+
+        if (ip == null) {
+            if(!command.isWindows()) {
+                ip = ipFromDhcpLeaseFile(sanitizedVmName, networkCidr);
+            } else {
+                ip = ipFromWindowsRegistry(sanitizedVmName, networkCidr);
             }
         }
+
         if(ip != null){
             result = true;
             logger.debug("GetVmIp: "+ vmName + " Found Ip: "+ip);
+        } else {
+            logger.warn("GetVmIp: "+ vmName + " IP not found.");
         }
+
         return new Answer(command, result, ip);
+    }
+
+    private String ipFromDomIf(String sanitizedVmName, String networkCidr) {
+        String ip = null;
+        List<String[]> commands = new ArrayList<>();
+        commands.add(new String[]{virsh_path, "domifaddr", sanitizedVmName, "--source", "agent"});
+        Pair<Integer,String> response = executePipedCommands(commands, 0);
+        if (response != null) {
+            String output = response.second();
+            String[] lines = output.split("\n");
+            for (String line : lines) {
+                if (line.contains("ipv4")) {
+                    String[] parts = line.split(" ");
+                    String[] ipParts = parts[parts.length-1].split("/");
+                    if (ipParts.length > 1) {
+                        if (NetUtils.isIpWithInCidrRange(ipParts[0], networkCidr)) {
+                            ip = ipParts[0];
+                            break;
+                        }
+                    }
+                }
+            }
+        } else {
+            logger.error("ipFromDomIf: Command execution failed for VM: " + sanitizedVmName);
+        }
+        return ip;
+    }
+
+    private String ipFromDhcpLeaseFile(String sanitizedVmName, String networkCidr) {
+        String ip = null;
+        List<String[]> commands = new ArrayList<>();
+        commands.add(new String[]{virt_ls_path, sanitizedVmName, "/var/lib/dhclient/"});
+        commands.add(new String[]{grep_path, ".*\\*.leases"});
+        Pair<Integer,String> response = executePipedCommands(commands, 0);
+
+        if(response != null && response.second() != null) {
+            String leasesList = response.second();
+            String[] leasesFiles = leasesList.split("\n");
+            for(String leaseFile : leasesFiles){
+                commands = new ArrayList<>();
+                commands.add(new String[]{virt_cat_path, sanitizedVmName, "/var/lib/dhclient/" + leaseFile});
+                commands.add(new String[]{tail_path, "-16"});
+                commands.add(new String[]{grep_path, "fixed-address"});
+                commands.add(new String[]{awk_path, "{print $2}"});
+                commands.add(new String[]{sed_path, "-e", "s/;//"});
+                String ipAddr = executePipedCommands(commands, 0).second();
+                if((ipAddr != null) && NetUtils.isIpWithInCidrRange(ipAddr, networkCidr)) {
+                    ip = ipAddr;
+                    break;
+                }
+                logger.debug("GetVmIp: "+ sanitizedVmName + " Ip: "+ipAddr+" does not belong to network "+networkCidr);
+            }
+        } else {
+            logger.error("ipFromDhcpLeaseFile: Command execution failed for VM: " + sanitizedVmName);
+        }
+        return ip;
+    }
+
+    private String ipFromWindowsRegistry(String sanitizedVmName, String networkCidr) {
+        String ip = null;
+        List<String[]> commands = new ArrayList<>();
+        commands.add(new String[]{virt_win_reg_path, "--unsafe-printable-strings", sanitizedVmName, "HKEY_LOCAL_MACHINE\\SYSTEM\\ControlSet001\\Services\\Tcpip\\Parameters\\Interfaces"});
+        commands.add(new String[]{grep_path, "DhcpIPAddress"});
+        commands.add(new String[]{awk_path, "-F", ":", "{print $2}"});
+        commands.add(new String[]{sed_path, "-e", "s/^\"//", "-e", "s/\"$//"});
+        Pair<Integer,String> pair = executePipedCommands(commands, 0);
+        if(pair != null && pair.second() != null) {
+            String ipList = pair.second();
+            ipList = ipList.replaceAll("\"", "");
+            logger.debug("GetVmIp: "+ sanitizedVmName + "Ips: "+ipList);
+            String[] ips = ipList.split("\n");
+            for (String ipAddr : ips){
+                if((ipAddr != null) && NetUtils.isIpWithInCidrRange(ipAddr, networkCidr)){
+                    ip = ipAddr;
+                    break;
+                }
+                logger.debug("GetVmIp: "+ sanitizedVmName + " Ip: "+ipAddr+" does not belong to network "+networkCidr);
+            }
+        } else {
+            logger.error("ipFromWindowsRegistry: Command execution failed for VM: " + sanitizedVmName);
+        }
+        return ip;
+    }
+
+    static Pair<Integer, String> executePipedCommands(List<String[]> commands, long timeout) {
+        return Script.executePipedCommands(commands, timeout);
     }
 }
