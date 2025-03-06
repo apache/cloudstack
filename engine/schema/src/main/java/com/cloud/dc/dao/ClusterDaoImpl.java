@@ -21,10 +21,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -150,14 +148,6 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     }
 
     @Override
-    public List<ClusterVO> listByHyTypeWithoutGuid(String hyType) {
-        SearchCriteria<ClusterVO> sc = HyTypeWithoutGuidSearch.create();
-        sc.setParameters("hypervisorType", hyType);
-
-        return listBy(sc);
-    }
-
-    @Override
     public List<ClusterVO> listByDcHyType(long dcId, String hyType) {
         SearchCriteria<ClusterVO> sc = ZoneHyTypeSearch.create();
         sc.setParameters("dataCenterId", dcId);
@@ -179,14 +169,12 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     }
 
     @Override
-    public Set<HypervisorType> getDistinctAvailableHypervisorsAcrossClusters() {
-        return new HashSet<>(getAvailableHypervisorInZone(null));
-    }
-
-    @Override
-    public List<Pair<HypervisorType, String>> getDistinctHypervisorsArchAcrossClusters() {
+    public List<Pair<HypervisorType, String>> getDistinctHypervisorsArchAcrossClusters(Long zoneId) {
         List<Pair<HypervisorType, String>> hypervisorArchList = new ArrayList<>();
         String selectSql = "SELECT DISTINCT hypervisor_type, arch FROM cloud.cluster WHERE removed IS NULL";
+        if (zoneId != null) {
+            selectSql += " AND data_center_id=" + zoneId;
+        }
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try {
             PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);

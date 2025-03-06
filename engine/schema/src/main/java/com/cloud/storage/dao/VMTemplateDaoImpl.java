@@ -30,6 +30,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
+import com.cloud.cpu.CPU;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.host.Host;
@@ -47,6 +48,7 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -111,6 +113,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         LatestTemplateByHypervisorTypeSearch = createSearchBuilder();
         LatestTemplateByHypervisorTypeSearch.and("hypervisorType", LatestTemplateByHypervisorTypeSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         LatestTemplateByHypervisorTypeSearch.and("templateType", LatestTemplateByHypervisorTypeSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
+        LatestTemplateByHypervisorTypeSearch.and("arch", LatestTemplateByHypervisorTypeSearch.entity().getArch(), SearchCriteria.Op.EQ);
         LatestTemplateByHypervisorTypeSearch.and("removed", LatestTemplateByHypervisorTypeSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
     }
 
@@ -618,10 +621,13 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
-    public VMTemplateVO findLatestTemplateByTypeAndHypervisor(HypervisorType hypervisorType, TemplateType type) {
+    public VMTemplateVO findLatestTemplateByTypeAndHypervisorAndArch(HypervisorType hypervisorType, CPU.CPUArch arch, TemplateType type) {
         SearchCriteria<VMTemplateVO> sc = LatestTemplateByHypervisorTypeSearch.create();
         sc.setParameters("hypervisorType", hypervisorType);
         sc.setParameters("templateType", type);
+        if (arch != null) {
+            sc.setParameters("arch", arch);
+        }
         Filter filter = new Filter(VMTemplateVO.class, "id", false, null, 1L);
         List<VMTemplateVO> templates = listBy(sc, filter);
         if (templates != null && !templates.isEmpty()) {
