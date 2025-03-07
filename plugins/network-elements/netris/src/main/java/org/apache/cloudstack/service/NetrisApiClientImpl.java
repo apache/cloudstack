@@ -1035,12 +1035,12 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             vNetName = String.format("N%s-%s", networkId, networkName);
         }
         String netrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, vNetName) ;
-        String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, vnetCidr) ;
+        String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetCidr) ;
 
         createIpamSubnetInternal(netrisSubnetName, vnetCidr, SubnetBody.PurposeEnum.COMMON, associatedVpc, isGlobalRouting);
         if (Objects.nonNull(netrisV6Cidr)) {
             String netrisV6IpamAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, netrisV6Cidr);
-            String netrisV6SubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, netrisV6Cidr) ;
+            String netrisV6SubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET,  String.valueOf(cmd.getVpcId()), netrisV6Cidr) ;
             InlineResponse2004Data createdIpamAllocation = createIpamAllocationInternal(netrisV6IpamAllocationName, netrisV6Cidr, associatedVpc);
             if (Objects.isNull(createdIpamAllocation)) {
                 throw new CloudRuntimeException(String.format("Failed to create Netris IPAM Allocation %s for VPC %s", netrisV6IpamAllocationName, netrisVpcName));
@@ -1082,7 +1082,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             }
 
             String netrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, vNetName) ;
-            String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, vnetCidr) ;
+            String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetCidr) ;
             FilterByVpc vpcFilter = new FilterByVpc();
             vpcFilter.add(associatedVpc.getId());
             FilterBySites siteFilter = new FilterBySites();
