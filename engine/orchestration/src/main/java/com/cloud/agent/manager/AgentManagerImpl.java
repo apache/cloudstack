@@ -726,9 +726,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), mgmtServiceConf.getPingInterval(), mgmtServiceConf.getPingInterval(), TimeUnit.SECONDS);
 
-        final int cleanupTime = Wait.value();
-        newAgentConnectionsMonitor.scheduleAtFixedRate(new AgentNewConnectionsMonitorTask(), cleanupTime,
-                cleanupTime, TimeUnit.MINUTES);
+        final int cleanupTimeInSecs = Wait.value();
+        newAgentConnectionsMonitor.scheduleAtFixedRate(new AgentNewConnectionsMonitorTask(), cleanupTimeInSecs,
+                cleanupTimeInSecs, TimeUnit.SECONDS);
 
         return true;
     }
