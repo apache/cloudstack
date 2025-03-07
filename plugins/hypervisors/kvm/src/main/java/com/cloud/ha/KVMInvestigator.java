@@ -39,6 +39,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import java.util.Arrays;
 import java.util.List;
 
 public class KVMInvestigator extends AdapterBase implements Investigator {
@@ -83,7 +84,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
             return haManager.getHostStatus(agent);
         }
 
-        List<StoragePoolVO> clusterPools = _storagePoolDao.listPoolsByCluster(agent.getClusterId());
+        List<StoragePoolVO> clusterPools = _storagePoolDao.findPoolsInClusters(Arrays.asList(agent.getClusterId()), null);
         boolean storageSupportHA = storageSupportHa(clusterPools);
         if (!storageSupportHA) {
             List<StoragePoolVO> zonePools = _storagePoolDao.findZoneWideStoragePoolsByHypervisor(agent.getDataCenterId(), agent.getHypervisorType());
