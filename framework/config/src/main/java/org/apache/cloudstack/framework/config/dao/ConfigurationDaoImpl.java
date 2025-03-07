@@ -44,7 +44,6 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     final SearchBuilder<ConfigurationVO> InstanceSearch;
     final SearchBuilder<ConfigurationVO> NameSearch;
     final SearchBuilder<ConfigurationVO> PartialSearch;
-    final SearchBuilder<ConfigurationVO> ConfigValueSearch;
 
     public static final String UPDATE_CONFIGURATION_SQL = "UPDATE configuration SET value = ? WHERE name = ?";
 
@@ -60,10 +59,6 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
         PartialSearch.select("name", SearchCriteria.Func.NATIVE, PartialSearch.entity().getName());
         PartialSearch.select("groupId", SearchCriteria.Func.NATIVE, PartialSearch.entity().getGroupId());
         PartialSearch.select("subGroupId", SearchCriteria.Func.NATIVE, PartialSearch.entity().getSubGroupId());
-
-        ConfigValueSearch = createSearchBuilder();
-        ConfigValueSearch.and("name", ConfigValueSearch.entity().getName(), SearchCriteria.Op.EQ);
-        ConfigValueSearch.select("value", SearchCriteria.Func.NATIVE, ConfigValueSearch.entity().getValue());
     }
 
     @Override
@@ -222,13 +217,5 @@ public class ConfigurationDaoImpl extends GenericDaoBase<ConfigurationVO, String
     public List<ConfigurationVO> searchPartialConfigurations() {
         SearchCriteria<ConfigurationVO> sc = PartialSearch.create();
         return searchIncludingRemoved(sc, null, null, false);
-    }
-
-    @Override
-    public String getValueByKey(String key) {
-        SearchCriteria<ConfigurationVO> sc = ConfigValueSearch.create();
-        sc.setParameters("name", key);
-        ConfigurationVO configVO = findOneIncludingRemovedBy(sc);
-        return (configVO == null ? null : configVO.getValue());
     }
 }

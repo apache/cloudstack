@@ -291,7 +291,11 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
             }
             return scopedConfigStorage.getConfigValue(scopeId, key);
         }
-        return _configDao.getValueByKey(key);
+        ConfigurationVO configurationVO = _configDao.findById(key);
+        if (configurationVO != null) {
+            return configurationVO.getValue();
+        }
+        return null;
     }
 
     private String getConfigCacheKey(String key, ConfigKey.Scope scope, Long scopeId) {

@@ -77,7 +77,9 @@ public class ConfigDepotImplTest {
     }
 
     private void runTestGetConfigStringValue(String key, String value) {
-        Mockito.when(_configDao.getValueByKey(key)).thenReturn(value);
+        ConfigurationVO configurationVO = Mockito.mock(ConfigurationVO.class);
+        Mockito.when(configurationVO.getValue()).thenReturn(value);
+        Mockito.when(_configDao.findById(key)).thenReturn(configurationVO);
         String result = configDepotImpl.getConfigStringValue(key, ConfigKey.Scope.Global, null);
         Assert.assertEquals(value, result);
     }
@@ -98,7 +100,7 @@ public class ConfigDepotImplTest {
         }
         String result = configDepotImpl.getConfigStringValue(key, ConfigKey.Scope.Global, null);
         Assert.assertEquals(value, result);
-        Mockito.verify(_configDao, Mockito.times(configDBRetrieval)).getValueByKey(key);
+        Mockito.verify(_configDao, Mockito.times(configDBRetrieval)).findById(key);
     }
 
     @Test
