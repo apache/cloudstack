@@ -678,7 +678,7 @@ public class ReconcileCommandServiceImpl extends ManagerBase implements Reconcil
         if (commands.length != answers.length) {
             logger.error(String.format("Incorrect number of commands (%s) and answers (%s)", commands.length, answers.length));
         }
-        for (int i = 0; i < commands.length; i++) {
+        for (int i = 0; i < answers.length; i++) {
             Command command = commands[i];
             Answer answer = answers[i];
             if (command.isReconcile() && answer.getResult()) {
