@@ -92,7 +92,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         if (!storageSupportHA) {
             s_logger.warn(
                     "Agent investigation was requested on host " + agent + ", but host does not support investigation because it has no NFS storage. Skipping investigation.");
-            return Status.Disconnected;
+            return null;
         }
 
         Status hostStatus = null;
