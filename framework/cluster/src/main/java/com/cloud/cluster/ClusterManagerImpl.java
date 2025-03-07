@@ -1112,6 +1112,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     mshostStatus.setLastJvmStop(new Date());
                     mshostStatusDao.update(mshostStatus.getId(), mshostStatus);
                 } else {
+                    logger.warn("an MS host, [{}] without a status? this should never happen!", mshost);
                     mshostStatus = new ManagementServerStatusVO();
                     mshostStatus.setMsId(mshost.getUuid());
                     mshostStatus.setLastSystemBoot(new Date());
