@@ -649,11 +649,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             iso.setGuestOsType(displayName);
             DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
             profile.addDisk(disk);
-        } else {
-            TemplateObjectTO iso = new TemplateObjectTO();
-            iso.setFormat(ImageFormat.ISO);
-            DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
-            profile.addDisk(disk);
         }
     }
 
