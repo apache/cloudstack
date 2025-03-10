@@ -18,7 +18,9 @@ package com.cloud.storage.dao;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -30,6 +32,7 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
+import com.cloud.cpu.CPU;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.host.Host;
@@ -47,6 +50,7 @@ import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -111,6 +115,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         LatestTemplateByHypervisorTypeSearch = createSearchBuilder();
         LatestTemplateByHypervisorTypeSearch.and("hypervisorType", LatestTemplateByHypervisorTypeSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         LatestTemplateByHypervisorTypeSearch.and("templateType", LatestTemplateByHypervisorTypeSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
+        LatestTemplateByHypervisorTypeSearch.and("arch", LatestTemplateByHypervisorTypeSearch.entity().getArch(), SearchCriteria.Op.EQ);
         LatestTemplateByHypervisorTypeSearch.and("removed", LatestTemplateByHypervisorTypeSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
     }
 
@@ -580,6 +585,47 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                 .orElse(null);
     }
 
+
+    private List<VMTemplateVO> listAllReadySystemVMTemplatesWithArch(Long zoneId, HypervisorType hypervisorType) {
+        List<Pair<HypervisorType, CPU.CPUArch>> availableHypervisors = _hostDao.listDistinctHypervisorArchTypes(zoneId);
+        if (CollectionUtils.isEmpty(availableHypervisors)) {
+            return Collections.emptyList();
+        }
+        SearchCriteria<VMTemplateVO> sc = readySystemTemplateSearch.create();
+        sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
+        sc.setParameters("state", VirtualMachineTemplate.State.Active);
+        if (hypervisorType != null && !HypervisorType.Any.equals(hypervisorType)) {
+            sc.setParameters("hypervisorType", List.of(hypervisorType).toArray());
+        } else {
+            sc.setParameters("hypervisorType",
+                    availableHypervisors.stream().map(Pair::first).distinct().toArray());
+        }
+        sc.setJoinParameters("vmTemplateJoinTemplateStoreRef", "downloadState",
+                List.of(VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
+                        VMTemplateStorageResourceAssoc.Status.BYPASSED).toArray());
+        // order by descending order of id
+        List<VMTemplateVO> templates = listBy(sc, new Filter(VMTemplateVO.class, "id", false, null, null));
+        Map<Pair<HypervisorType, CPU.CPUArch>, VMTemplateVO> uniqueTemplates = new HashMap<>();
+        for (VMTemplateVO template : templates) {
+            Pair<HypervisorType, CPU.CPUArch> key = new Pair<>(template.getHypervisorType(), template.getArch());
+            if (availableHypervisors.contains(key) && !uniqueTemplates.containsKey(key)) {
+                uniqueTemplates.put(key, template);
+            }
+        }
+        List<VMTemplateVO> result = new ArrayList<>(uniqueTemplates.values());
+        result.sort(Comparator.comparing(VMTemplateVO::getId).reversed());
+        return result;
+    }
+
+    @Override
+    public List<VMTemplateVO> findSystemVMReadyTemplates(long zoneId, HypervisorType hypervisorType) {
+        List<VMTemplateVO> templates = listAllReadySystemVMTemplatesWithArch(zoneId, hypervisorType);
+        if (CollectionUtils.isEmpty(templates)) {
+            return null;
+        }
+        return templates;
+    }
+
     @Override
     public VMTemplateVO findRoutingTemplate(HypervisorType hType, String templateName) {
         SearchCriteria<VMTemplateVO> sc = tmpltTypeHyperSearch2.create();
@@ -618,10 +664,43 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
-    public VMTemplateVO findLatestTemplateByTypeAndHypervisor(HypervisorType hypervisorType, TemplateType type) {
+    public List<VMTemplateVO> findRoutingTemplates(HypervisorType hType, String templateName) {
+        SearchCriteria<VMTemplateVO> sc = tmpltTypeHyperSearch2.create();
+        sc.setParameters("templateType", TemplateType.ROUTING);
+        sc.setParameters("hypervisorType", hType);
+        sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
+        if (templateName != null) {
+            sc.setParameters("templateName", templateName);
+        }
+        List<VMTemplateVO> templates = listBy(sc, new Filter(VMTemplateVO.class, "id", false, null, 1L));
+        if (CollectionUtils.isEmpty(templates)) {
+            sc = tmpltTypeHyperSearch2.create();
+            sc.setParameters("templateType", TemplateType.SYSTEM);
+            sc.setParameters("hypervisorType", hType);
+            sc.setParameters("state", VirtualMachineTemplate.State.Active.toString());
+            if (templateName != null) {
+                sc.setParameters("templateName", templateName);
+            }
+            templates = listBy(sc, new Filter(VMTemplateVO.class, "id", false, null, 1L));
+        }
+        Map<Pair<HypervisorType, CPU.CPUArch>, VMTemplateVO> uniqueTemplates = new HashMap<>();
+        for (VMTemplateVO template : templates) {
+            Pair<HypervisorType, CPU.CPUArch> key = new Pair<>(template.getHypervisorType(), template.getArch());
+            if (!uniqueTemplates.containsKey(key)) {
+                uniqueTemplates.put(key, template);
+            }
+        }
+        return new ArrayList<>(uniqueTemplates.values());
+    }
+
+    @Override
+    public VMTemplateVO findLatestTemplateByTypeAndHypervisorAndArch(HypervisorType hypervisorType, CPU.CPUArch arch, TemplateType type) {
         SearchCriteria<VMTemplateVO> sc = LatestTemplateByHypervisorTypeSearch.create();
         sc.setParameters("hypervisorType", hypervisorType);
         sc.setParameters("templateType", type);
+        if (arch != null) {
+            sc.setParameters("arch", arch);
+        }
         Filter filter = new Filter(VMTemplateVO.class, "id", false, null, 1L);
         List<VMTemplateVO> templates = listBy(sc, filter);
         if (templates != null && !templates.isEmpty()) {
