@@ -390,7 +390,6 @@ const user = {
           const result = response.listusersresponse.user[0]
           commit('SET_INFO', result)
           commit('SET_NAME', result.firstname + ' ' + result.lastname)
-          store.dispatch('SetCsLatestVersion', result.rolename)
         }).catch(error => {
           reject(error)
         })
