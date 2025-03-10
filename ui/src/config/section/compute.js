@@ -225,7 +225,7 @@ export default {
           docHelp: 'adminguide/virtual_machines.html#backup-offerings',
           dataView: true,
           args: ['virtualmachineid', 'backupofferingid'],
-          show: (record) => { return !record.backupofferingid },
+          show: (record) => { return ['Running', 'Stopped', 'Shutdown'].includes(record.state) && !record.backupofferingid },
           mapping: {
             backupofferingid: {
               api: 'listBackupOfferings',

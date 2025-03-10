@@ -254,5 +254,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     Map<String, String> getDiskOfferingDetailsForBackup(Long vmId);
 
+    void updateOrphanedBackups(VirtualMachine vm);
+
     Capacity getBackupStorageUsedStats(Long zoneId);
 }

@@ -370,8 +370,13 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             throw new CloudRuntimeException("No valid backup repository found for the VM, please check the attached backup offering");
         }
 
-        final VirtualMachine vm  = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
-        final Host host = getLastVMHypervisorHost(vm);
+        final Host host;
+        final VirtualMachine vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
+        if (vm != null) {
+            host = getLastVMHypervisorHost(vm);
+        } else {
+            host = getUpHostInZone(backup.getZoneId());
+        }
 
         DeleteBackupCommand command = new DeleteBackupCommand(backup.getExternalId(), backupRepository.getType(),
                 backupRepository.getAddress(), backupRepository.getMountOptions());

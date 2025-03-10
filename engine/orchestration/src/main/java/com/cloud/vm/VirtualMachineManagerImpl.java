@@ -57,6 +57,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
+import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -409,6 +410,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     ResourceCleanupService resourceCleanupService;
     @Inject
     VmWorkJobDao vmWorkJobDao;
+    @Inject
+    BackupManager backupManager;
 
     private SingleCache<List<Long>> vmIdsInProgressCache;
 
@@ -649,6 +652,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             logger.debug("Unable to expunge the vm because it is not in the correct state: " + vm);
             throw new CloudRuntimeException("Unable to expunge " + vm, e);
         }
+
+        backupManager.updateOrphanedBackups(vm);
 
         logger.debug("Expunging vm " + vm);
 

@@ -1227,13 +1227,17 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (backup == null) {
             throw new CloudRuntimeException("Backup " + backupId + " does not exist");
         }
+
         final Long vmId = backup.getVmId();
-        final VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
-        if (vm == null) {
-            throw new CloudRuntimeException("VM " + vmId + " does not exist");
+        if (vmId == null) {
+            logger.debug("Deleting orphaned backup with ID {}", backupId);
+        } else {
+            logger.debug("Deleting backup {} belonging to instance {}", backupId, vmId);
         }
-        validateBackupForZone(vm.getDataCenterId());
-        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+        final VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
+
+        validateBackupForZone(backup.getZoneId());
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm == null ? backup : vm);
         final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
         if (offering == null) {
             throw new CloudRuntimeException(String.format("Backup offering with ID [%s] does not exist.", backup.getBackupOfferingId()));
@@ -1241,8 +1245,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         boolean result = backupProvider.deleteBackup(backup, forced);
         if (result) {
-            resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
-            resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
+            resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup);
+            resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
             return backupDao.remove(backup.getId());
         }
         throw new CloudRuntimeException("Failed to delete the backup");
@@ -1791,6 +1795,20 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         CallContext.current().setEventDetails(String.format("Backup Offering updated [%s].",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(response, "id", "name", "description", "userDrivenBackupAllowed", "externalId")));
         return response;
+    }
+
+    @Override
+    public void updateOrphanedBackups(VirtualMachine vm) {
+        List<Backup> backups = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+        if (backups.size() == 0) {
+            return;
+        }
+        for (Backup backup : backups) {
+            BackupVO backupVO = backupDao.findById(backup.getId());
+            backupVO.setVmId(null);
+            backupVO.setVmName(vm.getHostName());
+            backupDao.update(backup.getId(), backupVO);
+        }
     }
 
     @Override

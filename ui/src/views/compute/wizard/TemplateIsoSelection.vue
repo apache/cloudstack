@@ -114,6 +114,7 @@ export default {
             }
           }
           if (this.preFillContent.templateid) {
+            let i = 0
             for (i < this.filterOpts.length; i++;) {
               const filter = this.filterOpts[i]
               if (items[filter.id]?.[key]?.some(item => item.id === this.preFillContent.templateid)) {

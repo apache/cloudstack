@@ -157,8 +157,10 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
         }
     }
 
-    long getVmId();
+    Long getVmId();
+    String getVmName();
     long getBackupOfferingId();
+    void setVmName(String vmName);
     String getExternalId();
     String getType();
     Date getDate();
@@ -168,7 +170,7 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
     void setName(String name);
     String getDescription();
     void setDescription(String description);
-    short getBackupIntervalType();
+    Short getBackupIntervalType();
     List<VolumeInfo> getBackedUpVolumes();
     long getZoneId();
     Map<String, String> getDetails();

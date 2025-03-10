@@ -244,36 +244,39 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
 
     @Override
     public BackupResponse newBackupResponse(Backup backup, Boolean listVmDetails) {
-        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
-        AccountVO account = accountDao.findByIdIncludingRemoved(vm.getAccountId());
-        DomainVO domain = domainDao.findByIdIncludingRemoved(vm.getDomainId());
-        DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(vm.getDataCenterId());
-        Long offeringId = backup.getBackupOfferingId();
-        if (offeringId == null) {
-            offeringId = vm.getBackupOfferingId();
+        VMInstanceVO vm = null;
+        if (backup.getVmId() != null) {
+            vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
         }
+        AccountVO account = accountDao.findByIdIncludingRemoved(backup.getAccountId());
+        DomainVO domain = domainDao.findByIdIncludingRemoved(backup.getDomainId());
+        DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(backup.getZoneId());
+        Long offeringId = backup.getBackupOfferingId();
         BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(offeringId);
 
         BackupResponse response = new BackupResponse();
         response.setId(backup.getUuid());
-        if (backup.getName() != null) {
-            response.setName(backup.getName());
-        } else {
-            response.setName(vm.getHostName());
-        }
+        response.setName(backup.getName());
         response.setDescription(backup.getDescription());
-        response.setVmId(vm.getUuid());
-        response.setVmName(vm.getHostName());
+        if (vm != null) {
+            response.setVmId(vm.getUuid());
+            response.setVmName(vm.getHostName());
+        } else {
+            response.setVmName(backup.getVmName());
+            response.setIsOrphan(true);
+        }
         response.setExternalId(backup.getExternalId());
         response.setType(backup.getType());
         response.setDate(backup.getDate());
         response.setSize(backup.getSize());
         response.setProtectedSize(backup.getProtectedSize());
         response.setStatus(backup.getStatus());
-        response.setIntervalType(Backup.Type.values()[backup.getBackupIntervalType()].toString());
+        if (backup.getBackupIntervalType() != null) {
+            response.setIntervalType(Backup.Type.values()[backup.getBackupIntervalType()].toString());
+        }
         // ACS 4.20: For backups taken prior this release the backup.backed_volumes column would be empty hence use vm_instance.backup_volumes
         String backedUpVolumes;
-        if (Objects.isNull(backup.getBackedUpVolumes())) {
+        if (Objects.isNull(backup.getBackedUpVolumes()) && vm != null) {
             backedUpVolumes = new Gson().toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class);
         } else {
             backedUpVolumes = new Gson().toJson(backup.getBackedUpVolumes().toArray(), Backup.VolumeInfo[].class);
