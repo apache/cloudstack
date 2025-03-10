@@ -18,11 +18,11 @@ package com.cloud.storage.dao;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -595,10 +595,10 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         sc.setParameters("templateType", Storage.TemplateType.SYSTEM);
         sc.setParameters("state", VirtualMachineTemplate.State.Active);
         if (hypervisorType != null && !HypervisorType.Any.equals(hypervisorType)) {
-            sc.setParameters("hypervisorType", List.of(hypervisorType));
+            sc.setParameters("hypervisorType", List.of(hypervisorType).toArray());
         } else {
             sc.setParameters("hypervisorType",
-                    availableHypervisors.stream().map(Pair::first).collect(Collectors.toList()));
+                    availableHypervisors.stream().map(Pair::first).distinct().toArray());
         }
         sc.setJoinParameters("vmTemplateJoinTemplateStoreRef", "downloadState",
                 List.of(VMTemplateStorageResourceAssoc.Status.DOWNLOADED,
@@ -612,7 +612,9 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                 uniqueTemplates.put(key, template);
             }
         }
-        return new ArrayList<>(uniqueTemplates.values());
+        List<VMTemplateVO> result = new ArrayList<>(uniqueTemplates.values());
+        result.sort(Comparator.comparing(VMTemplateVO::getId).reversed());
+        return result;
     }
 
     @Override

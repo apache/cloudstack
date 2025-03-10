@@ -74,6 +74,7 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -145,6 +146,7 @@ import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -227,6 +229,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private CAManager caManager;
     @Inject
     private NetworkOrchestrationService networkMgr;
+    @Inject
+    DeploymentPlanningManager deploymentPlanningManager;
 
     private ConsoleProxyListener consoleProxyListener;
 
@@ -719,24 +723,23 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             serviceOffering = serviceOfferingDao.findDefaultSystemOffering(ServiceOffering.consoleProxyDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
         }
         ConsoleProxyVO proxy = null;
-        InsufficientCapacityException lastException = null;
-        for (VMTemplateVO template : templates) {
+        for (final Iterator<VMTemplateVO> templateIterator = templates.iterator(); templateIterator.hasNext();) {
+            VMTemplateVO template = templateIterator.next();
             proxy = createOrUpdateConsoleProxy(proxy, dataCenterId, id, name, serviceOffering, template, systemAcct);
             try {
                 virtualMachineManager.allocate(name, template, serviceOffering, networks, plan, null);
                 proxy = consoleProxyDao.findById(proxy.getId());
-                lastException = null;
+                final VirtualMachineProfileImpl vmProfile =
+                        new VirtualMachineProfileImpl(proxy, template, serviceOffering, systemAcct, null);
+                deploymentPlanningManager.planDeployment(vmProfile, plan, new DeploymentPlanner.ExcludeList(), null);
                 break;
             } catch (InsufficientCapacityException e) {
-                String message = String.format("Unable to allocate proxy [%s] on zone [%s] with %s due to [%s].",
-                        proxy.toString(), dataCenterId, template, e.getMessage());
-                logger.warn(message, e);
-                lastException = e;
+                if (templateIterator.hasNext()) {
+                    logger.debug("Unable to allocate proxy {} with {} in {} due to [{}]. Retrying with another template", proxy, template, dc, e.getMessage(), e);
+                    continue;
+                }
+                throw new CloudRuntimeException("Failed to allocate proxy [%s] in zone [%s] with available templates", e);
             }
-        }
-
-        if (lastException != null) {
-            throw new CloudRuntimeException("Failed to allocate proxy [%s] on zone [%s] with available templates");
         }
 
         Map<String, Object> context = new HashMap<>();

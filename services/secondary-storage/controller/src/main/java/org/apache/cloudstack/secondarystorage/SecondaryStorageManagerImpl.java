@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -82,6 +83,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -155,6 +157,7 @@ import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -254,6 +257,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     private IndirectAgentLB indirectAgentLB;
     @Inject
     private CAManager caManager;
+    @Inject
+    DeploymentPlanningManager deploymentPlanningManager;
     private int _secStorageVmMtuSize;
 
     private String _instance;
@@ -686,24 +691,24 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             serviceOffering = _offeringDao.findDefaultSystemOffering(ServiceOffering.ssvmDefaultOffUniqueName, ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
         }
         SecondaryStorageVmVO secStorageVm = null;
-        InsufficientCapacityException lastException = null;
-        for (VMTemplateVO template : templates) {
-            secStorageVm = createOrUpdateSecondaryStorageVm(secStorageVm, id, dataCenterId, name, serviceOffering,
+        for (final Iterator<VMTemplateVO> templateIterator = templates.iterator(); templateIterator.hasNext();) {
+            VMTemplateVO template = templateIterator.next();
+            secStorageVm = createOrUpdateSecondaryStorageVm(secStorageVm, dataCenterId, id, name, serviceOffering,
                     template, systemAcct, role);
             try {
                 _itMgr.allocate(name, template, serviceOffering, networks, plan, null);
                 secStorageVm = _secStorageVmDao.findById(secStorageVm.getId());
-                lastException = null;
+                final VirtualMachineProfileImpl vmProfile =
+                        new VirtualMachineProfileImpl(secStorageVm, template, serviceOffering, systemAcct, null);
+                deploymentPlanningManager.planDeployment(vmProfile, plan, new DeploymentPlanner.ExcludeList(), null);
                 break;
             } catch (InsufficientCapacityException e) {
-                String errorMessage = String.format("Unable to allocate secondary storage VM [%s] due to [%s].", name, e.getMessage());
-                logger.warn(errorMessage, e);
-                lastException = e;
+                if (templateIterator.hasNext()) {
+                    logger.debug("Unable to allocate secondary storage {} with {} due to [{}]. Retrying with another template", secStorageVm, template, e.getMessage(), e);
+                    continue;
+                }
+                throw new CloudRuntimeException("Failed to allocate secondary storage VM [%s] in zone [%s] with available templates", e);
             }
-        }
-
-        if (lastException != null) {
-            throw new CloudRuntimeException("Failed to allocate secondary storage VM [%s] on zone [%s] with available templates");
         }
 
         Map<String, Object> context = new HashMap<>();
