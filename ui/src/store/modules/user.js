@@ -311,6 +311,17 @@ const user = {
           commit('SET_TIMEZONE_OFFSET', cachedTimezoneOffset)
           commit('SET_USE_BROWSER_TIMEZONE', cachedUseBrowserTimezone)
           commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
+
+          // Ensuring we get the user info so that store.getters.user is never empty when the page is freshly loaded
+          api('listUsers', { username: Cookies.get('username'), listall: true }).then(response => {
+            const result = response.listusersresponse.user[0]
+            commit('SET_INFO', result)
+            commit('SET_NAME', result.firstname + ' ' + result.lastname)
+            store.dispatch('SetCsLatestVersion', result.rolename)
+            resolve(cachedApis)
+          }).catch(error => {
+            reject(error)
+          })
         } else if (store.getters.loginFlag) {
           const hide = message.loading(i18n.global.t('message.discovering.feature'), 0)
           api('listZones').then(json => {
