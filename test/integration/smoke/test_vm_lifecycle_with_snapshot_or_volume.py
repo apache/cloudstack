@@ -35,7 +35,8 @@ from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
                                list_hosts,
-                               list_volumes)
+                               list_volumes,
+                               list_storage_pools)
 from marvin.codes import FAILED, PASS
 from nose.plugins.attrib import attr
 
@@ -55,6 +56,10 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
         cls.hypervisor = testClient.getHypervisorInfo()
+
+        if cls.hypervisor.lower() != "kvm":
+            cls.unsupportedHypervisor = True
+            return
 
         cls.template = get_template(
             cls.apiclient,
@@ -76,11 +81,44 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
         cls._cleanup.append(cls.account)
         cls.debug(cls.account.id)
 
-        cls.service_offering = ServiceOffering.create(
-            cls.apiclient,
-            cls.services["service_offerings"]["tiny"]
-        )
-        cls._cleanup.append(cls.service_offering)
+        storage_pools_response = list_storage_pools(cls.apiclient,
+                                                    zoneid=cls.zone.id,
+                                                    scope="ZONE")
+
+        if storage_pools_response:
+            cls.zone_wide_storage = storage_pools_response[0]
+
+            cls.debug(
+                "zone wide storage id is %s" %
+                cls.zone_wide_storage.id)
+            update1 = StoragePool.update(cls.apiclient,
+                                         id=cls.zone_wide_storage.id,
+                                         tags="test-vm"
+                                         )
+            cls.debug(
+                "Storage %s pool tag%s" %
+                (cls.zone_wide_storage.id, update1.tags))
+            cls.service_offering = ServiceOffering.create(
+                cls.apiclient,
+                cls.services["service_offerings"]["small"],
+                tags="test-vm"
+            )
+            cls._cleanup.append(cls.service_offering)
+
+            do = {
+                "name": "do-tags",
+                "displaytext": "Disk offering with tags",
+                "disksize":8,
+                "tags": "test-vm"
+            }
+            cls.disk_offering = DiskOffering.create(
+                cls.apiclient,
+                do,
+            )
+            cls._cleanup.append(cls.disk_offering)
+        else:
+            cls.debug("No zone wide storage found")
+            return
 
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
@@ -259,7 +297,7 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
         volume = Volume.create_from_snapshot(
             self.apiclient,
             snapshot_id=snapshotid,
-            services=self.services["volume_from_snapshot"],
+            disk_offering=self.disk_offering.id,
             zoneid=self.zone.id,
         )
         virtual_machine = VirtualMachine.create(self.apiclient,
