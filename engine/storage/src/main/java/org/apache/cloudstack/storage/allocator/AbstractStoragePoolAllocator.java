@@ -29,7 +29,10 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.api.query.dao.StoragePoolJoinDao;
+import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePoolStatus;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
@@ -74,10 +77,14 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Inject protected VolumeDao volumeDao;
     @Inject protected ConfigurationDao configDao;
     @Inject private CapacityDao capacityDao;
-    @Inject private ClusterDao clusterDao;
+    @Inject protected ClusterDao clusterDao;
     @Inject private StorageManager storageMgr;
     @Inject private StorageUtil storageUtil;
     @Inject private StoragePoolDetailsDao storagePoolDetailsDao;
+    @Inject
+    protected HostDao hostDao;
+    @Inject
+    protected HostPodDao podDao;
 
     /**
      * make sure shuffled lists of Pools are really shuffled
@@ -314,6 +321,16 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
         if(!checkHypervisorCompatibility(dskCh.getHypervisorType(), dskCh.getType(), pool.getPoolType())){
             return false;
+        }
+
+        if (plan.getHostId() != null) {
+            HostVO plannedHost = hostDao.findById(plan.getHostId());
+            if (!storageMgr.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(plannedHost, pool)) {
+                if (logger.isDebugEnabled()) {
+                    logger.debug(String.format("StoragePool %s and host %s does not have matching storage access groups", pool, plannedHost));
+                }
+                return false;
+            }
         }
 
         Volume volume = null;

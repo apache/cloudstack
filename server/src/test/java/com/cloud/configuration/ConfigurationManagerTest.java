@@ -1427,7 +1427,7 @@ public class ConfigurationManagerTest {
             return pod;
         });
         Mockito.doNothing().when(messageBus).publish(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-        configurationMgr.createPod(zoneId, "TestPod", null, null, null, null, null);
+        configurationMgr.createPod(zoneId, "TestPod", null, null, null, null, null, null);
     }
 
     @Test
