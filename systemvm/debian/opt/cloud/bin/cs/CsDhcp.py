@@ -84,7 +84,7 @@ class CsDhcp(CsDataBag):
     def configure_server(self):
         # self.conf.addeq("dhcp-hostsfile=%s" % DHCP_HOSTS)
         idx = 0
-        listen_address = ["127.0.0.1"]
+        listen_address = []
         for i in self.devinfo:
             if not i['dnsmasq']:
                 continue
