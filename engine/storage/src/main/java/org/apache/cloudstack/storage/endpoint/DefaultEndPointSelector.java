@@ -464,23 +464,16 @@ public class DefaultEndPointSelector implements EndPointSelector {
         switch (action) {
             case DELETESNAPSHOT:
             case TAKESNAPSHOT:
-            case CONVERTSNAPSHOT:
-            case REMOVEBITMAP:
-                SnapshotInfo snapshotInfo = (SnapshotInfo) object;
+            case CONVERTSNAPSHOT: {
+                SnapshotInfo snapshotInfo = (SnapshotInfo)object;
                 if (Hypervisor.HypervisorType.KVM.equals(snapshotInfo.getHypervisorType())) {
-                    VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
-                    VirtualMachine vm = volumeInfo.getAttachedVM();
-                    if (vm == null) {
-                        break;
-                    }
-                    if (vm.getState() == VirtualMachine.State.Running) {
-                        Long hostId = vm.getHostId();
-                        return getEndPointFromHostId(hostId);
-                    }
-                    Long hostId = vm.getLastHostId();
-                    return hostId != null ? getEndPointFromHostId(hostId) : select(object, encryptionRequired);
+                    return getEndPointForSnapshotOperationsInKvm(snapshotInfo, encryptionRequired);
                 }
                 break;
+            }
+            case REMOVEBITMAP: {
+                return getEndPointForBitmapRemoval(object, encryptionRequired);
+            }
             case MIGRATEVOLUME: {
                 VolumeInfo volume = (VolumeInfo) object;
                 if (volume.getHypervisorType() == Hypervisor.HypervisorType.Hyperv || volume.getHypervisorType() == Hypervisor.HypervisorType.VMware) {
@@ -509,9 +502,64 @@ public class DefaultEndPointSelector implements EndPointSelector {
         return select(object, encryptionRequired);
     }
 
+    protected EndPoint getEndPointForBitmapRemoval(DataObject object, boolean encryptionRequired) {
+        SnapshotInfo snapshotInfo = (SnapshotInfo)object;
+        VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
+
+        logger.debug("Selecting endpoint for bitmap removal of volume [{}].", volumeInfo.getUuid());
+        if (volumeInfo.isAttachedVM()) {
+            VirtualMachine attachedVM = volumeInfo.getAttachedVM();
+            if (attachedVM.getHostId() != null) {
+                return getEndPointFromHostId(attachedVM.getHostId());
+            } else if (attachedVM.getLastHostId() != null) {
+                return getEndPointFromHostId(attachedVM.getLastHostId());
+            }
+        }
+        return select(object, encryptionRequired);
+    }
+
+    protected EndPoint getEndPointForSnapshotOperationsInKvm(SnapshotInfo snapshotInfo, boolean encryptionRequired) {
+        VolumeInfo volumeInfo = snapshotInfo.getBaseVolume();
+        DataStoreRole snapshotDataStoreRole = snapshotInfo.getDataStore().getRole();
+        VirtualMachine vm = volumeInfo.getAttachedVM();
+
+        logger.debug("Selecting endpoint for operation on snapshot [{}] with encryptionRequired as [{}].", snapshotInfo, encryptionRequired);
+        if (vm == null) {
+            if (snapshotDataStoreRole == DataStoreRole.Image) {
+                return selectRandom(snapshotInfo.getDataCenterId(), Hypervisor.HypervisorType.KVM);
+            } else {
+                return select(snapshotInfo, encryptionRequired);
+            }
+        }
+
+        if (vm.getState() == VirtualMachine.State.Running) {
+            return getEndPointFromHostId(vm.getHostId());
+        }
+
+        Long hostId = vm.getLastHostId();
+        if (hostId != null) {
+            return getEndPointFromHostId(hostId);
+        } else if (snapshotDataStoreRole == DataStoreRole.Image) {
+            return selectRandom(snapshotInfo.getDataCenterId(), Hypervisor.HypervisorType.KVM);
+        }
+
+        return select(snapshotInfo, encryptionRequired);
+    }
+
     @Override
     public EndPoint select(Scope scope, Long storeId) {
         return findEndPointInScope(scope, findOneHostOnPrimaryStorage, storeId);
+    }
+
+    @Override
+    public EndPoint selectRandom(long zoneId, Hypervisor.HypervisorType hypervisorType) {
+        List<HostVO> hostVOs = hostDao.listByDataCenterIdAndHypervisorType(zoneId, hypervisorType);
+
+        if (hostVOs.isEmpty()) {
+            return null;
+        }
+        Collections.shuffle(hostVOs);
+        return RemoteHostEndPoint.getHypervisorHostEndPoint(hostVOs.get(0));
     }
 
     @Override

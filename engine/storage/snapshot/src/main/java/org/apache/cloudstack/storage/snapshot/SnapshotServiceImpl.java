@@ -397,6 +397,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     public SnapshotInfo convertSnapshot(SnapshotInfo snapshotInfo) {
         SnapshotObject snapObj = (SnapshotObject)snapshotInfo;
 
+        logger.debug("Converting snapshot [%s].", snapObj);
         Answer answer = null;
         try {
             snapObj.processEvent(Snapshot.Event.BackupToSecondary);
@@ -409,13 +410,21 @@ public class SnapshotServiceImpl implements SnapshotService {
             answer = ep.sendMessage(cmd);
 
             if (answer != null && answer.getResult()) {
-                snapObj.processEvent(Snapshot.Event.OperationSucceeded);
                 snapObj.setPath(((ConvertSnapshotAnswer) answer).getSnapshotObjectTO().getPath());
                 return snapObj;
             }
-            snapObj.processEvent(Snapshot.Event.OperationNotPerformed);
         } catch (NoTransitionException e) {
             logger.debug("Failed to change snapshot {} state.", snapObj.getUuid(), e);
+        } finally {
+            try {
+                if (answer != null && answer.getResult()) {
+                    snapObj.processEvent(Snapshot.Event.OperationSucceeded);
+                } else {
+                    snapObj.processEvent(Snapshot.Event.OperationNotPerformed);
+                }
+            } catch (NoTransitionException ex) {
+                logger.debug("Failed to change snapshot {} state.", snapObj.getUuid(), ex);
+            }
         }
 
         throw new CloudRuntimeException(String.format("Failed to convert snapshot [%s]%s.", snapObj.getUuid(), answer != null ? String.format(" due to [%s]", answer.getDetails()) : ""));
