@@ -170,8 +170,8 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     public void propagateMSListToAgents() {
         logger.debug("Propagating management server list update to agents");
         final String lbAlgorithm = getLBAlgorithmName();
+        final Long globalLbCheckInterval = getLBPreferredHostCheckInterval(null);
         List<DataCenterVO> zones = dataCenterDao.listAll();
-        Long lbCheckInterval = getLBPreferredHostCheckInterval(null);
         for (DataCenterVO zone : zones) {
             List<Long> zoneHostIds = new ArrayList<>();
             List<Long> nonRoutingHostIds = getAllAgentBasedNonRoutingHostsFromDB(zone.getId());
@@ -185,13 +185,13 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             }
             zoneHostIds.sort(Comparator.comparingLong(x -> x));
             for (Long nonRoutingHostId : nonRoutingHostIds) {
-                setupMSList(nonRoutingHostId, zone.getId(), zoneHostIds, lbAlgorithm, lbCheckInterval);
+                setupMSList(nonRoutingHostId, zone.getId(), zoneHostIds, lbAlgorithm, globalLbCheckInterval);
             }
             for (Long clusterId : clusterIds) {
-                lbCheckInterval = getLBPreferredHostCheckInterval(clusterId);
+                final Long clusterLbCheckInterval = getLBPreferredHostCheckInterval(clusterId);
                 List<Long> hostIds = clusterHostIdsMap.get(clusterId);
                 for (Long hostId : hostIds) {
-                    setupMSList(hostId, zone.getId(), zoneHostIds, lbAlgorithm, lbCheckInterval);
+                    setupMSList(hostId, zone.getId(), zoneHostIds, lbAlgorithm, clusterLbCheckInterval);
                 }
             }
         }
