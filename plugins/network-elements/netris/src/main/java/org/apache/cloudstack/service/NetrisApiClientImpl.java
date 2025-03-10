@@ -1066,6 +1066,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         Long networkId = cmd.getId();
         boolean isVpc = cmd.isVpc();
         String vnetCidr = cmd.getVNetCidr();
+        String vnetV6Cidr = cmd.getvNetV6Cidr();
         try {
             String netrisVpcName = getNetrisVpcName(cmd, vpcId, vpcName);
             VPCListing associatedVpc = getNetrisVpcResource(netrisVpcName);
@@ -1082,7 +1083,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             }
 
             String netrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, vNetName) ;
-            String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetCidr) ;
+            String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetCidr);
             FilterByVpc vpcFilter = new FilterByVpc();
             vpcFilter.add(associatedVpc.getId());
             FilterBySites siteFilter = new FilterBySites();
@@ -1091,6 +1092,10 @@ public class NetrisApiClientImpl implements NetrisApiClient {
 
             logger.debug("Successfully deleted vNet {}", vNetName);
             deleteSubnetInternal(vpcFilter, netrisVnetName, netrisSubnetName);
+            if (Objects.nonNull(vnetV6Cidr)) {
+                String netrisV6SubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetV6Cidr);
+                deleteSubnetInternal(vpcFilter, netrisVnetName, netrisV6SubnetName);
+            }
 
         } catch (Exception e) {
             throw new CloudRuntimeException(String.format("Failed to delete Netris vNet %s", networkName), e);

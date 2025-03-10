@@ -227,6 +227,10 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
     @Override
     public boolean deleteVnetResource(long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr) {
         DeleteNetrisVnetCommand cmd = new DeleteNetrisVnetCommand(zoneId, accountId, domainId, networkName, networkId, vpcName, vpcId, cidr, Objects.nonNull(vpcName));
+        Ipv6GuestPrefixSubnetNetworkMapVO ipv6PrefixNetworkMapVO = ipv6PrefixNetworkMapDao.findByNetworkId(networkId);
+        if (Objects.nonNull(ipv6PrefixNetworkMapVO)) {
+            cmd.setvNetV6Cidr(ipv6PrefixNetworkMapVO.getSubnet());
+        }
         NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
         return answer.getResult();
     }

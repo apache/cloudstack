@@ -20,6 +20,7 @@ public class DeleteNetrisVnetCommand extends NetrisCommand {
     private String vpcName;
     private Long vpcId;
     private final String vNetCidr;
+    private String vNetV6Cidr;
 
     public DeleteNetrisVnetCommand(long zoneId, long accountId, long domainId, String name, long id, String vpcName, Long vpcId, String vNetCidr, boolean isVpc) {
         super(zoneId, accountId, domainId, name, id, isVpc);
@@ -38,5 +39,13 @@ public class DeleteNetrisVnetCommand extends NetrisCommand {
 
     public String getVNetCidr() {
         return vNetCidr;
+    }
+
+    public String getvNetV6Cidr() {
+        return vNetV6Cidr;
+    }
+
+    public void setvNetV6Cidr(String vNetV6Cidr) {
+        this.vNetV6Cidr = vNetV6Cidr;
     }
 }
