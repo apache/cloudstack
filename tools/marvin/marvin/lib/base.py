@@ -2746,10 +2746,13 @@ class DiskOffering:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, tags=None, custom=False, domainid=None, cacheMode=None, **kwargs):
+    def create(cls, apiclient, services, tags=None, custom=False, domainid=None, cacheMode=None, displaytext=None, **kwargs):
         """Create Disk offering"""
         cmd = createDiskOffering.createDiskOfferingCmd()
-        cmd.displaytext = services["displaytext"]
+        if displaytext:
+            cmd.displaytext = displaytext
+        else:
+            cmd.displaytext = services["displaytext"]
         cmd.name = services["name"]
         if custom:
             cmd.customized = True
