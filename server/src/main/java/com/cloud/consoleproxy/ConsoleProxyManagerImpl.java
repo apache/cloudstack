@@ -709,7 +709,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         proxy.setLimitCpuUse(serviceOffering.getLimitCpuUse());
         proxy = consoleProxyDao.persist(proxy);
         try {
-            virtualMachineManager.allocate(name, template, serviceOffering, networks, plan, null);
+            virtualMachineManager.allocate(name, template, serviceOffering, networks, plan, null, null, null);
         } catch (InsufficientCapacityException e) {
             String message = String.format("Unable to allocate proxy [%s] on zone [%s] due to [%s].", proxy.toString(), dataCenterId, e.getMessage());
             logger.warn(message, e);

@@ -673,7 +673,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         secStorageVm.setLimitCpuUse(serviceOffering.getLimitCpuUse());
         secStorageVm = _secStorageVmDao.persist(secStorageVm);
         try {
-            _itMgr.allocate(name, template, serviceOffering, networks, plan, null);
+            _itMgr.allocate(name, template, serviceOffering, networks, plan, null, null, null);
             secStorageVm = _secStorageVmDao.findById(secStorageVm.getId());
         } catch (InsufficientCapacityException e) {
             String errorMessage = String.format("Unable to allocate secondary storage VM [%s] due to [%s].", name, e.getMessage());
