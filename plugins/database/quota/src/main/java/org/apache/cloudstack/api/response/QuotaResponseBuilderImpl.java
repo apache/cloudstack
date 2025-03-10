@@ -21,13 +21,11 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -36,6 +34,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -43,6 +42,18 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.utils.DateUtil;
@@ -87,9 +98,10 @@ import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
-import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.cloudstack.quota.vo.QuotaUsageResourceVO;
 import org.apache.cloudstack.utils.jsinterpreter.JsInterpreter;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -107,6 +119,8 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 
@@ -134,7 +148,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     @Inject
     private QuotaAccountDao quotaAccountDao;
     @Inject
-    private DomainDao _domainDao;
+    private DomainDao domainDao;
     @Inject
     private AccountManager _accountMgr;
     @Inject
@@ -147,6 +161,21 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     private JsInterpreterHelper jsInterpreterHelper;
     @Inject
     private ApiDiscoveryService apiDiscoveryService;
+    @Inject
+    private IPAddressDao ipAddressDao;
+    @Inject
+    private NetworkDao networkDao;
+    @Inject
+    private NetworkOfferingDao networkOfferingDao;
+    @Inject
+    private SnapshotDao snapshotDao;
+    @Inject
+    private VMInstanceDao vmInstanceDao;
+    @Inject
+    private VMTemplateDao vmTemplateDao;
+    @Inject
+    private VolumeDao volumeDao;
+
 
     private final Class<?>[] assignableClasses = {GenericPresetVariable.class, ComputingResources.class};
 
@@ -224,7 +253,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
 
         if (account != null) {
             QuotaSummaryResponse qr = new QuotaSummaryResponse();
-            DomainVO domain = _domainDao.findById(account.getDomainId());
+            DomainVO domain = domainDao.findById(account.getDomainId());
             BigDecimal curBalance = _quotaBalanceDao.lastQuotaBalance(account.getAccountId(), account.getDomainId(), period[1].getTime());
             BigDecimal quotaUsage = _quotaUsageDao.findTotalQuotaUsage(account.getAccountId(), account.getDomainId(), null, period[0].getTime(), period[1].getTime());
 
@@ -342,76 +371,177 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     @Override
-    public QuotaStatementResponse createQuotaStatementResponse(final List<QuotaUsageVO> quotaUsage) {
-        if (quotaUsage == null || quotaUsage.isEmpty()) {
-            throw new InvalidParameterValueException("There is no usage data found for period mentioned.");
+    public QuotaStatementResponse createQuotaStatementResponse(final List<QuotaUsageJoinVO> quotaUsages, QuotaStatementCmd cmd) {
+        if (CollectionUtils.isEmpty(quotaUsages)) {
+            throw new InvalidParameterValueException(String.format("There is no usage data for parameters [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd,
+                    "accountName", "accountId", "domainId", "startDate", "endDate", "type", "showDetails")));
         }
+        logger.debug("Creating quota statement from [{}] usage records for parameters [{}].", quotaUsages.size(),
+                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(cmd, "accountName", "accountId", "domainId", "startDate", "endDate", "type", "showDetails"));
+
+        createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformed(quotaUsages, cmd.getUsageType());
+
+        Map<Integer, List<QuotaUsageJoinVO>> recordsPerUsageTypes = quotaUsages
+                .stream()
+                .sorted(Comparator.comparingInt(QuotaUsageJoinVO::getUsageType))
+                .collect(Collectors.groupingBy(QuotaUsageJoinVO::getUsageType));
+
+        List<QuotaStatementItemResponse> items = new ArrayList<>();
+
+        recordsPerUsageTypes.forEach((key, value) -> items.add(createStatementItem(key, value, cmd.isShowResources())));
 
         QuotaStatementResponse statement = new QuotaStatementResponse();
 
-        HashMap<Integer, QuotaTypes> quotaTariffMap = new HashMap<Integer, QuotaTypes>();
-        Collection<QuotaTypes> result = QuotaTypes.listQuotaTypes().values();
-
-        for (QuotaTypes quotaTariff : result) {
-            quotaTariffMap.put(quotaTariff.getQuotaType(), quotaTariff);
-            // add dummy record for each usage type
-            QuotaUsageVO dummy = new QuotaUsageVO(quotaUsage.get(0));
-            dummy.setUsageType(quotaTariff.getQuotaType());
-            dummy.setQuotaUsed(new BigDecimal(0));
-            quotaUsage.add(dummy);
-        }
-
-        if (logger.isDebugEnabled()) {
-            logger.debug(
-                    "createQuotaStatementResponse Type=" + quotaUsage.get(0).getUsageType() + " usage=" + quotaUsage.get(0).getQuotaUsed().setScale(2, RoundingMode.HALF_EVEN)
-                    + " rec.id=" + quotaUsage.get(0).getUsageItemId() + " SD=" + quotaUsage.get(0).getStartDate() + " ED=" + quotaUsage.get(0).getEndDate());
-        }
-
-        Collections.sort(quotaUsage, new Comparator<QuotaUsageVO>() {
-            @Override
-            public int compare(QuotaUsageVO o1, QuotaUsageVO o2) {
-                if (o1.getUsageType() == o2.getUsageType()) {
-                    return 0;
-                }
-                return o1.getUsageType() < o2.getUsageType() ? -1 : 1;
-            }
-        });
-
-        List<QuotaStatementItemResponse> items = new ArrayList<QuotaStatementItemResponse>();
-        QuotaStatementItemResponse lineitem;
-        int type = -1;
-        BigDecimal usage = new BigDecimal(0);
-        BigDecimal totalUsage = new BigDecimal(0);
-        quotaUsage.add(new QuotaUsageVO());// boundary
-        QuotaUsageVO prev = quotaUsage.get(0);
-        if (logger.isDebugEnabled()) {
-            logger.debug("createQuotaStatementResponse record count=" + quotaUsage.size());
-        }
-        for (final QuotaUsageVO quotaRecord : quotaUsage) {
-            if (type != quotaRecord.getUsageType()) {
-                if (type != -1) {
-                    lineitem = new QuotaStatementItemResponse(type);
-                    lineitem.setQuotaUsed(usage);
-                    lineitem.setAccountId(prev.getAccountId());
-                    lineitem.setDomainId(prev.getDomainId());
-                    lineitem.setUsageUnit(quotaTariffMap.get(type).getQuotaUnit());
-                    lineitem.setUsageName(quotaTariffMap.get(type).getQuotaName());
-                    lineitem.setObjectName("quotausage");
-                    items.add(lineitem);
-                    totalUsage = totalUsage.add(usage);
-                    usage = new BigDecimal(0);
-                }
-                type = quotaRecord.getUsageType();
-            }
-            prev = quotaRecord;
-            usage = usage.add(quotaRecord.getQuotaUsed());
-        }
-
         statement.setLineItem(items);
-        statement.setTotalQuota(totalUsage);
+        statement.setTotalQuota(items.stream().map(QuotaStatementItemResponse::getQuotaUsed).reduce(BigDecimal.ZERO, BigDecimal::add));
         statement.setCurrency(QuotaConfig.QuotaCurrencySymbol.value());
         statement.setObjectName("statement");
+
+        AccountVO account = _accountDao.findAccountByNameAndDomainIncludingRemoved(cmd.getAccountName(), cmd.getDomainId());
+        DomainVO domain = domainDao.findByIdIncludingRemoved(cmd.getDomainId());
+
+        statement.setAccountId(account.getUuid());
+        statement.setAccountName(account.getAccountName());
+        statement.setDomainId(domain.getUuid());
+
         return statement;
+    }
+
+    protected void createDummyRecordForEachQuotaTypeIfUsageTypeIsNotInformed(List<QuotaUsageJoinVO> quotaUsages, Integer usageType) {
+        if (usageType != null) {
+            logger.debug("As the usage type [{}] was informed as parameter of the API quotaStatement, we will not create dummy records.", usageType);
+            return;
+
+        }
+
+        QuotaUsageJoinVO quotaUsage = quotaUsages.get(0);
+        for (Integer quotaType : QuotaTypes.listQuotaTypes().keySet()) {
+            QuotaUsageJoinVO dummy = new QuotaUsageJoinVO(quotaUsage);
+            dummy.setUsageType(quotaType);
+            dummy.setQuotaUsed(BigDecimal.ZERO);
+            quotaUsages.add(dummy);
+        }
+    }
+
+    protected QuotaStatementItemResponse createStatementItem(int usageType, List<QuotaUsageJoinVO> usageRecords, boolean showResources) {
+        QuotaUsageJoinVO firstRecord = usageRecords.get(0);
+        int type = firstRecord.getUsageType();
+
+
+        QuotaTypes quotaType = QuotaTypes.listQuotaTypes().get(type);
+
+        QuotaStatementItemResponse item = new QuotaStatementItemResponse(type);
+        item.setQuotaUsed(usageRecords.stream().map(QuotaUsageJoinVO::getQuotaUsed).filter(Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add));
+        item.setUsageUnit(quotaType.getQuotaUnit());
+        item.setUsageName(quotaType.getQuotaName());
+
+        setStatementItemResources(item, usageType, usageRecords, showResources);
+        return item;
+    }
+
+    protected void setStatementItemResources(QuotaStatementItemResponse statementItem, int usageType, List<QuotaUsageJoinVO> quotaUsageRecords, boolean showResources) {
+        if (!showResources) {
+            return;
+        }
+
+        List<QuotaStatementItemResourceResponse> itemDetails = new ArrayList<>();
+
+        Map<Long, BigDecimal> quotaUsagesValuesAggregatedById = quotaUsageRecords
+                .stream()
+                .filter(quotaUsageJoinVo -> getResourceIdByUsageType(quotaUsageJoinVo, usageType) != null)
+                .collect(Collectors.groupingBy(
+                        quotaUsageJoinVo -> getResourceIdByUsageType(quotaUsageJoinVo, usageType),
+                        Collectors.reducing(new BigDecimal(0), QuotaUsageJoinVO::getQuotaUsed, BigDecimal::add)
+                ));
+
+        for (Map.Entry<Long, BigDecimal> entry : quotaUsagesValuesAggregatedById.entrySet()) {
+            QuotaStatementItemResourceResponse detail = new QuotaStatementItemResourceResponse();
+
+            detail.setQuotaUsed(entry.getValue());
+
+            QuotaUsageResourceVO resource = getResourceFromIdAndType(entry.getKey(), usageType);
+            if (resource != null) {
+                detail.setResourceId(resource.getUuid());
+                detail.setDisplayName(resource.getName());
+                detail.setRemoved(resource.isRemoved());
+            } else {
+                detail.setDisplayName("<untraceable>");
+
+            }
+            itemDetails.add(detail);
+        }
+        statementItem.setResources(itemDetails);
+    }
+
+
+    protected Long getResourceIdByUsageType(QuotaUsageJoinVO quotaUsageJoinVo, int usageType) {
+        switch (usageType) {
+            case QuotaTypes.NETWORK_BYTES_SENT:
+            case QuotaTypes.NETWORK_BYTES_RECEIVED:
+                return quotaUsageJoinVo.getNetworkId();
+            case QuotaTypes.NETWORK_OFFERING:
+                return quotaUsageJoinVo.getOfferingId();
+            default:
+                return quotaUsageJoinVo.getResourceId();
+        }
+    }
+
+    protected QuotaUsageResourceVO getResourceFromIdAndType(long resourceId, int usageType) {
+        switch (usageType) {
+            case QuotaTypes.ALLOCATED_VM:
+            case QuotaTypes.RUNNING_VM:
+                VMInstanceVO vmInstance = vmInstanceDao.findByIdIncludingRemoved(resourceId);
+                if (vmInstance != null) {
+                    return new QuotaUsageResourceVO(vmInstance.getUuid(), vmInstance.getHostName(), vmInstance.getRemoved());
+                }
+                break;
+            case QuotaTypes.VOLUME:
+            case QuotaTypes.VOLUME_SECONDARY:
+            case QuotaTypes.VM_DISK_BYTES_READ:
+            case QuotaTypes.VM_DISK_BYTES_WRITE:
+            case QuotaTypes.VM_DISK_IO_READ:
+            case QuotaTypes.VM_DISK_IO_WRITE:
+                VolumeVO volume = volumeDao.findByIdIncludingRemoved(resourceId);
+                if (volume != null) {
+                    return new QuotaUsageResourceVO(volume.getUuid(), volume.getName(), volume.getRemoved());
+                }
+                break;
+            case QuotaTypes.VM_SNAPSHOT_ON_PRIMARY:
+            case QuotaTypes.VM_SNAPSHOT:
+            case QuotaTypes.SNAPSHOT:
+                SnapshotVO snapshot = snapshotDao.findByIdIncludingRemoved(resourceId);
+                if (snapshot != null) {
+                    return new QuotaUsageResourceVO(snapshot.getUuid(), snapshot.getName(), snapshot.getRemoved());
+                }
+                break;
+            case QuotaTypes.NETWORK_BYTES_SENT:
+            case QuotaTypes.NETWORK_BYTES_RECEIVED:
+                NetworkVO network = networkDao.findByIdIncludingRemoved(resourceId);
+                if (network != null) {
+                    return new QuotaUsageResourceVO(network.getUuid(), network.getName(), network.getRemoved());
+                }
+                break;
+            case QuotaTypes.TEMPLATE:
+            case QuotaTypes.ISO:
+                VMTemplateVO vmTemplate = vmTemplateDao.findByIdIncludingRemoved(resourceId);
+                if (vmTemplate != null) {
+                    return new QuotaUsageResourceVO(vmTemplate.getUuid(), vmTemplate.getName(), vmTemplate.getRemoved());
+                }
+                break;
+            case QuotaTypes.NETWORK_OFFERING:
+                NetworkOfferingVO networkOffering = networkOfferingDao.findByIdIncludingRemoved(resourceId);
+                if (networkOffering != null) {
+                    return new QuotaUsageResourceVO(networkOffering.getUuid(), networkOffering.getName(), networkOffering.getRemoved());
+                }
+                break;
+            case QuotaTypes.IP_ADDRESS:
+                IPAddressVO ipAddress = ipAddressDao.findByIdIncludingRemoved(resourceId);
+                if (ipAddress != null) {
+                    return new QuotaUsageResourceVO(ipAddress.getUuid(), ipAddress.getName(), ipAddress.getRemoved());
+                }
+                break;
+        }
+        return null;
     }
 
     @Override
@@ -469,11 +599,11 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         String warnMessage = "The parameter 's%s' for API 'quotaTariffUpdate' is no longer needed and it will be removed in future releases.";
 
         if (cmd.getStartDate() != null) {
-            logger.warn(String.format(warnMessage,"startdate"));
+            logger.warn(String.format(warnMessage, "startdate"));
         }
 
         if (cmd.getUsageType() != null) {
-            logger.warn(String.format(warnMessage,"usagetype"));
+            logger.warn(String.format(warnMessage, "usagetype"));
         }
     }
 
@@ -661,7 +791,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     @Override
-    public List<QuotaUsageVO> getQuotaUsage(QuotaStatementCmd cmd) {
+    public List<QuotaUsageJoinVO> getQuotaUsage(QuotaStatementCmd cmd) {
         return _quotaService.getQuotaUsage(cmd.getAccountId(), cmd.getAccountName(), cmd.getDomainId(), cmd.getUsageType(), cmd.getStartDate(), cmd.getEndDate());
     }
 
