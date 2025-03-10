@@ -95,6 +95,7 @@
             </template>
             <a-input v-model:value="form.size" />
           </a-form-item>
+        </div>
         <div :span="24" class="action-button">
           <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
           <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>

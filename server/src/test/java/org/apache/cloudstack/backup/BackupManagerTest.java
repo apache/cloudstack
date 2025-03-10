@@ -565,6 +565,8 @@ public class BackupManagerTest {
         when(oldestBackupVO.getId()).thenReturn(oldestBackupId);
         when(oldestBackupVO.getVmId()).thenReturn(vmId);
         when(oldestBackupVO.getBackupOfferingId()).thenReturn(backupOfferingId);
+        when(oldestBackupVO.getZoneId()).thenReturn(zoneId);
+        when(oldestBackupVO.getAccountId()).thenReturn(accountId);
 
         when(backupDao.findById(backupId)).thenReturn(backupVO);
         List<BackupVO> backups = new ArrayList<>(List.of(oldestBackupVO));
