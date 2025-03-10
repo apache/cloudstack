@@ -42,8 +42,8 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.hypervisor = testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
-
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls._cleanup = []
 
         # Create an account, network, VM and IP addresses
         cls.account = Account.create(
@@ -51,15 +51,14 @@ class TestVMDeploymentPlanner(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls._cleanup.append(cls.account)
+
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
+        cls._cleanup.append(cls.service_offering)
 
-        cls._cleanup = [
-            cls.account,
-            cls.service_offering
-        ]
 
     @classmethod
     def tearDownClass(cls):
