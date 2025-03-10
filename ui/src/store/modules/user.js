@@ -555,7 +555,7 @@ const user = {
       commit('SET_DOMAIN_STORE', domainStore)
     },
     SetCsLatestVersion ({ commit }, rolename) {
-      if (!config.notifyLatestCSVersion) {
+      if (!vueProps.$config.notifyLatestCSVersion) {
         return
       }
       const lastFetchTs = store.getters.latestVersion?.fetchedTs ? store.getters.latestVersion.fetchedTs : 0
