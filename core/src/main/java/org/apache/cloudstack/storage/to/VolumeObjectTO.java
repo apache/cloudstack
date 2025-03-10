@@ -33,6 +33,8 @@ import com.cloud.storage.Volume;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 
 import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
 
 public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
     private String uuid;
@@ -76,6 +78,8 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
     @LogLevel(LogLevel.Log4jLevel.Off)
     private byte[] passphrase;
     private String encryptFormat;
+    private List<String> checkpointPaths;
+    private Set<String> checkpointImageStoreUrls;
 
     public VolumeObjectTO() {
 
@@ -122,6 +126,8 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
         this.passphrase = volume.getPassphrase();
         this.encryptFormat = volume.getEncryptFormat();
         this.followRedirects = volume.isFollowRedirects();
+        this.checkpointPaths = volume.getCheckpointPaths();
+        this.checkpointImageStoreUrls = volume.getCheckpointImageStoreUrls();
     }
 
     public String getUuid() {
@@ -396,5 +402,22 @@ public class VolumeObjectTO extends DownloadableObjectTO implements DataTO {
 
     public boolean requiresEncryption() {
         return passphrase != null && passphrase.length > 0;
+    }
+
+
+    public List<String> getCheckpointPaths() {
+        return checkpointPaths;
+    }
+
+    public void setCheckpointPaths(List<String> checkpointPaths) {
+        this.checkpointPaths = checkpointPaths;
+    }
+
+    public Set<String> getCheckpointImageStoreUrls() {
+        return checkpointImageStoreUrls;
+    }
+
+    public void setCheckpointImageStoreUrls(Set<String> checkpointImageStoreUrls) {
+        this.checkpointImageStoreUrls = checkpointImageStoreUrls;
     }
 }

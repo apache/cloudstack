@@ -47,6 +47,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.joda.time.Duration;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -786,5 +787,18 @@ public class Script implements Callable<String> {
         } else {
             return result.trim();
         }
+    }
+
+    public static String runSimpleBashScriptWithFullResult(String command, int timeout) {
+        Script script = new Script("/bin/bash", Duration.standardSeconds(timeout));
+        script.add("-c");
+        script.add(command);
+
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+
+        if (script.execute(parser) != null) {
+            throw new CloudRuntimeException(String.format("Error executing command [%s]", script));
+        }
+        return parser.getLines();
     }
 }
