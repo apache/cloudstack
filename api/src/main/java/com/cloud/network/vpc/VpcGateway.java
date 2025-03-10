@@ -67,6 +67,11 @@ public interface VpcGateway extends Identity, ControlledEntity, InternalIdentity
     /**
      * @return
      */
+    String getDescription();
+
+    /**
+     * @return
+     */
     String getBroadcastUri();
 
     /**
