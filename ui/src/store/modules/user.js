@@ -317,7 +317,6 @@ const user = {
             const result = response.listusersresponse.user[0]
             commit('SET_INFO', result)
             commit('SET_NAME', result.firstname + ' ' + result.lastname)
-            store.dispatch('SetCsLatestVersion', result.rolename)
             resolve(cachedApis)
           }).catch(error => {
             reject(error)
@@ -390,6 +389,7 @@ const user = {
           const result = response.listusersresponse.user[0]
           commit('SET_INFO', result)
           commit('SET_NAME', result.firstname + ' ' + result.lastname)
+          store.dispatch('SetCsLatestVersion', result.rolename)
         }).catch(error => {
           reject(error)
         })
@@ -555,6 +555,9 @@ const user = {
       commit('SET_DOMAIN_STORE', domainStore)
     },
     SetCsLatestVersion ({ commit }, rolename) {
+      if (!config.notifyLatestCSVersion) {
+        return
+      }
       const lastFetchTs = store.getters.latestVersion?.fetchedTs ? store.getters.latestVersion.fetchedTs : 0
       if (rolename === 'Root Admin' && (+new Date() - lastFetchTs) > 24 * 60 * 60 * 1000) {
         axios.get(
