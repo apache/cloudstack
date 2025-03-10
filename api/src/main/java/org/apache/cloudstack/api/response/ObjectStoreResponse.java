@@ -17,6 +17,8 @@
 package org.apache.cloudstack.api.response;
 
 import com.cloud.serializer.Param;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.object.ObjectStore;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponseWithAnnotations;
@@ -24,27 +26,31 @@ import org.apache.cloudstack.api.EntityReference;
 
 @EntityReference(value = ObjectStore.class)
 public class ObjectStoreResponse extends BaseResponseWithAnnotations {
-    @SerializedName("id")
+    @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the object store")
     private String id;
 
-    @SerializedName("name")
+    @SerializedName(ApiConstants.NAME)
     @Param(description = "the name of the object store")
     private String name;
 
-    @SerializedName("url")
+    @SerializedName(ApiConstants.URL)
     @Param(description = "the url of the object store")
     private String url;
 
-    @SerializedName("providername")
-    @Param(description = "the provider name of the object store")
+    @SerializedName(ApiConstants.PROVIDER)
+    @Param(description = "the name of the object store provider")
     private String providerName;
 
-    @SerializedName("storagetotal")
+    @SerializedName(ApiConstants.SIZE)
     @Param(description = "the total size of the object store")
     private Long storageTotal;
 
-    @SerializedName("storageused")
+    @SerializedName(ApiConstants.ALLOCATED)
+    @Param(description = "the object store currently allocated size")
+    private Long storageAllocated;
+
+    @SerializedName(ApiConstants.USED)
     @Param(description = "the object store currently used size")
     private Long storageUsed;
 
@@ -94,6 +100,14 @@ public class ObjectStoreResponse extends BaseResponseWithAnnotations {
 
     public void setStorageTotal(Long storageTotal) {
         this.storageTotal = storageTotal;
+    }
+
+    public Long getStorageAllocated() {
+        return storageAllocated;
+    }
+
+    public void setStorageAllocated(Long storageAllocated) {
+        this.storageAllocated = storageAllocated;
     }
 
     public Long getStorageUsed() {

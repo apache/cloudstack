@@ -18,15 +18,19 @@
 package org.apache.cloudstack.backup.dao;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
 import com.cloud.utils.db.GenericSearchBuilder;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupDetailVO;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupVO;
 
@@ -39,6 +43,8 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
@@ -59,6 +65,9 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
 
     @Inject
     BackupOfferingDao backupOfferingDao;
+
+    @Inject
+    BackupDetailsDao backupDetailsDao;
 
     private SearchBuilder<BackupVO> backupSearch;
     private GenericSearchBuilder<BackupVO, Long> CountBackupsByAccount;
@@ -159,6 +168,27 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     }
 
     @Override
+    public BackupVO persist(BackupVO backup) {
+        return Transaction.execute((TransactionCallback<BackupVO>) status -> {
+            BackupVO backupDb = super.persist(backup);
+            saveDetails(backup);
+            loadDetails(backupDb);
+            return backupDb;
+        });
+    }
+
+    @Override
+    public boolean update(Long id, BackupVO backup) {
+        return Transaction.execute((TransactionCallback<Boolean>) status -> {
+            boolean result = super.update(id, backup);
+            if (result == true) {
+                saveDetails(backup);
+            }
+            return result;
+        });
+    }
+
+    @Override
     public List<Backup> syncBackups(Long zoneId, Long vmId, List<Backup> externalBackups) {
         for (Backup backup : externalBackups) {
             BackupVO backupVO = getBackupVO(backup);
@@ -193,30 +223,60 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     }
 
     @Override
-    public BackupResponse newBackupResponse(Backup backup) {
-        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
-        AccountVO account = accountDao.findByIdIncludingRemoved(vm.getAccountId());
-        DomainVO domain = domainDao.findByIdIncludingRemoved(vm.getDomainId());
-        DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(vm.getDataCenterId());
-        Long offeringId = backup.getBackupOfferingId();
-        if (offeringId == null) {
-            offeringId = vm.getBackupOfferingId();
+    public void loadDetails(BackupVO backup) {
+        Map<String, String> details = backupDetailsDao.listDetailsKeyPairs(backup.getId());
+        backup.setDetails(details);
+    }
+
+    @Override
+    public void saveDetails(BackupVO backup) {
+        Map<String, String> detailsStr = backup.getDetails();
+        if (detailsStr == null) {
+            return;
         }
+        List<BackupDetailVO> details = new ArrayList<BackupDetailVO>();
+        for (String key : detailsStr.keySet()) {
+            BackupDetailVO detail = new BackupDetailVO(backup.getId(), key, detailsStr.get(key), true);
+            details.add(detail);
+        }
+        backupDetailsDao.saveDetails(details);
+    }
+
+    @Override
+    public BackupResponse newBackupResponse(Backup backup, Boolean listVmDetails) {
+        VMInstanceVO vm = null;
+        if (backup.getVmId() != null) {
+            vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
+        }
+        AccountVO account = accountDao.findByIdIncludingRemoved(backup.getAccountId());
+        DomainVO domain = domainDao.findByIdIncludingRemoved(backup.getDomainId());
+        DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(backup.getZoneId());
+        Long offeringId = backup.getBackupOfferingId();
         BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(offeringId);
 
         BackupResponse response = new BackupResponse();
         response.setId(backup.getUuid());
-        response.setVmId(vm.getUuid());
-        response.setVmName(vm.getHostName());
+        response.setName(backup.getName());
+        response.setDescription(backup.getDescription());
+        if (vm != null) {
+            response.setVmId(vm.getUuid());
+            response.setVmName(vm.getHostName());
+        } else {
+            response.setVmName(backup.getVmName());
+            response.setIsOrphan(true);
+        }
         response.setExternalId(backup.getExternalId());
         response.setType(backup.getType());
         response.setDate(backup.getDate());
         response.setSize(backup.getSize());
         response.setProtectedSize(backup.getProtectedSize());
         response.setStatus(backup.getStatus());
+        if (backup.getBackupIntervalType() != null) {
+            response.setIntervalType(Backup.Type.values()[backup.getBackupIntervalType()].toString());
+        }
         // ACS 4.20: For backups taken prior this release the backup.backed_volumes column would be empty hence use vm_instance.backup_volumes
         String backedUpVolumes;
-        if (Objects.isNull(backup.getBackedUpVolumes())) {
+        if (Objects.isNull(backup.getBackedUpVolumes()) && vm != null) {
             backedUpVolumes = new Gson().toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class);
         } else {
             backedUpVolumes = new Gson().toJson(backup.getBackedUpVolumes().toArray(), Backup.VolumeInfo[].class);
@@ -230,6 +290,24 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         response.setDomain(domain.getName());
         response.setZoneId(zone.getUuid());
         response.setZone(zone.getName());
+
+        if (Boolean.TRUE.equals(listVmDetails)) {
+            Map<String, String> details = backupDetailsDao.listDetailsKeyPairs(backup.getId(), true);
+            if (details != null) {
+                HashMap<String, String> vmDetails = new HashMap<>();
+                vmDetails.put(ApiConstants.HYPERVISOR, details.get(ApiConstants.HYPERVISOR));
+                vmDetails.put(ApiConstants.TEMPLATE_ID, details.get(ApiConstants.TEMPLATE_ID));
+                vmDetails.put(ApiConstants.SERVICE_OFFERING_ID, details.get(ApiConstants.SERVICE_OFFERING_ID));
+                vmDetails.put(ApiConstants.NETWORK_IDS, details.get(ApiConstants.NETWORK_IDS));
+                vmDetails.put(ApiConstants.DISK_OFFERING_IDS, details.get(ApiConstants.DISK_OFFERING_IDS));
+                vmDetails.put(ApiConstants.DEVICE_IDS, details.get(ApiConstants.DEVICE_IDS));
+                vmDetails.put(ApiConstants.DISK_SIZES, details.get(ApiConstants.DISK_SIZES));
+                vmDetails.put(ApiConstants.MIN_IOPS, details.get(ApiConstants.MIN_IOPS));
+                vmDetails.put(ApiConstants.MAX_IOPS, details.get(ApiConstants.MAX_IOPS));
+                response.setVmDetails(vmDetails);
+            }
+        }
+
         response.setObjectName("backup");
         return response;
     }

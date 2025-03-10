@@ -408,4 +408,5 @@ public interface StorageManager extends StorageService {
 
     void validateChildDatastoresToBeAddedInUpState(StoragePoolVO datastoreClusterPool, List<ModifyStoragePoolAnswer> childDatastoreAnswerList);
 
+    CapacityVO getObjectStorageUsedStats(Long zoneId);
 }

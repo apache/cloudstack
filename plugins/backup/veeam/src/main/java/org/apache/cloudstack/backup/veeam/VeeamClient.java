@@ -925,8 +925,10 @@ public class VeeamClient {
         return dateFormat.parse(StringUtils.substring(date, 0, 19));
     }
 
-    public Pair<Boolean, String> restoreVMToDifferentLocation(String restorePointId, String hostIp, String dataStoreUuid) {
-        final String restoreLocation = RESTORE_VM_SUFFIX + UUID.randomUUID().toString();
+    public Pair<Boolean, String> restoreVMToDifferentLocation(String restorePointId, String restoreLocation, String hostIp, String dataStoreUuid) {
+        if (restoreLocation == null) {
+            restoreLocation = RESTORE_VM_SUFFIX + UUID.randomUUID().toString();
+        }
         final String datastoreId = dataStoreUuid.replace("-","");
         final List<String> cmds = Arrays.asList(
                 "$points = Get-VBRRestorePoint",
