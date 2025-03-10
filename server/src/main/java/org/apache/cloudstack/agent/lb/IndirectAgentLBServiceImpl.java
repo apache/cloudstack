@@ -488,23 +488,29 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
 
         List<DataCenterVO> dataCenterList = dcDao.listAll();
         for (DataCenterVO dc : dataCenterList) {
-            List<Long> orderedHostIdList = getOrderedHostIdList(dc.getId());
-            if (!migrateNonRoutingHostAgentsInZone(fromMsUuid, fromMsId, dc, migrationStartTimeInMs,
-                    timeoutDurationInMs, avoidMsList, lbAlgorithm, lbAlgorithmChanged, orderedHostIdList)) {
+            if (!migrateAgentsInZone(dc, fromMsUuid, fromMsId, avoidMsList, lbAlgorithm, lbAlgorithmChanged,
+                    migrationStartTimeInMs, timeoutDurationInMs)) {
                 return false;
-            }
-            List<Long> clusterIds = clusterDao.listAllClusterIds(dc.getId());
-            if (CollectionUtils.isEmpty(clusterIds)) {
-                continue;
-            }
-            for (Long clusterId : clusterIds) {
-                if (!migrateRoutingHostAgentsInCluster(clusterId, fromMsUuid, fromMsId, dc, migrationStartTimeInMs,
-                        timeoutDurationInMs, avoidMsList, lbAlgorithm, lbAlgorithmChanged, orderedHostIdList)) {
-                    return false;
-                }
             }
         }
 
+        return true;
+    }
+
+    private boolean migrateAgentsInZone(DataCenterVO dc, String fromMsUuid, long fromMsId, List<String> avoidMsList,
+                                            String lbAlgorithm, boolean lbAlgorithmChanged, long migrationStartTimeInMs, long timeoutDurationInMs) {
+        List<Long> orderedHostIdList = getOrderedHostIdList(dc.getId());
+        if (!migrateNonRoutingHostAgentsInZone(fromMsUuid, fromMsId, dc, migrationStartTimeInMs,
+                timeoutDurationInMs, avoidMsList, lbAlgorithm, lbAlgorithmChanged, orderedHostIdList)) {
+            return false;
+        }
+        List<Long> clusterIds = clusterDao.listAllClusterIds(dc.getId());
+        for (Long clusterId : clusterIds) {
+            if (!migrateRoutingHostAgentsInCluster(clusterId, fromMsUuid, fromMsId, dc, migrationStartTimeInMs,
+                    timeoutDurationInMs, avoidMsList, lbAlgorithm, lbAlgorithmChanged, orderedHostIdList)) {
+                return false;
+            }
+        }
         return true;
     }
 

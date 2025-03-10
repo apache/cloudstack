@@ -343,10 +343,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
             throw new CloudRuntimeException("Management server is not in the right state to prepare for shutdown");
         }
 
-        final List<ManagementServerHostVO> preparingForMaintenanceOrShutDownMsList = msHostDao.listBy(State.PreparingForMaintenance, State.PreparingForShutDown);
-        if (CollectionUtils.isNotEmpty(preparingForMaintenanceOrShutDownMsList)) {
-            throw new CloudRuntimeException("Cannot prepare for shutdown, there are other management servers preparing for maintenance/shutdown");
-        }
+        checkAnyMsInPreparingStates("prepare for shutdown");
 
         final Command[] cmds = new Command[1];
         cmds[0] = new PrepareForShutdownManagementServerHostCommand(msHost.getMsid());
@@ -370,10 +367,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         }
 
         if (State.Up.equals(msHost.getState())) {
-            final List<ManagementServerHostVO> preparingForMaintenanceOrShutDownMsList = msHostDao.listBy(State.PreparingForMaintenance, State.PreparingForShutDown);
-            if (CollectionUtils.isNotEmpty(preparingForMaintenanceOrShutDownMsList)) {
-                throw new CloudRuntimeException("Cannot trigger shutdown now, there are other management servers preparing for maintenance/shutdown");
-            }
+            checkAnyMsInPreparingStates("trigger shutdown");
             msHostDao.updateState(msHost.getId(), State.PreparingForShutDown);
         }
 
@@ -430,10 +424,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
             throw new CloudRuntimeException("Management server is not in the right state to prepare for maintenance");
         }
 
-        final List<ManagementServerHostVO> preparingForMaintenanceOrShutDownMsList = msHostDao.listBy(State.PreparingForMaintenance, State.PreparingForShutDown);
-        if (CollectionUtils.isNotEmpty(preparingForMaintenanceOrShutDownMsList)) {
-            throw new CloudRuntimeException("Cannot prepare for maintenance, there are other management servers preparing for maintenance/shutdown");
-        }
+        checkAnyMsInPreparingStates("prepare for maintenance");
 
         if (indirectAgentLB.haveAgentBasedHosts(msHost.getMsid())) {
             List<String> indirectAgentMsList = indirectAgentLB.getManagementServerList();
@@ -503,6 +494,13 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         }
         onCancelPreparingForMaintenance();
         msHostDao.updateState(msHost.getId(), State.Up);
+    }
+
+    private void checkAnyMsInPreparingStates(String operation) {
+        final List<ManagementServerHostVO> preparingForMaintenanceOrShutDownMsList = msHostDao.listBy(State.PreparingForMaintenance, State.PreparingForShutDown);
+        if (CollectionUtils.isNotEmpty(preparingForMaintenanceOrShutDownMsList)) {
+            throw new CloudRuntimeException(String.format("Cannot %s, there are other management servers preparing for maintenance/shutdown", operation));
+        }
     }
 
     private ManagementServerMaintenanceResponse prepareMaintenanceResponse(Long managementServerId) {

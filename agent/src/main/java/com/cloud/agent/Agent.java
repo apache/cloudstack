@@ -1011,14 +1011,18 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                 listener.processControlResponse(response, (AgentControlAnswer)answer);
             }
         } else if (answer instanceof PingAnswer) {
-            if ((((PingAnswer) answer).isSendStartup()) && reconnectAllowed) {
-                logger.info("Management server requested startup command to reinitialize the agent");
-                sendStartup(link);
-            }
-            shell.setAvoidHosts(((PingAnswer) answer).getAvoidMsList());
+            processPingAnswer((PingAnswer) answer);
         } else {
             updateLastPingResponseTime();
         }
+    }
+
+    private void processPingAnswer(final PingAnswer answer) {
+        if ((answer.isSendStartup()) && reconnectAllowed) {
+            logger.info("Management server requested startup command to reinitialize the agent");
+            sendStartup(link);
+        }
+        shell.setAvoidHosts(answer.getAvoidMsList());
     }
 
     public void processReadyCommand(final Command cmd) {

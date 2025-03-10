@@ -255,9 +255,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         _executor = new ThreadPoolExecutor(agentTaskThreads, agentTaskThreads, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("AgentTaskPool"));
 
-        _connectExecutor = new ThreadPoolExecutor(100, 500, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("AgentConnectTaskPool"));
-        // allow core threads to time out even when there are no items in the queue
-        _connectExecutor.allowCoreThreadTimeOut(true);
+        initConnectExecutor();
 
         maxConcurrentNewAgentConnections = RemoteAgentMaxConcurrentNewConnections.value();
 
@@ -272,10 +270,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         _cronJobExecutor = new ScheduledThreadPoolExecutor(directAgentPoolSize, new NamedThreadFactory("DirectAgentCronJob"));
         logger.debug("Created DirectAgentAttache pool with size: {}.", directAgentPoolSize);
         _directAgentThreadCap = Math.round(directAgentPoolSize * DirectAgentThreadCap.value()) + 1; // add 1 to always make the value > 0
-
-        _monitorExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("AgentMonitor"));
-
-        newAgentConnectionsMonitor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NewAgentConnectionsMonitor"));
 
         initializeCommandTimeouts();
 
@@ -388,10 +382,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public void onManagementServerCancelMaintenance() {
         logger.debug("Management server maintenance disabled");
         if (_connectExecutor.isShutdown()) {
-            _connectExecutor = new ThreadPoolExecutor(100, 500, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("AgentConnectTaskPool"));
-            _connectExecutor.allowCoreThreadTimeOut(true);
+            initConnectExecutor();
         }
-
         startDirectlyConnectedHosts(true);
         if (_connection != null) {
             try {
@@ -402,14 +394,28 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         }
 
         if (_monitorExecutor.isShutdown()) {
-            _monitorExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("AgentMonitor"));
-            _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), mgmtServiceConf.getPingInterval(), mgmtServiceConf.getPingInterval(), TimeUnit.SECONDS);
+            initAndScheduleMonitorExecutor();
         }
         if (newAgentConnectionsMonitor.isShutdown()) {
-            final int cleanupTimeInSecs = Wait.value();
-            newAgentConnectionsMonitor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NewAgentConnectionsMonitor"));
-            newAgentConnectionsMonitor.scheduleAtFixedRate(new AgentNewConnectionsMonitorTask(), cleanupTimeInSecs, cleanupTimeInSecs, TimeUnit.SECONDS);
+            initAndScheduleAgentConnectionsMonitor();
         }
+    }
+
+    private void initConnectExecutor() {
+        _connectExecutor = new ThreadPoolExecutor(100, 500, 60L, TimeUnit.SECONDS, new LinkedBlockingQueue<>(), new NamedThreadFactory("AgentConnectTaskPool"));
+        // allow core threads to time out even when there are no items in the queue
+        _connectExecutor.allowCoreThreadTimeOut(true);
+    }
+
+    private void initAndScheduleMonitorExecutor() {
+        _monitorExecutor = new ScheduledThreadPoolExecutor(1, new NamedThreadFactory("AgentMonitor"));
+        _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), mgmtServiceConf.getPingInterval(), mgmtServiceConf.getPingInterval(), TimeUnit.SECONDS);
+    }
+
+    private void initAndScheduleAgentConnectionsMonitor() {
+        final int cleanupTimeInSecs = Wait.value();
+        newAgentConnectionsMonitor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("NewAgentConnectionsMonitor"));
+        newAgentConnectionsMonitor.scheduleAtFixedRate(new AgentNewConnectionsMonitorTask(), cleanupTimeInSecs, cleanupTimeInSecs, TimeUnit.SECONDS);
     }
 
     private AgentControlAnswer handleControlCommand(final AgentAttache attache, final AgentControlCommand cmd) {
@@ -805,12 +811,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             }
         }
 
-        _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), mgmtServiceConf.getPingInterval(), mgmtServiceConf.getPingInterval(), TimeUnit.SECONDS);
-
-        final int cleanupTimeInSecs = Wait.value();
-        newAgentConnectionsMonitor.scheduleAtFixedRate(new AgentNewConnectionsMonitorTask(), cleanupTimeInSecs,
-                cleanupTimeInSecs, TimeUnit.SECONDS);
-
+        initAndScheduleMonitorExecutor();
+        initAndScheduleAgentConnectionsMonitor();
         return true;
     }
 

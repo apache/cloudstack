@@ -94,17 +94,8 @@ public abstract class NioConnection implements Callable<Boolean> {
         _workers = workers;
         _factory = factory;
         this.factoryMaxNewConnectionsCount = factory.getMaxConcurrentNewConnectionsCount();
-        _executor = new ThreadPoolExecutor(_workers, 5 * _workers, 1, TimeUnit.DAYS,
-                new LinkedBlockingQueue<>(5 * _workers), new NamedThreadFactory(_name + "-Handler"),
-                new ThreadPoolExecutor.AbortPolicy());
-        String sslHandshakeHandlerName = _name + "-SSLHandshakeHandler";
-        if (factoryMaxNewConnectionsCount > 0) {
-            _sslHandshakeExecutor = new ThreadPoolExecutor(0, this.factoryMaxNewConnectionsCount, 30,
-                    TimeUnit.MINUTES, new SynchronousQueue<>(), new NamedThreadFactory(sslHandshakeHandlerName),
-                    new ThreadPoolExecutor.AbortPolicy());
-        } else {
-            _sslHandshakeExecutor = Executors.newCachedThreadPool(new NamedThreadFactory(sslHandshakeHandlerName));
-        }
+        initWorkersExecutor();
+        initSSLHandshakeExecutor();
     }
 
     public void setCAService(final CAService caService) {
@@ -129,19 +120,10 @@ public abstract class NioConnection implements Callable<Boolean> {
         _isStartup = true;
 
         if (_executor.isShutdown()) {
-            _executor = new ThreadPoolExecutor(_workers, 5 * _workers, 1, TimeUnit.DAYS,
-                    new LinkedBlockingQueue<>(5 * _workers), new NamedThreadFactory(_name + "-Handler"),
-                    new ThreadPoolExecutor.AbortPolicy());
+            initWorkersExecutor();
         }
         if (_sslHandshakeExecutor.isShutdown()) {
-            String sslHandshakeHandlerName = _name + "-SSLHandshakeHandler";
-            if (factoryMaxNewConnectionsCount > 0) {
-                _sslHandshakeExecutor = new ThreadPoolExecutor(0, this.factoryMaxNewConnectionsCount, 30,
-                        TimeUnit.MINUTES, new SynchronousQueue<>(), new NamedThreadFactory(sslHandshakeHandlerName),
-                        new ThreadPoolExecutor.AbortPolicy());
-            } else {
-                _sslHandshakeExecutor = Executors.newCachedThreadPool(new NamedThreadFactory(sslHandshakeHandlerName));
-            }
+            initSSLHandshakeExecutor();
         }
         _threadExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory(this._name + "-NioConnectionHandler"));
         _isRunning = true;
@@ -157,6 +139,23 @@ public abstract class NioConnection implements Callable<Boolean> {
         if (_threadExecutor != null) {
             _futureTask.cancel(false);
             _threadExecutor.shutdown();
+        }
+    }
+
+    private void initWorkersExecutor() {
+        _executor = new ThreadPoolExecutor(_workers, 5 * _workers, 1, TimeUnit.DAYS,
+                new LinkedBlockingQueue<>(5 * _workers), new NamedThreadFactory(_name + "-Handler"),
+                new ThreadPoolExecutor.AbortPolicy());
+    }
+
+    private void initSSLHandshakeExecutor() {
+        String sslHandshakeHandlerName = _name + "-SSLHandshakeHandler";
+        if (factoryMaxNewConnectionsCount > 0) {
+            _sslHandshakeExecutor = new ThreadPoolExecutor(0, this.factoryMaxNewConnectionsCount, 30,
+                    TimeUnit.MINUTES, new SynchronousQueue<>(), new NamedThreadFactory(sslHandshakeHandlerName),
+                    new ThreadPoolExecutor.AbortPolicy());
+        } else {
+            _sslHandshakeExecutor = Executors.newCachedThreadPool(new NamedThreadFactory(sslHandshakeHandlerName));
         }
     }
 
