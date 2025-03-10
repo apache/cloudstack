@@ -171,6 +171,7 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         logger.debug("Propagating management server list update to agents");
         final String lbAlgorithm = getLBAlgorithmName();
         List<DataCenterVO> zones = dataCenterDao.listAll();
+        Long lbCheckInterval = getLBPreferredHostCheckInterval(null);
         for (DataCenterVO zone : zones) {
             List<Long> zoneHostIds = new ArrayList<>();
             List<Long> nonRoutingHostIds = getAllAgentBasedNonRoutingHostsFromDB(zone.getId());
@@ -183,23 +184,21 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
                 zoneHostIds.addAll(hostIds);
             }
             zoneHostIds.sort(Comparator.comparingLong(x -> x));
-            Long lbCheckInterval = getLBPreferredHostCheckInterval(null);
             for (Long nonRoutingHostId : nonRoutingHostIds) {
-                setupMSList(nonRoutingHostId, zone.getId(), zoneHostIds, lbCheckInterval);
+                setupMSList(nonRoutingHostId, zone.getId(), zoneHostIds, lbAlgorithm, lbCheckInterval);
             }
             for (Long clusterId : clusterIds) {
                 lbCheckInterval = getLBPreferredHostCheckInterval(clusterId);
                 List<Long> hostIds = clusterHostIdsMap.get(clusterId);
                 for (Long hostId : hostIds) {
-                    setupMSList(hostId, zone.getId(), zoneHostIds, lbCheckInterval);
+                    setupMSList(hostId, zone.getId(), zoneHostIds, lbAlgorithm, lbCheckInterval);
                 }
             }
         }
     }
 
-    private void setupMSList(final Long hostId, final Long dcId, final List<Long> orderedHostIdList, final Long lbCheckInterval) {
+    private void setupMSList(final Long hostId, final Long dcId, final List<Long> orderedHostIdList, final String lbAlgorithm, final Long lbCheckInterval) {
         final List<String> msList = getManagementServerList(hostId, dcId, orderedHostIdList);
-        final String lbAlgorithm = getLBAlgorithmName();
         final SetupMSListCommand cmd = new SetupMSListCommand(msList, lbAlgorithm, lbCheckInterval);
         final Answer answer = agentManager.easySend(hostId, cmd);
         if (answer == null || !answer.getResult()) {
