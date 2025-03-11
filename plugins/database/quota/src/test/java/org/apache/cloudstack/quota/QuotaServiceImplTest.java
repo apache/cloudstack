@@ -138,7 +138,7 @@ public class QuotaServiceImplTest extends TestCase {
 
         quotaService.getQuotaUsage(accountId, accountName, domainId, QuotaTypes.IP_ADDRESS, startDate, endDate);
         Mockito.verify(quotaUsageJoinDaoMock, Mockito.times(1)).findQuotaUsage(Mockito.eq(accountId), Mockito.eq(domainId), Mockito.eq(QuotaTypes.IP_ADDRESS), Mockito.any(),
-                Mockito.any(), Mockito.any(), Mockito.any(Date.class), Mockito.any(Date.class));
+                Mockito.any(), Mockito.any(), Mockito.any(Date.class), Mockito.any(Date.class), Mockito.any());
     }
 
     @Test

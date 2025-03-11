@@ -235,7 +235,7 @@ public class QuotaServiceImpl extends ManagerBase implements QuotaService, Confi
         logger.debug("Getting quota records of type [{}] for account [{}] in domain [{}], between [{}] and [{}].",
                 usageType, accountId, domainId, startDate, endDate);
 
-        return quotaUsageJoinDao.findQuotaUsage(accountId, domainId, usageType, null, null, null, startDate, endDate);
+        return quotaUsageJoinDao.findQuotaUsage(accountId, domainId, usageType, null, null, null, startDate, endDate, null);
     }
 
     @Override
