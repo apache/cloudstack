@@ -306,6 +306,8 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     public void propagateMSListToAgents() {
         logger.debug("Propagating management server list update to agents");
         ExecutorService setupMSListExecutorService = Executors.newFixedThreadPool(10, new NamedThreadFactory("SetupMSList-Worker"));
+        final String lbAlgorithm = getLBAlgorithmName();
+        final Long globalLbCheckInterval = getLBPreferredHostCheckInterval(null);
         List<DataCenterVO> zones = dataCenterDao.listAll();
         for (DataCenterVO zone : zones) {
             List<Long> zoneHostIds = new ArrayList<>();
@@ -320,16 +322,14 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             }
             zoneHostIds.sort(Comparator.comparingLong(x -> x));
             final List<String> avoidMsList = mshostDao.listNonUpStateMsIPs();
-            final String lbAlgorithm = getLBAlgorithmName();
-            Long lbCheckInterval = getLBPreferredHostCheckInterval(null);
             for (Long nonRoutingHostId : nonRoutingHostIds) {
-                setupMSListExecutorService.submit(new SetupMSListTask(nonRoutingHostId, zone.getId(), zoneHostIds, avoidMsList, lbAlgorithm, lbCheckInterval));
+                setupMSListExecutorService.submit(new SetupMSListTask(nonRoutingHostId, zone.getId(), zoneHostIds, avoidMsList, lbAlgorithm, globalLbCheckInterval));
             }
             for (Long clusterId : clusterIds) {
-                lbCheckInterval = getLBPreferredHostCheckInterval(clusterId);
+                final Long clusterLbCheckInterval = getLBPreferredHostCheckInterval(clusterId);
                 List<Long> hostIds = clusterHostIdsMap.get(clusterId);
                 for (Long hostId : hostIds) {
-                    setupMSListExecutorService.submit(new SetupMSListTask(hostId, zone.getId(), zoneHostIds, avoidMsList, lbAlgorithm, lbCheckInterval));
+                    setupMSListExecutorService.submit(new SetupMSListTask(hostId, zone.getId(), zoneHostIds, avoidMsList, lbAlgorithm, clusterLbCheckInterval));
                 }
             }
         }
