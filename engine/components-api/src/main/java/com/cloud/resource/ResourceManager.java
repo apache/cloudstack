@@ -28,6 +28,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.GPUDeviceTO;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.PodCluster;
@@ -61,13 +62,16 @@ public interface ResourceManager extends ResourceService, Configurable {
                     + "To force-stop VMs, choose 'ForceStop' strategy",
             true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "Error,Migration,ForceStop");
 
-    ConfigKey<String> SystemVmPreferredArchitecture = new ConfigKey<>("Advanced"
-            , String.class
-            , "system.vm.preferred.architecture"
-            , ""
-            , "Preferred architecture for the system VMs including virtual routers"
-            , true
-            , ConfigKey.Scope.Zone);
+    ConfigKey<String> SystemVmPreferredArchitecture = new ConfigKey<>(
+            String.class,
+            "system.vm.preferred.architecture",
+            "Advanced",
+            "",
+            "Preferred architecture for the system VMs including virtual routers",
+            true,
+            ConfigKey.Scope.Global, null, null, null, null, null,
+            ConfigKey.Kind.Select,
+            "," + CPU.CPUArch.getTypesAsCSV());
 
     /**
      * Register a listener for different types of resource life cycle events.

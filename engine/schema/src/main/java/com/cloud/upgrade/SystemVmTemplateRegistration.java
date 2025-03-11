@@ -106,7 +106,7 @@ public class SystemVmTemplateRegistration {
     private static final Integer SCRIPT_TIMEOUT = 1800000;
     private static final Integer LOCK_WAIT_TIMEOUT = 1200;
     private static final List<String> DOWNLOADABLE_TEMPLATE_ARCH_TYPES = Arrays.asList(
-            CPU.archARM64Identifier
+            CPU.CPUArch.arm64.getType()
     );
 
 
@@ -301,8 +301,8 @@ public class SystemVmTemplateRegistration {
     }
 
     public static final List<Pair<Hypervisor.HypervisorType, String>> hypervisorList = Arrays.asList(
-            new Pair<>(Hypervisor.HypervisorType.KVM, CPU.archX86_64Identifier),
-            new Pair<>(Hypervisor.HypervisorType.KVM, CPU.archARM64Identifier),
+            new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.x86.getType()),
+            new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64.getType()),
             new Pair<>(Hypervisor.HypervisorType.VMware, null),
             new Pair<>(Hypervisor.HypervisorType.XenServer, null),
             new Pair<>(Hypervisor.HypervisorType.Hyperv, null),
@@ -382,7 +382,7 @@ public class SystemVmTemplateRegistration {
     private static String getHypervisorArchKey(String hypervisorType, String arch) {
         if (Hypervisor.HypervisorType.KVM.name().equals(hypervisorType)) {
             return String.format("%s-%s", hypervisorType.toLowerCase(),
-                    StringUtils.isBlank(arch) ? CPU.archX86_64Identifier : arch);
+                    StringUtils.isBlank(arch) ? CPU.CPUArch.amd64 : arch);
         }
         return hypervisorType.toLowerCase();
     }
