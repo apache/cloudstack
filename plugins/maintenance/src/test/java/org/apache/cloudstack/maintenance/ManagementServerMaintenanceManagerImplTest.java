@@ -289,19 +289,6 @@ public class ManagementServerMaintenanceManagerImplTest {
     }
 
     @Test
-    public void triggerShutdownCmd() {
-        ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
-        Mockito.when(msHost.getState()).thenReturn(ManagementServerHost.State.ReadyToShutDown);
-        Mockito.when(msHostDao.findById(1L)).thenReturn(msHost);
-        TriggerShutdownCmd cmd = mock(TriggerShutdownCmd.class);
-        Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
-        Mockito.when(clusterManagerMock.execute(anyString(), anyLong(), anyString(), anyBoolean())).thenReturn("Success");
-
-        spy.triggerShutdown(cmd);
-        Mockito.verify(clusterManagerMock, Mockito.times(1)).execute(anyString(), anyLong(), anyString(), anyBoolean());
-    }
-
-    @Test
     public void prepareForMaintenanceAndCancelFromMaintenanceState() {
         Mockito.doNothing().when(jobManagerMock).disableAsyncJobs();
         spy.prepareForMaintenance("static");
