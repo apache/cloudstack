@@ -210,7 +210,7 @@
       </chart-card>
     </a-col>
     <a-col :xs="{ span: 24 }" :lg="{ span: 12 }" :xl="{ span: 8 }" :xxl="{ span: 8 }">
-      <chart-card :loading="capacityLoading" class="dashboard-card">
+      <chart-card :loading="capacityLoading" class="dashboard-storage">
         <template #title>
           <div class="center">
             <h3><hdd-outlined /> {{ $t('label.storage') }}</h3>
@@ -669,6 +669,13 @@ export default {
 .dashboard-card {
   width: 100%;
   min-height: 370px;
+}
+
+.dashboard-storage {
+  width: 100%;
+  overflow-x:hidden;
+  overflow-y: scroll;
+  max-height: 370px;
 }
 
 .dashboard-event {
