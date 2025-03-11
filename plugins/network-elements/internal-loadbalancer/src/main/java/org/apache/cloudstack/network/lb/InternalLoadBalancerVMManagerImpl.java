@@ -751,9 +751,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
 
     protected DomainRouterVO createOrUpdateInternalLb(DomainRouterVO internalLbVm, final long id,
                   final long internalLbProviderId, final Account owner, final long userId, final Long vpcId,
-                  final ServiceOffering routerOffering,
-                  final LinkedHashMap<Network, List<? extends NicProfile>> networks,
-                  final VMTemplateVO template) {
+                  final ServiceOffering routerOffering, final VMTemplateVO template) {
         if (internalLbVm == null) {
             internalLbVm = new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId,
                     VirtualMachineName.getSystemVmName(id, _instance, InternalLbVmNamePrefix),
@@ -780,14 +778,8 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         for (final Iterator<VMTemplateVO> templatesIterator = templates.iterator(); templatesIterator.hasNext();) {
             final VMTemplateVO template = templatesIterator.next();
             try {
-                internalLbVm = new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId,
-                        VirtualMachineName.getSystemVmName(id, _instance, InternalLbVmNamePrefix),
-                        template.getId(), template.getHypervisorType(), template.getGuestOSId(),
-                        owner.getDomainId(), owner.getId(), userId, false,
-                        RedundantState.UNKNOWN, false, false,
-                        VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
-                internalLbVm.setRole(Role.INTERNAL_LB_VM);
-                internalLbVm = _internalLbVmDao.persist(internalLbVm);
+                internalLbVm = createOrUpdateInternalLb(internalLbVm, id, internalLbProviderId, owner, userId, vpcId,
+                        routerOffering, template);
                 _itMgr.allocate(internalLbVm.getInstanceName(), template, routerOffering, networks, plan, null);
                 internalLbVm = _internalLbVmDao.findById(internalLbVm.getId());
                 if (templatesIterator.hasNext()) {
