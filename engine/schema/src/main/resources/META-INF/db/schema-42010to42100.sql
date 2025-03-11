@@ -44,11 +44,8 @@ ALTER TABLE `cloud`.`backups` ADD COLUMN `vm_name` varchar(255) COMMENT 'name of
 ALTER TABLE `cloud`.`backups` ADD COLUMN `description` varchar(1024) COMMENT 'description for the backup';
 UPDATE `cloud`.`backups` JOIN `cloud`.`vm_instance` ON `backups`.`vm_id` = `vm_instance`.`id` SET `backups`.`name` = `vm_instance`.`name`;
 
--- Make the column vm_id in backups table nullable and set it to null if foreign key is deleted
-ALTER TABLE `cloud`.`backups` DROP FOREIGN KEY `fk_backup__vm_id``;
+-- Make the column vm_id in backups table nullable to handle orphan backups
 ALTER TABLE `cloud`.`backups` MODIFY COLUMN `vm_id` BIGINT UNSIGNED NULL;
-ALTER TABLE `cloud`.`backups` ADD CONSTRAINT `fk_backup__vm_id`` FOREIGN KEY (`vm_id``) REFERENCES `cloud`.`vm_instance`(`id`) ON DELETE SET NULL;
-ALTER TABLE `cloud`.`backups` varchar(255) NOT NULL COMMENT 'name of the backup'
 
 -- Create backup details table
 CREATE TABLE `cloud`.`backup_details` (
