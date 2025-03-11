@@ -106,4 +106,8 @@ public interface VmDetailConstants {
     String VIRTUAL_TPM_ENABLED = "virtual.tpm.enabled";
     String VIRTUAL_TPM_MODEL = "virtual.tpm.model";
     String VIRTUAL_TPM_VERSION = "virtual.tpm.version";
+
+    // CPU mode and model, ADMIN only
+    String GUEST_CPU_MODE = "guest.cpu.mode";
+    String GUEST_CPU_MODEL = "guest.cpu.model";
 }
