@@ -3234,7 +3234,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             description.setLabel("Trusted Platform Module");
             VirtualTPM virtualTPM = new VirtualTPM();
             virtualTPM.setDeviceInfo(description);
-            virtualTPM.setKey(-1);
             VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
             deviceConfigSpec.setDevice(virtualTPM);
             deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
