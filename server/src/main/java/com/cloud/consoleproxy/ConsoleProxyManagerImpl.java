@@ -74,7 +74,6 @@ import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner;
-import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -146,7 +145,6 @@ import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.ConsoleProxyDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -229,8 +227,6 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private CAManager caManager;
     @Inject
     private NetworkOrchestrationService networkMgr;
-    @Inject
-    DeploymentPlanningManager deploymentPlanningManager;
 
     private ConsoleProxyListener consoleProxyListener;
 
@@ -576,7 +572,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
 
         HypervisorType availableHypervisor = resourceManager.getAvailableHypervisor(dataCenterId);
-        List<VMTemplateVO> templates = vmTemplateDao.findSystemVMReadyTemplates(dataCenterId, availableHypervisor);
+        List<VMTemplateVO> templates = vmTemplateDao.findSystemVMReadyTemplates(dataCenterId, availableHypervisor,
+                ResourceManager.SystemVmPreferredArchitecture.valueIn(dataCenterId));
         if (CollectionUtils.isEmpty(templates)) {
             throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenterId);
         }
@@ -727,11 +724,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             VMTemplateVO template = templateIterator.next();
             proxy = createOrUpdateConsoleProxy(proxy, dataCenterId, id, name, serviceOffering, template, systemAcct);
             try {
-                virtualMachineManager.allocate(name, template, serviceOffering, networks, plan, null);
+                virtualMachineManager.allocate(name, template, serviceOffering, networks, plan,
+                        template.getHypervisorType());
                 proxy = consoleProxyDao.findById(proxy.getId());
-                final VirtualMachineProfileImpl vmProfile =
-                        new VirtualMachineProfileImpl(proxy, template, serviceOffering, systemAcct, null);
-                deploymentPlanningManager.planDeployment(vmProfile, plan, new DeploymentPlanner.ExcludeList(), null);
+                virtualMachineManager.checkDeploymentPlan(proxy, template, serviceOffering, systemAcct, plan);
                 break;
             } catch (InsufficientCapacityException e) {
                 if (templateIterator.hasNext()) {
@@ -902,7 +898,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenter.getId());
         if (zoneHostInfo != null && isZoneHostReady(zoneHostInfo)) {
-            List<VMTemplateVO> templates = vmTemplateDao.findSystemVMReadyTemplates(dataCenter.getId(), HypervisorType.Any);
+            List<VMTemplateVO> templates = vmTemplateDao.findSystemVMReadyTemplates(dataCenter.getId(),
+                    HypervisorType.Any, null);
             if (CollectionUtils.isEmpty(templates)) {
                 if (logger.isDebugEnabled()) {
                     logger.debug("System vm template is not ready at data center {}, wait until it is ready to launch console proxy vm", dataCenter);

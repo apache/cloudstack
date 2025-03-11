@@ -61,6 +61,14 @@ public interface ResourceManager extends ResourceService, Configurable {
                     + "To force-stop VMs, choose 'ForceStop' strategy",
             true, ConfigKey.Scope.Global, null, null, null, null, null, ConfigKey.Kind.Select, "Error,Migration,ForceStop");
 
+    ConfigKey<String> SystemVmPreferredArchitecture = new ConfigKey<>("Advanced"
+            , String.class
+            , "system.vm.preferred.architecture"
+            , ""
+            , "Preferred architecture for the system VMs including virtual routers"
+            , true
+            , ConfigKey.Scope.Zone);
+
     /**
      * Register a listener for different types of resource life cycle events.
      * There can only be one type of listener per type of host.

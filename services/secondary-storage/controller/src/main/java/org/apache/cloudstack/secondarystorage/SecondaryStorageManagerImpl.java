@@ -83,7 +83,6 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner;
-import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -157,7 +156,6 @@ import com.cloud.vm.VirtualMachineGuru;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
@@ -257,8 +255,6 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     private IndirectAgentLB indirectAgentLB;
     @Inject
     private CAManager caManager;
-    @Inject
-    DeploymentPlanningManager deploymentPlanningManager;
     private int _secStorageVmMtuSize;
 
     private String _instance;
@@ -681,7 +677,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
 
         HypervisorType availableHypervisor = _resourceMgr.getAvailableHypervisor(dataCenterId);
-        List<VMTemplateVO> templates = _templateDao.findSystemVMReadyTemplates(dataCenterId, availableHypervisor);
+        List<VMTemplateVO> templates = _templateDao.findSystemVMReadyTemplates(dataCenterId, availableHypervisor,
+                ResourceManager.SystemVmPreferredArchitecture.valueIn(dataCenterId));
         if (CollectionUtils.isEmpty(templates)) {
             throw new CloudRuntimeException(String.format("Unable to find the system templates or it was not downloaded in %s.", dc));
         }
@@ -696,11 +693,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             secStorageVm = createOrUpdateSecondaryStorageVm(secStorageVm, dataCenterId, id, name, serviceOffering,
                     template, systemAcct, role);
             try {
-                _itMgr.allocate(name, template, serviceOffering, networks, plan, null);
+                _itMgr.allocate(name, template, serviceOffering, networks, plan, template.getHypervisorType());
                 secStorageVm = _secStorageVmDao.findById(secStorageVm.getId());
-                final VirtualMachineProfileImpl vmProfile =
-                        new VirtualMachineProfileImpl(secStorageVm, template, serviceOffering, systemAcct, null);
-                deploymentPlanningManager.planDeployment(vmProfile, plan, new DeploymentPlanner.ExcludeList(), null);
+                _itMgr.checkDeploymentPlan(secStorageVm, template, serviceOffering, systemAcct, plan);
                 break;
             } catch (InsufficientCapacityException e) {
                 if (templateIterator.hasNext()) {
@@ -850,7 +845,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
         if (zoneHostInfo != null && (zoneHostInfo.getFlags() & RunningHostInfoAgregator.ZoneHostInfo.ROUTING_HOST_MASK) != 0) {
-            List<VMTemplateVO> templates = _templateDao.findSystemVMReadyTemplates(dataCenterId, HypervisorType.Any);
+            List<VMTemplateVO> templates = _templateDao.findSystemVMReadyTemplates(dataCenterId,
+                    HypervisorType.Any, null);
             if (CollectionUtils.isEmpty(templates)) {
                 if (logger.isDebugEnabled()) {
                     logger.debug(String.format("System VM template is not ready at zone [%s], wait until it is ready to launch secondary storage VM.", dataCenterId));

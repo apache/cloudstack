@@ -496,25 +496,44 @@ public class NetworkHelperImpl implements NetworkHelper {
         return templateName;
     }
 
-    protected DomainRouterVO deployRouterWithTemplates(final long id,
+    protected DomainRouterVO createOrUpdateDomainRouter(DomainRouterVO router, final long id,
+            final RouterDeploymentDefinition routerDeploymentDefinition, final Account owner, final long userId,
+            final ServiceOfferingVO routerOffering, final boolean offerHA, final Long vpcId,
+            final VMTemplateVO template) {
+        if (router == null) {
+            router = new DomainRouterVO(id, routerOffering.getId(),
+                    routerDeploymentDefinition.getVirtualProvider().getId(),
+                    VirtualMachineName.getRouterName(id, s_vmInstanceName), template.getId(),
+                    template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(),
+                    userId, routerDeploymentDefinition.isRedundant(), RedundantState.UNKNOWN, offerHA, false,
+                    vpcId);
+            router.setDynamicallyScalable(template.isDynamicallyScalable());
+            router.setRole(Role.VIRTUAL_ROUTER);
+            router.setLimitCpuUse(routerOffering.getLimitCpuUse());
+            return _routerDao.persist(router);
+        }
+        router.setTemplateId(template.getId());
+        router.setDynamicallyScalable(template.isDynamicallyScalable());
+        _routerDao.update(router.getId(), router);
+        return router;
+    }
+
+    protected DomainRouterVO deployRouterWithTemplates(DomainRouterVO router, final long id,
                final RouterDeploymentDefinition routerDeploymentDefinition, final Account owner, final long userId,
                final ServiceOfferingVO routerOffering, final boolean offerHA, final Long vpcId,
                final List<VMTemplateVO> templates) throws InsufficientCapacityException {
         for (final Iterator<VMTemplateVO> templatesIterator = templates.iterator(); templatesIterator.hasNext();) {
             final VMTemplateVO template = templatesIterator.next();
             try {
-                DomainRouterVO router = new DomainRouterVO(id, routerOffering.getId(),
-                        routerDeploymentDefinition.getVirtualProvider().getId(),
-                        VirtualMachineName.getRouterName(id, s_vmInstanceName), template.getId(),
-                        template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(),
-                        userId, routerDeploymentDefinition.isRedundant(), RedundantState.UNKNOWN, offerHA, false,
-                        vpcId);
-                router.setDynamicallyScalable(template.isDynamicallyScalable());
-                router.setRole(Role.VIRTUAL_ROUTER);
-                router.setLimitCpuUse(routerOffering.getLimitCpuUse());
-                router = _routerDao.persist(router);
+                router = createOrUpdateDomainRouter(router, id, routerDeploymentDefinition, owner, userId,
+                        routerOffering, offerHA, vpcId, template);
                 reallocateRouterNetworks(routerDeploymentDefinition, router, template, null);
-                return  _routerDao.findById(router.getId());
+                router = _routerDao.findById(router.getId());
+                if (templatesIterator.hasNext()) {
+                    _itMgr.checkDeploymentPlan(router, template, routerOffering, owner,
+                            routerDeploymentDefinition.getPlan());
+                }
+                return router;
             } catch (InsufficientCapacityException ex) {
                 if (templatesIterator.hasNext()) {
                     logger.debug("Failed to allocate the VR with hypervisor {} and {}, retrying with another template", template.getHypervisorType(), template);
@@ -559,15 +578,17 @@ public class NetworkHelperImpl implements NetworkHelper {
                     logger.debug(String.format("Allocating the VR with id=%s in datacenter %s with the hypervisor type %s", id, routerDeploymentDefinition.getDest()
                             .getDataCenter(), hType));
                 }
-
-                final String templateName = retrieveTemplateName(hType, routerDeploymentDefinition.getDest().getDataCenter().getId());
-                final List<VMTemplateVO> templates = _templateDao.findRoutingTemplates(hType, templateName);
+                final long zoneId = routerDeploymentDefinition.getDest().getDataCenter().getId();
+                final String templateName = retrieveTemplateName(hType, zoneId);
+                final String preferredArch = ResourceManager.SystemVmPreferredArchitecture.valueIn(zoneId);
+                final List<VMTemplateVO> templates = _templateDao.findRoutingTemplates(hType, templateName,
+                        preferredArch);
                 if (CollectionUtils.isEmpty(templates)) {
                     logger.debug("{} won't support system vm, skip it", hType);
                     continue;
                 }
-                router = deployRouterWithTemplates(id, routerDeploymentDefinition, owner, userId, routerOffering,
-                        offerHA, vpcId, templates);
+                router = deployRouterWithTemplates(router, id, routerDeploymentDefinition, owner, userId,
+                        routerOffering, offerHA, vpcId, templates);
             } catch (final InsufficientCapacityException ex) {
                 if (iter.hasNext()) {
                     logger.debug("Failed to allocate the VR with {}, retrying with another hypervisor", hType);

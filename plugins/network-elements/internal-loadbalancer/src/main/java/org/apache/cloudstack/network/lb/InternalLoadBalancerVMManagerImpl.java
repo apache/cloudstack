@@ -749,22 +749,51 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
         return templateName;
     }
 
-    protected DomainRouterVO deployInternalLbVmWithTemplates(final long id, final DeploymentPlan plan, final long internalLbProviderId,
-                 final Account owner, final long userId, final Long vpcId, final ServiceOffering routerOffering,
-                 final LinkedHashMap<Network, List<? extends NicProfile>> networks,
-                 final List<VMTemplateVO> templates) throws InsufficientCapacityException {
+    protected DomainRouterVO createOrUpdateInternalLb(DomainRouterVO internalLbVm, final long id,
+                  final long internalLbProviderId, final Account owner, final long userId, final Long vpcId,
+                  final ServiceOffering routerOffering,
+                  final LinkedHashMap<Network, List<? extends NicProfile>> networks,
+                  final VMTemplateVO template) {
+        if (internalLbVm == null) {
+            internalLbVm = new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId,
+                    VirtualMachineName.getSystemVmName(id, _instance, InternalLbVmNamePrefix),
+                    template.getId(), template.getHypervisorType(), template.getGuestOSId(),
+                    owner.getDomainId(), owner.getId(), userId, false,
+                    RedundantState.UNKNOWN, false, false,
+                    VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
+            internalLbVm.setRole(Role.INTERNAL_LB_VM);
+            internalLbVm.setLimitCpuUse(routerOffering.getLimitCpuUse());
+            internalLbVm.setDynamicallyScalable(template.isDynamicallyScalable());
+            return _internalLbVmDao.persist(internalLbVm);
+        }
+        internalLbVm.setTemplateId(template.getId());
+        internalLbVm.setDynamicallyScalable(template.isDynamicallyScalable());
+        _internalLbVmDao.update(internalLbVm.getId(), internalLbVm);
+        return internalLbVm;
+    }
+
+    protected DomainRouterVO deployInternalLbVmWithTemplates(DomainRouterVO internalLbVm, final long id,
+                 final DeploymentPlan plan, final long internalLbProviderId, final Account owner, final long userId,
+                 final Long vpcId, final ServiceOffering routerOffering,
+                 final LinkedHashMap<Network, List<? extends NicProfile>> networks, final List<VMTemplateVO> templates)
+            throws InsufficientCapacityException {
         for (final Iterator<VMTemplateVO> templatesIterator = templates.iterator(); templatesIterator.hasNext();) {
             final VMTemplateVO template = templatesIterator.next();
             try {
-                DomainRouterVO internalLbVm = new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId,
+                internalLbVm = new DomainRouterVO(id, routerOffering.getId(), internalLbProviderId,
                         VirtualMachineName.getSystemVmName(id, _instance, InternalLbVmNamePrefix),
                         template.getId(), template.getHypervisorType(), template.getGuestOSId(),
                         owner.getDomainId(), owner.getId(), userId, false,
-                        RedundantState.UNKNOWN, false, false, VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
+                        RedundantState.UNKNOWN, false, false,
+                        VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
                 internalLbVm.setRole(Role.INTERNAL_LB_VM);
                 internalLbVm = _internalLbVmDao.persist(internalLbVm);
                 _itMgr.allocate(internalLbVm.getInstanceName(), template, routerOffering, networks, plan, null);
-                return _internalLbVmDao.findById(internalLbVm.getId());
+                internalLbVm = _internalLbVmDao.findById(internalLbVm.getId());
+                if (templatesIterator.hasNext()) {
+                    _itMgr.checkDeploymentPlan(internalLbVm, template, routerOffering, owner, plan);
+                }
+                return internalLbVm;
             } catch (InsufficientCapacityException ex) {
                 if (templatesIterator.hasNext()) {
                     logger.debug("Failed to allocate the VR with hypervisor {} and {}, retrying with another template", template.getHypervisorType(), template);
@@ -806,14 +835,17 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                     logger.debug("Creating the internal lb vm {} in datacenter {} with hypervisor type {}",
                             id, dest.getDataCenter(), hType);
                 }
-                final String templateName = getRouterTemplateForHypervisor(hType, dest.getDataCenter().getId());
-                final List<VMTemplateVO> templates = _templateDao.findRoutingTemplates(hType, templateName);
+                final long zoneId = dest.getDataCenter().getId();
+                final String templateName = getRouterTemplateForHypervisor(hType, zoneId);
+                final String preferredArch = ResourceManager.SystemVmPreferredArchitecture.valueIn(zoneId);
+                final List<VMTemplateVO> templates = _templateDao.findRoutingTemplates(hType, templateName,
+                        preferredArch);
                 if (CollectionUtils.isEmpty(templates)) {
                     logger.debug("{} won't support system vm, skip it", hType);
                     continue;
                 }
-                internalLbVm = deployInternalLbVmWithTemplates(id, plan, internalLbProviderId, owner, userId, vpcId,
-                        routerOffering, networks, templates);
+                internalLbVm = deployInternalLbVmWithTemplates(internalLbVm, id, plan, internalLbProviderId, owner,
+                        userId, vpcId, routerOffering, networks, templates);
             } catch (final InsufficientCapacityException ex) {
                 if (allocateRetry < 2 && iter.hasNext()) {
                     logger.debug("Failed to allocate the Internal lb vm with hypervisor type {}, retrying one more time", hType);
