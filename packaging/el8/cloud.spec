@@ -115,6 +115,7 @@ Requires: ipset
 Requires: perl
 Requires: rsync
 Requires: cifs-utils
+Requires: ceph-common
 Requires: (python3-libvirt or python3-libvirt-python)
 Requires: (qemu-img or qemu-tools)
 Requires: qemu-kvm
