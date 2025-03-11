@@ -571,4 +571,11 @@ public class LibvirtVMDefTest extends TestCase {
         cpuModeDef.setTopology(-1, -1, 4);
         assertEquals("<cpu></cpu>", cpuModeDef.toString());
     }
+
+    @Test
+    public void testTpmModel() {
+        LibvirtVMDef.TpmDef tpmDef = new LibvirtVMDef.TpmDef("tpm-tis", "2.0");
+        assertEquals(LibvirtVMDef.TpmDef.TpmModel.TIS, tpmDef.getModel());
+        assertEquals(LibvirtVMDef.TpmDef.TpmVersion.V2_0, tpmDef.getVersion());
+    }
 }

@@ -101,4 +101,9 @@ public interface VmDetailConstants {
     String VMWARE_HOST_NAME = String.format("%s-host", VMWARE_TO_KVM_PREFIX);
     String VMWARE_DISK = String.format("%s-disk", VMWARE_TO_KVM_PREFIX);
     String VMWARE_MAC_ADDRESSES = String.format("%s-mac-addresses", VMWARE_TO_KVM_PREFIX);
+
+    // TPM
+    String VIRTUAL_TPM_ENABLED = "virtual.tpm.enabled";
+    String VIRTUAL_TPM_MODEL = "virtual.tpm.model";
+    String VIRTUAL_TPM_VERSION = "virtual.tpm.version";
 }
