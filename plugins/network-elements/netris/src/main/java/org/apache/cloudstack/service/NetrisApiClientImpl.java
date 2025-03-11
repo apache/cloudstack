@@ -1021,39 +1021,46 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         boolean isVpc = cmd.isVpc();
         Boolean isGlobalRouting = cmd.isGlobalRouting();
 
-        String netrisVpcName = getNetrisVpcName(cmd, vpcId, vpcName);
-        VPCListing associatedVpc = getNetrisVpcResource(netrisVpcName);
-        if (associatedVpc == null) {
-            logger.error("Failed to find Netris VPC with name: {}, to create the corresponding vNet for network {}", netrisVpcName, networkName);
-            return false;
-        }
-
-        String vNetName;
-        if (isVpc) {
-            vNetName = String.format("V%s-N%s-%s", vpcId, networkId, networkName);
-        } else {
-            vNetName = String.format("N%s-%s", networkId, networkName);
-        }
-        String netrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, vNetName) ;
-        String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetCidr) ;
-
-        createIpamSubnetInternal(netrisSubnetName, vnetCidr, SubnetBody.PurposeEnum.COMMON, associatedVpc, isGlobalRouting);
-        if (Objects.nonNull(netrisV6Cidr)) {
-            String netrisV6IpamAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, netrisV6Cidr);
-            String netrisV6SubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET,  String.valueOf(cmd.getVpcId()), netrisV6Cidr) ;
-            InlineResponse2004Data createdIpamAllocation = createIpamAllocationInternal(netrisV6IpamAllocationName, netrisV6Cidr, associatedVpc);
-            if (Objects.isNull(createdIpamAllocation)) {
-                throw new CloudRuntimeException(String.format("Failed to create Netris IPAM Allocation %s for VPC %s", netrisV6IpamAllocationName, netrisVpcName));
+        try {
+            String netrisVpcName = getNetrisVpcName(cmd, vpcId, vpcName);
+            VPCListing associatedVpc = getNetrisVpcResource(netrisVpcName);
+            if (associatedVpc == null) {
+                logger.error("Failed to find Netris VPC with name: {}, to create the corresponding vNet for network {}", netrisVpcName, networkName);
+                return false;
             }
-            createIpamSubnetInternal(netrisV6SubnetName, netrisV6Cidr, SubnetBody.PurposeEnum.COMMON, associatedVpc, isGlobalRouting);
-        }
-        logger.debug("Successfully created IPAM Subnet {} for network {} on Netris", netrisSubnetName, networkName);
 
-        VnetResAddBody vnetResponse = createVnetInternal(associatedVpc, netrisVnetName, netrisGateway, netrisV6Cidr, vxlanId, netrisTag);
-        if (vnetResponse == null || !vnetResponse.isIsSuccess()) {
-            String reason = vnetResponse == null ? "Empty response" : "Operation failed on Netris";
-            logger.debug("The Netris vNet creation {} failed: {}", vNetName, reason);
-            return false;
+            String vNetName;
+            if (isVpc) {
+                vNetName = String.format("V%s-N%s-%s", vpcId, networkId, networkName);
+            } else {
+                vNetName = String.format("N%s-%s", networkId, networkName);
+            }
+            String netrisVnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VNET, vNetName) ;
+            String netrisSubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetCidr) ;
+
+            createIpamSubnetInternal(netrisSubnetName, vnetCidr, SubnetBody.PurposeEnum.COMMON, associatedVpc, isGlobalRouting);
+            if (Objects.nonNull(netrisV6Cidr)) {
+                String netrisV6IpamAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, netrisV6Cidr);
+                String netrisV6SubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET,  String.valueOf(cmd.getVpcId()), netrisV6Cidr) ;
+                BigDecimal ipamAllocationId = getIpamAllocationIdByPrefixAndVpc(netrisV6Cidr, associatedVpc);
+                if (ipamAllocationId == null) {
+                    InlineResponse2004Data createdIpamAllocation = createIpamAllocationInternal(netrisV6IpamAllocationName, netrisV6Cidr, associatedVpc);
+                    if (Objects.isNull(createdIpamAllocation)) {
+                        throw new CloudRuntimeException(String.format("Failed to create Netris IPAM Allocation %s for VPC %s", netrisV6IpamAllocationName, netrisVpcName));
+                    }
+                }
+                createIpamSubnetInternal(netrisV6SubnetName, netrisV6Cidr, SubnetBody.PurposeEnum.COMMON, associatedVpc, isGlobalRouting);
+            }
+            logger.debug("Successfully created IPAM Subnet {} for network {} on Netris", netrisSubnetName, networkName);
+
+            VnetResAddBody vnetResponse = createVnetInternal(associatedVpc, netrisVnetName, netrisGateway, netrisV6Cidr, vxlanId, netrisTag);
+            if (vnetResponse == null || !vnetResponse.isIsSuccess()) {
+                String reason = vnetResponse == null ? "Empty response" : "Operation failed on Netris";
+                logger.debug("The Netris vNet creation {} failed: {}", vNetName, reason);
+                return false;
+            }
+        } catch (ApiException e) {
+            throw new CloudRuntimeException(String.format("Failed to create Netris vNet %s", networkName), e);
         }
         return true;
     }
