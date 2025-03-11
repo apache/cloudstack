@@ -19,6 +19,7 @@ package org.apache.cloudstack.backup;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.alert.AlertManager;
+import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -92,6 +93,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 
 import static org.junit.Assert.assertEquals;
@@ -986,6 +988,11 @@ public class BackupManagerTest {
         }
     }
 
+    private
+    void setupRestoreBackupToVMMocks() {
+
+    }
+
     @Test
     public void testRestoreBackupToVM() throws NoTransitionException {
         Long backupId = 1L;
@@ -993,6 +1000,8 @@ public class BackupManagerTest {
         Long hostId = 3L;
         Long offeringId = 4L;
         Long poolId = 5L;
+
+        setupRestoreBackupToVMMocks();
 
         BackupVO backup = mock(BackupVO.class);
         when(backup.getBackupOfferingId()).thenReturn(offeringId);
@@ -1039,5 +1048,56 @@ public class BackupManagerTest {
         } catch (ResourceUnavailableException e) {
             fail("Test failed due to exception" + e);
         }
+    }
+
+    @Test
+    public void testUpdateOrphanedBackups() {
+        Long vmId = 1L;
+        Long zoneId = 2L;
+        Long backupId1 = 3L;
+        Long backupId2 = 4L;
+
+        VirtualMachine vm = mock(VirtualMachine.class);
+        when(vm.getDataCenterId()).thenReturn(1L);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getHostName()).thenReturn("test-vm");
+        when(vm.getDataCenterId()).thenReturn(zoneId);
+
+        Backup backup1 = mock(Backup.class);
+        Backup backup2 = mock(Backup.class);
+        when(backup1.getId()).thenReturn(backupId1);
+        when(backup2.getId()).thenReturn(backupId2);
+        List<Backup> backups = List.of(backup1, backup2);
+        when(backupDao.listByVmId(zoneId, vmId)).thenReturn(backups);
+
+        BackupVO backupVO1 = new BackupVO();
+        BackupVO backupVO2 = new BackupVO();
+        when(backupDao.findById(backupId1)).thenReturn(backupVO1);
+        when(backupDao.findById(backupId2)).thenReturn(backupVO2);
+
+        backupManager.updateOrphanedBackups(vm);
+
+        Assert.assertEquals(null, backupVO1.getVmId());
+        Assert.assertEquals("test-vm", backupVO1.getVmName());
+        Assert.assertEquals(null, backupVO2.getVmId());
+        Assert.assertEquals("test-vm", backupVO2.getVmName());
+        for (Backup backup : backups) {
+            verify(backupDao).update(Mockito.eq(backup.getId()), any(BackupVO.class));
+        }
+    }
+
+    @Test
+    public void testGetBackupStorageUsedStats() {
+        Long zoneId = 1L;
+        overrideBackupFrameworkConfigValue();
+        when(backupManager.getBackupProvider(zoneId)).thenReturn(backupProvider);
+        when(backupProvider.getBackupStorageStats(zoneId)).thenReturn(new Pair<>(100L, 200L));
+
+        CapacityVO capacity = backupManager.getBackupStorageUsedStats(zoneId);
+
+        Assert.assertNotNull(capacity);
+        Assert.assertEquals(Optional.ofNullable(Long.valueOf(100)), Optional.ofNullable(capacity.getUsedCapacity()));
+        Assert.assertEquals(Optional.ofNullable(Long.valueOf(200)), Optional.ofNullable(capacity.getTotalCapacity()));
+        Assert.assertEquals(CapacityVO.CAPACITY_TYPE_BACKUP_STORAGE, capacity.getCapacityType());
     }
 }
