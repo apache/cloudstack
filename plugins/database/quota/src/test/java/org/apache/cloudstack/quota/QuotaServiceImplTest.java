@@ -35,8 +35,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.naming.ConfigurationException;
@@ -66,7 +68,10 @@ public class QuotaServiceImplTest extends TestCase {
     @Mock
     private AccountVO accountVoMock;
 
-    QuotaServiceImpl quotaServiceImplSpy = new QuotaServiceImpl();
+    @Spy
+    @InjectMocks
+    QuotaServiceImpl quotaServiceImplSpy;
+
 
     @Before
     public void setup() throws IllegalAccessException, NoSuchFieldException, ConfigurationException {
@@ -137,7 +142,7 @@ public class QuotaServiceImplTest extends TestCase {
         final Date startDate = new DateTime().minusDays(2).toDate();
         final Date endDate = new Date();
 
-        Mockito.doReturn(accountId).when(quotaServiceImplSpy).getAccountToWhomQuotaBalancesWillBeListed(Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong());
+        Mockito.lenient().doReturn(accountId).when(quotaServiceImplSpy).getAccountToWhomQuotaBalancesWillBeListed(Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong());
 
         quotaServiceImplSpy.getQuotaUsage(accountId, accountName, domainId, QuotaTypes.IP_ADDRESS, startDate, endDate);
         Mockito.verify(quotaUsageDao, Mockito.times(1)).findQuotaUsage(Mockito.eq(accountId), Mockito.eq(domainId), Mockito.eq(QuotaTypes.IP_ADDRESS), Mockito.any(Date.class), Mockito.any(Date.class));
