@@ -483,8 +483,8 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             Pair<Boolean, RoutesGetBody> existingStaticRoute = staticRouteExists(vpcResource.getId(), prefix, null, staticRouteId);
             if (updateRoute) {
                 if (!existingStaticRoute.first()) {
-                    logger.error("The Netris static route {} does not exist for VPC {}", prefix, netrisVpcName);
-                    return false;
+                    logger.error("The Netris static route {} does not exist for VPC {}, adding it", prefix, netrisVpcName);
+                    return addStaticRouteInternal(vpcResource, netrisVpcName, prefix, nextHop, staticRouteId);
                 }
                 return updateStaticRouteInternal(existingStaticRoute.second().getId(), netrisVpcName, prefix, nextHop, staticRouteId);
             } else {
