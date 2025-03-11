@@ -51,6 +51,7 @@ import javax.xml.datatype.XMLGregorianCalendar;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.hypervisor.vmware.mo.HostDatastoreBrowserMO;
+import com.vmware.vim25.Description;
 import com.vmware.vim25.FileInfo;
 import com.vmware.vim25.FileQueryFlags;
 import com.vmware.vim25.FolderFileInfo;
@@ -58,6 +59,7 @@ import com.vmware.vim25.HostDatastoreBrowserSearchResults;
 import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
 import com.vmware.vim25.VirtualCdromIsoBackingInfo;
 import com.vmware.vim25.VirtualMachineConfigSummary;
+import com.vmware.vim25.VirtualTPM;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.PrepareForBackupRestorationCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
@@ -2597,12 +2599,16 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             setBootOptions(vmSpec, bootMode, vmConfigSpec);
 
+            // Config vTPM
+            configureVirtualTPM(vmMo, vmSpec, vmConfigSpec, bootMode);
+
             if (StringUtils.isNotEmpty(vmStoragePolicyId)) {
                 vmConfigSpec.getVmProfile().add(vmProfileSpec);
                 if (logger.isTraceEnabled()) {
                     logger.trace(String.format("Configuring the VM %s with storage policy: %s", vmInternalCSName, vmStoragePolicyId));
                 }
             }
+
             //
             // Configure VM
             //
@@ -3201,6 +3207,51 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         arrayVideoCardConfigSpecs.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
 
         vmConfigSpec.getDeviceChange().add(arrayVideoCardConfigSpecs);
+    }
+
+    /**
+     * Add or Remove virtual TPM module
+     *
+     * @param vmMo         virtual machine mo
+     * @param vmSpec       virtual machine specs
+     * @param vmConfigSpec virtual machine config spec
+     * @throws Exception exception
+     */
+    protected void configureVirtualTPM(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, VirtualMachineConfigSpec vmConfigSpec, String bootMode) throws Exception {
+        String bootType = vmSpec.getDetails().getOrDefault(ApiConstants.BootType.UEFI.toString(), null);
+        String virtualTPMEnabled = vmSpec.getDetails().getOrDefault(VmDetailConstants.VIRTUAL_TPM_ENABLED, null);
+        if (StringUtils.isNotBlank(bootMode) && !bootMode.equalsIgnoreCase("bios")
+                && "secure".equalsIgnoreCase(bootType)
+                && Boolean.parseBoolean(virtualTPMEnabled)) {
+            logger.debug("Adding Virtual TPM device");
+            for (VirtualDevice device : vmMo.getAllDeviceList()) {
+                if (device instanceof VirtualTPM) {
+                    return;
+                }
+            }
+            Description description = new Description();
+            description.setSummary("Trusted Platform Module");
+            description.setLabel("Trusted Platform Module");
+            VirtualTPM virtualTPM = new VirtualTPM();
+            virtualTPM.setDeviceInfo(description);
+            virtualTPM.setKey(-1);
+            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+            deviceConfigSpec.setDevice(virtualTPM);
+            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+            vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
+        } else {
+            logger.debug(String.format("Virtual TPM device is not enabled. It is only enabled when boot type is SECURE (actually %s) and vTPM is enabled (actually %s)", bootType, virtualTPMEnabled));
+            for (VirtualDevice device : vmMo.getAllDeviceList()) {
+                if (device instanceof VirtualTPM) {
+                    VirtualTPM virtualTPM = (VirtualTPM) device;
+                    VirtualDeviceConfigSpec virtualDeviceConfigSpec = new VirtualDeviceConfigSpec();
+                    virtualDeviceConfigSpec.setDevice(virtualTPM);
+                    virtualDeviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.REMOVE);
+                    vmConfigSpec.getDeviceChange().add(virtualDeviceConfigSpec);
+                }
+            }
+
+        }
     }
 
     private void tearDownVm(VirtualMachineMO vmMo) throws Exception {
