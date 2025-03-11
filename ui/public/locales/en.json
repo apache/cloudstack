@@ -3711,7 +3711,6 @@
 "message.volumes.managed": "Volumes controlled by CloudStack.",
 "message.volumes.unmanaged": "Volumes not controlled by CloudStack.",
 "message.vpc.restart.required": "Restart is required for VPC(s). Click here to view VPC(s) which require restart.",
-"message.vr.alert.upon.network.offering.creation.l2": "As virtual routers are not created for L2 Networks, the compute offering will not be used.",
 "message.vr.alert.upon.network.offering.creation.others": "As none of the obligatory services for creating a virtual router (VPN, DHCP, DNS, Firewall, LB, UserData, SourceNat, StaticNat, PortForwarding) are enabled, the virtual router will not be created and the compute offering will not be used.",
 "message.warn.change.primary.storage.scope": "This feature is tested and supported for the following configurations:<br>KVM - NFS/Ceph - DefaultPrimary<br>VMware - NFS - DefaultPrimary<br>*There might be extra steps involved to make it work for other configurations.",
 "message.warn.filetype": "jpg, jpeg, png, bmp and svg are the only supported image formats.",
