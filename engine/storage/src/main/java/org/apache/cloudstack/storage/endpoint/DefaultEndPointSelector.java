@@ -515,7 +515,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
                 return getEndPointFromHostId(attachedVM.getLastHostId());
             }
         }
-        return select(object, encryptionRequired);
+        return select(volumeInfo, encryptionRequired);
     }
 
     protected EndPoint getEndPointForSnapshotOperationsInKvm(SnapshotInfo snapshotInfo, boolean encryptionRequired) {

@@ -57,11 +57,11 @@ public class DefaultEndPointSelectorTest {
     @Test
     public void getEndPointForBitmapRemovalTestVolumeIsNotAttached() {
         Mockito.doReturn(false).when(volumeInfoMock).isAttachedVM();
-        Mockito.doReturn(null).when(defaultEndPointSelectorSpy).select(snapshotInfoMock, false);
+        Mockito.doReturn(null).when(defaultEndPointSelectorSpy).select(volumeInfoMock, false);
 
         defaultEndPointSelectorSpy.getEndPointForBitmapRemoval(snapshotInfoMock, false);
 
-        Mockito.verify(defaultEndPointSelectorSpy, Mockito.times(1)).select(snapshotInfoMock, false);
+        Mockito.verify(defaultEndPointSelectorSpy, Mockito.times(1)).select(volumeInfoMock, false);
     }
 
     @Test
@@ -102,11 +102,11 @@ public class DefaultEndPointSelectorTest {
         Mockito.doReturn(null).when(virtualMachineMock).getHostId();
         Mockito.doReturn(null).when(virtualMachineMock).getLastHostId();
 
-        Mockito.doReturn(null).when(defaultEndPointSelectorSpy).select(snapshotInfoMock, false);
+        Mockito.doReturn(null).when(defaultEndPointSelectorSpy).select(volumeInfoMock, false);
 
         defaultEndPointSelectorSpy.getEndPointForBitmapRemoval(snapshotInfoMock, false);
 
-        Mockito.verify(defaultEndPointSelectorSpy, Mockito.times(1)).select(snapshotInfoMock, false);
+        Mockito.verify(defaultEndPointSelectorSpy, Mockito.times(1)).select(volumeInfoMock, false);
     }
 
     @Test
