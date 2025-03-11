@@ -57,7 +57,9 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
 import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -412,6 +414,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     VmWorkJobDao vmWorkJobDao;
     @Inject
     BackupManager backupManager;
+    @Inject
+    BackupDao backupDao;
 
     private SingleCache<List<Long>> vmIdsInProgressCache;
 
@@ -2345,6 +2349,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                         throw new CloudRuntimeException("Unable to destroy " + vm);
                     } else {
                         if (expunge) {
+                            if (vm.getBackupOfferingId() != null) {
+                                List<Backup> backupsForVm = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+                                if (CollectionUtils.isEmpty(backupsForVm)) {
+                                    backupManager.removeVMFromBackupOffering(vm.getId(), true);
+                                } else {
+                                    throw new CloudRuntimeException(String.format("This VM [uuid: %s, name: %s] has a "
+                                                    + "Backup Offering [id: %s, external id: %s] with %s backups. Please, remove the backup offering "
+                                                    + "before proceeding to VM exclusion!", vm.getUuid(), vm.getInstanceName(), vm.getBackupOfferingId(),
+                                            vm.getBackupExternalId(), backupsForVm.size()));
+                                }
+                            }
                             if (!stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, vm.getHostId())) {
                                 logger.debug("Unable to expunge the vm because it is not in the correct state: {}", vm);
                                 throw new CloudRuntimeException("Unable to expunge " + vm);
