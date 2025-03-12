@@ -27,6 +27,7 @@ import com.vmware.vim25.VirtualMachineConfigSpec;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
+import org.apache.cloudstack.storage.DiskControllerMappingVO;
 
 /**
  * Interface to consolidate ESX(i) hosts and HA/FT clusters into a common interface used by CloudStack Hypervisor resources
@@ -64,7 +65,7 @@ public interface VmwareHypervisorHost {
 
     boolean createBlankVm(String vmName, String vmInternalCSName, int cpuCount, int cpuSpeedMHz, int cpuReservedMHz, boolean limitCpuUse, int memoryMB,
                           int memoryReserveMB, String guestOsIdentifier, ManagedObjectReference morDs, boolean snapshotDirToParent,
-                          Pair<String, String> controllerInfo, Boolean systemVm) throws Exception;
+                          Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo, Boolean systemVm) throws Exception;
 
     void importVmFromOVF(String ovfFilePath, String vmName, DatastoreMO dsMo, String diskOption, String configurationId) throws Exception;
 
