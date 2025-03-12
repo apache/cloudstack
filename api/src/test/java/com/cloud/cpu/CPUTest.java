@@ -61,7 +61,7 @@ public class CPUTest {
 
     @Test
     public void testCPUArchGetTypesAsCSV() {
-        String expectedCSV = "i686,x86_64,aarch64";
+        String expectedCSV = "i686,x86_64,aarch64,s390x";
         assertEquals(expectedCSV, CPU.CPUArch.getTypesAsCSV());
     }
 }
