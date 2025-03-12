@@ -41,7 +41,7 @@ from marvin.codes import FAILED, PASS
 from nose.plugins.attrib import attr
 
 import uuid
-
+import unittest
 
 class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
 
@@ -58,8 +58,7 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
         cls.hypervisor = testClient.getHypervisorInfo()
 
         if cls.hypervisor.lower() != "kvm":
-            cls.unsupportedHypervisor = True
-            return
+            raise unittest.SkipTest("Only KVM hypervisor is supported for deployment of a VM with volume/snapshot")
 
         cls.template = get_template(
             cls.apiclient,
@@ -117,8 +116,8 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
             )
             cls._cleanup.append(cls.disk_offering)
         else:
-            cls.debug("No zone wide storage found")
-            return
+            raise unittest.SkipTest("No zone wide storage found. Skipping tests")
+
 
         cls.virtual_machine = VirtualMachine.create(
             cls.apiclient,
