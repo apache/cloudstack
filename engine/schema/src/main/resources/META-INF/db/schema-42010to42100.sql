@@ -37,3 +37,46 @@ WHERE rp.rule = 'quotaStatement'
 AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaCreditsList');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'last_mgmt_server_id', 'bigint unsigned DEFAULT NULL COMMENT "last management server this host is connected to" AFTER `mgmt_server_id`');
+
+
+-- Create user token_keypairs table for apikey/secretkey tokens
+CREATE TABLE IF NOT EXISTS `cloud`.`api_keypair` (
+    `id` bigint(20) unsigned NOT NULL auto_increment,
+    `uuid` varchar(40) UNIQUE NOT NULL,
+    `name` varchar(255) NOT NULL,
+    `domain_id` bigint(20) unsigned NOT NULL,
+    `account_id` bigint(20) unsigned NOT NULL,
+    `user_id` bigint(20) unsigned NOT NULL,
+    `start_date` datetime,
+    `end_date` datetime,
+    `description` varchar(100),
+    `api_key` varchar(255) NOT NULL,
+    `secret_key` varchar(255) NOT NULL,
+    `created` datetime NOT NULL,
+    `removed` datetime,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_api_keypair__user_id` FOREIGN KEY(`user_id`) REFERENCES `cloud`.`user`(`id`),
+    CONSTRAINT `fk_api_keypair__account_id` FOREIGN KEY(`account_id`) REFERENCES `cloud`.`account`(`id`),
+    CONSTRAINT `fk_api_keypair__domain_id` FOREIGN KEY(`domain_id`) REFERENCES `cloud`.`domain`(`id`)
+    );
+
+CREATE TABLE IF NOT EXISTS `cloud`.`api_keypair_permissions` (
+                                                             `id` bigint(20) unsigned NOT NULL auto_increment,
+    `uuid` varchar(40) UNIQUE,
+    `sort_order` bigint(20) unsigned NOT NULL DEFAULT 0,
+    `rule` varchar(255) NOT NULL,
+    `api_keypair_id` bigint(20) unsigned NOT NULL,
+    `permission` varchar(255) NOT NULL,
+    `description` varchar(255),
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_keypair_permissions__api_keypair_id` FOREIGN KEY(`api_keypair_id`) REFERENCES `cloud`.`api_keypair`(`id`)
+    );
+
+INSERT INTO `cloud`.`api_keypair` (uuid, user_id, domain_id, account_id, api_key, secret_key, created, name)
+SELECT  uuid(), user.id, account.domain_id, account.id, user.api_key, user.secret_key, now(), 'Active key pair'
+FROM    `cloud`.`user` AS user
+JOIN    `cloud`.`account` AS account ON user.account_id = account.id
+WHERE   user.api_key IS NOT NULL
+  AND     user.secret_key IS NOT NULL;
+
+ALTER TABLE `cloud`.`user` DROP COLUMN api_key, DROP COLUMN secret_key;

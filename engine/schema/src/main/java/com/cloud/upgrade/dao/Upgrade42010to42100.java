@@ -19,11 +19,10 @@ package com.cloud.upgrade.dao;
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
-
-import java.io.InputStream;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.io.InputStream;
+import java.sql.Connection;
 import java.util.List;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
