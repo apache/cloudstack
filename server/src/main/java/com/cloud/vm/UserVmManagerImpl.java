@@ -95,7 +95,6 @@ import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
 import org.apache.cloudstack.api.command.user.volume.ChangeOfferingForVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.dao.BackupDao;
@@ -2483,17 +2482,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         try {
 
-            if (vm.getBackupOfferingId() != null) {
-                List<Backup> backupsForVm = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
-                if (CollectionUtils.isEmpty(backupsForVm)) {
-                    backupManager.removeVMFromBackupOffering(vm.getId(), true);
-                } else {
-                    throw new CloudRuntimeException(String.format("This VM [uuid: %s, name: %s] has a "
-                            + "Backup Offering [id: %s, external id: %s] with %s backups. Please, remove the backup offering "
-                            + "before proceeding to VM exclusion!", vm.getUuid(), vm.getInstanceName(), vm.getBackupOfferingId(),
-                            vm.getBackupExternalId(), backupsForVm.size()));
-                }
-            }
+            backupManager.checkAndRemoveBackupOfferingBeforeExpunge(vm);
 
             autoScaleManager.removeVmFromVmGroup(vm.getId());
 

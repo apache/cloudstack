@@ -1817,4 +1817,20 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         Pair<Long, Long> backupUsage = backupProvider.getBackupStorageStats(zoneId);
         return new CapacityVO(null, zoneId, null, null, backupUsage.first(), backupUsage.second(), Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
     }
+
+    @Override
+    public void checkAndRemoveBackupOfferingBeforeExpunge(VirtualMachine vm) {
+        if (vm.getBackupOfferingId() == null) {
+            return;
+        }
+        List<Backup> backupsForVm = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+        if (org.apache.commons.collections.CollectionUtils.isEmpty(backupsForVm)) {
+            removeVMFromBackupOffering(vm.getId(), true);
+        } else {
+            throw new CloudRuntimeException(String.format("This VM [uuid: %s, name: %s] has a "
+                            + "Backup Offering [id: %s, external id: %s] with %s backups. Please, remove the backup offering "
+                            + "before proceeding to VM exclusion!", vm.getUuid(), vm.getInstanceName(), vm.getBackupOfferingId(),
+                    vm.getBackupExternalId(), backupsForVm.size()));
+        }
+    }
 }
