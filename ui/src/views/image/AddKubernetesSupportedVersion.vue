@@ -17,7 +17,12 @@
 
 <template>
   <div class="form-layout" v-ctrl-enter="handleSubmit">
-    <a-spin :spinning="loading">
+    <span v-if="uploadPercentage > 0">
+      <loading-outlined />
+      {{ $t('message.upload.file.processing') }}
+      <a-progress :percent="uploadPercentage" />
+    </span>
+    <a-spin :spinning="loading" v-else>
       <a-form
         :ref="formRef"
         :model="form"
@@ -176,9 +181,11 @@ export default {
       zoneLoading: false,
       loading: false,
       selectedZone: {},
+      uploadParams: null,
       directDownloadDisabled: false,
       lastNonEdgeDirectDownloadUserSelection: false,
       architectureTypes: {},
+      uploadPercentage: 0,
       currentForm: ['plus-outlined', 'PlusOutlined'].includes(this.action.currentAction.icon) ? 'Create' : 'Upload'
     }
   },
@@ -332,7 +339,7 @@ export default {
           params.format = 'ISO'
           this.loading = true
           api('getUploadParamsForKubernetesSupportedVersion', params).then(json => {
-            this.uploadParams = (json.postuploadisoresponse && json.postuploadisoresponse.getuploadparams) ? json.postuploadisoresponse.getuploadparams : ''
+            this.uploadParams = (json.getuploadparamsforkubernetessupportedversionresponse && json.getuploadparamsforkubernetessupportedversionresponse.getuploadparams) ? json.getuploadparamsforkubernetessupportedversionresponse.getuploadparams : ''
             const response = this.handleUpload()
             if (response === 'upload successful') {
               this.$notification.success({
