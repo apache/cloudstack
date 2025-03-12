@@ -665,6 +665,8 @@
 "label.dark.mode": "Dark mode",
 "label.dashboard": "Dashboard",
 "label.data.disk": "Data disk",
+"label.data.pool": "Data pool",
+"label.data.pool.description": "Data pool is required when using a Ceph pool with erasure code",
 "label.data.disk.offering": "Data disk offering",
 "label.date": "Date",
 "label.datetime.filter.period": "From <b>{startDate}</b> to <b>{endDate}</b>",
