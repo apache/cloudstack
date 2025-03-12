@@ -89,7 +89,8 @@
           <a-input
             v-model:value="vcenter"
             :placeholder="apiParams.vcenter.description"
-            @change="onSelectExternalVmwareDatacenter"
+            @blur="onSelectExternalVmwareDatacenter"
+            @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
         <a-form-item ref="datacenter" name="datacenter">
@@ -99,7 +100,8 @@
           <a-input
             v-model:value="datacenter"
             :placeholder="apiParams.datacentername.description"
-            @change="onSelectExternalVmwareDatacenter"
+            @blur="onSelectExternalVmwareDatacenter"
+            @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
         <a-form-item ref="username" name="username">
@@ -109,7 +111,8 @@
           <a-input
             v-model:value="username"
             :placeholder="apiParams.username.description"
-            @change="onSelectExternalVmwareDatacenter"
+            @blur="onSelectExternalVmwareDatacenter"
+            @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
         <a-form-item ref="password" name="password">
@@ -119,13 +122,16 @@
           <a-input-password
             v-model:value="password"
             :placeholder="apiParams.password.description"
-            @change="onSelectExternalVmwareDatacenter"
+            @blur="onSelectExternalVmwareDatacenter"
+            @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
+        &nbsp;
+        <tooltip-label :title="$t('label.press.enter')" :tooltip="$t('label.press.enter.tooltip')"/>
       </div>
       <div
         v-if="selectedExistingVcenterId || (vcenterSelectedOption === 'new')">
-        <a-form-item :label="$t('label.vcenter.host')" ref="host" name="host" v-if="hosts.length > 0">
+        <a-form-item :label="$t('label.esx.host')" ref="host" name="host" v-if="hosts.length > 0">
           <a-select
             v-model:value="form.host"
             :loading="loading"
@@ -133,8 +139,9 @@
             :filterOption="(input, option) => {
               return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            :placeholder="$t('label.vcenter.host')"
+            :placeholder="$t('label.esx.host')"
             @change="onSelectExistingVmwareHost">
+            <a-select-option key="" label="">{{ }}</a-select-option>
             <a-select-option v-for="opt in hosts" :key="opt.name">
                 {{ 'ESXi: ' + opt.name }}
             </a-select-option>
@@ -283,7 +290,7 @@ export default {
         this.loading = false
       })
     },
-    listZoneVmwareDcHosts () {
+    loadZoneVmwareDcHosts (doNotify) {
       this.loading = true
       const params = {}
       if (this.vcenterSelectedOption === 'new') {
@@ -299,18 +306,23 @@ export default {
           this.hosts = response.listvmwaredchostsresponse.host
         }
       }).catch(error => {
-        this.$notifyError(error)
+        if (doNotify) {
+          this.$notifyError(error)
+        }
+        this.hosts = []
+        return false
       }).finally(() => {
         this.loading = false
+        return true
       })
     },
     onSelectExistingVmwareDatacenter (value) {
       this.selectedExistingVcenterId = value
-      this.listZoneVmwareDcHosts()
+      this.loadZoneVmwareDcHosts(true)
     },
     onSelectExternalVmwareDatacenter (value) {
       if (this.vcenterSelectedOption === 'new' && !(this.vcenter === '' || this.datacentername === '' || this.username === '' || this.password === '')) {
-        this.listZoneVmwareDcHosts()
+        this.loadZoneVmwareDcHosts(false)
       }
     },
     onSelectExistingVmwareHost (value) {

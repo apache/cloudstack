@@ -555,7 +555,7 @@ public class NetworkServiceImplTest {
         Mockito.when(vpcVO.getPublicMtu()).thenReturn(vpcMtu);
 
         Pair<Integer, Integer> updatedMtus = service.validateMtuConfig(publicMtu, privateMtu, zoneId);
-        service.mtuCheckForVpcNetwork(vpcId, updatedMtus, publicMtu, privateMtu);
+        service.mtuCheckForVpcNetwork(vpcId, updatedMtus, publicMtu);
         Assert.assertEquals(vpcMtu, updatedMtus.first());
         Assert.assertEquals(privateMtu, updatedMtus.second());
     }
@@ -782,6 +782,40 @@ public class NetworkServiceImplTest {
     }
 
     @Test
+    public void testCreateVpcTier() throws InsufficientCapacityException, ResourceAllocationException, NoSuchFieldException, IllegalAccessException {
+        Integer privateMtu = 1200;
+        Long networkOfferingId = 1L;
+        Long vpcId = 2L;
+
+        ReflectionTestUtils.setField(createNetworkCmd, "name", "testNetwork");
+        ReflectionTestUtils.setField(createNetworkCmd, "displayText", "Test Network");
+        ReflectionTestUtils.setField(createNetworkCmd, "networkOfferingId", networkOfferingId);
+        ReflectionTestUtils.setField(createNetworkCmd, "zoneId", zoneId);
+        ReflectionTestUtils.setField(createNetworkCmd, "privateMtu", privateMtu);
+        ReflectionTestUtils.setField(createNetworkCmd, "vpcId", vpcId);
+
+        dc = Mockito.mock(DataCenterVO.class);
+        Mockito.when(dcDao.findById(zoneId)).thenReturn(dc);
+        Mockito.when(dc.getId()).thenReturn(zoneId);
+        vpc = Mockito.mock(VpcVO.class);
+        Mockito.when(vpc.getName()).thenReturn("Vpc 1");
+        Mockito.when(vpcDao.findById(vpcId)).thenReturn(vpc);
+        networkOfferingVO = Mockito.mock(NetworkOfferingVO.class);
+        Mockito.when(networkOfferingDao.findById(networkOfferingId)).thenReturn(networkOfferingVO);
+        Mockito.when(configMgr.isOfferingForVpc(networkOfferingVO)).thenReturn(true);
+
+        overrideDefaultConfigValue(VpcManager.VpcTierNamePrepend, "_defaultValue", "true");
+        overrideDefaultConfigValue(VpcManager.VpcTierNamePrependDelimiter, "_defaultValue", " -- ");
+
+        service.createGuestNetwork(createNetworkCmd);
+
+        overrideDefaultConfigValue(VpcManager.VpcTierNamePrepend, "_defaultValue", "false");
+
+        Mockito.verify(vpcMgr, times(1)).createVpcGuestNetwork(networkOfferingId, "Vpc 1 -- testNetwork", "Test Network", null, null,
+                null, null, accountMock, null, phyNet, zoneId, null, null, vpcId, null, accountMock, true,
+                null, null, null, null, null, null, null, new Pair<>(0, privateMtu), null);
+    }
+
     public void testCreateIpv4RoutedNetworkWithBgpPeersFailure1() {
         registerCallContext();
         CreateNetworkCmdByAdmin cmd = Mockito.mock(CreateNetworkCmdByAdmin.class);

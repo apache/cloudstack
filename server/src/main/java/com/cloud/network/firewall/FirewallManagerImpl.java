@@ -1009,7 +1009,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
         Long relatedRuleId, long networkId) throws NetworkRuleConflictException {
 
         // If firwallRule for this port range already exists, return it
-        List<FirewallRuleVO> rules = _firewallDao.listByIpPurposeAndProtocolAndNotRevoked(ipAddrId, startPort, endPort, protocol, Purpose.Firewall);
+        List<FirewallRuleVO> rules = _firewallDao.listByIpPurposePortsProtocolAndNotRevoked(ipAddrId, startPort, endPort, protocol, Purpose.Firewall);
         if (!rules.isEmpty()) {
             return rules.get(0);
         }

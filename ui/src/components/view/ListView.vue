@@ -160,6 +160,10 @@
           &nbsp;
           <a-tag>static-nat</a-tag>
         </span>
+        <span v-if="record.issystem">
+          &nbsp;
+          <a-tag>system</a-tag>
+        </span>
       </template>
       <template v-if="column.key === 'ip6address'" href="javascript:;">
         <span>{{ ipV6Address(text, record) }}</span>
@@ -247,8 +251,17 @@
       <template v-if="column.key === 'agentstate'">
         <status :text="text ? text : ''" displayText />
       </template>
+      <template v-if="column.key === 'cpunumber'">
+        <span>{{ record.serviceofferingdetails?.mincpunumber && record.serviceofferingdetails?.maxcpunumber ? `${record.serviceofferingdetails.mincpunumber} - ${record.serviceofferingdetails.maxcpunumber}` : record.cpunumber }}</span>
+      </template>
+      <template v-if="column.key === 'memory'">
+        <span>{{ record.serviceofferingdetails?.minmemory && record.serviceofferingdetails?.maxmemory ? `${record.serviceofferingdetails.minmemory} - ${record.serviceofferingdetails.maxmemory}` : record.memory }}</span>
+      </template>
       <template v-if="column.key === 'quotastate'">
         <status :text="text ? text : ''" displayText />
+      </template>
+      <template v-if="column.key === 'vmstate'">
+        <status :text="text ? text : ''" displayText vmState/>
       </template>
       <template v-if="column.key === 'offerha'">
         {{ text ? $t('state.enabled') : $t('state.disabled')}}
@@ -412,8 +425,8 @@
         <status :text="record.enabled ? record.enabled.toString() : 'false'" />
         {{ record.enabled ? 'Enabled' : 'Disabled' }}
       </template>
-      <template v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)">
-        {{ $toLocaleDate(text) }}
+      <template v-if="['created', 'sent', 'removed', 'effectiveDate', 'endDate', 'allocated'].includes(column.key) || (['startdate'].includes(column.key) && ['webhook'].includes($route.path.split('/')[1])) || (column.key === 'allocated' && ['asnumbers', 'publicip', 'ipv4subnets'].includes($route.meta.name) && text)">
+        {{ text && $toLocaleDate(text) }}
       </template>
       <template v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp'].includes($route.path.split('/')[1])">
         {{ getDateAtTimeZone(text, record.timezone) }}
@@ -722,7 +735,7 @@ export default {
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
         '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', '/quotatariff', '/sharedfs',
-        '/ipv4subnets'].join('|'))
+        '/ipv4subnets', '/managementserver'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {

@@ -615,107 +615,81 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
         String msgSubject = null;
         String msgContent = null;
-        String totalStr;
-        String usedStr;
-        String pctStr = formatPercent(usedCapacity / totalCapacity);
+        String percentual = formatPercent(usedCapacity / totalCapacity);
+        String totalInMB = formatBytesToMegabytes(totalCapacity);
+        String usedInMB = formatBytesToMegabytes(usedCapacity);
+        String totalInString = String.valueOf(totalCapacity);
+        String usedInString = String.valueOf(usedCapacity);
         AlertType alertType = null;
         Long podId = pod == null ? null : pod.getId();
         Long clusterId = cluster == null ? null : cluster.getId();
+        String clusterName = cluster == null ? null : cluster.getName();
+        String podName = pod == null ? null : pod.getName();
+        String dataCenterName = dc.getName();
 
         switch (capacityType) {
-
-        //Cluster Level
-        case Capacity.CAPACITY_TYPE_MEMORY:
-            msgSubject = "System Alert: Low Available Memory in cluster " + cluster.getName() + " pod " + pod.getName() + " of availability zone " + dc.getName();
-            totalStr = formatBytesToMegabytes(totalCapacity);
-            usedStr = formatBytesToMegabytes(usedCapacity);
-            msgContent = "System memory is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_MEMORY;
-            break;
-        case Capacity.CAPACITY_TYPE_CPU:
-            msgSubject = "System Alert: Low Unallocated CPU in cluster " + cluster.getName() + " pod " + pod.getName() + " of availability zone " + dc.getName();
-            totalStr = DfWhole.format(totalCapacity);
-            usedStr = DfWhole.format(usedCapacity);
-            msgContent = "Unallocated CPU is low, total: " + totalStr + " Mhz, used: " + usedStr + " Mhz (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_CPU;
-            break;
-        case Capacity.CAPACITY_TYPE_STORAGE:
-            msgSubject = "System Alert: Low Available Storage in cluster " + cluster.getName() + " pod " + pod.getName() + " of availability zone " + dc.getName();
-            totalStr = formatBytesToMegabytes(totalCapacity);
-            usedStr = formatBytesToMegabytes(usedCapacity);
-            msgContent = "Available storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_STORAGE;
-            break;
-        case Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED:
-            msgSubject = "System Alert: Remaining unallocated Storage is low in cluster " + cluster.getName() + " pod " + pod.getName() + " of availability zone " +
-                    dc.getName();
-            totalStr = formatBytesToMegabytes(totalCapacity);
-            usedStr = formatBytesToMegabytes(usedCapacity);
-            msgContent = "Unallocated storage space is low, total: " + totalStr + " MB, allocated: " + usedStr + " MB (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_STORAGE_ALLOCATED;
-            break;
-        case Capacity.CAPACITY_TYPE_LOCAL_STORAGE:
-            msgSubject = "System Alert: Remaining unallocated Local Storage is low in cluster " + cluster.getName() + " pod " + pod.getName() + " of availability zone " +
-                    dc.getName();
-            totalStr = formatBytesToMegabytes(totalCapacity);
-            usedStr = formatBytesToMegabytes(usedCapacity);
-            msgContent = "Unallocated storage space is low, total: " + totalStr + " MB, allocated: " + usedStr + " MB (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_LOCAL_STORAGE;
-            break;
-
-            //Pod Level
-        case Capacity.CAPACITY_TYPE_PRIVATE_IP:
-            msgSubject = "System Alert: Number of unallocated private IPs is low in pod " + pod.getName() + " of availability zone " + dc.getName();
-            totalStr = Double.toString(totalCapacity);
-            usedStr = Double.toString(usedCapacity);
-            msgContent = "Number of unallocated private IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_PRIVATE_IP;
-            break;
-
-            //Zone Level
-        case Capacity.CAPACITY_TYPE_SECONDARY_STORAGE:
-            msgSubject = "System Alert: Low Available Secondary Storage in availability zone " + dc.getName();
-            totalStr = formatBytesToMegabytes(totalCapacity);
-            usedStr = formatBytesToMegabytes(usedCapacity);
-            msgContent = "Available secondary storage space is low, total: " + totalStr + " MB, used: " + usedStr + " MB (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_SECONDARY_STORAGE;
-            break;
-        case Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP:
-            msgSubject = "System Alert: Number of unallocated virtual network public IPs is low in availability zone " + dc.getName();
-            totalStr = Double.toString(totalCapacity);
-            usedStr = Double.toString(usedCapacity);
-            msgContent = "Number of unallocated public IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_VIRTUAL_NETWORK_PUBLIC_IP;
-            break;
-        case Capacity.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP:
-            msgSubject = "System Alert: Number of unallocated shared network IPs is low in availability zone " + dc.getName();
-            totalStr = Double.toString(totalCapacity);
-            usedStr = Double.toString(usedCapacity);
-            msgContent = "Number of unallocated shared network IPs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_DIRECT_ATTACHED_PUBLIC_IP;
-            break;
-        case Capacity.CAPACITY_TYPE_VLAN:
-            msgSubject = "System Alert: Number of unallocated VLANs is low in availability zone " + dc.getName();
-            totalStr = Double.toString(totalCapacity);
-            usedStr = Double.toString(usedCapacity);
-            msgContent = "Number of unallocated VLANs is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_VLAN;
-            break;
-        case Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET:
-            msgSubject = "System Alert: Number of unallocated virtual network guest IPv6 subnets is low in availability zone " + dc.getName();
-            totalStr = Double.toString(totalCapacity);
-            usedStr = Double.toString(usedCapacity);
-            msgContent = "Number of unallocated virtual network guest IPv6 subnets is low, total: " + totalStr + ", allocated: " + usedStr + " (" + pctStr + "%)";
-            alertType = AlertManager.AlertType.ALERT_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET;
-            break;
+            case Capacity.CAPACITY_TYPE_MEMORY:
+                msgSubject = String.format("System Alert: Low Available Memory in cluster [%s] pod [%s] of availability zone [%s].", clusterName, podName, dataCenterName);
+                msgContent = String.format("System memory is low, total: %s MB, used: %s MB (%s%%).", totalInMB, usedInMB, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_MEMORY;
+                break;
+            case Capacity.CAPACITY_TYPE_CPU:
+                msgSubject = String.format("System Alert: Low Unallocated CPU in cluster [%s] pod [%s] of availability zone [%s].", clusterName, podName, dataCenterName);
+                msgContent = String.format("Unallocated CPU is low, total: %s Mhz, used: %s Mhz (%s%%).", DfWhole.format(totalCapacity), DfWhole.format(usedCapacity), percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_CPU;
+                break;
+            case Capacity.CAPACITY_TYPE_STORAGE:
+                msgSubject = String.format("System Alert: Low Available Storage in cluster [%s] pod [%s] of availability zone [%s].", clusterName, podName, dataCenterName);
+                msgContent = String.format("Available storage space is low, total: %s MB, used: %s MB (%s%%).", totalInMB, usedInMB, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_STORAGE;
+                break;
+            case Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED:
+                msgSubject = String.format("System Alert: Remaining unallocated Storage is low in cluster [%s] pod [%s] of availability zone [%s].", clusterName, podName,
+                        dataCenterName);
+                msgContent = String.format("Unallocated storage space is low, total: %s MB, allocated: %s MB (%s%%)", totalInMB, usedInMB, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_STORAGE_ALLOCATED;
+                break;
+            case Capacity.CAPACITY_TYPE_LOCAL_STORAGE:
+                msgSubject = String.format("System Alert: Remaining unallocated Local Storage is low in cluster [%s] pod [%s] of availability zone [%s].", clusterName, podName,
+                        dataCenterName);
+                msgContent = String.format("Unallocated storage space is low, total: %s MB, allocated: %s MB (%s%%)", totalInMB, usedInMB, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_LOCAL_STORAGE;
+                break;
+            case Capacity.CAPACITY_TYPE_PRIVATE_IP:
+                msgSubject = String.format("System Alert: Number of unallocated private IPs is low in pod %s of availability zone [%s].", podName, dataCenterName);
+                msgContent = String.format("Number of unallocated private IPs is low, total: %s, allocated: %s (%s%%)", totalInString, usedInString, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_PRIVATE_IP;
+                break;
+            case Capacity.CAPACITY_TYPE_SECONDARY_STORAGE:
+                msgSubject = String.format("System Alert: Low Available Secondary Storage in availability zone [%s].", dataCenterName);
+                msgContent = String.format("Available secondary storage space is low, total: %s MB, used: %s MB (%s%%).", totalInMB, usedInMB, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_SECONDARY_STORAGE;
+                break;
+            case Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP:
+                msgSubject = String.format("System Alert: Number of unallocated virtual network public IPs is low in availability zone [%s].", dataCenterName);
+                msgContent = String.format("Number of unallocated public IPs is low, total: %s, allocated: %s (%s%%).", totalInString, usedInString, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_VIRTUAL_NETWORK_PUBLIC_IP;
+                break;
+            case Capacity.CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP:
+                msgSubject = String.format("System Alert: Number of unallocated shared network IPs is low in availability zone [%s].", dataCenterName);
+                msgContent = String.format("Number of unallocated shared network IPs is low, total: %s, allocated: %s (%s%%).", totalInString, usedInString, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_DIRECT_ATTACHED_PUBLIC_IP;
+                break;
+            case Capacity.CAPACITY_TYPE_VLAN:
+                msgSubject = String.format("System Alert: Number of unallocated VLANs is low in availability zone [%s].", dataCenterName);
+                msgContent = String.format("Number of unallocated VLANs is low, total: %s, allocated: %s (%s%%).", totalInString, usedInString, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_VLAN;
+                break;
+            case Capacity.CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET:
+                msgSubject = String.format("System Alert: Number of unallocated virtual network guest IPv6 subnets is low in availability zone [%s].", dc.getName());
+                msgContent = String.format("Number of unallocated virtual network guest IPv6 subnets is low, total: [%s], allocated: [%s] (%s%%).", totalInString, usedInString, percentual);
+                alertType = AlertManager.AlertType.ALERT_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET;
+                break;
         }
 
         try {
-            if (logger.isDebugEnabled()) {
-                logger.debug(msgSubject);
-                logger.debug(msgContent);
-            }
-            sendAlert(alertType, dc, pod, cluster, msgSubject, msgContent);
+            logger.debug("Sending alert with subject [{}] and content [{}].", msgSubject, msgContent);
+            sendAlert(alertType, dc.getId(), podId, clusterId, msgSubject, msgContent);
         } catch (Exception ex) {
             logger.error("Exception in CapacityChecker", ex);
         }

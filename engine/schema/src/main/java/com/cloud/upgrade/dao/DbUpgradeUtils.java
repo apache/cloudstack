@@ -58,4 +58,20 @@ public class DbUpgradeUtils {
         }
     }
 
+    public static String getTableColumnType(Connection conn, String tableName, String columnName) {
+        return dao.getColumnType(conn, tableName, columnName);
+    }
+
+    public static void addTableColumnIfNotExist(Connection conn, String tableName, String columnName, String columnDefinition) {
+        if (!dao.columnExists(conn, tableName, columnName)) {
+            dao.addColumn(conn, tableName, columnName, columnDefinition);
+        }
+    }
+
+    public static void changeTableColumnIfNotExist(Connection conn, String tableName, String oldColumnName, String newColumnName, String columnDefinition) {
+        if (dao.columnExists(conn, tableName, oldColumnName)) {
+            dao.changeColumn(conn, tableName, oldColumnName, newColumnName, columnDefinition);
+        }
+    }
+
 }

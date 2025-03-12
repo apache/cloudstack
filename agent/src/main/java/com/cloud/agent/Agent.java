@@ -26,6 +26,8 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +59,6 @@ import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.ThreadContext;
@@ -69,6 +70,8 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.CronCommand;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
+import com.cloud.agent.api.MigrateAgentConnectionAnswer;
+import com.cloud.agent.api.MigrateAgentConnectionCommand;
 import com.cloud.agent.api.PingAnswer;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.ReadyCommand;
@@ -84,6 +87,7 @@ import com.cloud.resource.ResourceStatusUpdater;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.NioConnectionException;
@@ -340,7 +344,6 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         }
         shell.updateConnectedHost();
         scavengeOldAgentObjects();
-
     }
 
     public void stop(final String reason, final String detail) {
@@ -539,6 +542,10 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     public void sendStartup(final Link link) {
+        sendStartup(link, false);
+    }
+
+    public void sendStartup(final Link link, boolean transfer) {
         final StartupCommand[] startup = serverResource.initialize();
         if (startup != null) {
             final String msHostList = shell.getPersistentProperty(null, "host");
@@ -546,6 +553,7 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             for (int i = 0; i < startup.length; i++) {
                 setupStartupCommand(startup[i]);
                 startup[i].setMSHostList(msHostList);
+                startup[i].setConnectionTransferred(transfer);
                 commands[i] = startup[i];
             }
             final Request request = new Request(id != null ? id : -1, -1, commands, false, false);
@@ -608,33 +616,15 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         return new ServerHandler(type, link, data);
     }
 
-    protected void closeAndTerminateLink(final Link link) {
-        if (link == null) {
-            return;
-        }
-        link.close();
-        link.terminated();
-    }
-
-    protected void stopAndCleanupConnection(boolean waitForStop) {
-        if (connection == null) {
-            return;
-        }
-        connection.stop();
-        try {
-            connection.cleanUp();
-        } catch (final IOException e) {
-            logger.warn("Fail to clean up old connection. {}", e);
-        }
-        if (!waitForStop) {
-            return;
-        }
-        do {
-            shell.getBackoffAlgorithm().waitBeforeRetry();
-        } while (connection.isStartup());
-    }
-
     protected void reconnect(final Link link) {
+        reconnect(link, null, null, false);
+    }
+
+    protected void reconnect(final Link link, String preferredHost, List<String> avoidHostList, boolean forTransfer) {
+        if (!(forTransfer || reconnectAllowed)) {
+            return;
+        }
+
         if (!reconnectAllowed) {
             logger.debug("Reconnect requested but it is not allowed {}", () -> getLinkLog(link));
             return;
@@ -661,6 +651,32 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         } while (!connection.isStartup());
         shell.updateConnectedHost();
         logger.info("Connected to the host: {}", shell.getConnectedHost());
+    }
+
+    protected void closeAndTerminateLink(final Link link) {
+        if (link == null) {
+            return;
+        }
+        link.close();
+        link.terminated();
+    }
+
+    protected void stopAndCleanupConnection(boolean waitForStop) {
+        if (connection == null) {
+            return;
+        }
+        connection.stop();
+        try {
+            connection.cleanUp();
+        } catch (final IOException e) {
+            logger.warn("Fail to clean up old connection. {}", e);
+        }
+        if (!waitForStop) {
+            return;
+        }
+        do {
+            shell.getBackoffAlgorithm().waitBeforeRetry();
+        } while (connection.isStartup());
     }
 
     public void processStartupAnswer(final Answer answer, final Response response, final Link link) {
@@ -709,6 +725,9 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                 final Command cmd = cmds[i];
                 Answer answer;
                 try {
+                    if (cmd.getContextParam("logid") != null) {
+                        ThreadContext.put("logcontextid", cmd.getContextParam("logid"));
+                    }
                     if (logger.isDebugEnabled()) {
                         if (!requestLogged) // ensures request is logged only once per method call
                         {
@@ -770,6 +789,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                         }
                     } else if (cmd instanceof SetupMSListCommand) {
                         answer = setupManagementServerList((SetupMSListCommand) cmd);
+                    } else if (cmd instanceof MigrateAgentConnectionCommand) {
+                        answer = migrateAgentToOtherMS((MigrateAgentConnectionCommand) cmd);
                     } else {
                         if (cmd instanceof ReadyCommand) {
                             processReadyCommand(cmd);
@@ -923,6 +944,53 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     private Answer setupManagementServerList(final SetupMSListCommand cmd) {
         processManagementServerList(cmd.getMsList(), cmd.getLbAlgorithm(), cmd.getLbCheckInterval());
         return new SetupMSListAnswer(true);
+    }
+
+    private Answer migrateAgentToOtherMS(final MigrateAgentConnectionCommand cmd) {
+        try {
+            if (CollectionUtils.isNotEmpty(cmd.getMsList())) {
+                processManagementServerList(cmd.getMsList(), cmd.getLbAlgorithm(), cmd.getLbCheckInterval());
+            }
+            migrateAgentConnection(cmd.getAvoidMsList());
+        } catch (Exception e) {
+            String errMsg = "Migrate agent connection failed, due to " + e.getMessage();
+            logger.debug(errMsg, e);
+            return new MigrateAgentConnectionAnswer(errMsg);
+        }
+        return new MigrateAgentConnectionAnswer(true);
+    }
+
+    private void migrateAgentConnection(List<String> avoidMsList) {
+        final String[] msHosts = shell.getHosts();
+        if (msHosts == null || msHosts.length < 1) {
+            throw new CloudRuntimeException("Management Server hosts empty, not properly configured in agent");
+        }
+
+        List<String> msHostsList = new ArrayList<>(Arrays.asList(msHosts));
+        msHostsList.removeAll(avoidMsList);
+        if (msHostsList.isEmpty() || StringUtils.isEmpty(msHostsList.get(0))) {
+            throw new CloudRuntimeException("No other Management Server hosts to migrate");
+        }
+
+        String preferredHost  = null;
+        for (String msHost : msHostsList) {
+            try (final Socket socket = new Socket()) {
+                socket.connect(new InetSocketAddress(msHost, shell.getPort()), 5000);
+                preferredHost = msHost;
+                break;
+            } catch (final IOException e) {
+                throw new CloudRuntimeException("Management server host: " + msHost + " is not reachable, to migrate connection");
+            }
+        }
+
+        if (preferredHost == null) {
+            throw new CloudRuntimeException("Management server host(s) are not reachable, to migrate connection");
+        }
+
+        logger.debug("Management server host " + preferredHost + " is found to be reachable, trying to reconnect");
+        shell.resetHostCounter();
+        shell.setConnectionTransfer(true);
+        reconnect(link, preferredHost, avoidMsList, true);
     }
 
     public void processResponse(final Response response, final Link link) {
@@ -1128,12 +1196,12 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     public class WatchTask implements Runnable {
         protected Request _request;
         protected Agent _agent;
-        protected Link _link;
+        protected Link link;
 
         public WatchTask(final Link link, final Request request, final Agent agent) {
             super();
             _request = request;
-            _link = link;
+            this.link = link;
             _agent = agent;
         }
 
@@ -1142,9 +1210,9 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             logger.trace("Scheduling {}", (_request instanceof Response ? "Ping" : "Watch Task"));
             try {
                 if (_request instanceof Response) {
-                    outRequestHandler.submit(new ServerHandler(Task.Type.OTHER, _link, _request));
+                    outRequestHandler.submit(new ServerHandler(Task.Type.OTHER, link, _request));
                 } else {
-                    _link.schedule(new ServerHandler(Task.Type.OTHER, _link, _request));
+                    link.schedule(new ServerHandler(Task.Type.OTHER, link, _request));
                 }
             } catch (final ClosedChannelException e) {
                 logger.warn("Unable to schedule task because channel is closed");
@@ -1153,12 +1221,12 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
     }
 
     public class StartupTask implements Runnable {
-        protected Link _link;
+        protected Link link;
         private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
         public StartupTask(final Link link) {
             logger.debug("Startup task created");
-            _link = link;
+            this.link = link;
         }
 
         public boolean cancel() {
@@ -1176,8 +1244,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                 logger.info("The running startup command is now invalid. Attempting reconnect");
                 startupTask.set(null);
                 startupWait = DEFAULT_STARTUP_WAIT * 2;
-                logger.debug("Executing reconnect from task - {}", () -> getLinkLog(_link));
-                reconnect(_link);
+                logger.debug("Executing reconnect from task - {}", () -> getLinkLog(link));
+                reconnect(link);
             }
         }
     }
@@ -1210,7 +1278,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             if (task.getType() == Task.Type.CONNECT) {
                 shell.getBackoffAlgorithm().reset();
                 setLink(task.getLink());
-                sendStartup(task.getLink());
+                sendStartup(task.getLink(), shell.isConnectionTransfer());
+                shell.setConnectionTransfer(false);
             } else if (task.getType() == Task.Type.DATA) {
                 Request request;
                 try {
@@ -1229,6 +1298,13 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                     logger.error("Error parsing task", e);
                 }
             } else if (task.getType() == Task.Type.DISCONNECT) {
+                try {
+                    // an issue has been found if reconnect immediately after disconnecting. please refer to https://github.com/apache/cloudstack/issues/8517
+                    // wait 5 seconds before reconnecting
+                    Thread.sleep(5000);
+                } catch (InterruptedException e) {
+                }
+                shell.setConnectionTransfer(false);
                 logger.debug("Executing disconnect task - {}", () -> getLinkLog(task.getLink()));
                 reconnect(task.getLink());
             } else if (task.getType() == Task.Type.OTHER) {

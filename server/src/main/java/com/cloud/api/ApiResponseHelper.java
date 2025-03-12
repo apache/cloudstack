@@ -590,7 +590,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         resourceLimitResponse.setResourceType(limit.getType());
 
-        if ((limit.getType() == ResourceType.primary_storage || limit.getType() == ResourceType.secondary_storage) && limit.getMax() >= 0) {
+        if (ResourceType.isStorageType(limit.getType()) && limit.getMax() >= 0) {
             resourceLimitResponse.setMax((long)Math.ceil((double)limit.getMax() / ResourceType.bytesToGiB));
         } else {
             resourceLimitResponse.setMax(limit.getMax());
@@ -5440,7 +5440,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setAddress(backupRepository.getAddress());
         response.setProviderName(backupRepository.getProvider());
         response.setType(backupRepository.getType());
-        response.setMountOptions(backupRepository.getMountOptions());
         response.setCapacityBytes(backupRepository.getCapacityBytes());
         response.setObjectName("backuprepository");
         DataCenter zone = ApiDBUtils.findZoneById(backupRepository.getZoneId());

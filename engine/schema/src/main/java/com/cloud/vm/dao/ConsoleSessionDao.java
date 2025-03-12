@@ -33,7 +33,7 @@ public interface ConsoleSessionDao extends GenericDao<ConsoleSessionVO, Long> {
 
     int expungeSessionsOlderThanDate(Date date);
 
-    void acquireSession(String sessionUuid);
+    void acquireSession(String sessionUuid, String clientAddress);
 
     int expungeByVmList(List<Long> vmIds, Long batchSize);
 }

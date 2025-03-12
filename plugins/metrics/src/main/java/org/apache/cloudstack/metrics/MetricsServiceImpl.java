@@ -80,6 +80,7 @@ import org.apache.cloudstack.response.ZoneMetricsResponse;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ObjectStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.commons.beanutils.BeanUtils;
 import org.apache.commons.collections.CollectionUtils;
@@ -627,6 +628,7 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
     public List<StoragePoolMetricsResponse> listStoragePoolMetrics(List<StoragePoolResponse> poolResponses) {
         final List<StoragePoolMetricsResponse> metricsResponses = new ArrayList<>();
         Map<String, Long> clusterUuidToIdMap = clusterDao.findByUuids(poolResponses.stream().map(StoragePoolResponse::getClusterId).toArray(String[]::new)).stream().collect(Collectors.toMap(ClusterVO::getUuid, ClusterVO::getId));
+        Map<String, Long> poolUuidToIdMap = storagePoolDao.findByUuids(poolResponses.stream().map(StoragePoolResponse::getId).toArray(String[]::new)).stream().collect(Collectors.toMap(StoragePoolVO::getUuid, StoragePoolVO::getId));
         for (final StoragePoolResponse poolResponse: poolResponses) {
             StoragePoolMetricsResponse metricsResponse = new StoragePoolMetricsResponse();
 
@@ -637,8 +639,9 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
             }
 
             Long poolClusterId = clusterUuidToIdMap.get(poolResponse.getClusterId());
+            Long poolId = poolUuidToIdMap.get(poolResponse.getId());
             final Double storageThreshold = AlertManager.StorageCapacityThreshold.valueIn(poolClusterId);
-            final Double storageDisableThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(poolClusterId);
+            final Double storageDisableThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(poolId);
 
             metricsResponse.setHasAnnotation(poolResponse.hasAnnotation());
             metricsResponse.setDiskSizeUsedGB(poolResponse.getDiskSizeUsed());
@@ -894,6 +897,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
         metricsResponse.setDbLocal(status.isDbLocal());
         metricsResponse.setUsageLocal(status.isUsageLocal());
         metricsResponse.setAvailableProcessors(status.getAvailableProcessors());
+        metricsResponse.setLastAgents(status.getLastAgents());
+        metricsResponse.setAgents(status.getAgents());
         metricsResponse.setAgentCount(status.getAgentCount());
         metricsResponse.setCollectionTime(status.getCollectionTime());
         metricsResponse.setSessions(status.getSessions());

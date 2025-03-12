@@ -889,6 +889,32 @@ public class VirtualMachineMO extends BaseMO {
         return fileLayout;
     }
 
+    public String getPath() throws Exception {
+        List<String> subPaths = new ArrayList<>();
+        ManagedObjectReference mor = _context.getVimClient().getDynamicProperty(_mor, "parent");
+        while (mor != null && mor.getType().equalsIgnoreCase("Folder")) {
+            String subPath = _context.getVimClient().getDynamicProperty(mor, "name");
+            if (StringUtils.isBlank(subPath)) {
+                return null;
+            }
+            subPaths.add(subPath);
+            mor = _context.getVimClient().getDynamicProperty(mor, "parent");
+        }
+
+        if (!subPaths.isEmpty()) {
+            Collections.reverse(subPaths);
+            String path = StringUtils.join(subPaths, "/");
+            return path;
+        }
+
+        return null;
+    }
+
+    @Override
+    public ManagedObjectReference getParentMor() throws Exception {
+        return _context.getVimClient().getDynamicProperty(_mor, "parent");
+    }
+
     public String[] getNetworks() throws Exception {
         PropertySpec pSpec = new PropertySpec();
         pSpec.setType("Network");
@@ -1018,6 +1044,7 @@ public class VirtualMachineMO extends BaseMO {
     }
 
     public boolean configureVm(VirtualMachineConfigSpec vmConfigSpec) throws Exception {
+        logger.debug("Reconfiguring virtual machine {} using spec {}.", this, GSON.toJson(vmConfigSpec));
         ManagedObjectReference morTask = _context.getService().reconfigVMTask(_mor, vmConfigSpec);
 
         boolean result = _context.getVimClient().waitForTask(morTask);
@@ -3459,5 +3486,10 @@ public class VirtualMachineMO extends BaseMO {
             getContext().uploadResourceContent(vmdkUrl, newVmdkContent);
             logger.info("Removed property ChangeTrackPath from VMDK content file " + diskBackingInfo.getFileName());
         }
+    }
+
+    @Override
+    public String toString() {
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "internalCSName");
     }
 }
