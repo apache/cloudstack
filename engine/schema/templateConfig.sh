@@ -71,7 +71,8 @@ function createMetadataFile() {
 
 declare -a templates
 getTemplateVersion $1
-templates=( "kvm:https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-x86_64-kvm.qcow2.bz2"
+templates=( "kvm-x86_64:https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-x86_64-kvm.qcow2.bz2"
+            "kvm-aarch64:https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-aarch64-kvm.qcow2.bz2"
             "vmware:https://download.cloudstack.org/systemvm/${CS_VERSION}/systemvmtemplate-$VERSION-x86_64-vmware.ova"
             "xenserver:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-x86_64-xen.vhd.bz2"
             "hyperv:https://download.cloudstack.org/systemvm/$CS_VERSION/systemvmtemplate-$VERSION-x86_64-hyperv.vhd.zip"

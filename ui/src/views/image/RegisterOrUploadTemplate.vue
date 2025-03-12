@@ -583,7 +583,7 @@ export default {
       this.fetchZone()
       this.fetchOsTypes()
       this.fetchTemplateTypes()
-      this.fetchArchitectureTypes()
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
       this.fetchUserData()
       this.fetchUserdataPolicy()
       if ('listDomains' in this.$store.getters.apis) {
@@ -752,19 +752,6 @@ export default {
         })
       }
       this.templateTypes.opts = templatetypes
-    },
-    fetchArchitectureTypes () {
-      this.architectureTypes.opts = []
-      const typesList = []
-      typesList.push({
-        id: 'x86_64',
-        description: 'AMD 64 bits (x86_64)'
-      })
-      typesList.push({
-        id: 'aarch64',
-        description: 'ARM 64 bits (aarch64)'
-      })
-      this.architectureTypes.opts = typesList
     },
     fetchUserData () {
       const params = {}

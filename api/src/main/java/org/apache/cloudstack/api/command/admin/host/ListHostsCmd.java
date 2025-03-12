@@ -109,6 +109,9 @@ public class ListHostsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "the id of the management server", since="4.21.0")
     private Long managementServerId;
 
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING, description = "CPU Arch of the host", since = "4.20.1")
+    private String arch;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -191,6 +194,10 @@ public class ListHostsCmd extends BaseListCmd {
 
     public String getHostOutOfBandManagementPowerState() {
         return outOfBandManagementPowerState;
+    }
+
+    public String getArch() {
+        return arch;
     }
 
     public Long getManagementServerId() {
