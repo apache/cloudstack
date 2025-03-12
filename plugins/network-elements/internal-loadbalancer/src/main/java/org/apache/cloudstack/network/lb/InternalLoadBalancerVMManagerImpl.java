@@ -785,7 +785,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
                                 template.getId(), template.getHypervisorType(), template.getGuestOSId(), owner.getDomainId(), owner.getId(), userId, false, RedundantState.UNKNOWN, false, false, VirtualMachine.Type.InternalLoadBalancerVm, vpcId);
                 internalLbVm.setRole(Role.INTERNAL_LB_VM);
                 internalLbVm = _internalLbVmDao.persist(internalLbVm);
-                _itMgr.allocate(internalLbVm.getInstanceName(), template, routerOffering, networks, plan, null);
+                _itMgr.allocate(internalLbVm.getInstanceName(), template, routerOffering, networks, plan, null, null, null);
                 internalLbVm = _internalLbVmDao.findById(internalLbVm.getId());
             } catch (final InsufficientCapacityException ex) {
                 if (allocateRetry < 2 && iter.hasNext()) {
