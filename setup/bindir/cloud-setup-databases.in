@@ -72,6 +72,7 @@ class DBDeployer(object):
     magicString = 'This_is_a_magic_string_i_think_no_one_will_duplicate'
     tmpMysqlFile = os.path.join(os.path.expanduser('~/'), 'cloudstackmysql.tmp.sql')
     mysqlBinPath = None
+    skipUsersAutoCreation = False
 
     def preRun(self):
         def backUpDbDotProperties():
@@ -219,6 +220,19 @@ for full help
                     ""),
             )
 
+        queriesToSkip = (
+            ("CREATE USER cloud@`localhost` identified by 'cloud';", ""),
+            ("CREATE USER cloud@`%` identified by 'cloud';", ""),
+            ("GRANT ALL ON cloud.* to cloud@`localhost`;", ""),
+            ("GRANT ALL ON cloud.* to cloud@`%`;", ""),
+            ("GRANT ALL ON cloud_usage.* to cloud@`localhost`;", ""),
+            ("GRANT ALL ON cloud_usage.* to cloud@`%`;", ""),
+            ("GRANT process ON *.* TO cloud@`localhost`;", ""),
+            ("GRANT process ON *.* TO cloud@`%`;", ""),
+            ("DROP USER 'cloud'@'localhost' ;", "DO NULL;"),
+            ("DROP USER 'cloud'@'%' ;", "DO NULL;")
+        )
+
         scriptsToRun = ["create-database","create-schema", "create-database-premium","create-schema-premium"]
         if self.options.schemaonly:
             scriptsToRun = ["create-schema", "create-schema-premium"]
@@ -227,6 +241,8 @@ for full help
             p = os.path.join(self.dbFilesPath,"%s.sql"%f)
             if not os.path.exists(p): continue
             text = open(p).read()
+            if self.options.skipUsersAutoCreation:
+                for t, r in queriesToSkip: text = text.replace(t,r)
             for t, r in replacements: text = text.replace(t,r)
             self.info("Applying %s"%p)
             self.runMysql(text, p, self.rootuser != None)
@@ -472,6 +488,8 @@ for example:
               self.encryptionJarPath = self.options.encryptionJarPath
             if self.options.mysqlbinpath:
               self.mysqlBinPath = self.options.mysqlbinpath
+            if self.options.skipUsersAutoCreation:
+                self.skipUsersAutoCreation = self.options.skipUsersAutoCreation
 
             if self.options.encryptorVersion:
               self.encryptorVersion = "--encryptorversion %s" % self.options.encryptorVersion
@@ -612,6 +630,9 @@ for example:
         self.parser.add_option("-g", "--encryptor-version", action="store", dest="encryptorVersion", default="V2",
                                help="The encryptor version to be used to encrypt the values in db.properties")
         self.parser.add_option("-b", "--mysql-bin-path", action="store", dest="mysqlbinpath", help="The mysql installed bin path")
+        self.parser.add_option("-u", "--skip-users-auto-creation", action="store_true", dest="skipUsersAutoCreation",
+                               help="Indicates whether to skip the auto-creation of users in the database. Use this flag when your database users " \
+                                    "are already configured and you only want to populate the db.properties file.")
         (self.options, self.args) = self.parser.parse_args()
         parseCasualCredit()
         parseOtherOptions()
