@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.cpu;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class CPU {
     public enum CPUArch {
         x86("i686", 32),
@@ -38,16 +40,16 @@ public class CPU {
             return bits;
         }
 
-        public static CPUArch fromType(String identifier) {
-            if (identifier == null || identifier.trim().isEmpty()) {
+        public static CPUArch fromType(String type) {
+            if (StringUtils.isBlank(type)) {
                 return amd64; // Default architecture
             }
             for (CPUArch arch : values()) {
-                if (arch.type.equals(identifier)) {
+                if (arch.type.equals(type)) {
                     return arch;
                 }
             }
-            throw new IllegalArgumentException("Unsupported arch type: " + identifier);
+            throw new IllegalArgumentException("Unsupported arch type: " + type);
         }
 
         public static String getTypesAsCSV() {
