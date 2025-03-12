@@ -18,6 +18,7 @@ package org.apache.cloudstack.backup;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -36,6 +37,7 @@ import org.apache.cloudstack.backup.backroll.model.BackrollBackupMetrics;
 import org.apache.cloudstack.backup.backroll.model.BackrollOffering;
 import org.apache.cloudstack.backup.backroll.model.response.TaskState;
 import org.apache.cloudstack.backup.Backup.Metric;
+import org.apache.cloudstack.backup.Backup.RestorePoint;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.logging.log4j.Logger;
 import org.junit.Before;
@@ -90,9 +92,10 @@ public class BackrollBackupProviderTest {
     }
 
     @Test
-    public void listBackupOfferings_Test() throws BackrollApiException, IOException{
+    public void listBackupOfferings_Test() throws BackrollApiException, IOException {
         Mockito.doReturn("dummyUrlToRequest").when(clientMock).getBackupOfferingUrl();
-        Mockito.doReturn(Arrays.asList(new BackrollOffering("dummyName", "dummyId"))).when(clientMock).getBackupOfferings(Mockito.anyString());
+        Mockito.doReturn(Arrays.asList(new BackrollOffering("dummyName", "dummyId"))).when(clientMock)
+                .getBackupOfferings(Mockito.anyString());
         List<BackupOffering> results = backupProvider.listBackupOfferings(2L);
         assertTrue(results.size() == 1);
     }
@@ -106,7 +109,8 @@ public class BackrollBackupProviderTest {
         vmInstanceVO.setUuid(UUID.randomUUID().toString());
         vmInstanceVO.setBackupOfferingId(2L);
 
-        Mockito.doReturn("/status/f32092e4-3e8a-461b-8733-ed93e23fa782").when(clientMock).startBackupJob(Mockito.anyString());
+        Mockito.doReturn("/status/f32092e4-3e8a-461b-8733-ed93e23fa782").when(clientMock)
+                .startBackupJob(Mockito.anyString());
         Mockito.doReturn(new BackupVO()).when(backupDao).persist(Mockito.any(BackupVO.class));
         Mockito.doNothing().when(clientMock).triggerTaskStatus(Mockito.anyString());
         syncBackups_Test();
@@ -116,12 +120,13 @@ public class BackrollBackupProviderTest {
 
     @Test
     public void restoreBackedUpVolume_Test() {
-        try{
-            backupProvider.restoreBackedUpVolume(new BackupVO(), "dummyString", "dummyString", "dummyString", new Pair<String,VirtualMachine.State>("dummyString", VirtualMachine.State.Shutdown));
+        try {
+            backupProvider.restoreBackedUpVolume(new BackupVO(), "dummyString", "dummyString", "dummyString",
+                    new Pair<String, VirtualMachine.State>("dummyString", VirtualMachine.State.Shutdown));
         } catch (Exception e) {
             assertEquals(CloudRuntimeException.class, e.getClass());
             String expected = String.format("Backroll plugin does not support this feature");
-            assertEquals(expected , e.getMessage());
+            assertEquals(expected, e.getMessage());
         }
     }
 
@@ -141,7 +146,7 @@ public class BackrollBackupProviderTest {
     }
 
     @Test
-    public void getBackupMetrics_Test() throws BackrollApiException, IOException{
+    public void getBackupMetrics_Test() throws BackrollApiException, IOException {
         VMInstanceVO vmInstanceVO = new VMInstanceVO();
         vmInstanceVO.setInstanceName("test");
         vmInstanceVO.setDataCenterId(1l);
@@ -152,20 +157,21 @@ public class BackrollBackupProviderTest {
         vmInstanceVO2.setDataCenterId(2l);
         vmInstanceVO2.setBackupOfferingId(2l);
 
-
         VMInstanceVO vmInstanceVO3 = new VMInstanceVO();
         vmInstanceVO3.setInstanceName("test3");
         vmInstanceVO3.setDataCenterId(3l);
         vmInstanceVO3.setBackupOfferingId(3l);
 
         List<BackrollVmBackup> backupsFromBackroll = Arrays.asList(
-            new BackrollVmBackup("OK","OK", new Date()));
+                new BackrollVmBackup("OK", "OK", new Date()));
 
         BackrollBackupMetrics metrics = new BackrollBackupMetrics(2L, 3L);
 
         Mockito.doReturn(metrics).when(clientMock).getBackupMetrics(Mockito.anyString(), Mockito.anyString());
         Mockito.doReturn(backupsFromBackroll).when(clientMock).getAllBackupsfromVirtualMachine(Mockito.anyString());
-        assertEquals(backupProvider.getBackupMetrics(2L, Arrays.asList(vmInstanceVO, vmInstanceVO2, vmInstanceVO3)).size(), 1);
+        assertEquals(
+                backupProvider.getBackupMetrics(2L, Arrays.asList(vmInstanceVO, vmInstanceVO2, vmInstanceVO3)).size(),
+                1);
 
         Mockito.verify(clientMock, times(3)).getAllBackupsfromVirtualMachine(Mockito.anyString());
         Mockito.verify(clientMock, times(3)).getBackupMetrics(Mockito.anyString(), Mockito.anyString());
@@ -201,22 +207,22 @@ public class BackrollBackupProviderTest {
         } catch (Exception e) {
             assertEquals(CloudRuntimeException.class, e.getClass());
             String expected = String.format("Failed to restore VM from Backup");
-            assertEquals(expected , e.getMessage());
+            assertEquals(expected, e.getMessage());
         }
     }
 
     @Test
-    public void getDescription_Test(){
+    public void getDescription_Test() {
         assertEquals("Backroll Backup Plugin", backupProvider.getDescription());
     }
 
     @Test
-    public void isValidProviderOffering_Test(){
+    public void isValidProviderOffering_Test() {
         assertTrue(backupProvider.isValidProviderOffering(2L, "dummyString"));
     }
 
     @Test
-    public void getName_Test(){
+    public void getName_Test() {
         assertEquals("backroll", backupProvider.getName());
     }
 
@@ -227,20 +233,18 @@ public class BackrollBackupProviderTest {
         assertTrue(backupProvider.assignVMToBackupOffering(vmInstanceVO, backrollOf));
     }
 
-
     @Test
-    public void removeVMFromBackupOffering_Test(){
+    public void removeVMFromBackupOffering_Test() {
         assertTrue(backupProvider.removeVMFromBackupOffering(new VMInstanceVO()));
     }
 
     @Test
-    public void willDeleteBackupsOnOfferingRemoval_Test(){
+    public void willDeleteBackupsOnOfferingRemoval_Test() {
         assertFalse(backupProvider.willDeleteBackupsOnOfferingRemoval());
     }
 
-
     @Test
-    public void syncBackups_Test() throws BackrollApiException, IOException  {
+    public void syncBackups_Test() throws BackrollApiException, IOException {
         VMInstanceVO vmInstanceVO = new VMInstanceVO();
         vmInstanceVO.setInstanceName("test");
         vmInstanceVO.setDataCenterId(2l);
@@ -277,7 +281,7 @@ public class BackrollBackupProviderTest {
         BackrollBackupMetrics metrics = new BackrollBackupMetrics(2L, 3L);
 
         List<BackrollVmBackup> backupsFromBackroll = Arrays.asList(
-            new BackrollVmBackup("OK","OK", new Date()));
+                new BackrollVmBackup("OK", "OK", new Date()));
 
         List<Backup> backupsInDb = Arrays.asList(backupBackingUp, backupBackedUp, backupFailed);
         Mockito.doReturn(backupsInDb).when(backupDao).listByVmId(Mockito.anyLong(), Mockito.anyLong());
@@ -289,7 +293,6 @@ public class BackrollBackupProviderTest {
 
         backupProvider.syncBackups(vmInstanceVO, metric);
     }
-
 
     @Test
     public void getClient_Test() {
@@ -326,7 +329,137 @@ public class BackrollBackupProviderTest {
         } catch (Exception e) {
             assertEquals(CloudRuntimeException.class, e.getClass());
             String expected = String.format("You can't delete a backup while it still BackingUp");
-            assertEquals(expected , e.getMessage());
+            assertEquals(expected, e.getMessage());
         }
+    }
+
+    @Test
+    public void listRestorePoints_Test() throws BackrollApiException, IOException {
+        List<RestorePoint> rps = Arrays.asList(new RestorePoint("rp1", new Date(), "incremental"),
+                new RestorePoint("rp2", new Date(), "incremental"),
+                new RestorePoint("rp3", new Date(), "incremental"),
+                new RestorePoint("rp4", new Date(), "incremental"));
+
+        VMInstanceVO vmInstanceVO3 = new VMInstanceVO();
+        vmInstanceVO3.setInstanceName("test3");
+        vmInstanceVO3.setDataCenterId(3l);
+        vmInstanceVO3.setBackupOfferingId(3l);
+
+        Mockito.doReturn(rps).when(clientMock).listRestorePoints(Mockito.anyString());
+
+        List<RestorePoint> rPoints = backupProvider.listRestorePoints(vmInstanceVO3);
+
+        assertEquals(rPoints.size(), rps.size());
+
+    }
+
+    @Test
+    public void createNewBackupEntryForRestorePoint_Test() throws BackrollApiException, IOException {
+        RestorePoint restorePoint = new RestorePoint("restore-123", new Date(), "INCREMENTAL");
+
+        VMInstanceVO vm = new VMInstanceVO();
+        vm.setUuid("vm-uuid-456");
+        vm.setDataCenterId(2L);
+        vm.setBackupOfferingId(3L);
+
+        Backup.Metric metric = null;
+
+        BackrollBackupMetrics backupMetrics = new BackrollBackupMetrics(100L, 200L);
+        Mockito.doReturn(backupMetrics).when(clientMock).getBackupMetrics(vm.getUuid(), restorePoint.getId());
+
+        BackupVO savedBackup = new BackupVO();
+        Mockito.doReturn(savedBackup).when(backupDao).persist(Mockito.any(BackupVO.class));
+
+        Backup result = backupProvider.createNewBackupEntryForRestorePoint(restorePoint, vm, metric);
+
+        assertNotNull(result);
+        assertEquals(vm.getId(), result.getVmId());
+        assertEquals(restorePoint.getId(), result.getExternalId());
+        assertEquals("INCREMENTAL", result.getType());
+        assertEquals(restorePoint.getCreated(), result.getDate());
+        assertEquals(Backup.Status.BackedUp, result.getStatus());
+        assertEquals(vm.getBackupOfferingId(), (Long)result.getBackupOfferingId());
+        assertEquals(vm.getAccountId(), result.getAccountId());
+        assertEquals(vm.getDomainId(), result.getDomainId());
+        assertEquals(vm.getDataCenterId(), result.getZoneId());
+        assertEquals((Long)backupMetrics.getDeduplicated(), result.getSize());
+        assertEquals((Long)backupMetrics.getSize(), result.getProtectedSize());
+
+        Mockito.verify(clientMock).getBackupMetrics(vm.getUuid(), restorePoint.getId());
+        Mockito.verify(backupDao).persist(Mockito.any(BackupVO.class));
+    }
+
+    @Test
+    public void createNewBackupEntryForRestorePoint_WithMetric_Test() throws BackrollApiException, IOException {
+        RestorePoint restorePoint = new RestorePoint("restore-789", new Date(), "INCREMENTAL");
+
+        VMInstanceVO vm = new VMInstanceVO();
+        vm.setUuid("vm-uuid-789");
+        vm.setDataCenterId(3L);
+        vm.setBackupOfferingId(4L);
+
+        Backup.Metric metric = new Backup.Metric(150L, 250L);
+
+
+        BackupVO savedBackup = new BackupVO();
+        Mockito.doReturn(savedBackup).when(backupDao).persist(Mockito.any(BackupVO.class));
+
+
+        Backup result = backupProvider.createNewBackupEntryForRestorePoint(restorePoint, vm, metric);
+
+
+        assertNotNull(result);
+        assertEquals(vm.getId(), result.getVmId());
+        assertEquals(restorePoint.getId(), result.getExternalId());
+        assertEquals("INCREMENTAL", result.getType());
+        assertEquals(restorePoint.getCreated(), result.getDate());
+        assertEquals(Backup.Status.BackedUp, result.getStatus());
+        assertEquals(vm.getBackupOfferingId(), (Long)result.getBackupOfferingId());
+        assertEquals(vm.getAccountId(), result.getAccountId());
+        assertEquals(vm.getDomainId(), result.getDomainId());
+        assertEquals(vm.getDataCenterId(), result.getZoneId());
+        assertEquals(metric.getBackupSize(), result.getSize());
+        assertEquals(metric.getDataSize(), result.getProtectedSize());
+
+
+        Mockito.verify(clientMock, Mockito.never()).getBackupMetrics(Mockito.anyString(), Mockito.anyString());
+        Mockito.verify(backupDao).persist(Mockito.any(BackupVO.class));
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void createNewBackupEntryForRestorePoint_BackrollApiException_Test()
+            throws BackrollApiException, IOException {
+
+        RestorePoint restorePoint =new RestorePoint("restore-404", new Date(), "INCREMENTAL");
+
+        VMInstanceVO vm = new VMInstanceVO();
+        vm.setUuid("vm-uuid-404");
+        vm.setDataCenterId(4L);
+        vm.setBackupOfferingId(5L);
+
+        Backup.Metric metric = null;
+
+        Mockito.doThrow(new BackrollApiException()).when(clientMock).getBackupMetrics(vm.getUuid(),
+                restorePoint.getId());
+
+        backupProvider.createNewBackupEntryForRestorePoint(restorePoint, vm, metric);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void createNewBackupEntryForRestorePoint_IOException_Test() throws BackrollApiException, IOException {
+
+        RestorePoint restorePoint = new RestorePoint("restore-500", new Date(), "INCREMENTAL");
+
+        VMInstanceVO vm = new VMInstanceVO();
+        vm.setUuid("vm-uuid-500");
+        vm.setDataCenterId(5L);
+        vm.setBackupOfferingId(6L);
+
+        Backup.Metric metric = null;
+
+        Mockito.doThrow(new IOException("IO Error")).when(clientMock).getBackupMetrics(vm.getUuid(),
+                restorePoint.getId());
+
+        backupProvider.createNewBackupEntryForRestorePoint(restorePoint, vm, metric);
     }
 }
