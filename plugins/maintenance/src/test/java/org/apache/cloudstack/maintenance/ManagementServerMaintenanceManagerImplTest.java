@@ -114,7 +114,7 @@ public class ManagementServerMaintenanceManagerImplTest {
     @Test
     public void triggerShutdown() {
         Mockito.doNothing().when(jobManagerMock).disableAsyncJobs();
-        Mockito.when(spy.isShutdownTriggered()).thenReturn(false);
+        Mockito.lenient().when(spy.isShutdownTriggered()).thenReturn(false);
         spy.triggerShutdown();
         Mockito.verify(jobManagerMock).disableAsyncJobs();
 
