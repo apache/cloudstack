@@ -841,7 +841,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     public boolean configDhcpSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile vm,
             DeployDestination dest,
             ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        return false;
+        return true;
     }
 
     @Override
