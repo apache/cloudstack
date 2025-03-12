@@ -31,11 +31,11 @@ public class ManagementServerMetricsResponse extends ManagementServerResponse {
     private Integer availableProcessors;
 
     @SerializedName(MetricConstants.LAST_AGENTS)
-    @Param(description = "the last agents this Management Server is responsible for, before preparing for maintenance", since = "4.18.1")
+    @Param(description = "the last agents this Management Server is responsible for, before shutdown or preparing for maintenance", since = "4.21.0.0")
     private List<String> lastAgents;
 
     @SerializedName(MetricConstants.AGENTS)
-    @Param(description = "the agents this Management Server is responsible for", since = "4.18.1")
+    @Param(description = "the agents this Management Server is responsible for", since = "4.21.0.0")
     private List<String> agents;
 
     @SerializedName(MetricConstants.AGENT_COUNT)

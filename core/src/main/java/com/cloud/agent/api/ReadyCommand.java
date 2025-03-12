@@ -35,6 +35,7 @@ public class ReadyCommand extends Command {
     private String hostUuid;
     private String hostName;
     private List<String> msHostList;
+    private List<String> avoidMsHostList;
     private String lbAlgorithm;
     private Long lbCheckInterval;
     private Boolean enableHumanReadableSizes;
@@ -88,6 +89,14 @@ public class ReadyCommand extends Command {
 
     public void setMsHostList(List<String> msHostList) {
         this.msHostList = msHostList;
+    }
+
+    public List<String> getAvoidMsHostList() {
+        return avoidMsHostList;
+    }
+
+    public void setAvoidMsHostList(List<String> msHostList) {
+        this.avoidMsHostList = avoidMsHostList;
     }
 
     public String getLbAlgorithm() {

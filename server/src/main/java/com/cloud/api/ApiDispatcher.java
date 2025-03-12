@@ -94,7 +94,7 @@ public class ApiDispatcher {
         if (asyncJobManager.isAsyncJobsEnabled()) {
             asyncCreationDispatchChain.dispatch(new DispatchTask(cmd, params));
         } else {
-            throw new CloudRuntimeException("Maintenance or Shutdown has been initiated on this management server. Can not accept new jobs");
+            throw new CloudRuntimeException("Maintenance or Shutdown has been initiated on this management server. Can not accept new async creation jobs");
         }
     }
 
