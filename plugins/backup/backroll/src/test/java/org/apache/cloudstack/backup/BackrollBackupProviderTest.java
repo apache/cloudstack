@@ -158,12 +158,17 @@ public class BackrollBackupProviderTest {
         vmInstanceVO3.setDataCenterId(3l);
         vmInstanceVO3.setBackupOfferingId(3l);
 
-        Metric metric = new Metric(2L, 3L);
+        List<BackrollVmBackup> backupsFromBackroll = Arrays.asList(
+            new BackrollVmBackup("OK","OK", new Date()));
 
-        Mockito.doReturn(metric).when(clientMock).getVirtualMachineMetrics(Mockito.anyString());
+        BackrollBackupMetrics metrics = new BackrollBackupMetrics(2L, 3L);
+
+        Mockito.doReturn(metrics).when(clientMock).getBackupMetrics(Mockito.anyString(), Mockito.anyString());
+        Mockito.doReturn(backupsFromBackroll).when(clientMock).getAllBackupsfromVirtualMachine(Mockito.anyString());
         assertEquals(backupProvider.getBackupMetrics(2L, Arrays.asList(vmInstanceVO, vmInstanceVO2, vmInstanceVO3)).size(), 1);
 
-        Mockito.verify(clientMock, times(3)).getVirtualMachineMetrics(Mockito.anyString());
+        Mockito.verify(clientMock, times(3)).getAllBackupsfromVirtualMachine(Mockito.anyString());
+        Mockito.verify(clientMock, times(3)).getBackupMetrics(Mockito.anyString(), Mockito.anyString());
     }
 
     @Test
