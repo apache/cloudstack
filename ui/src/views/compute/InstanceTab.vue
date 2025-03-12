@@ -179,6 +179,7 @@ export default {
       vm: {},
       totalStorage: 0,
       currentTab: 'details',
+      showUpdateSecurityGroupsModal: false,
       showAddVolumeModal: false,
       diskOfferings: [],
       annotations: [],
