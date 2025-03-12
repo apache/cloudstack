@@ -5331,6 +5331,12 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String value = cmd.getValue();
         Long resourceId = null;
 
+        // Reject requests for Object Store Details to non-RootAdmins
+        Account account = CallContext.current().getCallingAccount();
+        if (! accountMgr.isRootAdmin(account.getAccountId()) && resourceType == ResourceTag.ResourceObjectType.ObjectStore) {
+            throw new PermissionDeniedException("The " + account + " is not authorized to list object store details.");
+        }
+
         //Validation - 1.1 - resourceId and value can't be null.
         if (resourceIdStr == null && value == null) {
             throw new InvalidParameterValueException("Insufficient parameters passed for listing by resourceId OR key,value pair. Please check your params and try again.");

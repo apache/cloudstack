@@ -21,6 +21,7 @@ package org.apache.cloudstack.storage.object;
 import com.amazonaws.services.s3.model.AccessControlList;
 import com.amazonaws.services.s3.model.BucketPolicy;
 import com.cloud.agent.api.to.BucketTO;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 
 import java.util.List;
@@ -30,6 +31,13 @@ public interface ObjectStoreDriver extends DataStoreDriver {
     Bucket createBucket(Bucket bucket, boolean objectLock);
 
     List<Bucket> listBuckets(long storeId);
+
+    /**
+     * Verify Service Connectivity by testing the configuration.
+     * @param storeId identifies which store's configuration to verify.
+     * @throws CloudRuntimeException if there are any connectivity issues.
+     */
+    void verifyServiceConnectivity(long storeId);
 
     boolean deleteBucket(BucketTO bucket, long storeId);
 

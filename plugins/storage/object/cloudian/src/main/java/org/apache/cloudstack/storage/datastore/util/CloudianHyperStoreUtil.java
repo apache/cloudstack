@@ -90,7 +90,7 @@ public class CloudianHyperStoreUtil {
     /**
      * This method is solely for test purposes so that we can mock the timeout.
      *
-     * @returns the timeout in seconds
+     * @return the timeout in seconds
      */
     protected static int getAdminTimeoutSeconds() {
         return DEFAULT_ADMIN_TIMEOUT_SECONDS;
@@ -101,7 +101,7 @@ public class CloudianHyperStoreUtil {
      * @param url the url of the ADMIN API service
      * @param user the admin username to connect as
      * @param pass the matching admin password
-     * @param validateSSL validate the SSL Certificate (when using https://)
+     * @param validateSSL validate the SSL Certificate (when using https)
      * @return a connection object (never null)
      * @throws CloudRuntimeException if the connection fails for any reason
      */
@@ -166,7 +166,7 @@ public class CloudianHyperStoreUtil {
 
     /**
      * Test the S3Url to confirm it behaves like an S3 Service.
-     *
+     * </p>
      * The method uses bad credentials and looks for the particular error from S3
      * that says InvalidAccessKeyId was used. The method quietly returns if
      * we connect and get the expected error back.
@@ -176,6 +176,9 @@ public class CloudianHyperStoreUtil {
      * @throws RuntimeException if there is any issue.
      */
     public static void validateS3Url(String s3Url) {
+        if (StringUtils.isBlank(s3Url)) {
+            throw new CloudRuntimeException("The S3 URL must not be blank.");
+        }
         try {
             AmazonS3 s3Client = CloudianHyperStoreUtil.getS3Client(s3Url, "unknown", "unknown");
             s3Client.listBuckets();
@@ -189,7 +192,7 @@ public class CloudianHyperStoreUtil {
 
     /**
      * Test the IAMUrl to confirm it behaves like an IAM Service.
-     *
+     * </p>
      * The method uses bad credentials and looks for the particular error from IAM
      * that says InvalidAccessKeyId or InvalidClientTokenId was used. The method quietly
      * returns if we connect and get the expected error back.
@@ -199,6 +202,9 @@ public class CloudianHyperStoreUtil {
      * @throws RuntimeException if there is any issue.
      */
     public static void validateIAMUrl(String iamUrl) {
+        if (StringUtils.isBlank(iamUrl)) {
+            throw new CloudRuntimeException("The IAM URL must not be blank.");
+        }
         try {
             AmazonIdentityManagement iamClient = CloudianHyperStoreUtil.getIAMClient(iamUrl, "unknown", "unknown");
             iamClient.listAccessKeys();
