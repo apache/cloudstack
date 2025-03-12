@@ -28,9 +28,13 @@ public interface NetrisService {
 
     boolean createVpcResource(long zoneId, long accountId, long domainId, Long vpcId, String vpcName, boolean sourceNatEnabled, String cidr, boolean isVpcNetwork);
 
+    boolean updateVpcResource(long zoneId, long accountId, long domainId, Long vpcId, String vpcName, String previousVpcName);
+
     boolean deleteVpcResource(long zoneId, long accountId, long domainId, Vpc vpc);
 
     boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr, Boolean globalRouting);
+
+    boolean updateVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String prevNetworkName);
 
     boolean deleteVnetResource(long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr);
 

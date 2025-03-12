@@ -160,6 +160,20 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
     }
 
     @Override
+    public boolean update(Network network, String prevNetworkName) {
+        Long vpcId = network.getVpcId();
+        String vpcName = null;
+        if (Objects.nonNull(vpcId)) {
+            VpcVO vpc = _vpcDao.findById(vpcId);
+            if (Objects.nonNull(vpc)) {
+                vpcName = vpc.getName();
+            }
+        }
+        return netrisService.updateVnetResource(network.getDataCenterId(), network.getAccountId(), network.getDomainId(),
+                vpcName, vpcId, network.getName(), network.getId(), prevNetworkName);
+    }
+
+    @Override
     public Network implement(Network network, NetworkOffering offering, DeployDestination dest,
                              ReservationContext context) throws InsufficientVirtualNetworkCapacityException {
         NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(),

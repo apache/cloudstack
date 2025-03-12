@@ -59,6 +59,7 @@ import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
 import com.cloud.network.dao.Site2SiteVpnConnectionDao;
 import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.network.element.NetrisProviderVO;
+import com.cloud.network.element.NetworkACLServiceProvider;
 import com.cloud.network.element.NsxProviderVO;
 import com.cloud.network.rules.RulesManager;
 import com.cloud.network.vpn.RemoteAccessVpnService;
@@ -1601,6 +1602,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         _accountMgr.checkAccess(caller, null, false, vpcToUpdate);
 
         final VpcVO vpc = vpcDao.createForUpdate(vpcId);
+        String previousVpcName = vpcToUpdate.getName();
 
         if (vpcName != null) {
             vpc.setName(vpcName);
@@ -1636,6 +1638,16 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             } else {
                 if (logger.isDebugEnabled()) {
                     logger.debug("no restart needed.");
+                    if (isVpcForProvider(Provider.Netris, vpcToUpdate)) {
+                        final String aclProvider = _vpcSrvcDao.getProviderForServiceInVpc(vpc.getId(), Service.NetworkACL);
+                        for (final VpcProvider provider : getVpcElements()) {
+                            if ((provider instanceof NetworkACLServiceProvider && provider.getName().equalsIgnoreCase(aclProvider))) {
+                                vpcToUpdate.setName(vpcName);
+                                provider.updateVpc(vpcToUpdate, previousVpcName);
+                                break;
+                            }
+                        }
+                    }
                 }
             }
             return vpcDao.findById(vpcId);

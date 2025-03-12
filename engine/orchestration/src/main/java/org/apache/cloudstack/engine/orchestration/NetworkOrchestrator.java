@@ -1099,8 +1099,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 nsxGuru.allocate(network, profile, vm);
             } else if (isNicAllocatedForProviderPublicNetworkOnVR(network, profile, vm, Provider.Netris)) {
                 String guruName = "NetrisPublicNetworkGuru";
-                NetworkGuru nsxGuru = AdapterBase.getAdapterByName(networkGurus, guruName);
-                nsxGuru.allocate(network, profile, vm);
+                NetworkGuru netrisGuru = AdapterBase.getAdapterByName(networkGurus, guruName);
+                netrisGuru.allocate(network, profile, vm);
             }
 
             if (isDefaultNic != null) {

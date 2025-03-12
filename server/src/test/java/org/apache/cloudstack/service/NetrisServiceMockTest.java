@@ -37,12 +37,22 @@ public class NetrisServiceMockTest implements NetrisService {
     }
 
     @Override
+    public boolean updateVpcResource(long zoneId, long accountId, long domainId, Long vpcId, String vpcName, String previousVpcName) {
+        return true;
+    }
+
+    @Override
     public boolean deleteVpcResource(long zoneId, long accountId, long domainId, Vpc vpc) {
         return true;
     }
 
     @Override
     public boolean createVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String cidr, Boolean globalRouting) {
+        return true;
+    }
+
+    @Override
+    public boolean updateVnetResource(Long zoneId, long accountId, long domainId, String vpcName, Long vpcId, String networkName, Long networkId, String prevNetworkName) {
         return true;
     }
 

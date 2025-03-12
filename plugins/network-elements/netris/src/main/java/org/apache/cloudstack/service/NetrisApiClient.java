@@ -34,6 +34,8 @@ import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.ReleaseNatIpCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
+import org.apache.cloudstack.agent.api.UpdateNetrisVnetCommand;
+import org.apache.cloudstack.agent.api.UpdateNetrisVpcCommand;
 
 import java.util.List;
 
@@ -50,6 +52,8 @@ public interface NetrisApiClient {
      */
     boolean createVpc(CreateNetrisVpcCommand cmd);
 
+    boolean updateVpc(UpdateNetrisVpcCommand cmd);
+
     /**
      * Delete a VPC on CloudStack removes the following Netris resources:
      * - Delete the IPAM Allocation for the VPC using the Prefix = VPC CIDR
@@ -63,6 +67,8 @@ public interface NetrisApiClient {
      * - Creates a Netris vNet
      */
     boolean createVnet(CreateNetrisVnetCommand cmd);
+
+    boolean updateVnet(UpdateNetrisVnetCommand cmd);
 
     /**
      * Deletion of a VPC network tier deletes the following Netris resources:
