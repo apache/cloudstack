@@ -360,6 +360,9 @@
           </a-spin>
         </a-modal>
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.static.routes')" key="staticroutes">
+        <StaticRoutesTab :resource="resource" :loading="loading" />
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.virtual.routers')" key="vr" v-if="$store.getters.userInfo.roletype === 'Admin'">
         <RoutersTab :resource="resource" :loading="loading" />
       </a-tab-pane>
@@ -393,6 +396,7 @@ import EventsTab from '@/components/view/EventsTab'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import BgpPeersTab from '@/views/infra/zone/BgpPeersTab.vue'
+import StaticRoutesTab from './StaticRoutesTab'
 
 export default {
   name: 'VpcTab',
@@ -404,6 +408,7 @@ export default {
     RoutersTab,
     VpcTiersTab,
     VnfAppliancesTab,
+    StaticRoutesTab,
     EventsTab,
     AnnotationsTab,
     ResourceIcon

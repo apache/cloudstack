@@ -41,6 +41,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkMigrationResponder;
@@ -683,6 +684,11 @@ public class TungstenElement extends AdapterBase
             }
         }
 
+        return true;
+    }
+
+    @Override
+    public boolean releaseIp(IpAddress ipAddress) {
         return true;
     }
 
