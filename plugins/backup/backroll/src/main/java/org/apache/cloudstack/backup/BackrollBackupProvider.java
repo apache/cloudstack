@@ -29,7 +29,9 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+
 import org.apache.cloudstack.backup.Backup.Metric;
+import org.apache.cloudstack.backup.Backup.RestorePoint;
 import org.apache.cloudstack.backup.backroll.BackrollClient;
 import org.apache.cloudstack.backup.backroll.model.BackrollBackupMetrics;
 import org.apache.cloudstack.backup.backroll.model.BackrollTaskStatus;
@@ -153,6 +155,9 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
 
     @Override
     public Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms) {
+        Long vmBackupSize=0L;
+        Long vmBackupProtectedSize=0L;
+
         final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
         if (CollectionUtils.isEmpty(vms)) {
             logger.warn("Unable to get VM Backup Metrics because the list of VMs is empty.");
@@ -170,7 +175,13 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
 
             Metric metric;
             try {
-                metric = client.getVirtualMachineMetrics(vm.getUuid());
+                final List<BackrollVmBackup> backups = client.getAllBackupsfromVirtualMachine(vm.getUuid());
+                for (BackrollVmBackup backup : backups ) {
+                    BackrollBackupMetrics backupMetric = client.getBackupMetrics(vm.getUuid(), backup.getId());
+                    vmBackupProtectedSize += backupMetric.getDeduplicated();
+                    vmBackupSize += backupMetric.getSize();
+                }
+                metric = new Metric(vmBackupSize, vmBackupProtectedSize);
             } catch (BackrollApiException | IOException e) {
                 throw new CloudRuntimeException("Failed to retrieve backup metrics");
             }
@@ -192,7 +203,7 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
     }
 
     @Override
-    public boolean takeBackup(VirtualMachine vm) {
+    public Pair<Boolean, Backup> takeBackup(VirtualMachine vm) {
         logger.info("Starting backup for VM ID {} on backroll provider", vm.getUuid());
         final BackrollClient client = getClient(vm.getDataCenterId());
 
@@ -215,18 +226,16 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
                 backup.setZoneId(vm.getDataCenterId());
                 Boolean result = backupDao.persist(backup) != null;
                 client.triggerTaskStatus(urlToRequest);
-                syncBackups(vm, null);
-                return result;
+                return new Pair<Boolean,Backup>(result, backup);
             }
         } catch (ParseException | BackrollApiException | IOException e) {
             logger.debug(e.getMessage());
             throw new CloudRuntimeException("Failed to take backup");
         }
-        return false;
+        return new Pair<Boolean,Backup>(false, null);
     }
 
 
-    @Override
     public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
         logger.info("Starting sync backup for VM ID " + vm.getUuid() + " on backroll provider");
 
@@ -401,6 +410,7 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
         backupToUpdate.setStatus(Backup.Status.Removed);
         if (backupDao.persist(backupToUpdate) != null) {
             logger.debug("Backroll backup {} deleted in database.", backup.getUuid());
+            VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
             return true;
         }
         return false;
@@ -432,5 +442,48 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
     public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
         logger.debug("Restoring volume {} from backup {} on the Backroll Backup Provider", volumeUuid, backup.getUuid());
         throw new CloudRuntimeException("Backroll plugin does not support this feature");
+    }
+
+    @Override
+    public List<RestorePoint> listRestorePoints(VirtualMachine vm) {
+        try {
+            final BackrollClient client = getClient(vm.getDataCenterId());
+            return client.listRestorePoints(vm.getUuid());
+        } catch (BackrollApiException | IOException e) {
+            logger.error(e);
+            throw new CloudRuntimeException("Failed to delete backup");
+        }
+    }
+
+    @Override
+    public Backup createNewBackupEntryForRestorePoint(RestorePoint restorePoint, VirtualMachine vm, Metric metric) {
+        final BackrollClient client = getClient(vm.getDataCenterId());
+        BackupVO backupToInsert = new BackupVO();
+        backupToInsert.setVmId(vm.getId());
+        backupToInsert.setExternalId(restorePoint.getId());
+        backupToInsert.setType("INCREMENTAL");
+        backupToInsert.setDate(restorePoint.getCreated());
+        backupToInsert.setStatus(Backup.Status.BackedUp);
+        backupToInsert.setBackupOfferingId(vm.getBackupOfferingId());
+        backupToInsert.setAccountId(vm.getAccountId());
+        backupToInsert.setDomainId(vm.getDomainId());
+        backupToInsert.setZoneId(vm.getDataCenterId());
+        if(metric == null || metric.getBackupSize().equals(0L)){
+            try {
+                BackrollBackupMetrics backupMetrics = client.getBackupMetrics(vm.getUuid() , restorePoint.getId());
+                if (backupMetrics != null) {
+                    backupToInsert.setSize(backupMetrics.getDeduplicated()); // real size
+                    backupToInsert.setProtectedSize(backupMetrics.getSize()); // total size
+                }
+            } catch (BackrollApiException | IOException e) {
+                logger.error(e);
+                throw new CloudRuntimeException("Failed to get backup metrics");
+            }
+        }else{
+            backupToInsert.setSize(metric.getBackupSize());
+            backupToInsert.setProtectedSize(metric.getDataSize());
+        }
+        backupDao.persist(backupToInsert);
+        return backupToInsert;
     }
 }

@@ -110,8 +110,8 @@ public class BackrollBackupProviderTest {
         Mockito.doReturn(new BackupVO()).when(backupDao).persist(Mockito.any(BackupVO.class));
         Mockito.doNothing().when(clientMock).triggerTaskStatus(Mockito.anyString());
         syncBackups_Test();
-        Boolean result = backupProvider.takeBackup(vmInstanceVO);
-        assertTrue(result);
+        Pair<Boolean, Backup> result = backupProvider.takeBackup(vmInstanceVO);
+        assertTrue(result.first());
     }
 
     @Test
