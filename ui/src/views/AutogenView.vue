@@ -28,6 +28,8 @@
                   style="margin-bottom: 5px"
                   shape="round"
                   size="small"
+                  v-shortkey="['r']"
+                  @shortkey="fetchData({ irefresh: true })"
                   @click="fetchData({ irefresh: true })">
                   <template #icon><reload-outlined /></template>
                   {{ $t('label.refresh') }}
