@@ -34,4 +34,6 @@ public interface HostPodDao extends GenericDao<HostPodVO, Long> {
     public List<Long> listAllPods(Long zoneId);
 
     public List<HostPodVO> listAllPodsByCidr(long zoneId, String cidr);
+
+    List<String> listDistinctStorageAccessGroups(String name, String keyword);
 }
