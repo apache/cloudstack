@@ -36,7 +36,6 @@ import org.apache.cloudstack.backup.backroll.model.BackrollVmBackup;
 import org.apache.cloudstack.backup.backroll.model.BackrollBackupMetrics;
 import org.apache.cloudstack.backup.backroll.model.BackrollOffering;
 import org.apache.cloudstack.backup.backroll.model.response.TaskState;
-import org.apache.cloudstack.backup.Backup.Metric;
 import org.apache.cloudstack.backup.Backup.RestorePoint;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.logging.log4j.Logger;
