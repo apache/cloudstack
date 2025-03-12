@@ -451,7 +451,7 @@ export default {
       if (arrayField.includes('arch')) {
         const typeIndex = this.fields.findIndex(item => item.name === 'arch')
         this.fields[typeIndex].loading = true
-        this.fields[typeIndex].opts = this.fetchArchitectureTypes()
+        this.fields[typeIndex].opts = this.$fetchCpuArchitectureTypes()
         this.fields[typeIndex].loading = false
       }
     },
@@ -1323,12 +1323,6 @@ export default {
             reject(error.response.headers['x-description'])
           })
       })
-    },
-    fetchArchitectureTypes () {
-      return [
-        { id: 'x86_64', name: 'AMD 64 bits (x86_64)' },
-        { id: 'aarch64', name: 'ARM 64 bits (aarch64)' }
-      ]
     },
     onSearch (value) {
       this.paramsFilter = {}

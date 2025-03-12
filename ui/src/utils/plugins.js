@@ -523,3 +523,15 @@ export function createPathBasedOnVmType (vmtype, virtualmachineid) {
 
   return path + virtualmachineid
 }
+
+export const cpuArchitectureUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$fetchCpuArchitectureTypes = function () {
+      const architectures = [
+        { id: 'x86_64', name: 'AMD 64 bits (x86_64)' },
+        { id: 'aarch64', name: 'ARM 64 bits (aarch64)' }
+      ]
+      return architectures.map(item => ({ ...item, description: item.name }))
+    }
+  }
+}
