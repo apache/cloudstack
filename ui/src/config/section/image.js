@@ -398,7 +398,7 @@ export default {
         {
           api: 'getUploadParamsForKubernetesSupportedVersion',
           icon: 'cloud-upload-outlined',
-          label: 'label.kubernetes.version.add.from.local',
+          label: 'label.kubernetes.version.from.local',
           listView: true,
           popup: true,
           show: isZoneCreated,
