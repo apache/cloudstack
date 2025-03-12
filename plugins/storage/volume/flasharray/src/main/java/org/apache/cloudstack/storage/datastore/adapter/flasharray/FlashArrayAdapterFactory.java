@@ -25,7 +25,7 @@ public class FlashArrayAdapterFactory implements ProviderAdapterFactory {
 
     @Override
     public String getProviderName() {
-        return "Flash Array";
+        return "FlashArray";
     }
 
     @Override
