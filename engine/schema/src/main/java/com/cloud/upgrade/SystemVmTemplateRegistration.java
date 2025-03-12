@@ -841,7 +841,7 @@ public class SystemVmTemplateRegistration {
         String nfsVersion = getNfsVersion(storeUrlAndId.second());
         mountStore(storeUrlAndId.first(), filePath, nfsVersion);
         List<Pair<Hypervisor.HypervisorType, String>> hypervisorArchList =
-                clusterDao.getDistinctHypervisorsArchAcrossClusters(zoneId);
+                clusterDao.listDistinctHypervisorsArchAcrossClusters(zoneId);
         for (Pair<Hypervisor.HypervisorType, String> hypervisorArch : hypervisorArchList) {
             Hypervisor.HypervisorType hypervisorType = hypervisorArch.first();
             MetadataTemplateDetails templateDetails = getMetadataTemplateDetails(hypervisorType,
@@ -946,7 +946,7 @@ public class SystemVmTemplateRegistration {
             public void doInTransactionWithoutResult(final TransactionStatus status) {
                 List<Pair<Hypervisor.HypervisorType, String>> hypervisorsInUse;
                 try {
-                    hypervisorsInUse = clusterDao.getDistinctHypervisorsArchAcrossClusters(null);
+                    hypervisorsInUse = clusterDao.listDistinctHypervisorsArchAcrossClusters(null);
                 } catch (final Exception e) {
                     LOGGER.error("updateSystemVmTemplates: Exception caught while getting hypervisor types from clusters: {}", e.getMessage());
                     throw new CloudRuntimeException("updateSystemVmTemplates:Exception while getting hypervisor types from clusters", e);

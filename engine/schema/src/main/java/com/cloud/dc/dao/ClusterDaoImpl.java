@@ -20,7 +20,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -170,26 +169,17 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     }
 
     @Override
-    public List<Pair<HypervisorType, String>> getDistinctHypervisorsArchAcrossClusters(Long zoneId) {
-        List<Pair<HypervisorType, String>> hypervisorArchList = new ArrayList<>();
-        String selectSql = "SELECT DISTINCT hypervisor_type, arch FROM cloud.cluster WHERE removed IS NULL";
-        if (zoneId != null) {
-            selectSql += " AND data_center_id=" + zoneId;
-        }
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        try {
-            PreparedStatement stmt = txn.prepareAutoCloseStatement(selectSql);
-            ResultSet rs = stmt.executeQuery();
-            while (rs.next()) {
-                HypervisorType hypervisorType = HypervisorType.valueOf(rs.getString("hypervisor_type"));
-                String arch = rs.getString("arch");
-                hypervisorArchList.add(new Pair<>(hypervisorType, arch));
-            }
-        } catch (SQLException ex) {
-            logger.error("DB exception {}", ex.getMessage(), ex);
-            return Collections.emptyList();
-        }
-        return hypervisorArchList;
+    public List<Pair<HypervisorType, String>> listDistinctHypervisorsArchAcrossClusters(Long zoneId) {
+        SearchBuilder<ClusterVO> sb = createSearchBuilder();
+        sb.select(null, Func.DISTINCT_PAIR, sb.entity().getHypervisorType(), sb.entity().getArch());
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<ClusterVO> sc = sb.create();
+        sc.setParameters("zoneId", zoneId);
+        final List<ClusterVO> clusters = search(sc, null);
+        return clusters.stream()
+                .map(c -> new Pair<>(c.getHypervisorType(), c.getArch().getType()))
+                .collect(Collectors.toList());
     }
 
     @Override

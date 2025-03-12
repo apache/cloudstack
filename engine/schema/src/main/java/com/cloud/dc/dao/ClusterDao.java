@@ -34,7 +34,7 @@ public interface ClusterDao extends GenericDao<ClusterVO, Long> {
 
     List<HypervisorType> getAvailableHypervisorInZone(Long zoneId);
 
-    List<Pair<HypervisorType, String>> getDistinctHypervisorsArchAcrossClusters(Long zoneId);
+    List<Pair<HypervisorType, String>> listDistinctHypervisorsArchAcrossClusters(Long zoneId);
 
     List<ClusterVO> listByDcHyType(long dcId, String hyType);
 
