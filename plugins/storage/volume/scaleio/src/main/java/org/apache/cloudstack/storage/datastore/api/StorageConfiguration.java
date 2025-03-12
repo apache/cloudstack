@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,42 +14,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
 
-package com.cloud.agent.api;
+package org.apache.cloudstack.storage.datastore.api;
 
-import java.util.Map;
+public class StorageConfiguration {
+    String systemId;
+    Long mdmPort;
+    String[] mdmAddresses;
 
-import com.cloud.storage.Storage.StoragePoolType;
-
-public class UnprepareStorageClientCommand extends Command {
-    private StoragePoolType poolType;
-    private String poolUuid;
-    private Map<String, String> details;
-
-    public UnprepareStorageClientCommand() {
+    public String getSystemId() {
+        return systemId;
     }
 
-    public UnprepareStorageClientCommand(StoragePoolType poolType, String poolUuid, Map<String, String> details) {
-        this.poolType = poolType;
-        this.poolUuid = poolUuid;
-        this.details = details;
+    public void setSystemId(String systemId) {
+        this.systemId = systemId;
     }
 
-    @Override
-    public boolean executeInSequence() {
-        return false;
+    public Long getMdmPort() {
+        return mdmPort;
     }
 
-    public StoragePoolType getPoolType() {
-        return poolType;
+    public void setMdmPort(Long mdmPort) {
+        this.mdmPort = mdmPort;
     }
 
-    public String getPoolUuid() {
-        return poolUuid;
+    public String[] getMdmAddresses() {
+        return mdmAddresses;
     }
 
-    public Map<String, String> getDetails() {
-        return details;
+    public void setMdmAddresses(String[] mdmAddresses) {
+        this.mdmAddresses = mdmAddresses;
     }
 }
