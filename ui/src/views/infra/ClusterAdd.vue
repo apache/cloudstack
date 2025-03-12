@@ -213,7 +213,8 @@ export default {
     fetchData () {
       this.fetchZones()
       this.fetchHypervisors()
-      this.fetchArchitectureTypes()
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
+      this.selectedArchitecture = this.architectureTypes?.opts?.[0]?.id || null
       this.params = this.$store.getters.apis.addCluster.params
       Object.keys(this.placeholder).forEach(item => { this.returnPlaceholder(item) })
     },
@@ -239,20 +240,6 @@ export default {
       }).finally(() => {
         this.loading = false
       })
-    },
-    fetchArchitectureTypes () {
-      this.architectureTypes.opts = []
-      const typesList = []
-      typesList.push({
-        id: 'x86_64',
-        description: 'AMD 64 bits (x86_64)'
-      })
-      typesList.push({
-        id: 'aarch64',
-        description: 'ARM 64 bits (aarch64)'
-      })
-      this.architectureTypes.opts = typesList
-      this.selectedArchitecture = this.architectureTypes.opts[0].id
     },
     fetchPods () {
       this.loading = true
