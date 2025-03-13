@@ -3594,12 +3594,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return;
         }
         String templateName = getValidTemplateName(zoneId, hypervisorType);
-        Long templateId = systemVmTemplateRegistration.getRegisteredTemplateId(templateName, arch);
-        VMTemplateVO vmTemplateVO = null;
+        VMTemplateVO registeredTemplate = systemVmTemplateRegistration.getRegisteredTemplate(templateName, arch);
         TemplateDataStoreVO templateDataStoreVO = null;
-        if (templateId != null) {
-            vmTemplateVO = _templateDao.findById(templateId);
-            templateDataStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), templateId);
+        if (registeredTemplate != null) {
+            templateDataStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), registeredTemplate.getId());
             if (templateDataStoreVO != null) {
                 try {
                     if (systemVmTemplateRegistration.validateIfSeeded(templateDataStoreVO, url,
@@ -3612,11 +3610,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
         }
         SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath, nfsVersion);
-        if (templateDataStoreVO != null && vmTemplateVO != null) {
-            systemVmTemplateRegistration.registerTemplate(hypervisorType, templateName, storeUrlAndId, vmTemplateVO,
-                    templateDataStoreVO, filePath);
+        if (templateDataStoreVO != null) {
+            systemVmTemplateRegistration.validateAndRegisterTemplate(hypervisorType, templateName,
+                    storeUrlAndId.second(), registeredTemplate, templateDataStoreVO, filePath);
         } else {
-            systemVmTemplateRegistration.registerTemplate(hypervisorType, arch, templateName, storeUrlAndId, filePath);
+            systemVmTemplateRegistration.validateAndRegisterTemplateForNonExistingEntries(hypervisorType, arch,
+                    templateName, storeUrlAndId, filePath);
         }
     }
 

@@ -181,7 +181,7 @@ public class HttpUtils {
                             int percentDownloaded = (int) ((downloaded / (double) contentLength) * 100);
                             // Update every 5 percent or on completion
                             if (percentDownloaded - lastReportedPercent >= 5 || percentDownloaded == 100) {
-                                logger.debug("Downloaded {}% from {}", downloaded, fileURL);
+                                logger.debug("Downloaded {}% from {}", percentDownloaded, fileURL);
                                 lastReportedPercent = percentDownloaded;
                             }
                         }
