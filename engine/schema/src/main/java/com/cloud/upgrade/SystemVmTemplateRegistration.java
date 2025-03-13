@@ -301,7 +301,7 @@ public class SystemVmTemplateRegistration {
     }
 
     public static final List<Pair<Hypervisor.HypervisorType, String>> hypervisorList = Arrays.asList(
-            new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.x86.getType()),
+            new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.amd64.getType()),
             new Pair<>(Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64.getType()),
             new Pair<>(Hypervisor.HypervisorType.VMware, null),
             new Pair<>(Hypervisor.HypervisorType.XenServer, null),
