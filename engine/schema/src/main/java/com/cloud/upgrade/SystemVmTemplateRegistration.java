@@ -794,9 +794,8 @@ public class SystemVmTemplateRegistration {
         File tempFile = new File(filePath);
         if (!tempFile.exists() && DOWNLOADABLE_TEMPLATE_ARCH_TYPES.contains(templateDetails.getArch()) &&
                 StringUtils.isNotBlank(templateDetails.getUrl())) {
-            LOGGER.debug("Downloading the template file {} for hypervisor {} and arch {} as it is not present",
-                    templateDetails.getUrl(), templateDetails.getHypervisorType().name(),
-                    templateDetails.getArch().getType());
+            LOGGER.debug("Downloading the template file {} for hypervisor: {} as it is not present locally",
+                    templateDetails.getUrl(), templateDetails.getKey());
             if (!HttpUtils.downloadFileWithProgress(templateDetails.getUrl(), filePath, LOGGER)) {
                 return null;
             }
@@ -820,8 +819,8 @@ public class SystemVmTemplateRegistration {
             }
             File tempFile = getTemplateFile(matchedTemplate);
             if (tempFile == null) {
-                LOGGER.warn("Failed to download template for hypervisor {} and arch {}, moving ahead",
-                        matchedTemplate.getHypervisorType().name(), matchedTemplate.getArch().getType());
+                LOGGER.warn("Failed to download template for hypervisor: {}, moving ahead",
+                        matchedTemplate.getKey());
                 continue;
             }
             String templateChecksum = DigestHelper.calculateChecksum(tempFile);
@@ -944,8 +943,7 @@ public class SystemVmTemplateRegistration {
 
     protected boolean registerOrUpdateSystemVmTemplate(MetadataTemplateDetails templateDetails,
                    List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> hypervisorsInUse) {
-        LOGGER.debug("Updating {} System Vms {}, {}", templateDetails.getKey(),
-                templateDetails.getHypervisorType(), templateDetails.getArch().getType());
+        LOGGER.debug("Updating {} System VM template", templateDetails.getKey());
         Long templateId = getRegisteredTemplateId(templateDetails.getName(), templateDetails.getArch());
         // change template type to SYSTEM
         if (templateId != null) {
@@ -967,9 +965,8 @@ public class SystemVmTemplateRegistration {
                                     .collect(Collectors.toList()), ",")), e);
                 }
             } else {
-                LOGGER.warn("Cannot upgrade {} system VM template for {} {} hypervisor as it is not used, not failing upgrade",
-                        getSystemVmTemplateVersion(), templateDetails.getHypervisorType(),
-                        templateDetails.getArch().getType());
+                LOGGER.warn("Cannot upgrade {} system VM template for hypervisor: {} as it is not used, not failing upgrade",
+                        getSystemVmTemplateVersion(), templateDetails.getKey());
                 VMTemplateVO templateVO = vmTemplateDao.findLatestTemplateByTypeAndHypervisorAndArch(
                         templateDetails.getHypervisorType(), templateDetails.getArch(), Storage.TemplateType.SYSTEM);
                 if (templateVO != null) {
