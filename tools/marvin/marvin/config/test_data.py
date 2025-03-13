@@ -1069,7 +1069,7 @@ test_data = {
             "format": "raw",
             "hypervisor": "kvm",
             "ostype": "Other Linux (64-bit)",
-            "url": "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.img",
+            "url": "https://cloud-images.ubuntu.com/releases/jammy/release/ubuntu-22.04-server-cloudimg-amd64.img",
             "requireshvm": "True",
             "ispublic": "True",
             "isextractable": "False"
