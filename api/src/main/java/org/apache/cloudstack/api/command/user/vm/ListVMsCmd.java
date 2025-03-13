@@ -41,6 +41,7 @@ import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
@@ -151,6 +152,9 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
     @Parameter(name = ApiConstants.USER_DATA, type = CommandType.BOOLEAN, description = "Whether to return the VMs' user data or not. By default, user data will not be returned.", since = "4.18.0.0")
     private Boolean showUserData;
 
+    @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, required = false, description = "the instances by userdata")
+    private Long userdataId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -243,6 +247,10 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
 
     protected boolean isViewDetailsEmpty() {
         return CollectionUtils.isEmpty(viewDetails);
+    }
+
+    public Long getUserdataId() {
+        return userdataId;
     }
 
     public EnumSet<VMDetails> getDetails() throws InvalidParameterValueException {
