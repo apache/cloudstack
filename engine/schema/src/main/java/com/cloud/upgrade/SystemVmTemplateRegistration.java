@@ -798,9 +798,13 @@ public class SystemVmTemplateRegistration {
 
     protected File getTemplateFile(MetadataTemplateDetails templateDetails) {
         File templateFile = new File(templateDetails.getDefaultFilePath());
-        if (!templateFile.exists() && DOWNLOADABLE_TEMPLATE_ARCH_TYPES.contains(templateDetails.getArch()) &&
+        if (templateFile.exists()) {
+            return templateFile;
+        }
+        LOGGER.debug("{} is not present", templateFile.getAbsolutePath());
+        if (DOWNLOADABLE_TEMPLATE_ARCH_TYPES.contains(templateDetails.getArch()) &&
                 StringUtils.isNotBlank(templateDetails.getUrl())) {
-            LOGGER.debug("Downloading the template file {} for {} as it is not present locally",
+            LOGGER.debug("Downloading the template file {} for {}",
                     templateDetails.getUrl(), templateDetails.getHypervisorArchLog());
             Path path = Path.of(TEMPLATES_PATH);
             if (!Files.isWritable(path)) {
