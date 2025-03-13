@@ -156,8 +156,6 @@
         <module>user-two-factor-authenticators/totp</module>
         <module>user-two-factor-authenticators/static-pin</module>
 
-        <module>vpn/wireguard</module>
-
     </modules>
     <dependencies>
         <dependency>
