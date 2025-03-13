@@ -3229,28 +3229,34 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     return;
                 }
             }
-            Description description = new Description();
-            description.setSummary("Trusted Platform Module");
-            description.setLabel("Trusted Platform Module");
-            VirtualTPM virtualTPM = new VirtualTPM();
-            virtualTPM.setDeviceInfo(description);
-            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
-            deviceConfigSpec.setDevice(virtualTPM);
-            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-            vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
+            addVirtualTPMDevice(vmConfigSpec);
         } else {
             logger.debug(String.format("Virtual TPM device is not enabled. It is only enabled when boot type is SECURE (actually %s) and vTPM is enabled (actually %s)", bootType, virtualTPMEnabled));
             for (VirtualDevice device : vmMo.getAllDeviceList()) {
                 if (device instanceof VirtualTPM) {
-                    VirtualTPM virtualTPM = (VirtualTPM) device;
-                    VirtualDeviceConfigSpec virtualDeviceConfigSpec = new VirtualDeviceConfigSpec();
-                    virtualDeviceConfigSpec.setDevice(virtualTPM);
-                    virtualDeviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.REMOVE);
-                    vmConfigSpec.getDeviceChange().add(virtualDeviceConfigSpec);
+                    removeVirtualTPMDevice(vmConfigSpec, (VirtualTPM) device);
                 }
             }
-
         }
+    }
+
+    private void addVirtualTPMDevice(VirtualMachineConfigSpec vmConfigSpec) {
+        Description description = new Description();
+        description.setSummary("Trusted Platform Module");
+        description.setLabel("Trusted Platform Module");
+        VirtualTPM virtualTPM = new VirtualTPM();
+        virtualTPM.setDeviceInfo(description);
+        VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+        deviceConfigSpec.setDevice(virtualTPM);
+        deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+        vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
+    }
+
+    private void removeVirtualTPMDevice(VirtualMachineConfigSpec vmConfigSpec, VirtualTPM virtualTPM) {
+        VirtualDeviceConfigSpec virtualDeviceConfigSpec = new VirtualDeviceConfigSpec();
+        virtualDeviceConfigSpec.setDevice(virtualTPM);
+        virtualDeviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.REMOVE);
+        vmConfigSpec.getDeviceChange().add(virtualDeviceConfigSpec);
     }
 
     private void tearDownVm(VirtualMachineMO vmMo) throws Exception {
