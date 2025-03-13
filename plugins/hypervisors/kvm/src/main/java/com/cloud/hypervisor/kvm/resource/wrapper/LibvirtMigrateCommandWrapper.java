@@ -64,6 +64,7 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
 import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
@@ -73,6 +74,7 @@ import com.cloud.agent.api.to.DpdkTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.properties.AgentProperties;
 import com.cloud.agent.properties.AgentPropertiesFileHandler;
+import com.cloud.hypervisor.kvm.resource.disconnecthook.MigrationCancelHook;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
@@ -111,6 +113,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         }
 
         String result = null;
+        Command.State commandState = null;
 
         List<InterfaceDef> ifaces = null;
         List<DiskDef> disks;
@@ -121,6 +124,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         Connect conn = null;
         String xmlDesc = null;
         List<Ternary<String, Boolean, String>> vmsnapshots = null;
+        MigrationCancelHook cancelHook = null;
 
         try {
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
@@ -237,6 +241,12 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             final ExecutorService executor = Executors.newFixedThreadPool(1);
             boolean migrateNonSharedInc = command.isMigrateNonSharedInc() && !migrateStorageManaged;
 
+            // add cancel hook before we start. If migration fails to start and hook is called, it's non-fatal
+            cancelHook = new MigrationCancelHook(dm);
+            libvirtComputingResource.addDisconnectHook(cancelHook);
+
+            libvirtComputingResource.createOrUpdateLogFileForCommand(command, Command.State.PROCESSING);
+
             final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc,
                     migrateStorage, migrateNonSharedInc,
                     command.isAutoConvergence(), vmName, command.getDestinationIp(), migrateDiskLabels);
@@ -278,6 +288,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                             logger.info(String.format("Aborting migration of VM [%s] with domain job [%s] due to time out after %d seconds.", vmName, job, migrateWait));
                             dm.abortJob();
                             result = String.format("Migration of VM [%s] was cancelled by CloudStack due to time out after %d seconds.", vmName, migrateWait);
+                            commandState = Command.State.FAILED;
+                            libvirtComputingResource.createOrUpdateLogFileForCommand(command, commandState);
                             logger.debug(result);
                             break;
                         } catch (final LibvirtException e) {
@@ -338,6 +350,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 result = "Exception during migrate: " + e.getMessage();
             }
         } finally {
+            if (cancelHook != null) {
+                libvirtComputingResource.removeDisconnectHook(cancelHook);
+            }
             try {
                 if (dm != null && result != null) {
                     // restore vm snapshots in case of failed migration
@@ -373,6 +388,11 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     vifDriver.unplug(iface, libvirtComputingResource.shouldDeleteBridge(vlanToPersistenceMap, vlanId));
                 }
             }
+            commandState = Command.State.COMPLETED;
+            libvirtComputingResource.createOrUpdateLogFileForCommand(command, commandState);
+        } else if (commandState == null) {
+            commandState = Command.State.FAILED;
+            libvirtComputingResource.createOrUpdateLogFileForCommand(command, commandState);
         }
 
         return new MigrateAnswer(command, result == null, result, null);
