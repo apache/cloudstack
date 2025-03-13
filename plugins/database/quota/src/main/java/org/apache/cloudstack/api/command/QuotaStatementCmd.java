@@ -67,7 +67,7 @@ public class QuotaStatementCmd extends BaseCmd {
     private boolean showResources;
 
     @Inject
-    protected QuotaResponseBuilder responseBuilder;
+    QuotaResponseBuilder responseBuilder;
 
     public Long getAccountId() {
         return accountId;
