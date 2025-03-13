@@ -1050,7 +1050,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     Account owner = _accountMgr.getAccount(addr.getAllocatedToAccountId());
                     final IPAddressVO userIp = _ipAddressDao.lockRow(addr.getId(), true);
                     if (userIp == null) {
-                        s_logger.error(String.format("Failed to acquire row lock to mark public IP as allocated with ID [%s] address [%s]", addr.getId(), addr.getAddress()));
+                        s_logger.error(String.format("Failed to acquire row lock to mark public IP as allocated with ID [%s] and address [%s]", addr.getId(), addr.getAddress()));
                         return;
                     }
 
