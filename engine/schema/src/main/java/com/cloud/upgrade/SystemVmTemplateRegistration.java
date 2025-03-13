@@ -730,7 +730,7 @@ public class SystemVmTemplateRegistration {
         if (templateFile == null) {
             throw new CloudRuntimeException("Failed to find local template file");
         }
-        if (!matchTemplateChecksum(templateDetails, templateFile)) {
+        if (isTemplateFileChecksumDifferent(templateDetails, templateFile)) {
             throw new CloudRuntimeException("Checksum failed for local template file");
         }
     }
@@ -816,14 +816,14 @@ public class SystemVmTemplateRegistration {
         return templateFile;
     }
 
-    protected boolean matchTemplateChecksum(MetadataTemplateDetails templateDetails, File templateFile) {
+    protected boolean isTemplateFileChecksumDifferent(MetadataTemplateDetails templateDetails, File templateFile) {
         String templateChecksum = DigestHelper.calculateChecksum(templateFile);
         if (!templateChecksum.equals(templateDetails.getChecksum())) {
             LOGGER.error("Checksum {} for file {} does not match checksum {} from metadata",
                     templateChecksum, templateFile, templateDetails.getChecksum());
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     private void validateTemplates(List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> hypervisorsArchInUse) {
@@ -841,7 +841,7 @@ public class SystemVmTemplateRegistration {
                         matchedTemplate.getHypervisorArchLog());
                 continue;
             }
-            if (!matchTemplateChecksum(matchedTemplate, tempFile)) {
+            if (isTemplateFileChecksumDifferent(matchedTemplate, tempFile)) {
                 templatesFound = false;
                 break;
             }
