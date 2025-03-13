@@ -28,7 +28,7 @@ import java.util.List;
 public interface ReconcileCommandService {
 
     ConfigKey<Boolean> ReconcileCommandsEnabled = new ConfigKey<>("Advanced", Boolean.class,
-            "reconcile.commands.enabled", "true",
+            "reconcile.commands.enabled", "false",
             "Indicates whether the background task to reconcile the commands is enabled or not",
             false);
 
