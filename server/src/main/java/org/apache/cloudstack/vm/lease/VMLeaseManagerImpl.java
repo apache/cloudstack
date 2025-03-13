@@ -23,7 +23,9 @@ import com.cloud.api.ApiGsonHelper;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.event.ActionEventUtils;
+import com.cloud.user.Account;
 import com.cloud.user.User;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
@@ -39,10 +41,12 @@ import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.commons.lang3.time.DateUtils;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -138,17 +142,32 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             return;
         }
 
-        List<UserVmJoinVO> leaseExpiringForInstances = userVmJoinDao.listExpiringInstancesInDays(InstanceLeaseAlertStartsAt.value().intValue());
-        for (UserVmJoinVO instance : leaseExpiringForInstances) {
-            alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, instance.getDataCenterId(), instance.getPodId(),
-                    "Lease expiring for instance id: " + instance.getUuid(), "Lease expiring for instance");
+        GlobalLock scanLock = GlobalLock.getInternLock("VMLeaseAlertScheduler");
+        try {
+            if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
+                try {
+                    List<UserVmJoinVO> leaseExpiringForInstances = userVmJoinDao.listLeaseInstancesExpiringInDays(InstanceLeaseAlertStartsAt.value().intValue());
+                    for (UserVmJoinVO instance : leaseExpiringForInstances) {
+                        alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, instance.getDataCenterId(), instance.getPodId(),
+                                "Lease expiring for instance id: " + instance.getUuid(), "Lease expiring for instance");
+                    }
+                } finally {
+                    scanLock.unlock();
+                }
+            }
+        } finally {
+            scanLock.releaseRef();
         }
     }
 
     @Override
-    public void poll(Date currentTimestamp) {
-        // as feature is disabled, no action is required
+    public void poll(Date timestamp) {
+        Date currentTimestamp = DateUtils.round(timestamp, Calendar.MINUTE);
+        String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, currentTimestamp);
+        logger.debug("VMLeaseScheduler.poll is being called at {}", displayTime);
+
         if (!InstanceLeaseEnabled.value()) {
+            logger.debug("Instance lease feature is disabled, no action is required");
             return;
         }
 
@@ -168,16 +187,15 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
 
     protected void reallyRun() {
         // fetch user_instances having leaseDuration configured and has expired
-        List<UserVmJoinVO> leaseExpiredInstances = userVmJoinDao.listExpiredInstancesIds();
+        List<UserVmJoinVO> leaseExpiredInstances = userVmJoinDao.listLeaseExpiredInstances();
         List<Long> actionableInstanceIds = new ArrayList<>();
-        // iterate over them and ignore if delete protection is enabled
+        // iterate over and skip ones with delete protection
         for (UserVmJoinVO userVmVO : leaseExpiredInstances) {
             if (userVmVO.isDeleteProtection() != null && userVmVO.isDeleteProtection()) {
                 logger.debug("Ignoring instance with id: {} as deleteProtection is enabled", userVmVO.getUuid());
                 continue;
             }
             // state check, include instances not yet stopped or destroyed
-            // it can be done in fetch_user_instances as well
             if (!Arrays.asList(Destroyed, Expunging, Unknown, VirtualMachine.State.Error).contains(userVmVO.getState())) {
                 actionableInstanceIds.add(userVmVO.getId());
             }
@@ -208,7 +226,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
                 failedToSubmitInstanceIds.add(instanceId);
             }
         }
-        logger.debug("Successfully submitted jobs for ids: {}", submittedJobIds);
+        logger.debug("Successfully submitted lease expiry jobs with ids: {}", submittedJobIds);
         if (!failedToSubmitInstanceIds.isEmpty()) {
             logger.debug("Lease scheduler failed to submit jobs for instance ids: {}", failedToSubmitInstanceIds);
         }
@@ -227,7 +245,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             }
             default: {
                 logger.error("Invalid configuration for instance.lease.expiryaction for vm id: {}, " +
-                        "valid values are: \"stop\" and  \"destroy\"", instance.getUuid());
+                        "valid values are: \"STOP\" and  \"DESTROY\"", instance.getUuid());
             }
         }
         return null;
@@ -236,8 +254,8 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
     long executeStopInstanceJob(UserVmJoinVO vm, boolean isForced, long eventId) {
         final Map<String, String> params = new HashMap<>();
         params.put(ApiConstants.ID, String.valueOf(vm.getId()));
-        params.put("ctxUserId", "1");
-        params.put("ctxAccountId", String.valueOf(vm.getAccountId()));
+        params.put("ctxUserId", String.valueOf(User.UID_SYSTEM));
+        params.put("ctxAccountId", String.valueOf(Account.ACCOUNT_ID_SYSTEM));
         params.put(ApiConstants.CTX_START_EVENT_ID, String.valueOf(eventId));
         params.put(ApiConstants.FORCED, String.valueOf(isForced));
         final StopVMCmd cmd = new StopVMCmd();
@@ -252,8 +270,8 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
     long executeDestroyInstanceJob(UserVmJoinVO vm, boolean isForced, long eventId) {
         final Map<String, String> params = new HashMap<>();
         params.put(ApiConstants.ID, String.valueOf(vm.getId()));
-        params.put("ctxUserId", "1");
-        params.put("ctxAccountId", String.valueOf(vm.getAccountId()));
+        params.put("ctxUserId", String.valueOf(User.UID_SYSTEM));
+        params.put("ctxAccountId", String.valueOf(Account.ACCOUNT_ID_SYSTEM));
         params.put(ApiConstants.CTX_START_EVENT_ID, String.valueOf(eventId));
         params.put(ApiConstants.FORCED, String.valueOf(isForced));
 

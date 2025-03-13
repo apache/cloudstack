@@ -363,6 +363,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -6366,7 +6367,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private void addLeaseDetailsForInstance(UserVm vm, Long leaseDuration, String leaseExpiryAction) {
         LocalDate today = LocalDate.now();
-        Date leaseExpiryDate = Date.from(today.plusDays(leaseDuration).atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+        Date leaseExpiryDate = Date.from(today.plusDays(leaseDuration).atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant());
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         String formattedLeaseExpiryDate = sdf.format(leaseExpiryDate);
         userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE, formattedLeaseExpiryDate, false);

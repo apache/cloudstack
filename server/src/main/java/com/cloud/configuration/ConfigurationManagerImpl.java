@@ -3500,7 +3500,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Provide values for both: leaseduration and leaseexpiryaction");
         }
 
-        if (leaseDuration < 0L) {
+        if (leaseDuration < 1L) {
             throw new InvalidParameterValueException("Invalid value provided for leaseDuration, accepts only positive number");
         }
 

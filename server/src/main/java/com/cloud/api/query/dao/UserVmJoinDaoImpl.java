@@ -138,7 +138,9 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         leaseOverInstanceSearch.done();
 
         leaseExpiringInstanceSearch = createSearchBuilder();
-        leaseExpiringInstanceSearch.and("leaseExpiringToday", leaseExpiringInstanceSearch.entity().getLeaseExpiryDate(), Op.GTEQ);
+        leaseExpiringInstanceSearch.selectFields(leaseExpiringInstanceSearch.entity().getId(), leaseExpiringInstanceSearch.entity().getUuid(),
+                leaseExpiringInstanceSearch.entity().getPodId(), leaseExpiringInstanceSearch.entity().getDataCenterId());
+        leaseExpiringInstanceSearch.and("leaseCurrentDate", leaseExpiringInstanceSearch.entity().getLeaseExpiryDate(), Op.GTEQ);
         leaseExpiringInstanceSearch.and("leaseExpiresOnDate", leaseExpiringInstanceSearch.entity().getLeaseExpiryDate(), Op.LT);
         leaseExpiringInstanceSearch.done();
 
@@ -751,21 +753,21 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     }
 
     @Override
-    public List<UserVmJoinVO> listExpiredInstancesIds() {
+    public List<UserVmJoinVO> listLeaseExpiredInstances() {
         SearchCriteria<UserVmJoinVO> sc = leaseOverInstanceSearch.create();
         sc.setParameters("leaseExpired", new Date());
         return listBy(sc);
     }
 
     @Override
-    public List<UserVmJoinVO> listExpiringInstancesInDays(int days) {
+    public List<UserVmJoinVO> listLeaseInstancesExpiringInDays(int days) {
         SearchCriteria<UserVmJoinVO> sc = leaseExpiringInstanceSearch.create();
         Date currentDate = new Date();
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(currentDate);
         calendar.add(Calendar.DAY_OF_MONTH, days);
         Date nextDate = calendar.getTime();
-        sc.setParameters("leaseExpiringToday", currentDate);
+        sc.setParameters("leaseCurrentDate", currentDate);
         sc.setParameters("leaseExpiresOnDate", nextDate);
         return listBy(sc);
     }

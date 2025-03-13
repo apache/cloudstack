@@ -355,7 +355,7 @@
           </template>
           <a-switch v-model:checked="showLeaseOptions" @change="onToggleLeaseData"/>
         </a-form-item>
-        <a-row :gutter="12" v-if="showLeaseOptions">
+        <a-row :gutter="12" v-if="isLeaseFeatureEnabled && showLeaseOptions">
           <a-col :md="12" :lg="12">
             <a-form-item name="leaseduration" ref="leaseduration">
               <template #label>
@@ -363,7 +363,7 @@
               </template>
               <a-input
                 v-model:value="form.leaseduration"
-                :placeholder="$t('label.instance.lease.never')"/>
+                :placeholder="$t('label.instance.lease.placeholder')"/>
             </a-form-item>
           </a-col>
           <a-col :md="12" :lg="12">

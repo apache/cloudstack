@@ -54,15 +54,22 @@ class TestDeployVMLease(cloudstackTestCase):
         if cls.template == FAILED:
             assert False, "get_test_template() failed to return template"
 
+        
+        # enable instance lease feature
+        Configurations.update(cls.api_client,
+                              name="instance.lease.enabled",
+                              value="true"
+                              )
+
         # Create service, disk offerings  etc
-        cls.service_offering = ServiceOffering.create(
+        cls.non_lease_svc_offering = ServiceOffering.create(
             cls.api_client,
             cls.testdata["service_offering"],
             name="non-lease-svc-offering"
         )
 
         # Create service, disk offerings  etc
-        cls.lease_service_offering = ServiceOffering.create(
+        cls.lease_svc_offering = ServiceOffering.create(
             cls.api_client,
             cls.testdata["service_offering"],
             name="lease-svc-offering",
@@ -76,8 +83,8 @@ class TestDeployVMLease(cloudstackTestCase):
         )
 
         cls._cleanup = [
-            cls.lease_service_offering,
-            cls.service_offering,
+            cls.lease_svc_offering,
+            cls.non_lease_svc_offering,
             cls.disk_offering
         ]
         return
@@ -85,12 +92,16 @@ class TestDeployVMLease(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
+            # disable instance lease feature
+            Configurations.update(cls.api_client,
+                                name="instance.lease.enabled",
+                                value="false"
+                                )
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
     def setUp(self):
-        print(self.template)
         self.apiclient = self.testClient.getApiClient()
         self.hypervisor = self.testClient.getHypervisorInfo()
         self.testdata["virtual_machine"]["zoneid"] = self.zone.id
@@ -124,8 +135,6 @@ class TestDeployVMLease(cloudstackTestCase):
         1. deploy VM using non-lease-svc-offering
         2. confirm vm has no lease configured
         """
-        # enable instance lease feature
-        self.update_lease_feature("true")
 
         non_lease_vm = VirtualMachine.create(
             self.apiclient,
@@ -133,7 +142,7 @@ class TestDeployVMLease(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             templateid=self.template.id,
-            serviceofferingid=self.service_offering.id,
+            serviceofferingid=self.non_lease_svc_offering.id,
             diskofferingid=self.disk_offering.id,
             hypervisor=self.hypervisor
         )
@@ -158,13 +167,13 @@ class TestDeployVMLease(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             templateid=self.template.id,
-            serviceofferingid=self.service_offering.id,
+            serviceofferingid=self.non_lease_svc_offering.id,
             diskofferingid=self.disk_offering.id,
             hypervisor=self.hypervisor,
             leaseduration=10,
             leaseexpiryaction="STOP"
         )
-        self.verify_lease_configured_for_vm(lease_vm.id)
+        self.verify_lease_configured_for_vm(lease_vm.id, lease_duration=10, lease_expiry_action="STOP")
         return
     
     @attr(
@@ -177,7 +186,7 @@ class TestDeployVMLease(cloudstackTestCase):
             expect vm to inherit svc_offering lease properties
 
         Validate the following:
-        1. deploy VM using lease-svc-offering and leaseduration and leaseexpiryaction passed
+        1. deploy VM using lease-svc-offering without passing leaseduration and leaseexpiryaction
         2. confirm vm has lease configured
         """
         lease_vm = VirtualMachine.create(
@@ -186,11 +195,11 @@ class TestDeployVMLease(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             templateid=self.template.id,
-            serviceofferingid=self.service_offering.id,
+            serviceofferingid=self.lease_svc_offering.id,
             diskofferingid=self.disk_offering.id,
             hypervisor=self.hypervisor
         )
-        self.verify_lease_configured_for_vm(lease_vm.id)
+        self.verify_lease_configured_for_vm(lease_vm.id, lease_duration=20, lease_expiry_action="DESTROY")
         return
     
     @attr(
@@ -214,13 +223,13 @@ class TestDeployVMLease(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             templateid=self.template.id,
-            serviceofferingid=self.service_offering.id,
+            serviceofferingid=self.lease_svc_offering.id,
             diskofferingid=self.disk_offering.id,
             hypervisor=self.hypervisor,
             leaseduration=30,
             leaseexpiryaction="STOP"
         )
-        self.verify_lease_configured_for_vm(lease_vm.id)
+        self.verify_lease_configured_for_vm(lease_vm.id, lease_duration=30, lease_expiry_action="STOP")
         return
     
 
@@ -244,7 +253,7 @@ class TestDeployVMLease(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             templateid=self.template.id,
-            serviceofferingid=self.service_offering.id,
+            serviceofferingid=self.non_lease_svc_offering.id,
             diskofferingid=self.disk_offering.id,
             hypervisor=self.hypervisor,
             leaseduration=-1
@@ -272,7 +281,10 @@ class TestDeployVMLease(cloudstackTestCase):
         3. confirm vm has no lease configured
         """
 
-        self.update_lease_feature("false")
+        Configurations.update(self.api_client,
+                              name="instance.lease.enabled",
+                              value="false"
+                              )
 
         lease_vm = VirtualMachine.create(
             self.apiclient,
@@ -280,7 +292,7 @@ class TestDeployVMLease(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             templateid=self.template.id,
-            serviceofferingid=self.service_offering.id,
+            serviceofferingid=self.lease_svc_offering.id,
             diskofferingid=self.disk_offering.id,
             hypervisor=self.hypervisor
         )
@@ -295,10 +307,12 @@ class TestDeployVMLease(cloudstackTestCase):
     
 
     def verify_svc_offering(self):
-        svc_offering = ServiceOffering.list(
+        svc_offering_list = ServiceOffering.list(
             self.api_client, 
-            id=self.lease_service_offering.id
+            id=self.lease_svc_offering.id
         )
+
+        svc_offering = svc_offering_list[0]
 
         self.assertIsNotNone(
             svc_offering.leaseduration,
@@ -342,18 +356,3 @@ class TestDeployVMLease(cloudstackTestCase):
         vm = vms[0]
         self.assertIsNone(vm.leaseduration)
         self.assertIsNone(vm.leaseexpiryaction)
-
-
-    def update_lease_feature(self, value=None):
-        # Update global setting for "instance.lease.enabled"
-        Configurations.update(self.apiclient,
-                              name="instance.lease.enabled",
-                              value=value
-                              )
-        
-        # Verify that the above mentioned settings are set to true
-        if not is_config_suitable(
-                apiclient=cls.apiclient,
-                name='instance.lease.enabled',
-                value=value):
-            self.fail(f'instance.lease.enabled should be: {value}')

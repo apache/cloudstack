@@ -110,7 +110,7 @@ public class VMLeaseManagerImplTest {
     public void testAlert() {
         UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, false);
         List<UserVmJoinVO> expiringVms = Arrays.asList(vm);
-        when(userVmJoinDao.listExpiringInstancesInDays(anyInt())).thenReturn(expiringVms);
+        when(userVmJoinDao.listLeaseInstancesExpiringInDays(anyInt())).thenReturn(expiringVms);
         vmLeaseManager.alert();
         verify(alertManager).sendAlert(
                 eq(AlertManager.AlertType.ALERT_TYPE_USERVM),
@@ -123,7 +123,7 @@ public class VMLeaseManagerImplTest {
 
     @Test
     public void testReallyRunNoExpiredInstances() {
-        when(userVmJoinDao.listExpiredInstancesIds()).thenReturn(new ArrayList<>());
+        when(userVmJoinDao.listLeaseExpiredInstances()).thenReturn(new ArrayList<>());
         vmLeaseManager.reallyRun();
         verify(asyncJobManager, never()).submitAsyncJob(any(AsyncJobVO.class));
     }
@@ -132,7 +132,7 @@ public class VMLeaseManagerImplTest {
     public void testReallyRunWithDeleteProtection() {
         UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, true);
         List<UserVmJoinVO> expiredVms = Arrays.asList(vm);
-        when(userVmJoinDao.listExpiredInstancesIds()).thenReturn(expiredVms);
+        when(userVmJoinDao.listLeaseExpiredInstances()).thenReturn(expiredVms);
         vmLeaseManager.reallyRun();
         // Verify no jobs were submitted because of delete protection
         verify(asyncJobManager, never()).submitAsyncJob(any(AsyncJobVO.class));
@@ -147,7 +147,7 @@ public class VMLeaseManagerImplTest {
         UserVmJoinVO vmError = createMockVm(4L, "vm-uuid4", "vm-name4", VirtualMachine.State.Error, false);
 
         List<UserVmJoinVO> expiredVms = Arrays.asList(vmDestroyed, vmExpunging, vmUnknown, vmError);
-        when(userVmJoinDao.listExpiredInstancesIds()).thenReturn(expiredVms);
+        when(userVmJoinDao.listLeaseExpiredInstances()).thenReturn(expiredVms);
         vmLeaseManager.reallyRun();
         // Verify no jobs were submitted because all VMs are in ignored states
         verify(asyncJobManager, never()).submitAsyncJob(any(AsyncJobVO.class));
@@ -157,7 +157,7 @@ public class VMLeaseManagerImplTest {
     public void testReallyRunStopAction() {
         UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, false);
         List<UserVmJoinVO> expiredVms = Arrays.asList(vm);
-        when(userVmJoinDao.listExpiredInstancesIds()).thenReturn(expiredVms);
+        when(userVmJoinDao.listLeaseExpiredInstances()).thenReturn(expiredVms);
         when(userVmJoinDao.findById(1L)).thenReturn(vm);
         doReturn(1L).when(vmLeaseManager).executeStopInstanceJob(eq(vm), eq(true), anyLong());
         try (MockedStatic<ActionEventUtils> utilities = Mockito.mockStatic(ActionEventUtils.class)) {
@@ -173,7 +173,7 @@ public class VMLeaseManagerImplTest {
     public void testReallyRunDestroyAction() {
         UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, false, DESTORY);
         List<UserVmJoinVO> expiredVms = Arrays.asList(vm);
-        when(userVmJoinDao.listExpiredInstancesIds()).thenReturn(expiredVms);
+        when(userVmJoinDao.listLeaseExpiredInstances()).thenReturn(expiredVms);
         when(userVmJoinDao.findById(1L)).thenReturn(vm);
         doReturn(1L).when(vmLeaseManager).executeDestroyInstanceJob(eq(vm), eq(true), anyLong());
         try (MockedStatic<ActionEventUtils> utilities = Mockito.mockStatic(ActionEventUtils.class)) {
