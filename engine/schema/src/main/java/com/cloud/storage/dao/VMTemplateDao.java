@@ -92,7 +92,7 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     List<VMTemplateVO> listByParentTemplatetId(long parentTemplatetId);
 
-    VMTemplateVO findLatestTemplateByName(String name);
+    VMTemplateVO findLatestTemplateByName(String name, CPU.CPUArch arch);
 
     List<VMTemplateVO> findTemplatesLinkedToUserdata(long userdataId);
 

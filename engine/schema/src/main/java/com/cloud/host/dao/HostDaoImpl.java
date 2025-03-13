@@ -1766,7 +1766,9 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sb.done();
         SearchCriteria<HostVO> sc = sb.create();
         sc.setParameters("type", Type.Routing);
-        sc.setParameters("zoneId", zoneId);
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
         final List<HostVO> hosts = search(sc, null);
         return hosts.stream()
                 .map(h -> new Pair<>(h.getHypervisorType(), h.getArch()))

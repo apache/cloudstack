@@ -244,10 +244,16 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
 
     @Override
-    public VMTemplateVO findLatestTemplateByName(String name) {
-        SearchCriteria<VMTemplateVO> sc = createSearchCriteria();
-        sc.addAnd("name", SearchCriteria.Op.EQ, name);
-        sc.addAnd("removed", SearchCriteria.Op.NULL);
+    public VMTemplateVO findLatestTemplateByName(String name, CPU.CPUArch arch) {
+        SearchBuilder<VMTemplateVO> sb = createSearchBuilder();
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("arch", sb.entity().getArch(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<VMTemplateVO> sc = sb.create();
+        sc.setParameters("name", name);
+        if (arch != null) {
+            sc.setParameters("arch", arch);
+        }
         Filter filter = new Filter(VMTemplateVO.class, "id", false, null, 1L);
         List<VMTemplateVO> templates = listBy(sc, filter);
         if ((templates != null) && !templates.isEmpty()) {

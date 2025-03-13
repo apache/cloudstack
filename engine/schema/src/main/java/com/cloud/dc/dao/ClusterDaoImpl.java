@@ -169,16 +169,18 @@ public class ClusterDaoImpl extends GenericDaoBase<ClusterVO, Long> implements C
     }
 
     @Override
-    public List<Pair<HypervisorType, String>> listDistinctHypervisorsArchAcrossClusters(Long zoneId) {
+    public List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorsArchAcrossClusters(Long zoneId) {
         SearchBuilder<ClusterVO> sb = createSearchBuilder();
         sb.select(null, Func.DISTINCT_PAIR, sb.entity().getHypervisorType(), sb.entity().getArch());
         sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.done();
         SearchCriteria<ClusterVO> sc = sb.create();
-        sc.setParameters("zoneId", zoneId);
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
         final List<ClusterVO> clusters = search(sc, null);
         return clusters.stream()
-                .map(c -> new Pair<>(c.getHypervisorType(), c.getArch().getType()))
+                .map(c -> new Pair<>(c.getHypervisorType(), c.getArch()))
                 .collect(Collectors.toList());
     }
 

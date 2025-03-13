@@ -58,11 +58,12 @@ function createMetadataFile() {
   for template in "${templates[@]}"
   do
     section="${template%%:*}"
-    hvName=$(getGenericName $section)
+    sectionHv="${section%%-*}"
+    hvName=$(getGenericName $sectionHv)
 
     downloadurl="${template#*:}"
     arch=$(echo ${downloadurl#*"/systemvmtemplate-$VERSION-"} | cut -d'-' -f 1)
-    templatename="systemvm-${section%.*}-${VERSION}-${arch}"
+    templatename="systemvm-${sectionHv%.*}-${VERSION}-${arch}"
     checksum=$(getChecksum "$fileData" "$VERSION-${arch}-$hvName")
     filename=$(echo ${downloadurl##*'/'})
     echo -e "["$section"]\ntemplatename = $templatename\nchecksum = $checksum\ndownloadurl = $downloadurl\nfilename = $filename\narch = $arch\n" >> $METADATAFILE
