@@ -176,7 +176,9 @@ public class ApiResponseSerializer {
 
             sb.append("<").append(result.getResponseName());
             log.append("<").append(result.getResponseName());
-            if (ManagementServerImpl.exposeCloudStackVersionInApiXmlResponse.value()) {
+
+            boolean authenticated = CallContext.current().getCallingAccount().getId() != Account.ACCOUNT_ID_SYSTEM;
+            if (ManagementServerImpl.exposeCloudStackVersionInApiXmlResponse.value() && authenticated) {
                 sb.append(" cloud-stack-version=\"").append(ApiDBUtils.getVersion()).append("\"");
                 log.append(" cloud-stack-version=\"").append(ApiDBUtils.getVersion()).append("\"");
             }
