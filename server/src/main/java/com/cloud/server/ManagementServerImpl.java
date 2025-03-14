@@ -854,6 +854,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     static final ConfigKey<Integer> sshKeyLength = new ConfigKey<>("Advanced", Integer.class, "ssh.key.length", "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
     static final ConfigKey<Boolean> humanReadableSizes = new ConfigKey<>("Advanced", Boolean.class, "display.human.readable.sizes", "true", "Enables outputting human readable byte sizes to logs and usage records.", false, ConfigKey.Scope.Global);
     public static final ConfigKey<String> customCsIdentifier = new ConfigKey<>("Advanced", String.class, "custom.cs.identifier", UUID.randomUUID().toString().split("-")[0].substring(4), "Custom identifier for the cloudstack installation", true, ConfigKey.Scope.Global);
+    public static final ConfigKey<Boolean> exposeCloudStackVersionInApiXmlResponse = new ConfigKey<Boolean>("Advanced", Boolean.class, "expose.cloudstack.version.api.xml.response", "true", "Indicates whether ACS version should appear in the root element of an API XML response.", true, ConfigKey.Scope.Global);
+    public static final ConfigKey<Boolean> exposeCloudStackVersionInApiListCapabilities = new ConfigKey<Boolean>("Advanced", Boolean.class, "expose.cloudstack.version.api.list.capabilities", "true", "Indicates whether ACS version should show in the listCapabilities API.", true, ConfigKey.Scope.Global);
+
     private static final VirtualMachine.Type []systemVmTypes = { VirtualMachine.Type.SecondaryStorageVm, VirtualMachine.Type.ConsoleProxy};
     private static final List<HypervisorType> LIVE_MIGRATION_SUPPORTING_HYPERVISORS = List.of(HypervisorType.Hyperv, HypervisorType.KVM,
             HypervisorType.LXC, HypervisorType.Ovm, HypervisorType.Ovm3, HypervisorType.Simulator, HypervisorType.VMware, HypervisorType.XenServer);
@@ -4055,7 +4058,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier};
+        return new ConfigKey<?>[] {exposeCloudStackVersionInApiXmlResponse, exposeCloudStackVersionInApiListCapabilities, vmPasswordLength, sshKeyLength, humanReadableSizes, customCsIdentifier};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
@@ -4481,10 +4484,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final Integer fsVmMinCpu = Integer.parseInt(_configDao.getValue("sharedfsvm.min.cpu.count"));
         final Integer fsVmMinRam = Integer.parseInt(_configDao.getValue("sharedfsvm.min.ram.size"));
+        if (exposeCloudStackVersionInApiListCapabilities.value()) {
+            capabilities.put("cloudStackVersion", getVersion());
+        }
 
         capabilities.put("securityGroupsEnabled", securityGroupsEnabled);
         capabilities.put("userPublicTemplateEnabled", userPublicTemplateEnabled);
-        capabilities.put("cloudStackVersion", getVersion());
         capabilities.put("supportELB", supportELB);
         capabilities.put("projectInviteRequired", _projectMgr.projectInviteRequired());
         capabilities.put("allowusercreateprojects", _projectMgr.allowUserToCreateProject());
