@@ -2411,7 +2411,7 @@ public class LibvirtVMDef {
                 this.version = Arrays.stream(TpmVersion.values())
                         .filter(tpmVersion -> tpmVersion.toString().equals(version))
                         .findFirst()
-                        .orElse(null);;
+                        .orElse(this.version);;
             }
         }
 
@@ -2426,9 +2426,11 @@ public class LibvirtVMDef {
         @Override
         public String toString() {
             StringBuilder tpmBuidler = new StringBuilder();
-            tpmBuidler.append("<tpm model='").append(model).append("'>\n");
-            tpmBuidler.append("<backend type='emulator' version='").append(version).append("'/>\n");
-            tpmBuidler.append("</tpm>\n");
+            if (model != null) {
+                tpmBuidler.append("<tpm model='").append(model).append("'>\n");
+                tpmBuidler.append("<backend type='emulator' version='").append(version).append("'/>\n");
+                tpmBuidler.append("</tpm>\n");
+            }
             return tpmBuidler.toString();
         }
     }
