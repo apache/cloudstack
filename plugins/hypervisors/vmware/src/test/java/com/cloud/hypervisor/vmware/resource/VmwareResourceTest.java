@@ -855,10 +855,12 @@ public class VmwareResourceTest {
         details.put(VmDetailConstants.VIRTUAL_TPM_ENABLED, "true");
         when(vmSpec.getDetails()).thenReturn(details);
         when(vmMo.getAllDeviceList()).thenReturn(new ArrayList<>());
-        Mockito.doNothing().when(vmwareResource).addVirtualTPMDevice(vmConfigSpec);
+        List<VirtualDeviceConfigSpec> deviceChanges = Mockito.mock(List.class);
+        when(vmConfigSpec.getDeviceChange()).thenReturn(deviceChanges);
 
         vmwareResource.configureVirtualTPM(vmMo, vmSpec, vmConfigSpec, "uefi");
         Mockito.verify(vmwareResource, Mockito.times(1)).addVirtualTPMDevice(vmConfigSpec);
+        Mockito.verify(deviceChanges, Mockito.times(1)).add(any(VirtualDeviceConfigSpec.class));
     }
 
     @Test
@@ -872,9 +874,11 @@ public class VmwareResourceTest {
         when(vmSpec.getDetails()).thenReturn(details);
         VirtualTPM tpm = new VirtualTPM();
         when(vmMo.getAllDeviceList()).thenReturn(List.of(tpm));
-        Mockito.doNothing().when(vmwareResource).removeVirtualTPMDevice(vmConfigSpec, tpm);
+        List<VirtualDeviceConfigSpec> deviceChanges = Mockito.mock(List.class);
+        when(vmConfigSpec.getDeviceChange()).thenReturn(deviceChanges);
 
         vmwareResource.configureVirtualTPM(vmMo, vmSpec, vmConfigSpec, "uefi");
         Mockito.verify(vmwareResource, Mockito.times(1)).removeVirtualTPMDevice(vmConfigSpec, tpm);
+        Mockito.verify(deviceChanges, Mockito.times(1)).add(any(VirtualDeviceConfigSpec.class));
     }
 }
