@@ -117,6 +117,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
@@ -301,6 +302,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private UserDataDao userDataDao;
     @Inject
     private NetworkPermissionDao networkPermissionDao;
+    @Inject
+    KubernetesServiceHelper kubernetesServiceHelper;
 
     private List<QuerySelector> _querySelectors;
 
@@ -928,6 +931,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     s_logger.debug("Failed to cleanup vm snapshot " + vmSnapshot.getId() + " due to " + e.toString());
                 }
             }
+
+            kubernetesServiceHelper.cleanupForAccount(account);
 
             // Destroy the account's VMs
             List<UserVmVO> vms = _userVmDao.listByAccountId(accountId);

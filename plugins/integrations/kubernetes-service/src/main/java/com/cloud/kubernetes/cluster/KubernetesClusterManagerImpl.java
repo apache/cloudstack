@@ -1445,9 +1445,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), SecurityChecker.AccessType.OperateEntry, false, cluster);
         if (cluster.getClusterType() == KubernetesCluster.ClusterType.CloudManaged) {
-            KubernetesClusterDestroyWorker destroyWorker = new KubernetesClusterDestroyWorker(cluster, this);
-            destroyWorker = ComponentContext.inject(destroyWorker);
-            return destroyWorker.destroy();
+            return destroyKubernetesCluster(cluster);
         } else {
             boolean cleanup = cmd.getCleanup();
             boolean expunge = cmd.getExpunge();
@@ -1730,6 +1728,30 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         return responseList;
     }
 
+    protected boolean destroyKubernetesCluster(KubernetesCluster kubernetesCluster) {
+        KubernetesClusterDestroyWorker destroyWorker = new KubernetesClusterDestroyWorker(kubernetesCluster,
+                KubernetesClusterManagerImpl.this);
+        destroyWorker = ComponentContext.inject(destroyWorker);
+        return destroyWorker.destroy();
+    }
+
+    @Override
+    public void cleanupForAccount(Account account) {
+        List<KubernetesClusterVO> clusters = kubernetesClusterDao.listForCleanupByAccount(account.getId());
+        if (CollectionUtils.isEmpty(clusters)) {
+            return;
+        }
+        LOGGER.debug(String.format("Cleaning up %d Kubernetes cluster for %s", clusters.size(), account));
+        for (KubernetesClusterVO cluster : clusters) {
+            try {
+                destroyKubernetesCluster(cluster);
+            } catch (CloudRuntimeException e) {
+                LOGGER.warn(String.format("Failed to destroy Kubernetes cluster: %s during cleanup for %s",
+                        cluster.getName(), account), e);
+            }
+        }
+    }
+
     @Override
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
@@ -1781,9 +1803,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                         LOGGER.info(String.format("Running Kubernetes cluster garbage collector on Kubernetes cluster : %s", kubernetesCluster.getName()));
                     }
                     try {
-                        KubernetesClusterDestroyWorker destroyWorker = new KubernetesClusterDestroyWorker(kubernetesCluster, KubernetesClusterManagerImpl.this);
-                        destroyWorker = ComponentContext.inject(destroyWorker);
-                        if (destroyWorker.destroy()) {
+                        if (destroyKubernetesCluster(kubernetesCluster)) {
                             if (LOGGER.isInfoEnabled()) {
                                 LOGGER.info(String.format("Garbage collection complete for Kubernetes cluster : %s", kubernetesCluster.getName()));
                             }
@@ -1909,9 +1929,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                             LOGGER.info(String.format("Running Kubernetes cluster state scanner on Kubernetes cluster : %s for state: %s", kubernetesCluster.getName(), KubernetesCluster.State.Destroying.toString()));
                         }
                         try {
-                            KubernetesClusterDestroyWorker destroyWorker = new KubernetesClusterDestroyWorker(kubernetesCluster, KubernetesClusterManagerImpl.this);
-                            destroyWorker = ComponentContext.inject(destroyWorker);
-                            destroyWorker.destroy();
+                            destroyKubernetesCluster(kubernetesCluster);
                         } catch (Exception e) {
                             LOGGER.warn(String.format("Failed to run Kubernetes cluster Destroying state scanner on Kubernetes cluster : %s status scanner", kubernetesCluster.getName()), e);
                         }
