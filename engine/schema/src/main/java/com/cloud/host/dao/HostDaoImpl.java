@@ -42,6 +42,7 @@ import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.cluster.agentlb.HostTransferMapVO;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.configuration.ManagementServiceConfiguration;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
@@ -1754,6 +1755,24 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
         sc.setParameters("type", Type.Routing);
         return customSearch(sc, null);
+    }
+
+    @Override
+    public List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorArchTypes(final Long zoneId) {
+        SearchBuilder<HostVO> sb = createSearchBuilder();
+        sb.select(null, Func.DISTINCT_PAIR, sb.entity().getHypervisorType(), sb.entity().getArch());
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<HostVO> sc = sb.create();
+        sc.setParameters("type", Type.Routing);
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        final List<HostVO> hosts = search(sc, null);
+        return hosts.stream()
+                .map(h -> new Pair<>(h.getHypervisorType(), h.getArch()))
+                .collect(Collectors.toList());
     }
 
     @Override
