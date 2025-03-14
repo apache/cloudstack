@@ -2859,7 +2859,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return cmd;
     }
 
-    private TpmDef createTpmDef(VirtualMachineTO vmTO) {
+    protected TpmDef createTpmDef(VirtualMachineTO vmTO) {
         Map<String, String> details = vmTO.getDetails();
         if (MapUtils.isEmpty(details)) {
             return null;
