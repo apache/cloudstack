@@ -22,8 +22,13 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.template.TemplateManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 import org.apache.log4j.Logger;
 
@@ -54,6 +59,10 @@ public class BasePrimaryDataStoreLifeCycleImpl {
     protected HostDao hostDao;
     @Inject
     protected StoragePoolHostDao storagePoolHostDao;
+    @Inject
+    private PrimaryDataStoreDao primaryDataStoreDao;
+    @Inject
+    private TemplateManager templateMgr;
 
     private List<HostVO> getPoolHostsList(ClusterScope clusterScope, HypervisorType hypervisorType) {
         List<HostVO> hosts;
@@ -102,5 +111,43 @@ public class BasePrimaryDataStoreLifeCycleImpl {
             }
         }
         dataStoreHelper.switchToCluster(store, clusterScope);
+    }
+
+    private void evictTemplates(StoragePoolVO storagePoolVO) {
+        List<VMTemplateStoragePoolVO> unusedTemplatesInPool = templateMgr.getUnusedTemplatesInPool(storagePoolVO);
+        for (VMTemplateStoragePoolVO templatePoolVO : unusedTemplatesInPool) {
+            if (templatePoolVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+                templateMgr.evictTemplateFromStoragePool(templatePoolVO);
+            }
+        }
+    }
+
+    private void deleteAgentStoragePools(StoragePool storagePool) {
+        List<StoragePoolHostVO> poolHostVOs = storagePoolHostDao.listByPoolId(storagePool.getId());
+        for (StoragePoolHostVO poolHostVO : poolHostVOs) {
+            DeleteStoragePoolCommand deleteStoragePoolCommand = new DeleteStoragePoolCommand(storagePool);
+            final Answer answer = agentMgr.easySend(poolHostVO.getHostId(), deleteStoragePoolCommand);
+            if (answer != null && answer.getResult()) {
+                s_logger.info("Successfully deleted storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId());
+            } else {
+                if (answer != null) {
+                    s_logger.error("Failed to delete storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId() + " , result: " + answer.getResult());
+                } else {
+                    s_logger.error("Failed to delete storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId());
+                }
+            }
+        }
+    }
+
+    protected boolean cleanupDatastore(DataStore store) {
+        StoragePool storagePool = (StoragePool)store;
+        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(storagePool.getId());
+        if (storagePoolVO == null) {
+            return false;
+        }
+
+        evictTemplates(storagePoolVO);
+        deleteAgentStoragePools(storagePool);
+        return true;
     }
 }

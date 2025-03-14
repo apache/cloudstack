@@ -289,7 +289,10 @@ public class LinstorPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStoreLi
 
     @Override
     public boolean deleteDataStore(DataStore store) {
-        return dataStoreHelper.deletePrimaryDataStore(store);
+        if (cleanupDatastore(store)) {
+            return dataStoreHelper.deletePrimaryDataStore(store);
+        }
+        return false;
     }
 
     /* (non-Javadoc)
