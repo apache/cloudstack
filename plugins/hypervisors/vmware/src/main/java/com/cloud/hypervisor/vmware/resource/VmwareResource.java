@@ -3240,7 +3240,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         }
     }
 
-    private void addVirtualTPMDevice(VirtualMachineConfigSpec vmConfigSpec) {
+    protected void addVirtualTPMDevice(VirtualMachineConfigSpec vmConfigSpec) {
         Description description = new Description();
         description.setSummary("Trusted Platform Module");
         description.setLabel("Trusted Platform Module");
@@ -3252,7 +3252,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
     }
 
-    private void removeVirtualTPMDevice(VirtualMachineConfigSpec vmConfigSpec, VirtualTPM virtualTPM) {
+    protected void removeVirtualTPMDevice(VirtualMachineConfigSpec vmConfigSpec, VirtualTPM virtualTPM) {
         VirtualDeviceConfigSpec virtualDeviceConfigSpec = new VirtualDeviceConfigSpec();
         virtualDeviceConfigSpec.setDevice(virtualTPM);
         virtualDeviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.REMOVE);
