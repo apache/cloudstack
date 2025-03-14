@@ -19,6 +19,35 @@
 
 package com.cloud.kubernetes.cluster;
 
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
+import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.dc.DataCenter;
@@ -37,29 +66,9 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.User;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.command.user.kubernetes.cluster.AddVirtualMachinesToKubernetesClusterCmd;
-import org.apache.cloudstack.api.command.user.kubernetes.cluster.RemoveVirtualMachinesFromKubernetesClusterCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 
 @RunWith(MockitoJUnitRunner.class)
 public class KubernetesClusterManagerImplTest {
@@ -89,26 +98,30 @@ public class KubernetesClusterManagerImplTest {
     @InjectMocks
     KubernetesClusterManagerImpl kubernetesClusterManager;
 
+
+    @Mock
+    private Account account;
+
     @Test
     public void testValidateVpcTierAllocated() {
         Network network = Mockito.mock(Network.class);
-        Mockito.when(network.getState()).thenReturn(Network.State.Allocated);
+        when(network.getState()).thenReturn(Network.State.Allocated);
         kubernetesClusterManager.validateVpcTier(network);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testValidateVpcTierDefaultDenyRule() {
         Network network = Mockito.mock(Network.class);
-        Mockito.when(network.getState()).thenReturn(Network.State.Implemented);
-        Mockito.when(network.getNetworkACLId()).thenReturn(NetworkACL.DEFAULT_DENY);
+        when(network.getState()).thenReturn(Network.State.Implemented);
+        when(network.getNetworkACLId()).thenReturn(NetworkACL.DEFAULT_DENY);
         kubernetesClusterManager.validateVpcTier(network);
     }
 
     @Test
     public void testValidateVpcTierValid() {
         Network network = Mockito.mock(Network.class);
-        Mockito.when(network.getState()).thenReturn(Network.State.Implemented);
-        Mockito.when(network.getNetworkACLId()).thenReturn(NetworkACL.DEFAULT_ALLOW);
+        when(network.getState()).thenReturn(Network.State.Implemented);
+        when(network.getNetworkACLId()).thenReturn(NetworkACL.DEFAULT_ALLOW);
         kubernetesClusterManager.validateVpcTier(network);
     }
 
@@ -117,7 +130,7 @@ public class KubernetesClusterManagerImplTest {
         long ipId = 1L;
         FirewallRule.Purpose purpose = FirewallRule.Purpose.Firewall;
         Network network = Mockito.mock(Network.class);
-        Mockito.when(firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose)).thenReturn(new ArrayList<>());
+        when(firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose)).thenReturn(new ArrayList<>());
         kubernetesClusterManager.validateIsolatedNetworkIpRules(ipId, FirewallRule.Purpose.Firewall, network, 3);
     }
 
@@ -131,7 +144,7 @@ public class KubernetesClusterManagerImplTest {
         long ipId = 1L;
         FirewallRule.Purpose purpose = FirewallRule.Purpose.Firewall;
         Network network = Mockito.mock(Network.class);
-        Mockito.when(firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose)).thenReturn(List.of(createRule(80, 80), createRule(443, 443)));
+        when(firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose)).thenReturn(List.of(createRule(80, 80), createRule(443, 443)));
         kubernetesClusterManager.validateIsolatedNetworkIpRules(ipId, FirewallRule.Purpose.Firewall, network, 3);
     }
 
@@ -140,7 +153,7 @@ public class KubernetesClusterManagerImplTest {
         long ipId = 1L;
         FirewallRule.Purpose purpose = FirewallRule.Purpose.Firewall;
         Network network = Mockito.mock(Network.class);
-        Mockito.when(firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose)).thenReturn(List.of(createRule(6440, 6445), createRule(443, 443)));
+        when(firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose)).thenReturn(List.of(createRule(6440, 6445), createRule(443, 443)));
         kubernetesClusterManager.validateIsolatedNetworkIpRules(ipId, FirewallRule.Purpose.Firewall, network, 3);
     }
 
@@ -149,7 +162,7 @@ public class KubernetesClusterManagerImplTest {
         long ipId = 1L;
         FirewallRule.Purpose purpose = FirewallRule.Purpose.Firewall;
         Network network = Mockito.mock(Network.class);
-        Mockito.when(firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose)).thenReturn(List.of(createRule(2200, KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT), createRule(443, 443)));
+        when(firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose)).thenReturn(List.of(createRule(2200, KubernetesClusterActionWorker.CLUSTER_NODES_DEFAULT_START_SSH_PORT), createRule(443, 443)));
         kubernetesClusterManager.validateIsolatedNetworkIpRules(ipId, FirewallRule.Purpose.Firewall, network, 3);
     }
 
@@ -158,7 +171,7 @@ public class KubernetesClusterManagerImplTest {
         long ipId = 1L;
         FirewallRule.Purpose purpose = FirewallRule.Purpose.Firewall;
         Network network = Mockito.mock(Network.class);
-        Mockito.when(firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose)).thenReturn(List.of(createRule(2220, 2221), createRule(2225, 2227), createRule(6440, 6442), createRule(6444, 6446)));
+        when(firewallRulesDao.listByIpAndPurposeAndNotRevoked(ipId, purpose)).thenReturn(List.of(createRule(2220, 2221), createRule(2225, 2227), createRule(6440, 6442), createRule(6444, 6446)));
         kubernetesClusterManager.validateIsolatedNetworkIpRules(ipId, FirewallRule.Purpose.Firewall, network, 3);
     }
 
@@ -171,7 +184,7 @@ public class KubernetesClusterManagerImplTest {
     public void testValidateKubernetesClusterScaleSizeSameNewSizeNoError() {
         Long size = 2L;
         KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
-        Mockito.when(clusterVO.getNodeCount()).thenReturn(size);
+        when(clusterVO.getNodeCount()).thenReturn(size);
         kubernetesClusterManager.validateKubernetesClusterScaleSize(clusterVO, size, 100, Mockito.mock(DataCenter.class));
     }
 
@@ -179,8 +192,8 @@ public class KubernetesClusterManagerImplTest {
     public void testValidateKubernetesClusterScaleSizeStoppedCluster() {
         Long size = 2L;
         KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
-        Mockito.when(clusterVO.getNodeCount()).thenReturn(size);
-        Mockito.when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Stopped);
+        when(clusterVO.getNodeCount()).thenReturn(size);
+        when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Stopped);
         kubernetesClusterManager.validateKubernetesClusterScaleSize(clusterVO, 3L, 100, Mockito.mock(DataCenter.class));
     }
 
@@ -188,57 +201,57 @@ public class KubernetesClusterManagerImplTest {
     public void testValidateKubernetesClusterScaleSizeZeroNewSize() {
         Long size = 2L;
         KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
-        Mockito.when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
-        Mockito.when(clusterVO.getNodeCount()).thenReturn(size);
+        when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
+        when(clusterVO.getNodeCount()).thenReturn(size);
         kubernetesClusterManager.validateKubernetesClusterScaleSize(clusterVO, 0L, 100, Mockito.mock(DataCenter.class));
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testValidateKubernetesClusterScaleSizeOverMaxSize() {
         KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
-        Mockito.when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
-        Mockito.when(clusterVO.getControlNodeCount()).thenReturn(1L);
+        when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
+        when(clusterVO.getControlNodeCount()).thenReturn(1L);
         kubernetesClusterManager.validateKubernetesClusterScaleSize(clusterVO, 4L, 4, Mockito.mock(DataCenter.class));
     }
 
     @Test
     public void testValidateKubernetesClusterScaleSizeDownscaleNoError() {
         KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
-        Mockito.when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
-        Mockito.when(clusterVO.getControlNodeCount()).thenReturn(1L);
-        Mockito.when(clusterVO.getNodeCount()).thenReturn(4L);
+        when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
+        when(clusterVO.getControlNodeCount()).thenReturn(1L);
+        when(clusterVO.getNodeCount()).thenReturn(4L);
         kubernetesClusterManager.validateKubernetesClusterScaleSize(clusterVO, 2L, 10, Mockito.mock(DataCenter.class));
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testValidateKubernetesClusterScaleSizeUpscaleDeletedTemplate() {
         KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
-        Mockito.when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
-        Mockito.when(clusterVO.getControlNodeCount()).thenReturn(1L);
-        Mockito.when(clusterVO.getNodeCount()).thenReturn(2L);
-        Mockito.when(templateDao.findById(Mockito.anyLong())).thenReturn(null);
+        when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
+        when(clusterVO.getControlNodeCount()).thenReturn(1L);
+        when(clusterVO.getNodeCount()).thenReturn(2L);
+        when(templateDao.findById(Mockito.anyLong())).thenReturn(null);
         kubernetesClusterManager.validateKubernetesClusterScaleSize(clusterVO, 4L, 10, Mockito.mock(DataCenter.class));
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void testValidateKubernetesClusterScaleSizeUpscaleNotInZoneTemplate() {
         KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
-        Mockito.when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
-        Mockito.when(clusterVO.getControlNodeCount()).thenReturn(1L);
-        Mockito.when(clusterVO.getNodeCount()).thenReturn(2L);
-        Mockito.when(templateDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(VMTemplateVO.class));
-        Mockito.when(templateJoinDao.newTemplateView(Mockito.any(VMTemplateVO.class), Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(null);
+        when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
+        when(clusterVO.getControlNodeCount()).thenReturn(1L);
+        when(clusterVO.getNodeCount()).thenReturn(2L);
+        when(templateDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(VMTemplateVO.class));
+        when(templateJoinDao.newTemplateView(Mockito.any(VMTemplateVO.class), Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(null);
         kubernetesClusterManager.validateKubernetesClusterScaleSize(clusterVO, 4L, 10, Mockito.mock(DataCenter.class));
     }
 
     @Test
     public void testValidateKubernetesClusterScaleSizeUpscaleNoError() {
         KubernetesClusterVO clusterVO = Mockito.mock(KubernetesClusterVO.class);
-        Mockito.when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
-        Mockito.when(clusterVO.getControlNodeCount()).thenReturn(1L);
-        Mockito.when(clusterVO.getNodeCount()).thenReturn(2L);
-        Mockito.when(templateDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(VMTemplateVO.class));
-        Mockito.when(templateJoinDao.newTemplateView(Mockito.any(VMTemplateVO.class), Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(List.of(Mockito.mock(TemplateJoinVO.class)));
+        when(clusterVO.getState()).thenReturn(KubernetesCluster.State.Running);
+        when(clusterVO.getControlNodeCount()).thenReturn(1L);
+        when(clusterVO.getNodeCount()).thenReturn(2L);
+        when(templateDao.findById(Mockito.anyLong())).thenReturn(Mockito.mock(VMTemplateVO.class));
+        when(templateJoinDao.newTemplateView(Mockito.any(VMTemplateVO.class), Mockito.anyLong(), Mockito.anyBoolean())).thenReturn(List.of(Mockito.mock(TemplateJoinVO.class)));
         kubernetesClusterManager.validateKubernetesClusterScaleSize(clusterVO, 4L, 10, Mockito.mock(DataCenter.class));
 
     }
@@ -247,7 +260,7 @@ public class KubernetesClusterManagerImplTest {
     public void setUp() throws Exception {
         CallContext.register(Mockito.mock(User.class), Mockito.mock(Account.class));
         overrideDefaultConfigValue(KubernetesClusterService.KubernetesServiceEnabled, "_defaultValue", "true");
-        Mockito.doNothing().when(accountManager).checkAccess(
+        doNothing().when(accountManager).checkAccess(
                 Mockito.any(Account.class), Mockito.any(), Mockito.anyBoolean(), Mockito.any());
     }
 
@@ -269,13 +282,13 @@ public class KubernetesClusterManagerImplTest {
         AddVirtualMachinesToKubernetesClusterCmd cmd = Mockito.mock(AddVirtualMachinesToKubernetesClusterCmd.class);
         List<Long> vmIds = Arrays.asList(1L, 2L, 3L);
 
-        Mockito.when(cmd.getId()).thenReturn(1L);
-        Mockito.when(cmd.getVmIds()).thenReturn(vmIds);
-        Mockito.when(cmd.getActualCommandName()).thenReturn(BaseCmd.getCommandNameByClass(RemoveVirtualMachinesFromKubernetesClusterCmd.class));
-        Mockito.when(cluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
-        Mockito.when(vmInstanceDao.findById(Mockito.anyLong())).thenReturn(vm);
-        Mockito.when(kubernetesClusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
-        Mockito.when(kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(1L, vmIds)).thenReturn(Collections.emptyList());
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getVmIds()).thenReturn(vmIds);
+        when(cmd.getActualCommandName()).thenReturn(BaseCmd.getCommandNameByClass(RemoveVirtualMachinesFromKubernetesClusterCmd.class));
+        when(cluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
+        when(vmInstanceDao.findById(Mockito.anyLong())).thenReturn(vm);
+        when(kubernetesClusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
+        when(kubernetesClusterVmMapDao.listByClusterIdAndVmIdsIn(1L, vmIds)).thenReturn(Collections.emptyList());
         Assert.assertTrue(kubernetesClusterManager.addVmsToCluster(cmd));
     }
 
@@ -285,11 +298,53 @@ public class KubernetesClusterManagerImplTest {
         RemoveVirtualMachinesFromKubernetesClusterCmd cmd = Mockito.mock(RemoveVirtualMachinesFromKubernetesClusterCmd.class);
         List<Long> vmIds = Arrays.asList(1L, 2L, 3L);
 
-        Mockito.when(cmd.getId()).thenReturn(1L);
-        Mockito.when(cmd.getVmIds()).thenReturn(vmIds);
-        Mockito.when(cmd.getActualCommandName()).thenReturn(BaseCmd.getCommandNameByClass(RemoveVirtualMachinesFromKubernetesClusterCmd.class));
-        Mockito.when(cluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
-        Mockito.when(kubernetesClusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
+        when(cmd.getId()).thenReturn(1L);
+        when(cmd.getVmIds()).thenReturn(vmIds);
+        when(cmd.getActualCommandName()).thenReturn(BaseCmd.getCommandNameByClass(RemoveVirtualMachinesFromKubernetesClusterCmd.class));
+        when(cluster.getClusterType()).thenReturn(KubernetesCluster.ClusterType.ExternalManaged);
+        when(kubernetesClusterDao.findById(Mockito.anyLong())).thenReturn(cluster);
         Assert.assertTrue(kubernetesClusterManager.removeVmsFromCluster(cmd).size() > 0);
+    }
+
+    @Test
+    public void testCleanupForAccount_NoClusters() {
+        when(account.getId()).thenReturn(123L);
+        when(kubernetesClusterDao.listForCleanupByAccount(123L)).thenReturn(Collections.emptyList());
+
+        kubernetesClusterManager.cleanupForAccount(account);
+
+        verify(kubernetesClusterDao).listForCleanupByAccount(123L);
+        verifyNoMoreInteractions(kubernetesClusterDao);
+    }
+
+    @Test
+    public void testCleanupForAccount_SuccessfulCleanup() {
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        when(account.getId()).thenReturn(123L);
+        when(kubernetesClusterDao.listForCleanupByAccount(123L)).thenReturn(List.of(cluster));
+
+        doReturn(true).when(kubernetesClusterManager).destroyKubernetesCluster(cluster);
+
+        kubernetesClusterManager.cleanupForAccount(account);
+
+        verify(kubernetesClusterDao).listForCleanupByAccount(123L);
+        verify(kubernetesClusterManager).destroyKubernetesCluster(cluster);
+    }
+
+    @Test
+    public void testCleanupForAccount_ClusterCleanupFails() {
+        KubernetesClusterVO cluster = Mockito.mock(KubernetesClusterVO.class);
+        when(account.getId()).thenReturn(123L);
+        when(cluster.getName()).thenReturn("failed-cluster");
+        when(kubernetesClusterDao.listForCleanupByAccount(123L)).thenReturn(List.of(cluster));
+
+        doThrow(new CloudRuntimeException("Error destroying cluster"))
+                .when(kubernetesClusterManager)
+                .destroyKubernetesCluster(cluster);
+
+        kubernetesClusterManager.cleanupForAccount(account);
+
+        verify(kubernetesClusterDao).listForCleanupByAccount(123L);
+        verify(kubernetesClusterManager).destroyKubernetesCluster(cluster);
     }
 }
