@@ -24,7 +24,6 @@ import com.cloud.dc.dao.DataCenterVnetDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.dao.UsageEventDao;
-import com.cloud.kubernetes.cluster.KubernetesServiceHelper;
 import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
 import com.cloud.network.dao.IPAddressDao;
@@ -199,8 +198,6 @@ public class AccountManagetImplTestBase {
     UserDataDao userDataDao;
     @Mock
     NetworkPermissionDao networkPermissionDaoMock;
-    @Mock
-    KubernetesServiceHelper kubernetesServiceHelper;
 
     @Spy
     @InjectMocks

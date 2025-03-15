@@ -85,6 +85,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.auth.SetupUserTwoFactorAuthenticationCmd;
@@ -172,6 +173,7 @@ import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
@@ -302,8 +304,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private UserDataDao userDataDao;
     @Inject
     private NetworkPermissionDao networkPermissionDao;
-    @Inject
-    KubernetesServiceHelper kubernetesServiceHelper;
 
     private List<QuerySelector> _querySelectors;
 
@@ -851,6 +851,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return cleanupAccount(account, callerUserId, caller);
     }
 
+    protected void cleanupPluginsResourcesIfNeeded(Account account) {
+        try {
+            KubernetesServiceHelper kubernetesServiceHelper =
+                    ComponentContext.getDelegateComponentOfType(KubernetesServiceHelper.class);
+            kubernetesServiceHelper.cleanupForAccount(account);
+        } catch (NoSuchBeanDefinitionException ignored) {
+            s_logger.debug("No KubernetesServiceHelper bean found");
+        }
+    }
+
     protected boolean cleanupAccount(AccountVO account, long callerUserId, Account caller) {
         long accountId = account.getId();
         boolean accountCleanupNeeded = false;
@@ -932,7 +942,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             }
 
-            kubernetesServiceHelper.cleanupForAccount(account);
+            cleanupPluginsResourcesIfNeeded(account);
 
             // Destroy the account's VMs
             List<UserVmVO> vms = _userVmDao.listByAccountId(accountId);
