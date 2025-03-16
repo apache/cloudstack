@@ -4614,9 +4614,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         List<HypervisorType> hypers = null;
         if (!isIso) {
             hypers = _resourceMgr.listAvailHypervisorInZone(null);
-            if (hypers == null || hypers.isEmpty()) {
-                return new Pair<>(new ArrayList<>(), 0);
-            }
+            hypers.add(HypervisorType.External);
         }
 
         VMTemplateVO template;
