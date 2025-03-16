@@ -14,34 +14,33 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package org.apache.cloudstack.storage.heuristics.presetvariables;
 
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.HashSet;
-import java.util.Set;
+@RunWith(MockitoJUnitRunner.class)
+public class TemplateTest {
 
-public class GenericHeuristicPresetVariable {
+    @Test
+    public void toStringTestReturnsValidJson() {
+        Template variable = new Template();
+        variable.setName("test name");
+        variable.setTemplateType(Storage.TemplateType.USER);
+        variable.setHypervisorType(Hypervisor.HypervisorType.KVM);
+        variable.setFormat(Storage.ImageFormat.QCOW2);
 
-    protected transient Set<String> fieldNamesToIncludeInToString = new HashSet<>();
+        String expected = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(variable, "name", "templateType",
+                "hypervisorType", "format");
+        String result = variable.toString();
 
-    private String name;
-
-    public String getName() {
-        return name;
+        Assert.assertEquals(expected, result);
     }
 
-    public void setName(String name) {
-        this.name = name;
-        fieldNamesToIncludeInToString.add("name");
-    }
-
-    /***
-     * Converts the preset variable into a valid JSON object that will be injected into the JS interpreter.
-     * This method should not be overridden or changed.
-     */
-    @Override
-    public final String toString() {
-        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, fieldNamesToIncludeInToString.toArray(new String[0]));
-    }
 }
