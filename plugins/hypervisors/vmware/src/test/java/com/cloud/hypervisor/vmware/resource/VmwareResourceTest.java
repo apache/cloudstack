@@ -858,7 +858,7 @@ public class VmwareResourceTest {
         List<VirtualDeviceConfigSpec> deviceChanges = Mockito.mock(List.class);
         when(vmConfigSpec.getDeviceChange()).thenReturn(deviceChanges);
 
-        vmwareResource.configureVirtualTPM(vmMo, vmSpec, vmConfigSpec, "uefi");
+        vmwareResource.configureVirtualTPM(vmMo, vmSpec, vmConfigSpec);
         Mockito.verify(vmwareResource, Mockito.times(1)).addVirtualTPMDevice(vmConfigSpec);
         Mockito.verify(deviceChanges, Mockito.times(1)).add(any(VirtualDeviceConfigSpec.class));
     }
@@ -877,7 +877,7 @@ public class VmwareResourceTest {
         List<VirtualDeviceConfigSpec> deviceChanges = Mockito.mock(List.class);
         when(vmConfigSpec.getDeviceChange()).thenReturn(deviceChanges);
 
-        vmwareResource.configureVirtualTPM(vmMo, vmSpec, vmConfigSpec, "uefi");
+        vmwareResource.configureVirtualTPM(vmMo, vmSpec, vmConfigSpec);
         Mockito.verify(vmwareResource, Mockito.times(1)).removeVirtualTPMDevice(vmConfigSpec, tpm);
         Mockito.verify(deviceChanges, Mockito.times(1)).add(any(VirtualDeviceConfigSpec.class));
     }

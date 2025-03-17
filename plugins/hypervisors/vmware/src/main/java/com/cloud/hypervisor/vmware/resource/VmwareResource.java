@@ -2600,7 +2600,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             setBootOptions(vmSpec, bootMode, vmConfigSpec);
 
             // Config vTPM
-            configureVirtualTPM(vmMo, vmSpec, vmConfigSpec, bootMode);
+            configureVirtualTPM(vmMo, vmSpec, vmConfigSpec);
 
             if (StringUtils.isNotEmpty(vmStoragePolicyId)) {
                 vmConfigSpec.getVmProfile().add(vmProfileSpec);
@@ -3217,27 +3217,24 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
      * @param vmConfigSpec virtual machine config spec
      * @throws Exception exception
      */
-    protected void configureVirtualTPM(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, VirtualMachineConfigSpec vmConfigSpec, String bootMode) throws Exception {
+    protected void configureVirtualTPM(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, VirtualMachineConfigSpec vmConfigSpec) throws Exception {
         String virtualTPMEnabled = vmSpec.getDetails().getOrDefault(VmDetailConstants.VIRTUAL_TPM_ENABLED, null);
         if (Boolean.parseBoolean(virtualTPMEnabled)) {
-            if (StringUtils.isBlank(bootMode) || !bootMode.equalsIgnoreCase("uefi")) {
-                throw new Exception("VM instance with Virtual TPM must use UEFI boot mode");
-            }
             for (VirtualDevice device : vmMo.getAllDeviceList()) {
                 if (device instanceof VirtualTPM) {
-                    logger.debug("Virtual TPM device has already been added, returning");
+                    logger.debug(String.format("Virtual TPM device has already been added to VM , returning", vmMo.getVmName()));
                     return;
                 }
             }
             logger.debug("Adding Virtual TPM device");
             addVirtualTPMDevice(vmConfigSpec);
         } else if (virtualTPMEnabled == null) {
-            logger.debug("Virtual TPM device is neither enabled nor disabled, skipping");
+            logger.debug(String.format("Virtual TPM device is neither enabled nor disabled for VM %s, skipping", vmMo.getVmName()));
         } else {
-            logger.debug(String.format("Virtual TPM device is disabled. It is enabled when boot mode is UEFI (actually %s) and vTPM is enabled (actually %s)", bootMode, virtualTPMEnabled));
+            logger.debug(String.format("Virtual TPM device is disabled for VM %s", vmMo.getVmName()));
             for (VirtualDevice device : vmMo.getAllDeviceList()) {
                 if (device instanceof VirtualTPM) {
-                    logger.debug("Removing Virtual TPM device as it is disabled");
+                    logger.debug(String.format("Removing Virtual TPM device from VM %s as it is disabled", vmMo.getVmName()));
                     removeVirtualTPMDevice(vmConfigSpec, (VirtualTPM) device);
                 }
             }
