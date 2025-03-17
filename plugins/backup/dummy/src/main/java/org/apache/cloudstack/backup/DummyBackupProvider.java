@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.backup;
 
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
@@ -157,7 +156,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         backup.setAccountId(vm.getAccountId());
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
-        backup.setName(vm.getHostName() + '-' + new SimpleDateFormat("yyyy-MM-dd'T'HH:mmX").format(new Date()));
+        backup.setName(backupManager.getBackupNameFromVM(vm));
         backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
         Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
         backup.setDetails(details);

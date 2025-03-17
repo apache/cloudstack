@@ -36,11 +36,11 @@ public class BackupResponse extends BaseResponse {
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "name of the backup")
+    @Param(description = "name of the backup", since = "4.21.0")
     private String name;
 
     @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "description for the backup")
+    @Param(description = "description for the backup", since = "4.21.0")
     private String description;
 
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
@@ -116,11 +116,11 @@ public class BackupResponse extends BaseResponse {
     private Map<String, String> vmDetails;
 
     @SerializedName(ApiConstants.INTERVAL_TYPE)
-    @Param(description = "the interval type of the backup schedule")
+    @Param(description = "the interval type of the backup schedule", since = "4.21.0")
     private String intervalType;
 
     @SerializedName(ApiConstants.IS_ORPHAN)
-    @Param(description = "The backups is orphaned and no associated with an existing VM. A new VM can still be created using the backup")
+    @Param(description = "The backups is orphaned and not associated with an existing VM. A new VM can still be created using the backup", since = "4.21.0")
     private Boolean isOrphan;
 
     public String getId() {

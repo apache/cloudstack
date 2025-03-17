@@ -362,6 +362,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return details;
     }
 
+    @Override
+    public String getBackupNameFromVM(VirtualMachine vm) {
+        String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, new Date());
+        return (vm.getHostName() + '-' + displayTime);
+    }
+
     public static String createVolumeInfoFromVolumes(List<VolumeVO> vmVolumes) {
         List<Backup.VolumeInfo> list = new ArrayList<>();
         for (VolumeVO vol : vmVolumes) {
@@ -1409,7 +1415,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 DefaultMaxProjectBackups,
                 DefaultMaxProjectBackupStorage,
                 DefaultMaxDomainBackups,
-                DefaultMaxDomainBackupStorage
+                DefaultMaxDomainBackupStorage,
+                BackupStorageCapacityThreshold
         };
     }
 

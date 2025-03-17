@@ -144,6 +144,14 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
             ConfigKey.Scope.Global,
             null);
 
+    ConfigKey<Float> BackupStorageCapacityThreshold = new ConfigKey<>("Alert", Float.class,
+            "zone.backupStorage.capacity.notificationthreshold",
+            "0.75",
+            "Percentage (as a value between 0 and 1) of backup storage utilization above which alerts will be sent about low storage available.",
+            true,
+            ConfigKey.Scope.Zone,
+            null);
+
     /**
      * List backup provider offerings
      * @param zoneId zone id
@@ -253,6 +261,8 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     Map<String, String> getVmDetailsForBackup(VirtualMachine vm);
 
     Map<String, String> getDiskOfferingDetailsForBackup(Long vmId);
+
+    String getBackupNameFromVM(VirtualMachine vm);
 
     void updateOrphanedBackups(VirtualMachine vm);
 

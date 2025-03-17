@@ -134,22 +134,6 @@ public enum Config {
             "0.75",
             "Percentage (as a value between 0 and 1) of local storage utilization above which alerts will be sent about low local storage available.",
             null),
-    BackupStorageCapacityThreshold(
-            "Alert",
-            ManagementServer.class,
-            Float.class,
-            "zone.backupStorage.capacity.notificationthreshold",
-            "0.75",
-            "Percentage (as a value between 0 and 1) of backup storage utilization above which alerts will be sent about low storage available.",
-            null),
-    ObjectStorageCapacityThreshold(
-            "Alert",
-            ManagementServer.class,
-            Float.class,
-            "zone.objectStorage.capacity.notificationthreshold",
-            "0.75",
-            "Percentage (as a value between 0 and 1) of object storage utilization above which alerts will be sent about low storage available.",
-            null),
 
     // Storage
 

@@ -611,7 +611,7 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             backup.setAccountId(vm.getAccountId());
             backup.setDomainId(vm.getDomainId());
             backup.setZoneId(vm.getDataCenterId());
-            backup.setName(vm.getHostName() + '-' + new SimpleDateFormat("yyyy-MM-dd'T'HH:mmX").format(new Date()));
+            backup.setName(backupManager.getBackupNameFromVM(vm));
 
             HashMap<String, String> details = new HashMap<>();
             details.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());

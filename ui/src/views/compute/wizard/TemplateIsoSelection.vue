@@ -103,26 +103,20 @@ export default {
       deep: true,
       handler (items) {
         const key = this.inputDecorator.slice(0, -2)
-        if (!this.pagination) {
-          let i = 0
-          for (i < this.filterOpts.length; i++;) {
-            const filter = this.filterOpts[i]
-            if (items[filter.id]?.[key]?.length > 0) {
-              this.filterType = this.filter.id
+        if (this.pagination) {
+          return
+        }
+        for (const filter of this.filterOpts) {
+          if (this.preFillContent.templateid) {
+            if (items[filter.id]?.[key]?.some(item => item.id === this.preFillContent.templateid)) {
+              this.filterType = filter.id
               this.checkedValue = items[filter.id][key][0].id
               break
             }
-          }
-          if (this.preFillContent.templateid) {
-            let i = 0
-            for (i < this.filterOpts.length; i++;) {
-              const filter = this.filterOpts[i]
-              if (items[filter.id]?.[key]?.some(item => item.id === this.preFillContent.templateid)) {
-                this.filterType = filter.id
-                this.checkedValue = items[filter.id][key][0].id
-                break
-              }
-            }
+          } else if (items[filter.id]?.[key]?.length > 0) {
+            this.filterType = filter.id
+            this.checkedValue = items[filter.id][key][0].id
+            break
           }
         }
       }

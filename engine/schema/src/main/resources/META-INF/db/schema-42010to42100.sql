@@ -38,10 +38,10 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'last_mgmt_server_id', 'bigin
 ALTER TABLE `cloud`.`backup_schedule` ADD COLUMN `max_backups` int(8) default NULL COMMENT 'maximum number of backups to maintain';
 
 -- Add columns name, description and backup_interval_type to backup table
-ALTER TABLE `cloud`.`backups` ADD COLUMN `backup_interval_type` int(5) COMMENT 'type of backup, e.g. manual, recurring - hourly, daily, weekly or monthly';
-ALTER TABLE `cloud`.`backups` ADD COLUMN `name` varchar(255) NOT NULL COMMENT 'name of the backup';
-ALTER TABLE `cloud`.`backups` ADD COLUMN `vm_name` varchar(255) COMMENT 'name of the vm for which backup is taken, only set for orphaned backups';
-ALTER TABLE `cloud`.`backups` ADD COLUMN `description` varchar(1024) COMMENT 'description for the backup';
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'name', 'VARCHAR(255) NOT NULL COMMENT "name of the backup"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'description', 'VARCHAR(1024) COMMENT "description for the backup"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'backup_interval_type', 'int(5) COMMENT "type of backup, e.g. manual, recurring - hourly, daily, weekly or monthly"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'vm_name', 'VARCHAR(255) COMMENT "name of the vm for which backup is taken, set only for orphaned backups"');
 UPDATE `cloud`.`backups` JOIN `cloud`.`vm_instance` ON `backups`.`vm_id` = `vm_instance`.`id` SET `backups`.`name` = `vm_instance`.`name`;
 
 -- Make the column vm_id in backups table nullable to handle orphan backups
@@ -59,7 +59,7 @@ CREATE TABLE `cloud`.`backup_details` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Add column allocated_size to object_store table. Rename column 'used_bytes' to 'used_size'
-ALTER TABLE `cloud`.`object_store` ADD COLUMN `allocated_size` bigint unsigned COMMENT 'allocated size in bytes';
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.object_store', 'allocated_size', 'bigint unsigned COMMENT "allocated size in bytes"');
 ALTER TABLE `cloud`.`object_store` CHANGE COLUMN `used_bytes` `used_size` BIGINT UNSIGNED COMMENT 'used size in bytes';
 ALTER TABLE `cloud`.`object_store` MODIFY COLUMN `total_size` bigint unsigned COMMENT 'total size in bytes';
 UPDATE `cloud`.`object_store`

@@ -38,19 +38,19 @@ public class ObjectStoreResponse extends BaseResponseWithAnnotations {
     @Param(description = "the url of the object store")
     private String url;
 
-    @SerializedName(ApiConstants.PROVIDER)
-    @Param(description = "the name of the object store provider")
+    @SerializedName("providername")
+    @Param(description = "the provider name of the object store")
     private String providerName;
 
-    @SerializedName(ApiConstants.SIZE)
+    @SerializedName("storagetotal")
     @Param(description = "the total size of the object store")
     private Long storageTotal;
 
-    @SerializedName(ApiConstants.ALLOCATED)
+    @SerializedName("storageallocated")
     @Param(description = "the object store currently allocated size")
     private Long storageAllocated;
 
-    @SerializedName(ApiConstants.USED)
+    @SerializedName("storageused")
     @Param(description = "the object store currently used size")
     private Long storageUsed;
 

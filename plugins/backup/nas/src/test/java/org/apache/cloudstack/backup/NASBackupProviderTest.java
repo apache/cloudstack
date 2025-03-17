@@ -45,6 +45,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -82,6 +83,9 @@ public class NASBackupProviderTest {
 
     @Mock
     private BackupManager backupManager;
+
+    @Mock
+    private ResourceManager resourceManager;
 
     @Test
     public void testDeleteBackup() throws OperationTimedoutException, AgentUnavailableException {
@@ -135,7 +139,7 @@ public class NASBackupProviderTest {
                 "nfs", "address", "sync", 1024L);
 
         HostVO host = mock(HostVO.class);
-        Mockito.when(hostDao.listByDataCenterIdAndHypervisorType(1L, Hypervisor.HypervisorType.KVM)).thenReturn(Collections.singletonList(host));
+        Mockito.when(resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, 1L)).thenReturn(host);
 
         Mockito.when(backupRepositoryDao.listByZoneAndProvider(1L, "nas")).thenReturn(Collections.singletonList(backupRepository));
         GetBackupStorageStatsCommand command = new GetBackupStorageStatsCommand("nfs", "address", "sync");
@@ -198,7 +202,6 @@ public class NASBackupProviderTest {
         Mockito.when(vm.getAccountId()).thenReturn(accountId);
         Mockito.when(vm.getDomainId()).thenReturn(domainId);
         Mockito.when(vm.getDataCenterId()).thenReturn(zoneId);
-        Mockito.when(vm.getHostName()).thenReturn("test-host");
         Mockito.when(vm.getState()).thenReturn(VMInstanceVO.State.Running);
 
         BackupRepository backupRepository = mock(BackupRepository.class);

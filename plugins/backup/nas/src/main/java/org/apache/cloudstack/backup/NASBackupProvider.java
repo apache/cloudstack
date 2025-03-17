@@ -24,6 +24,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.resource.ResourceManager;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
@@ -94,16 +95,16 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Inject
     BackupManager backupManager;
 
+    @Inject
+    ResourceManager resourceManager;
+
     private Host getUpHostInZone(Long zoneId) {
         List<HostVO> hosts = hostDao.listByDataCenterIdAndHypervisorType(zoneId, Hypervisor.HypervisorType.KVM);
-        if (hosts.size() == 0) {
+        if (CollectionUtils.isNotEmpty(hosts)) {
             return null;
         }
-
-        Random random = new Random();
-        int randomIndex = random.nextInt(hosts.size());
-        HostVO hostInZone = hosts.get(randomIndex);
-        LOG.debug("Found Host {} in zone {}", zoneId);
+        HostVO hostInZone = hosts.get(new Random().nextInt(hosts.size()));
+        LOG.debug("Found Host {} in zone {}", hostInZone, zoneId);
         return hostInZone;
     }
 
@@ -127,7 +128,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             }
         }
         // Try to find any Host in the zone
-        return getUpHostInZone(host.getDataCenterId());
+        return resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, host.getDataCenterId());
     }
 
     protected Host getVMHypervisorHost(VirtualMachine vm) {
@@ -219,7 +220,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         backup.setAccountId(vm.getAccountId());
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
-        backup.setName(vm.getHostName() + '-' + new SimpleDateFormat("yyyy-MM-dd'T'HH:mmX").format(new Date()));
+        backup.setName(backupManager.getBackupNameFromVM(vm));
         Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
         backup.setDetails(details);
 
@@ -375,7 +376,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         if (vm != null) {
             host = getLastVMHypervisorHost(vm);
         } else {
-            host = getUpHostInZone(backup.getZoneId());
+            host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, backup.getZoneId());
         }
 
         DeleteBackupCommand command = new DeleteBackupCommand(backup.getExternalId(), backupRepository.getType(),
@@ -473,7 +474,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Override
     public void syncBackupStorageStats(Long zoneId) {
         final List<BackupRepository> repositories = backupRepositoryDao.listByZoneAndProvider(zoneId, getName());
-        final Host host = getUpHostInZone(zoneId);
+        final Host host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM, zoneId);
         for (final BackupRepository repository : repositories) {
             GetBackupStorageStatsCommand command = new GetBackupStorageStatsCommand(repository.getType(), repository.getAddress(), repository.getMountOptions());
             BackupStorageStatsAnswer answer;
