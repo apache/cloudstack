@@ -97,7 +97,7 @@ public class SystemVmTemplateRegistration {
     private static final String ABSOLUTE_TEMPLATE_PATH = "/usr/share/cloudstack-management/templates/systemvm/";
     private static final String TEMPLATES_PATH = fetchTemplatesPath();
     private static final String METADATA_FILE_NAME = "metadata.ini";
-    protected static final String METADATA_FILE = TEMPLATES_PATH + METADATA_FILE_NAME;
+    private static final String METADATA_FILE = TEMPLATES_PATH + METADATA_FILE_NAME;
     public static final String TEMPORARY_SECONDARY_STORE = "tmp";
     private static final String PARTIAL_TEMPLATE_FOLDER = String.format("/template/tmpl/%d/", Account.ACCOUNT_ID_SYSTEM);
     private static final String storageScriptsDir = "scripts/storage/secondary";
@@ -106,7 +106,7 @@ public class SystemVmTemplateRegistration {
     private static final Integer LINUX_7_ID = 183;
     private static final Integer SCRIPT_TIMEOUT = 1800000;
     private static final Integer LOCK_WAIT_TIMEOUT = 1200;
-    protected static final List<CPU.CPUArch> DOWNLOADABLE_TEMPLATE_ARCH_TYPES = Arrays.asList(
+    private static final List<CPU.CPUArch> DOWNLOADABLE_TEMPLATE_ARCH_TYPES = Arrays.asList(
             CPU.CPUArch.arm64
     );
 
@@ -171,10 +171,6 @@ public class SystemVmTemplateRegistration {
             return String.format("%s.%s", CS_MAJOR_VERSION, CS_TINY_VERSION);
         }
         return systemVmTemplateVersion;
-    }
-
-    public File getTempDownloadDir() {
-        return tempDownloadDir;
     }
 
     private static class SystemVMTemplateDetails {
@@ -395,7 +391,7 @@ public class SystemVmTemplateRegistration {
         return sb.toString();
     }
 
-    protected static String getHypervisorArchKey(Hypervisor.HypervisorType hypervisorType, CPU.CPUArch arch) {
+    private static String getHypervisorArchKey(Hypervisor.HypervisorType hypervisorType, CPU.CPUArch arch) {
         if (Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
             return String.format("%s-%s", hypervisorType.name().toLowerCase(),
                     arch == null ? CPU.CPUArch.amd64.getType() : arch.getType());
@@ -403,7 +399,7 @@ public class SystemVmTemplateRegistration {
         return hypervisorType.name().toLowerCase();
     }
 
-    protected static MetadataTemplateDetails getMetadataTemplateDetails(Hypervisor.HypervisorType hypervisorType,
+    private static MetadataTemplateDetails getMetadataTemplateDetails(Hypervisor.HypervisorType hypervisorType,
               CPU.CPUArch arch) {
         return NewTemplateMap.get(getHypervisorArchKey(hypervisorType, arch));
     }
@@ -445,7 +441,7 @@ public class SystemVmTemplateRegistration {
         return zoneIds;
     }
 
-    protected Pair<String, Long> getNfsStoreInZone(Long zoneId) {
+    private Pair<String, Long> getNfsStoreInZone(Long zoneId) {
         ImageStoreVO storeVO = imageStoreDao.findOneByZoneAndProtocol(zoneId, "nfs");
         if (storeVO == null) {
             String errMsg = String.format("Failed to fetch NFS store in zone = %s for SystemVM template registration",
@@ -460,13 +456,12 @@ public class SystemVmTemplateRegistration {
 
     public static void mountStore(String storeUrl, String path, String nfsVersion) {
         try {
-            if (storeUrl == null) {
-                return;
+            if (storeUrl != null) {
+                URI uri = new URI(UriUtils.encodeURIComponent(storeUrl));
+                String host = uri.getHost();
+                String mountPath = uri.getPath();
+                Script.runSimpleBashScript(getMountCommand(nfsVersion, host + ":" + mountPath, path));
             }
-            URI uri = new URI(UriUtils.encodeURIComponent(storeUrl));
-            String host = uri.getHost();
-            String mountPath = uri.getPath();
-            Script.runSimpleBashScript(getMountCommand(nfsVersion, host + ":" + mountPath, path));
         } catch (Exception e) {
             String msg = "NFS Store URL is not in the correct format";
             LOGGER.error(msg, e);
@@ -788,7 +783,7 @@ public class SystemVmTemplateRegistration {
                     hypervisorType.second()));
         }
         Ini.Section defaultSection = ini.get("default");
-        return defaultSection.get("version").trim();
+        return defaultSection.get("version");
     }
 
 
@@ -835,7 +830,7 @@ public class SystemVmTemplateRegistration {
         return false;
     }
 
-    protected void validateTemplates(List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> hypervisorsArchInUse) {
+    private void validateTemplates(List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> hypervisorsArchInUse) {
         boolean templatesFound = true;
         for (Pair<Hypervisor.HypervisorType, CPU.CPUArch> hypervisorArch : hypervisorsArchInUse) {
             MetadataTemplateDetails matchedTemplate = getMetadataTemplateDetails(hypervisorArch.first(),
