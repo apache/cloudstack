@@ -331,6 +331,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public static final String UBUNTU_WINDOWS_GUEST_CONVERSION_SUPPORTED_CHECK_CMD = "dpkg -l virtio-win";
     public static final String UBUNTU_NBDKIT_PKG_CHECK_CMD = "dpkg -l nbdkit";
 
+    public static final int LIBVIRT_CGROUP_CPU_SHARES_MIN = 2;
+    public static final int LIBVIRT_CGROUP_CPU_SHARES_MAX = 262144;
+    /**
+     * The minimal value for the LIBVIRT_CGROUPV2_WEIGHT_MIN is actually 1.
+     * However, due to an old libvirt bug, it is raised to 2.
+     * See: https://github.com/libvirt/libvirt/commit/38af6497610075e5fe386734b87186731d4c17ac
+     */
+    public static final int LIBVIRT_CGROUPV2_WEIGHT_MIN = 2;
+    public static final int LIBVIRT_CGROUPV2_WEIGHT_MAX = 10000;
+
     private String modifyVlanPath;
     private String versionStringPath;
     private String patchScriptPath;
@@ -512,8 +522,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private static int hostCpuMaxCapacity = 0;
 
-    private static final int CGROUP_V2_UPPER_LIMIT = 10000;
-
     private static final String COMMAND_GET_CGROUP_HOST_VERSION = "stat -fc %T /sys/fs/cgroup/";
 
     public static final String CGROUP_V2 = "cgroup2fs";
@@ -639,6 +647,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public LibvirtUtilitiesHelper getLibvirtUtilitiesHelper() {
         return libvirtUtilitiesHelper;
+    }
+
+    public String getClusterId() {
+        return clusterId;
     }
 
     public CPUStat getCPUStat() {
@@ -2821,14 +2833,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         int requestedCpuShares = vCpus * cpuSpeed;
         int hostCpuMaxCapacity = getHostCpuMaxCapacity();
 
+        // cgroup v2 is in use
         if (hostCpuMaxCapacity > 0) {
-            int updatedCpuShares = (int) Math.ceil((requestedCpuShares * CGROUP_V2_UPPER_LIMIT) / (double) hostCpuMaxCapacity);
-            LOGGER.debug(String.format("This host utilizes cgroupv2 (as the max shares value is [%s]), thus, the VM requested shares of [%s] will be converted to " +
-                    "consider the host limits; the new CPU shares value is [%s].", hostCpuMaxCapacity, requestedCpuShares, updatedCpuShares));
+
+            int updatedCpuShares = (int) Math.ceil((requestedCpuShares * LIBVIRT_CGROUPV2_WEIGHT_MAX) / (double) hostCpuMaxCapacity);
+            LOGGER.debug("This host utilizes cgroupv2 (as the max shares value is [{}]), thus, the VM requested shares of [{}] will be converted to " +
+                    "consider the host limits; the new CPU shares value is [{}].", hostCpuMaxCapacity, requestedCpuShares, updatedCpuShares);
+
+            if (updatedCpuShares < LIBVIRT_CGROUPV2_WEIGHT_MIN) updatedCpuShares = LIBVIRT_CGROUPV2_WEIGHT_MIN;
+            if (updatedCpuShares > LIBVIRT_CGROUPV2_WEIGHT_MAX) updatedCpuShares = LIBVIRT_CGROUPV2_WEIGHT_MAX;
             return updatedCpuShares;
         }
-        LOGGER.debug(String.format("This host does not have a maximum CPU shares set; therefore, this host utilizes cgroupv1 and the VM requested CPU shares [%s] will not be " +
-                "converted.", requestedCpuShares));
+
+        // cgroup v1 is in use
+        LOGGER.debug("This host does not have a maximum CPU shares set; therefore, this host utilizes cgroupv1 and the VM requested CPU shares [{}] will not be " +
+                "converted.", requestedCpuShares);
+
+        if (requestedCpuShares < LIBVIRT_CGROUP_CPU_SHARES_MIN) requestedCpuShares = LIBVIRT_CGROUP_CPU_SHARES_MIN;
+        if (requestedCpuShares > LIBVIRT_CGROUP_CPU_SHARES_MAX) requestedCpuShares = LIBVIRT_CGROUP_CPU_SHARES_MAX;
         return requestedCpuShares;
     }
 
