@@ -54,7 +54,7 @@ class TestDeployVMLease(cloudstackTestCase):
         if cls.template == FAILED:
             assert False, "get_test_template() failed to return template"
 
-        
+
         # enable instance lease feature
         Configurations.update(cls.api_client,
                               name="instance.lease.enabled",
@@ -148,7 +148,7 @@ class TestDeployVMLease(cloudstackTestCase):
         )
         self.verify_no_lease_configured_for_vm(non_lease_vm.id)
         return
-    
+
     @attr(
         tags=[
             "advanced",
@@ -175,7 +175,7 @@ class TestDeployVMLease(cloudstackTestCase):
         )
         self.verify_lease_configured_for_vm(lease_vm.id, lease_duration=10, lease_expiry_action="STOP")
         return
-    
+
     @attr(
         tags=[
             "advanced",
@@ -201,7 +201,7 @@ class TestDeployVMLease(cloudstackTestCase):
         )
         self.verify_lease_configured_for_vm(lease_vm.id, lease_duration=20, lease_expiry_action="DESTROY")
         return
-    
+
     @attr(
         tags=[
             "advanced",
@@ -211,7 +211,7 @@ class TestDeployVMLease(cloudstackTestCase):
         """Test Deploy Virtual Machine from lease-svc-offering with overridden lease properties
 
         Validate the following:
-        1. confirm svc_offering has lease properties 
+        1. confirm svc_offering has lease properties
         2. deploy VM using lease-svc-offering and leaseduration and leaseexpiryaction passed
         3. confirm vm has lease configured
         """
@@ -231,7 +231,7 @@ class TestDeployVMLease(cloudstackTestCase):
         )
         self.verify_lease_configured_for_vm(lease_vm.id, lease_duration=30, lease_expiry_action="STOP")
         return
-    
+
 
     @attr(
         tags=[
@@ -266,7 +266,7 @@ class TestDeployVMLease(cloudstackTestCase):
         vm = vms[0]
         self.verify_no_lease_configured_for_vm(vm.id)
         return
-    
+
     @attr(
         tags=[
             "advanced",
@@ -276,7 +276,7 @@ class TestDeployVMLease(cloudstackTestCase):
         """Test Deploy Virtual Machine from lease-svc-offering with lease feature disabled
 
         Validate the following:
-        1. Disable lease feature 
+        1. Disable lease feature
         2. deploy VM using lease-svc-offering
         3. confirm vm has no lease configured
         """
@@ -304,11 +304,11 @@ class TestDeployVMLease(cloudstackTestCase):
         vm = vms[0]
         self.verify_no_lease_configured_for_vm(vm.id)
         return
-    
+
 
     def verify_svc_offering(self):
         svc_offering_list = ServiceOffering.list(
-            self.api_client, 
+            self.api_client,
             id=self.lease_svc_offering.id
         )
 
@@ -336,14 +336,14 @@ class TestDeployVMLease(cloudstackTestCase):
             vm.leaseduration,
             "check to confirm leaseduration is configured"
             )
-        
+
         self.assertEqual(
             lease_expiry_action,
             vm.leaseexpiryaction,
             "check to confirm leaseexpiryaction is configured"
             )
-        
-        self.assertIsNotNone(vm.leaseexpirydate, "confirm leaseexpirydate is available") 
+
+        self.assertIsNotNone(vm.leaseexpirydate, "confirm leaseexpirydate is available")
 
 
     def verify_no_lease_configured_for_vm(self, vm_id=None):

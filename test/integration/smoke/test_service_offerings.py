@@ -370,7 +370,7 @@ class TestCreateServiceOffering(cloudstackTestCase):
         3. Verify service offering lease properties
         """
         self.update_lease_feature("true")
-        
+
         service_offering = ServiceOffering.create(
             self.apiclient,
             self.services["service_offerings"]["tiny"],
@@ -407,7 +407,7 @@ class TestCreateServiceOffering(cloudstackTestCase):
             "Confirm leaseexpiryaction"
         )
         return
-    
+
     @attr(
         tags=[
             "advanced",
@@ -452,7 +452,7 @@ class TestCreateServiceOffering(cloudstackTestCase):
             "Confirm leaseexpiryaction is not set"
         )
         return
-    
+
     @attr(
         tags=[
             "advanced",
@@ -499,22 +499,22 @@ class TestCreateServiceOffering(cloudstackTestCase):
             "Confirm leaseexpiryaction is not set"
         )
         return
-    
+
     def update_lease_feature(self, value=None):
         # Update global setting for "instance.lease.enabled"
         Configurations.update(self.apiclient,
                               name="instance.lease.enabled",
                               value=value
                               )
-        
+
         # Verify that the above mentioned settings are set to true
         if not is_config_suitable(
                 apiclient=self.apiclient,
                 name='instance.lease.enabled',
                 value=value):
             self.fail(f'instance.lease.enabled should be: {value}')
-        
-    
+
+
 
 class TestServiceOfferings(cloudstackTestCase):
 
