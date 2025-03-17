@@ -51,8 +51,8 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.commons.collections.MapUtils;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
@@ -1859,25 +1859,19 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             logger.trace("Agent New Connections Monitor is started.");
             final int cleanupTime = Wait.value();
             Set<Map.Entry<String, Long>> entrySet = newAgentConnections.entrySet();
-            long cutOff = System.currentTimeMillis() - (cleanupTime * 60 * 1000L);
-            if (logger.isDebugEnabled()) {
-                List<String> expiredConnections = newAgentConnections.entrySet()
-                        .stream()
-                        .filter(e -> e.getValue() <= cutOff)
-                        .map(Map.Entry::getKey)
-                        .collect(Collectors.toList());
-                logger.debug(String.format("Currently %d active new connections, of which %d have expired - %s",
-                        entrySet.size(),
-                        expiredConnections.size(),
-                        StringUtils.join(expiredConnections)));
-            }
-            for (Map.Entry<String, Long> entry : entrySet) {
-                if (entry.getValue() <= cutOff) {
-                    if (logger.isTraceEnabled()) {
-                        logger.trace(String.format("Cleaning up new agent connection for %s", entry.getKey()));
-                    }
-                    newAgentConnections.remove(entry.getKey());
-                }
+            long cutOff = System.currentTimeMillis() - (cleanupTime * 1000L);
+            List<String> expiredConnections = newAgentConnections.entrySet()
+                    .stream()
+                    .filter(e -> e.getValue() <= cutOff)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+            logger.debug("Currently {} active new connections, of which {} have expired - {}",
+                    entrySet.size(),
+                    expiredConnections.size(),
+                    StringUtils.join(expiredConnections));
+            for (String connection : expiredConnections) {
+                logger.trace("Cleaning up new agent connection for {}", connection);
+                newAgentConnections.remove(connection);
             }
         }
     }
