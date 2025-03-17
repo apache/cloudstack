@@ -48,7 +48,7 @@ export default {
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domainpath', 'associatednetwork', 'associatednetworkid', 'ip6firewall', 'ip6routing', 'ip6routes', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'privatemtu']
+        var fields = ['name', 'id', 'description', 'type', 'traffictype', 'vpcid', 'vlan', 'broadcasturi', 'cidr', 'ip6cidr', 'netmask', 'gateway', 'asnumber', 'aclname', 'ispersistent', 'restartrequired', 'reservediprange', 'redundantrouter', 'networkdomain', 'egressdefaultpolicy', 'zonename', 'account', 'domainpath', 'associatednetwork', 'associatednetworkid', 'ip4routing', 'ip6firewall', 'ip6routing', 'ip6routes', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu', 'privatemtu']
         if (!isAdmin()) {
           fields = fields.filter(function (e) { return e !== 'broadcasturi' })
         }
@@ -69,13 +69,21 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/EgressRulesTab.vue'))),
         show: (record, route, user) => { return record.type === 'Isolated' && !('vpcname' in record) && 'listEgressFirewallRules' in store.getters.apis && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid) }
       }, {
+        name: 'bgp.peers',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/infra/zone/BgpPeersTab.vue'))),
+        show: (record, route, user) => { return !record.vpcid && ['Admin'].includes(user.roletype) && record.ip4routing === 'Dynamic' }
+      }, {
+        name: 'routing.firewall',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/RoutingFirewallRulesTab.vue'))),
+        show: (record, route, user) => { return record.type === 'Isolated' && record.ip4routing && !('vpcname' in record) && 'listRoutingFirewallRules' in store.getters.apis && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid) }
+      }, {
         name: 'ip.v6.firewall',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/Ipv6FirewallRulesTab.vue'))),
         show: (record, route, user) => { return record.type === 'Isolated' && ['IPv6', 'DualStack'].includes(record.internetprotocol) && !('vpcid' in record) && 'listIpv6FirewallRules' in store.getters.apis && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid) }
       }, {
         name: (record) => { return record.type === 'Shared' ? 'ip.addresses' : 'public.ip.addresses' },
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/IpAddressesTab.vue'))),
-        show: (record, route, user) => { return 'listPublicIpAddresses' in store.getters.apis && (record.type === 'Shared' || (record.type === 'Isolated' && !('vpcname' in record) && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid))) }
+        show: (record, route, user) => { return 'listPublicIpAddresses' in store.getters.apis && (record.type === 'Shared' || (record.type === 'Isolated' && !record.ip4routing && !('vpcname' in record) && (['Admin', 'DomainAdmin'].includes(user.roletype) || record.account === user.account || record.projectid))) }
       }, {
         name: 'virtual.routers',
         component: shallowRef(defineAsyncComponent(() => import('@/views/network/RoutersTab.vue'))),
@@ -221,7 +229,7 @@ export default {
         fields.push(...['domain', 'zonename'])
         return fields
       },
-      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu'],
+      details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip4routing', 'ip4routes', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu'],
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
       related: [{
         name: 'vm',
