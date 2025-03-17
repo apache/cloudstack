@@ -1223,6 +1223,7 @@ public class CommandSetupHelper {
 
         boolean isVrGuestGateway = _networkModel.isAnyServiceSupportedInNetwork(network.getId(), Provider.VPCVirtualRouter, Service.SourceNat, Service.Gateway);
         setupCmd.setVrGuestGateway(isVrGuestGateway);
+        setupCmd.setNetworkId(network.getId());
 
         NicVO publicNic = _nicDao.findDefaultNicForVM(router.getId());
         if (publicNic != null) {

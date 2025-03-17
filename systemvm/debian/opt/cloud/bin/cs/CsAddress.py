@@ -45,6 +45,19 @@ class CsAddress(CsDataBag):
                 interfaces.append(CsInterface(ip, self.config))
         return interfaces
 
+    def get_guest_if_by_network_id(self):
+        guest_interface = None
+        lowest_network_id = 1000
+        for interface in self.get_interfaces():
+            if interface.is_guest() and interface.is_added():
+                if not self.config.is_vpc():
+                    return interface
+                network_id = self.config.guestnetwork().get_network_id(interface.get_device())
+                if network_id and network_id < lowest_network_id:
+                    lowest_network_id = network_id
+                    guest_interface = interface
+        return guest_interface
+
     def get_guest_if(self):
         """
         Return CsInterface object for the lowest in use guest interface
@@ -262,12 +275,15 @@ class CsDevice:
         self.fw = config.get_fw()
         self.cl = config.cmdline()
 
-    def configure_rp(self):
+    def configure_rp(self, enable=True):
         """
         Configure Reverse Path Filtering
         """
         filename = "/proc/sys/net/ipv4/conf/%s/rp_filter" % self.dev
-        CsHelper.updatefile(filename, "1\n", "w")
+        if enable:
+            CsHelper.updatefile(filename, "1\n", "w")
+        else:
+            CsHelper.updatefile(filename, "0\n", "w")
 
     def buildlist(self):
         """
@@ -362,12 +378,11 @@ class CsIP:
             # VPC routers in a different manner. Please do not remove this block otherwise
             # The VPC default route will be broken.
             if not self.config.has_public_network():
-                for interface in self.config.address().get_interfaces():
-                    if interface.is_guest() and interface.is_added() and interface.get_device() == self.dev:
-                        gateway = interface.get_gateway()
-                        route.add_defaultroute(gateway)
-                        CsHelper.execute("sudo echo 0 > /proc/sys/net/ipv4/conf/%s/rp_filter" % interface.get_device())
-                        break
+                interface = self.config.address().get_guest_if_by_network_id()
+                if interface:
+                    gateway = interface.get_gateway()
+                    route.add_or_change_defaultroute(gateway)
+                    CsDevice(self.dev, self.config).configure_rp(False)
             elif self.get_type() in ["public"] and address["device"] == CsHelper.PUBLIC_INTERFACES[self.cl.get_type()]:
                 gateway = str(address["gateway"])
                 route.add_defaultroute(gateway)

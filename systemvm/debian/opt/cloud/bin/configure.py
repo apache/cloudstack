@@ -1024,11 +1024,10 @@ class CsSite2SiteVpn(CsDataBag):
             dev = CsHelper.get_device(local_ip)
 
             if not self.config.has_public_network():
-                for interface in self.config.address().get_interfaces():
-                    if interface.is_guest() and interface.is_added():
-                        dev = interface.get_device()
-                        local_ip = interface.get_ip()
-                        break
+                interface = self.config.address().get_guest_if_by_network_id()
+                if interface:
+                    dev = interface.get_device()
+                    local_ip = interface.get_ip()
 
             if dev == "":
                 logging.error("Request for ipsec to %s not possible because ip is not configured", local_ip)
@@ -1234,11 +1233,10 @@ class CsRemoteAccessVpn(CsDataBag):
 
                 logging.debug("Remote accessvpn  data bag %s",  self.dbag)
                 if not self.config.has_public_network():
-                    for interface in self.config.address().get_interfaces():
-                        if interface.is_guest() and interface.is_added():
-                            self.configure_l2tpIpsec(interface.get_ip(), self.dbag[public_ip])
-                            self.remoteaccessvpn_iptables(interface.get_device(), interface.get_ip(), self.dbag[public_ip])
-                            break
+                    interface = self.config.address().get_guest_if_by_network_id()
+                    if interface:
+                        self.configure_l2tpIpsec(interface.get_ip(), self.dbag[public_ip])
+                        self.remoteaccessvpn_iptables(interface.get_device(), interface.get_ip(), self.dbag[public_ip])
                 else:
                     self.configure_l2tpIpsec(public_ip, self.dbag[public_ip])
                     self.remoteaccessvpn_iptables(self.dbag[public_ip]['public_interface'], public_ip, self.dbag[public_ip])
