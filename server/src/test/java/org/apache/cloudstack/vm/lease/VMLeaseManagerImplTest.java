@@ -93,10 +93,6 @@ public class VMLeaseManagerImplTest {
         vmLeaseManager.setAsyncJobDispatcher(asyncJobDispatcher);
         when(asyncJobDispatcher.getName()).thenReturn("AsyncJobDispatcher");
         when(asyncJobManager.submitAsyncJob(any(AsyncJobVO.class))).thenReturn(1L);
-
-        ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
-        VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
-        Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
     }
 
     @Test
@@ -108,6 +104,9 @@ public class VMLeaseManagerImplTest {
 
     @Test
     public void testAlert() {
+        ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
+        VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
+        Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
         UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, false);
         List<UserVmJoinVO> expiringVms = Arrays.asList(vm);
         when(userVmJoinDao.listLeaseInstancesExpiringInDays(anyInt())).thenReturn(expiringVms);
