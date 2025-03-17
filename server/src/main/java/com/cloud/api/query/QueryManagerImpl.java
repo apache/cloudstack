@@ -1305,6 +1305,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long storageId = null;
         StoragePoolVO pool = null;
         Long userId = cmd.getUserId();
+        Long userdataId = cmd.getUserdataId();
         Map<String, String> tags = cmd.getTags();
 
         boolean isAdmin = false;
@@ -1375,6 +1376,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (templateId != null) {
             userVmSearchBuilder.and("templateId", userVmSearchBuilder.entity().getTemplateId(), Op.EQ);
+        }
+
+        if (userdataId != null) {
+            userVmSearchBuilder.and("userdataId", userVmSearchBuilder.entity().getUserDataId(), Op.EQ);
         }
 
         if (hypervisor != null) {
@@ -1567,6 +1572,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (templateId != null) {
             userVmSearchCriteria.setParameters("templateId", templateId);
+        }
+
+        if (userdataId != null) {
+            userVmSearchCriteria.setParameters("userdataId", userdataId);
         }
 
         if (display != null) {
