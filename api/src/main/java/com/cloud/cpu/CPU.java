@@ -32,6 +32,10 @@ public class CPU {
             this.bits = bits;
         }
 
+        public static CPUArch getDefault() {
+            return amd64;
+        }
+
         public String getType() {
             return type;
         }
@@ -42,7 +46,7 @@ public class CPU {
 
         public static CPUArch fromType(String type) {
             if (StringUtils.isBlank(type)) {
-                return amd64; // Default architecture
+                return getDefault();
             }
             for (CPUArch arch : values()) {
                 if (arch.type.equals(type)) {
