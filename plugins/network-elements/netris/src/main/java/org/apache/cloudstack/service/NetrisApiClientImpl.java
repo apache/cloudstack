@@ -726,7 +726,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             if (ObjectUtils.allNull(editResponse, createResponse) || Boolean.FALSE.equals(success)) {
                 throw new CloudRuntimeException(String.format("Failed to %s Netris LB rule", updateRule ? "update" : "create"));
             }
-            if (Objects.nonNull(cmd.getCidrList())) {
+            if (Objects.nonNull(cmd.getCidrList()) && !cmd.getCidrList().isEmpty()) {
                 applyAclRulesForLb(cmd, lbName);
             }
         } catch (ApiException e) {
