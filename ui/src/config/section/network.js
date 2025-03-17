@@ -874,6 +874,54 @@ export default {
       ]
     },
     {
+      name: 'asnumbers',
+      title: 'label.asnumbers',
+      icon: 'partition-outlined',
+      permission: ['listASNumbers'],
+      show: () => {
+        if (!store.getters.zones || store.getters.zones.length === 0) {
+          return false
+        }
+        const AdvancedZonesWithRoutedmode = store.getters.zones.filter(zone => zone.routedmodeenabled)
+        if (isAdmin() && (AdvancedZonesWithRoutedmode && AdvancedZonesWithRoutedmode.length > 0)) {
+          return true
+        }
+        return false
+      },
+      filters: ['all', 'allocatedonly', 'free'],
+      columns: ['asnumber', 'allocationstate', 'asnrange', 'associatednetworkname', 'vpcname', 'allocated', 'account', 'domain', 'zonename'],
+      searchFilters: ['zoneid', 'associatednetworkid', 'account', 'domainid'],
+      resourceType: 'ASNumber',
+      actions: [
+        {
+          api: 'releaseASNumber',
+          icon: 'delete-outlined',
+          label: 'label.action.release.asnumber',
+          message: 'message.action.release.asnumber',
+          show: (record) => { return record.allocationstate === 'Allocated' },
+          args: ['zoneid', 'asnumber'],
+          mapping: {
+            zoneid: {
+              value: (record) => { return record.zoneid }
+            },
+            asnumber: {
+              value: (record) => { return record.asnumber }
+            }
+          },
+          dataView: true,
+          groupAction: true,
+          popup: true,
+          groupShow: (selectedItems, storegetters) => {
+            return selectedItems.length === 1 && selectedItems[0].allocationstate === 'Allocated'
+          },
+          groupMap: (selectedId, values, records) => {
+            const record = records.filter(x => { return x.id === selectedId[0] })
+            return record
+          }
+        }
+      ]
+    },
+    {
       name: 'privategw',
       title: 'label.private.gateway',
       icon: 'gateway-outlined',
