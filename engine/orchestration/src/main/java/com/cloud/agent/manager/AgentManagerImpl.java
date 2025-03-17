@@ -1947,25 +1947,19 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             logger.trace("Agent New Connections Monitor is started.");
             final int cleanupTime = Wait.value();
             Set<Map.Entry<String, Long>> entrySet = newAgentConnections.entrySet();
-            long cutOff = System.currentTimeMillis() - (cleanupTime * 60 * 1000L);
-            if (logger.isDebugEnabled()) {
-                List<String> expiredConnections = newAgentConnections.entrySet()
-                        .stream()
-                        .filter(e -> e.getValue() <= cutOff)
-                        .map(Map.Entry::getKey)
-                        .collect(Collectors.toList());
-                logger.debug("Currently {} active new connections, of which {} have expired - {}",
-                        entrySet.size(),
-                        expiredConnections.size(),
-                        StringUtils.join(expiredConnections));
-            }
-            for (Map.Entry<String, Long> entry : entrySet) {
-                if (entry.getValue() <= cutOff) {
-                    if (logger.isTraceEnabled()) {
-                        logger.trace("Cleaning up new agent connection for {}", entry.getKey());
-                    }
-                    newAgentConnections.remove(entry.getKey());
-                }
+            long cutOff = System.currentTimeMillis() - (cleanupTime * 1000L);
+            List<String> expiredConnections = newAgentConnections.entrySet()
+                    .stream()
+                    .filter(e -> e.getValue() <= cutOff)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+            logger.debug("Currently {} active new connections, of which {} have expired - {}",
+                    entrySet.size(),
+                    expiredConnections.size(),
+                    StringUtils.join(expiredConnections));
+            for (String connection : expiredConnections) {
+                logger.trace("Cleaning up new agent connection for {}", connection);
+                newAgentConnections.remove(connection);
             }
         }
     }
