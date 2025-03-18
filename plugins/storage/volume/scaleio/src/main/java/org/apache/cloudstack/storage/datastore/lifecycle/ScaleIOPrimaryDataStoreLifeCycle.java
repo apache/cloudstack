@@ -50,8 +50,6 @@ import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterVO;
@@ -65,9 +63,6 @@ import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolAutomation;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.template.TemplateManager;
 import com.cloud.utils.UriUtils;
@@ -345,37 +340,11 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
 
     @Override
     public boolean deleteDataStore(DataStore dataStore) {
-        StoragePool storagePool = (StoragePool)dataStore;
-        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(storagePool.getId());
-        if (storagePoolVO == null) {
-            return false;
+        if (cleanupDatastore(dataStore)) {
+            ScaleIOGatewayClientConnectionPool.getInstance().removeClient(dataStore.getId());
+            return dataStoreHelper.deletePrimaryDataStore(dataStore);
         }
-
-        List<VMTemplateStoragePoolVO> unusedTemplatesInPool = templateMgr.getUnusedTemplatesInPool(storagePoolVO);
-        for (VMTemplateStoragePoolVO templatePoolVO : unusedTemplatesInPool) {
-            if (templatePoolVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                templateMgr.evictTemplateFromStoragePool(templatePoolVO);
-            }
-        }
-
-        List<StoragePoolHostVO> poolHostVOs = storagePoolHostDao.listByPoolId(dataStore.getId());
-        for (StoragePoolHostVO poolHostVO : poolHostVOs) {
-            DeleteStoragePoolCommand deleteStoragePoolCommand = new DeleteStoragePoolCommand(storagePool);
-            final Answer answer = agentMgr.easySend(poolHostVO.getHostId(), deleteStoragePoolCommand);
-            if (answer != null && answer.getResult()) {
-                LOGGER.info("Successfully deleted storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId());
-            } else {
-                if (answer != null) {
-                    LOGGER.error("Failed to delete storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId() + " , result: " + answer.getResult());
-                } else {
-                    LOGGER.error("Failed to delete storage pool: " + storagePool.getId() + " from host: " + poolHostVO.getHostId());
-                }
-            }
-        }
-
-        ScaleIOGatewayClientConnectionPool.getInstance().removeClient(dataStore.getId());
-
-        return dataStoreHelper.deletePrimaryDataStore(dataStore);
+        return false;
     }
 
     @Override
