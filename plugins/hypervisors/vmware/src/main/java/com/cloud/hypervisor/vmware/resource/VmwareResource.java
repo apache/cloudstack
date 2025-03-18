@@ -5886,6 +5886,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             logger.debug(msg);
             return new Answer(cmd, true, msg);
         } catch (Exception e) {
+            if (e.getMessage().contains("was not found")) {
+                String msg = String.format("%s - VM [%s] file(s) not found, cleanup not needed .", e.getMessage(), cmd.getVmName());
+                logger.debug(msg);
+                return new Answer(cmd, true, msg);
+            }
             return new Answer(cmd, false, createLogMessageException(e, cmd));
         }
     }
