@@ -6071,6 +6071,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public Map<Long, Boolean> getDiskOfferingSuitabilityForVm(long vmId, List<Long> diskOfferingIds) {
         VMInstanceVO vm = _vmDao.findById(vmId);
+        if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.DEPLOY_VM) != null) {
+            return new HashMap<>();
+        }
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         Pair<Long, Long> clusterAndHost = findClusterAndHostIdForVm(vm, false);
         Long clusterId = clusterAndHost.first();
