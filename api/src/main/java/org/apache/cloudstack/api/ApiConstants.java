@@ -209,6 +209,8 @@ public class ApiConstants {
     public static final String EXTERNAL_UUID = "externaluuid";
     public static final String EXTERNAL_PROVISIONER = "externalprovisioner";
     public static final String EXTERNAL_DETAILS = "externaldetails";
+    public static final String EXTENSION = "extension";
+    public static final String EXTENSION_ID = "extensionid";
     public static final String FENCE = "fence";
     public static final String FETCH_LATEST = "fetchlatest";
     public static final String FILESYSTEM = "filesystem";

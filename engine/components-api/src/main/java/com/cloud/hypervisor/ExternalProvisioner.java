@@ -23,6 +23,8 @@ import com.cloud.agent.api.PostExternalProvisioningAnswer;
 import com.cloud.agent.api.PostExternalProvisioningCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.RunCustomActionAnswer;
+import com.cloud.agent.api.RunCustomActionCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopAnswer;
@@ -57,4 +59,6 @@ public interface ExternalProvisioner extends Adapter {
     PostExternalProvisioningAnswer postsetupInstance(PostExternalProvisioningCommand cmd);
 
     HashMap<String, HostVmStateReportEntry> getHostVmStateReport(Long hostId);
+
+    RunCustomActionAnswer runCustomAction(RunCustomActionCommand cmd);
 }

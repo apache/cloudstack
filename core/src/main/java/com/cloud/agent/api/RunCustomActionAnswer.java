@@ -1,3 +1,4 @@
+//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,24 +15,37 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.host.dao;
+//
 
-import java.util.List;
+package com.cloud.agent.api;
+
+import java.util.HashMap;
 import java.util.Map;
 
-import com.cloud.host.DetailVO;
-import com.cloud.utils.db.GenericDao;
+public class RunCustomActionAnswer extends Answer {
 
-public interface HostDetailsDao extends GenericDao<DetailVO, Long> {
-    Map<String, String> findDetails(long hostId);
+    Map<String, String> runDetails;
 
-    void persist(long hostId, Map<String, String> details);
+    public RunCustomActionAnswer() {
+        super();
+    }
 
-    DetailVO findDetail(long hostId, String name);
+    public RunCustomActionAnswer(RunCustomActionCommand cmd, boolean success, String details) {
+        super(cmd, success, details);
+        runDetails = new HashMap<>();
+        runDetails.put("result", details);
+    }
 
-    void deleteDetails(long hostId);
+    public Map<String, String> getRunDetails() {
+        return runDetails;
+    }
 
-    List<DetailVO> findByName(String name);
+    public void setRunDetails(Map<String, String> runDetails) {
+        this.runDetails = runDetails;
+    }
 
-    List<DetailVO> findByNameAndValue(String name, String value);
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 }
