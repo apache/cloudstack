@@ -338,7 +338,9 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         }
 
         sc.setParameters(VOLUME_ID, volumeId);
-        sc.setParameters(STORE_ROLE, role.toString());
+        if (role != null) {
+            sc.setParameters(STORE_ROLE, role.toString());
+        }
         sc.setParameters(STATE, ObjectInDataStoreStateMachine.State.Ready.name());
         if (storeId != null) {
             sc.setParameters(STORE_ID, new Long[]{storeId});
