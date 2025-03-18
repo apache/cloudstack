@@ -34,9 +34,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -45,6 +42,7 @@ import java.util.List;
 
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.utils.security.DigestHelper;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -78,48 +76,41 @@ public class SystemVmTemplateRegistrationTest {
     @InjectMocks
     SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration();
 
-    private void setupMetadataFile(boolean create) {
+    private void setupMetadataFile(MockedStatic<SystemVmTemplateRegistration> mockedStatic, String content) {
         try {
             String location = "metadata.ini";
-            if (create) {
+            if (StringUtils.isNotBlank(content)) {
                 File tempFile = File.createTempFile("metadata", ".ini");
                 location = tempFile.getAbsolutePath();
+                Files.write(Paths.get(location), content.getBytes());
+                tempFile.deleteOnExit();
             }
-            Field field = SystemVmTemplateRegistration.class.getDeclaredField("METADATA_FILE");
-            Field modifiersField = Field.class.getDeclaredField("modifiers");
-            modifiersField.setAccessible(true);
-            modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-            field.setAccessible(true);
-            field.set(null, location);
+            mockedStatic.when(SystemVmTemplateRegistration::getMetadataFilePath).thenReturn(location);
         } catch (Exception e) {
-            fail(e.getMessage());
-        }
-    }
-
-    private void updateMetadataContent(String content) {
-        try {
-            Files.write(Paths.get(SystemVmTemplateRegistration.METADATA_FILE), content.getBytes());
-        } catch (IOException e) {
             fail(e.getMessage());
         }
     }
 
     @Test
     public void test_parseMetadataFile_noFile() {
-        setupMetadataFile(false);
-        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
-                SystemVmTemplateRegistration::parseMetadataFile);
-        assertTrue(exception.getMessage().contains("Failed to parse systemVM template metadata file"));
+        try (MockedStatic<SystemVmTemplateRegistration> mockedStatic =
+                     Mockito.mockStatic(SystemVmTemplateRegistration.class, Mockito.CALLS_REAL_METHODS)) {
+            setupMetadataFile(mockedStatic, null);
+            CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
+                    SystemVmTemplateRegistration::parseMetadataFile);
+            assertTrue(exception.getMessage().contains("Failed to parse systemVM template metadata file"));
+        }
     }
 
     @Test
     public void test_parseMetadataFile_invalidContent() {
-        setupMetadataFile(true);
-        String metadataFileContent = "abc";
-        updateMetadataContent(metadataFileContent);
-        CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
-                SystemVmTemplateRegistration::parseMetadataFile);
-        assertTrue(exception.getMessage().contains("Failed to parse systemVM template metadata file"));
+        try (MockedStatic<SystemVmTemplateRegistration> mockedStatic =
+                     Mockito.mockStatic(SystemVmTemplateRegistration.class, Mockito.CALLS_REAL_METHODS)) {
+            setupMetadataFile(mockedStatic, "abc");
+            CloudRuntimeException exception = assertThrows(CloudRuntimeException.class,
+                    SystemVmTemplateRegistration::parseMetadataFile);
+            assertTrue(exception.getMessage().contains("Failed to parse systemVM template metadata file"));
+        }
     }
 
     @Test
@@ -144,10 +135,12 @@ public class SystemVmTemplateRegistrationTest {
                 "checksum = abc3\n" +
                 "downloadurl = https://download.cloudstack.org/systemvm/x.y/systemvmtemplate-x.y.z-vmware.ova\n" +
                 "filename = systemvmtemplate-x.y.z-vmware.ova\n";
-        setupMetadataFile(true);
-        updateMetadataContent(metadataFileContent);
-        String version = SystemVmTemplateRegistration.parseMetadataFile();
-        assertEquals("x.y.z.0", version);
+        try (MockedStatic<SystemVmTemplateRegistration> mockedStatic =
+                     Mockito.mockStatic(SystemVmTemplateRegistration.class, Mockito.CALLS_REAL_METHODS)) {
+            setupMetadataFile(mockedStatic, metadataFileContent);
+            String version = SystemVmTemplateRegistration.parseMetadataFile();
+            assertEquals("x.y.z.0", version);
+        }
         assertNull(SystemVmTemplateRegistration.NewTemplateMap.get("xenserver"));
         SystemVmTemplateRegistration.MetadataTemplateDetails templateDetails =
                 SystemVmTemplateRegistration.NewTemplateMap.get("kvm-x86_64");

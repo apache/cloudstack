@@ -97,7 +97,7 @@ public class SystemVmTemplateRegistration {
     private static final String ABSOLUTE_TEMPLATE_PATH = "/usr/share/cloudstack-management/templates/systemvm/";
     private static final String TEMPLATES_PATH = fetchTemplatesPath();
     private static final String METADATA_FILE_NAME = "metadata.ini";
-    protected static final String METADATA_FILE = TEMPLATES_PATH + METADATA_FILE_NAME;
+    private static final String METADATA_FILE = TEMPLATES_PATH + METADATA_FILE_NAME;
     public static final String TEMPORARY_SECONDARY_STORE = "tmp";
     private static final String PARTIAL_TEMPLATE_FOLDER = String.format("/template/tmpl/%d/", Account.ACCOUNT_ID_SYSTEM);
     private static final String storageScriptsDir = "scripts/storage/secondary";
@@ -774,6 +774,10 @@ public class SystemVmTemplateRegistration {
         registerTemplateForNonExistingEntries(hypervisor, arch, name, storeUrlAndId, filePath);
     }
 
+    protected static String getMetadataFilePath() {
+        return METADATA_FILE;
+    }
+
     /**
      * This method parses the metadata file consisting of the systemVM templates information
      * @return the version of the systemvm template that is to be used. This is done in order
@@ -781,9 +785,10 @@ public class SystemVmTemplateRegistration {
      * exist a template corresponding to the current code version.
      */
     public static String parseMetadataFile() {
-        String errMsg = String.format("Failed to parse systemVM template metadata file: %s", METADATA_FILE);
+        String metadataFilePath = getMetadataFilePath();
+        String errMsg = String.format("Failed to parse systemVM template metadata file: %s", metadataFilePath);
         final Ini ini = new Ini();
-        try (FileReader reader = new FileReader(METADATA_FILE)) {
+        try (FileReader reader = new FileReader(metadataFilePath)) {
             ini.load(reader);
         } catch (IOException e) {
             LOGGER.error(errMsg, e);
@@ -798,7 +803,8 @@ public class SystemVmTemplateRegistration {
             String key = getHypervisorArchKey(hypervisorType.first(), hypervisorType.second());
             Ini.Section section = ini.get(key);
             if (section == null) {
-                LOGGER.error("Failed to find details for {} in template metadata file: {}", key, METADATA_FILE);
+                LOGGER.error("Failed to find details for {} in template metadata file: {}",
+                        key, metadataFilePath);
                 continue;
             }
             NewTemplateMap.put(key, new MetadataTemplateDetails(
