@@ -795,6 +795,9 @@ public class EventTypes {
     // Resource Limit
     public static final String EVENT_RESOURCE_LIMIT_UPDATE = "RESOURCE.LIMIT.UPDATE";
 
+    // Custom Action
+    public static final String EVENT_CUSTOM_ACTION = "CUSTOM.ACTION";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking

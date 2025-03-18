@@ -615,8 +615,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         List<String> externalProvisionersListFromConfig = Arrays.stream(HypervisorGuruManagerImpl.ExternalProvisioners.value().split(","))
                 .map(String::trim)
+                .map(String::toLowerCase)
                 .collect(Collectors.toList());
-        if (!externalProvisionersListFromConfig.contains(provisioner)) {
+
+        if (!externalProvisionersListFromConfig.contains(provisioner.toLowerCase())) {
             throw new InvalidParameterValueException(String.format("Provisioner name %s is not valid", provisioner));
         }
     }
@@ -914,7 +916,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     details.putAll(cmdDetails);
                     ClusterVO clusterVO = _clusterDao.findById(clusterId);
                     if (HypervisorType.External.equals(clusterVO.getHypervisorType())) {
-                        details.put(ApiConstants.EXTERNAL_PROVISIONER, params.get(ApiConstants.EXTERNAL_PROVISIONER));
+                        details.put(ApiConstants.EXTERNAL_PROVISIONER, "SimpleExternalProvisioner");
                     }
 
                     if (deferAgentCreation) {

@@ -88,6 +88,21 @@ public class AddHostCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    public AddHostCmd() {
+
+    }
+
+    public AddHostCmd(Long zoneId, Long podId, Long clusterId, String hypervisor, String username, String password, String url, Map externalDetails) {
+        this.zoneId = zoneId;
+        this.podId = podId;
+        this.clusterId = clusterId;
+        this.hypervisor = hypervisor;
+        this.username = username;
+        this.password = password;
+        this.url = url;
+        this.externalDetails = externalDetails;
+    }
+
     public Long getClusterId() {
         return clusterId;
     }

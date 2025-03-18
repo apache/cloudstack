@@ -14,24 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.host.dao;
 
-import java.util.List;
-import java.util.Map;
+package com.cloud.hypervisor.external.provisioner.api;
 
-import com.cloud.host.DetailVO;
-import com.cloud.utils.db.GenericDao;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import org.apache.cloudstack.api.BaseListCmd;
+import org.apache.cloudstack.api.ServerApiException;
 
-public interface HostDetailsDao extends GenericDao<DetailVO, Long> {
-    Map<String, String> findDetails(long hostId);
+public class ListCustomAction extends BaseListCmd {
+    @Override
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
 
-    void persist(long hostId, Map<String, String> details);
-
-    DetailVO findDetail(long hostId, String name);
-
-    void deleteDetails(long hostId);
-
-    List<DetailVO> findByName(String name);
-
-    List<DetailVO> findByNameAndValue(String name, String value);
+    }
 }

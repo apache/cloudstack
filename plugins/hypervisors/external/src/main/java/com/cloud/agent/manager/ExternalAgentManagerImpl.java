@@ -19,24 +19,75 @@
 
 package com.cloud.agent.manager;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.RunCustomActionAnswer;
+import com.cloud.agent.api.RunCustomActionCommand;
+import com.cloud.dc.HostPodVO;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.DiscoveryException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.exception.ResourceInUseException;
+import com.cloud.host.DetailVO;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.ExternalProvisioner;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuruManagerImpl;
+import com.cloud.hypervisor.external.provisioner.api.RegisterExtensionCmd;
+import com.cloud.hypervisor.external.provisioner.api.RunCustomActionCmd;
+import com.cloud.hypervisor.external.provisioner.dao.ExternalOrchestratorDao;
+import com.cloud.hypervisor.external.provisioner.dao.ExternalOrchestratorDetailDao;
+import com.cloud.hypervisor.external.provisioner.dao.ExternalOrchestratorDetailVO;
+import com.cloud.hypervisor.external.provisioner.simpleprovisioner.SimpleExternalProvisioner;
+import com.cloud.hypervisor.external.provisioner.vo.ExternalOrchestrator;
+import com.cloud.hypervisor.external.provisioner.vo.ExternalOrchestratorVO;
 import com.cloud.hypervisor.external.resource.ExternalResourceBase;
+import com.cloud.org.Cluster;
+import com.cloud.resource.ResourceService;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
+import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAgentManager, Configurable {
+public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAgentManager, Configurable, PluggableService {
+
+    @Inject
+    AgentManager agentMgr;
+
+    @Inject
+    ExternalOrchestratorDao externalOrchestratorDao;
+
+    @Inject
+    ExternalOrchestratorDetailDao externalOrchestratorDetailDao;
+
+    @Inject
+    HostPodDao podDao;
+
+    @Inject
+    HostDao hostDao;
+
+    @Inject
+    HostDetailsDao hostDetailsDao;
+
+    @Inject
+    public ResourceService resourceService;
 
     public static final ConfigKey<Boolean> expectMacAddressFromExternalProvisioner = new ConfigKey<>(Boolean.class, "expect.macaddress.from.external.provisioner", "Advanced", "true",
             "Sample external provisioning config, any value that has to be sent", true, ConfigKey.Scope.Cluster, null);
@@ -61,6 +112,14 @@ public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAge
     public boolean start() {
         initializeExternalProvisionerMap();
         return true;
+    }
+
+    @Override
+    public List<Class<?>> getCommands() {
+        List<Class<?>> cmds = new ArrayList<Class<?>>();
+        cmds.add(RunCustomActionCmd.class);
+        cmds.add(RegisterExtensionCmd.class);
+        return cmds;
     }
 
     protected void initializeExternalProvisionerMap() {
@@ -101,6 +160,81 @@ public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAge
     @Override
     public List<ExternalProvisioner> listExternalProvisioners() {
         return externalProvisioners;
+    }
+
+    @Override
+    public RunCustomActionAnswer runCustomAction(RunCustomActionCmd cmd) {
+        String action =  cmd.getActionName();
+        Long extensionId = cmd.getExtensionId();
+        Map<String, String> externalDetails = cmd.getExternalDetails();
+
+        List<DetailVO> hostDetailsByExtension = hostDetailsDao.findByNameAndValue(ApiConstants.EXTENSION_ID, String.valueOf(extensionId));
+        DetailVO hostDetail = hostDetailsByExtension.get(0);
+
+        RunCustomActionAnswer answer;
+        try {
+            RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(action, externalDetails);
+            answer = (RunCustomActionAnswer) agentMgr.send(hostDetail.getHostId(), runCustomActionCommand);
+        } catch (AgentUnavailableException e) {
+            throw new CloudRuntimeException("Unable to run custom action");
+        } catch (OperationTimedoutException e) {
+            throw new CloudRuntimeException("Running custom action timed out, please try again");
+        }
+
+        return answer;
+    }
+
+    @Override
+    public ExternalOrchestrator registerExternalOrchestrator(RegisterExtensionCmd cmd) {
+        ExternalOrchestratorVO extension = new ExternalOrchestratorVO();
+        extension.setName(cmd.getName());
+        extension.setType(cmd.getType());
+        extension.setPodId(cmd.getPodId());
+        ExternalOrchestratorVO savedExtension = externalOrchestratorDao.persist(extension);
+
+        Map<String, String> externalDetails = cmd.getExternalDetails();
+        List<ExternalOrchestratorDetailVO> detailsVOList = new ArrayList<>();
+        if (externalDetails != null && !externalDetails.isEmpty()) {
+            for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
+                detailsVOList.add(new ExternalOrchestratorDetailVO(savedExtension.getId(), entry.getKey(), entry.getValue()));
+            }
+            externalOrchestratorDetailDao.saveDetails(detailsVOList);
+        }
+
+        createRequiredResourcesForExtension(savedExtension, cmd);
+
+        return savedExtension;
+    }
+
+    private void createRequiredResourcesForExtension(ExternalOrchestratorVO extension, RegisterExtensionCmd registerExtensionCmd) {
+        String clusterName = extension.getName() + "-" + extension.getId() + "-cluster";
+        HostPodVO pod = podDao.findById(extension.getPodId());
+        AddClusterCmd clusterCmd = new AddClusterCmd(clusterName, pod.getDataCenterId(), pod.getId(), Cluster.ClusterType.CloudManaged.toString(),
+                Hypervisor.HypervisorType.External.toString(), SimpleExternalProvisioner.class.getSimpleName());
+        List<? extends Cluster> clusters;
+        try {
+            clusters = resourceService.discoverCluster(clusterCmd);
+        } catch (DiscoveryException | ResourceInUseException e) {
+            throw new CloudRuntimeException("Unable to create cluster");
+        }
+
+        Cluster cluster = clusters.get(0);
+
+        String hosturl = "http://" + extension.getName() + "-" + extension.getId() + "-host";
+        AddHostCmd addHostCmd = new AddHostCmd(pod.getDataCenterId(), pod.getId(), cluster.getId(), Hypervisor.HypervisorType.External.toString(),
+                "External", "External", hosturl, registerExtensionCmd.getDetails());
+
+        List<? extends Host> hosts;
+        try {
+            hosts = resourceService.discoverHosts(addHostCmd);
+        } catch (DiscoveryException e) {
+            throw new CloudRuntimeException("Unable to add host");
+        }
+
+        HostVO host = hostDao.findById(hosts.get(0).getId());
+        hostDao.loadDetails(host);
+        host.getDetails().put(ApiConstants.EXTENSION_ID, String.valueOf(extension.getId()));
+        hostDao.saveDetails(host);
     }
 
     public Map<ExternalResourceBase, Map<String, String>> createServerResources(Map<String, Object> params) {

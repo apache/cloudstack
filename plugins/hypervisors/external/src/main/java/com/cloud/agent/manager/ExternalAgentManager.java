@@ -17,7 +17,11 @@
 
 package com.cloud.agent.manager;
 
+import com.cloud.agent.api.RunCustomActionAnswer;
 import com.cloud.hypervisor.ExternalProvisioner;
+import com.cloud.hypervisor.external.provisioner.api.RegisterExtensionCmd;
+import com.cloud.hypervisor.external.provisioner.api.RunCustomActionCmd;
+import com.cloud.hypervisor.external.provisioner.vo.ExternalOrchestrator;
 import com.cloud.hypervisor.external.resource.ExternalResourceBase;
 import com.cloud.utils.component.Manager;
 
@@ -34,4 +38,8 @@ public interface ExternalAgentManager extends Manager {
     ExternalProvisioner getExternalProvisioner(String provisioner);
 
     List<ExternalProvisioner> listExternalProvisioners();
+
+    RunCustomActionAnswer runCustomAction(RunCustomActionCmd cmd);
+
+    ExternalOrchestrator registerExternalOrchestrator(RegisterExtensionCmd cmd);
 }

@@ -33,6 +33,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.external.provisioner.simpleprovisioner.SimpleExternalProvisioner;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.hypervisor.external.resource.ExternalResourceBase;
@@ -165,11 +166,7 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
             params.put("cluster", cluster);
             params.put("guid", uri.toString());
 
-            if (_params.get(ApiConstants.EXTERNAL_PROVISIONER) == null) {
-                logger.error("External provisioner must be defined to discover");
-                return null;
-            }
-            params.put(ApiConstants.EXTERNAL_PROVISIONER, _params.get(ApiConstants.EXTERNAL_PROVISIONER));
+            params.put(ApiConstants.EXTERNAL_PROVISIONER, SimpleExternalProvisioner.class.getSimpleName().toLowerCase());
 
             resources = createAgentResources(params);
             return resources;
