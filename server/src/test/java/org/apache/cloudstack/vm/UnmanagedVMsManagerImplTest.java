@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.offering.DiskOffering;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
@@ -45,6 +46,7 @@ import org.apache.cloudstack.api.command.admin.vm.ImportVmCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListUnmanagedInstancesCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListVmsForImportCmd;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -56,6 +58,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -135,7 +138,6 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
@@ -154,7 +156,6 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -162,7 +163,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UnmanagedVMsManagerImplTest {
@@ -174,10 +174,6 @@ public class UnmanagedVMsManagerImplTest {
     private UserVmManager userVmManager;
     @Mock
     private ClusterDao clusterDao;
-    @Mock
-    private ClusterVO clusterVO;
-    @Mock
-    private UserVmVO userVm;
     @Mock
     private ResourceManager resourceManager;
     @Mock
@@ -219,10 +215,6 @@ public class UnmanagedVMsManagerImplTest {
     @Mock
     private ConfigurationDao configurationDao;
     @Mock
-    private VMSnapshotDao vmSnapshotDao;
-    @Mock
-    private SnapshotDao snapshotDao;
-    @Mock
     private UserVmDao userVmDao;
     @Mock
     private NicDao nicDao;
@@ -241,8 +233,6 @@ public class UnmanagedVMsManagerImplTest {
 
     @Mock
     private VMInstanceVO virtualMachine;
-    @Mock
-    private NicVO nicVO;
     @Mock
     EntityManager entityMgr;
     @Mock
@@ -276,19 +266,7 @@ public class UnmanagedVMsManagerImplTest {
         instance.setCpuSpeed(1000);
         instance.setMemory(1024);
         instance.setOperatingSystem("CentOS 7");
-        List<UnmanagedInstanceTO.Disk> instanceDisks = new ArrayList<>();
-        UnmanagedInstanceTO.Disk instanceDisk = new UnmanagedInstanceTO.Disk();
-        instanceDisk.setDiskId("1000-1");
-        instanceDisk.setPosition(0);
-        instanceDisk.setLabel("DiskLabel");
-        instanceDisk.setController("scsi");
-        instanceDisk.setImagePath("[b6ccf44a1fa13e29b3667b4954fa10ee] TestInstance/ROOT-1.vmdk");
-        instanceDisk.setCapacity(5242880L);
-        instanceDisk.setDatastoreName("Test");
-        instanceDisk.setDatastoreHost("Test");
-        instanceDisk.setDatastorePath("Test");
-        instanceDisk.setDatastoreType("NFS");
-        instanceDisks.add(instanceDisk);
+        List<UnmanagedInstanceTO.Disk> instanceDisks = getDisks();
         instance.setDisks(instanceDisks);
         List<UnmanagedInstanceTO.Nic> instanceNics = new ArrayList<>();
         UnmanagedInstanceTO.Nic instanceNic = new UnmanagedInstanceTO.Nic();
@@ -388,6 +366,24 @@ public class UnmanagedVMsManagerImplTest {
         when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Running);
     }
 
+    @NotNull
+    private static List<UnmanagedInstanceTO.Disk> getDisks() {
+        List<UnmanagedInstanceTO.Disk> instanceDisks = new ArrayList<>();
+        UnmanagedInstanceTO.Disk instanceDisk = new UnmanagedInstanceTO.Disk();
+        instanceDisk.setDiskId("1000-1");
+        instanceDisk.setPosition(0);
+        instanceDisk.setLabel("DiskLabel");
+        instanceDisk.setController("scsi");
+        instanceDisk.setImagePath("[b6ccf44a1fa13e29b3667b4954fa10ee] TestInstance/ROOT-1.vmdk");
+        instanceDisk.setCapacity(5242880L);
+        instanceDisk.setDatastoreName("Test");
+        instanceDisk.setDatastoreHost("Test");
+        instanceDisk.setDatastorePath("Test");
+        instanceDisk.setDatastoreType("NFS");
+        instanceDisks.add(instanceDisk);
+        return instanceDisks;
+    }
+
     @After
     public void tearDown() throws Exception {
         closeable.close();
@@ -425,7 +421,7 @@ public class UnmanagedVMsManagerImplTest {
         ImportUnmanagedInstanceCmd importUnmanageInstanceCmd = Mockito.mock(ImportUnmanagedInstanceCmd.class);
         when(importUnmanageInstanceCmd.getName()).thenReturn("TestInstance");
         when(importUnmanageInstanceCmd.getDomainId()).thenReturn(null);
-        when(volumeApiService.doesTargetStorageSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
+        when(volumeApiService.doesStoragePoolSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
         try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
             unmanagedVMsManager.importUnmanagedInstance(importUnmanageInstanceCmd);
         }
@@ -489,7 +485,7 @@ public class UnmanagedVMsManagerImplTest {
         when(cmd.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM.toString());
         when(cmd.getUsername()).thenReturn("user");
         when(cmd.getPassword()).thenReturn("pass");
-        ListResponse response = unmanagedVMsManager.listVmsForImport(cmd);
+        ListResponse<UnmanagedInstanceResponse> response = unmanagedVMsManager.listVmsForImport(cmd);
         Assert.assertEquals(1, response.getCount().intValue());
     }
 
@@ -586,7 +582,6 @@ public class UnmanagedVMsManagerImplTest {
                                                  boolean selectTemporaryStorage) throws OperationTimedoutException, AgentUnavailableException {
         long clusterId = 1L;
         long zoneId = 1L;
-        long podId = 1L;
         long existingDatacenterId = 1L;
         String vcenterHost = "192.168.1.2";
         String datacenter = "Datacenter";
@@ -704,7 +699,8 @@ public class UnmanagedVMsManagerImplTest {
             when(agentManager.send(Mockito.eq(convertHostId), Mockito.any(CheckConvertInstanceCommand.class))).thenReturn(checkConvertInstanceAnswer);
         }
 
-        when(volumeApiService.doesTargetStorageSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
+        when(volumeApiService.doesStoragePoolSupportDiskOffering(any(StoragePool.class), any(DiskOffering.class))).thenReturn(true);
+        when(volumeApiService.doesStoragePoolSupportDiskOfferingTags(any(StoragePool.class), any())).thenReturn(true);
 
         ConvertInstanceAnswer convertInstanceAnswer = mock(ConvertInstanceAnswer.class);
         ImportConvertedInstanceAnswer convertImportedInstanceAnswer = mock(ImportConvertedInstanceAnswer.class);
@@ -727,16 +723,16 @@ public class UnmanagedVMsManagerImplTest {
     }
 
     @Test
-    public void testImportFromLocalDisk() throws InsufficientServerCapacityException {
-        testImportFromDisk("local");
+    public void importFromLocalDisk() throws InsufficientServerCapacityException {
+        importFromDisk("local");
     }
 
     @Test
-    public void testImportFromsharedStorage() throws InsufficientServerCapacityException {
-        testImportFromDisk("shared");
+    public void importFromsharedStorage() throws InsufficientServerCapacityException {
+        importFromDisk("shared");
     }
 
-    private void testImportFromDisk(String source) throws InsufficientServerCapacityException {
+    private void importFromDisk(String source) throws InsufficientServerCapacityException {
         String vmname = "testVm";
         ImportVmCmd cmd = Mockito.mock(ImportVmCmd.class);
         when(cmd.getHypervisor()).thenReturn(Hypervisor.HypervisorType.KVM.toString());
@@ -770,7 +766,7 @@ public class UnmanagedVMsManagerImplTest {
         storagePools.add(storagePool);
         when(primaryDataStoreDao.findLocalStoragePoolsByHostAndTags(anyLong(), any())).thenReturn(storagePools);
         when(primaryDataStoreDao.findById(anyLong())).thenReturn(storagePool);
-        when(volumeApiService.doesTargetStorageSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
+        when(volumeApiService.doesStoragePoolSupportDiskOffering(any(StoragePool.class), any())).thenReturn(true);
         StoragePoolHostVO storagePoolHost = Mockito.mock(StoragePoolHostVO.class);
         when(storagePoolHostDao.findByPoolHost(anyLong(), anyLong())).thenReturn(storagePoolHost);
         try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {

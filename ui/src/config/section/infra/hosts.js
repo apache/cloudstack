@@ -65,7 +65,7 @@ export default {
       api: 'addHost',
       icon: 'plus-outlined',
       label: 'label.add.host',
-      docHelp: 'adminguide/installguide/configuration.html#adding-a-host',
+      docHelp: 'installguide/configuration.html#adding-a-host',
       listView: true,
       popup: true,
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostAdd.vue')))
@@ -77,6 +77,14 @@ export default {
       dataView: true,
       popup: true,
       component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostUpdate')))
+    },
+    {
+      api: 'updateHostPassword',
+      icon: 'key-outlined',
+      label: 'label.action.change.password',
+      dataView: true,
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ChangeHostPassword.vue')))
     },
     {
       api: 'provisionCertificate',
@@ -147,16 +155,8 @@ export default {
       message: 'label.outofbandmanagement.configure',
       docHelp: 'adminguide/hosts.html#out-of-band-management',
       dataView: true,
-      post: true,
-      args: ['hostid', 'address', 'port', 'username', 'password', 'driver'],
-      mapping: {
-        hostid: {
-          value: (record) => { return record.id }
-        },
-        driver: {
-          options: ['ipmitool', 'nestedcloudstack', 'redfish']
-        }
-      }
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ConfigureHostOOBM')))
     },
     {
       api: 'enableOutOfBandManagementForHost',

@@ -468,7 +468,8 @@ export default {
       return false
     },
     uploadFiles () {
-      if (!this.uploadDirectory.endsWith('/')) {
+      this.uploadDirectory = this.uploadDirectory.trim()
+      if (this.uploadDirectory.length !== 0 && !this.uploadDirectory.endsWith('/')) {
         this.uploadDirectory = this.uploadDirectory + '/'
       }
       var promises = []

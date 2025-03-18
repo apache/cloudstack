@@ -707,7 +707,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     private void handleUnsuccessfulExpungeOperation(List<Command> finalizeExpungeCommands, List<Command> nicExpungeCommands,
                                                     VMInstanceVO vm, Long hostId) throws OperationTimedoutException, AgentUnavailableException {
-        if (CollectionUtils.isNotEmpty(finalizeExpungeCommands) || CollectionUtils.isNotEmpty(nicExpungeCommands) && (hostId != null)) {
+        if ((CollectionUtils.isNotEmpty(finalizeExpungeCommands) || CollectionUtils.isNotEmpty(nicExpungeCommands)) && hostId != null) {
             final Commands cmds = new Commands(Command.OnError.Stop);
             addAllExpungeCommandsFromList(finalizeExpungeCommands, cmds, vm);
             addAllExpungeCommandsFromList(nicExpungeCommands, cmds, vm);
@@ -6071,6 +6071,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public Map<Long, Boolean> getDiskOfferingSuitabilityForVm(long vmId, List<Long> diskOfferingIds) {
         VMInstanceVO vm = _vmDao.findById(vmId);
+        if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.DEPLOY_VM) != null) {
+            return new HashMap<>();
+        }
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
         Pair<Long, Long> clusterAndHost = findClusterAndHostIdForVm(vm, false);
         Long clusterId = clusterAndHost.first();
