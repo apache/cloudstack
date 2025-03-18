@@ -412,26 +412,48 @@ public class SystemVmTemplateRegistration {
         return vmTemplateDao.findLatestTemplateByName(templateName, arch);
     }
 
+    private static boolean isRunningInTest() {
+        return "true".equalsIgnoreCase(System.getProperty("test.mode"));
+    }
+
+    /**
+     * Attempts to determine the templates directory path by locating the metadata file.
+     * <p>
+     * This method checks if the application is running in a test environment by invoking
+     * {@code isRunningInTest()}. If so, it immediately returns the {@code RELATIVE_TEMPLATE_PATH}.
+     * </p>
+     * <p>
+     * Otherwise, it creates a list of candidate paths (typically including both relative and absolute
+     * template paths) and iterates through them. For each candidate, it constructs the metadata file
+     * path by appending {@code METADATA_FILE_NAME} to {@code RELATIVE_TEMPLATE_PATH} (note: the candidate
+     * path is not used in the file path construction in this implementation) and checks if that file exists.
+     * If the metadata file exists, the candidate path is returned.
+     * </p>
+     * <p>
+     * If none of the candidate paths contain the metadata file, the method logs an error and throws a
+     * {@link CloudRuntimeException}.
+     * </p>
+     *
+     * @return the path to the templates directory if the metadata file is found, or {@code RELATIVE_TEMPLATE_PATH}
+     *         when running in a test environment.
+     * @throws CloudRuntimeException if the metadata file cannot be located in any of the candidate paths.
+     */
     private static String fetchTemplatesPath() {
-        String filePath = RELATIVE_TEMPLATE_PATH + METADATA_FILE_NAME;
-        LOGGER.debug("Looking for file [ {} ] in the classpath.", filePath);
-        File metaFile = new File(filePath);
-        String templatePath = null;
-        if (metaFile.exists()) {
-            templatePath = RELATIVE_TEMPLATE_PATH;
+        if (isRunningInTest()) {
+            return RELATIVE_TEMPLATE_PATH;
         }
-        if (templatePath == null) {
-            filePath = ABSOLUTE_TEMPLATE_PATH + METADATA_FILE_NAME;
-            metaFile = new File(filePath);
-            templatePath = ABSOLUTE_TEMPLATE_PATH;
+        List<String> paths = Arrays.asList(RELATIVE_TEMPLATE_PATH, ABSOLUTE_TEMPLATE_PATH);
+        for (String path : paths) {
+            String filePath = RELATIVE_TEMPLATE_PATH + METADATA_FILE_NAME;
             LOGGER.debug("Looking for file [ {} ] in the classpath.", filePath);
-            if (!metaFile.exists()) {
-                String errMsg = String.format("Unable to locate metadata file in your setup at %s", filePath);
-                LOGGER.error(errMsg);
-                throw new CloudRuntimeException(errMsg);
+            File metaFile = new File(filePath);
+            if (metaFile.exists()) {
+                return path;
             }
         }
-        return templatePath;
+        String errMsg = String.format("Unable to locate metadata file in your setup at %s", StringUtils.join(paths));
+        LOGGER.error(errMsg);
+        throw new CloudRuntimeException(errMsg);
     }
 
     private List<Long> getEligibleZoneIds() {

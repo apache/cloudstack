@@ -592,7 +592,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
                 .orElse(null);
     }
 
-    private List<VMTemplateVO> getSortedTemplatesListWithPreferredArch(
+    protected List<VMTemplateVO> getSortedTemplatesListWithPreferredArch(
             Map<Pair<HypervisorType, CPU.CPUArch>, VMTemplateVO> uniqueTemplates, String preferredArch) {
         List<VMTemplateVO> result = new ArrayList<>(uniqueTemplates.values());
         if (StringUtils.isNotBlank(preferredArch)) {

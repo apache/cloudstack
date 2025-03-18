@@ -396,4 +396,39 @@ public class SystemVmTemplateRegistrationTest {
         doReturn(false).when(systemVmTemplateRegistration).isTemplateFileChecksumDifferent(details, mockFile);
         systemVmTemplateRegistration.validateTemplates(list);
     }
+
+    @Test
+    public void testRegisterTemplatesForZone() {
+        long zoneId = 1L;
+        String filePath = "dummyFilePath";
+        String nfsVersion = "nfs3";
+        Pair<String, Long> storeUrlAndId = new Pair<>("nfs://dummy", 100L);
+        doReturn(storeUrlAndId).when(systemVmTemplateRegistration).getNfsStoreInZone(zoneId);
+        doReturn(nfsVersion).when(systemVmTemplateRegistration).getNfsVersion(storeUrlAndId.second());
+        try (MockedStatic<SystemVmTemplateRegistration> mockedStatic = Mockito.mockStatic(
+                SystemVmTemplateRegistration.class)) {
+            List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> hypervisorArchList = new ArrayList<>();
+            Hypervisor.HypervisorType hypervisorType = Hypervisor.HypervisorType.KVM;
+            CPU.CPUArch arch = CPU.CPUArch.getDefault();
+            hypervisorArchList.add(new Pair<>(hypervisorType, arch));
+            doReturn(hypervisorArchList).when(clusterDao).listDistinctHypervisorsArchAcrossClusters(zoneId);
+            SystemVmTemplateRegistration.MetadataTemplateDetails details =
+                    Mockito.mock(SystemVmTemplateRegistration.MetadataTemplateDetails.class);
+            String name = "existing";
+            Mockito.when(details.getArch()).thenReturn(CPU.CPUArch.getDefault());
+            Mockito.when(details.getName()).thenReturn(name);
+            mockedStatic.when(() -> SystemVmTemplateRegistration.getMetadataTemplateDetails(Mockito.any(),
+                    Mockito.any())).thenReturn(details);
+            when(systemVmTemplateRegistration.getRegisteredTemplate(name, arch))
+                    .thenReturn(null);
+            doNothing().when(systemVmTemplateRegistration).registerTemplateForNonExistingEntries(
+                    hypervisorType, arch,
+                    name, storeUrlAndId, filePath);
+            systemVmTemplateRegistration.registerTemplatesForZone(zoneId, filePath);
+            mockedStatic.verify(() -> SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath,
+                    nfsVersion));
+            verify(systemVmTemplateRegistration).registerTemplateForNonExistingEntries(hypervisorType,
+                    arch, name, storeUrlAndId, filePath);
+        }
+    }
 }

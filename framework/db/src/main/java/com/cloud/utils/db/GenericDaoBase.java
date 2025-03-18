@@ -949,7 +949,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     @DB()
-    protected List<T> listBy(SearchCriteria<T> sc, final Filter filter) {
+    public List<T> listBy(SearchCriteria<T> sc, final Filter filter) {
         sc = checkAndSetRemovedIsNull(sc);
         return listIncludingRemovedBy(sc, filter);
     }
