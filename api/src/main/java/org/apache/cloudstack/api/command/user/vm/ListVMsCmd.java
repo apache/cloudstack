@@ -149,8 +149,8 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
     @Parameter(name = ApiConstants.USER_DATA, type = CommandType.BOOLEAN, description = "Whether to return the VMs' user data or not. By default, user data will not be returned.", since = "4.18.0.0")
     private Boolean showUserData;
 
-    @Parameter(name = ApiConstants.ONLY_LEASED_INSTANCES, type = CommandType.BOOLEAN,
-            description = "Whether to return the Leased instances",
+    @Parameter(name = ApiConstants.LEASED, type = CommandType.BOOLEAN,
+            description = "Whether to return only leased instances",
             since = "4.21.0")
     private Boolean onlyLeasedInstances = false;
 
@@ -328,9 +328,7 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
         }
     }
 
-
     public Boolean getOnlyLeasedInstances() {
         return onlyLeasedInstances;
     }
-
 }

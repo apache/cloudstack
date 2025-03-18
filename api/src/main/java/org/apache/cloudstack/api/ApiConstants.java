@@ -524,7 +524,7 @@ public class ApiConstants {
     public static final String INSTANCE_LEASE_DURATION = "leaseduration";
     public static final String INSTANCE_LEASE_EXPIRY_DATE= "leaseexpirydate";
     public static final String INSTANCE_LEASE_EXPIRY_ACTION = "leaseexpiryaction";
-    public static final String ONLY_LEASED_INSTANCES = "onlyleasedinstances";
+    public static final String LEASED = "leased";
 
     public static final String USER_DATA_NAME = "userdataname";
     public static final String USER_DATA_ID = "userdataid";

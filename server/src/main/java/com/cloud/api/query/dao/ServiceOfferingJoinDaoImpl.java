@@ -177,7 +177,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
             }
         }
 
-        if (VMLeaseManagerImpl.InstanceLeaseEnabled.value() && offering.getLeaseDuration() != null && offering.getLeaseDuration() >= -1L) {
+        if (VMLeaseManagerImpl.InstanceLeaseEnabled.value() && offering.getLeaseDuration() != null && offering.getLeaseDuration() > 0L) {
             offeringResponse.setLeaseDuration(offering.getLeaseDuration());
             offeringResponse.setLeaseExpiryAction(offering.getLeaseExpiryAction());
         }

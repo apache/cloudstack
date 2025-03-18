@@ -78,7 +78,7 @@ export default {
         }
         fields.push('zonename')
         const route = useRoute()
-        if (route !== undefined && route.query !== undefined && route.query.onlyleasedinstances !== undefined && route.query.onlyleasedinstances) {
+        if (route !== undefined && route.query !== undefined && route.query.leased !== undefined && route.query.leased) {
           fields.push('leaseduration')
           fields.push('leaseexpirydate')
         }

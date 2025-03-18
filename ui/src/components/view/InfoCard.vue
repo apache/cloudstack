@@ -226,7 +226,7 @@
             </span>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="'leaseduration' in resource && resource.leaseduration > -1">
+        <div class="resource-detail-item" v-if="'leaseduration' in resource && resource.leaseduration !== undefined">
           <div class="resource-detail-item__label">{{ $t('label.leaseduration') }}</div>
           <div class="resource-detail-item__details">
             <font-awesome-icon

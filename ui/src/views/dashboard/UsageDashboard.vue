@@ -64,7 +64,7 @@
             </router-link>
           </a-col>
           <a-col :span="12" v-if="'listVirtualMachines' in $store.getters.apis && isLeaseFeatureEnabled">
-            <router-link :to="{ path: '/vm', query: {  onlyleasedinstances: true } }">
+            <router-link :to="{ path: '/vm', query: { leased: true } }">
               <a-statistic
                 :title="$t('label.leasedinstances')"
                 :value="data.leasedinstances"
@@ -567,7 +567,7 @@ export default {
         this.data.stopped = json?.listvirtualmachinesresponse?.count
       })
       if (this.isLeaseFeatureEnabled) {
-        api('listVirtualMachines', { onlyleasedinstances: true, listall: true, details: 'min', page: 1, pagesize: 1 }).then(json => {
+        api('listVirtualMachines', { leased: true, listall: true, details: 'min', page: 1, pagesize: 1 }).then(json => {
           this.loading = false
           this.data.leasedinstances = json?.listvirtualmachinesresponse?.count
           if (!this.data.leasedinstances) {

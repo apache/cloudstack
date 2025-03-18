@@ -2874,7 +2874,7 @@ export default {
       }
 
       if (this.isLeaseFeatureEnabled) {
-        if (offering && offering.leaseduration > -1) {
+        if (offering && offering.leaseduration > 0) {
           this.showLeaseOptions = true
         } else {
           this.showLeaseOptions = false

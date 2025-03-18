@@ -133,8 +133,14 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
 
         leaseOverInstanceSearch = createSearchBuilder();
         leaseOverInstanceSearch.selectFields(leaseOverInstanceSearch.entity().getId(), leaseOverInstanceSearch.entity().getState(),
-                leaseOverInstanceSearch.entity().isDeleteProtection(), leaseOverInstanceSearch.entity().getUuid());
+                leaseOverInstanceSearch.entity().isDeleteProtection(), leaseOverInstanceSearch.entity().getUuid(),
+                leaseOverInstanceSearch.entity().getLeaseExpiryAction());
         leaseOverInstanceSearch.and("leaseExpired", leaseOverInstanceSearch.entity().getLeaseExpiryDate(), Op.LT);
+        leaseOverInstanceSearch.and("leaseExpiryActions", leaseOverInstanceSearch.entity().getLeaseExpiryAction(), Op.IN);
+        leaseOverInstanceSearch.and("instanceState", leaseOverInstanceSearch.entity().getState(), Op.NOTIN);
+        leaseOverInstanceSearch.andNot().op("stoppedInstanceState", leaseOverInstanceSearch.entity().getState(), Op.EQ);
+        leaseOverInstanceSearch.and("stopLeaseAction", leaseOverInstanceSearch.entity().getLeaseExpiryAction(), Op.EQ);
+        leaseOverInstanceSearch.cp();
         leaseOverInstanceSearch.done();
 
         leaseExpiringInstanceSearch = createSearchBuilder();
@@ -752,10 +758,22 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         return customSearch(sc, null);
     }
 
+    /**
+     * This method fetches instances where
+     * 1. lease has expired
+     * 2. leaseExpiryActions are valid, either STOP or DESTROY
+     * 3. instance State is eligible for expiry action
+     * 4. excludes instances in Stopped state with STOP expiry action
+     * @return list of instances, expiry action can be executed on
+     */
     @Override
-    public List<UserVmJoinVO> listLeaseExpiredInstances() {
+    public List<UserVmJoinVO> listEligibleInstancesWithExpiredLease() {
         SearchCriteria<UserVmJoinVO> sc = leaseOverInstanceSearch.create();
         sc.setParameters("leaseExpired", new Date());
+        sc.setParameters("leaseExpiryActions", "STOP", "DESTROY");
+        sc.setParameters("instanceState", State.Destroyed, State.Expunging, State.Error, State.Unknown, State.Migrating);
+        sc.setParameters("stoppedInstanceState", State.Stopped);
+        sc.setParameters("stopLeaseAction", "STOP");
         return listBy(sc);
     }
 

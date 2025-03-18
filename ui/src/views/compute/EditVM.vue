@@ -195,7 +195,7 @@ export default {
         opts: []
       },
       isLeaseFeatureEnabled: this.$store.getters.features.instanceleaseenabled,
-      showLeaseOptions: this.isLeaseFeatureEnabled === false ? false : this.resource.leaseduration > -1,
+      showLeaseOptions: this.isLeaseFeatureEnabled === false ? false : this.resource.leaseduration !== undefined,
       leaseduration: this.resource.leaseduration === undefined ? 90 : this.resource.leaseduration,
       leaseexpiryaction: this.resource.leaseexpiryaction === undefined ? 'STOP' : this.resource.leaseexpiryaction,
       expiryActions: ['STOP', 'DESTROY']

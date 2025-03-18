@@ -100,8 +100,8 @@
               </a-tooltip>
             </span>
             <font-awesome-icon
-              v-if="record.leaseduration !== undefined && record.leaseduration > -1"
-              :icon="['fa-solid', 'fa-bomb']"
+              v-if="record.leaseduration !== undefined"
+              :icon="['fa-solid', 'fa-clock']"
               class="anticon leaseduration"
               :style="{
                 color: $store.getters.darkMode ? 'rgba(255, 255, 255, 0.65)' : '#888',

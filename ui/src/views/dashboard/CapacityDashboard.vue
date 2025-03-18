@@ -167,7 +167,7 @@
             </router-link>
           </a-col>
           <a-col :span="12" v-if="isLeaseFeatureEnabled">
-            <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1', onlyleasedinstances: true } }">
+            <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1', leased: true } }">
               <a-statistic
                 :title="$t('label.leasedinstances')"
                 :value="data.leasedinstances"
@@ -572,7 +572,7 @@ export default {
         }
       })
       if (this.isLeaseFeatureEnabled) {
-        api('listVirtualMachines', { zoneid: zone.id, onlyleasedinstances: true, listall: true, projectid: '-1', details: 'min', page: 1, pagesize: 1 }).then(json => {
+        api('listVirtualMachines', { zoneid: zone.id, leased: true, listall: true, projectid: '-1', details: 'min', page: 1, pagesize: 1 }).then(json => {
           this.loading = false
           this.data.leasedinstances = json?.listvirtualmachinesresponse?.count
           if (!this.data.leasedinstances) {

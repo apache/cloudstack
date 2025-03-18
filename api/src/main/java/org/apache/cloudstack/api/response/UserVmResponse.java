@@ -396,7 +396,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     private String vmType;
 
     @SerializedName(ApiConstants.INSTANCE_LEASE_DURATION)
-    @Param(description = "Instance lease duration", since = "4.21.0")
+    @Param(description = "Instance lease duration in days", since = "4.21.0")
     private Long leaseDuration;
 
     @SerializedName(ApiConstants.INSTANCE_LEASE_EXPIRY_DATE)

@@ -159,7 +159,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
     private Long leaseDuration;
 
     @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, type = CommandType.STRING, since = "4.21.0",
-            description = "Lease expiry action")
+            description = "Lease expiry action, valid values are STOP and DESTROY")
     private String leaseExpiryAction;
 
     /////////////////////////////////////////////////////

@@ -2649,7 +2649,7 @@
 "label.isLeaseFeatureEnabled": "Enable Lease",
 "label.instance.lease": "Instance lease",
 "label.instance.lease.placeholder": "Lease duration in days ( > 0)",
-"label.leaseduration": "Lease duration",
+"label.leaseduration": "Lease duration (in days)",
 "label.leaseexpirydate": "Lease expiry date",
 "label.leaseexpiryaction": "Lease expiry action",
 "label.remainingdays": "Lease",

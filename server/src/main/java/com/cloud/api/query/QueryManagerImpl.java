@@ -1329,6 +1329,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
+        boolean requestingOnlyLeasedInstances = cmd.getOnlyLeasedInstances() != null && cmd.getOnlyLeasedInstances();
+        if (!VMLeaseManagerImpl.InstanceLeaseEnabled.value() && requestingOnlyLeasedInstances) {
+            throw new InvalidParameterValueException("Enable lease feature to use leased=true");
+        }
+
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<>(cmd.getDomainId(), cmd.isRecursive(), null);
         accountMgr.buildACLSearchParameters(caller, id, cmd.getAccountName(), cmd.getProjectId(), permittedAccounts, domainIdRecursiveListProject, listAll, false);
         Long domainId = domainIdRecursiveListProject.first();
@@ -1478,14 +1483,11 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             userVmSearchBuilder.join("tags", resourceTagSearch, resourceTagSearch.entity().getResourceId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
-        if (cmd.getOnlyLeasedInstances() != null && cmd.getOnlyLeasedInstances()) {
-            if (VMLeaseManagerImpl.InstanceLeaseEnabled.value()) {
-                SearchBuilder<UserVmDetailVO> leasedInstancesSearch = userVmDetailsDao.createSearchBuilder();
-                leasedInstancesSearch.and(leasedInstancesSearch.entity().getName(), SearchCriteria.Op.EQ).values(VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
-                userVmSearchBuilder.join("userVmToLeased", leasedInstancesSearch, leasedInstancesSearch.entity().getResourceId(), userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
-            } else {
-                logger.warn("Lease feature is not enabled, onlyleasedinstances will be considered as false");
-            }
+        if (requestingOnlyLeasedInstances) {
+            SearchBuilder<UserVmDetailVO> leasedInstancesSearch = userVmDetailsDao.createSearchBuilder();
+            leasedInstancesSearch.and(leasedInstancesSearch.entity().getName(), SearchCriteria.Op.EQ).values(VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
+            userVmSearchBuilder.join("userVmToLeased", leasedInstancesSearch, leasedInstancesSearch.entity().getResourceId(),
+                    userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
         if (keyPairName != null) {

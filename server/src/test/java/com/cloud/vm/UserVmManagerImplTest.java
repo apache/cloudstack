@@ -479,6 +479,7 @@ public class UserVmManagerImplTest {
         Mockito.when(userVmVoMock.isDisplay()).thenReturn(true);
         Mockito.doNothing().when(userVmManagerImpl).updateDisplayVmFlag(false, vmId, userVmVoMock);
         Mockito.when(updateVmCommand.getUserdataId()).thenReturn(null);
+        Mockito.when(updateVmCommand.getLeaseDuration()).thenReturn(null);
         userVmManagerImpl.updateVirtualMachine(updateVmCommand);
         verifyMethodsThatAreAlwaysExecuted();
 
@@ -3128,7 +3129,7 @@ public class UserVmManagerImplTest {
         }
     }
 
-    @Test(expected = InvalidParameterValueException.class)
+    @Test
     public void testValidateLeasePropertiesInvalidDuration() {
         ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
         VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
@@ -3158,6 +3159,14 @@ public class UserVmManagerImplTest {
         VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
         Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
         userVmManagerImpl.validateLeaseProperties(-1L, null);
+    }
+
+    @Test
+    public void testValidateLeasePropertiesZeroDayDuration() {
+        ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
+        VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
+        Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
+        userVmManagerImpl.validateLeaseProperties(0L, "STOP");
     }
 
     @Test(expected = InvalidParameterValueException.class)

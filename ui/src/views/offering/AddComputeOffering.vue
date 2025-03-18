@@ -367,7 +367,7 @@
             </a-form-item>
           </a-col>
           <a-col :md="12" :lg="12">
-            <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction"  v-if="form.leaseduration > -1">
+            <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction"  v-if="form.leaseduration > 0">
               <template #label>
                 <tooltip-label :title="$t('label.leaseexpiryaction')" />
               </template>

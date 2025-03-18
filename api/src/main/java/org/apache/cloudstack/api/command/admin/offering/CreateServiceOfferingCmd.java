@@ -257,7 +257,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     private Long leaseDuration;
 
     @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, type = CommandType.STRING, since = "4.21.0",
-            description = "Action to be taken on lease expiration, valid values are STOP and DESTROY")
+            description = "Lease expiry action, valid values are STOP and DESTROY")
     private String leaseExpiryAction;
 
     /////////////////////////////////////////////////////

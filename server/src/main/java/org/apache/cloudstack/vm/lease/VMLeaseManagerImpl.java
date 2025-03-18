@@ -30,7 +30,6 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.GlobalLock;
-import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
@@ -45,7 +44,6 @@ import org.apache.commons.lang3.time.DateUtils;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -54,12 +52,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import static com.cloud.vm.VirtualMachine.State.Destroyed;
-import static com.cloud.vm.VirtualMachine.State.Expunging;
-import static com.cloud.vm.VirtualMachine.State.Unknown;
-
 public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, Configurable {
-
 
     public static ConfigKey<Boolean> InstanceLeaseEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
             "instance.lease.enabled", "false", "Indicates whether to enable the Instance Lease feature",
@@ -187,24 +180,22 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
 
     protected void reallyRun() {
         // fetch user_instances having leaseDuration configured and has expired
-        List<UserVmJoinVO> leaseExpiredInstances = userVmJoinDao.listLeaseExpiredInstances();
+        List<UserVmJoinVO> leaseExpiredInstances = userVmJoinDao.listEligibleInstancesWithExpiredLease();
         List<Long> actionableInstanceIds = new ArrayList<>();
-        // iterate over and skip ones with delete protection
         for (UserVmJoinVO userVmVO : leaseExpiredInstances) {
-            if (userVmVO.isDeleteProtection() != null && userVmVO.isDeleteProtection()) {
-                logger.debug("Ignoring instance with id: {} as deleteProtection is enabled", userVmVO.getUuid());
+            // skip instance with delete protection for DESTROY action
+            if (ExpiryAction.DESTROY.name().equals(userVmVO.getLeaseExpiryAction())
+                    && userVmVO.isDeleteProtection() != null && userVmVO.isDeleteProtection()) {
+                logger.debug("Ignoring DESTROY action on instance with id: {} as deleteProtection is enabled", userVmVO.getUuid());
                 continue;
             }
-            // state check, include instances not yet stopped or destroyed
-            if (!Arrays.asList(Destroyed, Expunging, Unknown, VirtualMachine.State.Error).contains(userVmVO.getState())) {
-                actionableInstanceIds.add(userVmVO.getId());
-            }
+            actionableInstanceIds.add(userVmVO.getId());
         }
-
         if (actionableInstanceIds.isEmpty()) {
             logger.debug("Lease scheduler found no instance to work upon");
             return;
         }
+
         List<Long> submittedJobIds = new ArrayList<>();
         List<Long> failedToSubmitInstanceIds = new ArrayList<>();
         for (Long instanceId : actionableInstanceIds) {

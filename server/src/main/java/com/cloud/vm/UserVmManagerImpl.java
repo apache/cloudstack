@@ -362,9 +362,8 @@ import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.text.SimpleDateFormat;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -378,6 +377,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -6280,14 +6280,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         boolean bothValuesSet = true;
         if (leaseDuration != null) {
-            if (leaseDuration == -1) {   // special condition used to disable lease for instance
+            if (leaseDuration < 1) {   // special condition to disable lease for instance
                 return;
             }
-            // both params have value
-            if (leaseDuration < -1) {
-                throw new InvalidParameterValueException("Invalid value given for leaseduration, lesser than -1 is not supported ");
-            }
-
             if (StringUtils.isEmpty(leaseExpiryAction)) {
                 bothValuesSet = false;
             }
@@ -6307,9 +6302,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     /**
-     * if feature is enabled
+     * if lease feature is enabled
      * use leaseDuration and leaseExpiryAction passed in the cmd
-     * if passed leaseDuration is -1, get leaseDuration from service_offering
+     * get leaseDuration from service_offering if leaseDuration is not passed
      * @param vm
      * @param leaseDuration
      * @param leaseExpiryAction
@@ -6323,8 +6318,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (leaseDuration == null) {
             leaseDuration = serviceOfferingJoinVO.getLeaseDuration();
         }
-        // if leaseDuration is null or -1, instance will never expire, nothing to be done
-        if  (leaseDuration == null || leaseDuration == -1) {
+        // if leaseDuration is null or < 1, instance will never expire, nothing to be done
+        if  (leaseDuration == null || leaseDuration < 1) {
             return;
         }
 
@@ -6355,7 +6350,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return;
         }
 
-        if (leaseDuration == -1L) {
+        if (leaseDuration < 1L) {
             userVmDetailsDao.removeDetail(instance.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
             userVmDetailsDao.removeDetail(instance.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION);
             return;
@@ -6366,13 +6361,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void addLeaseDetailsForInstance(UserVm vm, Long leaseDuration, String leaseExpiryAction) {
-        LocalDate today = LocalDate.now();
-        Date leaseExpiryDate = Date.from(today.plusDays(leaseDuration).atTime(LocalTime.MAX).atZone(ZoneId.systemDefault()).toInstant());
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime leaseExpiryDateTime = now.plusDays(leaseDuration);
+        Date leaseExpiryDate = Date.from(leaseExpiryDateTime.atZone(ZoneOffset.UTC).toInstant());
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
         String formattedLeaseExpiryDate = sdf.format(leaseExpiryDate);
         userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE, formattedLeaseExpiryDate, false);
         userVmDetailsDao.addDetail(vm.getId(),  VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION, leaseExpiryAction, false);
-
         logger.debug("Instance lease for instanceId: {} is configured to expire on: {} with action: {}", vm.getUuid(), formattedLeaseExpiryDate, leaseExpiryAction);
     }
 
