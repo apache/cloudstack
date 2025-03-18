@@ -661,16 +661,27 @@ export default {
       return ['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype)
     },
     fetchCksTemplates () {
-      const params = {
-        templatefilter: this.isAdminOrDomainAdmin() ? 'all' : 'self',
-        forcks: true
+      var filters = []
+      if (this.isAdminOrDomainAdmin()) {
+        filters = ['all']
+      } else {
+        filters = ['self', 'featured', 'community']
       }
-      this.templateLoading = true
-      api('listTemplates', params).then(json => {
-        this.templates = json?.listtemplatesresponse?.template || []
-      }).finally(() => {
-        this.templateLoading = false
-      })
+      var ckstemplates = []
+      for (const filtername of filters) {
+        const params = {
+          templatefilter: filtername,
+          forcks: true
+        }
+        this.templateLoading = true
+        api('listTemplates', params).then(json => {
+          var templates = json?.listtemplatesresponse?.template || []
+          ckstemplates.push(...templates)
+        }).finally(() => {
+          this.templateLoading = false
+        })
+      }
+      this.templates = ckstemplates
     },
     fetchNetworkData () {
       const params = {}
