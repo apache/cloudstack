@@ -14,24 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.host.dao;
+package com.cloud.hypervisor.external.provisioner.dao;
 
-import java.util.List;
-import java.util.Map;
-
-import com.cloud.host.DetailVO;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
-public interface HostDetailsDao extends GenericDao<DetailVO, Long> {
-    Map<String, String> findDetails(long hostId);
-
-    void persist(long hostId, Map<String, String> details);
-
-    DetailVO findDetail(long hostId, String name);
-
-    void deleteDetails(long hostId);
-
-    List<DetailVO> findByName(String name);
-
-    List<DetailVO> findByNameAndValue(String name, String value);
+public interface ExternalOrchestratorDetailDao extends GenericDao<ExternalOrchestratorDetailVO, Long>, ResourceDetailsDao<ExternalOrchestratorDetailVO> {
 }

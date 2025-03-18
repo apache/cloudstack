@@ -14,24 +14,31 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.host.dao;
 
-import java.util.List;
+package org.apache.cloudstack.extension;
+
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+
 import java.util.Map;
 
-import com.cloud.host.DetailVO;
-import com.cloud.utils.db.GenericDao;
+public class CustomActionResponse extends BaseResponse {
 
-public interface HostDetailsDao extends GenericDao<DetailVO, Long> {
-    Map<String, String> findDetails(long hostId);
+    @SerializedName(ApiConstants.ACTION)
+    @Param(description = "name of the action")
+    private String actionName;
 
-    void persist(long hostId, Map<String, String> details);
+    @SerializedName(ApiConstants.DETAILS)
+    @Param(description = "details of the custom action run")
+    private Map details;
 
-    DetailVO findDetail(long hostId, String name);
+    public void setDetails(Map details) {
+        this.details = details;
+    }
 
-    void deleteDetails(long hostId);
-
-    List<DetailVO> findByName(String name);
-
-    List<DetailVO> findByNameAndValue(String name, String value);
+    public void setActionName(String name) {
+        this.actionName = name;
+    }
 }

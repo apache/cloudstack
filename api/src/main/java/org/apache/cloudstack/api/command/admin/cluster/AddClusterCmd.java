@@ -121,6 +121,19 @@ public class AddClusterCmd extends BaseCmd {
     private String ovm3cluster;
     @Parameter(name = ApiConstants.OVM3_VIP, type = CommandType.STRING, required = false,  description = "Ovm3 vip to use for pool (and cluster)")
     private String ovm3vip;
+
+    public AddClusterCmd() {
+    }
+
+    public AddClusterCmd(String name, Long zoneId, Long podId, String clusterType, String hypervisor, String externalProvisioner) {
+        this.clusterName = name;
+        this.zoneId = zoneId;
+        this.podId = podId;
+        this.clusterType = clusterType;
+        this.hypervisor = hypervisor;
+        this.provisioner = externalProvisioner;
+    }
+
     public String getOvm3Pool() {
          return ovm3pool;
     }

@@ -37,6 +37,8 @@ import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
+import com.cloud.agent.api.RunCustomActionAnswer;
+import com.cloud.agent.api.RunCustomActionCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupCommand;
@@ -155,7 +157,9 @@ public class ExternalResourceBase implements ServerResource {
                 return execute((PingTestCommand) cmd);
             } else if (cmd instanceof MaintainCommand) {
                 return execute((MaintainCommand) cmd);
-            }  else {
+            } else if (cmd instanceof RunCustomActionCommand) {
+                return execute((RunCustomActionCommand) cmd);
+            } else {
                 return null;
             }
         } catch (IllegalArgumentException e) {
@@ -169,6 +173,10 @@ public class ExternalResourceBase implements ServerResource {
 
     private MaintainAnswer execute(MaintainCommand cmd) {
         return new MaintainAnswer(cmd, false);
+    }
+
+    public RunCustomActionAnswer execute(RunCustomActionCommand cmd) {
+        return externalProvisioner.runCustomAction(cmd);
     }
 
     public StopAnswer execute(StopCommand cmd) {
@@ -257,6 +265,8 @@ public class ExternalResourceBase implements ServerResource {
         _cluster = (String) params.get("cluster");
         _guid = (String) params.get("guid");
         _url = (String) params.get("guid");
+
+
 
         return true;
     }

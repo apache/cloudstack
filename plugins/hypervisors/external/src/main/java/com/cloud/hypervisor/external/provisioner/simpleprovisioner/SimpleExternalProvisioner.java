@@ -26,6 +26,8 @@ import com.cloud.agent.api.PostExternalProvisioningAnswer;
 import com.cloud.agent.api.PostExternalProvisioningCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.RunCustomActionAnswer;
+import com.cloud.agent.api.RunCustomActionCommand;
 import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopAnswer;
@@ -73,6 +75,7 @@ public class SimpleExternalProvisioner extends AdapterBase implements ExternalPr
 
     String ExternalProvisioningConfig = "external.provisioning.config";
 
+    public static final String EXTENSION_SCRIPT_PATH = "scripts/vm/hypervisor/external/{}/provisioner.sh";
     public static final String EXTERNAL_PROVISIONER_SCRIPT = "scripts/vm/hypervisor/external/simpleExternalProvisioner/provisioner.sh";
     public static final String EXTERNAL_POWER_OPERATIONS_SCRIPT = "scripts/vm/hypervisor/external/simpleExternalProvisioner/powerOperations.sh";
 
@@ -115,7 +118,9 @@ public class SimpleExternalProvisioner extends AdapterBase implements ExternalPr
             modifiedDetails.put(ExternalProvisioningConfig, SampleExternalConfig.valueIn(clusterId));
         }
 
-        modifiedDetails.put(VmDetailConstants.CLOUDSTACK_VM_DETAILS, vmTO);
+        if (vmTO != null) {
+            modifiedDetails.put(VmDetailConstants.CLOUDSTACK_VM_DETAILS, vmTO);
+        }
 
         logger.debug(String.format("Using these access details for VM instance operation: %s", accessDetails));
 
@@ -249,6 +254,32 @@ public class SimpleExternalProvisioner extends AdapterBase implements ExternalPr
         }
 
         return vmStates;
+    }
+
+    @Override
+    public RunCustomActionAnswer runCustomAction(RunCustomActionCommand cmd) {
+        return runCustomActionOnExternalSystem(cmd);
+    }
+
+    private RunCustomActionAnswer runCustomActionOnExternalSystem(RunCustomActionCommand cmd) {
+        logger.debug(String.format("Executing custom action '%s' in the external provisioner", cmd.getActionName()));
+
+        String actionName = cmd.getActionName();
+        Map<String, String> externalDetails = cmd.getExternalDetails();
+        Long clusterId = cmd.getClusterId();
+
+        logger.debug(String.format("Executing custom action '%s' in the external system", actionName));
+
+        String prepareExternalScript = Script.findScript("", EXTERNAL_PROVISIONER_SCRIPT);
+        Map<String, String> accessDetails = loadAccessDetails(externalDetails, clusterId, null);
+
+        Pair<Boolean, String> result = runCustomActionOnExternalSystem(prepareExternalScript, actionName, accessDetails, cmd.getWait());
+        return new RunCustomActionAnswer(cmd, result.first(), result.second());
+    }
+
+    public Pair<Boolean, String> runCustomActionOnExternalSystem(String filename, String actionName, Map<String, String> accessDetails, int wait) {
+        return executeExternalCommand(filename, actionName, accessDetails, wait,
+                String.format("Failed to execute custom action '%s' on external system", actionName));
     }
 
     private VirtualMachine.PowerState getVMpowerState(UserVmVO uservm) {
