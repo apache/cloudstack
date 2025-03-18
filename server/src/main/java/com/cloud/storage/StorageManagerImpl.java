@@ -4336,7 +4336,9 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if(cmd.getName() != null ) {
             objectStoreVO.setName(cmd.getName());
         }
-        objectStoreVO.setTotalSize(cmd.getSize() * ResourceType.bytesToGiB);
+        if (cmd.getSize() != null) {
+            objectStoreVO.setTotalSize(cmd.getSize() * ResourceType.bytesToGiB);
+        }
         _objectStoreDao.update(id, objectStoreVO);
         logger.debug("Successfully updated object store: {}", objectStoreVO);
         return objectStoreVO;
