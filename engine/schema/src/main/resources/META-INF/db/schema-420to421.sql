@@ -242,3 +242,6 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'manag
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'management-server', 'vmware.hung.wokervm.timeout', '7200', 'Worker VM timeout in seconds');
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Alert", 'DEFAULT', 'management-server', "alert.smtp.connectiontimeout", "30000", "Socket connection timeout value in milliseconds. -1 for infinite timeout.");
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ("Alert", 'DEFAULT', 'management-server', "alert.smtp.timeout", "30000", "Socket I/O timeout value in milliseconds. -1 for infinite timeout.");
+
+-- Update the value of user.vm.readonly.details record in the configuration table to "" if it is NULL
+UPDATE `cloud`.`configuration` SET value = '' WHERE name = 'user.vm.readonly.details' AND value IS NULL;
