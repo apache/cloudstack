@@ -20,10 +20,6 @@ import json
 import os
 import tempfile
 import time
-import unittest
-import urllib.error
-import urllib.parse
-import urllib.request
 
 from datetime import datetime
 
@@ -161,21 +157,12 @@ class TestEventsResource(cloudstackTestCase):
         virtual_machine.restore(self.apiclient)
         time.sleep(self.services["sleep"])
         virtual_machine.detach_volume(self.apiclient, volume)
-        volume.delete(self.apiclient)
-        self.cleanup.remove(volume)
         ts = str(time.time())
         virtual_machine.update(self.apiclient, displayname=ts)
-        virtual_machine.delete(self.apiclient)
-        self.cleanup.remove(virtual_machine)
         account_network.update(self.apiclient, name=account_network.name + ts)
-        account_network.delete(self.apiclient)
-        self.cleanup.remove(account_network)
+        virtual_machine.start(self.apiclient)
         account.update(self.apiclient, newname=account.name + ts)
         account.disable(self.apiclient)
-        account.delete(self.apiclient)
-        self.cleanup.remove(account)
-        domain1.delete(self.apiclient)
-        self.cleanup.remove(domain1)
 
         cmd = listEvents.listEventsCmd()
         cmd.startdate = start_time

@@ -733,6 +733,11 @@ class TestNetworkPermissions(cloudstackTestCase):
         self.exec_command("self.user_apiclient", command, expected=False)
         self.exec_command("self.otheruser_apiclient", command, expected=True)
 
+        #22. Start VM before destroying, to recreate ROOT volume that was deleted as part of restore operation
+        command = """self.virtual_machine.start({apiclient})"""
+        self.exec_command("self.user_apiclient", command, expected=False)
+        self.exec_command("self.otheruser_apiclient", command, expected=True)
+
         # 22. Destroy vm2, should succeed by vm owner
         command = """self.virtual_machine.delete({apiclient}, expunge=False)"""
         self.exec_command("self.user_apiclient", command, expected=False)
