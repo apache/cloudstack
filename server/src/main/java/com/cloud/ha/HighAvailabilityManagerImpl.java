@@ -1027,6 +1027,13 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
 
         @Override
         public void run() {
+            try {
+                synchronized (this) {
+                    wait(_timeToSleep);
+                }
+            } catch (final InterruptedException e) {
+                s_logger.info("Interrupted");
+            }
             s_logger.info("Starting work");
             while (!_stopped) {
                 _managedContext.runWithContext(new Runnable() {
