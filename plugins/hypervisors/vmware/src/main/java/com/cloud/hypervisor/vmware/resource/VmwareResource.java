@@ -3226,7 +3226,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     return;
                 }
             }
-            logger.debug("Adding Virtual TPM device");
+            logger.debug(String.format("Adding Virtual TPM device to the VM %s", vmMo.getVmName()));
             addVirtualTPMDevice(vmConfigSpec);
         } else if (virtualTPMEnabled == null) {
             logger.debug(String.format("Virtual TPM device is neither enabled nor disabled for VM %s, skipping", vmMo.getVmName()));
