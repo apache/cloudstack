@@ -35,8 +35,6 @@ public interface EndPointSelector {
 
     EndPoint select(DataObject object, boolean encryptionSupportRequired);
 
-    EndPoint getEndPointFromHostId(Long hostId);
-
     EndPoint select(DataObject object, StorageAction action);
 
     EndPoint select(DataObject object, StorageAction action, boolean encryptionSupportRequired);

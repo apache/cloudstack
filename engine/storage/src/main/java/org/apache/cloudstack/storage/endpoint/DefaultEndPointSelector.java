@@ -321,7 +321,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
         return select(srcData, destData, encryptionRequired);
     }
 
-    public EndPoint findEndpointForPrimaryStorage(DataStore store) {
+    protected EndPoint findEndpointForPrimaryStorage(DataStore store) {
         return findEndPointInScope(store.getScope(), findOneHostOnPrimaryStorage, store.getId());
     }
 
@@ -449,7 +449,6 @@ public class DefaultEndPointSelector implements EndPointSelector {
         }
     }
 
-    @Override
     public EndPoint getEndPointFromHostId(Long hostId) {
         HostVO host = hostDao.findById(hostId);
         return RemoteHostEndPoint.getHypervisorHostEndPoint(host);
