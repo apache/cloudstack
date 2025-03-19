@@ -69,7 +69,7 @@ public interface ResourceManager extends ResourceService, Configurable {
             CPU.CPUArch.getDefault().getType(),
             "Preferred architecture for the system VMs including virtual routers",
             true,
-            ConfigKey.Scope.Global, null, null, null, null, null,
+            ConfigKey.Scope.Zone, null, null, null, null, null,
             ConfigKey.Kind.Select,
             "," + CPU.CPUArch.getTypesAsCSV());
 
