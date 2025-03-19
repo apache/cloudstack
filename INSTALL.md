@@ -98,11 +98,11 @@ field should be left blank which is defaulted to the ROOT domain.
 ## To bring up CloudStack UI
  $ cd /path/to/cloudstack/ui
 
- $ npm install
+Use $ npm install to install dependencies.
 
- $ npm run build
- 
- $ npm start
+Use $ npm build to build the project.
+
+Use $ npm start for development mode.
 
 Make sure to set CS_URL=http://localhost:8080/client on .env.local file on ui.
 
