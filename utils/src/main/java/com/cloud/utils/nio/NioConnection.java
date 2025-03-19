@@ -83,26 +83,19 @@ public abstract class NioConnection implements Callable<Boolean> {
     protected Set<SocketChannel> socketChannels = new HashSet<>();
     protected Integer sslHandshakeTimeout = null;
     private final int factoryMaxNewConnectionsCount;
+    protected boolean blockNewConnections;
 
     public NioConnection(final String name, final int port, final int workers, final HandlerFactory factory) {
         _name = name;
         _isRunning = false;
+        blockNewConnections = false;
         _selector = null;
         _port = port;
         _workers = workers;
         _factory = factory;
         this.factoryMaxNewConnectionsCount = factory.getMaxConcurrentNewConnectionsCount();
-        _executor = new ThreadPoolExecutor(workers, 5 * workers, 1, TimeUnit.DAYS,
-                new LinkedBlockingQueue<>(5 * workers), new NamedThreadFactory(name + "-Handler"),
-                new ThreadPoolExecutor.AbortPolicy());
-        String sslHandshakeHandlerName = name + "-SSLHandshakeHandler";
-        if (factoryMaxNewConnectionsCount > 0) {
-            _sslHandshakeExecutor = new ThreadPoolExecutor(0, this.factoryMaxNewConnectionsCount, 30,
-                    TimeUnit.MINUTES, new SynchronousQueue<>(), new NamedThreadFactory(sslHandshakeHandlerName),
-                    new ThreadPoolExecutor.AbortPolicy());
-        } else {
-            _sslHandshakeExecutor = Executors.newCachedThreadPool(new NamedThreadFactory(sslHandshakeHandlerName));
-        }
+        initWorkersExecutor();
+        initSSLHandshakeExecutor();
     }
 
     public void setCAService(final CAService caService) {
@@ -127,10 +120,14 @@ public abstract class NioConnection implements Callable<Boolean> {
         _isStartup = true;
 
         if (_executor.isShutdown()) {
-            _executor = new ThreadPoolExecutor(_workers, 5 * _workers, 1, TimeUnit.DAYS, new LinkedBlockingQueue<>(), new NamedThreadFactory(_name + "-Handler"));
+            initWorkersExecutor();
+        }
+        if (_sslHandshakeExecutor.isShutdown()) {
+            initSSLHandshakeExecutor();
         }
         _threadExecutor = Executors.newSingleThreadExecutor(new NamedThreadFactory(this._name + "-NioConnectionHandler"));
         _isRunning = true;
+        blockNewConnections = false;
         _futureTask = _threadExecutor.submit(this);
     }
 
@@ -138,9 +135,27 @@ public abstract class NioConnection implements Callable<Boolean> {
         _executor.shutdown();
         _sslHandshakeExecutor.shutdown();
         _isRunning = false;
+        blockNewConnections = true;
         if (_threadExecutor != null) {
             _futureTask.cancel(false);
             _threadExecutor.shutdown();
+        }
+    }
+
+    private void initWorkersExecutor() {
+        _executor = new ThreadPoolExecutor(_workers, 5 * _workers, 1, TimeUnit.DAYS,
+                new LinkedBlockingQueue<>(5 * _workers), new NamedThreadFactory(_name + "-Handler"),
+                new ThreadPoolExecutor.AbortPolicy());
+    }
+
+    private void initSSLHandshakeExecutor() {
+        String sslHandshakeHandlerName = _name + "-SSLHandshakeHandler";
+        if (factoryMaxNewConnectionsCount > 0) {
+            _sslHandshakeExecutor = new ThreadPoolExecutor(0, this.factoryMaxNewConnectionsCount, 30,
+                    TimeUnit.MINUTES, new SynchronousQueue<>(), new NamedThreadFactory(sslHandshakeHandlerName),
+                    new ThreadPoolExecutor.AbortPolicy());
+        } else {
+            _sslHandshakeExecutor = Executors.newCachedThreadPool(new NamedThreadFactory(sslHandshakeHandlerName));
         }
     }
 
@@ -210,6 +225,16 @@ public abstract class NioConnection implements Callable<Boolean> {
 
     abstract void unregisterLink(InetSocketAddress saddr);
 
+    protected boolean rejectConnectionIfBlocked(final SocketChannel socketChannel) throws IOException {
+        if (!blockNewConnections) {
+            return false;
+        }
+        logger.warn("Rejecting new connection as the server is blocked from accepting new connections");
+        socketChannel.close();
+        _selector.wakeup();
+        return true;
+    }
+
     protected boolean rejectConnectionIfBusy(final SocketChannel socketChannel) throws IOException {
         if (factoryMaxNewConnectionsCount <= 0  || _factory.getNewConnectionsCount() < factoryMaxNewConnectionsCount) {
             return false;
@@ -226,7 +251,7 @@ public abstract class NioConnection implements Callable<Boolean> {
     protected void accept(final SelectionKey key) throws IOException {
         final ServerSocketChannel serverSocketChannel = (ServerSocketChannel)key.channel();
         final SocketChannel socketChannel = serverSocketChannel.accept();
-        if (rejectConnectionIfBusy(socketChannel)) {
+        if (rejectConnectionIfBlocked(socketChannel) || rejectConnectionIfBusy(socketChannel)) {
             return;
         }
         socketChannel.configureBlocking(false);
@@ -518,6 +543,14 @@ public abstract class NioConnection implements Callable<Boolean> {
         if (_selector != null) {
             _selector.close();
         }
+    }
+
+    public void block() {
+        blockNewConnections = true;
+    }
+
+    public void unblock() {
+        blockNewConnections = false;
     }
 
     public class ChangeRequest {

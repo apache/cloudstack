@@ -1150,6 +1150,7 @@ public class ApiConstants {
     public static final String PENDING_JOBS_COUNT = "pendingjobscount";
     public static final String AGENTS_COUNT = "agentscount";
     public static final String AGENTS = "agents";
+    public static final String LAST_AGENTS = "lastagents";
 
     public static final String PUBLIC_MTU = "publicmtu";
     public static final String PRIVATE_MTU = "privatemtu";
