@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.user;
 
-import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.nullable;
 
 import java.net.InetAddress;
@@ -1299,12 +1298,6 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Account newAccount = Mockito.mock(Account.class);
         Mockito.when(newAccount.getId()).thenReturn(1L);
 
-        AccountVO existingAccount = Mockito.mock(AccountVO.class);
-        Mockito.when(existingAccount.getUuid()).thenReturn("existing-account-uuid");
-        Mockito.when(existingAccount.getAccountName()).thenReturn("existing-account");
-
-        Mockito.when(_accountDao.findById(1L)).thenReturn(existingAccount);
-
         accountManagerImpl.assertUserNotAlreadyInAccount(existingUser, newAccount);
     }
 
@@ -1343,15 +1336,8 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
         AccountVO existingAccount = Mockito.mock(AccountVO.class);
         Mockito.when(existingAccount.getDomainId()).thenReturn(2L);
-        Mockito.when(existingAccount.getUuid()).thenReturn("existing-account-uuid");
-        Mockito.when(existingAccount.getAccountName()).thenReturn("existing-account");
-
-        DomainVO existingDomain = Mockito.mock(DomainVO.class);
-        Mockito.when(existingDomain.getUuid()).thenReturn("existing-domain-uuid");
-        Mockito.when(existingDomain.getName()).thenReturn("existing-domain");
 
         Mockito.when(_accountDao.findById(1L)).thenReturn(existingAccount);
-        Mockito.when(_domainDao.findById(1L)).thenReturn(existingDomain);
 
         accountManagerImpl.assertUserNotAlreadyInDomain(existingUser, originalAccount);
     }
