@@ -1298,7 +1298,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long userId = cmd.getUserId();
         Long userdataId = cmd.getUserdataId();
         Map<String, String> tags = cmd.getTags();
-        final String arch = cmd.getArch();
+        final CPU.CPUArch arch = cmd.getArch();
 
         boolean isAdmin = false;
         boolean isRootAdmin = false;
@@ -1526,7 +1526,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         Boolean isVnf = cmd.getVnf();
-        boolean templateJoinNeeded = isVnf != null || StringUtils.isNoneBlank(arch);
+        boolean templateJoinNeeded = isVnf != null || arch != null;
         if (templateJoinNeeded) {
             SearchBuilder<VMTemplateVO> templateSearch = _templateDao.createSearchBuilder();
             templateSearch.and("templateArch", templateSearch.entity().getArch(), Op.EQ);
@@ -1658,7 +1658,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 userVmSearchCriteria.setJoinParameters("vmTemplate", "templateTypeNEQ", TemplateType.VNF);
             }
         }
-        if (StringUtils.isNotBlank(arch)) {
+        if (arch != null) {
             userVmSearchCriteria.setJoinParameters("vmTemplate", "templateArch", arch);
         }
 
@@ -2361,7 +2361,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long startIndex = cmd.getStartIndex();
         Long pageSize = cmd.getPageSizeVal();
         Hypervisor.HypervisorType hypervisorType = cmd.getHypervisor();
-        String arch = cmd.getArch();
+        final CPU.CPUArch arch = cmd.getArch();
 
         Filter searchFilter = new Filter(HostVO.class, "id", Boolean.TRUE, startIndex, pageSize);
 
@@ -2458,7 +2458,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("hypervisor_type", hypervisorType);
         }
 
-        if (StringUtils.isNotBlank(arch)) {
+        if (arch != null) {
             sc.setParameters("arch", arch);
         }
 

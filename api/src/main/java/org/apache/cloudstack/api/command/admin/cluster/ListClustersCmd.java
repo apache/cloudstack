@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.admin.cluster;
 import java.util.ArrayList;
 import java.util.List;
 
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -28,7 +27,9 @@ import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.cpu.CPU;
 import com.cloud.org.Cluster;
 import com.cloud.utils.Pair;
 
@@ -117,8 +118,8 @@ public class ListClustersCmd extends BaseListCmd {
         return showCapacities;
     }
 
-    public String getArch() {
-        return arch;
+    public CPU.CPUArch getArch() {
+        return StringUtils.isBlank(arch) ? null : CPU.CPUArch.fromType(arch);
     }
 
     /////////////////////////////////////////////////////
