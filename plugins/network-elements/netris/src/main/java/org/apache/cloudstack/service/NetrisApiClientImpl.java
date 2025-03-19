@@ -1495,9 +1495,14 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             if (matchedSubnets.isEmpty()) {
                 VPCListing systemVpc = getSystemVpc();
                 createIpamSubnetInternal(netrisSubnetName, natIp, SubnetBody.PurposeEnum.NAT, systemVpc, null);
-                return;
+            } else {
+                IpTreeSubnet existingSubnet = matchedSubnets.stream().filter(x -> x.getPrefix().equals(natIp)).collect(Collectors.toList()).get(0);
+                if (existingSubnet.getPurpose() != IpTreeSubnet.PurposeEnum.NAT) {
+                    VPCListing systemVpc = getSystemVpc();
+                    logger.debug("Subnet: {} already exists, but purpose is not NAT, updating its purpose to 'nat'", natIp);
+                    updateIpamSubnetInternal(existingSubnet.getId().intValue(), netrisSubnetName, natIp, SubnetBody.PurposeEnum.NAT, systemVpc, null);
+                }
             }
-            logger.debug("NAT subnet: {} already exists", natIp);
         } catch (ApiException e) {
             throw new CloudRuntimeException(String.format("Failed to create subnet for %s with NAT purpose", natIp));
         }
@@ -1762,7 +1767,8 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         }
     }
 
-    private InlineResponse2004Data updateIpamSubnetInternal(Integer netrisSubnetId, String subnetName, String subnetPrefix, SubnetBody.PurposeEnum purpose, VPCListing vpc, Boolean isGlobalRouting) {
+    private InlineResponse2004Data updateIpamSubnetInternal(Integer netrisSubnetId, String subnetName, String subnetPrefix,
+                                                            SubnetBody.PurposeEnum purpose, VPCListing vpc, Boolean isGlobalRouting) {
         logger.debug("Updating Netris IPAM Subnet {} for VPC {}", subnetPrefix, vpc.getName());
         try {
 
