@@ -121,9 +121,9 @@
         <template #label>
           <tooltip-label :title="$t('label.isLeaseFeatureEnabled')" />
         </template>
-        <a-switch v-model:checked="showLeaseOptions" @change="onToggleLeaseData"/>
+        <a-switch v-model:checked="showLeaseOptions" @change="onToggleLeaseData" :disabled="isLeaseOver" />
       </a-form-item>
-      <a-row :gutter="12" v-if="isLeaseFeatureEnabled && showLeaseOptions">
+      <a-row :gutter="12" v-if="isLeaseFeatureEnabled && !isLeaseOver && showLeaseOptions">
         <a-col :md="12" :lg="12">
           <a-form-item name="leaseduration" ref="leaseduration">
             <template #label>
@@ -135,7 +135,7 @@
           </a-form-item>
         </a-col>
         <a-col :md="12" :lg="12">
-          <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction" v-if="form.leaseduration > -1">
+          <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction" v-if="form.leaseduration > 0">
             <template #label>
               <tooltip-label :title="$t('label.leaseexpiryaction')"  />
             </template>
@@ -195,6 +195,7 @@ export default {
         opts: []
       },
       isLeaseFeatureEnabled: this.$store.getters.features.instanceleaseenabled,
+      isLeaseOver: this.resource.leaseduration < 0,
       showLeaseOptions: this.isLeaseFeatureEnabled === false ? false : this.resource.leaseduration !== undefined,
       leaseduration: this.resource.leaseduration === undefined ? 90 : this.resource.leaseduration,
       leaseexpiryaction: this.resource.leaseexpiryaction === undefined ? 'STOP' : this.resource.leaseexpiryaction,

@@ -73,7 +73,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
 
     Timer vmLeaseTimer;
 
-    Timer vmLeaseAlterTimer;
+    Timer vmLeaseAlertTimer;
 
     @Override
     public String getConfigComponentName() {
@@ -123,9 +123,8 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         vmLeaseTimer = new Timer("VMLeasePollTask");
         vmLeaseTimer.scheduleAtFixedRate(schedulerPollTask, 5_000L, InstanceLeaseSchedulerInterval.value() * 1000L);
 
-        vmLeaseAlterTimer = new Timer("VMLeaseAlertPollTask");
-        vmLeaseAlterTimer.scheduleAtFixedRate(leaseAlterSchedulerTask, 5_000L, InstanceLeaseAlertSchedule.value() * 1000)
-        ;
+        vmLeaseAlertTimer = new Timer("VMLeaseAlertPollTask");
+        vmLeaseAlertTimer.scheduleAtFixedRate(leaseAlterSchedulerTask, 5_000L, InstanceLeaseAlertSchedule.value() * 1000);
         return true;
     }
 

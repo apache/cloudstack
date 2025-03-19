@@ -102,9 +102,8 @@
             <font-awesome-icon
               v-if="record.leaseduration !== undefined"
               :icon="['fa-solid', 'fa-clock']"
-              class="anticon leaseduration"
+              :class="['anticon', record.leaseduration > 0 ? 'lease-remaining' : 'lease-over' ]"
               :style="{
-                color: $store.getters.darkMode ? 'rgba(255, 255, 255, 0.65)' : '#888',
                 margin: '5px'
               }"/>
           </span>
@@ -1137,5 +1136,11 @@ export default {
     background-color: rgba(255, 190, 190, 0.75);
     color: #f50000;
     padding: 10%;
+  }
+  .lease-remaining {
+    color: #e2b51f;
+  }
+  .lease-over {
+    color: #f50000;
   }
 </style>

@@ -100,7 +100,7 @@ public class VMLeaseManagerImplTest {
     public void testStart() {
         assertTrue(vmLeaseManager.start());
         assertNotNull(vmLeaseManager.vmLeaseTimer);
-        assertNotNull(vmLeaseManager.vmLeaseAlterTimer);
+        assertNotNull(vmLeaseManager.vmLeaseAlertTimer);
     }
 
     @Test
