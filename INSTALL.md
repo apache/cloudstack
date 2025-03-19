@@ -96,7 +96,10 @@ The default credentials are; user: admin, password: password and the domain
 field should be left blank which is defaulted to the ROOT domain.
 
 ## To bring up CloudStack UI
- $ cd /path/to/cloudstack/ui
+
+Move to UI Directory
+
+    $ cd /path/to/cloudstack/ui
 
 To install dependencies.
 
