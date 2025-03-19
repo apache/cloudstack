@@ -134,7 +134,7 @@
         <template v-if="column.key === 'protocol'">
           {{ getCapitalise(record.protocol) }}
         </template>
-        <template v-if="column.key === 'stickiness'">
+        <template v-if="column.key === 'stickiness' && !this.isNetrisZone">
           <a-button @click="() => openStickinessModal(record.id)">
             {{ returnStickinessLabel(record.id) }}
           </a-button>
@@ -918,7 +918,8 @@ export default {
         expectedcode: undefined,
         urlpath: '/'
       },
-      healthMonitorLoading: false
+      healthMonitorLoading: false,
+      isNetrisZone: false
     }
   },
   computed: {
@@ -1078,6 +1079,9 @@ export default {
         id: this.resource.zoneid
       }).then(response => {
         this.lbProvider = response?.listzonesresponse?.zone?.[0]?.provider || null
+        if (this.lbProvider != null) {
+          this.isNetrisZone = this.lbProvider === 'Netris'
+        }
       }).finally(() => {
         this.zoneloading = false
         if (this.lbProvider !== 'Netris') {
