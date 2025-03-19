@@ -63,6 +63,7 @@ export default {
         if (store.getters.metrics) {
           fields.push(...metricsFields)
         }
+        fields.push('arch')
         if (store.getters.userInfo.roletype === 'Admin') {
           fields.splice(2, 0, 'instancename')
           fields.push('hostname')
