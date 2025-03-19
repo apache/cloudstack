@@ -25,7 +25,7 @@ import java.net.SocketAddress;
  * WorkerFactory creates and selects workers.
  */
 public interface HandlerFactory {
-    public Task create(Task.Type type, Link link, byte[] data);
+    Task create(Task.Type type, Link link, byte[] data);
     default int getMaxConcurrentNewConnectionsCount() {
         return 0;
     }
