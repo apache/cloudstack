@@ -2737,8 +2737,12 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 return vmMo.powerOn();
             } catch (Exception e) {
                 logger.info(String.format("Got exception while power on VM %s with hostname %s", vmInternalCSName, vmNameOnVcenter), e);
-                if (e.getMessage() != null && e.getMessage().contains("File system specific implementation of Ioctl[file] failed")) {
+                if (e.getMessage() != null &&
+                        (e.getMessage().contains("File system specific implementation of Ioctl[file] failed") ||
+                                e.getMessage().contains("Unable to access file") ||
+                                e.getMessage().contains("it is locked"))) {
                     logger.debug(String.format("Failed to power on VM %s with hostname %s. Retrying", vmInternalCSName, vmNameOnVcenter));
+                    Thread.sleep(1000);
                 } else {
                     throw e;
                 }
