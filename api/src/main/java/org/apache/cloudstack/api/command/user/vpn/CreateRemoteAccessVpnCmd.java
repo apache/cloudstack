@@ -38,6 +38,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.RemoteAccessVpn;
 
+import java.util.Objects;
+
 @APICommand(name = "createRemoteAccessVpn", description = "Creates a l2tp/ipsec remote access vpn", responseObject = RemoteAccessVpnResponse.class, entityType = {RemoteAccessVpn.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
@@ -56,7 +58,6 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = "iprange",
                type = CommandType.STRING,
-               required = false,
                description = "the range of ip addresses to allocate to vpn clients. The first ip in the range will be taken by the vpn server")
     private String ipRange;
 
@@ -78,6 +79,22 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the vpn to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
+
+    @Parameter(name = "listenport",
+            type = CommandType.INTEGER,
+            description = "Port on which the VPN server will be listening")
+    private Boolean listenPort;
+
+    @Parameter(name = "protocol",
+            type = CommandType.STRING,
+            description = "Name of the protocol used for the VPN")
+    private String protocol;
+
+    @Parameter(name = "implementationdata",
+            type = CommandType.STRING,
+            description = "JSON-encoded protocol-specific data for the VPN")
+    private String implementationData;
+
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -105,11 +122,19 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     }
 
     public Boolean getOpenFirewall() {
-        if (openFirewall != null) {
-            return openFirewall;
-        } else {
-            return true;
-        }
+        return Objects.requireNonNullElse(openFirewall, true);
+    }
+
+    public Boolean getListenPort() {
+        return listenPort;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public String getImplementationData() {
+        return implementationData;
     }
 
     /////////////////////////////////////////////////////
@@ -191,10 +216,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
 
     @Override
     public boolean isDisplay() {
-        if(display == null)
-            return true;
-        else
-            return display;
+        return Objects.requireNonNullElse(display, true);
     }
 
     @Override
