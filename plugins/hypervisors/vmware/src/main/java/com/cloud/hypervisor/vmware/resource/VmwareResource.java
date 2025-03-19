@@ -3222,7 +3222,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         if (Boolean.parseBoolean(virtualTPMEnabled)) {
             for (VirtualDevice device : vmMo.getAllDeviceList()) {
                 if (device instanceof VirtualTPM) {
-                    logger.debug(String.format("Virtual TPM device has already been added to VM , returning", vmMo.getVmName()));
+                    logger.debug(String.format("Virtual TPM device has already been added to VM %s, returning", vmMo.getVmName()));
                     return;
                 }
             }
