@@ -2742,7 +2742,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                                 e.getMessage().contains("Unable to access file") ||
                                 e.getMessage().contains("it is locked"))) {
                     logger.debug(String.format("Failed to power on VM %s with hostname %s. Retrying", vmInternalCSName, vmNameOnVcenter));
-                    Thread.sleep(1000);
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ie) {
+                        logger.debug(String.format("Waiting to power on VM %s been interrupted: ", vmInternalCSName));
+                    }
                 } else {
                     throw e;
                 }
