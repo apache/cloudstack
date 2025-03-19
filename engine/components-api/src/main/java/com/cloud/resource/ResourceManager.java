@@ -66,7 +66,7 @@ public interface ResourceManager extends ResourceService, Configurable {
             String.class,
             "system.vm.preferred.architecture",
             "Advanced",
-            "",
+            CPU.CPUArch.getDefault().getType(),
             "Preferred architecture for the system VMs including virtual routers",
             true,
             ConfigKey.Scope.Global, null, null, null, null, null,
