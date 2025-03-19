@@ -44,6 +44,10 @@ public interface ManagementServerMaintenanceManager {
 
     void unregisterListener(ManagementServerMaintenanceListener listener);
 
+    void onPreparingForMaintenance();
+
+    void onCancelPreparingForMaintenance();
+
     void onMaintenance();
 
     void onCancelMaintenance();

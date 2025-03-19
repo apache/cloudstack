@@ -82,6 +82,14 @@ public class ManagementServerResponse extends BaseResponse {
     @Param(description = "the Management Server Peers")
     private List<PeerManagementServerNodeResponse> peers;
 
+    @SerializedName(ApiConstants.LAST_AGENTS)
+    @Param(description = "the last agents this Management Server is responsible for, before shutdown or preparing for maintenance", since = "4.21.0.0")
+    private List<String> lastAgents;
+
+    @SerializedName(ApiConstants.AGENTS)
+    @Param(description = "the agents this Management Server is responsible for", since = "4.21.0.0")
+    private List<String> agents;
+
     @SerializedName(ApiConstants.AGENTS_COUNT)
     @Param(description = "the number of host agents this Management Server is responsible for", since = "4.21.0.0")
     private Long agentsCount;
@@ -132,6 +140,14 @@ public class ManagementServerResponse extends BaseResponse {
 
     public String getIpAddress() {
         return ipAddress;
+    }
+
+    public List<String> getLastAgents() {
+        return lastAgents;
+    }
+
+    public List<String> getAgents() {
+        return agents;
     }
 
     public Long getAgentsCount() {
@@ -188,6 +204,14 @@ public class ManagementServerResponse extends BaseResponse {
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
+    }
+
+    public void setLastAgents(List<String> lastAgents) {
+        this.lastAgents = lastAgents;
+    }
+
+    public void setAgents(List<String> agents) {
+        this.agents = agents;
     }
 
     public void setAgentsCount(Long agentsCount) {

@@ -752,21 +752,21 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             logger.debug(String.format("%s is running...", this.getClass().getSimpleName()));
             long msid = ManagementServerNode.getManagementServerId();
             ManagementServerHostVO mshost = null;
-            ManagementServerHostStatsEntry hostStatsEntry = null;
+            ManagementServerHostStatsEntry msHostStatsEntry = null;
             try {
                 mshost = managementServerHostDao.findByMsid(msid);
                 // get local data
-                hostStatsEntry = getDataFrom(mshost);
-                managementServerHostStats.put(mshost.getUuid(), hostStatsEntry);
+                msHostStatsEntry = getDataFrom(mshost);
+                managementServerHostStats.put(mshost.getUuid(), msHostStatsEntry);
                 // send to other hosts
-                clusterManager.publishStatus(gson.toJson(hostStatsEntry));
+                clusterManager.publishStatus(gson.toJson(msHostStatsEntry));
             } catch (Throwable t) {
                 // pokemon catch to make sure the thread stays running
                 logger.error("Error trying to retrieve management server host statistics", t);
             }
             try {
                 // send to DB
-                storeStatus(hostStatsEntry, mshost);
+                storeStatus(msHostStatsEntry, mshost);
             } catch (Throwable t) {
                 // pokemon catch to make sure the thread stays running
                 logger.error("Error trying to store  management server host statistics", t);
@@ -834,11 +834,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
 
         private void getDataBaseStatistics(ManagementServerHostStatsEntry newEntry, long msid) {
-            newEntry.setLastAgents(_agentMgr.getLastAgents());
+            List<String> lastAgents = _hostDao.listByLastMs(msid);
+            newEntry.setLastAgents(lastAgents);
             List<String> agents = _hostDao.listByMs(msid);
             newEntry.setAgents(agents);
-            int count = _hostDao.countByMs(msid);
-            newEntry.setAgentCount(count);
+            newEntry.setAgentCount(agents.size());
         }
 
         private void getMemoryData(@NotNull ManagementServerHostStatsEntry newEntry) {
