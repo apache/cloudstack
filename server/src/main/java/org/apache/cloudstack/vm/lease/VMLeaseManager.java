@@ -19,12 +19,11 @@
 package org.apache.cloudstack.vm.lease;
 
 import com.cloud.utils.component.Manager;
-import com.cloud.utils.concurrency.Scheduler;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import java.util.List;
 
-public interface VMLeaseManager extends Manager, Scheduler {
+public interface VMLeaseManager extends Manager {
 
     enum ExpiryAction {
         STOP,

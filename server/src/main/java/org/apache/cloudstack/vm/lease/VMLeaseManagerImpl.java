@@ -29,6 +29,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -39,18 +40,20 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
-import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.lang3.time.DateUtils;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, Configurable {
 
@@ -71,9 +74,8 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
 
     private AsyncJobDispatcher asyncJobDispatcher;
 
-    Timer vmLeaseTimer;
-
-    Timer vmLeaseAlertTimer;
+    ScheduledExecutorService vmLeaseExecutor;
+    ScheduledExecutorService vmLeaseAlertExecutor;
 
     @Override
     public String getConfigComponentName() {
@@ -97,83 +99,80 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
     }
 
     @Override
-    public boolean start() {
-        final TimerTask schedulerPollTask = new ManagedContextTimerTask() {
-            @Override
-            protected void runInContext() {
-                try {
-                    poll(new Date());
-                } catch (final Throwable t) {
-                    logger.warn("Catch throwable in VM lease scheduler ", t);
-                }
-            }
-        };
-
-        final TimerTask leaseAlterSchedulerTask = new ManagedContextTimerTask() {
-            @Override
-            protected void runInContext() {
-                try {
-                    alert();
-                } catch (final Throwable t) {
-                    logger.warn("Catch throwable in VM lease scheduler ", t);
-                }
-            }
-        };
-
-        vmLeaseTimer = new Timer("VMLeasePollTask");
-        vmLeaseTimer.scheduleAtFixedRate(schedulerPollTask, 5_000L, InstanceLeaseSchedulerInterval.value() * 1000L);
-
-        vmLeaseAlertTimer = new Timer("VMLeaseAlertPollTask");
-        vmLeaseAlertTimer.scheduleAtFixedRate(leaseAlterSchedulerTask, 5_000L, InstanceLeaseAlertSchedule.value() * 1000);
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        try {
+            vmLeaseExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("VMLeasePollExecutor"));
+            vmLeaseAlertExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("VMLeaseAlertPollExecutor"));
+        } catch (final Exception e) {
+            throw new ConfigurationException("Unable to to configure VMLeaseManagerImpl");
+        }
         return true;
     }
 
-    protected void alert() {
-        // as feature is disabled, no action is required
-        if (!InstanceLeaseEnabled.value()) {
-            return;
-        }
-
-        GlobalLock scanLock = GlobalLock.getInternLock("VMLeaseAlertScheduler");
-        try {
-            if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
-                try {
-                    List<UserVmJoinVO> leaseExpiringForInstances = userVmJoinDao.listLeaseInstancesExpiringInDays(InstanceLeaseAlertStartsAt.value().intValue());
-                    for (UserVmJoinVO instance : leaseExpiringForInstances) {
-                        alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, instance.getDataCenterId(), instance.getPodId(),
-                                "Lease expiring for instance id: " + instance.getUuid(), "Lease expiring for instance");
-                    }
-                } finally {
-                    scanLock.unlock();
-                }
-            }
-        } finally {
-            scanLock.releaseRef();
-        }
+    @Override
+    public boolean start() {
+        vmLeaseExecutor.scheduleAtFixedRate(new VMLeaseSchedulerTask(),5L, InstanceLeaseSchedulerInterval.value(), TimeUnit.SECONDS);
+        vmLeaseAlertExecutor.scheduleAtFixedRate(new VMLeaseAlertSchedulerTask(), 5L, InstanceLeaseAlertSchedule.value(), TimeUnit.SECONDS);
+        return true;
     }
 
     @Override
-    public void poll(Date timestamp) {
-        Date currentTimestamp = DateUtils.round(timestamp, Calendar.MINUTE);
-        String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, currentTimestamp);
-        logger.debug("VMLeaseScheduler.poll is being called at {}", displayTime);
+    public boolean stop() {
+        vmLeaseExecutor.shutdown();
+        vmLeaseAlertExecutor.shutdown();
+        return true;
+    }
 
-        if (!InstanceLeaseEnabled.value()) {
-            logger.debug("Instance lease feature is disabled, no action is required");
-            return;
-        }
-
-        GlobalLock scanLock = GlobalLock.getInternLock("VMLeaseScheduler");
-        try {
-            if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
-                try {
-                    reallyRun();
-                } finally {
-                    scanLock.unlock();
-                }
+    class VMLeaseSchedulerTask extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
+            Date currentTimestamp = DateUtils.round(new Date(), Calendar.MINUTE);
+            String displayTime = DateUtil.displayDateInTimezone(DateUtil.GMT_TIMEZONE, currentTimestamp);
+            logger.debug("VMLeaseSchedulerTask is being called at {}", displayTime);
+            if (!InstanceLeaseEnabled.value()) {
+                logger.debug("Instance lease feature is disabled, no action is required");
+                return;
             }
-        } finally {
-            scanLock.releaseRef();
+
+            GlobalLock scanLock = GlobalLock.getInternLock("VMLeaseSchedulerTask");
+            try {
+                if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
+                    try {
+                        reallyRun();
+                    } finally {
+                        scanLock.unlock();
+                    }
+                }
+            } finally {
+                scanLock.releaseRef();
+            }
+        }
+    }
+
+    class VMLeaseAlertSchedulerTask extends ManagedContextRunnable {
+        @Override
+        protected void runInContext() {
+            // as feature is disabled, no action is required
+            if (!InstanceLeaseEnabled.value()) {
+                return;
+            }
+
+            GlobalLock scanLock = GlobalLock.getInternLock("VMLeaseAlertSchedulerTask");
+            try {
+                if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
+                    try {
+                        List<UserVmJoinVO> leaseExpiringForInstances = userVmJoinDao.listLeaseInstancesExpiringInDays(InstanceLeaseAlertStartsAt.value().intValue());
+                        for (UserVmJoinVO instance : leaseExpiringForInstances) {
+                            alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, instance.getDataCenterId(), instance.getPodId(),
+                                    "Lease expiring for instance id: " + instance.getUuid(), "Lease expiring for instance");
+                        }
+                    } finally {
+                        scanLock.unlock();
+                    }
+                }
+            } finally {
+                scanLock.releaseRef();
+            }
         }
     }
 

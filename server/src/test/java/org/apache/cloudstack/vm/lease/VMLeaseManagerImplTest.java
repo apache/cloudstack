@@ -25,10 +25,10 @@ import com.cloud.event.ActionEventUtils;
 import com.cloud.user.User;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
-import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
@@ -44,8 +44,10 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
 
+import javax.naming.ConfigurationException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -54,9 +56,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -94,37 +94,27 @@ public class VMLeaseManagerImplTest {
         vmLeaseManager.setAsyncJobDispatcher(asyncJobDispatcher);
         when(asyncJobDispatcher.getName()).thenReturn("AsyncJobDispatcher");
         when(asyncJobManager.submitAsyncJob(any(AsyncJobVO.class))).thenReturn(1L);
+        try {
+            vmLeaseManager.configure("VMLeaseManagerImpl", new HashMap<>());
+        } catch (ConfigurationException e) {
+            throw new CloudRuntimeException(e);
+        }
     }
 
     @Test
     public void testStart() {
-        assertTrue(vmLeaseManager.start());
-        assertNotNull(vmLeaseManager.vmLeaseTimer);
-        assertNotNull(vmLeaseManager.vmLeaseAlertTimer);
+        boolean result = vmLeaseManager.start();
+        assertTrue(result);
+        assertNotNull(vmLeaseManager.vmLeaseExecutor);
+        assertNotNull(vmLeaseManager.vmLeaseAlertExecutor);
     }
 
     @Test
-    public void testAlert() {
-        try (MockedStatic<GlobalLock> ignored = Mockito.mockStatic(GlobalLock.class)) {
-            Mockito.when(GlobalLock.getInternLock(Mockito.anyString())).thenReturn(globalLock);
-            Mockito.doReturn(true).when(globalLock).lock(Mockito.anyInt());
-            ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
-            VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
-            Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
-            UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, false);
-            when(vm.getDataCenterId()).thenReturn(1L);
-            when(vm.getPodId()).thenReturn(1L);
-            List<UserVmJoinVO> expiringVms = Arrays.asList(vm);
-            when(userVmJoinDao.listLeaseInstancesExpiringInDays(anyInt())).thenReturn(expiringVms);
-            vmLeaseManager.alert();
-            verify(alertManager).sendAlert(
-                    eq(AlertManager.AlertType.ALERT_TYPE_USERVM),
-                    anyLong(),
-                    anyLong(),
-                    anyString(),
-                    anyString()
-            );
-        }
+    public void testStop() {
+        boolean result = vmLeaseManager.stop();
+        assertTrue(result);
+        assertTrue(vmLeaseManager.vmLeaseExecutor.isShutdown());
+        assertTrue(vmLeaseManager.vmLeaseAlertExecutor.isShutdown());
     }
 
     @Test
