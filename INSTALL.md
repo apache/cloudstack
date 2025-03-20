@@ -37,6 +37,7 @@ Setup up NodeJS (LTS):
 Start the MySQL service:
 
     $ service mysqld start
+    $ mysql_secure_installation
 
 ### Using jenv and/or pyenv for Version Management
 
@@ -92,6 +93,28 @@ Open the following URL on your browser to access the Management Server UI:
 
 The default credentials are; user: admin, password: password and the domain
 field should be left blank which is defaulted to the ROOT domain.
+
+## To bring up CloudStack UI
+
+Move to UI Directory
+
+    $ cd /path/to/cloudstack/ui
+
+To install dependencies.
+
+    $ npm install
+
+To build the project.
+
+    $ npm build
+
+For Development Mode.
+
+    $ npm start
+
+Make sure to set CS_URL=http://localhost:8080/client on .env.local file on ui.
+
+You should be able to run the management server on http://localhost:5050
 
 ## Building with non-redistributable plugins
 
