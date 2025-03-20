@@ -24,9 +24,13 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import com.cloud.configuration.Resource;
+import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VolumeDao;
+
 import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
@@ -35,12 +39,14 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 
 public class DummyBackupProvider extends AdapterBase implements BackupProvider {
-
+    private static final Logger LOG = LogManager.getLogger(DummyBackupProvider.class);
 
     @Inject
     private BackupDao backupDao;
     @Inject
     private VolumeDao volumeDao;
+    @Inject
+    private BackupManager backupManager;
 
     @Override
     public String getName() {
@@ -88,14 +94,21 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     @Override
     public Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms) {
         final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
-        final Backup.Metric metric = new Backup.Metric(1000L, 100L);
-        if (vms == null || vms.isEmpty()) {
+        if (CollectionUtils.isEmpty(vms)) {
+            LOG.warn("Unable to get VM Backup Metrics because the list of VMs is empty.");
             return metrics;
         }
-        for (VirtualMachine vm : vms) {
-            if (vm != null) {
-                metrics.put(vm, metric);
+
+        for (final VirtualMachine vm : vms) {
+            Long vmBackupSize = 0L;
+            Long vmBackupProtectedSize = 0L;
+            for (final Backup backup: backupDao.listByVmId(null, vm.getId())) {
+                vmBackupSize += backup.getSize();
+                vmBackupProtectedSize += backup.getProtectedSize();
             }
+            Backup.Metric vmBackupMetric = new Backup.Metric(vmBackupSize,vmBackupProtectedSize);
+            LOG.debug("Metrics for VM {} is [backup size: {}, data size: {}].", vm, vmBackupMetric.getBackupSize(), vmBackupMetric.getDataSize());
+            metrics.put(vm, vmBackupMetric);
         }
         return metrics;
     }
@@ -118,7 +131,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Override
     public boolean willDeleteBackupsOnOfferingRemoval() {
-        return true;
+        return false;
     }
 
     @Override
@@ -130,20 +143,51 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         backup.setExternalId("dummy-external-id");
         backup.setType("FULL");
         backup.setDate(new Date());
-        backup.setSize(1024000L);
-        backup.setProtectedSize(Resource.ResourceType.bytesToGiB);
+        long virtualSize = 0L;
+        for (final Volume volume: volumeDao.findByInstance(vm.getId())) {
+            if (Volume.State.Ready.equals(volume.getState())) {
+                virtualSize += volume.getSize();
+            }
+        }
+        backup.setSize(virtualSize);
+        backup.setProtectedSize(virtualSize);
         backup.setStatus(Backup.Status.BackedUp);
         backup.setBackupOfferingId(vm.getBackupOfferingId());
         backup.setAccountId(vm.getAccountId());
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
+        backup.setName(backupManager.getBackupNameFromVM(vm));
         backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+        Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
+        backup.setDetails(details);
+        Map<String, String> diskOfferingDetails = backupManager.getDiskOfferingDetailsForBackup(vm.getId());
+        backup.addDetails(diskOfferingDetails);
+
         backup = backupDao.persist(backup);
         return new Pair<>(true, backup);
     }
 
     @Override
     public boolean deleteBackup(Backup backup, boolean forced) {
+        return backupDao.remove(backup.getId());
+    }
+
+    @Override
+    public boolean supportsInstanceFromBackup() {
+        return true;
+    }
+
+    @Override
+    public Pair<Long, Long> getBackupStorageStats(Long zoneId) {
+        return new Pair<>(8L * 1024 * 1024 * 1024, 10L * 1024 * 1024 * 1024);
+    }
+
+    @Override
+    public void syncBackupStorageStats(Long zoneId) {
+    }
+
+    @Override
+    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
         return true;
     }
 }

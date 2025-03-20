@@ -30,8 +30,11 @@ import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+
 import com.cloud.vm.VMInstanceVO;
 import com.github.tomakehurst.wiremock.client.VerificationException;
+
+import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.backup.networker.NetworkerClient;
@@ -40,6 +43,9 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.mockito.Mockito;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import com.github.tomakehurst.wiremock.client.BasicCredentials;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
@@ -58,6 +64,7 @@ public class NetworkerClientTest {
                         .willReturn(aResponse()
                         .withStatus(200)));
         client = new NetworkerClient(url, adminUsername, adminPassword, false, 60);
+        ReflectionTestUtils.setField(client, "backupManager", Mockito.mock(BackupManager.class));
     }
 
     @Test

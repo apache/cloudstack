@@ -39,4 +39,6 @@ public interface ObjectStoreDao extends GenericDao<ObjectStoreVO, Long> {
     ObjectStoreResponse setObjectStoreResponse(ObjectStoreResponse storeData, ObjectStoreVO store);
 
     Integer countAllObjectStores();
+
+    Boolean updateAllocatedSize(ObjectStoreVO objectStoreVO, long delta);
 }

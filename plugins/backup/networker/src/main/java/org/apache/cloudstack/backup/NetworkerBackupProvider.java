@@ -21,21 +21,25 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.utils.script.Script;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDaoImpl;
 import org.apache.cloudstack.backup.networker.NetworkerClient;
@@ -115,6 +119,12 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     @Inject
     private VMInstanceDao vmInstanceDao;
+
+    @Inject
+    private EntityManager entityManager;
+
+    @Inject
+    BackupManager backupManager;
 
     private static String getUrlDomain(String url) throws URISyntaxException {
         URI uri;
@@ -512,6 +522,10 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         BackupVO backup = getClient(vm.getDataCenterId()).registerBackupForVm(vm, backupJobStart, saveTime);
         if (backup != null) {
             backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+            Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
+            backup.setDetails(details);
+            details = backupManager.getDiskOfferingDetailsForBackup(vm.getId());
+            backup.addDetails(details);
             backupDao.persist(backup);
             return new Pair<>(true, backup);
         } else {
@@ -597,6 +611,16 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             backup.setAccountId(vm.getAccountId());
             backup.setDomainId(vm.getDomainId());
             backup.setZoneId(vm.getDataCenterId());
+            backup.setName(backupManager.getBackupNameFromVM(vm));
+
+            HashMap<String, String> details = new HashMap<>();
+            details.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
+            ServiceOffering serviceOffering =  entityManager.findById(ServiceOffering.class, vm.getServiceOfferingId());
+            details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
+            VirtualMachineTemplate template =  entityManager.findById(VirtualMachineTemplate.class, vm.getTemplateId());
+            details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+            backup.setDetails(details);
+
             backupDao.persist(backup);
             return backup;
         }
@@ -612,5 +636,24 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
+    public boolean supportsInstanceFromBackup() {
+        return false;
+    }
+
+    @Override
+    public Pair<Long, Long> getBackupStorageStats(Long zoneId) {
+        return new Pair<>(0L, 0L);
+    }
+
+    @Override
+    public void syncBackupStorageStats(Long zoneId) {
+    }
+
+    @Override
     public boolean willDeleteBackupsOnOfferingRemoval() { return false; }
+
+    @Override
+    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
+        return true;
+    }
 }

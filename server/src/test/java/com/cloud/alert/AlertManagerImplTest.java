@@ -17,10 +17,15 @@
 package com.cloud.alert;
 
 import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 
 import javax.mail.MessagingException;
+import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.mailing.SMTPMailSender;
@@ -39,6 +44,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.capacity.CapacityVO;
+import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.HostPodVO;
@@ -95,6 +102,15 @@ public class AlertManagerImplTest {
 
     @Mock
     SMTPMailSender mailSenderMock;
+
+    @Mock
+    CapacityDao capacityDao;
+
+    @Mock
+    BackupManager backupManager;
+
+    @Mock
+    ConfigurationDao configDao;
 
     private final String[] recipients = new String[]{"test@test.com"};
     private final String senderAddress = "sender@test.com";
@@ -218,5 +234,38 @@ public class AlertManagerImplTest {
         alertManagerImplMock.recalculateStorageCapacities();
         Mockito.verify(storageManager, Mockito.times(2)).createCapacityEntry(sharedPool, Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED, 10L);
         Mockito.verify(storageManager, Mockito.times(1)).createCapacityEntry(nonSharedPool, Capacity.CAPACITY_TYPE_LOCAL_STORAGE, 20L);
+    }
+
+    @Test
+    public void testCheckForAlerts() throws ConfigurationException {
+        Long zoneId = 1L;
+        Mockito.doNothing().when(alertManagerImplMock).recalculateCapacity();
+        DataCenterVO dc = Mockito.mock(DataCenterVO.class);
+        Mockito.when(dc.getId()).thenReturn(zoneId);
+        Mockito.when(dc.getName()).thenReturn("zone1");
+        Mockito.when(_dcDao.listAll()).thenReturn(List.of(dc));
+        Mockito.when(_dcDao.findById(zoneId)).thenReturn(dc);
+        Mockito.when(configDao.getConfiguration("management-server", null)).thenReturn(new HashMap<>());
+
+        alertManagerImplMock.configure(null, null);
+        CapacityVO secondaryStorageCapacity = new CapacityVO(null, zoneId, null, null, 100L, 200L, Capacity.CAPACITY_TYPE_SECONDARY_STORAGE);
+        CapacityVO storagePoolCapacity = new CapacityVO(null, zoneId, null, null, 200L, 300L, Capacity.CAPACITY_TYPE_STORAGE);
+        CapacityVO objectStoreCapacity = new CapacityVO(null, zoneId, null, null, 200L, 300L, Capacity.CAPACITY_TYPE_OBJECT_STORAGE);
+        CapacityVO backupCapacity = new CapacityVO(null, zoneId, null, null, 180L, 200L, Capacity.CAPACITY_TYPE_BACKUP_STORAGE);
+        Mockito.when(storageManager.getSecondaryStorageUsedStats(null, zoneId)).thenReturn(secondaryStorageCapacity);
+        Mockito.when(storageManager.getObjectStorageUsedStats(zoneId)).thenReturn(objectStoreCapacity);
+        Mockito.when(backupManager.getBackupStorageUsedStats(zoneId)).thenReturn(backupCapacity);
+        alertManagerImplMock.checkForAlerts();
+
+        Mockito.verify(alertManagerImplMock).recalculateCapacity();
+
+        ArgumentCaptor<AlertVO> alertCaptor = ArgumentCaptor.forClass(AlertVO.class);
+        verify(_alertDao).persist(alertCaptor.capture());
+        AlertVO capturedAlert = alertCaptor.getValue();
+        assertNotNull("Captured alert should not be null", capturedAlert);
+        assertEquals(Optional.of(zoneId), Optional.ofNullable(capturedAlert.getDataCenterId()));
+        assertEquals("System Alert: Low Available Backup Storage in availability zone zone1", capturedAlert.getSubject());
+        assertEquals("Available backup storage space is low, total: 200.0 MB, used: 180.0 MB (90%)", capturedAlert.getContent());
+        assertEquals(AlertManager.AlertType.ALERT_TYPE_BACKUP_STORAGE.getType(), capturedAlert.getType());
     }
 }

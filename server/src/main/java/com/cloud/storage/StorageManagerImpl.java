@@ -4168,7 +4168,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 VmwareAllowParallelExecution,
                 DataStoreDownloadFollowRedirects,
                 AllowVolumeReSizeBeyondAllocation,
-                StoragePoolHostConnectWorkers
+                StoragePoolHostConnectWorkers,
+                ObjectStorageCapacityThreshold
         };
     }
 
@@ -4217,7 +4218,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_OBJECT_STORE_CREATE, eventDescription = "creating object storage")
-    public ObjectStore discoverObjectStore(String name, String url, String providerName, Map details)
+    public ObjectStore discoverObjectStore(String name, String url, Long size, String providerName, Map details)
             throws IllegalArgumentException, InvalidParameterValueException {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
 
@@ -4247,6 +4248,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         Map<String, Object> params = new HashMap<>();
         params.put("url", url);
         params.put("name", name);
+        if (size == null) {
+            params.put("size", 0L);
+        } else {
+            params.put("size", size);
+        }
         params.put("providerName", storeProvider.getName());
         params.put("role", DataStoreRole.Object);
         params.put("details", details);
@@ -4330,8 +4336,26 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if(cmd.getName() != null ) {
             objectStoreVO.setName(cmd.getName());
         }
+        objectStoreVO.setTotalSize(cmd.getSize() * ResourceType.bytesToGiB);
         _objectStoreDao.update(id, objectStoreVO);
         logger.debug("Successfully updated object store: {}", objectStoreVO);
         return objectStoreVO;
+    }
+
+    @Override
+    public CapacityVO getObjectStorageUsedStats(Long zoneId) {
+        List<ObjectStoreVO> objectStores = _objectStoreDao.listObjectStores();
+        Long allocated = 0L;
+        Long total = 0L;
+        for (ObjectStoreVO objectStore: objectStores) {
+            if (objectStore.getAllocatedSize() != null) {
+                allocated += objectStore.getAllocatedSize();
+            }
+            if (objectStore.getTotalSize() != null) {
+                total += objectStore.getTotalSize();
+            }
+        }
+        CapacityVO capacity = new CapacityVO(null, zoneId, null, null, allocated, total, Capacity.CAPACITY_TYPE_OBJECT_STORAGE);
+        return capacity;
     }
 }
