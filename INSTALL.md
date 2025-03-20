@@ -38,7 +38,6 @@ Start the MySQL service:
 
     $ service mysqld start
     $ mysql_secure_installation
-    
 
 ### Using jenv and/or pyenv for Version Management
 
@@ -103,7 +102,7 @@ Move to UI Directory
 
 To install dependencies.
 
-    $ npm install 
+    $ npm install
 
 To build the project.
 
@@ -111,7 +110,7 @@ To build the project.
 
 For Development Mode.
 
-    $ npm start 
+    $ npm start
 
 Make sure to set CS_URL=http://localhost:8080/client on .env.local file on ui.
 
