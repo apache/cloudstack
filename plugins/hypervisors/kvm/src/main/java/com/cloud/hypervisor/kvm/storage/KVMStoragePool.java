@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.storage;
 
+import java.io.File;
 import java.util.List;
 import java.util.Map;
 
@@ -99,6 +100,10 @@ public interface KVMStoragePool {
     public boolean supportsConfigDriveIso();
 
     public Map<String, String> getDetails();
+
+    default String getLocalPathFor(String relativePath) {
+        return String.format("%s%s%s", getLocalPath(), File.separator, relativePath);
+    }
 
     public boolean isPoolSupportHA();
 

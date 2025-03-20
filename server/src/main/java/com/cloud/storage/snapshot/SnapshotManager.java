@@ -17,6 +17,8 @@
 package com.cloud.storage.snapshot;
 
 import com.cloud.user.Account;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.StoragePool;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -34,12 +36,6 @@ import com.cloud.storage.VolumeVO;
  *
  */
 public interface SnapshotManager extends Configurable {
-
-    public static final int HOURLYMAX = 8;
-    public static final int DAILYMAX = 8;
-    public static final int WEEKLYMAX = 8;
-    public static final int MONTHLYMAX = 12;
-    public static final int DELTAMAX = 16;
 
     static final ConfigKey<Integer> SnapshotHourlyMax = new ConfigKey<Integer>(Integer.class, "snapshot.max.hourly", "Snapshots", "8",
             "Maximum recurring hourly snapshots to be retained for a volume. If the limit is reached, early snapshots from the start of the hour are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring hourly snapshots can not be scheduled.", false, ConfigKey.Scope.Global, null);
@@ -59,6 +55,12 @@ public interface SnapshotManager extends Configurable {
 
     public static final ConfigKey<Boolean> VmStorageSnapshotKvm = new ConfigKey<>(Boolean.class, "kvm.vmstoragesnapshot.enabled", "Snapshots", "false", "For live snapshot of virtual machine instance on KVM hypervisor without memory. Requires qemu version 1.6+ (on NFS or Local file system) and qemu-guest-agent installed on guest VM", true, ConfigKey.Scope.Global, null);
 
+    ConfigKey<Boolean> kvmIncrementalSnapshot = new ConfigKey<>(Boolean.class, "kvm.incremental.snapshot", "Snapshots", "false", "Whether differential snapshots are enabled for" +
+            " KVM or not. When this is enabled, all KVM snapshots will be incremental. Bear in mind that it will generate a new full snapshot when the snapshot chain reaches the limit defined in snapshot.delta.max.", true, ConfigKey.Scope.Cluster, null);
+
+    ConfigKey<Integer> snapshotDeltaMax = new ConfigKey<>(Integer.class, "snapshot.delta.max", "Snapshots", "16", "Max delta snapshots between two full snapshots. " +
+            "Only valid for KVM and XenServer.", true, ConfigKey.Scope.Global, null);
+
     void deletePoliciesForVolume(Long volumeId);
 
     /**
@@ -71,7 +73,7 @@ public interface SnapshotManager extends Configurable {
      */
     boolean deleteSnapshotDirsForAccount(Account account);
 
-    //void deleteSnapshotsDirForVolume(String secondaryStoragePoolUrl, Long dcId, Long accountId, Long volumeId);
+    boolean isHypervisorKvmAndFileBasedStorage(VolumeInfo volumeInfo, StoragePool storagePool);
 
     boolean canOperateOnVolume(Volume volume);
 
@@ -91,4 +93,6 @@ public interface SnapshotManager extends Configurable {
      * @param destVolume destination volume.
      */
     void copySnapshotPoliciesBetweenVolumes(VolumeVO srcVolume, VolumeVO destVolume);
+
+    void endSnapshotChainForVolume(long volumeId, Hypervisor.HypervisorType hypervisorType);
 }
