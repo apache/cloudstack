@@ -795,6 +795,9 @@ public class EventTypes {
     // Resource Limit
     public static final String EVENT_RESOURCE_LIMIT_UPDATE = "RESOURCE.LIMIT.UPDATE";
 
+    // Management Server
+    public static final String EVENT_MANAGEMENT_SERVER_REMOVE = "MANAGEMENT.SERVER.REMOVE";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -1289,6 +1292,9 @@ public class EventTypes {
         entityEventDetails.put(EVENT_SHAREDFS_DESTROY, SharedFS.class);
         entityEventDetails.put(EVENT_SHAREDFS_EXPUNGE, SharedFS.class);
         entityEventDetails.put(EVENT_SHAREDFS_RECOVER, SharedFS.class);
+
+        // Management Server
+        entityEventDetails.put(EVENT_MANAGEMENT_SERVER_REMOVE, "ManagementServer");
     }
 
     public static boolean isNetworkEvent(String eventType) {
