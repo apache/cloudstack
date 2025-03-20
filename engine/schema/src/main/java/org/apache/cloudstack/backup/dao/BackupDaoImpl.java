@@ -300,9 +300,6 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         if (vm != null) {
             response.setVmId(vm.getUuid());
             response.setVmName(vm.getHostName());
-        } else {
-            response.setVmName(backup.getVmName());
-            response.setIsOrphan(true);
         }
         response.setExternalId(backup.getExternalId());
         response.setType(backup.getType());

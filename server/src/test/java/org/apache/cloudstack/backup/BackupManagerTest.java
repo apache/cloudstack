@@ -680,10 +680,12 @@ public class BackupManagerTest {
 
         BackupVO backupInDb1 = new BackupVO();
         backupInDb1.setSize(backup1Size);
+        backupInDb1.setAccountId(accountId);
         backupInDb1.setExternalId(restorePoint1ExternalId);
 
         BackupVO backupInDb2 = new BackupVO();
         backupInDb2.setSize(backup2Size);
+        backupInDb2.setAccountId(accountId);
         backupInDb2.setExternalId(null);
         ReflectionTestUtils.setField(backupInDb2, "id", backup2Id);
         when(backupDao.findById(backup2Id)).thenReturn(backupInDb2);
@@ -990,11 +992,6 @@ public class BackupManagerTest {
         }
     }
 
-    private
-    void setupRestoreBackupToVMMocks() {
-
-    }
-
     @Test
     public void testRestoreBackupToVM() throws NoTransitionException {
         Long backupId = 1L;
@@ -1002,8 +999,6 @@ public class BackupManagerTest {
         Long hostId = 3L;
         Long offeringId = 4L;
         Long poolId = 5L;
-
-        setupRestoreBackupToVMMocks();
 
         BackupVO backup = mock(BackupVO.class);
         when(backup.getBackupOfferingId()).thenReturn(offeringId);
@@ -1049,42 +1044,6 @@ public class BackupManagerTest {
             verify(virtualMachineManager, times(1)).stateTransitTo(vm, VirtualMachine.Event.RestoringSuccess, hostId);
         } catch (ResourceUnavailableException e) {
             fail("Test failed due to exception" + e);
-        }
-    }
-
-    @Test
-    public void testUpdateOrphanedBackups() {
-        Long vmId = 1L;
-        Long zoneId = 2L;
-        Long backupId1 = 3L;
-        Long backupId2 = 4L;
-
-        VirtualMachine vm = mock(VirtualMachine.class);
-        when(vm.getDataCenterId()).thenReturn(1L);
-        when(vm.getId()).thenReturn(vmId);
-        when(vm.getHostName()).thenReturn("test-vm");
-        when(vm.getDataCenterId()).thenReturn(zoneId);
-
-        Backup backup1 = mock(Backup.class);
-        Backup backup2 = mock(Backup.class);
-        when(backup1.getId()).thenReturn(backupId1);
-        when(backup2.getId()).thenReturn(backupId2);
-        List<Backup> backups = List.of(backup1, backup2);
-        when(backupDao.listByVmId(zoneId, vmId)).thenReturn(backups);
-
-        BackupVO backupVO1 = new BackupVO();
-        BackupVO backupVO2 = new BackupVO();
-        when(backupDao.findById(backupId1)).thenReturn(backupVO1);
-        when(backupDao.findById(backupId2)).thenReturn(backupVO2);
-
-        backupManager.updateOrphanedBackups(vm);
-
-        Assert.assertEquals(null, backupVO1.getVmId());
-        Assert.assertEquals("test-vm", backupVO1.getVmName());
-        Assert.assertEquals(null, backupVO2.getVmId());
-        Assert.assertEquals("test-vm", backupVO2.getVmName());
-        for (Backup backup : backups) {
-            verify(backupDao).update(Mockito.eq(backup.getId()), any(BackupVO.class));
         }
     }
 

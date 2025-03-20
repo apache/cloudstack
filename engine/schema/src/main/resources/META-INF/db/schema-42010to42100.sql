@@ -41,8 +41,6 @@ ALTER TABLE `cloud`.`backup_schedule` ADD COLUMN `max_backups` int(8) default NU
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'name', 'VARCHAR(255) NOT NULL COMMENT "name of the backup"');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'description', 'VARCHAR(1024) COMMENT "description for the backup"');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'backup_interval_type', 'int(5) COMMENT "type of backup, e.g. manual, recurring - hourly, daily, weekly or monthly"');
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'vm_name', 'VARCHAR(255) COMMENT "name of the vm for which backup is taken, set only for orphaned backups"');
-UPDATE `cloud`.`backups` JOIN `cloud`.`vm_instance` ON `backups`.`vm_id` = `vm_instance`.`id` SET `backups`.`name` = `vm_instance`.`name`;
 
 -- Make the column vm_id in backups table nullable to handle orphan backups
 ALTER TABLE `cloud`.`backups` MODIFY COLUMN `vm_id` BIGINT UNSIGNED NULL;

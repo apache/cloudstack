@@ -264,8 +264,6 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     String getBackupNameFromVM(VirtualMachine vm);
 
-    void updateOrphanedBackups(VirtualMachine vm);
-
     Capacity getBackupStorageUsedStats(Long zoneId);
 
     void checkAndRemoveBackupOfferingBeforeExpunge(VirtualMachine vm);

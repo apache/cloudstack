@@ -656,8 +656,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             throw new CloudRuntimeException("Unable to expunge " + vm, e);
         }
 
-        backupManager.updateOrphanedBackups(vm);
-
         logger.debug("Expunging vm " + vm);
 
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);

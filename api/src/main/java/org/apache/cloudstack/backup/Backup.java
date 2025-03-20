@@ -158,9 +158,7 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
     }
 
     Long getVmId();
-    String getVmName();
     long getBackupOfferingId();
-    void setVmName(String vmName);
     String getExternalId();
     String getType();
     Date getDate();

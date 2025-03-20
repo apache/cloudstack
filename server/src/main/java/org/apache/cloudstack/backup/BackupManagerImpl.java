@@ -1235,12 +1235,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         final Long vmId = backup.getVmId();
-        if (vmId == null) {
-            logger.debug("Deleting orphaned backup with ID {}", backupId);
-        } else {
-            logger.debug("Deleting backup {} belonging to instance {}", backupId, vmId);
-        }
         final VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
+        if (vm == null) {
+            logger.warn("Instance {} not found for backup {} during delete backup", vmId, backup.toString());
+        }
+        logger.debug("Deleting backup {} belonging to instance {}", backup.toString(), vmId);
 
         validateBackupForZone(backup.getZoneId());
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm == null ? backup : vm);
@@ -1673,15 +1672,15 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             for (final Backup backupInDb : backupsInDb) {
                 logger.debug(String.format("Checking if Backup %s with external ID %s for VM %s is valid", backupsInDb, backupInDb.getName(), vm));
                 if (restorePoint.getId().equals(backupInDb.getExternalId())) {
-                    logger.debug(String.format("Found Backup %s in both Database and Networker", backupInDb));
+                    logger.debug(String.format("Found Backup %s in both Database and Provider", backupInDb));
                     if (metric != null) {
                         logger.debug(String.format("Update backup [%s] from [size: %s, protected size: %s] to [size: %s, protected size: %s].",
                                 backupInDb, backupInDb.getSize(), backupInDb.getProtectedSize(), metric.getBackupSize(), metric.getDataSize()));
 
-                        resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backupInDb.getSize());
+                        resourceLimitMgr.decrementResourceCount(backupInDb.getAccountId(), Resource.ResourceType.backup_storage, backupInDb.getSize());
                         ((BackupVO) backupInDb).setSize(metric.getBackupSize());
                         ((BackupVO) backupInDb).setProtectedSize(metric.getDataSize());
-                        resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backupInDb.getSize());
+                        resourceLimitMgr.incrementResourceCount(backupInDb.getAccountId(), Resource.ResourceType.backup_storage, backupInDb.getSize());
 
                         backupDao.update(backupInDb.getId(), ((BackupVO) backupInDb));
                     }
@@ -1689,6 +1688,16 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 }
             }
             return null;
+        }
+
+        private void processRemoveList(List<Long> removeList) {
+            for (final Long backupIdToRemove : removeList) {
+                logger.warn(String.format("Removing backup with ID: [%s].", backupIdToRemove));
+                Backup backup = backupDao.findById(backupIdToRemove);
+                resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup);
+                resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
+                backupDao.remove(backupIdToRemove);
+            }
         }
 
         private void syncBackups(BackupProvider backupProvider, VirtualMachine vm, Backup.Metric metric) {
@@ -1726,13 +1735,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                                     vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),0);
                         }
                     }
-                    for (final Long backupIdToRemove : removeList) {
-                        logger.warn(String.format("Removing backup with ID: [%s].", backupIdToRemove));
-                        Backup backup = backupDao.findById(backupIdToRemove);
-                        resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
-                        resourceLimitMgr.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
-                        backupDao.remove(backupIdToRemove);
-                    }
+                    processRemoveList(removeList);
                 }
             });
         }
@@ -1803,20 +1806,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         CallContext.current().setEventDetails(String.format("Backup Offering updated [%s].",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(response, "id", "name", "description", "userDrivenBackupAllowed", "externalId")));
         return response;
-    }
-
-    @Override
-    public void updateOrphanedBackups(VirtualMachine vm) {
-        List<Backup> backups = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
-        if (backups.size() == 0) {
-            return;
-        }
-        for (Backup backup : backups) {
-            BackupVO backupVO = backupDao.findById(backup.getId());
-            backupVO.setVmId(null);
-            backupVO.setVmName(vm.getHostName());
-            backupDao.update(backup.getId(), backupVO);
-        }
     }
 
     @Override

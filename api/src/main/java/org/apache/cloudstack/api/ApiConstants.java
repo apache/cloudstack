@@ -368,7 +368,6 @@ public class ApiConstants {
     public static final String OP = "op";
     public static final String OPTION = "option";
     public static final String OPTIONS = "options";
-    public static final String IS_ORPHAN = "isorphan";
     public static final String OS_CATEGORY_ID = "oscategoryid";
     public static final String OS_CATEGORY_NAME = "oscategoryname";
     public static final String OS_NAME = "osname";

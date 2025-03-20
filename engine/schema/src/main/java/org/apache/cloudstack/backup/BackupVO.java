@@ -62,9 +62,6 @@ public class BackupVO implements Backup {
     @Column(name = "vm_id")
     private Long vmId;
 
-    @Column(name = "vm_name")
-    private String vmName;
-
     @Column(name = "external_id")
     private String externalId;
 
@@ -116,7 +113,7 @@ public class BackupVO implements Backup {
     @Override
     public String toString() {
         return String.format("Backup %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                this, "id", "uuid", "vmId", "vmName", "backupType", "externalId"));
+                this, "id", "uuid", "vmId", "backupType", "externalId"));
     }
 
     @Override
@@ -136,16 +133,6 @@ public class BackupVO implements Backup {
 
     public void setVmId(Long vmId) {
         this.vmId = vmId;
-    }
-
-    @Override
-    public String getVmName() {
-        return vmName;
-    }
-
-    @Override
-    public void setVmName(String vmName) {
-        this.vmName = vmName;
     }
 
     @Override

@@ -119,10 +119,6 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "the interval type of the backup schedule", since = "4.21.0")
     private String intervalType;
 
-    @SerializedName(ApiConstants.IS_ORPHAN)
-    @Param(description = "The backups is orphaned and not associated with an existing VM. A new VM can still be created using the backup", since = "4.21.0")
-    private Boolean isOrphan;
-
     public String getId() {
         return id;
     }
@@ -297,13 +293,5 @@ public class BackupResponse extends BaseResponse {
 
     public void setIntervalType(String intervalType) {
         this.intervalType = intervalType;
-    }
-
-    public Boolean getIsOrphan() {
-        return isOrphan;
-    }
-
-    public void setIsOrphan(Boolean isOrphan) {
-        this.isOrphan = isOrphan;
     }
 }
