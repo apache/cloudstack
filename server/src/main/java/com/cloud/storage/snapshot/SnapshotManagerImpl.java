@@ -390,13 +390,25 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         boolean result = snapshotStrategy.revertSnapshot(snapshotInfo);
         if (result) {
-            // update volume size and primary storage count
-            _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.primary_storage, new Long(volume.getSize() - snapshot.getSize()));
-            volume.setSize(snapshot.getSize());
-            _volsDao.update(volume.getId(), volume);
+            updateVolumeSizeAndPrimaryStorageCount(volume, snapshot);
             return snapshotInfo;
         }
         return null;
+    }
+
+    public void updateVolumeSizeAndPrimaryStorageCount(VolumeVO volume, SnapshotVO snapshot) {
+        Long differenceBetweenVolumeAndSnapshotSize = new Long(volume.getSize() - snapshot.getSize());
+        if (differenceBetweenVolumeAndSnapshotSize != 0) {
+            if (differenceBetweenVolumeAndSnapshotSize > 0) {
+                _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.primary_storage, differenceBetweenVolumeAndSnapshotSize);
+            } else if (differenceBetweenVolumeAndSnapshotSize < 0) {
+                _resourceLimitMgr.incrementResourceCount(snapshot.getAccountId(), ResourceType.primary_storage, differenceBetweenVolumeAndSnapshotSize * -1L);
+            }
+            volume.setSize(snapshot.getSize());
+            _volsDao.update(volume.getId(), volume);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_RESIZE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
+                    volume.getDiskOfferingId(), volume.getTemplateId(), volume.getSize(), Volume.class.getName(), volume.getUuid());
+        }
     }
 
     @Override
@@ -805,7 +817,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
             return result;
         } catch (Exception e) {
-            logger.debug("Failed to delete snapshot {}:{}", snapshotCheck, e.toString());
+            logger.debug("Failed to delete snapshot {}:{}", snapshotCheck.getId(), e.toString());
 
             throw new CloudRuntimeException("Failed to delete snapshot:" + e.toString());
         }
