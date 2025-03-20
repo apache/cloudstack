@@ -49,7 +49,15 @@ github:
     squash: true
     rebase: false
 
-  collaborators: []
+  collaborators: 
+    - acs-robot
+    - gpordeus
+    - hsato03
+    - bernardodemarco
+    - abh1sar
+    - FelipeM525
+    - lucas-a-martins
+    - nicoschmdt
 
   protected_branches: ~
 
