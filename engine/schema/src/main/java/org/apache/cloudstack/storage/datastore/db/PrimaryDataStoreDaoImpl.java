@@ -296,14 +296,19 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     }
 
     @Override
-    @DB
     public StoragePoolVO persist(StoragePoolVO pool, Map<String, String> details, List<String> tags, Boolean isTagARule) {
+        return persist(pool, details, tags, isTagARule, true);
+    }
+
+    @Override
+    @DB
+    public StoragePoolVO persist(StoragePoolVO pool, Map<String, String> details, List<String> tags, Boolean isTagARule, boolean displayDetails) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         pool = super.persist(pool);
         if (details != null) {
             for (Map.Entry<String, String> detail : details.entrySet()) {
-                StoragePoolDetailVO vo = new StoragePoolDetailVO(pool.getId(), detail.getKey(), detail.getValue(), true);
+                StoragePoolDetailVO vo = new StoragePoolDetailVO(pool.getId(), detail.getKey(), detail.getValue(), displayDetails);
                 _detailsDao.persist(vo);
             }
         }
@@ -568,6 +573,11 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
                 _detailsDao.removeDetails(poolId);
             }
         }
+    }
+
+    @Override
+    public void removeDetails(long poolId) {
+        _detailsDao.removeDetails(poolId);
     }
 
     @Override
