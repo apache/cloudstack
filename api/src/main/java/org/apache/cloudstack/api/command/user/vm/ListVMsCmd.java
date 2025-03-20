@@ -153,6 +153,11 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
     @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, required = false, description = "the instances by userdata", since = "4.20.1")
     private Long userdataId;
 
+    @Parameter(name = ApiConstants.LEASED, type = CommandType.BOOLEAN,
+            description = "Whether to return only leased instances",
+            since = "4.21.0")
+    private Boolean onlyLeasedInstances = false;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -329,5 +334,9 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
             ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
             vmResponse.setResourceIconResponse(iconResponse);
         }
+    }
+
+    public Boolean getOnlyLeasedInstances() {
+        return onlyLeasedInstances;
     }
 }

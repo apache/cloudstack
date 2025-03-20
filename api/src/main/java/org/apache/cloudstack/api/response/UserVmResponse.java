@@ -16,6 +16,18 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.cloud.network.router.VirtualRouter;
+import com.cloud.serializer.Param;
+import com.cloud.uservm.UserVm;
+import com.cloud.vm.VirtualMachine;
+import com.google.gson.annotations.SerializedName;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponseWithTagInformation;
+import org.apache.cloudstack.api.EntityReference;
+import org.apache.commons.collections.CollectionUtils;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
@@ -25,19 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.affinity.AffinityGroupResponse;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponseWithTagInformation;
-import org.apache.cloudstack.api.EntityReference;
-
-import com.cloud.network.router.VirtualRouter;
-import com.cloud.serializer.Param;
-import com.cloud.uservm.UserVm;
-import com.cloud.vm.VirtualMachine;
-import com.google.gson.annotations.SerializedName;
-import org.apache.commons.collections.CollectionUtils;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {VirtualMachine.class, UserVm.class, VirtualRouter.class})
@@ -392,9 +391,21 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "VNF details", since = "4.19.0")
     private Map<String, String> vnfDetails;
 
-    @SerializedName((ApiConstants.VM_TYPE))
+    @SerializedName(ApiConstants.VM_TYPE)
     @Param(description = "User VM type", since = "4.20.0")
     private String vmType;
+
+    @SerializedName(ApiConstants.INSTANCE_LEASE_DURATION)
+    @Param(description = "Instance lease duration in days", since = "4.21.0")
+    private Long leaseDuration;
+
+    @SerializedName(ApiConstants.INSTANCE_LEASE_EXPIRY_DATE)
+    @Param(description = "Instance lease expiry date", since = "4.21.0")
+    private Date leaseExpiryDate;
+
+    @SerializedName(ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION)
+    @Param(description = "Instance lease expiry action", since = "4.21.0")
+    private String leaseExpiryAction;
 
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<>();
@@ -1169,4 +1180,29 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
     }
+
+    public Long getLeaseDuration() {
+        return leaseDuration;
+    }
+
+    public void setLeaseDuration(Long leaseDuration) {
+        this.leaseDuration = leaseDuration;
+    }
+
+    public String getLeaseExpiryAction() {
+        return leaseExpiryAction;
+    }
+
+    public void setLeaseExpiryAction(String leaseExpiryAction) {
+        this.leaseExpiryAction = leaseExpiryAction;
+    }
+
+    public Date getLeaseExpiryDate() {
+        return leaseExpiryDate;
+    }
+
+    public void setLeaseExpiryDate(Date leaseExpiryDate) {
+        this.leaseExpiryDate = leaseExpiryDate;
+    }
+
 }
