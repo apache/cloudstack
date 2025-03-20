@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -33,6 +34,7 @@ import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupDetailVO;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupVO;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -70,6 +72,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     BackupDetailsDao backupDetailsDao;
 
     private SearchBuilder<BackupVO> backupSearch;
+    private SearchBuilder<BackupVO> backupVmSearchInZone;
     private GenericSearchBuilder<BackupVO, Long> CountBackupsByAccount;
     private GenericSearchBuilder<BackupVO, SumCount> CalculateBackupStorageByAccount;
     private SearchBuilder<BackupVO> ListBackupsByVMandIntervalType;
@@ -84,6 +87,11 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         backupSearch.and("external_id", backupSearch.entity().getExternalId(), SearchCriteria.Op.EQ);
         backupSearch.and("backup_offering_id", backupSearch.entity().getBackupOfferingId(), SearchCriteria.Op.EQ);
         backupSearch.and("zone_id", backupSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        backupSearch.done();
+
+        backupVmSearchInZone = createSearchBuilder();
+        backupVmSearchInZone.and("zone_id", backupSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        backupVmSearchInZone.select("vm_id", SearchCriteria.Func.DISTINCT, backupVmSearchInZone.entity().getVmId());
         backupSearch.done();
 
         CountBackupsByAccount = createSearchBuilder(Long.class);
@@ -139,11 +147,34 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         return new ArrayList<>(listBy(sc));
     }
 
+    @Override
+    public List<Backup> listByVmIdAndOffering(Long zoneId, Long vmId, Long offeringId) {
+        SearchCriteria<BackupVO> sc = backupSearch.create();
+        sc.setParameters("vm_id", vmId);
+        if (zoneId != null) {
+            sc.setParameters("zone_id", zoneId);
+        }
+        sc.setParameters("backup_offering_id", offeringId);
+        return new ArrayList<>(listBy(sc));
+    }
+
     private Backup findByExternalId(Long zoneId, String externalId) {
         SearchCriteria<BackupVO> sc = backupSearch.create();
         sc.setParameters("external_id", externalId);
         sc.setParameters("zone_id", zoneId);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<BackupVO> searchByVmIds(List<Long> vmIds) {
+        if (CollectionUtils.isEmpty(vmIds)) {
+            return new ArrayList<>();
+        }
+        SearchBuilder<BackupVO> sb = createSearchBuilder();
+        sb.and("vmIds", sb.entity().getVmId(), SearchCriteria.Op.IN);
+        SearchCriteria<BackupVO> sc = sb.create();
+        sc.setParameters("vmIds", vmIds.toArray());
+        return search(sc, null);
     }
 
     public BackupVO getBackupVO(Backup backup) {
@@ -240,6 +271,14 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
             details.add(detail);
         }
         backupDetailsDao.saveDetails(details);
+    }
+
+    @Override
+    public List<Long> listVmIdsWithBackupsInZone(Long zoneId) {
+        SearchCriteria<BackupVO> sc = backupVmSearchInZone.create();
+        sc.setParameters("zone_id", zoneId);
+        List<BackupVO> backups = customSearch(sc, null);
+        return backups.stream().map(BackupVO::getVmId).collect(Collectors.toList());
     }
 
     @Override

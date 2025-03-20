@@ -1645,7 +1645,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
                     backupProvider.syncBackupStorageStats(dataCenter.getId());
 
-                    List<VMInstanceVO> vms = vmInstanceDao.listByZoneWithBackups(dataCenter.getId(), null);
+                    List<Long> vmIds = backupDao.listVmIdsWithBackupsInZone(dataCenter.getId());
+                    List<VMInstanceVO> vms = vmInstanceDao.listByIds(vmIds);
                     if (vms == null || vms.isEmpty()) {
                         logger.debug("Can't find any VM to sync backups in zone {}", dataCenter);
                         continue;
@@ -1830,7 +1831,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm.getBackupOfferingId() == null) {
             return;
         }
-        List<Backup> backupsForVm = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+        List<Backup> backupsForVm = backupDao.listByVmIdAndOffering(vm.getDataCenterId(), vm.getId(), vm.getBackupOfferingId());
         if (org.apache.commons.collections.CollectionUtils.isEmpty(backupsForVm)) {
             removeVMFromBackupOffering(vm.getId(), true);
         } else {

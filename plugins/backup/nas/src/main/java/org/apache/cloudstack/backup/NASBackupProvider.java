@@ -243,7 +243,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         List<VolumeVO> restoreVolumes = volumeDao.findByInstance(vm.getId());
 
         LOG.debug("Restoring vm {} from backup {} on the NAS Backup Provider", vm, backup);
-        BackupRepository backupRepository = getBackupRepository(vm, backup);
+        BackupRepository backupRepository = getBackupRepository(backup);
 
         final Host host = getLastVMHypervisorHost(vm);
         RestoreBackupCommand restoreCommand = new RestoreBackupCommand();
@@ -295,7 +295,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         Long backedUpVolumeSize = matchingVolume.isPresent() ? matchingVolume.get().getSize() : 0L;
 
         LOG.debug("Restoring vm volume {} from backup {} on the NAS Backup Provider", volume, backup);
-        BackupRepository backupRepository = getBackupRepository(backupSourceVm, backup);
+        BackupRepository backupRepository = getBackupRepository(backup);
 
         VolumeVO restoredVolume = new VolumeVO(Volume.Type.DATADISK, null, backup.getZoneId(),
                 backup.getDomainId(), backup.getAccountId(), 0, null,
@@ -345,15 +345,10 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         return new Pair<>(answer.getResult(), answer.getDetails());
     }
 
-    private BackupRepository getBackupRepository(VirtualMachine vm, Backup backup) {
-        BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(vm.getBackupOfferingId());
-        final String errorMessage = "No valid backup repository found for the VM, please check the attached backup offering";
+    private BackupRepository getBackupRepository(Backup backup) {
+        BackupRepository backupRepository = backupRepositoryDao.findByBackupOfferingId(backup.getBackupOfferingId());
         if (backupRepository == null) {
-            logger.warn(errorMessage + "Re-attempting with the backup offering associated with the backup");
-        }
-        backupRepository = backupRepositoryDao.findByBackupOfferingId(backup.getBackupOfferingId());
-        if (backupRepository == null) {
-            throw new CloudRuntimeException(errorMessage);
+            throw new CloudRuntimeException(String.format("No valid backup repository found for the backup %s, please check the attached backup offering", backup.getUuid()));
         }
         return backupRepository;
     }

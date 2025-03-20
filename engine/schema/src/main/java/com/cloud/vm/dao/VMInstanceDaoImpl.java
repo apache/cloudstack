@@ -1224,4 +1224,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         return vms.stream()
                 .collect(Collectors.toMap(VMInstanceVO::getInstanceName, VMInstanceVO::getId));
     }
+
+    @Override
+    public List<VMInstanceVO> listByIds(List<Long> ids) {
+        SearchBuilder<VMInstanceVO> idsSearch = createSearchBuilder();
+        idsSearch.and("ids", idsSearch.entity().getId(), SearchCriteria.Op.IN);
+        idsSearch.done();
+        SearchCriteria<VMInstanceVO> sc = idsSearch.create();
+        sc.setParameters("ids", ids.toArray());
+        return listIncludingRemovedBy(sc);
+    }
 }

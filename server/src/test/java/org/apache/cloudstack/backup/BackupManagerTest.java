@@ -665,7 +665,9 @@ public class BackupManagerTest {
         VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
         when(vm.getId()).thenReturn(vmId);
         when(vm.getAccountId()).thenReturn(accountId);
-        when(vmInstanceDao.listByZoneWithBackups(dataCenterId, null)).thenReturn(List.of(vm));
+        List<Long> vmIds = List.of(vmId);
+        when(backupDao.listVmIdsWithBackupsInZone(dataCenterId)).thenReturn(vmIds);
+        when(vmInstanceDao.listByIds(vmIds)).thenReturn(List.of(vm));
         Backup.Metric metric = new Backup.Metric(metricSize, null);
         Map<VirtualMachine, Backup.Metric> metricMap = new HashMap<>();
         metricMap.put(vm, metric);
