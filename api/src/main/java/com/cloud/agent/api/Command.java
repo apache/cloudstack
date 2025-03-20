@@ -35,6 +35,23 @@ public abstract class Command {
         Continue, Stop
     }
 
+    public enum State {
+        CREATED,        // Command is created by management server
+        STARTED,        // Command is started by agent
+        PROCESSING,     // Processing by agent
+        PROCESSING_IN_BACKEND,  // Processing in backend by agent
+        COMPLETED,      // Operation succeeds by agent or management server
+        FAILED,         // Operation fails by agent
+        RECONCILE_RETRY,        // Ready for retry of reconciliation
+        RECONCILING,    // Being reconciled by management server
+        RECONCILED,     // Reconciled by management server
+        RECONCILE_SKIPPED,  // Skip the reconciliation as the resource state is inconsistent with the command
+        RECONCILE_FAILED,       // Fail to reconcile by management server
+        TIMED_OUT,      // Timed out on management server or agent
+        INTERRUPTED,    // Interrupted by management server or agent (for example agent is restarted),
+        DANGLED_IN_BACKEND     // Backend process which cannot be processed normally (for example agent is restarted)
+    }
+
     public static final String HYPERVISOR_TYPE = "hypervisorType";
 
     // allow command to carry over hypervisor or other environment related context info
@@ -42,6 +59,7 @@ public abstract class Command {
     protected Map<String, String> contextMap = new HashMap<String, String>();
     private int wait;  //in second
     private boolean bypassHostMaintenance = false;
+    private transient long requestSequence = 0L;
 
     protected Command() {
         this.wait = 0;
@@ -82,6 +100,10 @@ public abstract class Command {
         return contextMap.get(name);
     }
 
+    public Map<String, String> getContextMap() {
+        return contextMap;
+    }
+
     public boolean allowCaching() {
         return true;
     }
@@ -92,6 +114,18 @@ public abstract class Command {
 
     public void setBypassHostMaintenance(boolean bypassHostMaintenance) {
         this.bypassHostMaintenance = bypassHostMaintenance;
+    }
+
+    public boolean isReconcile() {
+        return false;
+    }
+
+    public long getRequestSequence() {
+        return requestSequence;
+    }
+
+    public void setRequestSequence(long requestSequence) {
+        this.requestSequence = requestSequence;
     }
 
     @Override

@@ -37,6 +37,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.command.ReconcileCommandService;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -70,6 +71,7 @@ import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.SnapshotDao;
@@ -1197,6 +1199,11 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return true;
         }
         if (vol.getState().isTransitional()) {
+            if (Volume.State.Migrating.equals(vol.getState()) && Arrays.asList(ImageFormat.RAW, ImageFormat.QCOW2).contains(vol.getFormat())
+                    && ReconcileCommandService.ReconcileCommandsEnabled.value()) {
+                logger.debug("Skipping cleaning up Migrating volume: " + vol);
+                return true;
+            }
             logger.debug("Cleaning up volume with Id: " + volumeId);
             boolean status = vol.stateTransit(Volume.Event.OperationFailed);
             cleanupFailedVolumesCreatedFromSnapshots(volumeId);

@@ -22,6 +22,7 @@ import java.nio.channels.ClosedChannelException;
 import com.cloud.agent.transport.Request;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.nio.Link;
 
 /**
@@ -31,8 +32,8 @@ public class ConnectedAgentAttache extends AgentAttache {
 
     protected Link _link;
 
-    public ConnectedAgentAttache(final AgentManagerImpl agentMgr, final long id, final String uuid, final String name, final Link link, final boolean maintenance) {
-        super(agentMgr, id, uuid, name, maintenance);
+    public ConnectedAgentAttache(final AgentManagerImpl agentMgr, final long id, final String uuid, final String name, final Hypervisor.HypervisorType hypervisorType, final Link link, final boolean maintenance) {
+        super(agentMgr, id, uuid, name, hypervisorType, maintenance);
         _link = link;
     }
 
