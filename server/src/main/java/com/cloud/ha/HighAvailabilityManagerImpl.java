@@ -342,7 +342,8 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     @Override
     public boolean scheduleMigration(final VMInstanceVO vm) {
         if (vm.getHostId() != null) {
-            final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.Migration, Step.Scheduled, vm.getHostId(), vm.getState(), 0, vm.getUpdated());
+            Long hostId = VirtualMachine.State.Migrating.equals(vm.getState()) ? vm.getLastHostId() : vm.getHostId();
+            final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.Migration, Step.Scheduled, hostId, vm.getState(), 0, vm.getUpdated());
             _haDao.persist(work);
             s_logger.info("Scheduled migration work of VM " + vm.getUuid() + " from host " + _hostDao.findById(vm.getHostId()) + " with HAWork " + work);
             wakeupWorkers();
@@ -714,6 +715,10 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         VMInstanceVO vm = _instanceDao.findById(vmId);
         if (vm == null) {
             s_logger.info("Unable to find vm: " + vmId + ", skipping migrate.");
+            return null;
+        }
+        if (VirtualMachine.State.Running.equals(vm.getState()) && srcHostId != vm.getHostId()) {
+            s_logger.info(String.format("VM %s is running on a different host %s, skipping migration", vm, vm.getHostId()));
             return null;
         }
         s_logger.info("Migration attempt: for VM " + vm.getUuid() + "from host id " + srcHostId +
