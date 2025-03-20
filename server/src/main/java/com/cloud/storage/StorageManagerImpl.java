@@ -4303,34 +4303,72 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (objectStoreVO == null) {
             throw new IllegalArgumentException("Unable to find object store with ID: " + id);
         }
+        if (! StringUtils.equals(objectStoreVO.getProviderName(), cmd.getProviderName())) {
+            String msg = String.format("Unexpected providerName %s does not match store's providerName %s", cmd.getProviderName(), objectStoreVO.getProviderName());
+            logger.error(msg);
+            throw new IllegalArgumentException(msg);
+        }
 
-        if(cmd.getUrl() != null ) {
-            String url = cmd.getUrl();
+        boolean updated = false;
+        boolean detailsUpdated = false;
+
+        String newName = cmd.getName();
+        String oldName = objectStoreVO.getName();
+        if (newName != null && !newName.equals(oldName)) {
+            logger.debug("name {} => {}", oldName, newName);
+            objectStoreVO.setName(newName);
+            updated = true;
+        }
+
+        String newUrl = cmd.getUrl();
+        String oldUrl = objectStoreVO.getUrl();
+        if (newUrl != null && !newUrl.equals(oldUrl)) {
             try {
-                // Check URL
-                UriUtils.validateUrl(url);
-            } catch (final Exception e) {
-                throw new InvalidParameterValueException(url + " is not a valid URL");
+                UriUtils.validateUrl(newUrl);
+                logger.debug("url {} => {}", oldUrl, newUrl);
+                objectStoreVO.setUrl(newUrl);
+                updated = true;
+            } catch (final IllegalArgumentException e) {
+                throw new InvalidParameterValueException(newUrl + " is not a valid URL");
             }
-            ObjectStoreEntity objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(objectStoreVO.getId(), DataStoreRole.Object);
-            String oldUrl = objectStoreVO.getUrl();
-            objectStoreVO.setUrl(url);
+        }
+
+        if (updated) {
+            // any update to the store, save now
             _objectStoreDao.update(id, objectStoreVO);
-            //Update URL and check access
-            try {
-                objectStore.listBuckets();
-            } catch (Exception e) {
-                //Revert to old URL on failure
+        }
+
+        // If any details are given and if there is any difference, then
+        // we update with all the new details.
+        Map<String, String> oldDetails = _objectStoreDetailsDao.getDetails(id);
+        Map<String, String> newDetails = cmd.getDetails();
+        if (newDetails != null && !oldDetails.equals(newDetails)) {
+            logger.debug("details {} => {}", oldDetails, newDetails);
+            _objectStoreDetailsDao.update(id, newDetails);
+            detailsUpdated = true;
+        }
+
+        // Any updates have been saved. Try validate the connection.
+        // We test the connection even if there were no updates as that's also useful.
+        try {
+            ObjectStoreEntity objectStore = (ObjectStoreEntity)_dataStoreMgr.getDataStore(id, DataStoreRole.Object);
+            objectStore.verifyServiceConnectivity();
+        } catch (Exception e) {
+            String msg = String.format("Unable to access Object Storage with URL: %s", cmd.getUrl());
+            logger.warn(msg, e);
+
+            // revert any updates made.
+            if (updated) {
+                objectStoreVO.setName(oldName);
                 objectStoreVO.setUrl(oldUrl);
                 _objectStoreDao.update(id, objectStoreVO);
-                throw new IllegalArgumentException("Unable to access Object Storage with URL: " + cmd.getUrl());
             }
+            if (detailsUpdated) {
+                _objectStoreDetailsDao.update(id, oldDetails);
+            }
+            throw new IllegalArgumentException(msg);
         }
 
-        if(cmd.getName() != null ) {
-            objectStoreVO.setName(cmd.getName());
-        }
-        _objectStoreDao.update(id, objectStoreVO);
         logger.debug("Successfully updated object store: {}", objectStoreVO);
         return objectStoreVO;
     }

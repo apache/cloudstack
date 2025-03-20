@@ -59,8 +59,9 @@ export default {
       api: 'updateObjectStoragePool',
       icon: 'edit-outlined',
       label: 'label.action.update.object.storage',
-      args: ['name', 'url'],
-      dataView: true
+      dataView: true,
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/UpdateObjectStorage.vue')))
     },
     {
       api: 'deleteObjectStoragePool',
