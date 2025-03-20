@@ -112,6 +112,9 @@ public interface NetworkOrchestrationService {
     static final ConfigKey<Boolean> NSX_ENABLED = new ConfigKey<>(Boolean.class, "nsx.plugin.enable", "Advanced", "false",
             "Indicates whether to enable the NSX plugin", false, ConfigKey.Scope.Zone, null);
 
+    ConfigKey<Boolean> NETRIS_ENABLED = new ConfigKey<>(Boolean.class, "netris.plugin.enable", "Advanced", "false",
+            "Indicates whether to enable the Netris plugin", false, ConfigKey.Scope.Zone, null);
+
     List<? extends Network> setupNetwork(Account owner, NetworkOffering offering, DeploymentPlan plan, String name, String displayText, boolean isDefault)
         throws ConcurrentOperationException;
 
