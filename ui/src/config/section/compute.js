@@ -1045,3 +1045,28 @@ export default {
     }
   ]
 }
+tabs: [
+  {
+    name: 'details',
+    component: () => import('@/components/view/DetailsTab.vue')
+  },
+  {
+    name: 'ayuda',
+    component: {
+      template: 
+        <div>
+          <h3>Guía rápida</h3>
+          <ul>
+            <li><strong>Estado:</strong> Running indica que la VM está activa.</li>
+            <li><strong>IP Pública:</strong> Usada para acceder desde Internet.</li>
+            <li><strong>Snapshots:</strong> Copias de seguridad rápidas.</li>
+            <li><strong>Plantilla:</strong> para compatibilidad, Linux para servidores.</li>
+            <li><strong>RAM:</strong> mínima: 2GB para pruebas, 8GB para producción.</li>
+            <li><strong>Número de CPUS:</strong> mejoran rendimiento pero consumen más recursos.</li>
+        
+          </ul>
+        </div>
+
+    }
+  }
+]
