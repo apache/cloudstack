@@ -149,6 +149,10 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     @Param(description = "whether this pool is managed or not")
     private Boolean managed;
 
+    @SerializedName(ApiConstants.DETAILS)
+    @Param(description = "the storage pool details")
+    private Map<String, String> details;
+
     public Map<String, String> getCaps() {
         return caps;
     }
@@ -406,5 +410,13 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
 
     public void setManaged(Boolean managed) {
         this.managed = managed;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }
