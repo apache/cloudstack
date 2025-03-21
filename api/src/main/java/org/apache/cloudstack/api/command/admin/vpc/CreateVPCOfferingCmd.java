@@ -243,7 +243,7 @@ public class CreateVPCOfferingCmd extends BaseAsyncCreateCmd {
     }
 
     private void getServiceProviderMapForExternalProvider(Map<String, List<String>> serviceProviderMap, String provider) {
-        List<String> unsupportedServices = Arrays.asList("Vpn", "BaremetalPxeService", "SecurityGroup", "Connectivity", "Firewall");
+        List<String> unsupportedServices = new ArrayList<>(List.of("Vpn", "BaremetalPxeService", "SecurityGroup", "Connectivity", "Firewall"));
         if (NetworkOffering.NetworkMode.NATTED.name().equalsIgnoreCase(getNetworkMode())) {
             unsupportedServices.add("Gateway");
         }
