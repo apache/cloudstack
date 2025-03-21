@@ -226,6 +226,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
             Pair<String, Integer> cidr = null;
 
             if (networkId != null) {
+                Network network = _networkMgr.getNetwork(networkId);
                 long ipAddressOwner = ipAddr.getAccountId();
                 vpnVO = _remoteAccessVpnDao.findByAccountAndNetwork(ipAddressOwner, networkId);
                 if (vpnVO != null) {
@@ -233,9 +234,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
                         return vpnVO;
                     }
 
-                    throw new InvalidParameterValueException(String.format("A remote access VPN already exists for the account [%s].", ipAddressOwner));
+                    throw new InvalidParameterValueException(String.format("A remote access VPN already exists for the network %s.", network));
                 }
-                Network network = _networkMgr.getNetwork(networkId);
                 if (!_networkMgr.areServicesSupportedInNetwork(network.getId(), Service.Vpn)) {
                     throw new InvalidParameterValueException("Vpn service is not supported in network id=" + ipAddr.getAssociatedWithNetworkId());
                 }
@@ -310,9 +310,6 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
             boolean isVpcVRSourceNat = vpcManager.isProviderSupportServiceInVpc(vpcId, Service.SourceNat, Network.Provider.VPCVirtualRouter);
             if (isVpcVRSourceNat && !ipAddress.isSourceNat()) {
                 throw new InvalidParameterValueException("Vpn service can only be configured on the Source NAT IP of VPC id=" + ipAddress.getVpcId());
-            }
-            if (!isVpcVRSourceNat && ipAddress.isSourceNat()) {
-                throw new InvalidParameterValueException("Vpn service can not be configured on the Source NAT IP of VPC id=" + ipAddress.getVpcId());
             }
             if (!isVpcVRSourceNat) {
                 IPAddressVO ipAddressForVpcVR = vpcManager.getIpAddressForVpcVr(vpc, ipAddress, true);

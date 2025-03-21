@@ -149,7 +149,8 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             throw new InvalidParameterValueException(String.format("The VPN gateway of VPC %s already existed!", vpc));
         }
 
-        IPAddressVO ipAddress = getIpAddressIdForVpn(vpcId, vpc.getVpcOfferingId());
+        IPAddressVO requestedIp = _ipAddressDao.findById(cmd.getIpAddressId());
+        IPAddressVO ipAddress = getIpAddressIdForVpn(vpcId, vpc.getVpcOfferingId(), requestedIp);
         Site2SiteVpnGatewayVO gw = new Site2SiteVpnGatewayVO(owner.getAccountId(), owner.getDomainId(), ipAddress.getId(), vpcId);
 
         if (cmd.getDisplay() != null) {
@@ -160,7 +161,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         return gw;
     }
 
-    private IPAddressVO getIpAddressIdForVpn(Long vpcId, Long vpcOferingId) {
+    private IPAddressVO getIpAddressIdForVpn(Long vpcId, Long vpcOferingId, IPAddressVO requestedIp) {
         VpcOfferingServiceMapVO mapForSourceNat = vpcOfferingServiceMapDao.findByServiceProviderAndOfferingId(Network.Service.SourceNat.getName(), Network.Provider.VPCVirtualRouter.getName(), vpcOferingId);
         VpcOfferingServiceMapVO mapForVpn = vpcOfferingServiceMapDao.findByServiceProviderAndOfferingId(Network.Service.Vpn.getName(), Network.Provider.VPCVirtualRouter.getName(), vpcOferingId);
         if (mapForSourceNat == null && mapForVpn != null) {
@@ -168,7 +169,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             logger.debug(String.format("The VPC VR provides %s Service, however it does not provide %s service, trying to configure using IP of VPC VR", Network.Service.Vpn.getName(), Network.Service.SourceNat.getName()));
 
             Vpc vpc = _vpcDao.findById(vpcId);
-            IPAddressVO ipAddressForVpcVR = vpcManager.getIpAddressForVpcVr(vpc, null, true);
+            IPAddressVO ipAddressForVpcVR = vpcManager.getIpAddressForVpcVr(vpc, requestedIp, true);
             if (!vpcManager.configStaticNatForVpcVr(vpc, ipAddressForVpcVR)) {
                 throw new CloudRuntimeException("Failed to enable static nat for VPC VR as part of vpn gateway");
             }
@@ -178,6 +179,9 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
             List<IPAddressVO> ips = _ipAddressDao.listByAssociatedVpc(vpcId, true);
             if (ips.size() != 1) {
                 throw new CloudRuntimeException("Cannot found source nat ip of vpc " + vpcId);
+            }
+            if (requestedIp != null && requestedIp.getId() != ips.get(0).getId()) {
+                throw new CloudRuntimeException(String.format("Cannot use requested IP %s as it is not the Source NAT IP", requestedIp.getAddress().addr()));
             }
             return ips.get(0);
         }
