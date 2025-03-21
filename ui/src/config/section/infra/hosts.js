@@ -118,7 +118,12 @@ export default {
       dataView: true,
       show: (record) => { return record.resourcestate === 'Enabled' },
       popup: true,
-      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostEnableDisable')))
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostEnableDisable'))),
+      events: {
+        'refresh-data': () => {
+          store.dispatch('refreshCurrentPage')
+        }
+      }
     },
     {
       api: 'updateHost',
@@ -128,7 +133,12 @@ export default {
       dataView: true,
       show: (record) => { return record.resourcestate === 'Disabled' },
       popup: true,
-      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostEnableDisable')))
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostEnableDisable'))),
+      events: {
+        'refresh-data': () => {
+          store.dispatch('refreshCurrentPage')
+        }
+      }
     },
     {
       api: 'prepareHostForMaintenance',

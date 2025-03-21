@@ -18,7 +18,7 @@
 <template>
   <div class="form-layout">
     <a-form
-      :ref="formRef"
+      ref="formRef"
       :model="form"
       :rules="rules"
       @finish="handleSubmit"
@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw } from 'vue'
+import { reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -69,7 +69,9 @@ export default {
     return {
       resourcestate: '',
       allocationstate: '',
-      kvmAutoEnableDisableSetting: false
+      kvmAutoEnableDisableSetting: false,
+      form: {},
+      rules: {}
     }
   },
   created () {
@@ -78,11 +80,8 @@ export default {
     this.resourcestate = this.resource.resourcestate
     this.allocationstate = this.resourcestate === 'Enabled' ? 'Disable' : 'Enable'
   },
-  beforeCreate () {
-  },
   methods: {
     initForm () {
-      this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({})
     },
@@ -90,44 +89,54 @@ export default {
       if (this.resource.hypervisor !== 'KVM') {
         return
       }
-      api('listConfigurations', { name: 'enable.kvm.host.auto.enable.disable', clusterid: this.resource.clusterid }).then(json => {
+      api('listConfigurations', {
+        name: 'enable.kvm.host.auto.enable.disable',
+        clusterid: this.resource.clusterid
+      }).then(json => {
         if (json.listconfigurationsresponse.configuration?.[0]) {
           this.kvmAutoEnableDisableSetting = json?.listconfigurationsresponse?.configuration?.[0]?.value || false
         }
       })
     },
     handleSubmit (e) {
-      e.preventDefault()
-      this.formRef.value.validate().then(() => {
+      if (e) {
+        e.preventDefault()
+      }
+      this.$refs.formRef.validate().then(() => {
         const values = toRaw(this.form)
-
-        var data = {
+        const data = {
           allocationstate: this.allocationstate,
           id: this.resource.id
         }
         if (values.reason) {
           data.annotation = values.reason
         }
-        api('updateHost', data).then(_ => {
-          this.$emit('close-action')
-        })
+        api('updateHost', data)
+          .then(response => {
+            this.$emit('refresh-data')
+            this.$emit('close-action')
+          })
+          .catch(error => {
+            console.error('Error updating host:', error)
+            this.$emit('close-action')
+          })
+      }).catch(error => {
+        console.error('Validation failed:', error)
       })
     }
   }
 }
-
 </script>
 
 <style scoped>
 .reason {
-  padding-top: 20px
+  padding-top: 20px;
 }
 
 .form-layout {
-    width: 30vw;
-
-    @media (min-width: 500px) {
-      width: 450px;
-    }
+  width: 30vw;
+  @media (min-width: 500px) {
+    width: 450px;
   }
+}
 </style>
