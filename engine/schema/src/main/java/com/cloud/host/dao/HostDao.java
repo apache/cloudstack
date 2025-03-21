@@ -19,6 +19,7 @@ package com.cloud.host.dao;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.cpu.CPU;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
@@ -193,6 +194,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
             final List<Hypervisor.HypervisorType> hypervisorTypes);
 
     List<HypervisorType> listDistinctHypervisorTypes(final Long zoneId);
+
+    List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorArchTypes(final Long zoneId);
 
     List<HostVO> listByIds(final List<Long> ids);
 }

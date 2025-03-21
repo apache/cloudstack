@@ -17,6 +17,7 @@
 package com.cloud.dc.dao;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doReturn;
@@ -36,9 +37,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterVO;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ClusterDaoImplTest {
@@ -74,5 +79,40 @@ public class ClusterDaoImplTest {
         List<Long> result = clusterDao.listAllIds();
         verify(clusterDao).customSearch(genericSearchBuilder.create(), null);
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void listDistinctHypervisorsArchAcrossClusters_WithZone() {
+        Long zoneId = 123L;
+        ClusterVO cluster1 = mock(ClusterVO.class);
+        when(cluster1.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
+        when(cluster1.getArch()).thenReturn(CPU.CPUArch.amd64);
+        ClusterVO cluster2 = mock(ClusterVO.class);
+        when(cluster2.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        when(cluster2.getArch()).thenReturn(CPU.CPUArch.arm64);
+        List<ClusterVO> dummyHosts = Arrays.asList(cluster1, cluster2);
+        doReturn(dummyHosts).when(clusterDao).search(any(SearchCriteria.class), isNull());
+        List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> result = clusterDao.listDistinctHypervisorsArchAcrossClusters(zoneId);
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        assertEquals(Hypervisor.HypervisorType.XenServer, result.get(0).first());
+        assertEquals(CPU.CPUArch.amd64, result.get(0).second());
+        assertEquals(Hypervisor.HypervisorType.KVM, result.get(1).first());
+        assertEquals(CPU.CPUArch.arm64, result.get(1).second());
+    }
+
+    @Test
+    public void listDistinctHypervisorsArchAcrossClusters_WithoutZone() {
+        Long zoneId = null;
+        ClusterVO cluster = mock(ClusterVO.class);
+        when(cluster.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.VMware);
+        when(cluster.getArch()).thenReturn(CPU.CPUArch.amd64);
+        List<ClusterVO> dummyHosts = Collections.singletonList(cluster);
+        doReturn(dummyHosts).when(clusterDao).search(any(SearchCriteria.class), isNull());
+        List<Pair<Hypervisor.HypervisorType, CPU.CPUArch>> result = clusterDao.listDistinctHypervisorsArchAcrossClusters(zoneId);
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(Hypervisor.HypervisorType.VMware, result.get(0).first());
+        assertEquals(CPU.CPUArch.amd64, result.get(0).second());
     }
 }
