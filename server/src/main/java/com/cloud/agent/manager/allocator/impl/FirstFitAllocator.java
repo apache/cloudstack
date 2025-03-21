@@ -204,6 +204,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
         if (clusterHosts.isEmpty()) {
             logger.warn("No suitable host found for VM [{}] with tags {} in {}.", vmProfile, hostTagOnOffering, paramAsStringToLog);
+            return null;
         }
         // add all hosts that we are not considering to the avoid list
         List<HostVO> allhostsInCluster = _hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, null);
