@@ -69,10 +69,10 @@ public class BackrollHttpClientProvider {
 
     private Logger logger = LogManager.getLogger(BackrollClient.class);
 
-    public static BackrollHttpClientProvider createProvider(BackrollHttpClientProvider backrollHttpClientProvider, final String url, final String appname, final String password,
+    public static BackrollHttpClientProvider createProvider(final String url, final String appname, final String password,
         final boolean validateCertificate, final int timeout,
         final int restoreTimeout) throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
-
+        BackrollHttpClientProvider backrollHttpClientProvider = new BackrollHttpClientProvider();
         backrollHttpClientProvider.apiURI = new URI(url);
         backrollHttpClientProvider.appname = appname;
         backrollHttpClientProvider.password = password;
@@ -229,6 +229,12 @@ public class BackrollHttpClientProvider {
     }
 
     public class NotOkBodyException extends Exception {
+        public NotOkBodyException() {
+            super();
+        }
+        public NotOkBodyException(String errorMessage) {
+            super(errorMessage);
+        }
     }
 
     public String okBody(final CloseableHttpResponse response) throws NotOkBodyException {
@@ -251,11 +257,14 @@ public class BackrollHttpClientProvider {
                 }
             default:
                 try {
+                    HttpEntity bodyEntity2 = response.getEntity();
+                    result = EntityUtils.toString(bodyEntity2);
                     closeConnection(response);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                throw new NotOkBodyException();
+
+                throw new NotOkBodyException("Error ok body, code: " + String.valueOf(response.getStatusLine().getStatusCode()) + " / body response: " + result);
         }
     }
 
@@ -339,11 +348,11 @@ public class BackrollHttpClientProvider {
 
     public void loginIfAuthenticationFailed() throws BackrollApiException, IOException {
         if (!isAuthenticated()) {
-            login(appname, password);
+            login();
         }
     }
 
-    protected void login(final String appname, final String appsecret) throws BackrollApiException, IOException {
+    protected void login() throws BackrollApiException, IOException {
         logger.debug("Backroll client -  start login");
 
         CloseableHttpClient httpClient = createHttpClient();
@@ -357,7 +366,7 @@ public class BackrollHttpClientProvider {
 
         try {
             jsonBody.put("app_id", appname);
-            jsonBody.put("app_secret", appsecret);
+            jsonBody.put("app_secret", password);
             params = new StringEntity(jsonBody.toString());
             request.setEntity(params);
 
@@ -368,7 +377,7 @@ public class BackrollHttpClientProvider {
                 logger.info("BACKROLL:     " + response);
                 LoginApiResponse loginResponse = objectMapper.readValue(response, LoginApiResponse.class);
                 logger.info("ok");
-                this.backrollToken = loginResponse.accessToken;
+                backrollToken = loginResponse.accessToken;
                 logger.debug("Backroll client -  Token : {}", backrollToken);
 
                 if (StringUtils.isEmpty(loginResponse.accessToken)) {

@@ -34,8 +34,6 @@ import org.apache.cloudstack.backup.Backup.Metric;
 import org.apache.cloudstack.backup.Backup.RestorePoint;
 import org.apache.cloudstack.backup.backroll.BackrollClient;
 import org.apache.cloudstack.backup.backroll.model.BackrollBackupMetrics;
-import org.apache.cloudstack.backup.backroll.model.BackrollTaskStatus;
-import org.apache.cloudstack.backup.backroll.model.BackrollVmBackup;
 import org.apache.cloudstack.backup.backroll.utils.BackrollApiException;
 import org.apache.cloudstack.backup.backroll.utils.BackrollHttpClientProvider;
 import org.apache.cloudstack.backup.dao.BackupDao;
@@ -155,9 +153,6 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
 
     @Override
     public Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms) {
-        Long vmBackupSize=0L;
-        Long vmBackupProtectedSize=0L;
-
         final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
         if (CollectionUtils.isEmpty(vms)) {
             logger.warn("Unable to get VM Backup Metrics because the list of VMs is empty.");
@@ -175,13 +170,7 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
 
             Metric metric;
             try {
-                final List<BackrollVmBackup> backups = client.getAllBackupsfromVirtualMachine(vm.getUuid());
-                for (BackrollVmBackup backup : backups ) {
-                    BackrollBackupMetrics backupMetric = client.getBackupMetrics(vm.getUuid(), backup.getId());
-                    vmBackupProtectedSize += backupMetric.getDeduplicated();
-                    vmBackupSize += backupMetric.getSize();
-                }
-                metric = new Metric(vmBackupSize, vmBackupProtectedSize);
+                metric = client.getVirtualMachineMetrics(vm.getUuid());
             } catch (BackrollApiException | IOException e) {
                 throw new CloudRuntimeException("Failed to retrieve backup metrics");
             }
@@ -235,136 +224,6 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
         return new Pair<Boolean,Backup>(false, null);
     }
 
-
-    public void syncBackups(VirtualMachine vm, Backup.Metric metric) {
-        logger.info("Starting sync backup for VM ID " + vm.getUuid() + " on backroll provider");
-
-        final BackrollClient client = getClient(vm.getDataCenterId());
-        List<Backup> backupsInDb = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
-
-        for (Backup backup : backupsInDb) {
-            if (backup.getStatus().equals(Backup.Status.BackingUp)) {
-                BackrollTaskStatus response;
-                try {
-                    response = client.checkBackupTaskStatus(backup.getExternalId());
-                } catch (ParseException | BackrollApiException | IOException e) {
-                    logger.error(e);
-                    throw new CloudRuntimeException("Failed to sync backups");
-                }
-
-                if (response != null) {
-                    logger.debug("backroll backup id: {}", backup.getExternalId());
-                    logger.debug("backroll backup status: {}", response.getState());
-
-                    BackupVO backupToUpdate = ((BackupVO) backup);
-
-                    if (response.getState().equals("PENDING")) {
-                        backupToUpdate.setStatus(Backup.Status.BackingUp);
-                    } else if (response.getState().equals("FAILURE")) {
-                        backupToUpdate.setStatus(Backup.Status.Failed);
-                    } else if (response.getState().equals("SUCCESS")) {
-                        backupToUpdate.setStatus(Backup.Status.BackedUp);
-                        backupToUpdate.setExternalId(backup.getExternalId() + "," + response.getInfo());
-
-                        BackrollBackupMetrics backupMetrics = null;
-                        try {
-                            backupMetrics = client.getBackupMetrics(vm.getUuid() , response.getInfo());
-                            if (backupMetrics != null) {
-                                backupToUpdate.setSize(backupMetrics.getDeduplicated()); // real size
-                                backupToUpdate.setProtectedSize(backupMetrics.getSize()); // total size
-                            }
-                        } catch (BackrollApiException | IOException e) {
-                            logger.error(e);
-                            throw new CloudRuntimeException("Failed to get backup metrics");
-                        }
-                    } else {
-                        backupToUpdate.setStatus(Backup.Status.BackingUp);
-                    }
-
-                    if (backupDao.persist(backupToUpdate) != null) {
-                        logger.info("Backroll mise à jour enregistrée");
-                    }
-                }
-            } else if (backup.getStatus().equals(Backup.Status.BackedUp) && backup.getSize().equals(0L)) {
-                String backupId = backup.getExternalId().contains(",") ? backup.getExternalId().split(",")[1] : backup.getExternalId();
-                BackrollBackupMetrics backupMetrics;
-                try {
-                    backupMetrics = client.getBackupMetrics(vm.getUuid() , backupId);
-                } catch (BackrollApiException | IOException e) {
-                    logger.error(e);
-                    throw new CloudRuntimeException("Failed to get backup metrics");
-                }
-
-                if (backupMetrics != null) {
-                    BackupVO backupToUpdate = ((BackupVO) backup);
-                    backupToUpdate.setSize(backupMetrics.getDeduplicated()); // real size
-                    backupToUpdate.setProtectedSize(backupMetrics.getSize()); // total size
-                    backupDao.persist(backupToUpdate);
-                }
-            }
-        }
-
-        // Backups synchronisation between Backroll ad CS Db
-        List<BackrollVmBackup> backupsFromBackroll;
-        try {
-            backupsFromBackroll = client.getAllBackupsfromVirtualMachine(vm.getUuid());
-
-            backupsInDb = backupDao.listByVmId(null, vm.getId());
-
-            // insert new backroll backup in CS
-            for (BackrollVmBackup backupInBackroll : backupsFromBackroll) {
-                Backup backupToFind = backupsInDb.stream()
-                    .filter(backupInDb -> backupInDb.getExternalId().contains(backupInBackroll.getName()))
-                    .findAny()
-                    .orElse(null);
-
-                if (backupToFind == null) {
-                    BackupVO backupToInsert = new BackupVO();
-                    backupToInsert.setVmId(vm.getId());
-                    backupToInsert.setExternalId(backupInBackroll.getId() + "," + backupInBackroll.getName());
-                    backupToInsert.setType("INCREMENTAL");
-                    backupToInsert.setDate(backupInBackroll.getDate());
-                    backupToInsert.setSize(0L);
-                    backupToInsert.setProtectedSize(0L);
-                    backupToInsert.setStatus(Backup.Status.BackedUp);
-                    backupToInsert.setBackupOfferingId(vm.getBackupOfferingId());
-                    backupToInsert.setAccountId(vm.getAccountId());
-                    backupToInsert.setDomainId(vm.getDomainId());
-                    backupToInsert.setZoneId(vm.getDataCenterId());
-                    backupDao.persist(backupToInsert);
-                }
-                if (backupToFind != null && backupToFind.getStatus() == Backup.Status.Removed) {
-                    BackupVO backupToUpdate = ((BackupVO) backupToFind);
-                    backupToUpdate.setStatus(Backup.Status.BackedUp);
-                    if (backupDao.persist(backupToUpdate) != null) {
-                        logger.info("Backroll update saved");
-                        backupDao.remove(backupToFind.getId());
-                    }
-                }
-            }
-
-            // delete deleted backroll backup in CS
-            backupsInDb = backupDao.listByVmId(null, vm.getId());
-            for (Backup backup : backupsInDb) {
-                String backupName = backup.getExternalId().contains(",") ? backup.getExternalId().split(",")[1] : backup.getExternalId();
-                BackrollVmBackup backupToFind = backupsFromBackroll.stream()
-                    .filter(backupInBackroll -> backupInBackroll.getName().contains(backupName))
-                    .findAny()
-                    .orElse(null);
-
-                if (backupToFind == null) {
-                    BackupVO backupToUpdate = ((BackupVO) backup);
-                    backupToUpdate.setStatus(Backup.Status.Removed);
-                    if (backupDao.persist(backupToUpdate) != null) {
-                        logger.debug("Backroll delete saved (sync)");
-                    }
-                }
-            }
-        } catch (BackrollApiException | IOException e) {
-            logger.error(e);
-        }
-    }
-
     @Override
     public String getConfigComponentName() {
         return BackupService.class.getSimpleName();
@@ -381,11 +240,11 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
 
     @Override
     public boolean deleteBackup(Backup backup, boolean forced) {
-        logger.info("backroll delete backup id: {}", backup.getExternalId());
+        logger.info("BACKROLL: delete backup id: {}", backup.getExternalId());
         if (backup.getStatus().equals(Backup.Status.BackingUp)) {
             throw new CloudRuntimeException("You can't delete a backup while it still BackingUp");
         } else {
-            logger.debug("backroll - try delete backup");
+            logger.debug("BACKROLL: try delete backup");
 
             if (backup.getStatus().equals(Backup.Status.Removed) || backup.getStatus().equals(Backup.Status.Failed)){
                 return deleteBackupInDb(backup);
@@ -393,12 +252,12 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
                 VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
                 try {
                     if (getClient(backup.getZoneId()).deleteBackup(vm.getUuid(), getBackupName(backup))) {
-                        logger.debug("Backup deletion for backup {} complete on backroll side.", backup.getUuid());
+                        logger.debug("BACKROLL: Backup deletion for backup {} complete on backroll side.", backup.getUuid());
                         return deleteBackupInDb(backup);
                     }
                 } catch (BackrollApiException | IOException e) {
                     logger.error(e);
-                    throw new CloudRuntimeException("Failed to delete backup");
+                    throw new CloudRuntimeException("BACKROLL: Failed to delete backup");
                 }
             }
         }
@@ -409,7 +268,7 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
         BackupVO backupToUpdate = ((BackupVO) backup);
         backupToUpdate.setStatus(Backup.Status.Removed);
         if (backupDao.persist(backupToUpdate) != null) {
-            logger.debug("Backroll backup {} deleted in database.", backup.getUuid());
+            logger.debug("BACKROLL: Backroll backup {} deleted in database.", backup.getUuid());
             VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
             return true;
         }
@@ -421,7 +280,7 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
         try {
             if (backrollClient == null) {
                 logger.debug("backroll client null - instantiation of new one ");
-                BackrollHttpClientProvider provider = BackrollHttpClientProvider.createProvider(new BackrollHttpClientProvider(), BackrollUrlConfigKey.valueIn(zoneId), BackrollAppNameConfigKey.valueIn(zoneId), BackrollPasswordConfigKey.valueIn(zoneId), true, 300, 600);
+                BackrollHttpClientProvider provider = BackrollHttpClientProvider.createProvider(BackrollUrlConfigKey.valueIn(zoneId), BackrollAppNameConfigKey.valueIn(zoneId), BackrollPasswordConfigKey.valueIn(zoneId), true, 300, 600);
                 backrollClient = new BackrollClient(provider);
             }
             return backrollClient;
@@ -451,7 +310,7 @@ public class BackrollBackupProvider extends AdapterBase implements BackupProvide
             return client.listRestorePoints(vm.getUuid());
         } catch (BackrollApiException | IOException e) {
             logger.error(e);
-            throw new CloudRuntimeException("Failed to delete backup");
+            throw new CloudRuntimeException("Error while listing restore points");
         }
     }
 

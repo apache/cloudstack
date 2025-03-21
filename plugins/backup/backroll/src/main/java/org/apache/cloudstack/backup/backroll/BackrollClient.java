@@ -153,7 +153,7 @@ public class BackrollClient {
     }
 
     public boolean deleteBackup(final String vmId, final String backupName) throws IOException, BackrollApiException {
-        logger.info("Trying to delete backup {} for vm {} using Backroll", vmId, backupName);
+        logger.info("BACKROLL: Trying to delete backup {} for vm {} using Backroll", vmId, backupName);
         boolean isBackupDeleted = false;
 
         BackrollTaskRequestResponse requestResponse = httpProvider.delete(
@@ -260,7 +260,7 @@ public class BackrollClient {
         if (backupInfos != null && backupInfos.size() > 0) {
             for (BackupInfos infos : backupInfos) {
                 var dateStart = new DateTime(infos.start);
-                backups.add(new Backup.RestorePoint(infos.id, dateStart.toDate(), "INCREMENTAL"));
+                backups.add(new Backup.RestorePoint(infos.id + "," + infos.name, dateStart.toDate(), "INCREMENTAL"));
             }
         }
         return backups;

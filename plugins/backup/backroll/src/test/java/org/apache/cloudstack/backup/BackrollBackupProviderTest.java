@@ -36,6 +36,7 @@ import org.apache.cloudstack.backup.backroll.model.BackrollVmBackup;
 import org.apache.cloudstack.backup.backroll.model.BackrollBackupMetrics;
 import org.apache.cloudstack.backup.backroll.model.BackrollOffering;
 import org.apache.cloudstack.backup.backroll.model.response.TaskState;
+import org.apache.cloudstack.backup.Backup.Metric;
 import org.apache.cloudstack.backup.Backup.RestorePoint;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.logging.log4j.Logger;
@@ -145,7 +146,7 @@ public class BackrollBackupProviderTest {
     }
 
     @Test
-    public void getBackupMetrics_Test() throws BackrollApiException, IOException {
+    public void getBackupMetrics_Test() throws BackrollApiException, IOException{
         VMInstanceVO vmInstanceVO = new VMInstanceVO();
         vmInstanceVO.setInstanceName("test");
         vmInstanceVO.setDataCenterId(1l);
@@ -156,24 +157,18 @@ public class BackrollBackupProviderTest {
         vmInstanceVO2.setDataCenterId(2l);
         vmInstanceVO2.setBackupOfferingId(2l);
 
+
         VMInstanceVO vmInstanceVO3 = new VMInstanceVO();
         vmInstanceVO3.setInstanceName("test3");
         vmInstanceVO3.setDataCenterId(3l);
         vmInstanceVO3.setBackupOfferingId(3l);
 
-        List<BackrollVmBackup> backupsFromBackroll = Arrays.asList(
-                new BackrollVmBackup("OK", "OK", new Date()));
+        Metric metric = new Metric(2L, 3L);
 
-        BackrollBackupMetrics metrics = new BackrollBackupMetrics(2L, 3L);
+        Mockito.doReturn(metric).when(clientMock).getVirtualMachineMetrics(Mockito.anyString());
+        assertEquals(backupProvider.getBackupMetrics(2L, Arrays.asList(vmInstanceVO, vmInstanceVO2, vmInstanceVO3)).size(), 1);
 
-        Mockito.doReturn(metrics).when(clientMock).getBackupMetrics(Mockito.anyString(), Mockito.anyString());
-        Mockito.doReturn(backupsFromBackroll).when(clientMock).getAllBackupsfromVirtualMachine(Mockito.anyString());
-        assertEquals(
-                backupProvider.getBackupMetrics(2L, Arrays.asList(vmInstanceVO, vmInstanceVO2, vmInstanceVO3)).size(),
-                1);
-
-        Mockito.verify(clientMock, times(3)).getAllBackupsfromVirtualMachine(Mockito.anyString());
-        Mockito.verify(clientMock, times(3)).getBackupMetrics(Mockito.anyString(), Mockito.anyString());
+        Mockito.verify(clientMock, times(3)).getVirtualMachineMetrics(Mockito.anyString());
     }
 
     @Test
