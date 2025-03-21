@@ -2715,8 +2715,16 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 return vmMo.powerOn();
             } catch (Exception e) {
                 logger.info(String.format("Got exception while power on VM %s with hostname %s", vmInternalCSName, vmNameOnVcenter), e);
-                if (e.getMessage() != null && e.getMessage().contains("File system specific implementation of Ioctl[file] failed")) {
+                if (e.getMessage() != null &&
+                        (e.getMessage().contains("File system specific implementation of Ioctl[file] failed") ||
+                                e.getMessage().contains("Unable to access file") ||
+                                e.getMessage().contains("it is locked"))) {
                     logger.debug(String.format("Failed to power on VM %s with hostname %s. Retrying", vmInternalCSName, vmNameOnVcenter));
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ie) {
+                        logger.debug(String.format("Waiting to power on VM %s been interrupted: ", vmInternalCSName));
+                    }
                 } else {
                     throw e;
                 }
@@ -5815,6 +5823,11 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             logger.debug(msg);
             return new Answer(cmd, true, msg);
         } catch (Exception e) {
+            if (e.getMessage().contains("was not found")) {
+                String msg = String.format("%s - VM [%s] file(s) not found, cleanup not needed .", e.getMessage(), cmd.getVmName());
+                logger.debug(msg);
+                return new Answer(cmd, true, msg);
+            }
             return new Answer(cmd, false, createLogMessageException(e, cmd));
         }
     }
