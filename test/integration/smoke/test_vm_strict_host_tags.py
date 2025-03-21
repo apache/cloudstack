@@ -420,7 +420,11 @@ class TestRestoreVMStrictTags(cloudstackTestCase):
 
         self.assertEqual(self.host_h1.id, vm.hostid, "VM instance was not deployed on target host ID")
         try:
+            # remove vm from cleanup list since it should not be restored and the vm gets expunged
+            self.cleanup.remove(vm)
             vm.restore(self.apiclient, templateid=self.template_t2.id, expunge=True)
+            # If restore is successful, it will be added to the cleanup list. Ideally, this code should not be reached.
+            self.cleanup.append(vm)
             self.fail("VM should not be restored")
         except Exception as e:
             self.assertTrue("No suitable host found for vm " in str(e))
