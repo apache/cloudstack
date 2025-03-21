@@ -230,6 +230,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private CAManager caManager;
     @Inject
     private NetworkOrchestrationService networkMgr;
+    @Inject
+    private VMTemplateDao _templateDao;
 
     private ConsoleProxyListener consoleProxyListener;
 
@@ -680,6 +682,10 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         DataCenterVO dc = dataCenterDao.findById(dataCenterId);
         Account systemAcct = accountManager.getSystemAccount();
 
+        if (template != null) {
+            _templateDao.loadDetails(template);
+        }
+
         DataCenterDeployment plan = new DataCenterDeployment(dataCenterId);
 
         NetworkVO defaultNetwork = getDefaultNetworkForCreation(dc);
@@ -708,6 +714,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         proxy.setDynamicallyScalable(template.isDynamicallyScalable());
         proxy.setLimitCpuUse(serviceOffering.getLimitCpuUse());
         proxy = consoleProxyDao.persist(proxy);
+        proxy.setDetails(template.getDetails());
+        userVmDetailsDao.saveDetails(proxy);
         try {
             virtualMachineManager.allocate(name, template, serviceOffering, networks, plan, null);
         } catch (InsufficientCapacityException e) {
