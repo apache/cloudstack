@@ -130,8 +130,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             // FirstFitAllocator should be used for user VMs only since it won't care whether the host is capable of routing or not
             return new ArrayList<>();
         }
-
-        logger.debug("Looking for hosts in zone [{}], pod [{}], cluster [{}]", dcId, podId, clusterId);
+        String paramAsStringToLog = String.format("zone [%s], pod [%s], cluster [%s]", dcId, podId, clusterId);
+        logger.debug("Looking for hosts in {}", paramAsStringToLog);
 
         String hostTagOnOffering = offering.getHostTag();
         String hostTagOnTemplate = template.getTemplateTag();
@@ -203,8 +203,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
 
 
         if (clusterHosts.isEmpty()) {
-            logger.error("No suitable host found for vm [{}] with tags [{}].", vmProfile, hostTagOnOffering);
-            throw new CloudRuntimeException(String.format("No suitable host found for vm [%s].", vmProfile));
+            logger.warn("No suitable host found for VM [{}] with tags {} in {}.", vmProfile, hostTagOnOffering, paramAsStringToLog);
         }
         // add all hosts that we are not considering to the avoid list
         List<HostVO> allhostsInCluster = _hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, null);
