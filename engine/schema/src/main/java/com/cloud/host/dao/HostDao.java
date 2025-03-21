@@ -184,6 +184,13 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<String> listByMs(long msId);
 
     /**
+     * Retrieves the last host ids/agents this {@see ManagementServer} has responsibility over.
+     * @param msId the id of the {@see ManagementServer}
+     * @return the last host ids/agents this {@see ManagementServer} has responsibility over
+     */
+    List<String> listByLastMs(long msId);
+
+    /**
      * Retrieves the hypervisor versions of the hosts in the datacenter which are in Up state in ascending order
      * @param datacenterId data center id
      * @param hypervisorType hypervisor type of the hosts
@@ -200,7 +207,7 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     boolean isHostUp(long hostId);
 
     List<Long> findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(final Long zoneId, final Long clusterId,
-            final List<ResourceState> resourceStates, final List<Type> types,
+            final Long msId, final List<ResourceState> resourceStates, final List<Type> types,
             final List<Hypervisor.HypervisorType> hypervisorTypes);
 
     List<HypervisorType> listDistinctHypervisorTypes(final Long zoneId);

@@ -49,7 +49,7 @@ github:
     squash: true
     rebase: false
 
-  collaborators:
+  collaborators: 
     - acs-robot
     - gpordeus
     - hsato03
