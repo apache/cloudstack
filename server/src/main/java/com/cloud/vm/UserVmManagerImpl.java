@@ -6310,11 +6310,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @param leaseExpiryAction
      * @param serviceOfferingJoinVO
      */
-    private void applyLeaseOnCreateInstance(UserVm vm, Long leaseDuration, String leaseExpiryAction, ServiceOfferingJoinVO serviceOfferingJoinVO) {
+    void applyLeaseOnCreateInstance(UserVm vm, Long leaseDuration, String leaseExpiryAction, ServiceOfferingJoinVO serviceOfferingJoinVO) {
         if (!VMLeaseManagerImpl.InstanceLeaseEnabled.value()) {
             return;
         }
-
         if (leaseDuration == null) {
             leaseDuration = serviceOfferingJoinVO.getLeaseDuration();
         }
@@ -6322,31 +6321,36 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if  (leaseDuration == null || leaseDuration < 1) {
             return;
         }
-
         leaseExpiryAction = Strings.isNotEmpty(leaseExpiryAction) ? leaseExpiryAction : serviceOfferingJoinVO.getLeaseExpiryAction();
-        if (StringUtils.isEmpty(leaseExpiryAction)) {
-            leaseExpiryAction = VMLeaseManager.InstanceLeaseExpiryAction.valueIn(vm.getAccountId());
-        }
         addLeaseDetailsForInstance(vm, leaseDuration, leaseExpiryAction);
     }
 
-
     protected void applyLeaseOnUpdateInstance(UserVm instance, Long leaseDuration, String leaseExpiryAction) {
-        if (leaseDuration == null) {
+        // lease feature must be enabled
+        if (!VMLeaseManagerImpl.InstanceLeaseEnabled.value() || leaseDuration == null) {
             return;
         }
 
-        // find if lease feature is or was enabled for instance
-        boolean shouldApplyLease = VMLeaseManagerImpl.InstanceLeaseEnabled.value();
-        if (!shouldApplyLease) {
-            UserVmDetailVO vmDetail = userVmDetailsDao.findDetail(instance.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
-            if (vmDetail != null && StringUtils.isNotEmpty(vmDetail.getValue())) {
-                shouldApplyLease = true;
-            }
+        String instanceUuid = instance.getUuid();
+        // vm must have associated lease during deployment
+        UserVmDetailVO vmDetail = userVmDetailsDao.findDetail(instance.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
+        if (vmDetail == null || StringUtils.isEmpty(vmDetail.getValue())) {
+            logger.debug("Lease wont be applied on instance with id: {}, it doesn't have " +
+                    "leased associated during deployment", instanceUuid);
+            return;
         }
-
-        // nothing to be done if lease feature is/was not enabled for vm
-        if (!shouldApplyLease) {
+        // lease is yet to expire
+        long leaseExpiryTimeDiff;
+        try {
+             leaseExpiryTimeDiff = DateUtil.getTimeDifference(
+                     DateUtil.parseDateString(TimeZone.getTimeZone("UTC"), vmDetail.getValue()), new Date());
+        } catch (Exception ex) {
+            logger.error("Error occurred computing time difference for instance lease expiry, " +
+                            "will skip applying lease for vm with id: {}", instanceUuid, ex);
+            return;
+        }
+        if (leaseExpiryTimeDiff < 0) {
+            logger.debug("Lease has expired for instance with id: {}, can't modify lease information", instanceUuid);
             return;
         }
 
@@ -6355,12 +6359,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             userVmDetailsDao.removeDetail(instance.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION);
             return;
         }
-
-        leaseExpiryAction = Strings.isNotEmpty(leaseExpiryAction) ? leaseExpiryAction : VMLeaseManager.InstanceLeaseExpiryAction.valueIn(instance.getAccountId());
         addLeaseDetailsForInstance(instance, leaseDuration, leaseExpiryAction);
     }
 
-    private void addLeaseDetailsForInstance(UserVm vm, Long leaseDuration, String leaseExpiryAction) {
+    protected void addLeaseDetailsForInstance(UserVm vm, Long leaseDuration, String leaseExpiryAction) {
+        if (vm == null || leaseDuration == null || leaseDuration < 1 || StringUtils.isEmpty(leaseExpiryAction) ||
+                !Arrays.asList("STOP", "DESTROY").contains(leaseExpiryAction)) {
+            logger.debug("Lease can't be applied for given vm: {}, leaseduration: {} and leaseexpiryaction: {}", vm, leaseDuration, leaseExpiryAction);
+            return;
+        }
         LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
         LocalDateTime leaseExpiryDateTime = now.plusDays(leaseDuration);
         Date leaseExpiryDate = Date.from(leaseExpiryDateTime.atZone(ZoneOffset.UTC).toInstant());

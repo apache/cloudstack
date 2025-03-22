@@ -170,7 +170,8 @@ SELECT
     `user_vm`.`user_data_details` AS `user_data_details`,
     `vm_template`.`user_data_link_policy` AS `user_data_policy`,
     `lease_expiry_date`.`value` AS `lease_expiry_date`,
-    `lease_expiry_action`.`value` AS `lease_expiry_action`
+    `lease_expiry_action`.`value` AS `lease_expiry_action`,
+    `lease_action_execution_date`.`value` AS `lease_action_execution_date`
 FROM
     (((((((((((((((((((((((((((((((((((`user_vm`
         JOIN `vm_instance` ON (((`vm_instance`.`id` = `user_vm`.`id`)
@@ -220,5 +221,7 @@ FROM
         AND (`custom_ram_size`.`name` = 'memory')))
         LEFT JOIN `user_vm_details` `lease_expiry_date` ON ((`lease_expiry_date`.`vm_id` = `vm_instance`.`id`)
         AND (`lease_expiry_date`.`name` = 'leaseexpirydate'))
+        LEFT JOIN `user_vm_details` `lease_action_execution_date` ON ((`lease_action_execution_date`.`vm_id` = `vm_instance`.`id`)
+        AND (`lease_action_execution_date`.`name` = 'leaseactionexecutiondate'))
         LEFT JOIN `user_vm_details` `lease_expiry_action` ON (((`lease_expiry_action`.`vm_id` = `vm_instance`.`id`)
         AND (`lease_expiry_action`.`name` = 'leaseexpiryaction'))));

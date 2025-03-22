@@ -48,6 +48,7 @@ import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VmStats;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
@@ -135,6 +136,8 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         leaseOverInstanceSearch.selectFields(leaseOverInstanceSearch.entity().getId(), leaseOverInstanceSearch.entity().getState(),
                 leaseOverInstanceSearch.entity().isDeleteProtection(), leaseOverInstanceSearch.entity().getUuid(),
                 leaseOverInstanceSearch.entity().getLeaseExpiryAction());
+        leaseOverInstanceSearch.and(VmDetailConstants.INSTANCE_LEASE_ACTION_EXECUTION_DATE, leaseOverInstanceSearch.entity().getLeaseActionExecutionDate(), Op.NULL);
+        leaseOverInstanceSearch.and("vmCreatedDate", leaseOverInstanceSearch.entity().getId(), Op.GTEQ);
         leaseOverInstanceSearch.and("leaseExpired", leaseOverInstanceSearch.entity().getLeaseExpiryDate(), Op.LT);
         leaseOverInstanceSearch.and("leaseExpiryActions", leaseOverInstanceSearch.entity().getLeaseExpiryAction(), Op.IN);
         leaseOverInstanceSearch.and("instanceState", leaseOverInstanceSearch.entity().getState(), Op.NOTIN);
@@ -767,15 +770,21 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
      * @return list of instances, expiry action can be executed on
      */
     @Override
-    public List<UserVmJoinVO> listEligibleInstancesWithExpiredLease() {
+    public List<UserVmJoinVO> listEligibleInstancesWithExpiredLease(Date featureEnabledDate) {
         SearchCriteria<UserVmJoinVO> sc = leaseOverInstanceSearch.create();
         sc.setParameters("leaseExpired", new Date());
         sc.setParameters("leaseExpiryActions", "STOP", "DESTROY");
         sc.setParameters("instanceState", State.Destroyed, State.Expunging, State.Error, State.Unknown, State.Migrating);
         sc.setParameters("stoppedInstanceState", State.Stopped);
         sc.setParameters("stopLeaseAction", "STOP");
+
+        if (featureEnabledDate != null) {
+            sc.setParameters("vmCreatedDate", featureEnabledDate);
+        }
+
         return listBy(sc);
     }
+
 
     @Override
     public List<UserVmJoinVO> listLeaseInstancesExpiringInDays(int days) {

@@ -447,6 +447,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "lease_expiry_action")
     private String leaseExpiryAction;
 
+    @Column(name = "lease_action_execution_date")
+    private Date leaseActionExecutionDate;
+
     public UserVmJoinVO() {
         // Empty constructor
     }
@@ -995,5 +998,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public void setLeaseExpiryAction(String leaseExpiryAction) {
         this.leaseExpiryAction = leaseExpiryAction;
+    }
+
+    public Date getLeaseActionExecutionDate() {
+        return leaseActionExecutionDate;
     }
 }

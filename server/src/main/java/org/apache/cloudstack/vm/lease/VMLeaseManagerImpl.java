@@ -31,12 +31,16 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
@@ -58,13 +62,20 @@ import java.util.concurrent.TimeUnit;
 public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, Configurable {
 
     public static ConfigKey<Boolean> InstanceLeaseEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
-            "instance.lease.enabled", "false", "Indicates whether to enable the Instance Lease feature",
+            "instance.lease.enabled", "false", "Indicates whether to enable the Instance lease," +
+            " will be applicable on instances created after lease got enabled",
             true, List.of(ConfigKey.Scope.Global));
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;   // 5 seconds
 
     @Inject
+    private UserVmDetailsDao userVmDetailsDao;
+
+    @Inject
     private UserVmJoinDao userVmJoinDao;
+
+    @Inject
+    private ConfigurationDao configurationDao;
 
     @Inject
     private AlertManager alertManager;
@@ -86,8 +97,6 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
                 InstanceLeaseEnabled,
-                InstanceLeaseDuration,
-                InstanceLeaseExpiryAction,
                 InstanceLeaseSchedulerInterval,
                 InstanceLeaseAlertSchedule,
                 InstanceLeaseAlertStartsAt
@@ -176,9 +185,16 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         }
     }
 
+    @Override
+    public Map<String, Object> getConfigParams() {
+        return super.getConfigParams();
+    }
+
     protected void reallyRun() {
+        ConfigurationVO vo = configurationDao.findById("instance.lease.enabled");
+        Date featureEnabledDate = vo.getUpdated();
         // fetch user_instances having leaseDuration configured and has expired
-        List<UserVmJoinVO> leaseExpiredInstances = userVmJoinDao.listEligibleInstancesWithExpiredLease();
+        List<UserVmJoinVO> leaseExpiredInstances = userVmJoinDao.listEligibleInstancesWithExpiredLease(featureEnabledDate);
         List<Long> actionableInstanceIds = new ArrayList<>();
         for (UserVmJoinVO userVmVO : leaseExpiredInstances) {
             // skip instance with delete protection for DESTROY action
@@ -204,13 +220,14 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             }
             // for qualified vms, prepare Stop/Destroy(Cmd) and submit to Job Manager
             final long eventId = ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, instance.getAccountId(), null,
-                    expiryAction.name(), true,
-                    String.format("Executing action (%s) for VM: %s", instance.getLeaseExpiryAction(), instance),
+                    "VM.LEASE.EXPIRED", true,
+                    String.format("Executing lease expiry action (%s) for instanceId: %s", instance.getLeaseExpiryAction(), instance.getUuid()),
                     instance.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
 
             Long jobId = executeExpiryAction(instance, expiryAction, eventId);
             if (jobId != null) {
                 submittedJobIds.add(jobId);
+                userVmDetailsDao.addDetail(instanceId, VmDetailConstants.INSTANCE_LEASE_ACTION_EXECUTION_DATE, DateUtil.currentGMTTime().toString(), false);
             } else {
                 failedToSubmitInstanceIds.add(instanceId);
             }

@@ -27,8 +27,11 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
@@ -56,8 +59,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -78,7 +84,13 @@ public class VMLeaseManagerImplTest {
     private UserVmJoinDao userVmJoinDao;
 
     @Mock
+    private ConfigurationDao configurationDao;
+
+    @Mock
     private AlertManager alertManager;
+
+    @Mock
+    private UserVmDetailsDao userVmDetailsDao;
 
     @Mock
     private AsyncJobManager asyncJobManager;
@@ -94,6 +106,11 @@ public class VMLeaseManagerImplTest {
         vmLeaseManager.setAsyncJobDispatcher(asyncJobDispatcher);
         when(asyncJobDispatcher.getName()).thenReturn("AsyncJobDispatcher");
         when(asyncJobManager.submitAsyncJob(any(AsyncJobVO.class))).thenReturn(1L);
+        ConfigurationVO configVo = mock(ConfigurationVO.class);
+        when(configurationDao.findById(anyString())).thenReturn(configVo);
+        doNothing().when(userVmDetailsDao).addDetail(
+                anyLong(), anyString(), anyString(), anyBoolean()
+        );
         try {
             vmLeaseManager.configure("VMLeaseManagerImpl", new HashMap<>());
         } catch (ConfigurationException e) {
@@ -119,7 +136,7 @@ public class VMLeaseManagerImplTest {
 
     @Test
     public void testReallyRunNoExpiredInstances() {
-        when(userVmJoinDao.listEligibleInstancesWithExpiredLease()).thenReturn(new ArrayList<>());
+        when(userVmJoinDao.listEligibleInstancesWithExpiredLease(null)).thenReturn(new ArrayList<>());
         vmLeaseManager.reallyRun();
         verify(asyncJobManager, never()).submitAsyncJob(any(AsyncJobVO.class));
     }
@@ -129,7 +146,7 @@ public class VMLeaseManagerImplTest {
         UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, true);
         when(vm.getLeaseExpiryAction()).thenReturn("DESTROY");
         List<UserVmJoinVO> expiredVms = Arrays.asList(vm);
-        when(userVmJoinDao.listEligibleInstancesWithExpiredLease()).thenReturn(expiredVms);
+        when(userVmJoinDao.listEligibleInstancesWithExpiredLease(null)).thenReturn(expiredVms);
         vmLeaseManager.reallyRun();
         // Verify no jobs were submitted because of delete protection
         verify(asyncJobManager, never()).submitAsyncJob(any(AsyncJobVO.class));
@@ -139,7 +156,7 @@ public class VMLeaseManagerImplTest {
     public void testReallyRunStopAction() {
         UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, false);
         List<UserVmJoinVO> expiredVms = Arrays.asList(vm);
-        when(userVmJoinDao.listEligibleInstancesWithExpiredLease()).thenReturn(expiredVms);
+        when(userVmJoinDao.listEligibleInstancesWithExpiredLease(null)).thenReturn(expiredVms);
         when(userVmJoinDao.findById(1L)).thenReturn(vm);
         doReturn(1L).when(vmLeaseManager).executeStopInstanceJob(eq(vm), eq(true), anyLong());
         try (MockedStatic<ActionEventUtils> utilities = Mockito.mockStatic(ActionEventUtils.class)) {
@@ -155,7 +172,7 @@ public class VMLeaseManagerImplTest {
     public void testReallyRunDestroyAction() {
         UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, false, DESTROY);
         List<UserVmJoinVO> expiredVms = Arrays.asList(vm);
-        when(userVmJoinDao.listEligibleInstancesWithExpiredLease()).thenReturn(expiredVms);
+        when(userVmJoinDao.listEligibleInstancesWithExpiredLease(null)).thenReturn(expiredVms);
         when(userVmJoinDao.findById(1L)).thenReturn(vm);
         doReturn(1L).when(vmLeaseManager).executeDestroyInstanceJob(eq(vm), eq(true), anyLong());
         try (MockedStatic<ActionEventUtils> utilities = Mockito.mockStatic(ActionEventUtils.class)) {

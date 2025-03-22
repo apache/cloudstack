@@ -70,7 +70,7 @@
                 :value="data.leasedinstances"
                 :value-style="{ color: $config.theme['@primary-color'] }">
                 <template #prefix>
-                  <field-time-outlined />&nbsp;
+                  <clock-circle-outlined/>&nbsp;
                 </template>
               </a-statistic>
             </router-link>

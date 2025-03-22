@@ -3321,7 +3321,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // validate lease properties and set leaseExpiryAction
         Long leaseDuration = cmd.getLeaseDuration();
-        String leaseExpiryAction = validateAndGetLeaseExpiryAction(cmd.getLeaseDuration(), cmd.getLeaseExpiryAction());
+        String leaseExpiryAction = validateAndGetLeaseExpiryAction(leaseDuration, cmd.getLeaseExpiryAction());
 
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainIds(), cmd.getZoneIds(), cmd.getHostTag(),
@@ -3483,16 +3483,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     /**
      * This method will return valid and non-empty expiryAction  when
      * "instance.lease.enabled" feature is enabled at global level
-     * leaseDuration is positive > -1 and has valid leaseExpiryAction provided or configured
+     * leaseDuration is positive > 0 and has valid leaseExpiryAction provided
      * @param leaseDuration
      * @param cmdExpiryAction
      * @return leaseExpiryAction
      */
     public static String validateAndGetLeaseExpiryAction(Long leaseDuration, String cmdExpiryAction) {
-        String leaseExpiryAction = null;
         if (!VMLeaseManagerImpl.InstanceLeaseEnabled.value()
                 || (leaseDuration == null && StringUtils.isEmpty(cmdExpiryAction))) { // both are null
-            return leaseExpiryAction;
+            return null;
         }
 
         // one of them is non-null
@@ -3504,16 +3503,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Invalid value provided for leaseDuration, accepts only positive number");
         }
 
-        leaseExpiryAction = StringUtils.isNotEmpty(cmdExpiryAction) ? cmdExpiryAction : VMLeaseManager.InstanceLeaseExpiryAction.valueIn(CallContext.current().getCallingAccountId());
-        if (StringUtils.isNotEmpty(leaseExpiryAction)) {
+        if (StringUtils.isNotEmpty(cmdExpiryAction)) {
             try {
-                VMLeaseManager.ExpiryAction.valueOf(leaseExpiryAction);
+                VMLeaseManager.ExpiryAction.valueOf(cmdExpiryAction);
             } catch (IllegalArgumentException e) {
                 throw new InvalidParameterValueException("Invalid value configured for leaseexpiryaction, valid values are: " +
                         com.cloud.utils.EnumUtils.listValues(VMLeaseManager.ExpiryAction.values()));
             }
         }
-        return leaseExpiryAction != null ? leaseExpiryAction.toUpperCase() : null;
+        return cmdExpiryAction.toUpperCase();
     }
 
     @Override

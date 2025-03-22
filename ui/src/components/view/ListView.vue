@@ -100,12 +100,13 @@
               </a-tooltip>
             </span>
             <font-awesome-icon
-              v-if="record.leaseduration !== undefined"
-              :icon="['fa-solid', 'fa-clock']"
-              :class="['anticon', record.leaseduration > 0 ? 'lease-remaining' : 'lease-over' ]"
-              :style="{
-                margin: '5px'
-              }"/>
+            v-if="record.leaseduration !== undefined"
+            :icon="['fa-solid', 'fa-clock']"
+            :class="['anticon']"
+            :style="{
+              'margin-left': '5px',
+              color: record.leaseduration > -1 ? $store.getters.darkMode ? 'rgba(255, 255, 255, 0.65)' : '#888': '#f50000'
+            }"/>
           </span>
         </span>
       </template>
@@ -1136,11 +1137,5 @@ export default {
     background-color: rgba(255, 190, 190, 0.75);
     color: #f50000;
     padding: 10%;
-  }
-  .lease-remaining {
-    color: #e2b51f;
-  }
-  .lease-over {
-    color: #f50000;
   }
 </style>

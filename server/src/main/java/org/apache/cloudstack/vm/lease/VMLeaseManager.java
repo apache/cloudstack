@@ -30,14 +30,6 @@ public interface VMLeaseManager extends Manager {
         DESTROY
     }
 
-    ConfigKey<Long> InstanceLeaseDuration = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
-            "instance.lease.duration", "90", "The default lease duration in days for the instance",
-            true, List.of(ConfigKey.Scope.Account, ConfigKey.Scope.Domain));
-
-    ConfigKey<String> InstanceLeaseExpiryAction = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, String.class,
-            "instance.lease.expiryaction", "STOP", "Default action to be taken at instance lease expiry",
-            true, List.of(ConfigKey.Scope.Account, ConfigKey.Scope.Domain));
-
     ConfigKey<Long> InstanceLeaseSchedulerInterval = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
             "instance.lease.scheduler.interval", "86400", "VM Lease Scheduler interval in seconds",
             true, List.of(ConfigKey.Scope.Global));
@@ -49,5 +41,4 @@ public interface VMLeaseManager extends Manager {
     ConfigKey<Long> InstanceLeaseAlertStartsAt = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
             "instance.lease.alert.startat", "7", "Denotes remaining day at which alerting will start",
             true, List.of(ConfigKey.Scope.Global));
-
 }
