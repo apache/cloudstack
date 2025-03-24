@@ -84,7 +84,6 @@ override_dh_auto_install:
 	cp client/target/lib/*jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/
 	cp -r engine/schema/dist/systemvm-templates/* $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/
 	rm -rf $(DESTDIR)/usr/share/$(PACKAGE)-management/templates/systemvm/md5sum.txt
-	chown -R cloud:cloud /usr/share/$(PACKAGE)-management/templates/systemvm
 
 	# Bundle cmk in cloudstack-management
 	wget https://github.com/apache/cloudstack-cloudmonkey/releases/download/$(CMK_REL)/cmk.linux.x86-64 -O $(DESTDIR)/usr/bin/cmk
