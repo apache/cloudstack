@@ -88,4 +88,4 @@ public class AddOrUpdateNetrisStaticRouteCommandTest {
         Assert.assertEquals(ROUTE_ID, command.getRouteId());
         Assert.assertEquals(UPDATE_ROUTE, command.isUpdateRoute());
     }
-} 
+}

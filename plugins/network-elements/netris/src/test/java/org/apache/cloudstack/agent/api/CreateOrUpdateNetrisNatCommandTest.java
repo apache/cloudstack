@@ -142,4 +142,4 @@ public class CreateOrUpdateNetrisNatCommandTest {
         assertEquals(IS_VPC, command.isVpc());
         assertEquals(VPC_CIDR, command.getVpcCidr());
     }
-} 
+}

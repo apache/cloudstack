@@ -101,4 +101,4 @@ public class ListNetrisProvidersCmdTest {
     public void testGetEntityOwnerId() {
         Assert.assertEquals(0L, cmd.getEntityOwnerId());
     }
-} 
+}

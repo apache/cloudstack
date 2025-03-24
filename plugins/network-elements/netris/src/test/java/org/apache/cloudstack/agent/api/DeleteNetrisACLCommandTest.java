@@ -100,4 +100,4 @@ public class DeleteNetrisACLCommandTest {
         assertEquals(VPC_NAME, command.getVpcName());
         assertNull(command.getAclRuleNames());
     }
-} 
+}

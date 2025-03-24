@@ -64,7 +64,7 @@ public class AddNetrisProviderCmdTest {
         closeable = MockitoAnnotations.openMocks(this);
         callContextMockedStatic = Mockito.mockStatic(CallContext.class);
         callContextMockedStatic.when(CallContext::current).thenReturn(callContext);
-        
+
         // Set private fields using reflection
         setPrivateField("zoneId", ZONE_ID);
         setPrivateField("name", NAME);

@@ -141,4 +141,4 @@ public class CreateNetrisACLCommandTest {
         Assert.assertEquals(DEST_PORT_END, command.getDestPortEnd());
         Assert.assertEquals("", command.getProtocol());
     }
-} 
+}

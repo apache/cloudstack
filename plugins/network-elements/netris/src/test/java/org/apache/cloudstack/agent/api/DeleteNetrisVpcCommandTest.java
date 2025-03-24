@@ -61,4 +61,4 @@ public class DeleteNetrisVpcCommandTest {
         assertEquals("VPC ID should match", VPC_ID, command.getId());
         assertEquals("Is VPC flag should match", IS_VPC, command.isVpc());
     }
-} 
+}

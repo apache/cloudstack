@@ -77,4 +77,4 @@ public class ReleaseNatIpCommandTest {
         assertEquals(IS_VPC, command.isVpc());
         assertEquals(NAT_IP, command.getNatIp());
     }
-} 
+}

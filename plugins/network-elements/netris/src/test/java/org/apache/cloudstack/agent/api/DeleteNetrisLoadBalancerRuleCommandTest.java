@@ -95,4 +95,4 @@ public class DeleteNetrisLoadBalancerRuleCommandTest {
         Assert.assertEquals(IS_VPC, command.isVpc());
         Assert.assertEquals(LB_ID, command.getLbId());
     }
-} 
+}

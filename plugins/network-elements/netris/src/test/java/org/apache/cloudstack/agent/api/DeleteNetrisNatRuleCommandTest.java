@@ -91,4 +91,4 @@ public class DeleteNetrisNatRuleCommandTest {
         assertEquals(NETWORK_ID, command.getId());
         assertEquals(IS_VPC, command.isVpc());
     }
-} 
+}

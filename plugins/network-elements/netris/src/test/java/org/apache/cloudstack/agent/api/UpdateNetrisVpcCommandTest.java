@@ -90,4 +90,4 @@ public class UpdateNetrisVpcCommandTest {
         assertEquals(IS_VPC, command.isVpc());
         assertNull(command.getPreviousVpcName());
     }
-} 
+}

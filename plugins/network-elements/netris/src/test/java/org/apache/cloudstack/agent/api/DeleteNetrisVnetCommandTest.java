@@ -80,4 +80,4 @@ public class DeleteNetrisVnetCommandTest {
         // Assert
         Assert.assertEquals(VNET_V6_CIDR, command.getvNetV6Cidr());
     }
-} 
+}

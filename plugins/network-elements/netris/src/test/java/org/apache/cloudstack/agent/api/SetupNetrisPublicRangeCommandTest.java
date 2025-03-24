@@ -60,4 +60,4 @@ public class SetupNetrisPublicRangeCommandTest {
         assertEquals(ZONE_ID, command.getId());
         assertFalse(command.isVpc());
     }
-} 
+}

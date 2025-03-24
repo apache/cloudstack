@@ -102,4 +102,4 @@ public class UpdateNetrisVnetCommandTest {
         assertNull(command.getVpcName());
         assertNull(command.getVpcId());
     }
-} 
+}
