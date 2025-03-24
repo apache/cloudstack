@@ -35,7 +35,7 @@ import static org.apache.cloudstack.api.command.DeleteNetrisProviderCmd.APINAME;
 
 @APICommand(name = APINAME, description = "delete Netris Provider to CloudStack",
         responseObject = NetrisProviderResponse.class, requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false, since = "4.20.0")
+        responseHasSensitiveInfo = false, since = "4.21.0")
 public class DeleteNetrisProviderCmd extends BaseCmd {
     public static final String APINAME = "deleteNetrisProvider";
 

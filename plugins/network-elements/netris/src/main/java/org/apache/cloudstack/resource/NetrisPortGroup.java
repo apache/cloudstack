@@ -19,6 +19,9 @@ package org.apache.cloudstack.resource;
 public class NetrisPortGroup {
     private String ports;
 
+    public NetrisPortGroup() {
+    }
+
     public NetrisPortGroup(String ports) {
         this.ports = ports;
     }

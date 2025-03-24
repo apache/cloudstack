@@ -34,7 +34,7 @@ import java.util.List;
 
 @APICommand(name = ListNetrisProvidersCmd.APINAME, description = "list all Netris providers added to CloudStack",
         responseObject = NetrisProviderResponse.class, requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false, since = "4.20.0")
+        responseHasSensitiveInfo = false, since = "4.21.0")
 public class ListNetrisProvidersCmd extends BaseListCmd {
     public static final String APINAME = "listNetrisProviders";
 

@@ -35,7 +35,7 @@ import javax.inject.Inject;
 
 @APICommand(name = AddNetrisProviderCmd.APINAME, description = "Add Netris Provider to CloudStack",
         responseObject = NetrisProviderResponse.class, requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false, since = "4.20")
+        responseHasSensitiveInfo = false, since = "4.21.0")
 public class AddNetrisProviderCmd extends BaseCmd {
     public static final String APINAME = "addNetrisProvider";
     public static final Logger LOGGER = LoggerFactory.getLogger(AddNetrisProviderCmd.class.getName());
