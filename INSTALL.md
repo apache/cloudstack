@@ -87,9 +87,7 @@ Start the management server:
 
 If this works, you've successfully setup a single server Apache CloudStack installation.
 
-Open the following URL on your browser to access the Management Server UI:
-
-    http://localhost:8080/client/
+To access the Management Server UI, follow the following procedure:
 
 The default credentials are; user: admin, password: password and the domain
 field should be left blank which is defaulted to the ROOT domain.
