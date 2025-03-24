@@ -110,7 +110,12 @@ export default {
         }
         api('updateHost', data).then(_ => {
           this.$emit('close-action')
+          this.$emit('refresh-data')
+        }).catch(err => {
+          this.$message.error(err.message || 'Failed to update host status')
         })
+      }).catch(() => {
+        this.$message.error('Validation failed. Please check the inputs.')
       })
     }
   }
