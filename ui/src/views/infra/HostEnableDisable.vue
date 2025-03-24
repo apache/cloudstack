@@ -94,9 +94,6 @@ export default {
       })
     },
     handleSubmit (e) {
-      if (e) {
-        e.preventDefault()
-      }
       this.$refs.formRef.validate().then(() => {
         const values = toRaw(this.form)
         const data = {
@@ -106,7 +103,6 @@ export default {
         if (values.reason) {
           data.annotation = values.reason
         }
-<<<<<<< HEAD
         api('updateHost', data).then(_ => {
           this.$emit('close-action')
           this.$emit('refresh-data')
@@ -115,19 +111,6 @@ export default {
         })
       }).catch(() => {
         this.$message.error('Validation failed. Please check the inputs.')
-=======
-        api('updateHost', data)
-          .then(response => {
-            this.$emit('refresh-data')
-            this.$emit('close-action')
-          })
-          .catch(error => {
-            console.error('Error updating host:', error)
-            this.$emit('close-action')
-          })
-      }).catch(error => {
-        console.error('Validation failed:', error)
->>>>>>> 06ddb1abe6 (Auto update the host status)
       })
     }
   }
