@@ -639,6 +639,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return libvirtUtilitiesHelper;
     }
 
+    public String getClusterId() {
+        return clusterId;
+    }
+
     public CPUStat getCPUStat() {
         return cpuStat;
     }

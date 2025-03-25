@@ -74,6 +74,8 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
             ResourceState.ErrorInMaintenance, ResourceState.PrepareForMaintenance);
     private static final List<Host.Type> agentValidHostTypes = List.of(Host.Type.Routing, Host.Type.ConsoleProxy,
             Host.Type.SecondaryStorage, Host.Type.SecondaryStorageVM);
+    private static final List<Host.Type> agentNonRoutingHostTypes = List.of(Host.Type.ConsoleProxy,
+            Host.Type.SecondaryStorage, Host.Type.SecondaryStorageVM);
     private static final List<Hypervisor.HypervisorType> agentValidHypervisorTypes = List.of(
             Hypervisor.HypervisorType.KVM, Hypervisor.HypervisorType.LXC);
 
@@ -136,6 +138,16 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
         return hostIdList;
     }
 
+    private List<Long> getAllAgentBasedNonRoutingHostsFromDB(final Long zoneId) {
+        return hostDao.findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(zoneId, null,
+                agentValidResourceStates, agentNonRoutingHostTypes, agentValidHypervisorTypes);
+    }
+
+    private List<Long> getAllAgentBasedRoutingHostsFromDB(final Long zoneId, final Long clusterId) {
+        return hostDao.findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(zoneId, clusterId,
+                agentValidResourceStates, List.of(Host.Type.Routing), agentValidHypervisorTypes);
+    }
+
     private List<Long> getAllAgentBasedHostsFromDB(final Long zoneId, final Long clusterId) {
         return hostDao.findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(zoneId, clusterId,
                 agentValidResourceStates, agentValidHostTypes, agentValidHypervisorTypes);
@@ -158,29 +170,39 @@ public class IndirectAgentLBServiceImpl extends ComponentLifecycleBase implement
     public void propagateMSListToAgents() {
         logger.debug("Propagating management server list update to agents");
         final String lbAlgorithm = getLBAlgorithmName();
+        final Long globalLbCheckInterval = getLBPreferredHostCheckInterval(null);
         List<DataCenterVO> zones = dataCenterDao.listAll();
         for (DataCenterVO zone : zones) {
             List<Long> zoneHostIds = new ArrayList<>();
+            List<Long> nonRoutingHostIds = getAllAgentBasedNonRoutingHostsFromDB(zone.getId());
+            zoneHostIds.addAll(nonRoutingHostIds);
             Map<Long, List<Long>> clusterHostIdsMap = new HashMap<>();
             List<Long> clusterIds = clusterDao.listAllClusterIds(zone.getId());
             for (Long clusterId : clusterIds) {
-                List<Long> hostIds = getAllAgentBasedHostsFromDB(zone.getId(), clusterId);
+                List<Long> hostIds = getAllAgentBasedRoutingHostsFromDB(zone.getId(), clusterId);
                 clusterHostIdsMap.put(clusterId, hostIds);
                 zoneHostIds.addAll(hostIds);
             }
             zoneHostIds.sort(Comparator.comparingLong(x -> x));
+            for (Long nonRoutingHostId : nonRoutingHostIds) {
+                setupMSList(nonRoutingHostId, zone.getId(), zoneHostIds, lbAlgorithm, globalLbCheckInterval);
+            }
             for (Long clusterId : clusterIds) {
-                final Long lbCheckInterval = getLBPreferredHostCheckInterval(clusterId);
+                final Long clusterLbCheckInterval = getLBPreferredHostCheckInterval(clusterId);
                 List<Long> hostIds = clusterHostIdsMap.get(clusterId);
                 for (Long hostId : hostIds) {
-                    final List<String> msList = getManagementServerList(hostId, zone.getId(), zoneHostIds);
-                    final SetupMSListCommand cmd = new SetupMSListCommand(msList, lbAlgorithm, lbCheckInterval);
-                    final Answer answer = agentManager.easySend(hostId, cmd);
-                    if (answer == null || !answer.getResult()) {
-                        logger.warn("Failed to setup management servers list to the agent of ID: {}", hostId);
-                    }
+                    setupMSList(hostId, zone.getId(), zoneHostIds, lbAlgorithm, clusterLbCheckInterval);
                 }
             }
+        }
+    }
+
+    private void setupMSList(final Long hostId, final Long dcId, final List<Long> orderedHostIdList, final String lbAlgorithm, final Long lbCheckInterval) {
+        final List<String> msList = getManagementServerList(hostId, dcId, orderedHostIdList);
+        final SetupMSListCommand cmd = new SetupMSListCommand(msList, lbAlgorithm, lbCheckInterval);
+        final Answer answer = agentManager.easySend(hostId, cmd);
+        if (answer == null || !answer.getResult()) {
+            logger.warn(String.format("Failed to setup management servers list to the agent of ID: %d", hostId));
         }
     }
 

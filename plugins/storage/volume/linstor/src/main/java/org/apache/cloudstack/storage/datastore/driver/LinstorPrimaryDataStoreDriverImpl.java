@@ -1119,6 +1119,8 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             String snapshotName,
             String restoredName) throws ApiException {
         final String rscGrp = getRscGrp(storagePoolVO);
+        // try to delete -rst resource, could happen if the copy failed and noone deleted it.
+        deleteResourceDefinition(storagePoolVO, restoredName);
         ResourceDefinitionCreate rdc = createResourceDefinitionCreate(restoredName, rscGrp);
         api.resourceDefinitionCreate(rdc);
 
@@ -1261,19 +1263,22 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
             throws ApiException {
         Answer answer;
         String restoreName = rscName + "-rst";
-        String devName = restoreResourceFromSnapshot(api, pool, rscName, snapshotName, restoreName);
+        try {
+            String devName = restoreResourceFromSnapshot(api, pool, rscName, snapshotName, restoreName);
 
-        Optional<RemoteHostEndPoint> optEPAny = getLinstorEP(api, restoreName);
-        if (optEPAny.isPresent()) {
-            // patch the src device path to the temporary linstor resource
-            snapshotObject.setPath(devName);
-            origCmd.setSrcTO(snapshotObject.getTO());
-            answer = optEPAny.get().sendMessage(origCmd);
-        } else{
-            answer = new Answer(origCmd, false, "Unable to get matching Linstor endpoint.");
+            Optional<RemoteHostEndPoint> optEPAny = getLinstorEP(api, restoreName);
+            if (optEPAny.isPresent()) {
+                // patch the src device path to the temporary linstor resource
+                snapshotObject.setPath(devName);
+                origCmd.setSrcTO(snapshotObject.getTO());
+                answer = optEPAny.get().sendMessage(origCmd);
+            } else{
+                answer = new Answer(origCmd, false, "Unable to get matching Linstor endpoint.");
+            }
+        } finally {
+            // delete the temporary resource, noop if already gone
+            api.resourceDefinitionDelete(restoreName);
         }
-        // delete the temporary resource, noop if already gone
-        api.resourceDefinitionDelete(restoreName);
         return answer;
     }
 

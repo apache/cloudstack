@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -61,7 +62,6 @@ import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -162,8 +162,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private VirtualMachineManager virtualMachineManager;
     @Inject
     private VolumeApiService volumeApiService;
-    @Inject
-    private VolumeOrchestrationService volumeOrchestrationService;
 
     private AsyncJobDispatcher asyncJobDispatcher;
     private Timer backupTimer;
@@ -382,10 +380,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         boolean result = false;
         try {
-            vm.setBackupOfferingId(null);
-            vm.setBackupExternalId(null);
-            vm.setBackupVolumes(null);
             result = backupProvider.removeVMFromBackupOffering(vm);
+            vm.setBackupOfferingId(null);
+            vm.setBackupVolumes(null);
+            vm.setBackupExternalId(null);
             if (result && backupProvider.willDeleteBackupsOnOfferingRemoval()) {
                 final List<Backup> backups = backupDao.listByVmId(null, vm.getId());
                 for (final Backup backup : backups) {
@@ -396,8 +394,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
                         "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null,
                         Backup.class.getSimpleName(), vm.getUuid());
-                final BackupSchedule backupSchedule = backupScheduleDao.findByVM(vm.getId());
-                if (backupSchedule != null) {
+                final List<BackupScheduleVO> backupSchedules = backupScheduleDao.listByVM(vm.getId());
+                for(BackupSchedule backupSchedule: backupSchedules) {
                     backupScheduleDao.remove(backupSchedule.getId());
                 }
                 result = true;
@@ -455,7 +453,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         schedule.setTimezone(timezoneId);
         schedule.setScheduledTimestamp(nextDateTime);
         backupScheduleDao.update(schedule.getId(), schedule);
-        return backupScheduleDao.findByVM(vmId);
+        return backupScheduleDao.findById(schedule.getId());
     }
 
     @Override
@@ -469,16 +467,33 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_SCHEDULE_DELETE, eventDescription = "deleting VM backup schedule")
-    public boolean deleteBackupSchedule(final Long vmId) {
-        final VMInstanceVO vm = findVmById(vmId);
-        validateForZone(vm.getDataCenterId());
-        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
-
-        final BackupSchedule schedule = backupScheduleDao.findByVM(vmId);
-        if (schedule == null) {
-            throw new CloudRuntimeException("VM has no backup schedule defined, no need to delete anything.");
+    public boolean deleteBackupSchedule(DeleteBackupScheduleCmd cmd) {
+        Long vmId = cmd.getVmId();
+        Long id = cmd.getId();
+        if (Objects.isNull(vmId) && Objects.isNull(id)) {
+            throw new InvalidParameterValueException("Either instance ID or ID of backup schedule needs to be specified");
         }
-        return backupScheduleDao.remove(schedule.getId());
+        if (Objects.nonNull(vmId)) {
+            final VMInstanceVO vm = findVmById(vmId);
+            validateForZone(vm.getDataCenterId());
+            accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+            return deleteAllVMBackupSchedules(vm.getId());
+        } else {
+            final BackupSchedule schedule = backupScheduleDao.findById(id);
+            if (schedule == null) {
+                throw new CloudRuntimeException("Could not find the requested backup schedule.");
+            }
+            return backupScheduleDao.remove(schedule.getId());
+        }
+    }
+
+    private boolean deleteAllVMBackupSchedules(long vmId) {
+        List<BackupScheduleVO> vmBackupSchedules = backupScheduleDao.listByVM(vmId);
+        boolean success = true;
+        for (BackupScheduleVO vmBackupSchedule : vmBackupSchedules) {
+            success = success && backupScheduleDao.remove(vmBackupSchedule.getId());
+        }
+        return success;
     }
 
     @Override
@@ -622,6 +637,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 !vm.getState().equals(VirtualMachine.State.Destroyed)) {
             throw new CloudRuntimeException("Existing VM should be stopped before being restored from backup");
         }
+
         // This is done to handle historic backups if any with Veeam / Networker plugins
         List<Backup.VolumeInfo> backupVolumes = CollectionUtils.isNullOrEmpty(backup.getBackedUpVolumes()) ?
                 vm.getBackupVolumeList() : backup.getBackedUpVolumes();
