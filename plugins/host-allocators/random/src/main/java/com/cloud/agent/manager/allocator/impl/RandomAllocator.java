@@ -98,8 +98,10 @@ public class RandomAllocator extends AdapterBase implements HostAllocator {
         VMTemplateVO template = (VMTemplateVO)vmProfile.getTemplate();
         String templateTag = template.getTemplateTag();
         String hostTag = null;
-        if (ObjectUtils.anyNull(offeringHostTag, templateTag)) {
-            hostTag = offeringHostTag;
+        if (ObjectUtils.anyNotNull(offeringHostTag, templateTag)) {
+            hostTag = ObjectUtils.allNotNull(offeringHostTag, templateTag) ?
+                    String.format("%s, %s", offeringHostTag, templateTag) :
+                    ObjectUtils.firstNonNull(offeringHostTag, templateTag);
             logger.debug("Looking for hosts in dc [{}], pod [{}], cluster [{}] and complying with host tag(s): [{}]", dcId, podId, clusterId, hostTag);
         } else {
             logger.debug("Looking for hosts in dc: {} pod: {} cluster: {}", dcId , podId, clusterId);
