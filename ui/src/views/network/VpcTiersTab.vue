@@ -223,18 +223,18 @@
           </a-form-item>
           <a-form-item ref="gateway" name="gateway" :colon="false">
             <template #label>
-              <tooltip-label :title="$t('label.gateway')" :tooltip="$t('label.create.tier.gateway.description')"/>
+              <tooltip-label :title="$t('label.gateway')" :tooltip="gatewayPlaceholder"/>
             </template>
             <a-input
-              :placeholder="$t('label.create.tier.gateway.description')"
+              :placeholder="gatewayPlaceholder"
               v-model:value="form.gateway"></a-input>
           </a-form-item>
           <a-form-item ref="netmask" name="netmask" :colon="false">
             <template #label>
-              <tooltip-label :title="$t('label.netmask')" :tooltip="$t('label.create.tier.netmask.description')"/>
+              <tooltip-label :title="$t('label.netmask')" :tooltip="netmaskPlaceholder"/>
             </template>
             <a-input
-              :placeholder="$t('label.create.tier.netmask.description')"
+              :placeholder="netmaskPlaceholder"
               v-model:value="form.netmask"></a-input>
           </a-form-item>
           <a-form-item ref="externalId" name="externalId" :colon="false">
@@ -381,6 +381,8 @@ export default {
       selectedNetworkOffering: {},
       privateMtuMax: 1500,
       errorPrivateMtu: '',
+      gatewayPlaceholder: '',
+      netmaskPlaceholder: '',
       algorithms: {
         Source: 'source',
         'Round-robin': 'roundrobin',
@@ -620,8 +622,6 @@ export default {
       const cidr = this.resource.cidr
       if (cidr && cidr.includes('/')) {
         const [address, maskBits] = cidr.split('/')
-        this.form.gateway = address
-
         const prefix = Number(maskBits)
 
         const subnetMasks = {
@@ -652,8 +652,13 @@ export default {
           32: '255.255.255.255'
         }
 
-        this.form.netmask = subnetMasks[prefix] || '255.255.255.0'
+        const cidrValue = `${address}/${maskBits}`
+        const netmask = subnetMasks[prefix] || '255.255.255.0'
+
+        this.gatewayPlaceholder = this.$t('label.create.tier.gateway.description', { value: cidrValue })
+        this.netmaskPlaceholder = this.$t('label.create.tier.netmask.description', { value: netmask })
       }
+
       this.showCreateNetworkModal = true
       this.rules = {
         name: [{ required: true, message: this.$t('label.required') }],
