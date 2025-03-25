@@ -32,6 +32,7 @@ import com.cloud.agent.api.Command;
 import com.cloud.utils.db.GenericDao;
 
 import org.apache.cloudstack.acl.InfrastructureEntity;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
@@ -50,6 +51,12 @@ public class ReconcileCommandVO implements InfrastructureEntity, InternalIdentit
 
     @Column(name = "request_sequence")
     private long requestSequence;
+
+    @Column(name = "resource_id")
+    private long resourceId;
+
+    @Column(name = "resource_type")
+    private ApiCommandResourceType resourceType;
 
     @Column(name = "state_by_management")
     private Command.State stateByManagement;
@@ -109,6 +116,22 @@ public class ReconcileCommandVO implements InfrastructureEntity, InternalIdentit
 
     public void setRequestSequence(long requestSequence) {
         this.requestSequence = requestSequence;
+    }
+
+    public long getResourceId() {
+        return resourceId;
+    }
+
+    public void setResourceId(long resourceId) {
+        this.resourceId = resourceId;
+    }
+
+    public ApiCommandResourceType getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(ApiCommandResourceType resourceType) {
+        this.resourceType = resourceType;
     }
 
     public Command.State getStateByManagement() {

@@ -26,13 +26,15 @@ import java.util.List;
 public class ReconcileMigrateAnswer extends ReconcileAnswer {
 
     Long hostId;
+    String vmName;
     VirtualMachine.State vmState;
     List<String> vmDisks;
 
     public ReconcileMigrateAnswer() {
     }
 
-    public ReconcileMigrateAnswer(VirtualMachine.State vmState) {
+    public ReconcileMigrateAnswer(String vmName, VirtualMachine.State vmState) {
+        this.vmName = vmName;
         this.vmState = vmState;
     }
 
@@ -42,6 +44,10 @@ public class ReconcileMigrateAnswer extends ReconcileAnswer {
 
     public void setHostId(Long hostId) {
         this.hostId = hostId;
+    }
+
+    public String getVmName() {
+        return vmName;
     }
 
     public VirtualMachine.State getVmState() {

@@ -49,6 +49,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Func;
@@ -398,7 +399,6 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         AllFieldsSearch.and("passphraseId", AllFieldsSearch.entity().getPassphraseId(), Op.EQ);
         AllFieldsSearch.and("iScsiName", AllFieldsSearch.entity().get_iScsiName(), Op.EQ);
         AllFieldsSearch.and("path", AllFieldsSearch.entity().getPath(), Op.EQ);
-        AllFieldsSearch.and("lastId", AllFieldsSearch.entity().getLastId(), Op.EQ);
         AllFieldsSearch.done();
 
         RootDiskStateSearch = createSearchBuilder();
@@ -914,18 +914,10 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
     }
 
     @Override
-    public VolumeVO findByInstanceIdAndPath(Long instanceId, String path) {
-        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
-        sc.setParameters("instanceId", instanceId);
-        sc.setParameters("path", path);
-        return findOneBy(sc);
-    }
-
-    @Override
-    public VolumeVO findByLastIdAndState(long lastVolumeId, State state) {
-        SearchCriteria<VolumeVO> sc = AllFieldsSearch.create();
-        sc.setParameters("lastId", lastVolumeId);
-        sc.setParameters("state", state);
-        return findOneBy(sc);
+    public VolumeVO findByLastIdAndState(long lastVolumeId, State ...states) {
+        QueryBuilder<VolumeVO> sc = QueryBuilder.create(VolumeVO.class);
+        sc.and(sc.entity().getLastId(), SearchCriteria.Op.EQ,  lastVolumeId);
+        sc.and(sc.entity().getState(), SearchCriteria.Op.IN,  (Object[]) states);
+        return sc.find();
     }
 }

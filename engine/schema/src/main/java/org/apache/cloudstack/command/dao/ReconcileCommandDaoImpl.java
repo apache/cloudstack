@@ -20,6 +20,7 @@ package org.apache.cloudstack.command.dao;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.command.ReconcileCommandVO;
 import org.springframework.stereotype.Component;
 
@@ -35,6 +36,7 @@ import com.cloud.utils.db.SearchCriteria;
 public class ReconcileCommandDaoImpl extends GenericDaoBase<ReconcileCommandVO, Long> implements ReconcileCommandDao {
 
     final SearchBuilder<ReconcileCommandVO> updateCommandSearch;
+    final SearchBuilder<ReconcileCommandVO> resourceSearch;
 
     public ReconcileCommandDaoImpl() {
 
@@ -46,6 +48,12 @@ public class ReconcileCommandDaoImpl extends GenericDaoBase<ReconcileCommandVO, 
         updateCommandSearch.and("reqSequence", updateCommandSearch.entity().getRequestSequence(), SearchCriteria.Op.EQ);
         updateCommandSearch.and("commandName", updateCommandSearch.entity().getCommandName(), SearchCriteria.Op.EQ);
         updateCommandSearch.done();
+
+        resourceSearch = createSearchBuilder();
+        resourceSearch.and("resourceId", resourceSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
+        resourceSearch.and("resourceType", resourceSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+        resourceSearch.and("stateByManagement", resourceSearch.entity().getStateByManagement(), SearchCriteria.Op.IN);
+        resourceSearch.done();
     }
 
     @Override
@@ -113,5 +121,14 @@ public class ReconcileCommandDaoImpl extends GenericDaoBase<ReconcileCommandVO, 
         vo.setStateByAgent(Command.State.INTERRUPTED);
 
         update(vo, sc);
+    }
+
+    @Override
+    public List<ReconcileCommandVO> listByResourceIdAndTypeAndStates(long resourceId, ApiCommandResourceType resourceType, Command.State... states) {
+        QueryBuilder<ReconcileCommandVO> sc = QueryBuilder.create(ReconcileCommandVO.class);
+        sc.and(sc.entity().getResourceId(), SearchCriteria.Op.EQ,  resourceId);
+        sc.and(sc.entity().getResourceType(), SearchCriteria.Op.EQ,  resourceType);
+        sc.and(sc.entity().getStateByManagement(), SearchCriteria.Op.IN,  (Object[]) states);
+        return sc.list();
     }
 }

@@ -20,6 +20,7 @@ package org.apache.cloudstack.command.dao;
 import com.cloud.agent.api.Command;
 import com.cloud.utils.db.GenericDao;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.command.ReconcileCommandVO;
 
 import java.util.List;
@@ -39,4 +40,6 @@ public interface ReconcileCommandDao extends GenericDao<ReconcileCommandVO, Long
     void updateCommandsToInterruptedByManagementServerId(long managementServerId);
 
     void updateCommandsToInterruptedByHostId(long hostId);
+
+    List<ReconcileCommandVO> listByResourceIdAndTypeAndStates(long resourceId, ApiCommandResourceType resourceType, Command.State... states);
 }

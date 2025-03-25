@@ -44,6 +44,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`reconcile_commands` (
     `management_server_id` bigint unsigned NOT NULL COMMENT 'node id of the management server',
     `host_id` bigint unsigned NOT NULL COMMENT 'id of the host',
     `request_sequence` bigint unsigned NOT NULL COMMENT 'sequence of the request',
+    `resource_id` bigint unsigned DEFAULT NULL COMMENT 'id of the resource',
+    `resource_type` varchar(255) NOT NULL COMMENT 'type if the resource',
     `state_by_management` varchar(255) COMMENT 'state of the command updated by management server',
     `state_by_agent` varchar(255) COMMENT 'state of the command updated by cloudstack agent',
     `command_name` varchar(255) COMMENT 'name of the command',

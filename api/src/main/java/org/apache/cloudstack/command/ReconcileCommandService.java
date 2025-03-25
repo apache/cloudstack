@@ -20,6 +20,7 @@ package org.apache.cloudstack.command;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.hypervisor.Hypervisor;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import java.util.Arrays;
@@ -59,4 +60,6 @@ public interface ReconcileCommandService {
     void updateReconcileCommandToInterruptedByManagementServerId(long managementServerId);
 
     void updateReconcileCommandToInterruptedByHostId(long hostId);
+
+    boolean isReconcileResourceNeeded(long resourceId, ApiCommandResourceType resourceType);
 }

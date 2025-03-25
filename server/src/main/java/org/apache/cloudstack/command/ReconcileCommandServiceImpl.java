@@ -196,6 +196,22 @@ public class ReconcileCommandServiceImpl extends ManagerBase implements Reconcil
         reconcileCommandVO.setStateByManagement(State.CREATED);
         reconcileCommandVO.setHostId(hostId);
         reconcileCommandVO.setRequestSequence(requestSequence);
+        if (cmd instanceof CopyCommand) {
+            CopyCommand copyCmd = (CopyCommand)cmd;
+            DataTO srcData = copyCmd.getSrcTO();
+            if (srcData != null && srcData.getDataStore() instanceof PrimaryDataStoreTO) {
+                reconcileCommandVO.setResourceType(ApiCommandResourceType.Volume);
+                reconcileCommandVO.setResourceId(srcData.getId());
+            }
+        } else if (cmd instanceof MigrateCommand) {
+            MigrateCommand migrateCommand = (MigrateCommand)cmd;
+            reconcileCommandVO.setResourceType(ApiCommandResourceType.VirtualMachine);
+            reconcileCommandVO.setResourceId(migrateCommand.getVirtualMachine().getId());
+        } else if (cmd instanceof MigrateVolumeCommand) {
+            MigrateVolumeCommand migrateVolumeCommand = (MigrateVolumeCommand)cmd;
+            reconcileCommandVO.setResourceType(ApiCommandResourceType.Volume);
+            reconcileCommandVO.setResourceId(migrateVolumeCommand.getVolumeId());
+        }
         reconcileCommandDao.persist(reconcileCommandVO);
     }
 
@@ -745,6 +761,7 @@ public class ReconcileCommandServiceImpl extends ManagerBase implements Reconcil
                 logger.debug(String.format("Searching for volumes with last_id = %s", volumeVO.getId()));
                 VolumeVO destVolume = volumeDao.findByLastIdAndState(volumeVO.getId(), Volume.State.Migrating);
                 if (destVolume != null) {
+                    logger.debug(String.format("Found destination volume with last_id = %s: %s", volumeVO.getId(), destVolume));
                     Boolean isVolumeMigrated = isVolumeMigrated(diskPaths, volumeVO.getPath(), destVolume.getPath());
                     if (isVolumeMigrated == null) {
                         logger.debug(String.format("Unable to determine if source volume %s has been migrated to destination volume %s", volumeVO, destVolume));
@@ -1118,4 +1135,10 @@ public class ReconcileCommandServiceImpl extends ManagerBase implements Reconcil
         return new Pair<>(null, null);
     }
 
+    @Override
+    public boolean isReconcileResourceNeeded(long resourceId, ApiCommandResourceType resourceType) {
+        return !reconcileCommandDao.listByResourceIdAndTypeAndStates(resourceId, resourceType,
+                State.INTERRUPTED, State.TIMED_OUT, State.RECONCILE_RETRY, State.RECONCILING, State.RECONCILE_FAILED, State.CREATED)
+                .isEmpty();
+    }
 }

@@ -84,12 +84,12 @@ public final class LibvirtReconcileCommandWrapper extends CommandWrapper<Reconci
             if (VirtualMachine.State.Running.equals(state)) {
                 disks = getVmDiskPaths(libvirtComputingResource.getDisks(conn, vmName));
             }
-            answer = new ReconcileMigrateAnswer(state);
+            answer = new ReconcileMigrateAnswer(vmName, state);
             answer.setVmDisks(disks);
         } catch (LibvirtException e) {
             logger.debug(String.format("Failed to get state of VM %s, assume it is Stopped", vmName));
             VirtualMachine.State state = VirtualMachine.State.Stopped;
-            answer = new ReconcileMigrateAnswer(state);
+            answer = new ReconcileMigrateAnswer(vmName, state);
         }
         return answer;
     }
