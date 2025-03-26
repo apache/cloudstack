@@ -1211,6 +1211,9 @@ export default {
         if (item.name === 'template') {
           query.templatefilter = 'self'
           query.filter = 'self'
+        } else if (item.name === 'iso') {
+          query.isofilter = 'self'
+          query.filter = 'self'
         }
 
         if (item.param === 'account') {
