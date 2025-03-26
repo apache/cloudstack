@@ -578,7 +578,7 @@
 "label.create.tier.externalid.description": "ID of the Network in an external system.",
 "label.create.tier.gateway.description": "Gateway in range of VPC CIDR ({value})",
 "label.create.tier.name.description": "A unique name for the Network Tier.",
-"label.create.tier.netmask.description": "The Network Tier's netmask. Your current is {value}",
+"label.create.tier.netmask.description": "The Network Tier's netmask. For example {value}",
 "label.create.tier.networkofferingid.description": "The Network offering for the Network Tier.",
 "label.create.tungsten.routing.policy": "Create Tungsten-Fabric routing policy",
 "label.create.user": "Create User",
