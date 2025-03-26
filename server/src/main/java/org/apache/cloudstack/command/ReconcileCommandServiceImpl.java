@@ -799,33 +799,38 @@ public class ReconcileCommandServiceImpl extends ManagerBase implements Reconcil
     private boolean processReconcileCopyAnswer(long requestSequence, CopyCommand command, ReconcileCopyAnswer reconcileAnswer) {
         DataTO srcData = command.getSrcTO();
         DataTO destData = command.getDestTO();
-        if (reconcileAnswer.isSkipped()) {
-            logger.debug(String.format("The reconcile command for source %s to destination %s is ignored because it is skipped, due to reason: %s", srcData.getId(), destData.getId(), reconcileAnswer.getReason()));
-            return true;
-        }
-        if (!reconcileAnswer.getResult()) {
-            logger.debug(String.format("The reconcile command for source %s to destination %s is ignored because the result is false, due to %s", srcData.getId(), destData.getId(), reconcileAnswer.getDetails()));
-            return false;
-        }
+
+        final Long srcStoreId = srcData.getDataStore() instanceof PrimaryDataStoreTO ? ((PrimaryDataStoreTO) srcData.getDataStore()).getId() : null;
+        final Long destStoreId = destData.getDataStore() instanceof PrimaryDataStoreTO ? ((PrimaryDataStoreTO) destData.getDataStore()).getId() : null;
 
         VolumeVO sourceVolume = srcData.getObjectType().equals(DataObjectType.VOLUME) && srcData.getDataStore() instanceof PrimaryDataStoreTO ? volumeDao.findByIdIncludingRemoved(srcData.getId()) : null;
         VolumeVO destVolume = destData.getObjectType().equals(DataObjectType.VOLUME) && destData.getDataStore() instanceof PrimaryDataStoreTO  ? volumeDao.findByIdIncludingRemoved(destData.getId()) : null;
 
+        if (reconcileAnswer.isSkipped()) {
+            logger.debug(String.format("The reconcile command for source volume (id: %s) to destination volume (id: %s) is ignored because it is skipped, due to reason: %s", srcData.getId(), destData.getId(), reconcileAnswer.getReason()));
+            processVolumesIfReconcileCopyCommandIsSkipped(srcStoreId, sourceVolume, destStoreId, destVolume, command, reconcileAnswer);
+            return true;
+        }
+        if (!reconcileAnswer.getResult()) {
+            logger.debug(String.format("The reconcile command for source volume (id: %s) to destination volume (id: %s) is ignored because the result is false, due to %s", srcData.getId(), destData.getId(), reconcileAnswer.getDetails()));
+            return false;
+        }
+
         ReconcileCommandVO reconcileCommandVO = reconcileCommandDao.findCommand(requestSequence, command.toString());
         if (reconcileCommandVO == null) {
-            logger.debug(String.format("The reconcile command for source %s to destination %s is not found in database, ignoring", srcData.getId(), destData.getId()));
+            logger.debug(String.format("The reconcile command for source volume (id: %s) to destination volume (id: %s) is not found in database, ignoring", srcData.getId(), destData.getId()));
             return true;
         }
 
         ReconcileCopyAnswer previousReconcileAnswer = null;
         if (destVolume != null) {
             if (reconcileCommandVO.getAnswerName() == null) {
-                logger.debug(String.format("The reconcile command for source %s to destination %s does not have previous answer in database, ignoring this time", srcData.getId(), destData.getId()));
+                logger.debug(String.format("The reconcile command for source volume (id: %s) to destination volume (id: %s) does not have previous answer in database, ignoring this time", srcData.getId(), destData.getId()));
                 return false;
             }
             Answer previousAnswer = ReconcileCommandUtils.parseAnswerFromAnswerInfo(reconcileCommandVO.getAnswerName(), reconcileCommandVO.getAnswerInfo());
             if (!(previousAnswer instanceof ReconcileCopyAnswer)) {
-                logger.debug(String.format("The reconcile command for source %s to destination %s does not have previous reconcileAnswer in database, ignoring this time", srcData.getId(), destData.getId()));
+                logger.debug(String.format("The reconcile command for source volume (id: %s) to destination volume (id: %s) does not have previous reconcileAnswer in database, ignoring this time", srcData.getId(), destData.getId()));
                 return false;
             }
             previousReconcileAnswer = (ReconcileCopyAnswer) previousAnswer;
@@ -838,96 +843,125 @@ public class ReconcileCommandServiceImpl extends ManagerBase implements Reconcil
         Volume.State destVolumeState = statePair.second();
         logger.debug(String.format("Processing volume (id: %s, state: %s) on source store and volume (id: %s, state: %s) on destination store", srcData.getId(), sourceVolumeState, destData.getId(), destVolumeState));
 
-        final Long srcStoreId = srcData.getDataStore() instanceof PrimaryDataStoreTO ? ((PrimaryDataStoreTO) srcData.getDataStore()).getId() : null;
-        final Long destStoreId = destData.getDataStore() instanceof PrimaryDataStoreTO ? ((PrimaryDataStoreTO) destData.getDataStore()).getId() : null;
-
-        boolean isSourceMigrating = sourceVolume != null && sourceVolume.getRemoved() == null && sourceVolume.getState().equals(Volume.State.Migrating);
         if (sourceVolume != null && destVolume != null) {
             // copy from primary to primary (offline volume migration)
-            if (Volume.State.Ready.equals(sourceVolumeState)) {
-                if (isSourceMigrating && srcStoreId != null && srcStoreId.equals(sourceVolume.getPoolId()) && destVolumeState != null) {
-                    logger.debug(String.format("Updating source volume %s to %s state", sourceVolume, Volume.State.Ready));
-                    sourceVolume.setState(Volume.State.Ready);
-                    sourceVolume.setUpdated(new Date());
-                    volumeDao.update(sourceVolume.getId(), sourceVolume);
-                }
-                if (Volume.State.Creating.equals(destVolume.getState()) && destStoreId != null && destStoreId.equals(destVolume.getPoolId()) && destVolumeState != null) {
-                    logger.debug(String.format("Updating destination volume %s to %s state", destVolume, destVolumeState));
-                    destVolume.setState(destVolumeState);
-                    destVolume.setUpdated(new Date());
-                    volumeDao.update(destVolume.getId(), destVolume);
-                }
-                return true;
-            } else if (Volume.State.Ready.equals(destVolumeState)) {
-                if (Volume.State.Creating.equals(destVolume.getState()) && destStoreId != null && destStoreId.equals(destVolume.getPoolId())) {
-                    logger.debug(String.format("Updating destination volume %s to %s state", destVolume, Volume.State.Ready));
-                    destVolume.setState(Volume.State.Ready);
-                    destVolume.setUpdated(new Date());
-                    destVolume.setInstanceId(sourceVolume.getInstanceId());
-                    destVolume.setPath(volumeOnDestination.getPath());  // Update path of destination volume
-                    destVolume.set_iScsiName(volumeOnDestination.getPath());
-                    volumeDao.update(destVolume.getId(), destVolume);
-                }
-                if (isSourceMigrating && srcStoreId != null && srcStoreId.equals(sourceVolume.getPoolId()) && sourceVolumeState != null) {
-                    logger.debug(String.format("Updating source volume %s to %s state", sourceVolume, sourceVolumeState));
-                    sourceVolume.setState(sourceVolumeState);
-                    sourceVolume.setUpdated(new Date());
-                    sourceVolume.setInstanceId(null);
-                    volumeDao.update(sourceVolume.getId(), sourceVolume);
-                }
-                return true;
-            }
+            return processReconcileCopyAnswerFromPrimaryToPrimary(srcStoreId, sourceVolume, sourceVolumeState, destStoreId, destVolume, destVolumeState, volumeOnDestination);
         } else if (sourceVolume == null && destVolume != null) {
             // copy from secondary to primary
-            if (destVolume.getRemoved() == null && Volume.State.Creating.equals(destVolume.getState()) && destStoreId != null && destStoreId.equals(destVolume.getPoolId())) {
-                Long lastVolumeId = destVolume.getLastId();
-                logger.debug(String.format("Searching for last volume with id = %s", destVolume.getLastId()));
-                VolumeVO lastVolume = volumeDao.findById(lastVolumeId);
-                if (lastVolume != null && Arrays.asList(Volume.State.Migrating, Volume.State.Ready).contains(lastVolume.getState())
-                        && Volume.State.Destroy.equals(destVolumeState)) {
-                    destVolume.setState(destVolumeState);
-                    destVolume.setPath(volumeOnDestination.getPath());  // Update path of destination volume
-                    volumeDao.update(destVolume.getId(), destVolume);
-                    if (Volume.State.Migrating.equals(lastVolume.getState())) {
-                        lastVolume.setState(Volume.State.Ready);        // Update last volume to Ready
-                        volumeDao.update(lastVolume.getId(), lastVolume);
-                    }
-                    // remove record from volume_store_ref with Copying state
-                    VolumeDataStoreVO volumeDataStoreVO = volumeDataStoreDao.findByVolume(lastVolume.getId());
-                    if (volumeDataStoreVO != null && volumeDataStoreVO.getState().equals(ObjectInDataStoreStateMachine.State.Copying)) {
-                        logger.debug(String.format("Removing record (id: %s) for volume %s from volume_store_ref as part of reconciliation of command %s and answer %s", volumeDataStoreVO.getId(), lastVolume, command, reconcileAnswer));
-                        volumeDataStoreDao.remove(volumeDataStoreVO.getId());
-                    }
-                }
-                return true;
-            }
+            return processReconcileCopyAnswerFromImageCacheToPrimary(destStoreId, destVolume, destVolumeState, volumeOnDestination, command, reconcileAnswer);
         } else if (sourceVolume != null && sourceVolumeState != null) {
             // copy from primary to secondary
-            if (isSourceMigrating && srcStoreId != null && srcStoreId.equals(sourceVolume.getPoolId())) {
-                logger.debug(String.format("Updating source volume %s to %s state", sourceVolume, sourceVolumeState));
-                sourceVolume.setState(sourceVolumeState);   // Update source volume state
-                volumeDao.update(sourceVolume.getId(), sourceVolume);
+            return processReconcileCopyAnswerFromPrimaryToSecondary(srcStoreId, sourceVolume, sourceVolumeState, command, reconcileAnswer);
+        }
+        return false;
+    }
 
-                // remove record from volume_store_ref with Creating state
-                VolumeDataStoreVO volumeDataStoreVO = volumeDataStoreDao.findByVolume(sourceVolume.getId());
-                if (volumeDataStoreVO != null && volumeDataStoreVO.getState().equals(ObjectInDataStoreStateMachine.State.Creating)) {
-                    logger.debug(String.format("Removing record (id: %s) for volume %s from volume_store_ref as part of reconciliation of command %s and answer %s", volumeDataStoreVO.getId(), sourceVolume, command, reconcileAnswer));
-                    volumeDataStoreDao.remove(volumeDataStoreVO.getId());
-                }
+    private boolean processVolumesIfReconcileCopyCommandIsSkipped(Long srcStoreId, VolumeVO sourceVolume, Long destStoreId, VolumeVO destVolume,
+                                                                  CopyCommand command, ReconcileCopyAnswer reconcileAnswer) {
+        if (sourceVolume == null && destVolume != null) {
+            // copy from secondary to primary
+            return processReconcileCopyAnswerFromImageCacheToPrimary(destStoreId, destVolume, Volume.State.Destroy, null, command, reconcileAnswer);
+        } else if (sourceVolume != null && destVolume == null) {
+            // copy from primary to secondary
+            return processReconcileCopyAnswerFromPrimaryToSecondary(srcStoreId, sourceVolume, Volume.State.Ready, command, reconcileAnswer);
+        }
+        return false;
+    }
+
+    private boolean processReconcileCopyAnswerFromPrimaryToPrimary(Long srcStoreId, VolumeVO sourceVolume, Volume.State sourceVolumeState,
+                                                                   Long destStoreId, VolumeVO destVolume, Volume.State destVolumeState, VolumeOnStorageTO volumeOnDestination) {
+        boolean isSourceMigrating = sourceVolume != null && sourceVolume.getRemoved() == null && sourceVolume.getState().equals(Volume.State.Migrating);
+        if (Volume.State.Ready.equals(sourceVolumeState)) {
+            if (isSourceMigrating && srcStoreId != null && srcStoreId.equals(sourceVolume.getPoolId()) && destVolumeState != null) {
+                logger.debug(String.format("Updating source volume %s to %s state", sourceVolume, Volume.State.Ready));
+                sourceVolume.setState(Volume.State.Ready);
+                sourceVolume.setUpdated(new Date());
+                volumeDao.update(sourceVolume.getId(), sourceVolume);
             }
-            logger.debug(String.format("Searching for volumes with last_id = %s", sourceVolume.getId()));
-            VolumeVO newVolume = volumeDao.findByLastIdAndState(sourceVolume.getId(), Volume.State.Creating);
-            if (newVolume != null) {
-                logger.debug(String.format("Removing volume %s as part of reconciliation of command %s and answer %s", newVolume, command, reconcileAnswer));
-                newVolume.setState(Volume.State.Destroy);
-                newVolume.setVolumeType(Volume.Type.DATADISK);
-                newVolume.setInstanceId(null);
-                newVolume.setRemoved(new Date());
-                volumeDao.update(newVolume.getId(), newVolume);
+            if (Volume.State.Creating.equals(destVolume.getState()) && destStoreId != null && destStoreId.equals(destVolume.getPoolId()) && destVolumeState != null) {
+                logger.debug(String.format("Updating destination volume %s to %s state", destVolume, destVolumeState));
+                destVolume.setState(destVolumeState);
+                destVolume.setUpdated(new Date());
+                volumeDao.update(destVolume.getId(), destVolume);
+            }
+            return true;
+        } else if (Volume.State.Ready.equals(destVolumeState)) {
+            if (Volume.State.Creating.equals(destVolume.getState()) && destStoreId != null && destStoreId.equals(destVolume.getPoolId())) {
+                logger.debug(String.format("Updating destination volume %s to %s state", destVolume, Volume.State.Ready));
+                destVolume.setState(Volume.State.Ready);
+                destVolume.setUpdated(new Date());
+                destVolume.setInstanceId(sourceVolume.getInstanceId());
+                destVolume.setPath(volumeOnDestination.getPath());  // Update path of destination volume
+                destVolume.set_iScsiName(volumeOnDestination.getPath());
+                volumeDao.update(destVolume.getId(), destVolume);
+            }
+            if (isSourceMigrating && srcStoreId != null && srcStoreId.equals(sourceVolume.getPoolId()) && sourceVolumeState != null) {
+                logger.debug(String.format("Updating source volume %s to %s state", sourceVolume, sourceVolumeState));
+                sourceVolume.setState(sourceVolumeState);
+                sourceVolume.setUpdated(new Date());
+                sourceVolume.setInstanceId(null);
+                volumeDao.update(sourceVolume.getId(), sourceVolume);
             }
             return true;
         }
         return false;
+    }
+
+    private boolean processReconcileCopyAnswerFromImageCacheToPrimary(Long destStoreId, VolumeVO destVolume, Volume.State destVolumeState, VolumeOnStorageTO volumeOnDestination,
+                                                                     CopyCommand command, ReconcileCopyAnswer reconcileAnswer) {
+        if (destVolume.getRemoved() == null && Volume.State.Creating.equals(destVolume.getState()) && destStoreId != null && destStoreId.equals(destVolume.getPoolId())) {
+            Long lastVolumeId = destVolume.getLastId();
+            logger.debug(String.format("Searching for last volume with id = %s", destVolume.getLastId()));
+            VolumeVO lastVolume = volumeDao.findById(lastVolumeId);
+            if (lastVolume != null && Arrays.asList(Volume.State.Migrating, Volume.State.Ready).contains(lastVolume.getState())
+                    && Volume.State.Destroy.equals(destVolumeState)) {
+                destVolume.setState(destVolumeState);
+                if (volumeOnDestination != null) {
+                    destVolume.setPath(volumeOnDestination.getPath());  // Update path of destination volume
+                }
+                volumeDao.update(destVolume.getId(), destVolume);
+                if (Volume.State.Migrating.equals(lastVolume.getState())) {
+                    lastVolume.setState(Volume.State.Ready);        // Update last volume to Ready
+                    volumeDao.update(lastVolume.getId(), lastVolume);
+                }
+                // remove record from volume_store_ref with Copying state
+                VolumeDataStoreVO volumeDataStoreVO = volumeDataStoreDao.findByVolume(lastVolume.getId());
+                if (volumeDataStoreVO != null && volumeDataStoreVO.getState().equals(ObjectInDataStoreStateMachine.State.Copying)) {
+                    logger.debug(String.format("Removing record (id: %s) for volume %s from volume_store_ref as part of reconciliation of command %s and answer %s", volumeDataStoreVO.getId(), lastVolume, command, reconcileAnswer));
+                    volumeDataStoreDao.remove(volumeDataStoreVO.getId());
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    private boolean processReconcileCopyAnswerFromPrimaryToSecondary(Long srcStoreId, VolumeVO sourceVolume, Volume.State sourceVolumeState,
+                                                                     CopyCommand command, ReconcileCopyAnswer reconcileAnswer) {
+        boolean isSourceMigrating = sourceVolume != null && sourceVolume.getRemoved() == null && sourceVolume.getState().equals(Volume.State.Migrating);
+        if (isSourceMigrating && srcStoreId != null && srcStoreId.equals(sourceVolume.getPoolId())) {
+            logger.debug(String.format("Updating source volume %s to %s state", sourceVolume, sourceVolumeState));
+            sourceVolume.setState(sourceVolumeState);   // Update source volume state
+            volumeDao.update(sourceVolume.getId(), sourceVolume);
+
+            // remove record from volume_store_ref with Creating state
+            VolumeDataStoreVO volumeDataStoreVO = volumeDataStoreDao.findByVolume(sourceVolume.getId());
+            if (volumeDataStoreVO != null && volumeDataStoreVO.getState().equals(ObjectInDataStoreStateMachine.State.Creating)) {
+                logger.debug(String.format("Removing record (id: %s) for volume %s from volume_store_ref as part of reconciliation of command %s and answer %s", volumeDataStoreVO.getId(), sourceVolume, command, reconcileAnswer));
+                volumeDataStoreDao.remove(volumeDataStoreVO.getId());
+            }
+        }
+        logger.debug(String.format("Searching for volumes with last_id = %s", sourceVolume.getId()));
+        VolumeVO newVolume = volumeDao.findByLastIdAndState(sourceVolume.getId(), Volume.State.Creating);
+        if (newVolume != null) {
+            logger.debug(String.format("Removing volume %s as part of reconciliation of command %s and answer %s", newVolume, command, reconcileAnswer));
+            newVolume.setState(Volume.State.Destroy);
+            newVolume.setVolumeType(Volume.Type.DATADISK);
+            newVolume.setInstanceId(null);
+            newVolume.setRemoved(new Date());
+            volumeDao.update(newVolume.getId(), newVolume);
+        }
+        return true;
     }
 
     private boolean processReconcileMigrateVolumeAnswer(long requestSequence, MigrateVolumeCommand command, ReconcileMigrateVolumeAnswer reconcileAnswer) {
