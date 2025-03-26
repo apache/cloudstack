@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -72,10 +71,10 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     BackupDetailsDao backupDetailsDao;
 
     private SearchBuilder<BackupVO> backupSearch;
-    private SearchBuilder<BackupVO> backupVmSearchInZone;
     private GenericSearchBuilder<BackupVO, Long> CountBackupsByAccount;
     private GenericSearchBuilder<BackupVO, SumCount> CalculateBackupStorageByAccount;
     private SearchBuilder<BackupVO> ListBackupsByVMandIntervalType;
+    private GenericSearchBuilder<BackupVO, Long> backupVmSearchInZone;
 
     public BackupDaoImpl() {
     }
@@ -89,10 +88,10 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         backupSearch.and("zone_id", backupSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
         backupSearch.done();
 
-        backupVmSearchInZone = createSearchBuilder();
-        backupVmSearchInZone.and("zone_id", backupSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
-        backupVmSearchInZone.select("vm_id", SearchCriteria.Func.DISTINCT, backupVmSearchInZone.entity().getVmId());
-        backupSearch.done();
+        backupVmSearchInZone = createSearchBuilder(Long.class);
+        backupVmSearchInZone.select(null, SearchCriteria.Func.DISTINCT, backupVmSearchInZone.entity().getVmId());
+        backupVmSearchInZone.and("zone_id", backupVmSearchInZone.entity().getZoneId(), SearchCriteria.Op.EQ);
+        backupVmSearchInZone.done();
 
         CountBackupsByAccount = createSearchBuilder(Long.class);
         CountBackupsByAccount.select(null, SearchCriteria.Func.COUNT, null);
@@ -275,10 +274,9 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
 
     @Override
     public List<Long> listVmIdsWithBackupsInZone(Long zoneId) {
-        SearchCriteria<BackupVO> sc = backupVmSearchInZone.create();
+        SearchCriteria<Long> sc = backupVmSearchInZone.create();
         sc.setParameters("zone_id", zoneId);
-        List<BackupVO> backups = customSearch(sc, null);
-        return backups.stream().map(BackupVO::getVmId).collect(Collectors.toList());
+        return customSearchIncludingRemoved(sc, null);
     }
 
     @Override
