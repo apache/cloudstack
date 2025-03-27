@@ -15,75 +15,105 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-set +u
+
+parse_json() {
+    local json_string=$1
+    echo "$json_string" | jq '.' || { echo '{"error":"Invalid JSON input"}'; exit 1; }
+}
+
+generate_random_mac() {
+    hexchars="0123456789ABCDEF"
+    echo "52:54:00:$(for i in {1..3}; do echo -n ${hexchars:$(( RANDOM % 16 )):1}${hexchars:$(( RANDOM % 16 )):1}; [[ $i -lt 3 ]] && echo -n ':'; done)"
+}
 
 prepare() {
-    parsed_arguments="$1"
-    # Add code to handle preparation logic
+    parse_json "$1" || exit 1
+
+    local mac_address
+    mac_address=$(generate_random_mac)
+
+    local response
+    response=$(jq -n --arg mac "$mac_address" \
+        '{status: "success", mac_address: $mac}')
+
+    echo "$response"
 }
 
 create() {
-    local vm_id=$((1000 + id))
+    parse_json "$1" || exit 1
 
-    sshpass_path=$(which sshpass)
-    ssh_path=$(which ssh)
-    local ssh_command="sudo $sshpass_path -p 'password' ssh -T root@$endpoint \
-    qm create $vm_id \
-    --ide2 local:iso/TinyCore-8.0.iso,media=cdrom \
-    --ostype l26 \
-    --scsihw virtio-scsi-single \
-    --scsi0 local-lvm:32,iothread=on \
-    --sockets 1 \
-    --cores 1 \
-    --numa 0 \
-    --cpu x86-64-v2-AES \
-    --memory 2048 \
-    --net0 virtio=$mac,bridge=vmbr0,tag=$vlan,firewall=1"
+    local response
+    response=$(jq -n \
+        '{status: "success", message: "Resource created"}')
 
-    eval "$ssh_command"
-    local ssh_command2="sudo $sshpass_path -p 'password' $ssh_path root@$endpoint \
-    qm start $vm_id"
-
-    eval "$ssh_command2"
+    echo "$response"
 }
 
 delete() {
-    parsed_arguments="$1"
-    # Add code to handle delete logic
+    parse_json "$1" || exit 1
+
+    local response
+    response=$(jq -n \
+        '{status: "success", message: "Resource deleted"}')
+
+    echo "$response"
+}
+
+start() {
+    parse_json "$1" || exit 1
+    echo '{"status": "success", "message": "Instance started"}'
+}
+
+stop() {
+    parse_json "$1" || exit 1
+    echo '{"status": "success", "message": "Instance stopped"}'
+}
+
+reboot() {
+    parse_json "$1" || exit 1
+    echo '{"status": "success", "message": "Instance rebooted"}'
+}
+
+status() {
+    parse_json "$1" || exit 1
+    echo '{"status": "success", "power_state": "running"}'
 }
 
 action=$1
-parameters="$2"
+parameters=$2
 wait_time=$3
 
-if [[ -z $action || -z $parameters || -z $wait_time ]]; then
+if [[ -z $action || -z $parameters ]]; then
+    echo '{"error":"Missing required arguments"}'
     exit 1
 fi
 
 case $action in
     prepare)
-        prepare "$parameters" "$wait_time"
+        prepare "$parameters"
         ;;
     create)
-        declare -A arguments
-        while IFS= read -r line; do
-            key=$(echo "$line" | awk '{print $1}')
-            value=$(echo "$line" | awk '{print $2}')
-            arguments["$key"]="$value"
-        done < <(echo "$parameters" | jq -r 'to_entries | .[] | "\(.key) \(.value)"')
-
-        endpoint=${arguments['endpoint.url']}
-        vlan=${arguments['cloudstack.vlan']}
-        id=${arguments['cloudstack.id']}
-        mac=${arguments['cloudstack.mac']}
-        create "$parameters" "$wait_time"
+        create "$parameters"
         ;;
     delete)
+        delete "$parameters"
+        ;;
+    start)
+        prepare "$parameters" "$wait_time"
+        ;;
+    stop)
+        create "$parameters" "$wait_time"
+        ;;
+    reboot)
         delete "$parameters" "$wait_time"
         ;;
+    status)
+        status "$parameters" "$wait_time"
+        ;;
     *)
+        echo '{"error":"Invalid action"}'
         exit 1
         ;;
 esac
-set -u
+
 exit 0
