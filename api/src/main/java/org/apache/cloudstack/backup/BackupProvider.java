@@ -17,7 +17,6 @@
 package org.apache.cloudstack.backup;
 
 import java.util.List;
-import java.util.Map;
 
 import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
@@ -97,12 +96,10 @@ public interface BackupProvider {
     Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState);
 
     /**
-     * Returns backup metrics for a list of VMs in a zone
+     * Syncs backup metrics (backup size, protected size) from the plugin and stores it within the provider
      * @param zoneId the zone for which to return metrics
-     * @param vms a list of machines to get measurements for
-     * @return a map of machine -> backup metrics
      */
-    Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms);
+    void syncBackupMetrics(Long zoneId);
 
     /**
      * This method should TODO
@@ -112,11 +109,11 @@ public interface BackupProvider {
 
     /**
      * This method should TODO
+     *
      * @param restorePoint the restore point to create a backup for
-     * @param vm The machine for which to create a backup
-     * @param metric the metric object to update with the new backup data
+     * @param vm           The machine for which to create a backup
      */
-    Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric);
+    Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm);
 
     /**
      * Returns if the backup provider supports creating new instance from backup

@@ -651,7 +651,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public List<VMInstanceVO> listByZoneWithBackups(Long zoneId, Long backupOfferingId) {
+    public List<VMInstanceVO> listByZoneAndBackupOffering(Long zoneId, Long backupOfferingId) {
         SearchCriteria<VMInstanceVO> sc = BackupSearch.create();
         sc.setParameters("zone_id", zoneId);
         if (backupOfferingId != null) {

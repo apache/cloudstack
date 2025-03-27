@@ -51,7 +51,6 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -111,26 +110,6 @@ public class NASBackupProviderTest {
 
         boolean result = nasBackupProvider.deleteBackup(backup, true);
         Assert.assertTrue(result);
-    }
-
-    @Test
-    public void testGetBackupMetrics() {
-        VMInstanceVO vm = mock(VMInstanceVO.class);
-        Mockito.when(vm.getId()).thenReturn(1L);
-
-        Backup backup1 = mock(Backup.class);
-        Mockito.when(backup1.getSize()).thenReturn(100L);
-        Mockito.when(backup1.getProtectedSize()).thenReturn(50L);
-        Backup backup2 = mock(Backup.class);
-        Mockito.when(backup2.getSize()).thenReturn(200L);
-        Mockito.when(backup2.getProtectedSize()).thenReturn(50L);
-
-        Mockito.when(backupDao.listByVmId(null, 1L)).thenReturn(List.of(backup1, backup2));
-
-        Map<VirtualMachine, Backup.Metric> result = nasBackupProvider.getBackupMetrics(1L, Collections.singletonList(vm));
-        Assert.assertEquals(1, result.size());
-        Assert.assertEquals(300L, result.get(vm).getBackupSize().longValue());
-        Assert.assertEquals(100L, result.get(vm).getDataSize().longValue());
     }
 
     @Test

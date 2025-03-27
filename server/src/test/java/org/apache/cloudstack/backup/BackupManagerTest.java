@@ -539,7 +539,7 @@ public class BackupManagerTest {
         BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
         when(backupOfferingDao.findById(backupOfferingId)).thenReturn(offering);
         when(offering.isUserDrivenBackupAllowed()).thenReturn(true);
-        when(offering.getProvider()).thenReturn("test");
+        when(offering.getProvider()).thenReturn("testbackupprovider");
 
         Account account = Mockito.mock(Account.class);
         when(accountManager.getAccount(accountId)).thenReturn(account);
@@ -554,7 +554,7 @@ public class BackupManagerTest {
         Backup backup = mock(Backup.class);
         when(backup.getId()).thenReturn(backupId);
         when(backup.getSize()).thenReturn(newBackupSize);
-        when(backupProvider.getName()).thenReturn("test");
+        when(backupProvider.getName()).thenReturn("testbackupprovider");
         when(backupProvider.takeBackup(vm)).thenReturn(new Pair<>(true, backup));
         Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
         backupProvidersMap.put(backupProvider.getName().toLowerCase(), backupProvider);
@@ -649,7 +649,7 @@ public class BackupManagerTest {
         Long backup1Size = 1 * Resource.ResourceType.bytesToGiB;
         Long backup2Size = 2 * Resource.ResourceType.bytesToGiB;
         Long newBackupSize = 3 * Resource.ResourceType.bytesToGiB;
-        Long metricSize = 4 * Resource.ResourceType.bytesToGiB;
+        Long restorePointSize = 4 * Resource.ResourceType.bytesToGiB;
 
         overrideBackupFrameworkConfigValue();
 
@@ -667,14 +667,10 @@ public class BackupManagerTest {
         when(vm.getAccountId()).thenReturn(accountId);
         List<Long> vmIds = List.of(vmId);
         when(backupDao.listVmIdsWithBackupsInZone(dataCenterId)).thenReturn(vmIds);
-        when(vmInstanceDao.listByIds(vmIds)).thenReturn(List.of(vm));
-        Backup.Metric metric = new Backup.Metric(metricSize, null);
-        Map<VirtualMachine, Backup.Metric> metricMap = new HashMap<>();
-        metricMap.put(vm, metric);
-        when(backupProvider.getBackupMetrics(Mockito.anyLong(), Mockito.anyList())).thenReturn(metricMap);
+        when(vmInstanceDao.listByZoneAndBackupOffering(dataCenterId, null)).thenReturn(List.of(vm));
 
-        Backup.RestorePoint restorePoint1 = new Backup.RestorePoint(restorePoint1ExternalId, DateUtil.now(), "Root");
-        Backup.RestorePoint restorePoint2 = new Backup.RestorePoint("12345", DateUtil.now(), "Root");
+        Backup.RestorePoint restorePoint1 = new Backup.RestorePoint(restorePoint1ExternalId, DateUtil.now(), "Full", restorePointSize, 0L);
+        Backup.RestorePoint restorePoint2 = new Backup.RestorePoint("12345", DateUtil.now(), "Full", restorePointSize, 0L);
         List<Backup.RestorePoint> restorePoints = new ArrayList<>(List.of(restorePoint1, restorePoint2));
         when(backupProvider.listRestorePoints(vm)).thenReturn(restorePoints);
 
@@ -694,7 +690,7 @@ public class BackupManagerTest {
 
         BackupVO newBackupEntry = new BackupVO();
         newBackupEntry.setSize(newBackupSize);
-        when(backupProvider.createNewBackupEntryForRestorePoint(restorePoint2, vm, metric)).thenReturn(newBackupEntry);
+        when(backupProvider.createNewBackupEntryForRestorePoint(restorePoint2, vm)).thenReturn(newBackupEntry);
 
         try (MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
             Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
@@ -708,8 +704,8 @@ public class BackupManagerTest {
                 backupSyncTask.runInContext();
 
                 verify(resourceLimitMgr, times(1)).decrementResourceCount(accountId, Resource.ResourceType.backup_storage, backup1Size);
-                verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup_storage, metricSize);
-                Assert.assertEquals(backupInDb1.getSize(), metricSize);
+                verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup_storage, restorePointSize);
+                Assert.assertEquals(backupInDb1.getSize(), restorePointSize);
 
                 verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup);
                 verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup_storage, newBackupSize);

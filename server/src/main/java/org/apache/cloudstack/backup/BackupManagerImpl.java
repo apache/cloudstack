@@ -30,6 +30,7 @@ import java.util.TimeZone;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.amazonaws.util.CollectionUtils;
 import com.cloud.alert.AlertManager;
@@ -302,7 +303,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Could not find a backup offering with id: " + offeringId);
         }
 
-        if (vmInstanceDao.listByZoneWithBackups(offering.getZoneId(), offering.getId()).size() > 0) {
+        if (vmInstanceDao.listByZoneAndBackupOffering(offering.getZoneId(), offering.getId()).size() > 0) {
             throw new CloudRuntimeException("Backup offering is assigned to VMs, remove the assignment(s) in order to remove the offering.");
         }
 
@@ -473,6 +474,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         boolean result = false;
         try {
+            Long backupOfferingId = vm.getBackupOfferingId();
             vm.setBackupOfferingId(null);
             vm.setBackupExternalId(null);
             vm.setBackupVolumes(null);
@@ -484,9 +486,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 }
             }
             if ((result || forced) && vmInstanceDao.update(vm.getId(), vm)) {
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
-                        "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null,
-                        Backup.class.getSimpleName(), vm.getUuid());
+                final List<Backup> backups = backupDao.listByVmId(null, vm.getId());
+                if (backups.size() == 0) {
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(),
+                            "Backup-" + vm.getHostName() + "-" + vm.getUuid(), backupOfferingId, null, null,
+                            Backup.class.getSimpleName(), vm.getUuid());
+                }
                 final List<BackupScheduleVO> backupSchedules = backupScheduleDao.listByVM(vm.getId());
                 for(BackupSchedule backupSchedule: backupSchedules) {
                     backupScheduleDao.remove(backupSchedule.getId());
@@ -1247,13 +1252,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (offering == null) {
             throw new CloudRuntimeException(String.format("Backup offering with ID [%s] does not exist.", backup.getBackupOfferingId()));
         }
-        final BackupProvider backupProvider = getBackupProvider(offering.getProvider());
+        final BackupProvider backupProvider = getBackupProvider(backup.getZoneId());
         boolean result = backupProvider.deleteBackup(backup, forced);
         if (result) {
             resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup);
             resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
             return backupDao.remove(backup.getId());
         }
+        checkAndGenerateUsageForLastBackupDeletedAfterOfferingRemove(vm, backup);
         throw new CloudRuntimeException("Failed to delete the backup");
     }
 
@@ -1312,6 +1318,17 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             return guru.attachRestoredVolumeToVirtualMachine(zoneId, restoredVolumeLocation, volumeInfo, vm, pool.getId(), backup);
         } catch (Exception e) {
             throw new CloudRuntimeException("Error attach restored volume to VM " + vm.getUuid() + " due to: " + e.getMessage());
+        }
+    }
+
+    private void checkAndGenerateUsageForLastBackupDeletedAfterOfferingRemove(VirtualMachine vm, Backup backup) {
+        if (vm.getBackupOfferingId() != backup.getBackupOfferingId()) {
+            List<Backup> backups = backupDao.listByVmIdAndOffering(vm.getDataCenterId(), vm.getId(), backup.getBackupOfferingId());
+            if (backups.size() == 0) {
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_DELETE_LAST_POST_OFFERING_REMOVE, vm.getAccountId(),
+                        vm.getDataCenterId(), vm.getId(), "Backup-" + vm.getHostName() + "-" + vm.getUuid(),
+                        backup.getBackupOfferingId(), null, null, Backup.class.getSimpleName(), vm.getUuid());
+            }
         }
     }
 
@@ -1644,42 +1661,85 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
                     backupProvider.syncBackupStorageStats(dataCenter.getId());
 
-                    List<Long> vmIds = backupDao.listVmIdsWithBackupsInZone(dataCenter.getId());
-                    List<VMInstanceVO> vms = vmInstanceDao.listByIds(vmIds);
-                    if (vms == null || vms.isEmpty()) {
-                        logger.debug("Can't find any VM to sync backups in zone {}", dataCenter);
-                        continue;
-                    }
+                    syncOutOfBandBackups(backupProvider, dataCenter);
 
-                    final Map<VirtualMachine, Backup.Metric> metrics = backupProvider.getBackupMetrics(dataCenter.getId(), new ArrayList<>(vms));
-                    syncBackupMetrics(backupProvider, metrics);
+                    updateBackupUsageRecords(backupProvider, dataCenter);
                 }
             } catch (final Throwable t) {
                 logger.error(String.format("Error trying to run backup-sync background task due to: [%s].", t.getMessage()), t);
             }
         }
 
-        /**
-         * Tries to sync the VM backups. If one backup synchronization fails, only this VM backups are skipped, and the entire process does not stop.
-         */
-        private void syncBackupMetrics(final BackupProvider backupProvider, final Map<VirtualMachine, Backup.Metric> metrics) {
-            for (final VirtualMachine vm : metrics.keySet()) {
-                tryToSyncVMBackups(backupProvider, metrics, vm);
+        private void syncOutOfBandBackups(final BackupProvider backupProvider, DataCenter dataCenter) {
+            List<VMInstanceVO> vms = vmInstanceDao.listByZoneAndBackupOffering(dataCenter.getId(), null);
+            if (vms == null || vms.isEmpty()) {
+                logger.debug("Can't find any VM to sync backups in zone {}", dataCenter);
+                return;
+            }
+            backupProvider.syncBackupMetrics(dataCenter.getId());
+            for (final VMInstanceVO vm : vms) {
+                try {
+                     logger.debug(String.format("Trying to sync backups of VM [%s] using backup provider [%s].", vm, backupProvider.getName()));
+                     // Sync out-of-band backups
+                     syncBackups(backupProvider, vm);
+                } catch (final Exception e) {
+                    logger.error("Failed to sync backup usage metrics and out-of-band backups of VM [{}] due to: [{}].", vm, e.getMessage(), e);
+                }
             }
         }
 
-        private Backup checkAndUpdateIfBackupEntryExistsForRestorePoint(Backup.RestorePoint restorePoint, List<Backup> backupsInDb, VirtualMachine vm, Backup.Metric metric) {
+        private void updateBackupUsageRecords(final BackupProvider backupProvider, DataCenter dataCenter) {
+            List<Long> vmIdsWithBackups = backupDao.listVmIdsWithBackupsInZone(dataCenter.getId());
+            List<VMInstanceVO> vmsWithBackups = vmInstanceDao.listByIds(vmIdsWithBackups);
+            List<VMInstanceVO> vmsWithBackupOffering = vmInstanceDao.listByZoneAndBackupOffering(dataCenter.getId(), null); //should return including removed
+            Set<VMInstanceVO> vms =  Stream.concat(vmsWithBackups.stream(), vmsWithBackupOffering.stream()) .collect(Collectors.toSet());
+
+            for (final VirtualMachine vm : vms) {
+
+                Map<Long, Pair<Long, Long>> backupOfferingToSizeMap = new HashMap<>();
+                for (final Backup backup: backupDao.listByVmId(null, vm.getId())) {
+                    Long backupSize = 0L;
+                    Long backupProtectedSize = 0L;
+                    if (Objects.nonNull(backup.getSize())) {
+                        backupSize = backup.getSize();
+                    }
+                    if (Objects.nonNull(backup.getProtectedSize())) {
+                        backupProtectedSize = backup.getProtectedSize();
+                    }
+                    Long offeringId = backup.getBackupOfferingId();
+                    if (backupOfferingToSizeMap.containsKey(offeringId)) {
+                        Pair<Long, Long> sizes = backupOfferingToSizeMap.get(offeringId);
+                        sizes.set(sizes.first() + backupSize, sizes.second() + backupProtectedSize);
+                    } else {
+                        backupOfferingToSizeMap.put(offeringId, new Pair<>(backupSize, backupProtectedSize));
+                    }
+                }
+
+                for (final Map.Entry<Long, Pair<Long, Long>> entry : backupOfferingToSizeMap.entrySet()) {
+                    Long offeringId = entry.getKey();
+                    Pair<Long, Long> sizes = entry.getValue();
+                    Long backupSize = sizes.first();
+                    Long protectedSize = sizes.second();
+                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_USAGE_METRIC, vm.getAccountId(),
+                            vm.getDataCenterId(), vm.getId(), "Backup-" + vm.getHostName() + "-" + vm.getUuid(),
+                            offeringId, null, backupSize, protectedSize,
+                            Backup.class.getSimpleName(), vm.getUuid());
+                }
+            }
+        }
+
+        private Backup checkAndUpdateIfBackupEntryExistsForRestorePoint(Backup.RestorePoint restorePoint, List<Backup> backupsInDb, VirtualMachine vm) {
             for (final Backup backupInDb : backupsInDb) {
                 logger.debug(String.format("Checking if Backup %s with external ID %s for VM %s is valid", backupsInDb, backupInDb.getName(), vm));
                 if (restorePoint.getId().equals(backupInDb.getExternalId())) {
                     logger.debug(String.format("Found Backup %s in both Database and Provider", backupInDb));
-                    if (metric != null) {
+                    if (restorePoint.getDataSize() != null && restorePoint.getBackupSize() != null) {
                         logger.debug(String.format("Update backup [%s] from [size: %s, protected size: %s] to [size: %s, protected size: %s].",
-                                backupInDb, backupInDb.getSize(), backupInDb.getProtectedSize(), metric.getBackupSize(), metric.getDataSize()));
+                                backupInDb, backupInDb.getSize(), backupInDb.getProtectedSize(), restorePoint.getBackupSize(), restorePoint.getDataSize()));
 
                         resourceLimitMgr.decrementResourceCount(backupInDb.getAccountId(), Resource.ResourceType.backup_storage, backupInDb.getSize());
-                        ((BackupVO) backupInDb).setSize(metric.getBackupSize());
-                        ((BackupVO) backupInDb).setProtectedSize(metric.getDataSize());
+                        ((BackupVO) backupInDb).setSize(restorePoint.getBackupSize());
+                        ((BackupVO) backupInDb).setProtectedSize(restorePoint.getDataSize());
                         resourceLimitMgr.incrementResourceCount(backupInDb.getAccountId(), Resource.ResourceType.backup_storage, backupInDb.getSize());
 
                         backupDao.update(backupInDb.getId(), ((BackupVO) backupInDb));
@@ -1690,17 +1750,18 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             return null;
         }
 
-        private void processRemoveList(List<Long> removeList) {
+        private void processRemoveList(List<Long> removeList, VirtualMachine vm) {
             for (final Long backupIdToRemove : removeList) {
                 logger.warn(String.format("Removing backup with ID: [%s].", backupIdToRemove));
                 Backup backup = backupDao.findById(backupIdToRemove);
                 resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup);
                 resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
                 backupDao.remove(backupIdToRemove);
+                checkAndGenerateUsageForLastBackupDeletedAfterOfferingRemove(vm, backup);
             }
         }
 
-        private void syncBackups(BackupProvider backupProvider, VirtualMachine vm, Backup.Metric metric) {
+        private void syncBackups(BackupProvider backupProvider, VirtualMachine vm) {
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
@@ -1713,14 +1774,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                     final List<Long> removeList = backupsInDb.stream().map(InternalIdentity::getId).collect(Collectors.toList());
                     for (final Backup.RestorePoint restorePoint : restorePoints) {
                         if (!(restorePoint.getId() == null || restorePoint.getType() == null || restorePoint.getCreated() == null)) {
-                            Backup existingBackupEntry = checkAndUpdateIfBackupEntryExistsForRestorePoint(restorePoint, backupsInDb, vm, metric);
+                            Backup existingBackupEntry = checkAndUpdateIfBackupEntryExistsForRestorePoint(restorePoint, backupsInDb, vm);
                             if (existingBackupEntry != null) {
                                 removeList.remove(existingBackupEntry.getId());
                                 continue;
                             }
                         }
 
-                        Backup backup = backupProvider.createNewBackupEntryForRestorePoint(restorePoint, vm, metric);
+                        Backup backup = backupProvider.createNewBackupEntryForRestorePoint(restorePoint, vm);
                         if (backup != null) {
                             logger.warn("Added backup found in provider [" + backup + "]");
                             resourceLimitMgr.incrementResourceCount(vm.getAccountId(), Resource.ResourceType.backup);
@@ -1735,27 +1796,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                                     vm.getId(), ApiCommandResourceType.VirtualMachine.toString(),0);
                         }
                     }
-                    processRemoveList(removeList);
+                    processRemoveList(removeList, vm);
                 }
             });
-        }
-
-        private void tryToSyncVMBackups(BackupProvider backupProvider, Map<VirtualMachine, Backup.Metric> metrics, VirtualMachine vm) {
-            try {
-                final Backup.Metric metric = metrics.get(vm);
-                if (metric != null) {
-                    logger.debug(String.format("Trying to sync backups of VM [%s] using backup provider [%s].", vm, backupProvider.getName()));
-                    // Sync out-of-band backups
-                    syncBackups(backupProvider, vm, metric);
-                    // Emit a usage event, update usage metric for the VM by the usage server
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_USAGE_METRIC, vm.getAccountId(),
-                            vm.getDataCenterId(), vm.getId(), "Backup-" + vm.getHostName() + "-" + vm.getUuid(),
-                            vm.getBackupOfferingId(), null, metric.getBackupSize(), metric.getDataSize(),
-                            Backup.class.getSimpleName(), vm.getUuid());
-                }
-            } catch (final Exception e) {
-                logger.error("Failed to sync backup usage metrics and out-of-band backups of VM [{}] due to: [{}].", vm, e.getMessage(), e);
-            }
         }
 
         @Override

@@ -18,7 +18,6 @@ package org.apache.cloudstack.backup;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +27,6 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VolumeDao;
 
 import org.apache.cloudstack.backup.dao.BackupDao;
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -91,26 +89,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         throw new CloudRuntimeException("Dummy plugin does not support this feature");
     }
 
-    @Override
-    public Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms) {
-        final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
-        if (CollectionUtils.isEmpty(vms)) {
-            LOG.warn("Unable to get VM Backup Metrics because the list of VMs is empty.");
-            return metrics;
-        }
-
-        for (final VirtualMachine vm : vms) {
-            Long vmBackupSize = 0L;
-            Long vmBackupProtectedSize = 0L;
-            for (final Backup backup: backupDao.listByVmId(null, vm.getId())) {
-                vmBackupSize += backup.getSize();
-                vmBackupProtectedSize += backup.getProtectedSize();
-            }
-            Backup.Metric vmBackupMetric = new Backup.Metric(vmBackupSize,vmBackupProtectedSize);
-            LOG.debug("Metrics for VM {} is [backup size: {}, data size: {}].", vm, vmBackupMetric.getBackupSize(), vmBackupMetric.getDataSize());
-            metrics.put(vm, vmBackupMetric);
-        }
-        return metrics;
+    public void syncBackupMetrics(Long zoneId) {
     }
 
     @Override
@@ -119,7 +98,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric) {
+    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm) {
         return null;
     }
 

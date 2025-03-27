@@ -24,12 +24,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.backup.Backup.Metric;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.veeam.VeeamClient;
 import org.apache.cloudstack.backup.veeam.api.Job;
@@ -105,6 +102,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     private BackupManager backupManager;
     @Inject
     private VolumeDao volumeDao;
+
+    private Map<String, Backup.Metric> backupFilesMetricsMap = new HashMap<>();
 
     protected VeeamClient getClient(final Long zoneId) {
         try {
@@ -212,7 +211,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
     @Override
     public boolean willDeleteBackupsOnOfferingRemoval() {
-        return true;
+        return false;
     }
 
     @Override
@@ -243,7 +242,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
         client.syncBackupRepository();
 
-        List<Backup> allBackups = backupDao.listByVmId(backup.getZoneId(), backup.getVmId());
+        List<Backup> allBackups = backupDao.listByVmIdAndOffering(backup.getZoneId(), backup.getVmId(), backup.getBackupOfferingId());
         for (Backup b : allBackups) {
             if (b.getId() != backup.getId()) {
                 backupDao.remove(b.getId());
@@ -295,41 +294,23 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public Map<VirtualMachine, Backup.Metric> getBackupMetrics(final Long zoneId, final List<VirtualMachine> vms) {
-        final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
-        if (CollectionUtils.isEmpty(vms)) {
-            logger.warn("Unable to get VM Backup Metrics because the list of VMs is empty.");
-            return metrics;
-        }
-
-        List<String> vmUuids = vms.stream().filter(Objects::nonNull).map(VirtualMachine::getUuid).collect(Collectors.toList());
-        logger.debug(String.format("Get Backup Metrics for VMs: [%s].", String.join(", ", vmUuids)));
-
-        final Map<String, Backup.Metric> backendMetrics = getClient(zoneId).getBackupMetrics();
-        for (final VirtualMachine vm : vms) {
-            if (vm == null || !backendMetrics.containsKey(vm.getUuid())) {
-                continue;
-            }
-
-            Metric metric = backendMetrics.get(vm.getUuid());
-            logger.debug("Metrics for VM [{}] is [backup size: {}, data size: {}].", vm,
-                    metric.getBackupSize(), metric.getDataSize());
-            metrics.put(vm, metric);
-        }
-        return metrics;
+    public void syncBackupMetrics(Long zoneId) {
+        backupFilesMetricsMap = getClient(zoneId).getBackupMetrics();
     }
 
     @Override
-    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric) {
+    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm) {
         BackupVO backup = new BackupVO();
         backup.setVmId(vm.getId());
         backup.setExternalId(restorePoint.getId());
         backup.setType(restorePoint.getType());
         backup.setDate(restorePoint.getCreated());
         backup.setStatus(Backup.Status.BackedUp);
-        if (metric != null) {
-            backup.setSize(metric.getBackupSize());
-            backup.setProtectedSize(metric.getDataSize());
+        if (restorePoint.getBackupSize() != null) {
+            backup.setSize(restorePoint.getBackupSize());
+        }
+        if (restorePoint.getDataSize() != null) {
+            backup.setProtectedSize(restorePoint.getDataSize());
         }
         backup.setBackupOfferingId(vm.getBackupOfferingId());
         backup.setAccountId(vm.getAccountId());
@@ -347,8 +328,9 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
     @Override
     public List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm) {
+        final VmwareDatacenter vmwareDC = findVmwareDatacenterForVM(vm);
         String backupName = getGuestBackupName(vm.getInstanceName(), vm.getUuid());
-        return getClient(vm.getDataCenterId()).listRestorePoints(backupName, vm.getInstanceName());
+        return getClient(vm.getDataCenterId()).listRestorePoints(backupName, vmwareDC.getVcenterHost(), vm.getInstanceName(), backupFilesMetricsMap);
     }
 
     @Override

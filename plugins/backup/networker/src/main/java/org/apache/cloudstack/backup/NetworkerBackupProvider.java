@@ -550,35 +550,11 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         return false;
     }
 
-    @Override
-    public Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms) {
-        final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
-        long vmBackupSize=0L;
-        long vmBackupProtectedSize=0L;
-
-        if (CollectionUtils.isEmpty(vms)) {
-            LOG.warn("Unable to get VM Backup Metrics because the list of VMs is empty.");
-            return metrics;
-        }
-
-        for (final VirtualMachine vm : vms) {
-            for ( Backup.VolumeInfo thisVMVol : vm.getBackupVolumeList()) {
-                vmBackupProtectedSize += (thisVMVol.getSize() / 1024L / 1024L);
-            }
-            final ArrayList<String> vmBackups = getClient(zoneId).getBackupsForVm(vm);
-            for ( String vmBackup : vmBackups ) {
-                NetworkerBackup vmNwBackup = getClient(zoneId).getNetworkerBackupInfo(vmBackup);
-                vmBackupSize += vmNwBackup.getSize().getValue() / 1024L;
-            }
-            Backup.Metric vmBackupMetric = new Backup.Metric(vmBackupSize,vmBackupProtectedSize);
-            LOG.debug(String.format("Metrics for VM [%s] is [backup size: %s, data size: %s].", vm, vmBackupMetric.getBackupSize(), vmBackupMetric.getDataSize()));
-            metrics.put(vm, vmBackupMetric);
-        }
-        return metrics;
+    public void syncBackupMetrics(Long zoneId) {
     }
 
     @Override
-    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric) {
+    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm) {
         // Technically an administrator can manually create a backup for a VM by utilizing the KVM scripts
         // with the proper parameters. So we will register any backups taken on the Networker side from
         // outside Cloudstack. If ever Networker will support KVM out of the box this functionality also will

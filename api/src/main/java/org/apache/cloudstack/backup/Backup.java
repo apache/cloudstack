@@ -86,11 +86,19 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
         private String id;
         private Date created;
         private String type;
+        private Long backupSize = 0L;
+        private Long dataSize = 0L;
 
         public RestorePoint(String id, Date created, String type) {
             this.id = id;
             this.created = created;
             this.type = type;
+        }
+
+        public RestorePoint(String id, Date created, String type, Long backupSize, Long dataSize) {
+            this(id, created, type);
+            this.backupSize = backupSize;
+            this.dataSize = dataSize;
         }
 
         public String getId() {
@@ -115,6 +123,22 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
 
         public void setType(String type) {
             this.type = type;
+        }
+
+        public Long getBackupSize() {
+            return backupSize;
+        }
+
+        public void setBackupSize(Long backupSize) {
+            this.backupSize = backupSize;
+        }
+
+        public Long getDataSize() {
+            return dataSize;
+        }
+
+        public void setDataSize(Long dataSize) {
+            this.dataSize = dataSize;
         }
     }
 

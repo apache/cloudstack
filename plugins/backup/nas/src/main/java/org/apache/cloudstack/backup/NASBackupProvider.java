@@ -55,7 +55,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
@@ -394,30 +393,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         return false;
     }
 
-    @Override
-    public Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms) {
-        final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
-        if (CollectionUtils.isEmpty(vms)) {
-            LOG.warn("Unable to get VM Backup Metrics because the list of VMs is empty.");
-            return metrics;
-        }
-
-        for (final VirtualMachine vm : vms) {
-            Long vmBackupSize = 0L;
-            Long vmBackupProtectedSize = 0L;
-            for (final Backup backup: backupDao.listByVmId(null, vm.getId())) {
-                if (Objects.nonNull(backup.getSize())) {
-                    vmBackupSize += backup.getSize();
-                }
-                if (Objects.nonNull(backup.getProtectedSize())) {
-                    vmBackupProtectedSize += backup.getProtectedSize();
-                }
-            }
-            Backup.Metric vmBackupMetric = new Backup.Metric(vmBackupSize,vmBackupProtectedSize);
-            LOG.debug("Metrics for VM {} is [backup size: {}, data size: {}].", vm, vmBackupMetric.getBackupSize(), vmBackupMetric.getDataSize());
-            metrics.put(vm, vmBackupMetric);
-        }
-        return metrics;
+    public void syncBackupMetrics(Long zoneId) {
     }
 
     @Override
@@ -426,7 +402,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     }
 
     @Override
-    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric) {
+    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm) {
         return null;
     }
 
