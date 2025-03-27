@@ -1545,7 +1545,11 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         boolean backupSnapToSecondary = isBackupSnapshotToSecondaryForZone(volume.getDataCenterId());
 
         if (isKvmAndFileBasedStorage && backupSnapToSecondary) {
-            snapshot.setImageStore(snapshotSrv.findSnapshotImageStore(snapshot));
+            DataStore imageStore = snapshotSrv.findSnapshotImageStore(snapshot);
+            if (imageStore == null) {
+                throw new CloudRuntimeException(String.format("Could not find any secondary storage to allocate snapshot [%s].", snapshot));
+            }
+            snapshot.setImageStore(imageStore);
         }
 
         updateSnapshotPayload(volume.getPoolId(), payload, isKvmAndFileBasedStorage, clusterId);
@@ -1918,6 +1922,15 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
             return true; // already downloaded on this image store
         }
+
+        if (ObjectInDataStoreStateMachine.State.Hidden.equals(dstSnapshotStore.getState())) {
+            logger.debug("Snapshot [{}] was hidden in secondary storage [{}]. Since the user asked to copy it back. We will put it as ready.", dstSnapshotStore, dstSecStore);
+            dstSnapshotStore.setState(ObjectInDataStoreStateMachine.State.Ready);
+            dstSnapshotStore.setDisplay(true);
+            _snapshotStoreDao.update(dstSnapshotStore.getId(), dstSnapshotStore);
+            return true;
+        }
+
         if ((dstSnapshotStore.getDownloadState() != null && List.of(VMTemplateStorageResourceAssoc.Status.ABANDONED,
                 VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR,
                 VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED,

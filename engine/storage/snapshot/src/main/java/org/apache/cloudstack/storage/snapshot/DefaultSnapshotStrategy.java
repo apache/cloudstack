@@ -332,6 +332,9 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
         } else {
             snapshotZoneDao.removeSnapshotFromZones(snapshotVo.getId());
         }
+
+        updateEndOfChainIfNeeded(snapshotVo);
+
         if (CollectionUtils.isNotEmpty(retrieveSnapshotEntries(snapshotVo.getId(), null))) {
             return true;
         }
@@ -340,13 +343,9 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
     }
 
     /**
-     * Updates the snapshot to {@link Snapshot.State#Destroyed}. If using the KVM hypervisor and the snapshot was the end of a chain,
-     * will mark their parents as end of chain as well.
-     */
-    protected void updateSnapshotToDestroyed(SnapshotVO snapshotVo) {
-        snapshotVo.setState(Snapshot.State.Destroyed);
-        snapshotDao.update(snapshotVo.getId(), snapshotVo);
-
+     * If using the KVM hypervisor and the snapshot was the end of a chain, will mark their parents as end of chain.
+     * */
+    protected void updateEndOfChainIfNeeded(SnapshotVO snapshotVo) {
         if (!HypervisorType.KVM.equals(snapshotVo.getHypervisorType())) {
             return;
         }
@@ -367,7 +366,14 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             parentSnapshotDatastoreVo.setEndOfChain(true);
             snapshotStoreDao.update(parentSnapshotDatastoreVo.getId(), parentSnapshotDatastoreVo);
         }
+    }
 
+    /**
+     * Updates the snapshot to {@link Snapshot.State#Destroyed}.
+     */
+    protected void updateSnapshotToDestroyed(SnapshotVO snapshotVo) {
+        snapshotVo.setState(Snapshot.State.Destroyed);
+        snapshotDao.update(snapshotVo.getId(), snapshotVo);
     }
 
     protected List<SnapshotDataStoreVO> findLastAliveAncestors(long snapshotId) {

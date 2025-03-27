@@ -111,17 +111,16 @@ public class DefaultSnapshotStrategyTest {
     }
 
     @Test
-    public void updateSnapshotToDestroyedTestNotKvm() {
+    public void updateEndOfChainIfNeededTestNotKvm() {
         Mockito.doReturn(Hypervisor.HypervisorType.VMware).when(snapshotVoMock).getHypervisorType();
 
-        defaultSnapshotStrategySpy.updateSnapshotToDestroyed(snapshotVoMock);
+        defaultSnapshotStrategySpy.updateEndOfChainIfNeeded(snapshotVoMock);
 
-        Mockito.verify(snapshotVoMock).setState(Snapshot.State.Destroyed);
-        Mockito.verify(snapshotVoMock, Mockito.never()).getSnapshotId();
+        Mockito.verify(snapshotDataStoreDao, Mockito.never()).findBySnapshotIdAndDataStoreRoleAndState(Mockito.anyLong(), Mockito.any(), Mockito.any());
     }
 
     @Test
-    public void updateSnapshotToDestroyedTestKvmAndIsNotEndOfChain() {
+    public void updateEndOfChainIfNeededTestKvmAndIsNotEndOfChain() {
         Mockito.doReturn(Hypervisor.HypervisorType.KVM).when(snapshotVoMock).getHypervisorType();
         Mockito.doReturn(2L).when(snapshotVoMock).getSnapshotId();
 
@@ -129,14 +128,13 @@ public class DefaultSnapshotStrategyTest {
         snapshotDataStoreVO.setEndOfChain(false);
         Mockito.doReturn(snapshotDataStoreVO).when(snapshotDataStoreDao).findBySnapshotIdAndDataStoreRoleAndState(2, DataStoreRole.Image, ObjectInDataStoreStateMachine.State.Destroyed);
 
-        defaultSnapshotStrategySpy.updateSnapshotToDestroyed(snapshotVoMock);
+        defaultSnapshotStrategySpy.updateEndOfChainIfNeeded(snapshotVoMock);
 
-        Mockito.verify(snapshotVoMock).setState(Snapshot.State.Destroyed);
         Mockito.verify(snapshotDataStoreDao, Mockito.never()).update(Mockito.anyLong(), Mockito.any());
     }
 
     @Test
-    public void updateSnapshotToDestroyedTestKvmAndIsEndOfChain() {
+    public void updateEndOfChainIfNeededTestKvmAndIsEndOfChain() {
         Mockito.doReturn(Hypervisor.HypervisorType.KVM).when(snapshotVoMock).getHypervisorType();
         Mockito.doReturn(2L).when(snapshotVoMock).getSnapshotId();
 
@@ -148,9 +146,8 @@ public class DefaultSnapshotStrategyTest {
         Mockito.doReturn(ObjectInDataStoreStateMachine.State.Ready).when(snapshotDataStoreVOMock).getState();
         Mockito.doReturn(List.of(snapshotDataStoreVOMock)).when(snapshotDataStoreDao).listBySnapshotId(8);
 
-        defaultSnapshotStrategySpy.updateSnapshotToDestroyed(snapshotVoMock);
+        defaultSnapshotStrategySpy.updateEndOfChainIfNeeded(snapshotVoMock);
 
-        Mockito.verify(snapshotVoMock).setState(Snapshot.State.Destroyed);
         Mockito.verify(snapshotDataStoreDao, Mockito.times(1)).listBySnapshotId(Mockito.anyLong());
         Mockito.verify(snapshotDataStoreVOMock).setEndOfChain(true);
         Mockito.verify(snapshotDataStoreDao, Mockito.times(1)).update(Mockito.anyLong(), Mockito.any());
