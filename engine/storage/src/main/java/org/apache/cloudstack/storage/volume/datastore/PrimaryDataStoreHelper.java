@@ -144,7 +144,23 @@ public class PrimaryDataStoreHelper {
                 storageTags.add(tag);
             }
         }
-        dataStoreVO = dataStoreDao.persist(dataStoreVO, details, storageTags, params.isTagARule());
+
+        String storageAccessGroupsParams = params.getStorageAccessGroups();
+        List<String> storageAccessGroupsList = new ArrayList<String>();
+
+        if (storageAccessGroupsParams != null) {
+            String[] storageAccessGroups = storageAccessGroupsParams.split(",");
+
+            for (String storageAccessGroup : storageAccessGroups) {
+                storageAccessGroup = storageAccessGroup.trim();
+                if (storageAccessGroup.length() == 0) {
+                    continue;
+                }
+                storageAccessGroupsList.add(storageAccessGroup);
+            }
+        }
+
+        dataStoreVO = dataStoreDao.persist(dataStoreVO, details, storageTags, params.isTagARule(), storageAccessGroupsList);
         return dataStoreMgr.getDataStore(dataStoreVO.getId(), DataStoreRole.Primary);
     }
 
@@ -263,6 +279,7 @@ public class PrimaryDataStoreHelper {
         this.dataStoreDao.update(poolVO.getId(), poolVO);
         dataStoreDao.remove(poolVO.getId());
         dataStoreDao.deletePoolTags(poolVO.getId());
+        dataStoreDao.deleteStoragePoolAccessGroups(poolVO.getId());
         annotationDao.removeByEntityType(AnnotationService.EntityType.PRIMARY_STORAGE.name(), poolVO.getUuid());
         deletePoolStats(poolVO.getId());
         // Delete op_host_capacity entries

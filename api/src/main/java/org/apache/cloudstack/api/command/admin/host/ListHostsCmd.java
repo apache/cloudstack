@@ -109,6 +109,9 @@ public class ListHostsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "the id of the management server", since="4.21.0")
     private Long managementServerId;
 
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUP, type = CommandType.STRING, description = "the name of the storage access group")
+    private String storageAccessGroup;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -195,6 +198,18 @@ public class ListHostsCmd extends BaseListCmd {
 
     public Long getManagementServerId() {
         return managementServerId;
+    }
+
+    public String getStorageAccessGroup() {
+        return storageAccessGroup;
+    }
+
+    public ListHostsCmd() {
+
+    }
+
+    public ListHostsCmd(String storageAccessGroup) {
+        this.storageAccessGroup = storageAccessGroup;
     }
 
     /////////////////////////////////////////////////////

@@ -45,6 +45,25 @@
         </template>
         <a-switch v-model:checked="form.istagarule" />
       </a-form-item>
+      <a-form-item name="storageaccessgroups" ref="storageaccessgroups">
+        <template #label>
+          <tooltip-label :title="$t('label.storageaccessgroups')" :tooltip="apiParamsConfigureStorageAccess.storageaccessgroups.description"/>
+        </template>
+        <a-select
+          mode="tags"
+          v-model:value="form.storageaccessgroups"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }"
+          :loading="storageAccessGroupsLoading"
+          :placeholder="apiParamsConfigureStorageAccess.storageaccessgroups.description">
+          <a-select-option v-for="(opt) in storageAccessGroups" :key="opt">
+            {{ opt }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
       <a-form-item name="oscategoryid" ref="oscategoryid">
         <template #label>
           <tooltip-label :title="$t('label.oscategoryid')" :tooltip="apiParams.oscategoryid.description"/>
@@ -94,6 +113,8 @@ export default {
   data () {
     return {
       loading: false,
+      storageAccessGroups: [],
+      storageAccessGroupsLoading: false,
       osCategories: {
         loading: false,
         opts: []
@@ -102,10 +123,12 @@ export default {
   },
   beforeCreate () {
     this.apiParams = this.$getApiParams('updateHost')
+    this.apiParamsConfigureStorageAccess = this.$getApiParams('configureStorageAccess')
   },
   created () {
     this.initForm()
     this.fetchOsCategories()
+    this.fetchStorageAccessGroupsData()
   },
   methods: {
     initForm () {
@@ -114,7 +137,25 @@ export default {
         name: this.resource.name,
         hosttags: this.resource.explicithosttags,
         istagarule: this.resource.istagarule,
+        storageaccessgroups: this.resource.storageaccessgroups
+          ? this.resource.storageaccessgroups.split(',')
+          : [],
         oscategoryid: this.resource.oscategoryid
+      })
+      this.rules = reactive({})
+    },
+    fetchStorageAccessGroupsData () {
+      const params = {}
+      this.storageAccessGroupsLoading = true
+      api('listStorageAccessGroups', params).then(json => {
+        const sags = json.liststorageaccessgroupsresponse.storageaccessgroup || []
+        for (const sag of sags) {
+          if (!this.storageAccessGroups.includes(sag.name)) {
+            this.storageAccessGroups.push(sag.name)
+          }
+        }
+      }).finally(() => {
+        this.storageAccessGroupsLoading = false
       })
       this.rules = reactive({})
     },
@@ -132,6 +173,7 @@ export default {
     handleSubmit () {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
+        console.log(values)
         const params = {}
         params.id = this.resource.id
         params.name = values.name
@@ -147,11 +189,36 @@ export default {
             content: `${this.$t('label.action.update.host')} - ${values.name}`,
             duration: 2
           })
+          if (values.storageaccessgroups != null && values.storageaccessgroups.length > 0) {
+            params.storageaccessgroups = values.storageaccessgroups.join(',')
+          } else {
+            params.storageaccessgroups = ''
+          }
+
+          if (params.storageaccessgroups !== undefined && (this.resource.storageaccessgroups ? this.resource.storageaccessgroups.split(',').join(',') : '') !== params.storageaccessgroups) {
+            api('configureStorageAccess', {
+              hostid: params.id,
+              storageaccessgroups: params.storageaccessgroups
+            }).then(response => {
+              this.$pollJob({
+                jobId: response.configurestorageaccessresponse.jobid,
+                successMethod: () => {
+                  this.$message.success({
+                    content: this.$t('label.action.configure.storage.access.group'),
+                    duration: 2
+                  })
+                },
+                errorMessage: this.$t('message.configuring.storage.access.failed')
+              })
+            })
+          }
           this.$emit('refresh-data')
           this.onCloseAction()
         }).catch(error => {
           this.$notifyError(error)
-        }).finally(() => { this.loading = false })
+        }).finally(() => {
+          this.loading = false
+        })
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })

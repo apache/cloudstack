@@ -24,6 +24,7 @@ import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StorageManagerImpl;
 import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.Before;
@@ -32,12 +33,11 @@ import org.mockito.Mockito;
 
 import java.util.Collections;
 
-import static org.mockito.ArgumentMatchers.nullable;
-
 public class StoragePoolMonitorTest {
 
     private StorageManagerImpl storageManager;
     private PrimaryDataStoreDao poolDao;
+    private StoragePoolHostDao storagePoolHostDao;
     private StoragePoolMonitor storagePoolMonitor;
     private HostVO host;
     private StoragePoolVO pool;
@@ -47,8 +47,9 @@ public class StoragePoolMonitorTest {
     public void setUp() throws Exception {
         storageManager = Mockito.mock(StorageManagerImpl.class);
         poolDao = Mockito.mock(PrimaryDataStoreDao.class);
+        storagePoolHostDao = Mockito.mock(StoragePoolHostDao.class);
 
-        storagePoolMonitor = new StoragePoolMonitor(storageManager, poolDao, null);
+        storagePoolMonitor = new StoragePoolMonitor(storageManager, poolDao, storagePoolHostDao, null);
         host = new HostVO("some-uuid");
         pool = new StoragePoolVO();
         pool.setScope(ScopeType.CLUSTER);
@@ -61,14 +62,26 @@ public class StoragePoolMonitorTest {
 
     @Test
     public void testProcessConnectStoragePoolNormal() throws Exception {
-        Mockito.when(poolDao.listBy(nullable(Long.class), nullable(Long.class), nullable(Long.class), Mockito.any(ScopeType.class))).thenReturn(Collections.singletonList(pool));
-        Mockito.when(poolDao.findZoneWideStoragePoolsByTags(Mockito.anyLong(), Mockito.any(String[].class), Mockito.anyBoolean())).thenReturn(Collections.<StoragePoolVO>emptyList());
-        Mockito.when(poolDao.findZoneWideStoragePoolsByHypervisor(Mockito.anyLong(), Mockito.any(Hypervisor.HypervisorType.class))).thenReturn(Collections.<StoragePoolVO>emptyList());
-        Mockito.doReturn(true).when(storageManager).connectHostToSharedPool(host, pool.getId());
+        HostVO hostMock = Mockito.mock(HostVO.class);
+        StartupRoutingCommand startupRoutingCommand = Mockito.mock(StartupRoutingCommand.class);
+        StoragePoolVO poolMock = Mockito.mock(StoragePoolVO.class);
+        Mockito.when(poolMock.getScope()).thenReturn(ScopeType.CLUSTER);
+        Mockito.when(poolMock.getStatus()).thenReturn(StoragePoolStatus.Up);
+        Mockito.when(poolMock.getId()).thenReturn(123L);
+        Mockito.when(poolMock.getPoolType()).thenReturn(Storage.StoragePoolType.Filesystem);
+        Mockito.when(hostMock.getDataCenterId()).thenReturn(1L);
+        Mockito.when(hostMock.getPodId()).thenReturn(1L);
+        Mockito.when(hostMock.getClusterId()).thenReturn(1L);
+        Mockito.when(startupRoutingCommand.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        Mockito.when(poolDao.findStoragePoolsByEmptyStorageAccessGroups(1L, 1L, 1L, ScopeType.CLUSTER, null)).thenReturn(Collections.singletonList(pool));
+        Mockito.when(poolDao.findStoragePoolsByEmptyStorageAccessGroups(1L, null, null, ScopeType.ZONE, null)).thenReturn(Collections.<StoragePoolVO>emptyList());
+        Mockito.when(poolDao.findStoragePoolsByEmptyStorageAccessGroups(1L, null, null, ScopeType.ZONE, Hypervisor.HypervisorType.KVM)).thenReturn(Collections.<StoragePoolVO>emptyList());
+        Mockito.when(poolDao.findStoragePoolsByEmptyStorageAccessGroups(1L, null, null, ScopeType.ZONE, Hypervisor.HypervisorType.Any)).thenReturn(Collections.<StoragePoolVO>emptyList());
+        Mockito.doReturn(true).when(storageManager).connectHostToSharedPool(hostMock, 123L);
 
-        storagePoolMonitor.processConnect(host, cmd, false);
+        storagePoolMonitor.processConnect(hostMock, startupRoutingCommand, false);
 
-        Mockito.verify(storageManager, Mockito.times(1)).connectHostToSharedPool(Mockito.eq(host), Mockito.eq(pool.getId()));
+        Mockito.verify(storageManager, Mockito.times(1)).connectHostToSharedPool(Mockito.eq(hostMock), Mockito.eq(pool.getId()));
         Mockito.verify(storageManager, Mockito.times(1)).createCapacityEntry(Mockito.eq(pool.getId()));
     }
 
