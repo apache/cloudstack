@@ -94,7 +94,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`extension_resource_map` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_extension_resource_map__extension_id` FOREIGN KEY (`extension_id`)
       REFERENCES `cloud`.`extension`(`id`) ON DELETE CASCADE,
-  INDEX `idx_extension_resource` (`resource_id`, `resource_type`),
+  INDEX `idx_extension_resource` (`resource_id`, `resource_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`extension_resource_map_details` (
