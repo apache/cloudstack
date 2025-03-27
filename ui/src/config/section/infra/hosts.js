@@ -115,9 +115,14 @@ export default {
       label: 'label.disable.host',
       message: 'message.confirm.disable.host',
       dataView: true,
-      show: (record) => { return record.resourcestate === 'Enabled' },
+      show: (record) => record.resourcestate === 'Enabled',
       popup: true,
-      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostEnableDisable')))
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostEnableDisable'))),
+      events: {
+        'refresh-data': () => {
+          store.dispatch('refreshCurrentPage')
+        }
+      }
     },
     {
       api: 'updateHost',
@@ -125,9 +130,14 @@ export default {
       label: 'label.enable.host',
       message: 'message.confirm.enable.host',
       dataView: true,
-      show: (record) => { return record.resourcestate === 'Disabled' },
+      show: (record) => record.resourcestate === 'Disabled',
       popup: true,
-      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostEnableDisable')))
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/HostEnableDisable'))),
+      events: {
+        'refresh-data': () => {
+          store.dispatch('refreshCurrentPage')
+        }
+      }
     },
     {
       api: 'prepareHostForMaintenance',
