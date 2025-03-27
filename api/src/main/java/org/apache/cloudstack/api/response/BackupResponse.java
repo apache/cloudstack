@@ -119,6 +119,10 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "the interval type of the backup schedule", since = "4.21.0")
     private String intervalType;
 
+    @SerializedName(ApiConstants.BACKUP_VM_OFFERING_REMOVED)
+    @Param(description = "The backup offering corresponding to this backup was removed from the VM", since = "4.21.0")
+    private Boolean vmOfferingRemoved;
+
     public String getId() {
         return id;
     }
@@ -293,5 +297,9 @@ public class BackupResponse extends BaseResponse {
 
     public void setIntervalType(String intervalType) {
         this.intervalType = intervalType;
+    }
+
+    public void setVmOfferingRemoved(boolean vmOfferingRemoved) {
+        this.vmOfferingRemoved = vmOfferingRemoved;
     }
 }

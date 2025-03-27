@@ -457,7 +457,7 @@ export default {
           label: 'label.backup.offering.remove',
           message: 'message.backup.offering.remove',
           dataView: true,
-          show: (record) => { return record.state !== 'Destroyed' },
+          show: (record) => { return record.state !== 'Destroyed' && record.vmbackupofferingremoved !== true },
           args: ['forced', 'virtualmachineid'],
           mapping: {
             forced: {

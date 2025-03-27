@@ -47,6 +47,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 
@@ -281,10 +282,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
 
     @Override
     public BackupResponse newBackupResponse(Backup backup, Boolean listVmDetails) {
-        VMInstanceVO vm = null;
-        if (backup.getVmId() != null) {
-            vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
-        }
+        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
         AccountVO account = accountDao.findByIdIncludingRemoved(backup.getAccountId());
         DomainVO domain = domainDao.findByIdIncludingRemoved(backup.getDomainId());
         DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(backup.getZoneId());
@@ -295,9 +293,12 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         response.setId(backup.getUuid());
         response.setName(backup.getName());
         response.setDescription(backup.getDescription());
-        if (vm != null) {
+        response.setVmName(vm.getHostName());
+        if (vm.getState() != VirtualMachine.State.Expunging) {
             response.setVmId(vm.getUuid());
-            response.setVmName(vm.getHostName());
+        }
+        if (vm.getBackupOfferingId() != backup.getBackupOfferingId()) {
+            response.setVmOfferingRemoved(true);
         }
         response.setExternalId(backup.getExternalId());
         response.setType(backup.getType());
@@ -310,7 +311,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         }
         // ACS 4.20: For backups taken prior this release the backup.backed_volumes column would be empty hence use vm_instance.backup_volumes
         String backedUpVolumes;
-        if (Objects.isNull(backup.getBackedUpVolumes()) && vm != null) {
+        if (Objects.isNull(backup.getBackedUpVolumes())) {
             backedUpVolumes = new Gson().toJson(vm.getBackupVolumeList().toArray(), Backup.VolumeInfo[].class);
         } else {
             backedUpVolumes = new Gson().toJson(backup.getBackedUpVolumes().toArray(), Backup.VolumeInfo[].class);
