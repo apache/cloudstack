@@ -84,6 +84,8 @@ public class AddHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue", since = "4.21.0")
     protected Map externalDetails;
 
+    private Long extensionId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -92,7 +94,7 @@ public class AddHostCmd extends BaseCmd {
 
     }
 
-    public AddHostCmd(Long zoneId, Long podId, Long clusterId, String hypervisor, String username, String password, String url, Map externalDetails) {
+    public AddHostCmd(Long zoneId, Long podId, Long clusterId, String hypervisor, String username, String password, String url, Map externalDetails, Long extensionid) {
         this.zoneId = zoneId;
         this.podId = podId;
         this.clusterId = clusterId;
@@ -101,6 +103,7 @@ public class AddHostCmd extends BaseCmd {
         this.password = password;
         this.url = url;
         this.externalDetails = externalDetails;
+        this.extensionId = extensionid;
     }
 
     public Long getClusterId() {
@@ -145,6 +148,10 @@ public class AddHostCmd extends BaseCmd {
 
     public String getAllocationState() {
         return allocationState;
+    }
+
+    public Long getExtensionId() {
+        return extensionId;
     }
 
     public Map<String, String> getExternalDetails() {

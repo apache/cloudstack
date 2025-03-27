@@ -30,12 +30,13 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
-import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.ExternalProvisioner;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuruManagerImpl;
+import com.cloud.hypervisor.external.provisioner.api.ExtensionResponse;
+import com.cloud.hypervisor.external.provisioner.api.ListExtensionsCmd;
 import com.cloud.hypervisor.external.provisioner.api.RegisterExtensionCmd;
 import com.cloud.hypervisor.external.provisioner.api.RunCustomActionCmd;
 import com.cloud.hypervisor.external.provisioner.dao.ExternalOrchestratorDao;
@@ -47,8 +48,12 @@ import com.cloud.hypervisor.external.provisioner.vo.ExternalOrchestratorVO;
 import com.cloud.hypervisor.external.resource.ExternalResourceBase;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceService;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
@@ -119,6 +124,7 @@ public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAge
         List<Class<?>> cmds = new ArrayList<Class<?>>();
         cmds.add(RunCustomActionCmd.class);
         cmds.add(RegisterExtensionCmd.class);
+        cmds.add(ListExtensionsCmd.class);
         return cmds;
     }
 
@@ -206,6 +212,43 @@ public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAge
         return savedExtension;
     }
 
+    @Override
+    public List<ExtensionResponse> listExtensions(ListExtensionsCmd cmd) {
+        Long id = cmd.getExtensionId();
+        String name = cmd.getName();
+        String keyword = cmd.getKeyword();
+        final SearchBuilder<ExternalOrchestratorVO> sb = externalOrchestratorDao.createSearchBuilder();
+        final Filter searchFilter = new Filter(ExternalOrchestratorVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        final SearchCriteria<ExternalOrchestratorVO> sc = sb.create();
+
+        if (id != null) {
+            sc.setParameters("id", id);
+        }
+
+        if (name != null) {
+            sc.setParameters("name", name);
+        }
+
+        if (keyword != null) {
+            sc.setParameters("keyword",  "%" + keyword + "%");
+        }
+
+        final Pair<List<ExternalOrchestratorVO>, Integer> result = externalOrchestratorDao.searchAndCount(sc, searchFilter);
+        List<ExtensionResponse> responses = new ArrayList<>();
+        for (ExternalOrchestratorVO extension : result.first()) {
+            Map<String, String> details = externalOrchestratorDetailDao.listDetailsKeyPairs(extension.getId());
+            ExtensionResponse response = new ExtensionResponse(extension.getName(), extension.getType(), extension.getPodId(), extension.getUuid(), details);
+            response.setObjectName(ApiConstants.EXTENSIONS);
+            responses.add(response);
+        }
+
+        return responses;
+    }
+
     private void createRequiredResourcesForExtension(ExternalOrchestratorVO extension, RegisterExtensionCmd registerExtensionCmd) {
         String clusterName = extension.getName() + "-" + extension.getId() + "-cluster";
         HostPodVO pod = podDao.findById(extension.getPodId());
@@ -222,7 +265,7 @@ public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAge
 
         String hosturl = "http://" + extension.getName() + "-" + extension.getId() + "-host";
         AddHostCmd addHostCmd = new AddHostCmd(pod.getDataCenterId(), pod.getId(), cluster.getId(), Hypervisor.HypervisorType.External.toString(),
-                "External", "External", hosturl, registerExtensionCmd.getDetails());
+                "External", "External", hosturl, registerExtensionCmd.getDetails(), extension.getId());
 
         List<? extends Host> hosts;
         try {
@@ -230,11 +273,6 @@ public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAge
         } catch (DiscoveryException e) {
             throw new CloudRuntimeException("Unable to add host");
         }
-
-        HostVO host = hostDao.findById(hosts.get(0).getId());
-        hostDao.loadDetails(host);
-        host.getDetails().put(ApiConstants.EXTENSION_ID, String.valueOf(extension.getId()));
-        hostDao.saveDetails(host);
     }
 
     public Map<ExternalResourceBase, Map<String, String>> createServerResources(Map<String, Object> params) {

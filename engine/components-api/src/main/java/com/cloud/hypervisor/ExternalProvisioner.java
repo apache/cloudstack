@@ -61,4 +61,6 @@ public interface ExternalProvisioner extends Adapter {
     HashMap<String, HostVmStateReportEntry> getHostVmStateReport(Long hostId);
 
     RunCustomActionAnswer runCustomAction(RunCustomActionCommand cmd);
+
+    void prepareScripts(Long extensionId);
 }

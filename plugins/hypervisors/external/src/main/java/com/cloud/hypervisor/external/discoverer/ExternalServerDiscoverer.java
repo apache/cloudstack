@@ -32,6 +32,7 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.ExternalProvisioner;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.external.provisioner.simpleprovisioner.SimpleExternalProvisioner;
 import com.cloud.resource.Discoverer;
@@ -230,6 +231,11 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
         StartupRoutingCommand ssCmd = ((StartupRoutingCommand)firstCmd);
         if (ssCmd.getHypervisorType() != Hypervisor.HypervisorType.External) {
             return null;
+        }
+
+        ExternalProvisioner externalProvisioner = _externalAgentMgr.getExternalProvisioner(SimpleExternalProvisioner.class.getSimpleName());
+        if (details.get(ApiConstants.EXTENSION_ID) != null){
+            externalProvisioner.prepareScripts(Long.valueOf(details.get(ApiConstants.EXTENSION_ID)));
         }
 
         return _resourceMgr.fillRoutingHostVO(host, ssCmd, Hypervisor.HypervisorType.External, details, hostTags);
