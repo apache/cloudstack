@@ -105,7 +105,7 @@ public class SecondaryStorageServiceImplTest extends TestCase {
     public void templateIsOnDestinationTestReturnsTrueIfTemplateIsDownloadedSuccessfully() {
         prepareForTemplateIsOnDestinationTests();
         Mockito.when(templateDataStoreVoMock.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS);
-        Mockito.doAnswer(I -> Mockito.when(templateDataStoreVoMock.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOADED)).when(secondaryStorageService).waitForTemplateDownload(Mockito.anyInt(), Mockito.anyString(), Mockito.anyString());
+        Mockito.doAnswer(I -> Mockito.when(templateDataStoreVoMock.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOADED)).when(secondaryStorageService).waitForTemplateDownload(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString());
 
         boolean result = secondaryStorageService.templateIsOnDestination(templateInfoMock, dataStoreMock);
 
@@ -120,7 +120,7 @@ public class SecondaryStorageServiceImplTest extends TestCase {
             Mockito.when(templateDataStoreVoMock.getDownloadState()).thenReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
             Mockito.when(templateDataStoreVoMock.getState()).thenReturn(ObjectInDataStoreStateMachine.State.Failed);
             return "mocked download fail";
-        }).when(secondaryStorageService).waitForTemplateDownload(Mockito.anyInt(), Mockito.anyString(), Mockito.anyString());
+        }).when(secondaryStorageService).waitForTemplateDownload(Mockito.anyLong(), Mockito.anyString(), Mockito.anyString());
 
         boolean result = secondaryStorageService.templateIsOnDestination(templateInfoMock, dataStoreMock);
 
