@@ -43,8 +43,8 @@ import com.cloud.hypervisor.external.provisioner.dao.ExternalOrchestratorDao;
 import com.cloud.hypervisor.external.provisioner.dao.ExternalOrchestratorDetailDao;
 import com.cloud.hypervisor.external.provisioner.dao.ExternalOrchestratorDetailVO;
 import com.cloud.hypervisor.external.provisioner.simpleprovisioner.SimpleExternalProvisioner;
-import com.cloud.hypervisor.external.provisioner.vo.ExternalOrchestrator;
-import com.cloud.hypervisor.external.provisioner.vo.ExternalOrchestratorVO;
+import com.cloud.hypervisor.external.provisioner.vo.Extension;
+import com.cloud.hypervisor.external.provisioner.vo.ExtensionVO;
 import com.cloud.hypervisor.external.resource.ExternalResourceBase;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceService;
@@ -191,12 +191,12 @@ public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAge
     }
 
     @Override
-    public ExternalOrchestrator registerExternalOrchestrator(RegisterExtensionCmd cmd) {
-        ExternalOrchestratorVO extension = new ExternalOrchestratorVO();
+    public Extension registerExternalOrchestrator(RegisterExtensionCmd cmd) {
+        ExtensionVO extension = new ExtensionVO();
         extension.setName(cmd.getName());
         extension.setType(cmd.getType());
         extension.setPodId(cmd.getPodId());
-        ExternalOrchestratorVO savedExtension = externalOrchestratorDao.persist(extension);
+        ExtensionVO savedExtension = externalOrchestratorDao.persist(extension);
 
         Map<String, String> externalDetails = cmd.getExternalDetails();
         List<ExternalOrchestratorDetailVO> detailsVOList = new ArrayList<>();
@@ -217,13 +217,13 @@ public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAge
         Long id = cmd.getExtensionId();
         String name = cmd.getName();
         String keyword = cmd.getKeyword();
-        final SearchBuilder<ExternalOrchestratorVO> sb = externalOrchestratorDao.createSearchBuilder();
-        final Filter searchFilter = new Filter(ExternalOrchestratorVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+        final SearchBuilder<ExtensionVO> sb = externalOrchestratorDao.createSearchBuilder();
+        final Filter searchFilter = new Filter(ExtensionVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
-        final SearchCriteria<ExternalOrchestratorVO> sc = sb.create();
+        final SearchCriteria<ExtensionVO> sc = sb.create();
 
         if (id != null) {
             sc.setParameters("id", id);
@@ -237,11 +237,13 @@ public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAge
             sc.setParameters("keyword",  "%" + keyword + "%");
         }
 
-        final Pair<List<ExternalOrchestratorVO>, Integer> result = externalOrchestratorDao.searchAndCount(sc, searchFilter);
+        final Pair<List<ExtensionVO>, Integer> result = externalOrchestratorDao.searchAndCount(sc, searchFilter);
         List<ExtensionResponse> responses = new ArrayList<>();
-        for (ExternalOrchestratorVO extension : result.first()) {
+        for (ExtensionVO extension : result.first()) {
             Map<String, String> details = externalOrchestratorDetailDao.listDetailsKeyPairs(extension.getId());
             ExtensionResponse response = new ExtensionResponse(extension.getName(), extension.getType(), extension.getPodId(), extension.getUuid(), details);
+            String destinationPath = String.format(SimpleExternalProvisioner.EXTENSION_SCRIPT_PATH, extension.getId());
+            response.setScriptPath(destinationPath);
             response.setObjectName(ApiConstants.EXTENSIONS);
             responses.add(response);
         }
@@ -249,7 +251,7 @@ public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAge
         return responses;
     }
 
-    private void createRequiredResourcesForExtension(ExternalOrchestratorVO extension, RegisterExtensionCmd registerExtensionCmd) {
+    private void createRequiredResourcesForExtension(ExtensionVO extension, RegisterExtensionCmd registerExtensionCmd) {
         String clusterName = extension.getName() + "-" + extension.getId() + "-cluster";
         HostPodVO pod = podDao.findById(extension.getPodId());
         AddClusterCmd clusterCmd = new AddClusterCmd(clusterName, pod.getDataCenterId(), pod.getId(), Cluster.ClusterType.CloudManaged.toString(),

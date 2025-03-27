@@ -16,8 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.external.provisioner.dao;
 
-import com.cloud.hypervisor.external.provisioner.vo.ExternalOrchestratorVO;
+import com.cloud.hypervisor.external.provisioner.vo.ExtensionVO;
 import com.cloud.utils.db.GenericDao;
 
-public interface ExternalOrchestratorDao extends GenericDao<ExternalOrchestratorVO, Long> {
+public interface ExternalOrchestratorDao extends GenericDao<ExtensionVO, Long> {
 }
