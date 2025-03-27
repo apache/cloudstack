@@ -683,18 +683,18 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         String hypervisorType = cmd.getHypervisor().equalsIgnoreCase(HypervisorGuru.HypervisorCustomDisplayName.value()) ?
                 "Custom" : cmd.getHypervisor();
-        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, hypervisorType, hostTags, cmd.getFullUrlParams(), false, cmd.getExternalDetails());
+        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, hypervisorType, hostTags, cmd.getFullUrlParams(), false, cmd.getExternalDetails(), cmd.getExtensionId());
     }
 
     @Override
     public List<? extends Host> discoverHosts(final AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         final Long dcId = cmd.getZoneId();
         final String url = cmd.getUrl();
-        return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null, false, null);
+        return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null, false, null, null);
     }
 
     private List<HostVO> discoverHostsFull(final Long dcId, final Long podId, Long clusterId, final String clusterName, String url, String username, String password,
-                                           final String hypervisorType, final List<String> hostTags, final Map<String, String> params, final boolean deferAgentCreation, Map<String, String> cmdDetails) throws IllegalArgumentException, DiscoveryException,
+                                           final String hypervisorType, final List<String> hostTags, final Map<String, String> params, final boolean deferAgentCreation, Map<String, String> cmdDetails, Long extensionid) throws IllegalArgumentException, DiscoveryException,
             InvalidParameterValueException {
         URI uri;
 
@@ -843,6 +843,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             if (params != null) {
                 ClusterVO clusterVO = _clusterDao.findById(clusterId);
                 if (HypervisorType.External.equals(clusterVO.getHypervisorType())) {
+                    params.put(ApiConstants.EXTENSION_ID, String.valueOf(extensionid));
                     if (params.get(ApiConstants.EXTERNAL_PROVISIONER) != null) {
                         params.put(ApiConstants.EXTERNAL_PROVISIONER, params.get(ApiConstants.EXTERNAL_PROVISIONER));
                     } else {
@@ -916,6 +917,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     details.putAll(cmdDetails);
                     ClusterVO clusterVO = _clusterDao.findById(clusterId);
                     if (HypervisorType.External.equals(clusterVO.getHypervisorType())) {
+                        details.put(ApiConstants.EXTENSION_ID, String.valueOf(extensionid));
                         details.put(ApiConstants.EXTERNAL_PROVISIONER, "SimpleExternalProvisioner");
                     }
 
