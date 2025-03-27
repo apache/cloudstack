@@ -444,7 +444,7 @@ public class SystemVmTemplateRegistration {
         }
         List<String> paths = Arrays.asList(RELATIVE_TEMPLATE_PATH, ABSOLUTE_TEMPLATE_PATH);
         for (String path : paths) {
-            String filePath = RELATIVE_TEMPLATE_PATH + METADATA_FILE_NAME;
+            String filePath = path + METADATA_FILE_NAME;
             LOGGER.debug("Looking for file [ {} ] in the classpath.", filePath);
             File metaFile = new File(filePath);
             if (metaFile.exists()) {
