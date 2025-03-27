@@ -610,7 +610,7 @@ pip3 install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %{_datadir}/%{name}-management/setup/*.sh
 %{_datadir}/%{name}-management/setup/server-setup.xml
 %{_datadir}/%{name}-management/webapp/*
-%dir %attr(0770, cloud, cloud) %{_datadir}/%{name}-management/templates
+%dir %attr(0775, cloud, cloud) %{_datadir}/%{name}-management/templates
 %attr(0644, cloud, cloud) %{_datadir}/%{name}-management/templates/*
 %attr(0755,root,root) %{_bindir}/%{name}-external-ipallocator.py
 %attr(0755,root,root) %{_initrddir}/%{name}-ipallocator
