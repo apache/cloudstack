@@ -27,14 +27,14 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
-@Table(name = "external_orchestrator_details")
+@Table(name = "extension_details")
 public class ExternalOrchestratorDetailVO implements ResourceDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
 
-    @Column(name = "orchestrator_id", nullable = false)
+    @Column(name = "extension_id", nullable = false)
     private long resourceId;
 
     @Column(name = "name", nullable = false, length = 255)

@@ -17,8 +17,8 @@
 
 package com.cloud.hypervisor.external.provisioner.dao;
 
-import com.cloud.hypervisor.external.provisioner.vo.ExternalOrchestratorVO;
+import com.cloud.hypervisor.external.provisioner.vo.ExtensionVO;
 import com.cloud.utils.db.GenericDaoBase;
 
-public class ExternalOrchestratorDaoImpl extends GenericDaoBase<ExternalOrchestratorVO, Long> implements ExternalOrchestratorDao {
+public class ExternalOrchestratorDaoImpl extends GenericDaoBase<ExtensionVO, Long> implements ExternalOrchestratorDao {
 }
