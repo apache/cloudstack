@@ -44,7 +44,7 @@ create() {
 
     local response
     response=$(jq -n \
-        '{status: "success", message: "Resource created"}')
+        '{status: "success", message: "Instance created"}')
 
     echo "$response"
 }
@@ -54,7 +54,7 @@ delete() {
 
     local response
     response=$(jq -n \
-        '{status: "success", message: "Resource deleted"}')
+        '{status: "success", message: "Instance deleted"}')
 
     echo "$response"
 }
@@ -99,16 +99,16 @@ case $action in
         delete "$parameters"
         ;;
     start)
-        prepare "$parameters" "$wait_time"
+        prepare "$parameters"
         ;;
     stop)
-        create "$parameters" "$wait_time"
+        create "$parameters"
         ;;
     reboot)
-        delete "$parameters" "$wait_time"
+        delete "$parameters"
         ;;
     status)
-        status "$parameters" "$wait_time"
+        status "$parameters"
         ;;
     *)
         echo '{"error":"Invalid action"}'

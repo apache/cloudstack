@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.hypervisor.external.provisioner.dao;
+package com.cloud.hypervisor.external.provisioner.vo;
 
 import org.apache.cloudstack.api.ResourceDetail;
 

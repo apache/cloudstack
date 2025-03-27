@@ -46,10 +46,6 @@ public class ExtensionResponse extends BaseResponse {
     @Param(description = "Type of the extension")
     private String type;
 
-    @SerializedName(ApiConstants.POD_ID)
-    @Param(description = "Pod ID associated with the extension")
-    private long podId;
-
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "the details of the network")
     private Map<String, String> details;
@@ -66,10 +62,9 @@ public class ExtensionResponse extends BaseResponse {
     @Param(description = "Removal timestamp of the extension, if applicable")
     private Date removed;
 
-    public ExtensionResponse(String name, String type, long podId, String uuid, Map<String, String> details) {
+    public ExtensionResponse(String name, String type, String uuid, Map<String, String> details) {
         this.name = name;
         this.type = type;
-        this.podId = podId;
         this.uuid = uuid;
         this.details = details;
     }
@@ -96,14 +91,6 @@ public class ExtensionResponse extends BaseResponse {
 
     public void setType(String type) {
         this.type = type;
-    }
-
-    public long getPodId() {
-        return podId;
-    }
-
-    public void setPodId(long podId) {
-        this.podId = podId;
     }
 
     public void setDetails(Map<String, String> details) {

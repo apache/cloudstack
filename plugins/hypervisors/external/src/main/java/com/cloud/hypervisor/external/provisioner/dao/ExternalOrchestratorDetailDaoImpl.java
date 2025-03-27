@@ -17,6 +17,7 @@
 
 package com.cloud.hypervisor.external.provisioner.dao;
 
+import com.cloud.hypervisor.external.provisioner.vo.ExternalOrchestratorDetailVO;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
 public class ExternalOrchestratorDetailDaoImpl extends ResourceDetailsDaoBase<ExternalOrchestratorDetailVO> implements ExternalOrchestratorDetailDao {
