@@ -45,11 +45,9 @@ CREATE TABLE IF NOT EXISTS `cloud`.`extension` (
   `uuid` varchar(40) NOT NULL UNIQUE,
   `name` varchar(255) NOT NULL,
   `type` varchar(255) NOT NULL,
-  `pod_id` bigint unsigned NOT NULL,
   `created` datetime NOT NULL,
   `removed` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_extension__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`) ON DELETE CASCADE
+  PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE `cloud`.`extension_details` (
@@ -84,4 +82,28 @@ CREATE TABLE IF NOT EXISTS `cloud`.`reconcile_commands` (
     PRIMARY KEY(`id`),
     INDEX `i_reconcile_command__host_id`(`host_id`),
     CONSTRAINT `fk_reconcile_command__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`extension_resource_map` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `extension_id` bigint(20) unsigned NOT NULL,
+  `resource_id` bigint(20) unsigned NOT NULL,
+  `resource_type` varchar(255) NOT NULL,
+  `created` datetime NOT NULL,
+  `removed` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_extension_resource_map__extension_id` FOREIGN KEY (`extension_id`)
+      REFERENCES `cloud`.`extension`(`id`) ON DELETE CASCADE,
+  INDEX `idx_extension_resource` (`resource_id`, `resource_type`),
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`extension_resource_map_details` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `extension_resource_map_id` bigint unsigned NOT NULL COMMENT 'mapping to which the detail is related',
+  `name` varchar(255) NOT NULL COMMENT 'name of the detail',
+  `value` varchar(255) NOT NULL COMMENT 'value of the detail',
+  `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_extension_resource_map_details__map_id` FOREIGN KEY (`extension_resource_map_id`)
+    REFERENCES `extension_resource_map` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

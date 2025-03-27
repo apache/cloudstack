@@ -14,11 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package com.cloud.hypervisor.external.provisioner.dao;
 
-import com.cloud.hypervisor.external.provisioner.vo.ExternalOrchestratorDetailVO;
+import com.cloud.hypervisor.external.provisioner.vo.ExtensionResourceMapVO;
 import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
-public interface ExternalOrchestratorDetailDao extends GenericDao<ExternalOrchestratorDetailVO, Long>, ResourceDetailsDao<ExternalOrchestratorDetailVO> {
+public interface ExtensionResourceMapDao extends GenericDao<ExtensionResourceMapVO, Long> {
 }

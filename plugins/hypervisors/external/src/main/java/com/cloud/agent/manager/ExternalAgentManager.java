@@ -21,6 +21,7 @@ import com.cloud.agent.api.RunCustomActionAnswer;
 import com.cloud.hypervisor.ExternalProvisioner;
 import com.cloud.hypervisor.external.provisioner.api.ExtensionResponse;
 import com.cloud.hypervisor.external.provisioner.api.ListExtensionsCmd;
+import com.cloud.hypervisor.external.provisioner.api.CreateExtensionCmd;
 import com.cloud.hypervisor.external.provisioner.api.RegisterExtensionCmd;
 import com.cloud.hypervisor.external.provisioner.api.RunCustomActionCmd;
 import com.cloud.hypervisor.external.provisioner.vo.Extension;
@@ -43,7 +44,9 @@ public interface ExternalAgentManager extends Manager {
 
     RunCustomActionAnswer runCustomAction(RunCustomActionCmd cmd);
 
-    Extension registerExternalOrchestrator(RegisterExtensionCmd cmd);
+    Extension createExtension(CreateExtensionCmd cmd);
 
    List<ExtensionResponse> listExtensions(ListExtensionsCmd cmd);
+
+   boolean registerExtensionWithResource(RegisterExtensionCmd cmd);
 }

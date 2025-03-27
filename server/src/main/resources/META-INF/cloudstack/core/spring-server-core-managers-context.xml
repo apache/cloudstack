@@ -388,4 +388,6 @@
     </bean>
     <bean id="ExternalOrchestratorDaoImpl" class="com.cloud.hypervisor.external.provisioner.dao.ExternalOrchestratorDaoImpl" />
     <bean id="ExternalOrchestratorDetailDaoImpl" class="com.cloud.hypervisor.external.provisioner.dao.ExternalOrchestratorDetailDaoImpl" />
+    <bean id="ExtensionResourceMapDaoImpl" class="com.cloud.hypervisor.external.provisioner.dao.ExtensionResourceMapDaoImpl" />
+    <bean id="ExtensionResourceMapDetailsDaoImpl" class="com.cloud.hypervisor.external.provisioner.dao.ExtensionResourceMapDetailsDaoImpl" />
 </beans>

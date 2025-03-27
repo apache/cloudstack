@@ -54,9 +54,6 @@ public class ExtensionVO implements Extension {
     @Column(name = "type", nullable = false)
     private String type;
 
-    @Column(name = "pod_id", updatable = false, nullable = false)
-    private long podId;
-
     @Column(name = "created", nullable = false, updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
     private Date created;
@@ -100,13 +97,4 @@ public class ExtensionVO implements Extension {
     public void setRemoved(Date removed) {
         this.removed = removed;
     }
-
-    public long getPodId() {
-        return podId;
-    }
-
-    public void setPodId(long podId) {
-        this.podId = podId;
-    }
 }
-
