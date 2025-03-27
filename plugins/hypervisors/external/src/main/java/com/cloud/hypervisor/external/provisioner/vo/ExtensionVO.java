@@ -32,10 +32,10 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 @Entity
-@Table(name = "external_orchestrator")
-public class ExternalOrchestratorVO implements ExternalOrchestrator {
+@Table(name = "extension")
+public class ExtensionVO implements Extension {
 
-    public ExternalOrchestratorVO() {
+    public ExtensionVO() {
         this.uuid = UUID.randomUUID().toString();
         this.created = new Date();
     }

@@ -17,7 +17,7 @@
 
 package com.cloud.hypervisor.external.provisioner.api;
 
-import com.cloud.hypervisor.external.provisioner.vo.ExternalOrchestrator;
+import com.cloud.hypervisor.external.provisioner.vo.Extension;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
@@ -27,7 +27,7 @@ import org.apache.cloudstack.api.EntityReference;
 import java.util.Date;
 import java.util.Map;
 
-@EntityReference(value = ExternalOrchestrator.class)
+@EntityReference(value = Extension.class)
 public class ExtensionResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
@@ -53,6 +53,10 @@ public class ExtensionResponse extends BaseResponse {
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "the details of the network")
     private Map<String, String> details;
+
+    @SerializedName(ApiConstants.SCRIPT)
+    @Param(description = "the path of the script")
+    private String script;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "Creation timestamp of the extension")
@@ -104,6 +108,14 @@ public class ExtensionResponse extends BaseResponse {
 
     public void setDetails(Map<String, String> details) {
         this.details = details;
+    }
+
+    public String getScriptPath() {
+        return script;
+    }
+
+    public void setScriptPath(String script) {
+        this.script = script;
     }
 
     public Date getCreated() {

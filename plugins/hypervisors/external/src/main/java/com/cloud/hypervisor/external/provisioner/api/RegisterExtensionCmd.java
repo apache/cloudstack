@@ -23,7 +23,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.hypervisor.external.provisioner.vo.ExternalOrchestrator;
+import com.cloud.hypervisor.external.provisioner.vo.Extension;
 import com.cloud.user.Account;
 import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.APICommand;
@@ -103,7 +103,7 @@ public class RegisterExtensionCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        ExternalOrchestrator externalOrchestrator = _externalMgr.registerExternalOrchestrator(this);
+        Extension externalOrchestrator = _externalMgr.registerExternalOrchestrator(this);
         ExtensionResponse response = new ExtensionResponse(name, type, podId, externalOrchestrator.getUuid(), getExternalDetails());
         response.setResponseName(getCommandName());
         response.setObjectName(ApiConstants.EXTENSION);

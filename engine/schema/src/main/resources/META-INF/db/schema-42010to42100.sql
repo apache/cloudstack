@@ -40,7 +40,7 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'last_mgmt_server_id', 'bigin
 
 UPDATE `cloud`.`configuration` SET value = CONCAT(value, ',External') WHERE name = 'hypervisor.list';
 
-CREATE TABLE IF NOT EXISTS `cloud`.`external_orchestrator` (
+CREATE TABLE IF NOT EXISTS `cloud`.`extension` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `uuid` varchar(40) NOT NULL UNIQUE,
   `name` varchar(255) NOT NULL,
@@ -49,18 +49,18 @@ CREATE TABLE IF NOT EXISTS `cloud`.`external_orchestrator` (
   `created` datetime NOT NULL,
   `removed` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_external_orchestrator__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_extension__pod_id` FOREIGN KEY (`pod_id`) REFERENCES `cloud`.`host_pod_ref`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`external_orchestrator_details` (
+CREATE TABLE `cloud`.`extension_details` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `orchestrator_id` bigint unsigned NOT NULL COMMENT 'orchestrator the detail is related to',
+  `extension_id` bigint unsigned NOT NULL COMMENT 'extension to which the detail is related to',
   `name` varchar(255) NOT NULL COMMENT 'name of the detail',
   `value` varchar(255) NOT NULL COMMENT 'value of the detail',
   `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
   PRIMARY KEY (`id`),
-  CONSTRAINT `fk_orchestrator_details__orchestrator_id` FOREIGN KEY (`orchestrator_id`)
-    REFERENCES `external_orchestrator` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_extension_details__extension_id` FOREIGN KEY (`extension_id`)
+    REFERENCES `extension` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 -- Add table for reconcile commands

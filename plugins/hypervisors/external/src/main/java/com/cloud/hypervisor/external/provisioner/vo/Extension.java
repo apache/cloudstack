@@ -20,5 +20,5 @@ package com.cloud.hypervisor.external.provisioner.vo;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface ExternalOrchestrator extends InternalIdentity, Identity {
+public interface Extension extends InternalIdentity, Identity {
 }

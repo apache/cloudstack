@@ -212,6 +212,7 @@ public class ApiConstants {
     public static final String EXTENSION = "extension";
     public static final String EXTENSIONS = "extensions";
     public static final String EXTENSION_ID = "extensionid";
+    public static final String SCRIPT = "script";
     public static final String FENCE = "fence";
     public static final String FETCH_LATEST = "fetchlatest";
     public static final String FILESYSTEM = "filesystem";
