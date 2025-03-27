@@ -23,6 +23,8 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.external.provisioner.simpleprovisioner.SimpleExternalProvisioner;
+import com.cloud.hypervisor.external.provisioner.vo.Extension;
 import com.cloud.user.Account;
 import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.APICommand;
@@ -36,30 +38,26 @@ import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
-@APICommand(name = RegisterExtensionCmd.APINAME, description = "Register an extension with a resource",
+@APICommand(name = CreateExtensionCmd.APINAME, description = "create the external extension",
         responseObject = SuccessResponse.class, responseHasSensitiveInfo = false, since = "4.21.0")
-public class RegisterExtensionCmd extends BaseCmd {
+public class CreateExtensionCmd extends BaseCmd {
 
     @Inject
     ExternalAgentManager _externalMgr;
 
-    public static final String APINAME = "registerExtension";
+    public static final String APINAME = "createExtension";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID, required = true,
-            entityType = ExtensionResponse.class, description = "UUID of the extension")
-    private Long extensionId;
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
+            description = "Name of the extension")
+    private String name;
 
-    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, required = true,
-            description = "ID of the resource to register the extension with")
-    private String resourceId;
-
-    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, required = true,
-            description = "Type of the resource")
-    private String resourceType;
+    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true,
+            description = "Type of the extension. Supported value is orchestrate")
+    private String type;
 
     @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP,
             description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue")
@@ -69,16 +67,12 @@ public class RegisterExtensionCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getExtensionId() {
-        return extensionId;
+    public String getName() {
+        return name;
     }
 
-    public String getResourceId() {
-        return resourceId;
-    }
-
-    public String getResourceType() {
-        return resourceType;
+    public String getType() {
+        return type;
     }
 
     public Map<String, String> getExternalDetails() {
@@ -91,15 +85,22 @@ public class RegisterExtensionCmd extends BaseCmd {
         return details;
     }
 
+    public Map getDetails() {
+        return externalDetails;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        boolean success = _externalMgr.registerExtensionWithResource(this);
-        SuccessResponse response = new SuccessResponse(getCommandName());
-        response.setSuccess(success);
+        Extension extension = _externalMgr.createExtension(this);
+        ExtensionResponse response = new ExtensionResponse(name, type, extension.getUuid(), getExternalDetails());
+        String destinationPath = String.format(SimpleExternalProvisioner.EXTENSION_SCRIPT_PATH, extension.getId());
+        response.setScriptPath(destinationPath);
+        response.setResponseName(getCommandName());
+        response.setObjectName(ApiConstants.EXTENSION);
         setResponseObject(response);
     }
 
