@@ -27,9 +27,9 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 
-@APICommand(name = "registerCustomAction", description = "Register the custom action",
+@APICommand(name = "deleteCustomAction", description = "delete the custom action",
         responseObject = SuccessResponse.class, responseHasSensitiveInfo = false, since = "4.21.0")
-public class RegisterCustomAction extends BaseCmd {
+public class DeleteCustomActionCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
 

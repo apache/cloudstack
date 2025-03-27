@@ -22,21 +22,12 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.SuccessResponse;
 
-@APICommand(name = "deleteCustomAction", description = "delete the custom action",
-        responseObject = SuccessResponse.class, responseHasSensitiveInfo = false, since = "4.21.0")
-public class DeleteCustomAction extends BaseCmd {
+public class ListCustomActionCmd extends BaseListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
 
-    }
-
-    @Override
-    public long getEntityOwnerId() {
-        return 0;
     }
 }
