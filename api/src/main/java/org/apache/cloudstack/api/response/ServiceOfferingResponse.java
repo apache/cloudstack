@@ -240,7 +240,7 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
 
     @SerializedName(ApiConstants.INSTANCE_LEASE_DURATION)
     @Param(description = "Instance lease duration for service offering", since = "4.21.0")
-    private Long leaseDuration;
+    private Integer leaseDuration;
 
     @SerializedName(ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION)
     @Param(description = "Action to be taken once lease is over", since = "4.21.0")
@@ -513,11 +513,11 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
         this.cacheMode = cacheMode;
     }
 
-    public Long getLeaseDuration() {
+    public Integer getLeaseDuration() {
         return leaseDuration;
     }
 
-    public void setLeaseDuration(Long leaseDuration) {
+    public void setLeaseDuration(Integer leaseDuration) {
         this.leaseDuration = leaseDuration;
     }
 

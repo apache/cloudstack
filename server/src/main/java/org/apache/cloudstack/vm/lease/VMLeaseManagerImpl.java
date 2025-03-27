@@ -23,6 +23,7 @@ import com.cloud.api.ApiGsonHelper;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
@@ -39,8 +40,6 @@ import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
@@ -60,10 +59,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, Configurable {
+    public static final String INSTANCE_LEASE_ENABLED = "instance.lease.enabled";
 
     public static ConfigKey<Boolean> InstanceLeaseEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
-            "instance.lease.enabled", "false", "Indicates whether to enable the Instance lease," +
-            " will be applicable on instances created after lease got enabled",
+            INSTANCE_LEASE_ENABLED, "false", "Indicates whether to enable the Instance lease," +
+            " will be applicable only on instances created after lease is enabled. Disabling the feature cancels lease on existing instances with lease." +
+            "Re-enabling feature will not cause lease expiry actions on grandfathered instances",
             true, List.of(ConfigKey.Scope.Global));
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;   // 5 seconds
@@ -73,9 +74,6 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
 
     @Inject
     private UserVmJoinDao userVmJoinDao;
-
-    @Inject
-    private ConfigurationDao configurationDao;
 
     @Inject
     private AlertManager alertManager;
@@ -99,7 +97,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
                 InstanceLeaseEnabled,
                 InstanceLeaseSchedulerInterval,
                 InstanceLeaseAlertSchedule,
-                InstanceLeaseAlertStartsAt
+                InstanceLeaseExpiryAlertDaysBefore
         };
     }
 
@@ -130,6 +128,18 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         vmLeaseExecutor.shutdown();
         vmLeaseAlertExecutor.shutdown();
         return true;
+    }
+
+    @Override
+    public void cancelLeaseOnExistingInstances() {
+        List<UserVmJoinVO> leaseExpiringForInstances = userVmJoinDao.listLeaseInstancesExpiringInDays(-1);
+        logger.debug("Total instances found for lease cancellation: {}", leaseExpiringForInstances.size());
+        for (UserVmJoinVO instance : leaseExpiringForInstances) {
+            userVmDetailsDao.addDetail(instance.getId(), VmDetailConstants.INSTANCE_LEASE_EXECUTION, "CANCELLED", false);
+            String leaseCancellationMsg = String.format("Lease is cancelled for the instancedId: %s ", instance.getUuid());
+            ActionEventUtils.onActionEvent(instance.getUserId(), instance.getAccountId(), instance.getDomainId(),
+                    EventTypes.VM_LEASE_CANCELLED, leaseCancellationMsg, instance.getId(), ApiCommandResourceType.VirtualMachine.toString());
+        }
     }
 
     class VMLeaseSchedulerTask extends ManagedContextRunnable {
@@ -170,10 +180,11 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             try {
                 if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
                     try {
-                        List<UserVmJoinVO> leaseExpiringForInstances = userVmJoinDao.listLeaseInstancesExpiringInDays(InstanceLeaseAlertStartsAt.value().intValue());
+                        List<UserVmJoinVO> leaseExpiringForInstances = userVmJoinDao.listLeaseInstancesExpiringInDays(InstanceLeaseExpiryAlertDaysBefore.value().intValue());
                         for (UserVmJoinVO instance : leaseExpiringForInstances) {
-                            alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_USERVM, instance.getDataCenterId(), instance.getPodId(),
-                                    "Lease expiring for instance id: " + instance.getUuid(), "Lease expiring for instance");
+                            String leaseExpiryEventMsg =  String.format("Lease expiring for for instanceId: %s with action: %s", instance.getUuid(), instance.getLeaseExpiryAction());
+                            ActionEventUtils.onActionEvent(instance.getUserId(), instance.getAccountId(), instance.getDomainId(),
+                                    EventTypes.VM_LEASE_EXPIRING, leaseExpiryEventMsg, instance.getId(), ApiCommandResourceType.VirtualMachine.toString());
                         }
                     } finally {
                         scanLock.unlock();
@@ -191,10 +202,8 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
     }
 
     protected void reallyRun() {
-        ConfigurationVO vo = configurationDao.findById("instance.lease.enabled");
-        Date featureEnabledDate = vo.getUpdated();
         // fetch user_instances having leaseDuration configured and has expired
-        List<UserVmJoinVO> leaseExpiredInstances = userVmJoinDao.listEligibleInstancesWithExpiredLease(featureEnabledDate);
+        List<UserVmJoinVO> leaseExpiredInstances = userVmJoinDao.listEligibleInstancesWithExpiredLease();
         List<Long> actionableInstanceIds = new ArrayList<>();
         for (UserVmJoinVO userVmVO : leaseExpiredInstances) {
             // skip instance with delete protection for DESTROY action
@@ -220,14 +229,14 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             }
             // for qualified vms, prepare Stop/Destroy(Cmd) and submit to Job Manager
             final long eventId = ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, instance.getAccountId(), null,
-                    "VM.LEASE.EXPIRED", true,
+                    EventTypes.VM_LEASE_EXPIRED, true,
                     String.format("Executing lease expiry action (%s) for instanceId: %s", instance.getLeaseExpiryAction(), instance.getUuid()),
                     instance.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
 
             Long jobId = executeExpiryAction(instance, expiryAction, eventId);
             if (jobId != null) {
                 submittedJobIds.add(jobId);
-                userVmDetailsDao.addDetail(instanceId, VmDetailConstants.INSTANCE_LEASE_ACTION_EXECUTION_DATE, DateUtil.currentGMTTime().toString(), false);
+                userVmDetailsDao.addDetail(instanceId, VmDetailConstants.INSTANCE_LEASE_EXECUTION, "DONE", false);
             } else {
                 failedToSubmitInstanceIds.add(instanceId);
             }

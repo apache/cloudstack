@@ -336,7 +336,7 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
         }
     }
 
-    public Boolean getOnlyLeasedInstances() {
-        return onlyLeasedInstances;
+    public boolean getOnlyLeasedInstances() {
+        return BooleanUtils.toBoolean(onlyLeasedInstances);
     }
 }

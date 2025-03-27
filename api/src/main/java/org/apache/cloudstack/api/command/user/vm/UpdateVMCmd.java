@@ -16,20 +16,18 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
 import com.cloud.utils.exception.CloudRuntimeException;
-
-import org.apache.cloudstack.api.ApiArgValidator;
-import org.apache.cloudstack.api.response.UserDataResponse;
-
+import com.cloud.utils.net.Dhcp;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -40,15 +38,14 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
-import com.cloud.utils.net.Dhcp;
-import com.cloud.vm.VirtualMachine;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @APICommand(name = "updateVirtualMachine", description="Updates properties of a virtual machine. The VM has to be stopped and restarted for the " +
         "new properties to take effect. UpdateVirtualMachine does not first check whether the VM is stopped. " +
@@ -154,9 +151,9 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
                     " autoscaling groups or CKS, delete protection will be ignored.")
     private Boolean deleteProtection;
 
-    @Parameter(name = ApiConstants.INSTANCE_LEASE_DURATION, type = CommandType.LONG, since = "4.21.0",
+    @Parameter(name = ApiConstants.INSTANCE_LEASE_DURATION, type = CommandType.INTEGER, since = "4.21.0",
             description = "Number of days instance is leased for.")
-    private Long leaseDuration;
+    private Integer leaseDuration;
 
     @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, type = CommandType.STRING, since = "4.21.0",
             description = "Lease expiry action, valid values are STOP and DESTROY")
@@ -333,7 +330,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
         return ApiCommandResourceType.VirtualMachine;
     }
 
-    public Long getLeaseDuration() {
+    public Integer getLeaseDuration() {
         return leaseDuration;
     }
 

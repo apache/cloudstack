@@ -104,5 +104,5 @@ public interface VmDetailConstants {
 
     String INSTANCE_LEASE_EXPIRY_DATE = "leaseexpirydate";
     String INSTANCE_LEASE_EXPIRY_ACTION = "leaseexpiryaction";
-    String INSTANCE_LEASE_ACTION_EXECUTION_DATE = "leaseactionexecutiondate";
+    String INSTANCE_LEASE_EXECUTION = "leaseactionexecution";
 }

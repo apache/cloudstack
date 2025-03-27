@@ -58,7 +58,7 @@ public class CreateServiceOfferingCmdTest {
 
     @Test
     public void testGetLeaseDuration() {
-        ReflectionTestUtils.setField(createServiceOfferingCmd, "leaseDuration", 10L);
+        ReflectionTestUtils.setField(createServiceOfferingCmd, "leaseDuration", 10);
         Assert.assertEquals(10, createServiceOfferingCmd.getLeaseDuration().longValue());
     }
 

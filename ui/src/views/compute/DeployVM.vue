@@ -605,7 +605,7 @@
                     </a-form-item>
                     <a-form-item name="showLeaseOptions" ref="showLeaseOptions" v-if="isLeaseFeatureEnabled">
                       <template #label>
-                        <tooltip-label :title="$t('label.isLeaseFeatureEnabled')" />
+                        <tooltip-label :title="$t('label.lease.enable')" :tooltip="$t('label.lease.enable.tooltip')"/>
                       </template>
                       <a-switch v-model:checked="showLeaseOptions" @change="onToggleLeaseData"/>
                     </a-form-item>
@@ -1136,7 +1136,11 @@ export default {
       leaseexpiryaction: undefined,
       expiryActions: ['STOP', 'DESTROY'],
       defaultLeaseDuration: 90,
-      defaultLeaseExpiryAction: 'STOP'
+      defaultLeaseExpiryAction: 'STOP',
+      naturalNumberRule: {
+        type: 'number',
+        validator: this.validateNumber
+      }
     }
   },
   computed: {
@@ -1657,7 +1661,8 @@ export default {
       this.form = reactive({})
       this.rules = reactive({
         zoneid: [{ required: true, message: `${this.$t('message.error.select')}` }],
-        hypervisor: [{ required: true, message: `${this.$t('message.error.select')}` }]
+        hypervisor: [{ required: true, message: `${this.$t('message.error.select')}` }],
+        leaseduration: [this.naturalNumberRule]
       })
 
       if (this.zoneSelected) {
@@ -2940,6 +2945,12 @@ export default {
       }
       this.form.leaseduration = this.leaseduration
       this.form.leaseexpiryaction = this.leaseexpiryaction
+    },
+    async validateNumber (rule, value) {
+      if (value && (isNaN(value) || value <= 0)) {
+        return Promise.reject(this.$t('message.error.number'))
+      }
+      return Promise.resolve()
     }
   }
 }

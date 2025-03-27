@@ -351,7 +351,7 @@
         </a-form-item>
         <a-form-item name="showLeaseOptions" ref="showLeaseOptions" v-if="isLeaseFeatureEnabled">
           <template #label>
-            <tooltip-label :title="$t('label.isLeaseFeatureEnabled')"/>
+            <tooltip-label :title="$t('label.lease.enable')" :tooltip="$t('label.lease.enable.tooltip')" />
           </template>
           <a-switch v-model:checked="showLeaseOptions" @change="onToggleLeaseData"/>
         </a-form-item>
@@ -822,7 +822,8 @@ export default {
             }
             return Promise.resolve()
           }
-        }]
+        }],
+        leaseduration: [this.naturalNumberRule]
       })
     },
     fetchData () {

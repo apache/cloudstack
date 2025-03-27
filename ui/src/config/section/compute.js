@@ -18,7 +18,6 @@
 import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 import { isZoneCreated } from '@/utils/zone'
-import { useRoute } from 'vue-router'
 
 export default {
   name: 'compute',
@@ -45,6 +44,9 @@ export default {
         const filters = ['running', 'stopped']
         if (!(store.getters.project && store.getters.project.id)) {
           filters.unshift('self')
+        }
+        if (store.getters.features.instanceleaseenabled) {
+          filters.push('leased')
         }
         return filters
       },
@@ -77,12 +79,6 @@ export default {
           fields.push('project')
         }
         fields.push('zonename')
-        const route = useRoute()
-        if (route !== undefined && route.query !== undefined && route.query.leased !== undefined && route.query.leased) {
-          fields.push('leaseduration')
-          fields.push('leaseexpirydate')
-        }
-
         return fields
       },
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'tags'],

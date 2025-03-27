@@ -119,7 +119,7 @@
       </a-form-item>
       <a-form-item name="showLeaseOptions" ref="showLeaseOptions" v-if="isLeaseEditable">
         <template #label>
-          <tooltip-label :title="$t('label.isLeaseFeatureEnabled')" />
+          <tooltip-label :title="$t('label.lease.enable')" :tooltip="$t('label.lease.enable.tooltip')" />
         </template>
         <a-switch v-model:checked="showLeaseOptions" @change="onToggleLeaseData"/>
       </a-form-item>
@@ -194,11 +194,15 @@ export default {
         loading: false,
         opts: []
       },
-      isLeaseEditable: this.$store.getters.features.instanceleaseenabled && this.resource.leaseduration !== undefined && this.resource.leaseduration > -1,
+      isLeaseEditable: this.$store.getters.features.instanceleaseenabled && this.resource.leaseduration > -1,
       showLeaseOptions: false,
       leaseduration: this.resource.leaseduration === undefined ? 90 : this.resource.leaseduration,
       leaseexpiryaction: this.resource.leaseexpiryaction === undefined ? 'STOP' : this.resource.leaseexpiryaction,
-      expiryActions: ['STOP', 'DESTROY']
+      expiryActions: ['STOP', 'DESTROY'],
+      naturalNumberRule: {
+        type: 'number',
+        validator: this.validateNumber
+      }
     }
   },
   beforeCreate () {
@@ -224,7 +228,9 @@ export default {
         leaseduration: this.resource.leaseduration,
         leaseexpiryaction: this.resource.leaseexpiryaction
       })
-      this.rules = reactive({})
+      this.rules = reactive({
+        leaseduration: [this.naturalNumberRule]
+      })
       this.showLeaseOptions = this.isLeaseEditable
     },
     fetchData () {
@@ -426,6 +432,12 @@ export default {
         this.form.leaseduration = this.leaseduration
         this.form.leaseexpiryaction = this.leaseexpiryaction
       }
+    },
+    async validateNumber (rule, value) {
+      if (value && (isNaN(value) || value <= 0)) {
+        return Promise.reject(this.$t('message.error.number'))
+      }
+      return Promise.resolve()
     }
   }
 }

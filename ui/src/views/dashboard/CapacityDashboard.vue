@@ -166,18 +166,6 @@
               </a-statistic>
             </router-link>
           </a-col>
-          <a-col :span="12" v-if="isLeaseFeatureEnabled">
-            <router-link :to="{ path: '/vm', query: { zoneid: zoneSelected.id, projectid: '-1', leased: true } }">
-              <a-statistic
-                :title="$t('label.leasedinstances')"
-                :value="data.leasedinstances"
-                :value-style="{ color: $config.theme['@primary-color'] }">
-                <template #prefix>
-                  <clock-circle-outlined/>&nbsp;
-                </template>
-              </a-statistic>
-            </router-link>
-          </a-col>
         </a-row>
       </chart-card>
     </a-col>
@@ -394,8 +382,7 @@ export default {
         VIRTUAL_NETWORK_PUBLIC_IP: 'label.public.ips',
         VLAN: 'label.vlan',
         VIRTUAL_NETWORK_IPV6_SUBNET: 'label.ipv6.subnets'
-      },
-      isLeaseFeatureEnabled: this.$store.getters.features.instanceleaseenabled
+      }
     }
   },
   computed: {
@@ -571,15 +558,6 @@ export default {
           this.data.instances = 0
         }
       })
-      if (this.isLeaseFeatureEnabled) {
-        api('listVirtualMachines', { zoneid: zone.id, leased: true, listall: true, projectid: '-1', details: 'min', page: 1, pagesize: 1 }).then(json => {
-          this.loading = false
-          this.data.leasedinstances = json?.listvirtualmachinesresponse?.count
-          if (!this.data.leasedinstances) {
-            this.data.leasedinstances = 0
-          }
-        })
-      }
     },
     listAlerts () {
       const params = {

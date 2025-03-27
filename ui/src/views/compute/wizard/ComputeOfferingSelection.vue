@@ -38,9 +38,20 @@
       </template>
       <template #displayText="{ record }">
         <span>{{ record.name }}</span>
-        <a-tag v-if="record.leaseduration" :color="this.$config.theme['@error-color']" style="margin-left: 5px">
-                {{ $t('label.remainingdays') + ': '+ (record.leaseduration) }}
-        </a-tag>
+        <span
+            v-if="record.leaseduration !== undefined"
+            :style="{
+              'margin-right': '10px',
+              'float': 'right'}">
+          <a-tooltip>
+            <template #title>{{ $t('label.remainingdays')  + ": " + getRemainingLeaseText(record.leaseduration) }}</template>
+            <field-time-outlined
+              :style="{
+                color: $store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' },
+                fontSize: '20px'
+              }"/>
+          </a-tooltip>
+        </span>
       </template>
     </a-table>
 
@@ -193,7 +204,6 @@ export default {
         if (this.allowAllOfferings) {
           disabled = false
         }
-        // var computedName = (item.leaseduration !== undefined) ? item.name + ': ' + item.leaseduration : item.name
         return {
           key: item.id,
           name: item.name,
@@ -277,6 +287,15 @@ export default {
           this.selectedRowKeys = [record.key]
           this.$emit('select-compute-item', record.key)
         }
+      }
+    },
+    getRemainingLeaseText (leaseDuration) {
+      if (leaseDuration > 0) {
+        return leaseDuration + (leaseDuration === 1 ? ' day' : ' days')
+      } else if (leaseDuration === 0) {
+        return 'expiring today'
+      } else {
+        return 'over'
       }
     }
   }

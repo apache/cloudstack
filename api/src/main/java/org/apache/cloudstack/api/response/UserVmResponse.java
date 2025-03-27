@@ -397,7 +397,7 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     @SerializedName(ApiConstants.INSTANCE_LEASE_DURATION)
     @Param(description = "Instance lease duration in days", since = "4.21.0")
-    private Long leaseDuration;
+    private Integer leaseDuration;
 
     @SerializedName(ApiConstants.INSTANCE_LEASE_EXPIRY_DATE)
     @Param(description = "Instance lease expiry date", since = "4.21.0")
@@ -1181,11 +1181,11 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.ipAddress = ipAddress;
     }
 
-    public Long getLeaseDuration() {
+    public Integer getLeaseDuration() {
         return leaseDuration;
     }
 
-    public void setLeaseDuration(Long leaseDuration) {
+    public void setLeaseDuration(Integer leaseDuration) {
         this.leaseDuration = leaseDuration;
     }
 

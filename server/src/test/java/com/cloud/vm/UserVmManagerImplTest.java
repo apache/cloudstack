@@ -28,6 +28,7 @@ import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEventUtils;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -3104,7 +3105,7 @@ public class UserVmManagerImplTest {
             configureDoNothingForMethodsThatWeDoNotWantToTest();
 
             userVmManagerImpl.executeStepsToChangeOwnershipOfVm(assignVmCmdMock, callerAccount, accountMock, accountMock, userVmVoMock, serviceOfferingVoMock, volumes,
-                    virtualMachineTemplateMock, 1l);
+                    virtualMachineTemplateMock, 1L);
 
             Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
@@ -3142,7 +3143,7 @@ public class UserVmManagerImplTest {
         ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
         VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
         Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
-        userVmManagerImpl.validateLeaseProperties(-2L, "STOP");
+        userVmManagerImpl.validateLeaseProperties(-2, "STOP");
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -3150,7 +3151,7 @@ public class UserVmManagerImplTest {
         ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
         VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
         Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
-        userVmManagerImpl.validateLeaseProperties(20L, null);
+        userVmManagerImpl.validateLeaseProperties(20, null);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -3166,7 +3167,7 @@ public class UserVmManagerImplTest {
         ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
         VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
         Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
-        userVmManagerImpl.validateLeaseProperties(-1L, null);
+        userVmManagerImpl.validateLeaseProperties(-1, null);
     }
 
     @Test
@@ -3174,7 +3175,7 @@ public class UserVmManagerImplTest {
         ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
         VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
         Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
-        userVmManagerImpl.validateLeaseProperties(0L, "STOP");
+        userVmManagerImpl.validateLeaseProperties(0, "STOP");
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -3182,7 +3183,7 @@ public class UserVmManagerImplTest {
         ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
         VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
         Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
-        userVmManagerImpl.validateLeaseProperties(20L, "RUN");
+        userVmManagerImpl.validateLeaseProperties(20, "RUN");
     }
 
     @Test
@@ -3190,7 +3191,7 @@ public class UserVmManagerImplTest {
         ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
         VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
         Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
-        userVmManagerImpl.validateLeaseProperties(20L, "STOP");
+        userVmManagerImpl.validateLeaseProperties(20, "STOP");
     }
 
     @Test
@@ -3206,7 +3207,7 @@ public class UserVmManagerImplTest {
         ConfigKey<Boolean> instanceLeaseFeature = Mockito.mock(ConfigKey.class);
         VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
         Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.FALSE);
-        userVmManagerImpl.validateLeaseProperties(20L, null);
+        userVmManagerImpl.validateLeaseProperties(20, null);
     }
 
     @Test
@@ -3222,7 +3223,7 @@ public class UserVmManagerImplTest {
         UserVm userVm = mock(UserVm.class);
         when(userVm.getId()).thenReturn(vmId);
         when(userVm.getUuid()).thenReturn(UUID.randomUUID().toString());
-        userVmManagerImpl.addLeaseDetailsForInstance(userVm, 10L, "STOP");
+        userVmManagerImpl.addLeaseDetailsForInstance(userVm, 10, "STOP");
         verify(userVmDetailsDao).addDetail(eq(vmId), eq(VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION), eq("STOP"), anyBoolean());
         verify(userVmDetailsDao).addDetail(eq(vmId), eq(VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE), eq(getLeaseExpiryDate(10L)), anyBoolean());
     }
@@ -3242,7 +3243,7 @@ public class UserVmManagerImplTest {
         Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.FALSE);
         UserVmVO userVm = Mockito.mock(UserVmVO.class);
         ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
-        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, 10L, "STOP", svcOfferingMock);
+        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, 10, "STOP", svcOfferingMock);
         Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
     }
 
@@ -3253,7 +3254,7 @@ public class UserVmManagerImplTest {
         Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
         UserVmVO userVm = Mockito.mock(UserVmVO.class);
         ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
-        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, 10L, "DESTROY", svcOfferingMock);
+        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, 10, "DESTROY", svcOfferingMock);
         Mockito.verify(userVmManagerImpl, Mockito.times(1)).addLeaseDetailsForInstance(any(), any(), any());
     }
 
@@ -3263,7 +3264,7 @@ public class UserVmManagerImplTest {
         VMLeaseManagerImpl.InstanceLeaseEnabled = instanceLeaseFeature;
         Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
         UserVmVO userVm = Mockito.mock(UserVmVO.class);
-        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, -1L, "DESTROY", null);
+        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, -1, "DESTROY", null);
         Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
     }
 
@@ -3285,7 +3286,7 @@ public class UserVmManagerImplTest {
         Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
         UserVmVO userVm = Mockito.mock(UserVmVO.class);
         ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
-        when(svcOfferingMock.getLeaseDuration()).thenReturn(10L);
+        when(svcOfferingMock.getLeaseDuration()).thenReturn(10);
         userVmManagerImpl.applyLeaseOnCreateInstance(userVm, null, "DESTROY", svcOfferingMock);
         Mockito.verify(userVmManagerImpl, Mockito.times(1)).addLeaseDetailsForInstance(any(), any(), any());
     }
@@ -3297,7 +3298,7 @@ public class UserVmManagerImplTest {
         Mockito.when(instanceLeaseFeature.value()).thenReturn(Boolean.TRUE);
         UserVmVO userVm = Mockito.mock(UserVmVO.class);
         ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
-        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, 10L, null, svcOfferingMock);
+        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, 10, null, svcOfferingMock);
         Mockito.verify(userVmManagerImpl, Mockito.times(1)).addLeaseDetailsForInstance(any(), any(), any());
     }
 
@@ -3309,7 +3310,7 @@ public class UserVmManagerImplTest {
         UserVmVO userVm = Mockito.mock(UserVmVO.class);
         when(userVm.getId()).thenReturn(vmId);
         when(userVmDetailsDao.findDetail(anyLong(), any())).thenReturn(null);
-        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10L, "STOP");
+        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, "STOP");
         Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
     }
 
@@ -3323,7 +3324,7 @@ public class UserVmManagerImplTest {
         when(userVm.getId()).thenReturn(vmId);
         when(userVmDetailVO.getValue()).thenReturn(getLeaseExpiryDate(5));
         when(userVmDetailsDao.findDetail(anyLong(), any())).thenReturn(userVmDetailVO);
-        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10L, "STOP");
+        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, "STOP");
         Mockito.verify(userVmManagerImpl, Mockito.times(1)).addLeaseDetailsForInstance(any(), any(), any());
     }
 
@@ -3337,7 +3338,7 @@ public class UserVmManagerImplTest {
         when(userVm.getId()).thenReturn(vmId);
         when(userVmDetailVO.getValue()).thenReturn(getLeaseExpiryDate(-5));
         when(userVmDetailsDao.findDetail(anyLong(), any())).thenReturn(userVmDetailVO);
-        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10L, "STOP");
+        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, "STOP");
         Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
     }
 
@@ -3351,10 +3352,16 @@ public class UserVmManagerImplTest {
         when(userVm.getId()).thenReturn(vmId);
         when(userVmDetailVO.getValue()).thenReturn(getLeaseExpiryDate(2));
         when(userVmDetailsDao.findDetail(anyLong(), any())).thenReturn(userVmDetailVO);
-        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, -1L, "STOP");
+
+        try (MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
+            Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                    Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyString(),
+                    Mockito.anyLong(), Mockito.anyString())).thenReturn(1L);
+            userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, -1, "STOP");
+        }
         Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
-        Mockito.verify(userVmDetailsDao, Mockito.times(1)).removeDetail(vmId, VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION);
-        Mockito.verify(userVmDetailsDao, Mockito.times(1)).removeDetail(vmId, VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
+        Mockito.verify(userVmDetailsDao, Mockito.times(1)).addDetail(vmId, VmDetailConstants.INSTANCE_LEASE_EXECUTION, "DISABLED", false);
     }
 
     @Test
@@ -3367,7 +3374,7 @@ public class UserVmManagerImplTest {
         when(userVm.getId()).thenReturn(vmId);
         when(userVmDetailVO.getValue()).thenReturn(getLeaseExpiryDate(-10));
         when(userVmDetailsDao.findDetail(anyLong(), any())).thenReturn(userVmDetailVO);
-        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, -1L, "STOP");
+        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, -1, "STOP");
         Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
         Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(vmId, VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION);
         Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(vmId, VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);

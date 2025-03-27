@@ -360,24 +360,6 @@ public abstract class SearchBase<J extends SearchBase<?, T, K>, T, K> {
     }
 
     /**
-     * Adds an AND NOT condition to the search.  Normally you should use this to
-     * perform an 'AND NOT' with a big conditional in parenthesis.  For example,
-     *
-     * search.andNot().op(entity.getId(), Op.Eq, "abc").cp()
-     *
-     * The above fragment produces something similar to
-     *
-     * "AND NOT (id = $abc) where abc is the token to be replaced by a value later.
-     *
-     * @return this
-     */
-    @SuppressWarnings("unchecked")
-    public J andNot() {
-        constructCondition(null, " AND NOT ", null, null);
-        return (J)this;
-    }
-
-    /**
      * Closes a parenthesis that's started by op()
      * @return this
      */

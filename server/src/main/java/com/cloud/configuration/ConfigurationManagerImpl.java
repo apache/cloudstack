@@ -473,6 +473,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     Ipv6Service ipv6Service;
     @Inject
     NsxProviderDao nsxProviderDao;
+    @Inject
+    VMLeaseManager vmLeaseManager;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -626,6 +628,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
                     params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
                     _agentManager.propagateChangeToAgents(params);
+                } else if (VMLeaseManagerImpl.InstanceLeaseEnabled.key().equals(globalSettingUpdated) && !VMLeaseManagerImpl.InstanceLeaseEnabled.value()) {
+                    vmLeaseManager.cancelLeaseOnExistingInstances();
                 }
             }
         });
@@ -3320,7 +3324,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // validate lease properties and set leaseExpiryAction
-        Long leaseDuration = cmd.getLeaseDuration();
+        Integer leaseDuration = cmd.getLeaseDuration();
         String leaseExpiryAction = validateAndGetLeaseExpiryAction(leaseDuration, cmd.getLeaseExpiryAction());
 
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
@@ -3335,16 +3339,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
-            final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final String provisioningType, final boolean localStorageRequired,
-            final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm, String tags, final List<Long> domainIds, List<Long> zoneIds, final String hostTag,
-            final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, Long rootDiskSizeInGiB, final Boolean isCustomizedIops, Long minIops, Long maxIops,
-            Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
-            Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
-            Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
-            Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID,
-            final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness,
-            final boolean isCustomized, final boolean encryptRoot, final boolean purgeResources, Long leaseDuration, String leaseExpiryAction) {
+                                                      final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final String provisioningType, final boolean localStorageRequired,
+                                                      final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm, String tags, final List<Long> domainIds, List<Long> zoneIds, final String hostTag,
+                                                      final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, Long rootDiskSizeInGiB, final Boolean isCustomizedIops, Long minIops, Long maxIops,
+                                                      Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
+                                                      Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
+                                                      Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
+                                                      Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
+                                                      final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID,
+                                                      final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness,
+                                                      final boolean isCustomized, final boolean encryptRoot, final boolean purgeResources, Integer leaseDuration, String leaseExpiryAction) {
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
@@ -3488,9 +3492,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      * @param cmdExpiryAction
      * @return leaseExpiryAction
      */
-    public static String validateAndGetLeaseExpiryAction(Long leaseDuration, String cmdExpiryAction) {
-        if (!VMLeaseManagerImpl.InstanceLeaseEnabled.value()
-                || (leaseDuration == null && StringUtils.isEmpty(cmdExpiryAction))) { // both are null
+    public static String validateAndGetLeaseExpiryAction(Integer leaseDuration, String cmdExpiryAction) {
+        if (!VMLeaseManagerImpl.InstanceLeaseEnabled.value() || ObjectUtils.allNull(leaseDuration, cmdExpiryAction)) { // both are null
             return null;
         }
 

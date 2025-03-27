@@ -99,14 +99,20 @@
                 <warning-outlined style="color: #f5222d"/>
               </a-tooltip>
             </span>
-            <font-awesome-icon
+          </span>
+          <span
             v-if="record.leaseduration !== undefined"
-            :icon="['fa-solid', 'fa-clock']"
-            :class="['anticon']"
             :style="{
-              'margin-left': '5px',
-              color: record.leaseduration > -1 ? $store.getters.darkMode ? 'rgba(255, 255, 255, 0.65)' : '#888': '#f50000'
-            }"/>
+              'margin-right': '5px',
+              'float': 'right'}">
+              <a-tooltip>
+                <template #title>{{ $t('label.remainingdays')  + ": " + getRemainingLeaseText(record.leaseduration) }}</template>
+                <field-time-outlined
+                  :style="{
+                    color: getLeaseColor(record.leaseduration),
+                    fontSize: '20px'
+                  }"/>
+              </a-tooltip>
           </span>
         </span>
       </template>
@@ -1076,6 +1082,24 @@ export default {
             }
           }
         })
+      }
+    },
+    getRemainingLeaseText (leaseDuration) {
+      if (leaseDuration > 0) {
+        return leaseDuration + (leaseDuration === 1 ? ' day' : ' days')
+      } else if (leaseDuration === 0) {
+        return 'expiring today'
+      } else {
+        return 'over'
+      }
+    },
+    getLeaseColor (leaseDuration) {
+      if (leaseDuration >= 7) {
+        return '#888'
+      } else if (leaseDuration >= 0) {
+        return '#ffbf00'
+      } else {
+        return '#fd7e14'
       }
     }
   }
