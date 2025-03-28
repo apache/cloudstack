@@ -621,9 +621,8 @@ export default {
       this.fetchNetworkAclList()
       this.fetchNetworkOfferings()
       const cidr = this.resource.cidr
-      if (cidr?.includes('/')) {
-        const netmask = getNetmaskFromCidr(cidr)
-
+      const netmask = getNetmaskFromCidr(cidr)
+      if (netmask) {
         this.gatewayPlaceholder = this.$t('label.create.tier.gateway.description', { value: cidr })
         this.netmaskPlaceholder = this.$t('label.create.tier.netmask.description', { value: netmask })
       }
