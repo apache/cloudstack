@@ -46,7 +46,7 @@ public class ExtensionResourceMapResponse extends BaseResponse {
     private String script;
 
     @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "the details of the resouce map")
+    @Param(description = "the details of the resource map")
     private Map<String, String> details;
 
     @SerializedName(ApiConstants.CREATED)
