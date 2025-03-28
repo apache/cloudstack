@@ -25,14 +25,11 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 @EntityReference(value = Extension.class)
 public class ExtensionResponse extends BaseResponse {
-
-    @SerializedName(ApiConstants.ID)
-    @Param(description = "ID of the extension")
-    private String id;
 
     @SerializedName(ApiConstants.UUID)
     @Param(description = "UUID of the extension")
@@ -47,12 +44,12 @@ public class ExtensionResponse extends BaseResponse {
     private String type;
 
     @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "the details of the network")
+    @Param(description = "the details of the extension")
     private Map<String, String> details;
 
-    @SerializedName(ApiConstants.SCRIPT)
-    @Param(description = "the path of the script")
-    private String script;
+    @SerializedName(ApiConstants.EXTENSION_RESOURCE_ID)
+    @Param(description = "List of resources to which extension is registered to", responseObject = ExtensionResourceMapResponse.class)
+    private List<ExtensionResourceMapResponse> resources;
 
     @SerializedName(ApiConstants.CREATED)
     @Param(description = "Creation timestamp of the extension")
@@ -97,12 +94,12 @@ public class ExtensionResponse extends BaseResponse {
         this.details = details;
     }
 
-    public String getScriptPath() {
-        return script;
+    public List<ExtensionResourceMapResponse> getResources() {
+        return resources;
     }
 
-    public void setScriptPath(String script) {
-        this.script = script;
+    public void setResources(List<ExtensionResourceMapResponse> resources) {
+        this.resources = resources;
     }
 
     public Date getCreated() {

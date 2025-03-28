@@ -23,7 +23,6 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.hypervisor.external.provisioner.simpleprovisioner.SimpleExternalProvisioner;
 import com.cloud.hypervisor.external.provisioner.vo.Extension;
 import com.cloud.user.Account;
 import com.cloud.vm.VmDetailConstants;
@@ -97,8 +96,6 @@ public class CreateExtensionCmd extends BaseCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         Extension extension = _externalMgr.createExtension(this);
         ExtensionResponse response = new ExtensionResponse(name, type, extension.getUuid(), getExternalDetails());
-        String destinationPath = String.format(SimpleExternalProvisioner.EXTENSION_SCRIPT_PATH, extension.getId());
-        response.setScriptPath(destinationPath);
         response.setResponseName(getCommandName());
         response.setObjectName(ApiConstants.EXTENSION);
         setResponseObject(response);
