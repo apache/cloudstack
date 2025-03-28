@@ -62,5 +62,5 @@ public interface ExternalProvisioner extends Adapter {
 
     RunCustomActionAnswer runCustomAction(RunCustomActionCommand cmd);
 
-    void prepareScripts(Long extensionId);
+    void prepareScripts(Long extensionId, Long extensionResourceId);
 }

@@ -19,6 +19,35 @@ package com.cloud.hypervisor.external.provisioner.dao;
 
 import com.cloud.hypervisor.external.provisioner.vo.ExtensionResourceMapVO;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+
+import java.util.List;
 
 public class ExtensionResourceMapDaoImpl extends GenericDaoBase<ExtensionResourceMapVO, Long> implements ExtensionResourceMapDao {
-}
+    private final SearchBuilder<ExtensionResourceMapVO> genericSearch;
+
+    public ExtensionResourceMapDaoImpl() {
+        super();
+
+        genericSearch = createSearchBuilder();
+        genericSearch.and("extensionId", genericSearch.entity().getExtensionId(), SearchCriteria.Op.EQ);
+        genericSearch.and("resourceId", genericSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
+        genericSearch.and("resourceType", genericSearch.entity().getResourceType(), SearchCriteria.Op.EQ);
+        genericSearch.done();
+    }
+
+    @Override
+    public List<ExtensionResourceMapVO> listByExtensionId(long extensionId) {
+        SearchCriteria<ExtensionResourceMapVO> sc = genericSearch.create();
+        sc.setParameters("extensionId", extensionId);
+        return listBy(sc);
+    }
+
+    @Override
+    public ExtensionResourceMapVO findByResourceIdAndType(long resourceId, String resourceType) {
+        SearchCriteria<ExtensionResourceMapVO> sc = genericSearch.create();
+        sc.setParameters("resourceId", resourceId);
+        sc.setParameters("resourceType", resourceType);
+        return findOneBy(sc);
+    }}
