@@ -243,13 +243,9 @@ export default {
           message: 'message.backup.create',
           docHelp: 'adminguide/virtual_machines.html#creating-vm-backups',
           dataView: true,
-          args: ['name', 'description', 'virtualmachineid'],
           show: (record) => { return record.backupofferingid },
-          mapping: {
-            virtualmachineid: {
-              value: (record, params) => { return record.id }
-            }
-          }
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/compute/StartBackup.vue')))
         },
         {
           api: 'createBackupSchedule',
