@@ -85,6 +85,7 @@ public class AddHostCmd extends BaseCmd {
     protected Map externalDetails;
 
     private Long extensionId;
+    private Long extensionResourceId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -94,7 +95,7 @@ public class AddHostCmd extends BaseCmd {
 
     }
 
-    public AddHostCmd(Long zoneId, Long podId, Long clusterId, String hypervisor, String username, String password, String url, Map externalDetails, Long extensionid) {
+    public AddHostCmd(Long zoneId, Long podId, Long clusterId, String hypervisor, String username, String password, String url, Map externalDetails, Long extensionid, Long extensionResourceId) {
         this.zoneId = zoneId;
         this.podId = podId;
         this.clusterId = clusterId;
@@ -104,6 +105,7 @@ public class AddHostCmd extends BaseCmd {
         this.url = url;
         this.externalDetails = externalDetails;
         this.extensionId = extensionid;
+        this.extensionResourceId = extensionResourceId;
     }
 
     public Long getClusterId() {
@@ -152,6 +154,10 @@ public class AddHostCmd extends BaseCmd {
 
     public Long getExtensionId() {
         return extensionId;
+    }
+
+    public Long getExtensionResourceId() {
+        return extensionResourceId;
     }
 
     public Map<String, String> getExternalDetails() {

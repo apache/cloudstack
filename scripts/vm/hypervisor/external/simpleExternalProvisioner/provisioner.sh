@@ -18,7 +18,7 @@
 
 parse_json() {
     local json_string=$1
-    echo "$json_string" | jq '.' || { echo '{"error":"Invalid JSON input"}'; exit 1; }
+    echo "$json_string" | jq '.' > /dev/null || { echo '{"error":"Invalid JSON input"}'; exit 1; }
 }
 
 generate_random_mac() {

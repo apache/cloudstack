@@ -60,6 +60,14 @@ public class RunCustomActionCmd extends BaseAsyncCmd {
             entityType = ExtensionResponse.class, description = "the extension id used to call the custom action")
     private Long extensionId;
 
+    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, required = true,
+            description = "UUID of the resource to register the extension with")
+    private String resourceId;
+
+    @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, required = true,
+            description = "Type of the resource")
+    private String resourceType;
+
     @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue", since = "4.21.0")
     protected Map externalDetails;
 
@@ -74,6 +82,14 @@ public class RunCustomActionCmd extends BaseAsyncCmd {
 
     public Long getExtensionId() {
         return extensionId;
+    }
+
+    public String getResourceId() {
+        return resourceId;
+    }
+
+    public String getResourceType() {
+        return resourceType;
     }
 
     public Map<String, String> getExternalDetails() {

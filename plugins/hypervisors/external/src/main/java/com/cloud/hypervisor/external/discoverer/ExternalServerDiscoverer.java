@@ -234,8 +234,8 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
         }
 
         ExternalProvisioner externalProvisioner = _externalAgentMgr.getExternalProvisioner(SimpleExternalProvisioner.class.getSimpleName());
-        if (details.get(ApiConstants.EXTENSION_ID) != null){
-            externalProvisioner.prepareScripts(Long.valueOf(details.get(ApiConstants.EXTENSION_ID)));
+        if (details.get(ApiConstants.EXTENSION_ID) != null && details.get(ApiConstants.EXTENSION_RESOURCE_ID) != null) {
+            externalProvisioner.prepareScripts(Long.valueOf(details.get(ApiConstants.EXTENSION_ID)), Long.valueOf(details.get(ApiConstants.EXTENSION_RESOURCE_ID)));
         }
 
         return _resourceMgr.fillRoutingHostVO(host, ssCmd, Hypervisor.HypervisorType.External, details, hostTags);

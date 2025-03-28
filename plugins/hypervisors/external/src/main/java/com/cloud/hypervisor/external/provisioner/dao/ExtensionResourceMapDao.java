@@ -20,5 +20,10 @@ package com.cloud.hypervisor.external.provisioner.dao;
 import com.cloud.hypervisor.external.provisioner.vo.ExtensionResourceMapVO;
 import com.cloud.utils.db.GenericDao;
 
+import java.util.List;
+
 public interface ExtensionResourceMapDao extends GenericDao<ExtensionResourceMapVO, Long> {
+    List<ExtensionResourceMapVO> listByExtensionId(long extensionId);
+
+    ExtensionResourceMapVO findByResourceIdAndType(long resourceId, String resourceType);
 }
