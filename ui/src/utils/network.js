@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Parsing CIDR into Gateway,Netmask Placehoolders
+// Parsing CIDR into Gateway,Netmask Placeholders
 
 export function getNetmaskFromCidr (cidr) {
   if (!cidr?.includes('/')) return undefined
