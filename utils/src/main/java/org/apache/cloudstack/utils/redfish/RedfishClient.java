@@ -75,8 +75,8 @@ public class RedfishClient {
     private boolean ignoreSsl;
     private int redfishRequestMaxRetries;
 
-    private final static String SYSTEMS_URL_PATH = "redfish/v1/Systems/";
-    private final static String COMPUTER_SYSTEM_RESET_URL_PATH = "/Actions/ComputerSystem.Reset";
+    private final static String SYSTEMS_URL_PATH = "redfish/v1/Systems";
+    private final static String COMPUTER_SYSTEM_RESET_URL_PATH = "Actions/ComputerSystem.Reset";
     private final static String REDFISH_RESET_TYPE = "ResetType";
     private final static String POWER_STATE = "PowerState";
     private final static String APPLICATION_JSON = "application/json";
@@ -265,12 +265,12 @@ public class RedfishClient {
             if (StringUtils.isBlank(resourceId)) {
                 throw new RedfishException(String.format("Command '%s' requires a valid resource ID '%s'.", cmd, resourceId));
             }
-            return String.format("%s%s", SYSTEMS_URL_PATH, resourceId);
+            return String.format("%s/%s", SYSTEMS_URL_PATH, resourceId);
         case ComputerSystemReset:
             if (StringUtils.isBlank(resourceId)) {
                 throw new RedfishException(String.format("Command '%s' requires a valid resource ID '%s'.", cmd, resourceId));
             }
-            return String.format("%s%s%s", SYSTEMS_URL_PATH, resourceId, COMPUTER_SYSTEM_RESET_URL_PATH);
+            return String.format("%s/%s/%s", SYSTEMS_URL_PATH, resourceId, COMPUTER_SYSTEM_RESET_URL_PATH);
         default:
             throw new RedfishException(String.format("Redfish client does not support command '%s'.", cmd));
         }
