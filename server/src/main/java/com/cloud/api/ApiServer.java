@@ -750,6 +750,11 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         // BaseAsyncCreateCmd: cmd params are processed and create() is called, then same workflow as BaseAsyncCmd.
         // BaseAsyncCmd: cmd is processed and submitted as an AsyncJob, job related info is serialized and returned.
         if (cmdObj instanceof BaseAsyncCmd) {
+            if (!asyncMgr.isAsyncJobsEnabled()) {
+                String msg = "Maintenance or Shutdown has been initiated on this management server. Can not accept new jobs";
+                logger.warn(msg);
+                throw new ServerApiException(ApiErrorCode.SERVICE_UNAVAILABLE, msg);
+            }
             Long objectId = null;
             String objectUuid = null;
             if (cmdObj instanceof BaseAsyncCreateCmd) {

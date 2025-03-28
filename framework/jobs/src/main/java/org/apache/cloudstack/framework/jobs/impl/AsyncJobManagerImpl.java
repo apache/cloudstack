@@ -237,7 +237,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             }
         }
 
-        throw new CloudRuntimeException("Maintenance or Shutdown has been initiated on this management server. Can not accept new jobs");
+        throw new CloudRuntimeException("Maintenance or Shutdown has been initiated on this management server. Can not accept new async jobs");
     }
 
     private boolean checkSyncQueueItemAllowed(SyncQueueItemVO item) {

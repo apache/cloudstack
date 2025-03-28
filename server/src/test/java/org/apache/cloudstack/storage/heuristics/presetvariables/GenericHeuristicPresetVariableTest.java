@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,41 +14,27 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
 
-package com.cloud.agent.api;
+package org.apache.cloudstack.storage.heuristics.presetvariables;
 
-import java.util.List;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
-public class PingAnswer extends Answer {
-    private PingCommand _command = null;
+@RunWith(MockitoJUnitRunner.class)
+public class GenericHeuristicPresetVariableTest {
 
-    private boolean sendStartup = false;
-    private List<String> avoidMsList;
+    @Test
+    public void toStringTestReturnsValidJson() {
+        GenericHeuristicPresetVariable variable = new GenericHeuristicPresetVariable();
+        variable.setName("test name");
 
-    protected PingAnswer() {
+        String expected = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(variable, "name");
+        String result = variable.toString();
+
+        Assert.assertEquals(expected, result);
     }
 
-    public PingAnswer(PingCommand cmd, List<String> avoidMsList, boolean sendStartup) {
-        super(cmd);
-        _command = cmd;
-        this.sendStartup = sendStartup;
-        this.avoidMsList = avoidMsList;
-    }
-
-    public PingCommand getCommand() {
-        return _command;
-    }
-
-    public boolean isSendStartup() {
-        return sendStartup;
-    }
-
-    public void setSendStartup(boolean sendStartup) {
-        this.sendStartup = sendStartup;
-    }
-
-    public List<String> getAvoidMsList() {
-        return avoidMsList;
-    }
 }
