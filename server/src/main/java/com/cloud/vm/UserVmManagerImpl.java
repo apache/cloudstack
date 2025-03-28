@@ -757,19 +757,21 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isWindows;
         Long hostId;
         String networkCidr;
+        String macAddress;
 
-        public VmIpAddrFetchThread(long vmId, long nicId, String instanceName, boolean windows, Long hostId, String networkCidr) {
+        public VmIpAddrFetchThread(long vmId, long nicId, String instanceName, boolean windows, Long hostId, String networkCidr, String macAddress) {
             this.vmId = vmId;
             this.nicId = nicId;
             this.vmName = instanceName;
             this.isWindows = windows;
             this.hostId = hostId;
             this.networkCidr = networkCidr;
+            this.macAddress = macAddress;
         }
 
         @Override
         protected void runInContext() {
-            GetVmIpAddressCommand cmd = new GetVmIpAddressCommand(vmName, networkCidr, isWindows);
+            GetVmIpAddressCommand cmd = new GetVmIpAddressCommand(vmName, networkCidr, isWindows, macAddress);
             boolean decrementCount = true;
 
             try {
@@ -2397,9 +2399,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private void loadVmDetailsInMapForExternalDhcpIp() {
 
         List<NetworkVO> networks = _networkDao.listByGuestType(Network.GuestType.Shared);
+        networks.addAll(_networkDao.listByGuestType(Network.GuestType.L2));
 
         for (NetworkVO network: networks) {
-            if(_networkModel.isSharedNetworkWithoutServices(network.getId())) {
+            if (GuestType.L2.equals(network.getGuestType()) || _networkModel.isSharedNetworkWithoutServices(network.getId())) {
                 List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
 
                 for (NicVO nic : nics) {
@@ -2642,7 +2645,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
 
                             _vmIpFetchThreadExecutor.execute(new VmIpAddrFetchThread(vmId, nicId, vmInstance.getInstanceName(),
-                                    isWindows, vm.getHostId(), network.getCidr()));
+                                    isWindows, vm.getHostId(), network.getCidr(), nicVo.getMacAddress()));
 
                         }
                     } catch (Exception e) {
@@ -3279,7 +3282,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             final List<NicVO> nics = _nicDao.listByVmId(vmId);
             for (NicVO nic : nics) {
                 Network network = _networkModel.getNetwork(nic.getNetworkId());
-                if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
+                if (GuestType.L2.equals(network.getGuestType()) || _networkModel.isSharedNetworkWithoutServices(network.getId())) {
                     s_logger.debug("Adding vm " +vmId +" nic id "+ nic.getId() +" into vmIdCountMap as part of vm " +
                             "reboot for vm ip fetch ");
                     vmIdCountMap.put(nic.getId(), new VmAndCountDetails(nic.getInstanceId(), VmIpFetchTrialMax.value()));
@@ -5202,7 +5205,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
                 for (NicVO nic : nics) {
                     Network network = _networkModel.getNetwork(nic.getNetworkId());
-                    if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
+                    if (GuestType.L2.equals(network.getGuestType()) || _networkModel.isSharedNetworkWithoutServices(network.getId())) {
                         vmIdCountMap.put(nic.getId(), new VmAndCountDetails(nic.getInstanceId(), VmIpFetchTrialMax.value()));
                     }
                 }
