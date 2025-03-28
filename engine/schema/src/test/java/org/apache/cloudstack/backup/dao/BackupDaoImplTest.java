@@ -127,6 +127,7 @@ public class BackupDaoImplTest {
         VMInstanceVO vm = new VMInstanceVO(vmId, 0L, "test-vm", "test-vm", VirtualMachine.Type.User,
                 0L, Hypervisor.HypervisorType.Simulator, 0L, domainId, accountId, 0L, false);
         vm.setDataCenterId(zoneId);
+        vm.setBackupOfferingId(offeringId);
 
         AccountVO account = new AccountVO();
         account.setUuid("account-uuid");
