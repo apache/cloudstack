@@ -344,6 +344,7 @@ import { api } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import Status from '@/components/widgets/Status'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { getNetmaskFromCidr } from '@/utils/network'
 
 export default {
   name: 'VpcTiersTab',
@@ -620,42 +621,10 @@ export default {
       this.fetchNetworkAclList()
       this.fetchNetworkOfferings()
       const cidr = this.resource.cidr
-      if (cidr && cidr.includes('/')) {
-        const [address, maskBits] = cidr.split('/')
-        const prefix = Number(maskBits)
+      if (cidr?.includes('/')) {
+        const netmask = getNetmaskFromCidr(cidr)
 
-        const subnetMasks = {
-          8: '255.0.0.0',
-          9: '255.128.0.0',
-          10: '255.192.0.0',
-          11: '255.224.0.0',
-          12: '255.240.0.0',
-          13: '255.248.0.0',
-          14: '255.252.0.0',
-          15: '255.254.0.0',
-          16: '255.255.0.0',
-          17: '255.255.128.0',
-          18: '255.255.192.0',
-          19: '255.255.224.0',
-          20: '255.255.240.0',
-          21: '255.255.248.0',
-          22: '255.255.252.0',
-          23: '255.255.254.0',
-          24: '255.255.255.0',
-          25: '255.255.255.128',
-          26: '255.255.255.192',
-          27: '255.255.255.224',
-          28: '255.255.255.240',
-          29: '255.255.255.248',
-          30: '255.255.255.252',
-          31: '255.255.255.254',
-          32: '255.255.255.255'
-        }
-
-        const cidrValue = `${address}/${maskBits}`
-        const netmask = subnetMasks[prefix] || '255.255.255.0'
-
-        this.gatewayPlaceholder = this.$t('label.create.tier.gateway.description', { value: cidrValue })
+        this.gatewayPlaceholder = this.$t('label.create.tier.gateway.description', { value: cidr })
         this.netmaskPlaceholder = this.$t('label.create.tier.netmask.description', { value: netmask })
       }
 
