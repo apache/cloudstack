@@ -269,6 +269,7 @@ public class ApiConstants {
     public static final String INTERNAL_DNS2 = "internaldns2";
     public static final String INTERNET_PROTOCOL = "internetprotocol";
     public static final String INTERVAL_TYPE = "intervaltype";
+    public static final String INSTANCE_LEASE_ENABLED = "instanceleaseenabled";
     public static final String LOCATION_TYPE = "locationtype";
     public static final String IOPS_READ_RATE = "iopsreadrate";
     public static final String IOPS_READ_RATE_MAX = "iopsreadratemax";
@@ -520,6 +521,10 @@ public class ApiConstants {
     public static final String USED_SUBNETS = "usedsubnets";
     public static final String USED_IOPS = "usediops";
     public static final String USER_DATA = "userdata";
+    public static final String INSTANCE_LEASE_DURATION = "leaseduration";
+    public static final String INSTANCE_LEASE_EXPIRY_DATE= "leaseexpirydate";
+    public static final String INSTANCE_LEASE_EXPIRY_ACTION = "leaseexpiryaction";
+    public static final String LEASED = "leased";
 
     public static final String USER_DATA_NAME = "userdataname";
     public static final String USER_DATA_ID = "userdataid";
