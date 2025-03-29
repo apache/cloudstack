@@ -43,6 +43,7 @@ import com.cloud.bgp.ASNumber;
 import com.cloud.bgp.ASNumberRange;
 import com.cloud.dc.ASNumberRangeVO;
 import com.cloud.dc.ASNumberVO;
+import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.ASNumberDao;
 import com.cloud.dc.dao.ASNumberRangeDao;
@@ -1530,6 +1531,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         clusterResponse.setCpuOvercommitRatio(cpuOvercommitRatio);
         clusterResponse.setMemoryOvercommitRatio(memoryOvercommitRatio);
         clusterResponse.setResourceDetails(_clusterDetailsDao.findDetails(cluster.getId()));
+        if (Hypervisor.HypervisorType.External.equals(cluster.getHypervisorType())) {
+            ClusterDetailsVO detail = _clusterDetailsDao.findDetail(cluster.getId(), ApiConstants.EXTERNAL_PROVISIONER);
+            clusterResponse.setExternalProvisioner(detail.getValue());
+        }
+
         if (cluster.getArch() != null) {
             clusterResponse.setArch(cluster.getArch().getType());
         }
