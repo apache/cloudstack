@@ -76,7 +76,7 @@ public abstract class DownloadActiveState extends DownloadState {
             getDownloadListener().log("handleTimeout, updateMs=" + updateMs + ", curr state= " + getName(), Level.TRACE);
         }
         String newState = getName();
-        if (updateMs > 5 * DownloadListener.STATUS_POLL_INTERVAL) {
+        if (updateMs > DownloadListener.DOWNLOAD_TIMEOUT) {
             newState = Status.DOWNLOAD_ERROR.toString();
             getDownloadListener().log("timeout: transitioning to download error state, currstate=" + getName(), Level.DEBUG);
         } else if (updateMs > 3 * DownloadListener.STATUS_POLL_INTERVAL) {
