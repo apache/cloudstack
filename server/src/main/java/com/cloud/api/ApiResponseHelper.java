@@ -1718,6 +1718,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (template != null) {
                 vmResponse.setTemplateId(template.getUuid());
                 vmResponse.setTemplateName(template.getName());
+                vmResponse.setArch(template.getArch().getType());
             }
             vmResponse.setCreated(vm.getCreated());
             vmResponse.setHypervisor(vm.getHypervisorType().getHypervisorDisplayName());

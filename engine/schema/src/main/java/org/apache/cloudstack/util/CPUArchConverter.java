@@ -21,7 +21,7 @@ import com.cloud.cpu.CPU;
 import javax.persistence.AttributeConverter;
 import javax.persistence.Converter;
 
-@Converter
+@Converter(autoApply = true)
 public class CPUArchConverter implements AttributeConverter<CPU.CPUArch, String> {
 
     @Override
