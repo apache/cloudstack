@@ -5756,7 +5756,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 if (toolsStatus == VirtualMachineToolsStatus.TOOLS_NOT_INSTALLED) {
                     details += "Vmware tools not installed.";
                 } else {
-                    var normalizedMac = cmd.getVmNetworkMac().replaceAll("-", ":");
+                    var normalizedMac = cmd.getVmNicMac().replaceAll("-", ":");
                     for(var guestInfoNic : guestInfo.getNet()) {
                         var normalizedNicMac = guestInfoNic.getMacAddress().replaceAll("-", ":");
                         if (!result && normalizedNicMac.equalsIgnoreCase(normalizedMac)) {
