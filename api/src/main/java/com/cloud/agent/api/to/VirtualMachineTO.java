@@ -61,7 +61,7 @@ public class VirtualMachineTO {
     @LogLevel(LogLevel.Log4jLevel.Off)
     String vncPassword;
     String vncAddr;
-    Map<String, String> params;
+    Map<String, String> details;
     String uuid;
     String bootType;
     String bootMode;
@@ -191,7 +191,11 @@ public class VirtualMachineTO {
         return maxSpeed;
     }
 
-    public boolean getLimitCpuUse() {
+    public boolean isEnableHA() {
+        return enableHA;
+    }
+
+    public boolean isLimitCpuUse() {
         return limitCpuUse;
     }
 
@@ -289,11 +293,11 @@ public class VirtualMachineTO {
     }
 
     public Map<String, String> getDetails() {
-        return params;
+        return details;
     }
 
     public void setDetails(Map<String, String> params) {
-        this.params = params;
+        this.details = params;
     }
 
     public String getUuid() {

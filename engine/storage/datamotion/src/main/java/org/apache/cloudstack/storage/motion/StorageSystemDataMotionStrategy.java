@@ -32,6 +32,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.CheckVirtualMachineAnswer;
+import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
@@ -2011,6 +2013,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     @Override
     public void copyAsync(Map<VolumeInfo, DataStore> volumeDataStoreMap, VirtualMachineTO vmTO, Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
         String errMsg = null;
+        boolean success = false;
+        Map<VolumeInfo, VolumeInfo> srcVolumeInfoToDestVolumeInfo = new HashMap<>();
 
         try {
             if (srcHost.getHypervisorType() != HypervisorType.KVM) {
@@ -2024,7 +2028,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             List<MigrateDiskInfo> migrateDiskInfoList = new ArrayList<MigrateDiskInfo>();
 
             Map<String, MigrateCommand.MigrateDiskInfo> migrateStorage = new HashMap<>();
-            Map<VolumeInfo, VolumeInfo> srcVolumeInfoToDestVolumeInfo = new HashMap<>();
 
             boolean managedStorageDestination = false;
             boolean migrateNonSharedInc = false;
@@ -2140,20 +2143,38 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
             migrateCommand.setAutoConvergence(kvmAutoConvergence);
 
-            MigrateAnswer migrateAnswer = (MigrateAnswer)agentManager.send(srcHost.getId(), migrateCommand);
-
-            boolean success = migrateAnswer != null && migrateAnswer.getResult();
+            MigrateAnswer migrateAnswer = null;
+            try {
+                migrateAnswer = (MigrateAnswer)agentManager.send(srcHost.getId(), migrateCommand);
+                success = migrateAnswer != null && migrateAnswer.getResult();
+            } catch (OperationTimedoutException ex) {
+                if (HypervisorType.KVM.equals(vm.getHypervisorType())) {
+                    final Answer answer = agentManager.send(destHost.getId(), new CheckVirtualMachineCommand(vm.getInstanceName()));
+                    if (answer != null && answer.getResult() && answer instanceof CheckVirtualMachineAnswer) {
+                        final CheckVirtualMachineAnswer vmAnswer = (CheckVirtualMachineAnswer)answer;
+                        if (VirtualMachine.PowerState.PowerOn.equals(vmAnswer.getState())) {
+                            logger.info(String.format("Vm %s is found on destination host %s. Migration is successful", vm, destHost));
+                            success = true;
+                        }
+                    }
+                }
+                if (!success) {
+                    throw ex;
+                }
+            }
 
             handlePostMigration(success, srcVolumeInfoToDestVolumeInfo, vmTO, destHost);
 
-            if (migrateAnswer == null) {
-                throw new CloudRuntimeException("Unable to get an answer to the migrate command");
-            }
+            if (!success) {
+                if (migrateAnswer == null) {
+                    throw new CloudRuntimeException("Unable to get an answer to the migrate command");
+                }
 
-            if (!migrateAnswer.getResult()) {
-                errMsg = migrateAnswer.getDetails();
+                if (!migrateAnswer.getResult()) {
+                    errMsg = migrateAnswer.getDetails();
 
-                throw new CloudRuntimeException(errMsg);
+                    throw new CloudRuntimeException(errMsg);
+                }
             }
         } catch (AgentUnavailableException | OperationTimedoutException | CloudRuntimeException ex) {
             String volumesAndStorages = volumeDataStoreMap.entrySet().stream().map(entry -> formatEntryOfVolumesAndStoragesAsJsonToDisplayOnLog(entry)).collect(Collectors.joining(","));
@@ -2163,6 +2184,15 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             throw new CloudRuntimeException(errMsg);
         } finally {
+            if (!success && !srcVolumeInfoToDestVolumeInfo.isEmpty()) {
+                for (VolumeInfo destVolumeInfo : srcVolumeInfoToDestVolumeInfo.values()) {
+                    logger.info(String.format("Expunging dest volume [id: %s, state: %s] as part of failed VM migration with volumes command for VM [%s].", destVolumeInfo.getId(), destVolumeInfo.getState(), vmTO.getId()));
+                    destVolumeInfo.processEvent(Event.OperationFailed);
+                    destVolumeInfo.processEvent(Event.DestroyRequested);
+                    _volumeService.expungeVolumeAsync(destVolumeInfo);
+                }
+            }
+
             CopyCmdAnswer copyCmdAnswer = new CopyCmdAnswer(errMsg);
 
             CopyCommandResult result = new CopyCommandResult(null, copyCmdAnswer);
@@ -2372,6 +2402,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         newVol.setPodId(storagePoolVO.getPodId());
         newVol.setPoolId(storagePoolVO.getId());
         newVol.setLastPoolId(lastPoolId);
+        newVol.setLastId(volume.getId());
 
         if (volume.getPassphraseId() != null) {
             newVol.setPassphraseId(volume.getPassphraseId());
