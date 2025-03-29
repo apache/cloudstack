@@ -38,21 +38,36 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import com.cloud.agent.api.to.DiskTO;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostDatastoreBrowserMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachine;
 import com.vmware.vim25.FileInfo;
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
 import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
+import com.vmware.vim25.ParaVirtualSCSIController;
+import com.vmware.vim25.VirtualAHCIController;
+import com.vmware.vim25.VirtualCdrom;
+import com.vmware.vim25.VirtualDisk;
+import com.vmware.vim25.VirtualIDEController;
+import com.vmware.vim25.VirtualLsiLogicController;
+import com.vmware.vim25.VirtualNVMEController;
+import org.apache.cloudstack.storage.DiskControllerMappingVO;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsAnswer;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -144,6 +159,8 @@ public class VmwareResourceTest {
     @Mock
     VirtualMachineTO vmSpec;
     @Mock
+    DiskTO diskTo;
+    @Mock
     VmwareHypervisorHost hyperHost;
     @Mock
     VirtualMachineMO vmMo;
@@ -185,6 +202,8 @@ public class VmwareResourceTest {
     VimPortType vimService;
     @Mock
     HostCapability hostCapability;
+    @Mock
+    VirtualMachineDiskInfo virtualMachineDiskInfo;
 
     CopyCommand storageCmd;
     EnumMap<VmwareStorageProcessorConfigurableFields, Object> params = new EnumMap<VmwareStorageProcessorConfigurableFields,Object>(VmwareStorageProcessorConfigurableFields.class);
@@ -232,6 +251,8 @@ public class VmwareResourceTest {
         when(context.getService()).thenReturn(vimService);
         when(vimService.queryTargetCapabilities(envRef, hostRef)).thenReturn(hostCapability);
         when(hostCapability.isNestedHVSupported()).thenReturn(true);
+
+        configureSupportedDiskControllersForTests();
     }
 
     @After
@@ -841,5 +862,360 @@ public class VmwareResourceTest {
         assertEquals(Collections.singletonList(false), answer.getIsDirs());
         assertEquals(Collections.singletonList(1L), answer.getSizes());
         assertEquals(Collections.singletonList(date.getTime()), answer.getLastModified());
+    }
+
+    private void configureSupportedDiskControllersForTests() {
+        DiskControllerMappingVO osdefaultMapping = new DiskControllerMappingVO();
+        osdefaultMapping.setName("osdefault");
+        osdefaultMapping.setControllerReference("osdefault");
+
+        DiskControllerMappingVO ideMapping = new DiskControllerMappingVO();
+        ideMapping.setName("ide");
+        ideMapping.setControllerReference(VirtualIDEController.class.getName());
+        ideMapping.setBusName("ide");
+        ideMapping.setMaxDeviceCount(2);
+        ideMapping.setMaxControllerCount(2);
+
+        DiskControllerMappingVO lsilogicMapping = new DiskControllerMappingVO();
+        lsilogicMapping.setName("lsilogic");
+        lsilogicMapping.setControllerReference(VirtualLsiLogicController.class.getName());
+        lsilogicMapping.setBusName("scsi");
+        lsilogicMapping.setMaxDeviceCount(16);
+        lsilogicMapping.setMaxControllerCount(4);
+
+        DiskControllerMappingVO pvscsiMapping = new DiskControllerMappingVO();
+        pvscsiMapping.setName("pvscsi");
+        pvscsiMapping.setControllerReference(ParaVirtualSCSIController.class.getName());
+        pvscsiMapping.setBusName("scsi");
+        pvscsiMapping.setMaxDeviceCount(16);
+        pvscsiMapping.setMaxControllerCount(4);
+        pvscsiMapping.setMinHardwareVersion("7");
+
+        DiskControllerMappingVO sataMapping = new DiskControllerMappingVO();
+        sataMapping.setName("sata");
+        sataMapping.setControllerReference(VirtualAHCIController.class.getName());
+        sataMapping.setBusName("sata");
+        sataMapping.setMaxDeviceCount(30);
+        sataMapping.setMaxControllerCount(4);
+        sataMapping.setMinHardwareVersion("10");
+
+        DiskControllerMappingVO nvmeMapping = new DiskControllerMappingVO();
+        nvmeMapping.setName("nvme");
+        nvmeMapping.setControllerReference(VirtualNVMEController.class.getName());
+        nvmeMapping.setBusName("nvme");
+        nvmeMapping.setMaxDeviceCount(15);
+        nvmeMapping.setMaxControllerCount(4);
+        nvmeMapping.setMinHardwareVersion("13");
+
+        VmwareHelper.setSupportedDiskControllers(List.of(osdefaultMapping, ideMapping, lsilogicMapping, pvscsiMapping, sataMapping, nvmeMapping));
+    }
+
+    private Set<DiskControllerMappingVO> getRequiredDiskControllersForValidateRequiredVirtualHardwareVersionForNewDiskControllersTests() {
+        DiskControllerMappingVO lsilogicMapping = VmwareHelper.getDiskControllerMapping("lsilogic", null);
+        DiskControllerMappingVO nvmeMapping = VmwareHelper.getDiskControllerMapping("nvme", null);
+        Set<DiskControllerMappingVO> requiredDiskControllers = new HashSet<>();
+        requiredDiskControllers.add(lsilogicMapping);
+        requiredDiskControllers.add(nvmeMapping);
+        return requiredDiskControllers;
+    }
+
+    @Test
+    public void validateRequiredVirtualHardwareVersionForNewDiskControllersTestDoesNothingWhenControllerWithSupportedVirtualHardwareVersionIsRequired() throws Exception {
+        Set<DiskControllerMappingVO> requiredDiskControllers = getRequiredDiskControllersForValidateRequiredVirtualHardwareVersionForNewDiskControllersTests();
+        Mockito.when(vmMo.getVirtualHardwareVersion()).thenReturn(13);
+
+        vmwareResource.validateRequiredVirtualHardwareVersionForNewDiskControllers(vmMo, requiredDiskControllers);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void validateRequiredVirtualHardwareVersionForNewDiskControllersTestThrowsExceptionWhenControllerWithGreaterVirtualHardwareVersionIsRequired() throws Exception {
+        Set<DiskControllerMappingVO> requiredDiskControllers = getRequiredDiskControllersForValidateRequiredVirtualHardwareVersionForNewDiskControllersTests();
+        Mockito.when(vmMo.getVirtualHardwareVersion()).thenReturn(8);
+
+        vmwareResource.validateRequiredVirtualHardwareVersionForNewDiskControllers(vmMo, requiredDiskControllers);
+    }
+
+    private void createDisksForValidateNewDiskControllersSupportExistingDisksTests(int numberOfDisks) throws Exception {
+        List<VirtualDisk> virtualDisks = new ArrayList<>();
+        for (int i = 0; i < numberOfDisks; i++) {
+            virtualDisks.add(new VirtualDisk());
+        }
+        Mockito.when(vmMo.getVirtualDisks()).thenReturn(virtualDisks);
+    }
+
+    @Test
+    public void validateNewDiskControllersSupportExistingDisksTestDoesNothingWhenBothControllersAreTheSameAndMaximumDevicesAreOnTheBus() throws Exception {
+        DiskControllerMappingVO ideMapping = VmwareHelper.getDiskControllerMapping("ide", null);
+        Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo = new Pair<>(ideMapping, ideMapping);
+        createDisksForValidateNewDiskControllersSupportExistingDisksTests(4);
+
+        vmwareResource.validateNewDiskControllersSupportExistingDisks(vmMo, controllerInfo);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void validateNewDiskControllersSupportExistingDisksTestThrowsExceptionWhenBothControllersAreTheSameAndMoreThanMaximumDevicesAreOnTheBus() throws Exception {
+        DiskControllerMappingVO ideMapping = VmwareHelper.getDiskControllerMapping("ide", null);
+        Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo = new Pair<>(ideMapping, ideMapping);
+        Mockito.when(vmMo.getIsoDevice()).thenReturn(new VirtualCdrom());
+        createDisksForValidateNewDiskControllersSupportExistingDisksTests(4);
+
+        vmwareResource.validateNewDiskControllersSupportExistingDisks(vmMo, controllerInfo);
+    }
+
+    @Test
+    public void validateNewDiskControllersSupportExistingDisksTestDoesNothingWhenControllersAreNotTheSameAndMaximumDevicesAreOnDataDiskBus() throws Exception {
+        DiskControllerMappingVO nvmeMapping = VmwareHelper.getDiskControllerMapping("nvme", null);
+        DiskControllerMappingVO ideMapping = VmwareHelper.getDiskControllerMapping("ide", null);
+        Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo = new Pair<>(nvmeMapping, ideMapping);
+        createDisksForValidateNewDiskControllersSupportExistingDisksTests(5);
+
+        vmwareResource.validateNewDiskControllersSupportExistingDisks(vmMo, controllerInfo);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void validateNewDiskControllersSupportExistingDisksTestThrowsExceptionWhenBothControllersAreNotTheSameAndMoreThanMaximumDevicesAreOnDataDiskBus() throws Exception {
+        DiskControllerMappingVO nvmeMapping = VmwareHelper.getDiskControllerMapping("nvme", null);
+        DiskControllerMappingVO ideMapping = VmwareHelper.getDiskControllerMapping("ide", null);
+        Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo = new Pair<>(nvmeMapping, ideMapping);
+        Mockito.when(vmMo.getIsoDevice()).thenReturn(new VirtualCdrom());
+        createDisksForValidateNewDiskControllersSupportExistingDisksTests(5);
+
+        vmwareResource.validateNewDiskControllersSupportExistingDisks(vmMo, controllerInfo);
+    }
+
+    @Test
+    public void getMaxSupportedDevicesInBusTestExpectedValueWhenBusIsNotScsi() {
+        DiskControllerMappingVO nvmeMapping = VmwareHelper.getDiskControllerMapping("nvme", null);
+
+        int result = vmwareResource.getMaxSupportedDevicesInBus(nvmeMapping);
+
+        Assert.assertEquals(nvmeMapping.getMaxControllerCount() * nvmeMapping.getMaxDeviceCount(), result);
+    }
+
+    @Test
+    public void getMaxSupportedDevicesInBusTestExpectedValueWhenBusIsScsi() {
+        DiskControllerMappingVO lsilogicMapping = VmwareHelper.getDiskControllerMapping("lsilogic", null);
+
+        int result = vmwareResource.getMaxSupportedDevicesInBus(lsilogicMapping);
+
+        Assert.assertEquals(lsilogicMapping.getMaxControllerCount() * (lsilogicMapping.getMaxDeviceCount() - 1), result);
+    }
+
+    @Test
+    public void teardownAllDiskControllersTestTearsdownAllControllersWithValidMappings() throws Exception {
+        vmwareResource.teardownAllDiskControllers(vmMo);
+
+        int numberOfConfiguredDiskControllersToTeardown = VmwareHelper.getAllSupportedDiskControllerMappingsExceptOsDefault().size() - 1;
+        Mockito.verify(vmMo, Mockito.times(1)).tearDownDevices(Mockito.argThat((Class<?>[] c) -> c.length == numberOfConfiguredDiskControllersToTeardown));
+    }
+
+    @Test
+    public void createDiskControllerUnitNumberMapTestInitializesValuesAsZeroWhenTemplateIsNotDeployAsIs() throws Exception {
+        DiskControllerMappingVO ideMapping = VmwareHelper.getDiskControllerMapping("ide", null);
+        DiskControllerMappingVO nvmeMapping = VmwareHelper.getDiskControllerMapping("nvme", null);
+        DiskControllerMappingVO lsilogicMapping = VmwareHelper.getDiskControllerMapping("lsilogic", null);
+        Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo = new Pair<>(nvmeMapping, lsilogicMapping);
+
+        Map<String, Integer> result = vmwareResource.createDiskControllerUnitNumberMap(vmMo, controllerInfo, false);
+
+        Assert.assertEquals(0, (int) result.get(ideMapping.getControllerReference()));
+        Assert.assertEquals(0, (int) result.get(nvmeMapping.getControllerReference()));
+        Assert.assertEquals(0, (int) result.get(lsilogicMapping.getControllerReference()));
+    }
+
+    @Test
+    public void createDiskControllerUnitNumberMapTestInitializesValuesAtNextAvailableUnitNumberWhenTemplateIsNotDeployAsIs() throws Exception {
+        DiskControllerMappingVO ideMapping = VmwareHelper.getDiskControllerMapping("ide", null);
+        DiskControllerMappingVO nvmeMapping = VmwareHelper.getDiskControllerMapping("nvme", null);
+        DiskControllerMappingVO lsilogicMapping = VmwareHelper.getDiskControllerMapping("lsilogic", null);
+        Mockito.doReturn(new Pair<>(100, 10)).when(vmMo).getNextAvailableControllerKeyAndDeviceNumberForType(ideMapping);
+        Mockito.doReturn(new Pair<>(200, 11)).when(vmMo).getNextAvailableControllerKeyAndDeviceNumberForType(nvmeMapping);
+        Mockito.doReturn(new Pair<>(300, 12)).when(vmMo).getNextAvailableControllerKeyAndDeviceNumberForType(lsilogicMapping);
+        Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo = new Pair<>(nvmeMapping, lsilogicMapping);
+
+        Map<String, Integer> result = vmwareResource.createDiskControllerUnitNumberMap(vmMo, controllerInfo, true);
+
+        Assert.assertEquals(10, (int) result.get(ideMapping.getControllerReference()));
+        Assert.assertEquals(11, (int) result.get(nvmeMapping.getControllerReference()));
+        Assert.assertEquals(12, (int) result.get(lsilogicMapping.getControllerReference()));
+    }
+
+    @Test
+    public void ensureDiskControllersInternalTestCallsEnsureDiskControllersWhenInstanceIsSystemVm() throws Exception {
+        Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo = new Pair<>(new DiskControllerMappingVO(), new DiskControllerMappingVO());
+        Mockito.doNothing().when(vmwareResource).ensureDiskControllers(Mockito.any(), Mockito.any(), Mockito.anyBoolean());
+
+        vmwareResource.ensureDiskControllersInternal(vmMo, true, controllerInfo, true);
+
+        Mockito.verify(vmwareResource, Mockito.times(1)).ensureDiskControllers(vmMo, controllerInfo, true);
+    }
+
+    @Test
+    public void ensureDiskControllersInternalTestCallsEnsureDiskControllersWhenTemplateIsNotDeployAsIs() throws Exception {
+        Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo = new Pair<>(new DiskControllerMappingVO(), new DiskControllerMappingVO());
+        Mockito.doNothing().when(vmwareResource).ensureDiskControllers(Mockito.any(), Mockito.any(), Mockito.anyBoolean());
+
+        vmwareResource.ensureDiskControllersInternal(vmMo, false, controllerInfo, false);
+
+        Mockito.verify(vmwareResource, Mockito.times(1)).ensureDiskControllers(vmMo, controllerInfo, false);
+    }
+
+    @Test
+    public void ensureDiskControllersInternalTestDoesNotCallEnsureDiskControllersWhenInstanceIsNotSystemVmAndTemplateIsDeployAsIs() throws Exception {
+        vmwareResource.ensureDiskControllersInternal(vmMo, false, new Pair<>(new DiskControllerMappingVO(), new DiskControllerMappingVO()), true);
+
+        Mockito.verify(vmwareResource, Mockito.never()).ensureDiskControllers(Mockito.any(), Mockito.any(), Mockito.anyBoolean());
+    }
+
+    @Test
+    public void ensureDiskControllersTestVmIsConfiguredWhenRequiredDiskControllersDoNotExist() throws Exception {
+        boolean isSystemVm = false;
+        DiskControllerMappingVO osdefaultMapping = VmwareHelper.getDiskControllerMapping("osdefault", null);
+        Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo = new Pair<>(osdefaultMapping, osdefaultMapping);
+
+        try (MockedStatic<VmwareHelper> vmwareHelperMock = Mockito.mockStatic(VmwareHelper.class)) {
+            DiskControllerMappingVO nvmeMapping = VmwareHelper.getDiskControllerMapping("nvme", null);
+            Pair<DiskControllerMappingVO, DiskControllerMappingVO> chosenDiskControllers = new Pair<>(nvmeMapping, nvmeMapping);
+            vmwareHelperMock.when(() -> VmwareHelper.chooseDiskControllers(controllerInfo, vmMo, null, null)).thenReturn(chosenDiskControllers);
+            Set<DiskControllerMappingVO> requiredDiskControllers = new HashSet<>();
+            requiredDiskControllers.add(nvmeMapping);
+            vmwareHelperMock.when(() -> VmwareHelper.getRequiredDiskControllers(chosenDiskControllers, isSystemVm)).thenReturn(requiredDiskControllers);
+            Mockito.doReturn(false).when(vmwareResource).vmHasRequiredControllers(vmMo, requiredDiskControllers);
+            Mockito.doNothing().when(vmwareResource).validateRequiredVirtualHardwareVersionForNewDiskControllers(vmMo, requiredDiskControllers);
+            Mockito.doNothing().when(vmwareResource).validateNewDiskControllersSupportExistingDisks(vmMo, chosenDiskControllers);
+            Mockito.doNothing().when(vmwareResource).teardownAllDiskControllers(vmMo);
+            Mockito.doReturn(true).when(vmMo).configureVm(Mockito.any(VirtualMachineConfigSpec.class));
+
+            vmwareResource.ensureDiskControllers(vmMo, controllerInfo, isSystemVm);
+
+            Mockito.verify(vmwareResource, Mockito.times(1)).vmHasRequiredControllers(vmMo, requiredDiskControllers);
+            Mockito.verify(vmwareResource, Mockito.times(1)).validateRequiredVirtualHardwareVersionForNewDiskControllers(vmMo, requiredDiskControllers);
+            Mockito.verify(vmwareResource, Mockito.times(1)).validateNewDiskControllersSupportExistingDisks(vmMo, chosenDiskControllers);
+            Mockito.verify(vmwareResource, Mockito.times(1)).teardownAllDiskControllers(vmMo);
+            vmwareHelperMock.verify(() -> VmwareHelper.addDiskControllersToVmConfigSpec(Mockito.any(), Mockito.any(), Mockito.anyBoolean()), Mockito.times(1));
+            Mockito.verify(vmMo, Mockito.times(1)).configureVm(Mockito.any(VirtualMachineConfigSpec.class));
+        }
+    }
+
+    @Test
+    public void ensureDiskControllersTestVmIsNotConfiguredWhenRequiredDiskControllersExist() throws Exception {
+        boolean isSystemVm = false;
+        DiskControllerMappingVO osdefaultMapping = VmwareHelper.getDiskControllerMapping("osdefault", null);
+        Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo = new Pair<>(osdefaultMapping, osdefaultMapping);
+
+        try (MockedStatic<VmwareHelper> vmwareHelperMock = Mockito.mockStatic(VmwareHelper.class)) {
+            DiskControllerMappingVO nvmeMapping = VmwareHelper.getDiskControllerMapping("nvme", null);
+            Pair<DiskControllerMappingVO, DiskControllerMappingVO> chosenDiskControllers = new Pair<>(nvmeMapping, nvmeMapping);
+            vmwareHelperMock.when(() -> VmwareHelper.chooseDiskControllers(controllerInfo, vmMo, null, null)).thenReturn(chosenDiskControllers);
+            Set<DiskControllerMappingVO> requiredDiskControllers = new HashSet<>();
+            requiredDiskControllers.add(nvmeMapping);
+            vmwareHelperMock.when(() -> VmwareHelper.getRequiredDiskControllers(chosenDiskControllers, isSystemVm)).thenReturn(requiredDiskControllers);
+            Mockito.doReturn(true).when(vmwareResource).vmHasRequiredControllers(vmMo, requiredDiskControllers);
+
+            vmwareResource.ensureDiskControllers(vmMo, controllerInfo, isSystemVm);
+
+            Mockito.verify(vmwareResource, Mockito.times(1)).vmHasRequiredControllers(vmMo, requiredDiskControllers);
+            Mockito.verify(vmwareResource, Mockito.never()).validateRequiredVirtualHardwareVersionForNewDiskControllers(vmMo, requiredDiskControllers);
+            Mockito.verify(vmwareResource, Mockito.never()).validateNewDiskControllersSupportExistingDisks(vmMo, chosenDiskControllers);
+            Mockito.verify(vmwareResource, Mockito.never()).teardownAllDiskControllers(vmMo);
+            vmwareHelperMock.verify(() -> VmwareHelper.addDiskControllersToVmConfigSpec(Mockito.any(), Mockito.any(), Mockito.anyBoolean()), Mockito.never());
+            Mockito.verify(vmMo, Mockito.never()).configureVm(Mockito.any(VirtualMachineConfigSpec.class));
+        }
+    }
+
+    @Test
+    public void vmHasRequiredControllersTestReturnsTrueWhenInstanceHasAllTheRequiredControllers() throws Exception {
+        DiskControllerMappingVO nvmeMapping = VmwareHelper.getDiskControllerMapping("nvme", null);
+        DiskControllerMappingVO lsilogicMapping = VmwareHelper.getDiskControllerMapping("lsilogic", null);
+        Set<DiskControllerMappingVO> requiredControllers = new HashSet<>();
+        requiredControllers.add(nvmeMapping);
+        requiredControllers.add(lsilogicMapping);
+        VirtualNVMEController firstExistingController = new VirtualNVMEController();
+        VirtualLsiLogicController secondExistingController = new VirtualLsiLogicController();
+        Mockito.when(vmMo.getControllers()).thenReturn(List.of(firstExistingController, secondExistingController));
+
+        boolean result = vmwareResource.vmHasRequiredControllers(vmMo, requiredControllers);
+
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void vmHasRequiredControllersTestReturnsFalseWhenInstanceDoesNotHaveAllTheRequiredControllers() throws Exception {
+        DiskControllerMappingVO sataMapping = VmwareHelper.getDiskControllerMapping("sata", null);
+        DiskControllerMappingVO pvscsiMapping = VmwareHelper.getDiskControllerMapping("pvscsi", null);
+        Set<DiskControllerMappingVO> requiredControllers = new HashSet<>();
+        requiredControllers.add(sataMapping);
+        requiredControllers.add(pvscsiMapping);
+        VirtualAHCIController firstExistingController = new VirtualAHCIController();
+        VirtualLsiLogicController secondExistingController = new VirtualLsiLogicController();
+        Mockito.when(vmMo.getControllers()).thenReturn(List.of(firstExistingController, secondExistingController));
+
+        boolean result = vmwareResource.vmHasRequiredControllers(vmMo, requiredControllers);
+
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void getControllerInfoFromVmSpecTestExpectedValues() {
+        String rootDiskControllerDetail = "nvme";
+        String dataDiskControllerDetail = "sata";
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDiskControllerDetail);
+        details.put(VmDetailConstants.DATA_DISK_CONTROLLER, dataDiskControllerDetail);
+        Mockito.when(vmSpec.getDetails()).thenReturn(details);
+        Mockito.when(vmSpec.getType()).thenReturn(VirtualMachine.Type.SecondaryStorageVm);
+
+        DiskControllerMappingVO expectedMapping = new DiskControllerMappingVO();
+        expectedMapping.setControllerReference("expected");
+        Pair<DiskControllerMappingVO, DiskControllerMappingVO> expectedResult = new Pair<>(expectedMapping, expectedMapping);
+
+        try (MockedStatic<VmwareHelper> vmwareHelperMock = Mockito.mockStatic(VmwareHelper.class)) {
+            vmwareHelperMock.when(() -> VmwareHelper.getDiskControllersFromVmSettings(rootDiskControllerDetail, dataDiskControllerDetail, true)).thenReturn(expectedResult);
+
+            Pair<DiskControllerMappingVO, DiskControllerMappingVO> result = vmwareResource.getControllerInfoFromVmSpec(vmSpec);
+
+            Assert.assertEquals(expectedResult, result);
+        }
+    }
+
+    @Test
+    public void getControllerForDiskTestChoosesControllerFromControllerInfoWhenTemplateIsNotDeployAsIs() throws Exception {
+        Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo = new Pair<>(new DiskControllerMappingVO(), new DiskControllerMappingVO());
+
+        try (MockedStatic<VmwareHelper> vmwareHelperMock = Mockito.mockStatic(VmwareHelper.class)) {
+            DiskControllerMappingVO expectedResult = new DiskControllerMappingVO();
+            expectedResult.setControllerReference("expected");
+            vmwareHelperMock.when(() -> VmwareHelper.getControllerBasedOnDiskType(controllerInfo, diskTo)).thenReturn(expectedResult);
+
+            DiskControllerMappingVO result = vmwareResource.getControllerForDisk(vmMo, null, diskTo, controllerInfo, false);
+
+            Assert.assertEquals(expectedResult, result);
+        }
+    }
+
+    @Test
+    public void getControllerForDiskTestChoosesControllerFromCurrentBusNameWhenTemplateIsDeployAsIsAndCurrentBusNameIsValid() throws Exception {
+        Mockito.when(virtualMachineDiskInfo.getDiskDeviceBusName()).thenReturn("nvme1:3");
+        Mockito.when(vmMo.getMappingsForExistingDiskControllers()).thenReturn(new HashSet<>(VmwareHelper.getAllSupportedDiskControllerMappingsExceptOsDefault()));
+        Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo = new Pair<>(new DiskControllerMappingVO(), new DiskControllerMappingVO());
+
+        DiskControllerMappingVO result = vmwareResource.getControllerForDisk(vmMo, virtualMachineDiskInfo, diskTo, controllerInfo, true);
+
+        DiskControllerMappingVO nvmeMapping = VmwareHelper.getDiskControllerMapping("nvme", null);
+        Assert.assertEquals(nvmeMapping, result);
+    }
+
+    @Test
+    public void getControllerForDiskTestChoosesAnyControllerWhenTemplateIsDeployAsIsAndBusNameIsInvalid() throws Exception {
+        Mockito.when(virtualMachineDiskInfo.getDiskDeviceBusName()).thenReturn("unmapped1:3");
+        Mockito.when(vmMo.getMappingsForExistingDiskControllers()).thenReturn(new HashSet<>(VmwareHelper.getAllSupportedDiskControllerMappingsExceptOsDefault()));
+        Pair<DiskControllerMappingVO, DiskControllerMappingVO> controllerInfo = new Pair<>(new DiskControllerMappingVO(), new DiskControllerMappingVO());
+        DiskControllerMappingVO expectedResult = new DiskControllerMappingVO();
+        expectedResult.setControllerReference("expected");
+        Mockito.when(vmMo.getAnyExistingAvailableDiskController()).thenReturn(expectedResult);
+
+        DiskControllerMappingVO result = vmwareResource.getControllerForDisk(vmMo, virtualMachineDiskInfo, diskTo, controllerInfo, true);
+
+        Assert.assertEquals(expectedResult, result);
     }
 }

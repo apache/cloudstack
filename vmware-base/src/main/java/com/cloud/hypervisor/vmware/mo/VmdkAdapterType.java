@@ -22,18 +22,6 @@ public enum VmdkAdapterType {
     buslogic,
     none;
 
-    public static VmdkAdapterType getAdapterType(DiskControllerType diskControllerType) {
-        if (diskControllerType == DiskControllerType.ide) {
-            return VmdkAdapterType.ide;
-        } else if (diskControllerType == DiskControllerType.buslogic) {
-            return VmdkAdapterType.buslogic;
-        } else if (diskControllerType == DiskControllerType.lsilogic || diskControllerType == DiskControllerType.pvscsi || diskControllerType == DiskControllerType.lsisas1068) {
-            return VmdkAdapterType.lsilogic;
-        } else {
-            return VmdkAdapterType.none;
-        }
-    }
-
     public static VmdkAdapterType getType(String vmdkAdapterType) {
         if (vmdkAdapterType == null)
             return VmdkAdapterType.none;
