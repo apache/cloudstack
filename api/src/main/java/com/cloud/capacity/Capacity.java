@@ -34,13 +34,17 @@ public interface Capacity extends InternalIdentity, Identity {
     public static final short CAPACITY_TYPE_LOCAL_STORAGE = 9;
     public static final short CAPACITY_TYPE_VIRTUAL_NETWORK_IPV6_SUBNET = 10;
     public static final short CAPACITY_TYPE_GPU = 19;
+    public static final short CAPACITY_TYPE_OBJECT_STORAGE = 20;
+    public static final short CAPACITY_TYPE_BACKUP_STORAGE = 21;
 
     public static final short CAPACITY_TYPE_CPU_CORE = 90;
 
     public static final List<Short> STORAGE_CAPACITY_TYPES = List.of(CAPACITY_TYPE_STORAGE,
             CAPACITY_TYPE_STORAGE_ALLOCATED,
             CAPACITY_TYPE_SECONDARY_STORAGE,
-            CAPACITY_TYPE_LOCAL_STORAGE);
+            CAPACITY_TYPE_LOCAL_STORAGE,
+            CAPACITY_TYPE_BACKUP_STORAGE,
+            CAPACITY_TYPE_OBJECT_STORAGE);
 
     public Long getHostOrPoolId();
 

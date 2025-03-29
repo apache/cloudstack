@@ -36,16 +36,17 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> implements UsageBackupDao {
-    protected static final String UPDATE_DELETED = "UPDATE usage_backup SET removed = ? WHERE account_id = ? AND vm_id = ? and removed IS NULL";
+    protected static final String UPDATE_DELETED = "UPDATE usage_backup SET removed = ? WHERE account_id = ? AND vm_id = ? and backup_offering_id = ? and removed IS NULL";
     protected static final String GET_USAGE_RECORDS_BY_ACCOUNT = "SELECT id, zone_id, account_id, domain_id, vm_id, backup_offering_id, size, protected_size, created, removed FROM usage_backup WHERE " +
             " account_id = ? AND ((removed IS NULL AND created <= ?) OR (created BETWEEN ? AND ?) OR (removed BETWEEN ? AND ?) " +
             " OR ((created <= ?) AND (removed >= ?)))";
 
     @Override
-    public void updateMetrics(final Long vmId, final Long size, final Long virtualSize) {
+    public void updateMetrics(final Long vmId, Long backupOfferingId, final Long size, final Long virtualSize) {
         try (TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB)) {
             SearchCriteria<UsageBackupVO> sc = this.createSearchCriteria();
             sc.addAnd("vmId", SearchCriteria.Op.EQ, vmId);
+            sc.addAnd("backupOfferingId", SearchCriteria.Op.EQ, backupOfferingId);
             UsageBackupVO vo = findOneBy(sc);
             if (vo != null) {
                 vo.setSize(size);
@@ -58,7 +59,7 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
     }
 
     @Override
-    public void removeUsage(Long accountId, Long vmId, Date eventDate) {
+    public void removeUsage(Long accountId, Long vmId, Long backupOfferingId, Date eventDate) {
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.USAGE_DB);
         try {
             txn.start();
@@ -67,6 +68,7 @@ public class UsageBackupDaoImpl extends GenericDaoBase<UsageBackupVO, Long> impl
                     pstmt.setString(1, DateUtil.getDateDisplayString(TimeZone.getTimeZone("GMT"), eventDate));
                     pstmt.setLong(2, accountId);
                     pstmt.setLong(3, vmId);
+                    pstmt.setLong(3, backupOfferingId);
                     pstmt.executeUpdate();
                 }
             } catch (SQLException e) {
