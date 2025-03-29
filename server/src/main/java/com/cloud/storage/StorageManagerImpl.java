@@ -4168,7 +4168,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 VmwareAllowParallelExecution,
                 DataStoreDownloadFollowRedirects,
                 AllowVolumeReSizeBeyondAllocation,
-                StoragePoolHostConnectWorkers
+                StoragePoolHostConnectWorkers,
+                COPY_PUBLIC_TEMPLATES_FROM_OTHER_STORAGES
         };
     }
 
