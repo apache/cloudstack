@@ -32,6 +32,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -40,6 +41,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.component.AdapterBase;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.alert.AlertService;
@@ -1820,10 +1822,6 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.hideIpAddressUsage, String.valueOf(hideIpAddressUsage), false));
         }
 
-        if (ip6GatewayCidr != null) {
-            ipv6Service.assignIpv6SubnetToNetwork(ip6Cidr, network.getId());
-        }
-
         // assign to network
         if (NetworkOffering.NetworkMode.ROUTED.equals(ntwkOff.getNetworkMode())) {
             routedIpv4Manager.assignIpv4SubnetToNetwork(network);
@@ -2326,9 +2324,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                     }
 
                     if (createVlan && network != null) {
+                        Provider networkProvider = getNetworkOfferingProvider(ntwkOff);
                         // Create vlan ip range
                         _configMgr.createVlanAndPublicIpRange(pNtwk.getDataCenterId(), network.getId(), physicalNetworkId, false, false, null, startIP, endIP, gateway, netmask, vlanId,
-                                bypassVlanOverlapCheck, null, null, startIPv6, endIPv6, ip6Gateway, ip6Cidr, ntwkOff.isForNsx());
+                                bypassVlanOverlapCheck, null, null, startIPv6, endIPv6, ip6Gateway, ip6Cidr, networkProvider);
                     }
                     if (associatedNetwork != null) {
                         _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.AssociatedNetworkId, String.valueOf(associatedNetwork.getId()), true));
@@ -2352,6 +2351,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             ExceptionUtil.rethrow(e, ResourceAllocationException.class);
             throw new IllegalStateException(e);
         }
+    }
+
+    private Provider getNetworkOfferingProvider(NetworkOffering networkOffering) {
+        if (_networkModel.isProviderForNetworkOffering(Provider.Nsx, networkOffering.getId())) {
+            return Provider.Nsx;
+        } else if (_networkModel.isProviderForNetworkOffering(Provider.Netris, networkOffering.getId())) {
+            return Provider.Netris;
+        }
+        return null;
     }
 
     @Override
@@ -3101,7 +3109,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
         // verify input parameters
         final NetworkVO network = getNetworkVO(networkId, "Specified network id doesn't exist in the system");
-
+        String prevNetworkName = network.getName();
         //perform below validation if the network is vpc network
         if (network.getVpcId() != null && networkOfferingId != null) {
             Vpc vpc = _entityMgr.findById(Vpc.class, network.getVpcId());
@@ -3585,7 +3593,15 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Network updatedNetwork = getNetwork(network.getId());
         UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_UPDATE, updatedNetwork.getAccountId(), updatedNetwork.getDataCenterId(), updatedNetwork.getId(),
                 updatedNetwork.getName(), updatedNetwork.getNetworkOfferingId(), null, updatedNetwork.getState().name(), Network.class.getName(), updatedNetwork.getUuid(), true);
+        updateProviderNetwork(updatedNetwork, prevNetworkName);
         return updatedNetwork;
+    }
+
+    private void updateProviderNetwork(Network network, String prevNetworkName) {
+        final NetworkGuru guru = AdapterBase.getAdapterByName(_networkGurus, network.getGuruName());
+        if (Objects.nonNull(guru) && !guru.update(network, prevNetworkName)) {
+            logger.error("Failed to update name of network on provider");
+        }
     }
 
     protected Pair<Integer, Integer> validateMtuOnUpdate(NetworkVO network, Long zoneId, Integer publicMtu, Integer privateMtu) {
@@ -4257,6 +4273,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                         logger.warn("Failed to add NSX provider to physical network due to:", ex.getMessage());
                     }
 
+                    // Add Netris provider
+                    try {
+                        addNetrisProviderToPhysicalNetwork(pNetwork.getId());
+                    } catch (Exception ex) {
+                        logger.warn("Failed to add Netris provider to physical network due to:", ex.getMessage());
+                    }
+
                     CallContext.current().putContextParameter(PhysicalNetwork.class, pNetwork.getUuid());
 
                     return pNetwork;
@@ -4453,7 +4476,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (network.getIsolationMethods().contains("GRE")) {
                 minVnet = MIN_GRE_KEY;
                 maxVnet = MAX_GRE_KEY;
-            } else if (network.getIsolationMethods().contains("VXLAN")) {
+            } else if (network.getIsolationMethods().contains("VXLAN") || network.getIsolationMethods().contains("Netris")) {
                 minVnet = MIN_VXLAN_VNI;
                 maxVnet = MAX_VXLAN_VNI;
                 // fail if zone already contains VNI, need to be unique per zone.
@@ -5085,11 +5108,14 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
             // validate Services
             boolean addGatewayService = false;
+            boolean isRoutedMode = enabledServices.stream().noneMatch(svc -> svc.equalsIgnoreCase(Service.SourceNat.getName()));
             for (String serviceName : enabledServices) {
                 Network.Service service = Network.Service.getService(serviceName);
                 if (service == null || service == Service.Gateway) {
                     throw new InvalidParameterValueException("Invalid Network Service specified=" + serviceName);
-                } else if (service == Service.SourceNat) {
+                } else if (service == Service.SourceNat ||
+                        (isRoutedMode && Arrays.asList(Provider.Nsx.getName().toLowerCase(Locale.ROOT),
+                        Provider.Netris.getName().toLowerCase(Locale.ROOT)).contains(providerName.toLowerCase(Locale.ROOT)))) {
                     addGatewayService = true;
                 }
 
@@ -5662,6 +5688,22 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
 
             addProviderToPhysicalNetwork(physicalNetworkId, Provider.Nsx.getName(), null, null);
             enableProvider(Provider.Nsx.getName());
+        }
+        return null;
+    }
+
+    private PhysicalNetworkServiceProvider addNetrisProviderToPhysicalNetwork(long physicalNetworkId) {
+        PhysicalNetworkVO pvo = _physicalNetworkDao.findById(physicalNetworkId);
+        DataCenterVO dvo = _dcDao.findById(pvo.getDataCenterId());
+        if (dvo.getNetworkType() == NetworkType.Advanced) {
+
+            Provider provider = Network.Provider.getProvider(Provider.Netris.getName());
+            if (provider == null) {
+                return null;
+            }
+
+            addProviderToPhysicalNetwork(physicalNetworkId, Provider.Netris.getName(), null, null);
+            enableProvider(Provider.Netris.getName());
         }
         return null;
     }
