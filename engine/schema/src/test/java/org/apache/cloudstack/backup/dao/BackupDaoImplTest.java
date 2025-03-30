@@ -19,6 +19,7 @@ package org.apache.cloudstack.backup.dao;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupOfferingVO;
@@ -111,8 +112,9 @@ public class BackupDaoImplTest {
         Long accountId = 2L;
         Long domainId = 3L;
         Long zoneId = 4L;
-        Long offeringId = 5L;
-        Long backupId = 6L;
+        Long vmOfferingId = 5L;
+        Long backupOfferingId = 6L;
+        Long backupId = 7L;
         BackupVO backup = new BackupVO();
         ReflectionTestUtils.setField(backup, "id", backupId);
         ReflectionTestUtils.setField(backup, "uuid", "backup-uuid");
@@ -120,14 +122,14 @@ public class BackupDaoImplTest {
         backup.setAccountId(accountId);
         backup.setDomainId(domainId);
         backup.setZoneId(zoneId);
-        backup.setBackupOfferingId(offeringId);
+        backup.setBackupOfferingId(backupOfferingId);
         backup.setType("Full");
         backup.setBackupIntervalType((short) Backup.Type.MANUAL.ordinal());
 
         VMInstanceVO vm = new VMInstanceVO(vmId, 0L, "test-vm", "test-vm", VirtualMachine.Type.User,
                 0L, Hypervisor.HypervisorType.Simulator, 0L, domainId, accountId, 0L, false);
         vm.setDataCenterId(zoneId);
-        vm.setBackupOfferingId(offeringId);
+        vm.setBackupOfferingId(vmOfferingId);
 
         AccountVO account = new AccountVO();
         account.setUuid("account-uuid");
@@ -148,9 +150,13 @@ public class BackupDaoImplTest {
         Mockito.when(accountDao.findByIdIncludingRemoved(accountId)).thenReturn(account);
         Mockito.when(domainDao.findByIdIncludingRemoved(domainId)).thenReturn(domain);
         Mockito.when(dataCenterDao.findByIdIncludingRemoved(zoneId)).thenReturn(zone);
-        Mockito.when(backupOfferingDao.findByIdIncludingRemoved(offeringId)).thenReturn(offering);
+        Mockito.when(backupOfferingDao.findByIdIncludingRemoved(backupOfferingId)).thenReturn(offering);
 
-        BackupResponse response = backupDao.newBackupResponse(backup, false);
+        Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.HYPERVISOR, String.valueOf(Hypervisor.HypervisorType.KVM));
+        Mockito.when(backupDetailsDao.listDetailsKeyPairs(backup.getId(), true)).thenReturn(details);
+
+        BackupResponse response = backupDao.newBackupResponse(backup, true);
 
         Assert.assertEquals("backup-uuid", response.getId());
         Assert.assertEquals("test-vm", response.getVmName());
@@ -163,5 +169,7 @@ public class BackupDaoImplTest {
         Assert.assertEquals("offering-uuid", response.getBackupOfferingId());
         Assert.assertEquals("test-offering", response.getBackupOffering());
         Assert.assertEquals("MANUAL", response.getIntervalType());
+        Assert.assertEquals("{hypervisor=KVM}", response.getVmDetails().toString());
+        Assert.assertEquals(true, response.getVmOfferingRemoved());
     }
 }

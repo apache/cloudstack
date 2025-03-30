@@ -1120,10 +1120,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 dataStore = restoreInfo.second().getUuid();
             }
             if (!backupProvider.restoreBackupToVM(vm, backup, host, dataStore)) {
-                ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_BACKUP_RESTORE_TO_VM,
-                        String.format("Failed to restore backup %s to VM %s", backup.getUuid(), vm.getInstanceName()),
-                        vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), eventId);
-                throw new CloudRuntimeException(String.format("Error restoring backup [%s] to VM %s.", backupDetailsInMessage));
+                throw new CloudRuntimeException(String.format("Error restoring backup [%s] to VM %s.", backupDetailsInMessage, vm.getUuid()));
             }
         } catch (CloudRuntimeException e) {
             updateVolumeState(vm, Volume.Event.RestoreFailed, Volume.State.Ready);
@@ -1132,7 +1129,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, vm.getAccountId(), EventVO.LEVEL_ERROR, EventTypes.EVENT_VM_BACKUP_RESTORE_TO_VM,
                     String.format("Failed to restore backup %s to VM %s", backup.getUuid(), vm.getInstanceName()),
                     vm.getId(), ApiCommandResourceType.VirtualMachine.toString(), eventId);
-            throw new CloudRuntimeException(String.format("Error restoring backup [%s] to VM %s.", backupDetailsInMessage));
+            throw new CloudRuntimeException(String.format("Error restoring backup [%s] to VM %s.", backupDetailsInMessage, vm.getUuid()));
         }
         updateVolumeState(vm, Volume.Event.RestoreSucceeded, Volume.State.Ready);
         updateVmState(vm, VirtualMachine.Event.RestoringSuccess, VirtualMachine.State.Stopped);

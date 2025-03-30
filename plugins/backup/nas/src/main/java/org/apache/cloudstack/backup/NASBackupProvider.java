@@ -97,16 +97,6 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
     @Inject
     ResourceManager resourceManager;
 
-    private Host getUpHostInZone(Long zoneId) {
-        List<HostVO> hosts = hostDao.listByDataCenterIdAndHypervisorType(zoneId, Hypervisor.HypervisorType.KVM);
-        if (CollectionUtils.isNotEmpty(hosts)) {
-            return null;
-        }
-        HostVO hostInZone = hosts.get(new Random().nextInt(hosts.size()));
-        LOG.debug("Found Host {} in zone {}", hostInZone, zoneId);
-        return hostInZone;
-    }
-
     protected Host getLastVMHypervisorHost(VirtualMachine vm) {
         Long hostId = vm.getLastHostId();
         if (hostId == null) {

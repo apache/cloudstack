@@ -299,7 +299,11 @@ public class BackupResponse extends BaseResponse {
         this.intervalType = intervalType;
     }
 
-    public void setVmOfferingRemoved(boolean vmOfferingRemoved) {
+    public Boolean getVmOfferingRemoved() {
+        return this.vmOfferingRemoved;
+    }
+
+    public void setVmOfferingRemoved(Boolean vmOfferingRemoved) {
         this.vmOfferingRemoved = vmOfferingRemoved;
     }
 }

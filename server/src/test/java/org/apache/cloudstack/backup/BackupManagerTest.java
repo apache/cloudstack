@@ -25,6 +25,7 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -66,6 +67,7 @@ import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
+import org.apache.cloudstack.api.command.user.backup.DeleteBackupScheduleCmd;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupScheduleDao;
@@ -550,6 +552,11 @@ public class BackupManagerTest {
         when(backupScheduleDao.findById(scheduleId)).thenReturn(schedule);
         when(backupScheduleDao.findByVMAndIntervalType(vmId, DateUtil.IntervalType.DAILY)).thenReturn(schedule);
 
+        VolumeVO volume = mock(VolumeVO.class);
+        when(volumeDao.findByInstance(vmId)).thenReturn(List.of(volume));
+        when(volume.getState()).thenReturn(Volume.State.Ready);
+        when(volumeApiService.getVolumePhysicalSize(null, null, null)).thenReturn(newBackupSize);
+
         BackupProvider backupProvider = mock(BackupProvider.class);
         Backup backup = mock(Backup.class);
         when(backup.getId()).thenReturn(backupId);
@@ -580,6 +587,7 @@ public class BackupManagerTest {
 
         CreateBackupCmd cmd = Mockito.mock(CreateBackupCmd.class);
         when(cmd.getVmId()).thenReturn(vmId);
+        when(cmd.getName()).thenReturn("new-backup1");
         when(cmd.getScheduleId()).thenReturn(scheduleId);
 
         try (MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
@@ -589,6 +597,9 @@ public class BackupManagerTest {
                     Mockito.anyLong(), Mockito.anyString())).thenReturn(1L);
 
             Assert.assertEquals(backupManager.createBackup(cmd), true);
+
+            Mockito.verify(resourceLimitMgr, times(1)).checkResourceLimit(account, Resource.ResourceType.backup);
+            Mockito.verify(resourceLimitMgr, times(1)).checkResourceLimit(account, Resource.ResourceType.backup_storage, newBackupSize);
 
             Mockito.verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup);
             Mockito.verify(resourceLimitMgr, times(1)).incrementResourceCount(accountId, Resource.ResourceType.backup_storage, newBackupSize);
@@ -602,6 +613,45 @@ public class BackupManagerTest {
 
     @Test (expected = ResourceAllocationException.class)
     public void testCreateBackupLimitReached() throws ResourceAllocationException {
+        Long vmId = 1L;
+        Long zoneId = 2L;
+        Long scheduleId = 3L;
+        Long backupOfferingId = 4L;
+        Long accountId = 5L;
+
+        VMInstanceVO vm = Mockito.mock(VMInstanceVO.class);
+        when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+        when(vm.getDataCenterId()).thenReturn(zoneId);
+        when(vm.getBackupOfferingId()).thenReturn(backupOfferingId);
+        when(vm.getAccountId()).thenReturn(accountId);
+
+        overrideBackupFrameworkConfigValue();
+        BackupOfferingVO offering = Mockito.mock(BackupOfferingVO.class);
+        when(backupOfferingDao.findById(backupOfferingId)).thenReturn(offering);
+        when(offering.isUserDrivenBackupAllowed()).thenReturn(true);
+
+        BackupScheduleVO schedule = mock(BackupScheduleVO.class);
+        when(schedule.getScheduleType()).thenReturn(DateUtil.IntervalType.DAILY);
+        when(backupScheduleDao.findById(scheduleId)).thenReturn(schedule);
+
+        Account account = Mockito.mock(Account.class);
+        when(account.getId()).thenReturn(accountId);
+        when(accountManager.getAccount(accountId)).thenReturn(account);
+        Mockito.doThrow(new ResourceAllocationException("", Resource.ResourceType.backup)).when(resourceLimitMgr).checkResourceLimit(account, Resource.ResourceType.backup);
+
+        CreateBackupCmd cmd = Mockito.mock(CreateBackupCmd.class);
+        when(cmd.getVmId()).thenReturn(vmId);
+        when(cmd.getScheduleId()).thenReturn(scheduleId);
+
+        backupManager.createBackup(cmd);
+
+        String msg = "Backup storage space resource limit exceeded for account id : " + accountId + ". Failed to create backup";
+        Mockito.verify(alertManager, times(1)).sendAlert(AlertManager.AlertType.ALERT_TYPE_UPDATE_RESOURCE_COUNT, 0L, 0L, msg, "Backup resource limit exceeded for account id : " + accountId
+                + ". Failed to create backups; please use updateResourceLimit to increase the limit");
+    }
+
+    @Test (expected = ResourceAllocationException.class)
+    public void testCreateBackupStorageLimitReached() throws ResourceAllocationException {
         Long vmId = 1L;
         Long zoneId = 2L;
         Long scheduleId = 3L;
@@ -964,28 +1014,87 @@ public class BackupManagerTest {
     @Test
     public void testRemoveVMFromBackupOffering() {
         Long vmId = 1L;
+        Long accountId = 2L;
+        Long zoneId = 3L;
+        Long offeringId = 4L;
+        Long backupScheduleId = 5L;
+        String vmHostName = "vm1";
+        String vmUuid = "uuid1";
+        String resourceName = "Backup-" + vmHostName + "-" + vmUuid;
+
         boolean forced = true;
 
         VMInstanceVO vm = mock(VMInstanceVO.class);
-        when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+        when(vm.getId()).thenReturn(vmId);
         when(vm.getDataCenterId()).thenReturn(1L);
-        when(vm.getBackupOfferingId()).thenReturn(2L);
+        when(vm.getBackupOfferingId()).thenReturn(offeringId);
+        when(vm.getAccountId()).thenReturn(accountId);
+        when(vm.getDataCenterId()).thenReturn(zoneId);
+        when(vm.getHostName()).thenReturn(vmHostName);
+        when(vm.getUuid()).thenReturn(vmUuid);
+        when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+        when(vmInstanceDao.update(vmId, vm)).thenReturn(true);
 
         BackupOfferingVO offering = mock(BackupOfferingVO.class);
         when(backupOfferingDao.findById(vm.getBackupOfferingId())).thenReturn(offering);
         when(offering.getProvider()).thenReturn("testbackupprovider");
         when(backupProvider.removeVMFromBackupOffering(vm)).thenReturn(true);
+        when(backupProvider.willDeleteBackupsOnOfferingRemoval()).thenReturn(true);
+        when(backupDao.listByVmId(null, vmId)).thenReturn(new ArrayList<>());
+
+        BackupScheduleVO backupSchedule = new BackupScheduleVO();
+        ReflectionTestUtils.setField(backupSchedule, "id", backupScheduleId);
+        when(backupScheduleDao.listByVM(vmId)).thenReturn(List.of(backupSchedule));
 
         overrideBackupFrameworkConfigValue();
 
-        try (MockedStatic<UsageEventUtils> ignored = Mockito.mockStatic(UsageEventUtils.class)) {
+        try (MockedStatic<UsageEventUtils> usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class)) {
             boolean result = backupManager.removeVMFromBackupOffering(vmId, forced);
 
             assertTrue(result);
             verify(vmInstanceDao, times(1)).findByIdIncludingRemoved(vmId);
             verify(backupOfferingDao, times(1)).findById(vm.getBackupOfferingId());
             verify(backupManager, times(1)).getBackupProvider("testbackupprovider");
+            verify(backupScheduleDao, times(1)).remove(backupScheduleId);
+            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_REMOVE, accountId, zoneId, vmId, resourceName,
+                    offeringId, null, null, Backup.class.getSimpleName(), vmUuid));
         }
+    }
+
+    @Test
+    public void testDeleteBackupScheduleById() {
+        Long scheduleId = 1L;
+        DeleteBackupScheduleCmd cmd = new DeleteBackupScheduleCmd();
+        ReflectionTestUtils.setField(cmd, "id", scheduleId);
+
+        BackupScheduleVO schedule = mock(BackupScheduleVO.class);
+        when(schedule.getId()).thenReturn(scheduleId);
+        when(backupScheduleDao.findById(scheduleId)).thenReturn(schedule);
+        when(backupScheduleDao.remove(scheduleId)).thenReturn(true);
+
+        boolean result = backupManager.deleteBackupSchedule(cmd);
+        assertTrue(result);
+    }
+
+    @Test
+    public void testDeleteBackupScheduleByVmId() {
+        Long vmId = 1L;
+        Long scheduleId = 2L;
+        DeleteBackupScheduleCmd cmd = new DeleteBackupScheduleCmd();
+        ReflectionTestUtils.setField(cmd, "vmId", vmId);
+
+        overrideBackupFrameworkConfigValue();
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(vmId);
+        when(vmInstanceDao.findById(vmId)).thenReturn(vm);
+        BackupScheduleVO schedule = mock(BackupScheduleVO.class);
+        when(schedule.getId()).thenReturn(scheduleId);
+        when(backupScheduleDao.listByVM(vmId)).thenReturn(List.of(schedule));
+        when(backupScheduleDao.remove(scheduleId)).thenReturn(true);
+
+        boolean result = backupManager.deleteBackupSchedule(cmd);
+        assertTrue(result);
     }
 
     @Test
@@ -1044,6 +1153,59 @@ public class BackupManagerTest {
     }
 
     @Test
+    public void testRestoreBackupToVMException() throws NoTransitionException {
+        Long backupId = 1L;
+        Long vmId = 2L;
+        Long hostId = 3L;
+        Long offeringId = 4L;
+        Long poolId = 5L;
+
+        BackupVO backup = mock(BackupVO.class);
+        when(backup.getBackupOfferingId()).thenReturn(offeringId);
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(vm.getHostId()).thenReturn(hostId);
+
+        BackupOfferingVO offering = mock(BackupOfferingVO.class);
+        BackupProvider backupProvider = mock(BackupProvider.class);
+        when(backupProvider.supportsInstanceFromBackup()).thenReturn(true);
+
+        overrideBackupFrameworkConfigValue();
+
+        when(backupDao.findById(backupId)).thenReturn(backup);
+        when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+        when(backupOfferingDao.findByIdIncludingRemoved(offeringId)).thenReturn(offering);
+        when(offering.getProvider()).thenReturn("testbackupprovider");
+        when(backupManager.getBackupProvider("testbackupprovider")).thenReturn(backupProvider);
+        when(virtualMachineManager.stateTransitTo(vm, VirtualMachine.Event.RestoringRequested, hostId)).thenReturn(true);
+        when(virtualMachineManager.stateTransitTo(vm, VirtualMachine.Event.RestoringFailed, hostId)).thenReturn(true);
+
+        VolumeVO rootVolume = mock(VolumeVO.class);
+        when(rootVolume.getPoolId()).thenReturn(poolId);
+        HostVO host = mock(HostVO.class);
+        when(hostDao.findById(hostId)).thenReturn(host);
+        StoragePoolVO pool = mock(StoragePoolVO.class);
+        when(volumeDao.findIncludingRemovedByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(List.of(rootVolume));
+        when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
+        when(rootVolume.getPoolId()).thenReturn(poolId);
+        when(volumeDao.findIncludingRemovedByInstanceAndType(vmId, Volume.Type.ROOT)).thenReturn(List.of(rootVolume));
+        when(primaryDataStoreDao.findById(poolId)).thenReturn(pool);
+        when(backupProvider.restoreBackupToVM(vm, backup, null, null)).thenReturn(false);
+
+        try (MockedStatic<ActionEventUtils> utils = Mockito.mockStatic(ActionEventUtils.class)) {
+            CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
+                    () -> backupManager.restoreBackupToVM(backupId, vmId));
+
+            verify(backupProvider, times(1)).restoreBackupToVM(vm, backup, null, null);
+            verify(virtualMachineManager, times(1)).stateTransitTo(vm, VirtualMachine.Event.RestoringRequested, hostId);
+            verify(virtualMachineManager, times(1)).stateTransitTo(vm, VirtualMachine.Event.RestoringFailed, hostId);
+        }
+    }
+
+    @Test
     public void testGetBackupStorageUsedStats() {
         Long zoneId = 1L;
         overrideBackupFrameworkConfigValue();
@@ -1056,5 +1218,31 @@ public class BackupManagerTest {
         Assert.assertEquals(Optional.ofNullable(Long.valueOf(100)), Optional.ofNullable(capacity.getUsedCapacity()));
         Assert.assertEquals(Optional.ofNullable(Long.valueOf(200)), Optional.ofNullable(capacity.getTotalCapacity()));
         Assert.assertEquals(CapacityVO.CAPACITY_TYPE_BACKUP_STORAGE, capacity.getCapacityType());
+    }
+
+    @Test
+    public void testCheckAndRemoveBackupOfferingBeforeExpunge() {
+        Long vmId = 1L;
+        Long zoneId = 2L;
+        Long offeringId = 3L;
+        String vmUuid = "uuid1";
+        String instanceName = "i-2-1-VM";
+        String backupExternalId = "backup-external-id";
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getUuid()).thenReturn(vmUuid);
+        when(vm.getBackupOfferingId()).thenReturn(offeringId);
+        when(vm.getInstanceName()).thenReturn(instanceName);
+        when(vm.getBackupExternalId()).thenReturn(backupExternalId);
+        when(vm.getDataCenterId()).thenReturn(zoneId);
+        Backup backup = mock(Backup.class);
+        when(backupDao.listByVmIdAndOffering(zoneId, vmId, offeringId)).thenReturn(List.of(backup));
+
+        CloudRuntimeException exception = Assert.assertThrows(CloudRuntimeException.class,
+                () -> backupManager.checkAndRemoveBackupOfferingBeforeExpunge(vm));
+        Assert.assertEquals("This VM [uuid: uuid1, name: i-2-1-VM] has a "
+                        + "Backup Offering [id: 3, external id: backup-external-id] with 1 backups. Please, remove the backup offering "
+                        + "before proceeding to VM exclusion!", exception.getMessage());
     }
 }
