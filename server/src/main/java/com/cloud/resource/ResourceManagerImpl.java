@@ -916,7 +916,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         details = new HashMap<>();
                     }
 
-                    details.putAll(cmdDetails);
+                    if (cmdDetails != null) {
+                        details.putAll(cmdDetails);
+                    }
                     ClusterVO clusterVO = _clusterDao.findById(clusterId);
                     if (HypervisorType.External.equals(clusterVO.getHypervisorType())) {
                         details.put(ApiConstants.EXTENSION_ID, String.valueOf(extensionid));
