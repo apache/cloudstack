@@ -48,5 +48,5 @@ public interface ExternalAgentManager extends Manager {
 
    List<ExtensionResponse> listExtensions(ListExtensionsCmd cmd);
 
-   boolean registerExtensionWithResource(RegisterExtensionCmd cmd);
+   ExtensionResponse registerExtensionWithResource(RegisterExtensionCmd cmd);
 }
