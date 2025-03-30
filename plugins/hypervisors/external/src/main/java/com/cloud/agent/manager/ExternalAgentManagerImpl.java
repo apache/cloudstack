@@ -72,6 +72,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -288,7 +289,7 @@ public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAge
     }
 
     @Override
-    public boolean registerExtensionWithResource(RegisterExtensionCmd cmd) {
+    public ExtensionResponse registerExtensionWithResource(RegisterExtensionCmd cmd) {
         String resourceId = cmd.getResourceId();
         Long extensionId = cmd.getExtensionId();
         String resourceType = cmd.getResourceType();
@@ -314,11 +315,24 @@ public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAge
                 extensionResourceMapDetailsDao.saveDetails(detailsVOList);
             }
             createRequiredResourcesForExtensionInPod(cmd, savedExtensionMap);
+
+            ExtensionVO extension = externalOrchestratorDao.findById(extensionId);
+            Map<String, String> details = externalOrchestratorDetailDao.listDetailsKeyPairs(extension.getId());
+            ExtensionResponse response = new ExtensionResponse(extension.getName(), extension.getType(), extension.getUuid(), details);
+
+            ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(pod.getId(), "pod");
+            ExtensionResourceMapResponse resourceResponse = new ExtensionResourceMapResponse(extension.getUuid(), pod.getUuid(), "pod");
+            String scriptPath = String.format(SimpleExternalProvisioner.EXTENSION_SCRIPT_PATH, extension.getId(), pod.getId());
+            resourceResponse.setScriptPath(scriptPath);
+
+            Map<String, String> resourceMapDetails = extensionResourceMapDetailsDao.listDetailsKeyPairs(extensionResourceMapVO.getId());
+            resourceResponse.setDetails(resourceMapDetails);
+
+            response.setResources(Collections.singletonList(resourceResponse));
+            return response;
         } else {
             throw new CloudRuntimeException("Currently only pod can be used to register an extension of type Orchestrator");
         }
-
-        return true;
     }
 
     private void createRequiredResourcesForExtensionInPod(RegisterExtensionCmd cmd, ExtensionResourceMapVO extensionResourceMap) {

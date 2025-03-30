@@ -97,9 +97,9 @@ public class RegisterExtensionCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        boolean success = _externalMgr.registerExtensionWithResource(this);
-        SuccessResponse response = new SuccessResponse(getCommandName());
-        response.setSuccess(success);
+        ExtensionResponse response = _externalMgr.registerExtensionWithResource(this);
+        response.setResponseName(getCommandName());
+        response.setObjectName(ApiConstants.EXTENSION);
         setResponseObject(response);
     }
 
