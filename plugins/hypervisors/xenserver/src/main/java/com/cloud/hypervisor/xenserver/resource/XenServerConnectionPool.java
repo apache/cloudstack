@@ -231,7 +231,6 @@ public class XenServerConnectionPool {
                         } catch (Exception e) {
                             LOGGER.debug("Caught exception during logout", e);
                         }
-                        conn.dispose();
                     }
                     if (!hostenabled) {
                         String msg = "Unable to create master connection, due to master Host " + ipAddress + " is not enabled";
