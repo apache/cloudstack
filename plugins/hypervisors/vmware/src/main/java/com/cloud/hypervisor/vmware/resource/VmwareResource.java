@@ -7209,7 +7209,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             ManagedObjectReference  dcMor = hyperHost.getHyperHostDatacenter();
             DatacenterMO dataCenterMo = new DatacenterMO(getServiceContext(), dcMor);
-            VirtualMachineMO vm = dataCenterMo.findVm(instanceName);
+            VirtualMachineMO vm = dataCenterMo.findVm2(instanceName);
             if (vm == null) {
                 return new PrepareUnmanageVMInstanceAnswer(cmd, false, String.format("Cannot find VM with name [%s] in datacenter [%s].", instanceName, dataCenterMo.getName()));
             }
@@ -7515,7 +7515,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
         DatacenterMO dcMo = new DatacenterMO(hyperHost.getContext(), hyperHost.getHyperHostDatacenter());
-        VirtualMachineMO vmMo = dcMo.findVm(vmInternalCSName);
+        VirtualMachineMO vmMo = dcMo.findVm2(vmInternalCSName);
         return vmMo.acquireVncTicket();
     }
 
