@@ -207,7 +207,7 @@ public class BridgeVifDriver extends VifDriverBase {
         String trafficLabel = nic.getName();
         Integer networkRateKBps = 0;
         if (libvirtVersion > ((10 * 1000 + 10))) {
-            networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
+            networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 125 : 0;
         }
 
         if (nic.getType() == Networks.TrafficType.Guest) {
