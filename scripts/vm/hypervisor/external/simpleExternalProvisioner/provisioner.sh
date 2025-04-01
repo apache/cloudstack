@@ -99,13 +99,13 @@ case $action in
         delete "$parameters"
         ;;
     start)
-        prepare "$parameters"
+        start "$parameters"
         ;;
     stop)
-        create "$parameters"
+        stop "$parameters"
         ;;
     reboot)
-        delete "$parameters"
+        reboot "$parameters"
         ;;
     status)
         status "$parameters"

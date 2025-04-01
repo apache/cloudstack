@@ -272,12 +272,11 @@ public class SimpleExternalProvisioner extends AdapterBase implements ExternalPr
     public void prepareScripts(Long extensionId, Long extensionResourceId) {
         String destinationPath = String.format(EXTENSION_SCRIPT_PATH, extensionId, extensionResourceId);
         File destinationFile = new File(destinationPath);
+        filledExtensionPath = destinationPath;
         if (destinationFile.exists()) {
             logger.info("File already exists at " + destinationPath + ", skipping copy.");
             return;
         }
-
-        filledExtensionPath = destinationPath;
 
         String destinationDir = destinationPath.substring(0, destinationPath.lastIndexOf('/'));
         Script mkdirScript = new Script(true, "/bin/mkdir", 0, logger);
