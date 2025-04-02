@@ -232,7 +232,6 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
             if (params != null) {
                 mergeConfigs(configs, params);
-                s_logger.info("configs = " + configs);
             }
         } catch (CloudRuntimeException e) {
             s_logger.error("Unhandled configuration exception: " + e.getMessage());
