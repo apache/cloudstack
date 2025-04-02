@@ -17,7 +17,7 @@
 
 <template>
   <div>
-    <a-affix :offsetTop="this.$store.getters.shutdownTriggered ? 103 : 78">
+    <a-affix :offsetTop="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 103 : 78">
       <a-card class="breadcrumb-card" style="z-index: 10">
         <a-row>
           <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px; margin-top: 10px">
@@ -402,7 +402,7 @@
       </a-modal>
     </div>
 
-    <div :style="this.$store.getters.shutdownTriggered ? 'margin-top: 24px; margin-bottom: 12px' : null">
+    <div :style="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 'margin-top: 24px; margin-bottom: 12px' : null">
       <div v-if="dataView">
         <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
         <resource-view
@@ -920,6 +920,9 @@ export default {
       this.loading = true
       if (this.$route.params && this.$route.params.id) {
         params.id = this.$route.params.id
+        if (['listNetworks'].includes(this.apiName) && 'displaynetwork' in this.$route.query) {
+          params.displaynetwork = this.$route.query.displaynetwork
+        }
         if (['listSSHKeyPairs'].includes(this.apiName)) {
           if (!this.$isValidUuid(params.id)) {
             delete params.id
@@ -1752,7 +1755,7 @@ export default {
         if (filter === 'all') {
           delete query.resourcestate
           delete query.state
-        } else if (['up', 'down', 'alert'].includes(filter)) {
+        } else if (['up', 'down', 'disconnected', 'alert'].includes(filter)) {
           delete query.resourcestate
           query.state = filter
         } else {

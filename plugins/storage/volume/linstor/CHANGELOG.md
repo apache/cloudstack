@@ -5,6 +5,35 @@ All notable changes to Linstor CloudStack plugin will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2025-03-13]
+
+### Fixed
+
+- Implemented missing delete datastore, to correctly cleanup on datastore removal
+
+## [2025-02-21]
+
+### Fixed
+
+- Always try to delete cs-...-rst resource before doing a snapshot backup
+
+## [2025-01-27]
+
+### Fixed
+
+- Use of multiple primary storages on the same linstor controller
+
+## [2025-01-20]
+
+### Fixed
+
+- Volume snapshots on zfs used the wrong dataset path to hide/unhide snapdev
+
+## [2024-12-19]
+
+### Added
+- Native CloudStack encryption support
+
 ## [2024-12-13]
 
 ### Fixed

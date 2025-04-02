@@ -248,7 +248,9 @@ public class LibvirtVMDef {
                         guestDef.append("<boot dev='" + bo + "'/>\n");
                     }
                 }
-                guestDef.append("<smbios mode='sysinfo'/>\n");
+                if (_arch == null || ! (_arch.equals("aarch64") || _arch.equals("s390x"))) { // simplification of (as ref.) (!(_arch != null && _arch.equals("s390x")) || (_arch == null || !_arch.equals("aarch64")))
+                    guestDef.append("<smbios mode='sysinfo'/>\n");
+                }
                 guestDef.append("</os>\n");
                 if (iothreads) {
                     guestDef.append(String.format("<iothreads>%s</iothreads>", NUMBER_OF_IOTHREADS));
@@ -580,7 +582,7 @@ public class LibvirtVMDef {
                 }
             }
 
-            if (_emulator != null && _emulator.endsWith("aarch64")) {
+            if (_emulator != null && (_emulator.endsWith("aarch64") || _emulator.endsWith("s390x"))) {
                 devicesBuilder.append("<controller type='pci' model='pcie-root'/>\n");
                 for (int i = 0; i < 32; i++) {
                   devicesBuilder.append("<controller type='pci' model='pcie-root-port'/>\n");
@@ -678,7 +680,7 @@ public class LibvirtVMDef {
         }
 
         public enum DiskBus {
-            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML("uml"), FDC("fdc"), SATA("sata");
+            IDE("ide"), SCSI("scsi"), VIRTIO("virtio"), XEN("xen"), USB("usb"), UML("uml"), FDC("fdc"), SATA("sata"), VIRTIOBLK("virtio-blk");
             String _bus;
 
             DiskBus(String bus) {
@@ -1652,7 +1654,7 @@ public class LibvirtVMDef {
             if (_scriptPath != null) {
                 netBuilder.append("<script path='" + _scriptPath + "'/>\n");
             }
-            if (_pxeDisable) {
+            if (_pxeDisable && !"s390x".equals(System.getProperty("os.arch"))) {
                 netBuilder.append("<rom bar='off' file=''/>");
             }
             if (_virtualPortType != null) {
@@ -2293,7 +2295,7 @@ public class LibvirtVMDef {
 
     public static class WatchDogDef {
         enum WatchDogModel {
-            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288"), ITCO("itco");
+            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288"), ITCO("itco"), NONE("none");
             String model;
 
             WatchDogModel(String model) {
@@ -2346,6 +2348,10 @@ public class LibvirtVMDef {
 
         @Override
         public String toString() {
+            if (WatchDogModel.NONE == model) {
+                // Do not add watchodogs when the model is set to none
+                return "";
+            }
             StringBuilder wacthDogBuilder = new StringBuilder();
             wacthDogBuilder.append("<watchdog model='" + model + "' action='" + action + "'/>\n");
             return wacthDogBuilder.toString();

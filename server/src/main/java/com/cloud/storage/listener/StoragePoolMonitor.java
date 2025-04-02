@@ -95,49 +95,51 @@ public class StoragePoolMonitor implements Listener {
 
     @Override
     public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
-        if (cmd instanceof StartupRoutingCommand) {
-            StartupRoutingCommand scCmd = (StartupRoutingCommand)cmd;
-            if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() ==  HypervisorType.KVM ||
+        if (!(cmd instanceof StartupRoutingCommand) || cmd.isConnectionTransferred()) {
+            return;
+        }
+
+        StartupRoutingCommand scCmd = (StartupRoutingCommand)cmd;
+        if (scCmd.getHypervisorType() == HypervisorType.XenServer || scCmd.getHypervisorType() ==  HypervisorType.KVM ||
                 scCmd.getHypervisorType() == HypervisorType.VMware || scCmd.getHypervisorType() ==  HypervisorType.Simulator ||
                 scCmd.getHypervisorType() == HypervisorType.Ovm || scCmd.getHypervisorType() == HypervisorType.Hyperv ||
                 scCmd.getHypervisorType() == HypervisorType.LXC || scCmd.getHypervisorType() == HypervisorType.Ovm3) {
-                List<StoragePoolVO> pools = _poolDao.listBy(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER);
-                List<StoragePoolVO> zoneStoragePoolsByTags = _poolDao.findZoneWideStoragePoolsByTags(host.getDataCenterId(), null, false);
-                List<StoragePoolVO> zoneStoragePoolsByHypervisor = _poolDao.findZoneWideStoragePoolsByHypervisor(host.getDataCenterId(), scCmd.getHypervisorType());
-                zoneStoragePoolsByTags.retainAll(zoneStoragePoolsByHypervisor);
-                pools.addAll(zoneStoragePoolsByTags);
-                List<StoragePoolVO> zoneStoragePoolsByAnyHypervisor = _poolDao.findZoneWideStoragePoolsByHypervisor(host.getDataCenterId(), HypervisorType.Any);
-                pools.addAll(zoneStoragePoolsByAnyHypervisor);
+            List<StoragePoolVO> pools = _poolDao.listBy(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER);
+            List<StoragePoolVO> zoneStoragePoolsByTags = _poolDao.findZoneWideStoragePoolsByTags(host.getDataCenterId(), null, false);
+            List<StoragePoolVO> zoneStoragePoolsByHypervisor = _poolDao.findZoneWideStoragePoolsByHypervisor(host.getDataCenterId(), scCmd.getHypervisorType());
+            zoneStoragePoolsByTags.retainAll(zoneStoragePoolsByHypervisor);
+            pools.addAll(zoneStoragePoolsByTags);
+            List<StoragePoolVO> zoneStoragePoolsByAnyHypervisor = _poolDao.findZoneWideStoragePoolsByHypervisor(host.getDataCenterId(), HypervisorType.Any);
+            pools.addAll(zoneStoragePoolsByAnyHypervisor);
 
-                // get the zone wide disabled pools list if global setting is true.
-                if (StorageManager.MountDisabledStoragePool.value()) {
-                    pools.addAll(_poolDao.findDisabledPoolsByScope(host.getDataCenterId(), null, null, ScopeType.ZONE));
+            // get the zone wide disabled pools list if global setting is true.
+            if (StorageManager.MountDisabledStoragePool.value()) {
+                pools.addAll(_poolDao.findDisabledPoolsByScope(host.getDataCenterId(), null, null, ScopeType.ZONE));
+            }
+
+            // get the cluster wide disabled pool list
+            if (StorageManager.MountDisabledStoragePool.valueIn(host.getClusterId())) {
+                pools.addAll(_poolDao.findDisabledPoolsByScope(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER));
+            }
+
+            for (StoragePoolVO pool : pools) {
+                if (!pool.isShared()) {
+                    continue;
                 }
 
-                // get the cluster wide disabled pool list
-                if (StorageManager.MountDisabledStoragePool.valueIn(host.getClusterId())) {
-                    pools.addAll(_poolDao.findDisabledPoolsByScope(host.getDataCenterId(), host.getPodId(), host.getClusterId(), ScopeType.CLUSTER));
+                if (pool.getPoolType() == StoragePoolType.OCFS2 && !_ocfs2Mgr.prepareNodes(pool.getClusterId())) {
+                    throw new ConnectionException(true, String.format("Unable to prepare OCFS2 nodes for pool %s", pool));
                 }
 
-                for (StoragePoolVO pool : pools) {
-                    if (!pool.isShared()) {
-                        continue;
-                    }
-
-                    if (pool.getPoolType() == StoragePoolType.OCFS2 && !_ocfs2Mgr.prepareNodes(pool.getClusterId())) {
-                        throw new ConnectionException(true, "Unable to prepare OCFS2 nodes for pool " + pool.getId());
-                    }
-
-                    Long hostId = host.getId();
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Host " + hostId + " connected, connecting host to shared pool id " + pool.getId() + " and sending storage pool information ...");
-                    }
-                    try {
-                        _storageManager.connectHostToSharedPool(hostId, pool.getId());
-                        _storageManager.createCapacityEntry(pool.getId());
-                    } catch (Exception e) {
-                        throw new ConnectionException(true, "Unable to connect host " + hostId + " to storage pool id " + pool.getId() + " due to " + e.toString(), e);
-                    }
+                Long hostId = host.getId();
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Host {} connected, connecting host to shared pool {} and sending storage pool information ...", host, pool);
+                }
+                try {
+                    _storageManager.connectHostToSharedPool(host, pool.getId());
+                    _storageManager.createCapacityEntry(pool.getId());
+                } catch (Exception e) {
+                    throw new ConnectionException(true, String.format("Unable to connect host %s to storage pool %s due to %s", host, pool, e.toString()), e);
                 }
             }
         }
@@ -145,9 +147,14 @@ public class StoragePoolMonitor implements Listener {
 
     @Override
     public synchronized boolean processDisconnect(long agentId, Status state) {
+        return processDisconnect(agentId, null, null, state);
+    }
+
+    @Override
+    public synchronized boolean processDisconnect(long agentId, String uuid, String name, Status state) {
         Host host = _storageManager.getHost(agentId);
         if (host == null) {
-            logger.warn("Agent: " + agentId + " not found, not disconnecting pools");
+            logger.warn("Agent [id: {}, uuid: {}, name: {}] not found, not disconnecting pools", agentId, uuid, name);
             return false;
         }
 
@@ -158,7 +165,7 @@ public class StoragePoolMonitor implements Listener {
         List<StoragePoolHostVO> storagePoolHosts = _storageManager.findStoragePoolsConnectedToHost(host.getId());
         if (storagePoolHosts == null) {
             if (logger.isTraceEnabled()) {
-                logger.trace("No pools to disconnect for host: " + host.getId());
+                logger.trace("No pools to disconnect for host: {}", host);
             }
             return true;
         }
@@ -180,9 +187,9 @@ public class StoragePoolMonitor implements Listener {
             }
 
             try {
-                _storageManager.disconnectHostFromSharedPool(host.getId(), pool.getId());
+                _storageManager.disconnectHostFromSharedPool(host, pool);
             } catch (Exception e) {
-                logger.error("Unable to disconnect host " + host.getId() + " from storage pool id " + pool.getId() + " due to " + e.toString());
+                logger.error("Unable to disconnect host {} from storage pool {} due to {}", host, pool, e.toString());
                 disconnectResult = false;
             }
         }

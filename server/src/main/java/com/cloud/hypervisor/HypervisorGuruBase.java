@@ -206,7 +206,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
             }
             to.setNicSecIps(secIps);
         } else {
-            logger.warn("Unabled to load NicVO for NicProfile " + profile.getId());
+            logger.warn("Unabled to load NicVO for NicProfile {}", profile);
             //Workaround for dynamically created nics
             //FixMe: uuid and secondary IPs can be made part of nic profile
             to.setUuid(UUID.randomUUID().toString());
@@ -309,6 +309,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
         if (vmProfile.getTemplate().getBits() == 32) {
             to.setArch("i686");
+        } else if("s390x".equals(System.getProperty("os.arch"))) {
+            to.setArch("s390x");
         } else {
             to.setArch("x86_64");
         }

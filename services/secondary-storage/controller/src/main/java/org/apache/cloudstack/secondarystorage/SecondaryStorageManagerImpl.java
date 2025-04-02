@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.secondarystorage;
 
+import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -156,8 +158,6 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
 
 /**
 * Class to manage secondary storages. <br><br>
@@ -400,10 +400,13 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
         String[] cidrs = _allowedInternalSites.split(",");
         for (String cidr : cidrs) {
-            if (NetUtils.isValidIp4Cidr(cidr) || NetUtils.isValidIp4(cidr) || !cidr.startsWith("0.0.0.0")) {
-                if (NetUtils.getCleanIp4Cidr(cidr).equals(cidr)) {
-                    logger.warn(String.format("Invalid CIDR %s in %s", cidr, SecStorageAllowedInternalDownloadSites.key()));
+            if (NetUtils.isValidIp4Cidr(cidr) && !cidr.startsWith("0.0.0.0")) {
+                if (! NetUtils.getCleanIp4Cidr(cidr).equals(cidr)) {
+                    logger.warn("Invalid CIDR {} in {}", cidr, SecStorageAllowedInternalDownloadSites.key());
                 }
+                allowedCidrs.add(NetUtils.getCleanIp4Cidr(cidr));
+            } else if (NetUtils.isValidIp4(cidr) && !cidr.startsWith("0.0.0.0")) {
+                logger.warn("Ip address is not a valid CIDR; {} consider using {}/32", cidr, cidr);
                 allowedCidrs.add(cidr);
             }
         }
@@ -810,11 +813,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     }
 
     public boolean isZoneReady(Map<Long, ZoneHostInfo> zoneHostInfoMap, long dataCenterId) {
-        List <HostVO> hosts = _hostDao.listByDataCenterId(dataCenterId);
-        if (CollectionUtils.isEmpty(hosts)) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Zone " + dataCenterId + " has no host available which is enabled and in Up state");
-            }
+        Integer totalUpAndEnabledHosts = _hostDao.countUpAndEnabledHostsInZone(dataCenterId);
+        if (totalUpAndEnabledHosts != null && totalUpAndEnabledHosts < 1) {
+            logger.debug("Zone {} has no host available which is enabled and in Up state", dataCenterId);
             return false;
         }
         ZoneHostInfo zoneHostInfo = zoneHostInfoMap.get(dataCenterId);
@@ -841,8 +842,8 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             }
 
             boolean useLocalStorage = BooleanUtils.toBoolean(ConfigurationManagerImpl.SystemVMUseLocalStorage.valueIn(dataCenterId));
-            List<Pair<Long, Integer>> storagePoolHostInfos = _storagePoolHostDao.getDatacenterStoragePoolHostInfo(dataCenterId, !useLocalStorage);
-            if (CollectionUtils.isNotEmpty(storagePoolHostInfos) && storagePoolHostInfos.get(0).second() > 0) {
+            boolean hasStoragePoolHostInfo = _storagePoolHostDao.hasDatacenterStoragePoolHostInfo(dataCenterId, !useLocalStorage);
+            if (hasStoragePoolHostInfo) {
                 return true;
             } else {
                 if (logger.isDebugEnabled()) {

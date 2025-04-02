@@ -86,8 +86,8 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
         long zoneId = zone.getId();
         List<HostPodVO> podsInZone = _podDao.listByDataCenterId(zoneId);
 
-        if (podsInZone.size() == 0) {
-            logger.debug("No pods found in zone " + zone.getName());
+        if (podsInZone.isEmpty()) {
+            logger.debug("No pods found in zone {}", zone);
             return null;
         }
 
@@ -111,7 +111,7 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
 
                     if (!enoughCapacity) {
                         if (logger.isDebugEnabled()) {
-                            logger.debug("Not enough RAM available in zone/pod to allocate storage for user VM (zone: " + zoneId + ", pod: " + podId + ")");
+                            logger.debug("Not enough RAM available in zone/pod to allocate storage for user VM (zone: {}, pod: {})", zone, pod);
                         }
                         continue;
                     }
@@ -121,7 +121,7 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
                         dataCenterAndPodHasEnoughCapacity(zoneId, podId, ((long)offering.getCpu() * offering.getSpeed()), Capacity.CAPACITY_TYPE_CPU, hostCandiates);
                     if (!enoughCapacity) {
                         if (logger.isDebugEnabled()) {
-                            logger.debug("Not enough cpu available in zone/pod to allocate storage for user VM (zone: " + zoneId + ", pod: " + podId + ")");
+                            logger.debug("Not enough cpu available in zone/pod to allocate storage for user VM (zone: {}, pod: {})", zone, pod);
                         }
                         continue;
                     }
@@ -144,14 +144,14 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
             }
         }
 
-        if (availablePods.size() == 0) {
-            logger.debug("There are no pods with enough memory/CPU capacity in zone " + zone.getName());
+        if (availablePods.isEmpty()) {
+            logger.debug("There are no pods with enough memory/CPU capacity in zone {}", zone);
             return null;
         } else {
             // Return a random pod
             int next = _rand.nextInt(availablePods.size());
             HostPodVO selectedPod = availablePods.get(next);
-            logger.debug("Found pod " + selectedPod.getName() + " in zone " + zone.getName());
+            logger.debug("Found pod {} in zone {}", selectedPod, zone);
             return new Pair<Pod, Long>(selectedPod, podHostCandidates.get(selectedPod.getId()));
         }
     }
@@ -195,7 +195,7 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
     private boolean skipCalculation(VMInstanceVO vm) {
         if (vm.getState() == State.Expunging) {
             if (logger.isDebugEnabled()) {
-                logger.debug("Skip counting capacity for Expunging VM : " + vm.getInstanceName());
+                logger.debug("Skip counting capacity for Expunging VM: {}", vm);
             }
             return true;
         }
@@ -261,15 +261,16 @@ public class UserConcentratedAllocator extends AdapterBase implements PodAllocat
                     usedCapacity += so.getRamSize() * 1024L * 1024L;
 
                     if (logger.isDebugEnabled()) {
-                        logger.debug("Counting memory capacity used by vm: " + vm.getId() + ", size: " + so.getRamSize() + "MB, host: " + hostId + ", currently counted: " +
-                                toHumanReadableSize(usedCapacity) + " Bytes");
+                        logger.debug("Counting memory capacity used by vm: {}, size: {}MB, " +
+                                "host: {}, currently counted: {} Bytes",
+                                vm, so.getRamSize(), hostId, toHumanReadableSize(usedCapacity));
                     }
                 } else if (capacityType == Capacity.CAPACITY_TYPE_CPU) {
                     usedCapacity += so.getCpu() * so.getSpeed();
 
                     if (logger.isDebugEnabled()) {
-                        logger.debug("Counting cpu capacity used by vm: " + vm.getId() + ", cpu: " + so.getCpu() + ", speed: " + so.getSpeed() + ", currently counted: " +
-                                usedCapacity + " Bytes");
+                        logger.debug("Counting cpu capacity used by vm: {}, cpu: {}, speed: {}, " +
+                                "currently counted: {} Bytes", vm, so.getCpu(), so.getSpeed(), usedCapacity);
                     }
                 }
             }
