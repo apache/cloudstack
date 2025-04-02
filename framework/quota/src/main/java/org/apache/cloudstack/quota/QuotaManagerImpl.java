@@ -32,7 +32,12 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.domain.DomainDetailVO;
+import com.cloud.domain.dao.DomainDetailsDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountDetailVO;
+import com.cloud.user.AccountDetailsDao;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.activationrule.presetvariables.Configuration;
 import org.apache.cloudstack.quota.activationrule.presetvariables.GenericPresetVariable;
@@ -89,6 +94,10 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
 
     @Inject
     protected PresetVariableHelper presetVariableHelper;
+    @Inject
+    protected AccountDetailsDao accountDetailsDao;
+    @Inject
+    protected DomainDetailsDao domainDetailsDao;
 
     private static TimeZone usageAggregationTimeZone = TimeZone.getTimeZone("GMT");
     static final BigDecimal GiB_DECIMAL = BigDecimal.valueOf(ByteScaleUtils.GiB);
@@ -340,12 +349,41 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     }
 
     protected boolean shouldCalculateUsageRecord(AccountVO accountVO, UsageVO usageRecord) {
-        if (Boolean.FALSE.equals(QuotaConfig.QuotaAccountEnabled.valueIn(accountVO.getAccountId()))) {
+        boolean calculateUsageRecord = findConfigurationValue(accountVO, QuotaConfig.QuotaAccountEnabled);
+        if (!calculateUsageRecord && usageRecord != null) {
             logger.debug("Considering usage record [{}] as calculated and skipping it because account [{}] has the quota plugin disabled.",
                     usageRecord.toString(usageAggregationTimeZone), accountVO.reflectionToString());
             return false;
         }
-        return true;
+        return calculateUsageRecord;
+    }
+
+    @Override
+    public boolean findConfigurationValue(AccountVO accountVO, ConfigKey<Boolean> key) {
+        boolean result = Boolean.parseBoolean(getConfigValueOrDefaultValue(key));
+        logger.trace("Searching configuration [{}] of account [{}] in its settings.", key.key(), accountVO);
+        AccountDetailVO accountDetail = accountDetailsDao.findDetail(accountVO.getAccountId(), key.key());
+        if (accountDetail != null) {
+            result = Boolean.TRUE.equals(Boolean.valueOf(accountDetail.getValue()));
+            logger.trace("Using value [{}] found in account [{}] settings to configuration [{}].", result, accountVO, key.key());
+            return result;
+        }
+
+        if (Boolean.parseBoolean(_configDao.getValue("enable.account.settings.for.domain"))) {
+            logger.trace("Searching for configuration [{}] of account [{}] in its domain [{}] settings.", key.key(), accountVO, accountVO.getDomainId());
+            DomainDetailVO domainDetail = domainDetailsDao.findDetail(accountVO.getDomainId(), key.key());
+            if (domainDetail != null) {
+                result = Boolean.TRUE.equals(Boolean.valueOf(domainDetail.getValue()));
+                logger.trace("Using value [{}] found in domain [{}] settings to configuration [{}].", result, accountVO.getDomainId(), key.key());
+                return result;
+            }
+        }
+        logger.trace("Using default value [{}] to configuration [{}].", result, key.key());
+        return result;
+    }
+
+    protected String getConfigValueOrDefaultValue(ConfigKey<?> key) {
+        return ObjectUtils.defaultIfNull(_configDao.getValue(key.key()), key.defaultValue());
     }
 
     protected List<QuotaUsageVO> persistUsagesAndQuotaUsagesAndRetrievePersistedQuotaUsages(List<Pair<UsageVO, QuotaUsageVO>> pairsUsageAndQuotaUsage) {

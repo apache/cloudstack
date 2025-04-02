@@ -149,7 +149,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
      */
     @Override
     public boolean isQuotaEmailTypeEnabledForAccount(AccountVO account, QuotaEmailTemplateTypes quotaEmailTemplateType) {
-        boolean quotaEmailsEnabled = QuotaConfig.QuotaEnableEmails.valueIn(account.getAccountId());
+        boolean quotaEmailsEnabled = _quotaManager.findConfigurationValue(account, QuotaConfig.QuotaEnableEmails);
         if (!quotaEmailsEnabled) {
             logger.debug("Configuration [{}] is disabled for account [{}]. Therefore, the account will not receive Quota email of type [{}].", QuotaConfig.QuotaEnableEmails.key(), account, quotaEmailTemplateType);
             return false;

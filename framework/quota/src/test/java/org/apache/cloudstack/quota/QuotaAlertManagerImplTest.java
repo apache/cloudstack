@@ -116,9 +116,6 @@ public class QuotaAlertManagerImplTest extends TestCase {
     @Test
     public void isQuotaEmailTypeEnabledForAccountTestConfigurationIsEnabledAndEmailIsConfiguredReturnConfiguredValue() {
         boolean expectedValue = !QuotaConfig.QuotaEnableEmails.value();
-        QuotaEmailConfigurationVO quotaEmailConfigurationVoMock = Mockito.mock(QuotaEmailConfigurationVO.class);
-        Mockito.when(quotaEmailConfigurationVoMock.isEnabled()).thenReturn(expectedValue);
-        Mockito.doReturn(quotaEmailConfigurationVoMock).when(quotaEmailConfigurationDaoMock).findByAccountIdAndEmailTemplateType(Mockito.anyLong(), Mockito.any(QuotaConfig.QuotaEmailTemplateTypes.class));
 
         boolean result = quotaAlertManager.isQuotaEmailTypeEnabledForAccount(accountMock, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_EMPTY);
 
@@ -128,6 +125,8 @@ public class QuotaAlertManagerImplTest extends TestCase {
     @Test
     public void isQuotaEmailTypeEnabledForAccountTestConfigurationIsEnabledAndEmailIsNotConfiguredReturnDefaultValue() {
         boolean defaultValue = QuotaConfig.QuotaEnableEmails.value();
+
+        Mockito.when(quotaManagerMock.findConfigurationValue(accountMock, QuotaConfig.QuotaEnableEmails)).thenReturn(true);
 
         boolean result = quotaAlertManager.isQuotaEmailTypeEnabledForAccount(accountMock, QuotaConfig.QuotaEmailTemplateTypes.QUOTA_EMPTY);
 

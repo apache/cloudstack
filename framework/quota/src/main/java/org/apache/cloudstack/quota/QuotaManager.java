@@ -18,11 +18,14 @@ package org.apache.cloudstack.quota;
 
 import com.cloud.user.AccountVO;
 import com.cloud.utils.component.Manager;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface QuotaManager extends Manager {
 
     boolean calculateQuotaUsage();
 
     boolean isLockable(AccountVO account);
+
+    boolean findConfigurationValue(AccountVO accountVO, ConfigKey<Boolean> key);
 
 }
