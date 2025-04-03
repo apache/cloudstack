@@ -439,13 +439,15 @@ public class VeeamClientTest {
 
         Assert.assertEquals(2, metrics.size());
 
-        Assert.assertTrue(metrics.containsKey("d1bd8abd-fc73-4b77-9047-7be98a2ecb72"));
-        Assert.assertEquals(537776128L, (long) metrics.get("d1bd8abd-fc73-4b77-9047-7be98a2ecb72").getBackupSize());
-        Assert.assertEquals(2147506644L, (long) metrics.get("d1bd8abd-fc73-4b77-9047-7be98a2ecb72").getDataSize());
+        String vmName1 = "i-2-3-VM";
+        Assert.assertTrue(metrics.containsKey(vmName1));
+        Assert.assertEquals(537776128L, (long) metrics.get(vmName1).getBackupSize());
+        Assert.assertEquals(2147506644L, (long) metrics.get(vmName1).getDataSize());
 
-        Assert.assertTrue(metrics.containsKey("0d752ca6-d628-4d85-a739-75275e4661e6"));
-        Assert.assertEquals(1268682752L, (long) metrics.get("0d752ca6-d628-4d85-a739-75275e4661e6").getBackupSize());
-        Assert.assertEquals(15624049921L, (long) metrics.get("0d752ca6-d628-4d85-a739-75275e4661e6").getDataSize());
+        String vmName2 = "i-2-5-VM";
+        Assert.assertTrue(metrics.containsKey(vmName2));
+        Assert.assertEquals(1268682752L, (long) metrics.get(vmName2).getBackupSize());
+        Assert.assertEquals(15624049921L, (long) metrics.get(vmName2).getDataSize());
     }
 
     @Test
@@ -478,12 +480,14 @@ public class VeeamClientTest {
                         .withHeader("content-type", "application/xml")
                         .withStatus(200)
                         .withBody(xmlResponse)));
+
+        String vmName = "i-2-4-VM";
         Map<String, Backup.Metric> metrics = client.getBackupMetricsViaVeeamAPI();
 
         Assert.assertEquals(1, metrics.size());
-        Assert.assertTrue(metrics.containsKey("506760dc-ed77-40d6-a91d-e0914e7a1ad8"));
-        Assert.assertEquals(535875584L, (long) metrics.get("506760dc-ed77-40d6-a91d-e0914e7a1ad8").getBackupSize());
-        Assert.assertEquals(2147507235L, (long) metrics.get("506760dc-ed77-40d6-a91d-e0914e7a1ad8").getDataSize());
+        Assert.assertTrue(metrics.containsKey(vmName));
+        Assert.assertEquals(535875584L, (long) metrics.get(vmName).getBackupSize());
+        Assert.assertEquals(2147507235L, (long) metrics.get(vmName).getDataSize());
     }
 
     @Test

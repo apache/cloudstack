@@ -780,32 +780,15 @@ public class VeeamClient {
                 throw new CloudRuntimeException("Could not get backup metrics via Veeam B&R API");
             }
             for (final BackupFile backupFile : backupFiles.getBackupFiles()) {
-                String vmUuid = null;
-                String backupName = null;
-                List<Link> links = backupFile.getLink();
-                for (Link link : links) {
-                    if (BACKUP_REFERENCE.equals(link.getType())) {
-                        backupName = link.getName();
-                        break;
-                    }
-                }
-                if (backupName != null && backupName.contains(BACKUP_IDENTIFIER)) {
-                    final String[] names = backupName.split(BACKUP_IDENTIFIER);
-                    if (names.length > 1) {
-                        vmUuid = names[1];
-                    }
-                }
-                if (vmUuid == null) {
+                String vmInstanceName = getVmInstanceNameFromBackupFile(backupFile);
+                if (vmInstanceName == null) {
                     continue;
-                }
-                if (vmUuid.contains(" - ")) {
-                    vmUuid = vmUuid.split(" - ")[0];
                 }
                 Long usedSize = 0L;
                 Long dataSize = 0L;
-                if (metrics.containsKey(vmUuid)) {
-                    usedSize = metrics.get(vmUuid).getBackupSize();
-                    dataSize = metrics.get(vmUuid).getDataSize();
+                if (metrics.containsKey(vmInstanceName)) {
+                    usedSize = metrics.get(vmInstanceName).getBackupSize();
+                    dataSize = metrics.get(vmInstanceName).getDataSize();
                 }
                 if (backupFile.getBackupSize() != null) {
                     usedSize += Long.valueOf(backupFile.getBackupSize());
@@ -813,13 +796,32 @@ public class VeeamClient {
                 if (backupFile.getDataSize() != null) {
                     dataSize += Long.valueOf(backupFile.getDataSize());
                 }
-                metrics.put(vmUuid, new Backup.Metric(usedSize, dataSize));
+                metrics.put(vmInstanceName, new Backup.Metric(usedSize, dataSize));
             }
         } catch (final IOException e) {
             logger.error("Failed to process response to get backup metrics via Veeam B&R API due to:", e);
             checkResponseTimeOut(e);
         }
         return metrics;
+    }
+
+    private String getVmInstanceNameFromBackupFile(BackupFile backupFile) {
+        String vmInstanceName = null;
+        String backupName = null;
+        List<Link> links = backupFile.getLink();
+        for (Link link : links) {
+            if (BACKUP_REFERENCE.equals(link.getType())) {
+                backupName = link.getName();
+                break;
+            }
+        }
+        if (backupName != null && backupName.contains(BACKUP_IDENTIFIER)) {
+            final String[] names = backupName.split(BACKUP_IDENTIFIER);
+            if (names.length > 0) {
+                vmInstanceName = names[0];
+            }
+        }
+        return vmInstanceName;
     }
 
     public Map<String, Backup.Metric> getBackupMetricsLegacy() {

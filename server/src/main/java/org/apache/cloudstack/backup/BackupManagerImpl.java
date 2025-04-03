@@ -347,9 +347,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
                     UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN, vm.getAccountId(), vm.getDataCenterId(), vmId,
                             "Backup-" + vm.getHostName() + "-" + vm.getUuid(), vm.getBackupOfferingId(), null, null, Backup.class.getSimpleName(), vm.getUuid());
-                    logger.debug(String.format("VM [%s] successfully added to Backup Offering [%s].", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm,
-                            "uuid", "instanceName", "backupOfferingId", "backupVolumes"), ReflectionToStringBuilderUtils.reflectOnlySelectedFields(offering,
-                                    "uuid", "name", "externalId", "provider")));
+                    logger.debug("VM [{}] successfully added to Backup Offering [{}].",
+                            () -> ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName", "backupOfferingId", "backupVolumes"),
+                            () -> ReflectionToStringBuilderUtils.reflectOnlySelectedFields(offering, "uuid", "name", "externalId", "provider"));
                     return vm;
                 } catch (Exception e) {
                     String msg = String.format("Failed to assign VM [%s] to the Backup Offering [%s], using provider [name: %s, class: %s], due to: [%s].",
@@ -964,10 +964,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException(String.format("Error restoring volume [%s] of VM [%s] to host [%s] using backup provider [%s] due to: [%s].",
                     backedUpVolumeUuid, vm.getUuid(), host.getUuid(), backupProvider.getName(), result.second()));
         }
-        if (!attachVolumeToVM(vm.getDataCenterId(), result.second(), backupProvider.getName().equalsIgnoreCase("veeam") ?
-                        backup.getBackedUpVolumes() : vmFromBackup.getBackupVolumeList(),
+
+        if (!attachVolumeToVM(vm.getDataCenterId(), result.second(), CollectionUtils.isNullOrEmpty(backup.getBackedUpVolumes()) ?
+                            vm.getBackupVolumeList() : backup.getBackedUpVolumes(),
                             backedUpVolumeUuid, vm, datastore.getUuid(), backup)) {
-            throw new CloudRuntimeException(String.format("Error attaching volume [%s] to VM [%s]." + backedUpVolumeUuid, vm.getUuid()));
+            throw new CloudRuntimeException(String.format("Error attaching volume [%s] to VM [%s].", backedUpVolumeUuid, vm.getUuid()));
         }
         return true;
     }

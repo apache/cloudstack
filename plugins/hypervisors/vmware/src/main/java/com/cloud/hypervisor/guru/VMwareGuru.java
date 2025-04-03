@@ -602,14 +602,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     protected Long getPoolIdFromDatastoreNameOrPath(String datastore, long datacenterId, long clusterId) {
-        logger.debug(String.format("Trying to find pool Id for datastore: [%s].", datastore));
+        logger.debug("Trying to find pool Id for datastore: [{}].", datastore);
 
         String errorMessage = String.format("Could not find storage pool with name or path [%s].", datastore);
         StoragePoolVO poolVO = _storagePoolDao.findPoolByName(datastore, datacenterId, clusterId);
         if (poolVO != null) {
             return poolVO.getId();
         }
-        logger.debug(String.format("Could not find storage pool with name [%s]. Trying to search by path [%s] in datacenter [%s] and cluster [%s].", datastore, datastore, datacenterId, clusterId));
+        logger.debug("Could not find storage pool with name [{}]. Trying to search by path [{}] in datacenter [{}] and cluster [{}].", datastore, datastore, datacenterId, clusterId);
 
         poolVO = _storagePoolDao.findPoolByPathLike(datastore, datacenterId, clusterId);
         if (poolVO == null) {
@@ -868,7 +868,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     protected VolumeVO detachVolume(VMInstanceVO vmInstanceVO, VirtualDisk disk, Backup backup) {
         VolumeVO volume = null;
-        logger.debug(LogUtils.logGsonWithoutException("Disk [%s] of VM [uuid: %s, name: %s] does not exist in the metadata of backup [uuid: %s]. Therefore, we need to detach it.",
+        logger.debug(() -> LogUtils.logGsonWithoutException("Disk [%s] of VM [uuid: %s, name: %s] does not exist in the metadata of backup [uuid: %s]. Therefore, we need to detach it.",
                 disk, vmInstanceVO.getUuid(), vmInstanceVO.getInstanceName(), backup.getUuid()));
         String volumeFullPath = getVolumeFullPath(disk);
         volume = _volumeDao.findByPath(getVolumeNameFromFileName(volumeFullPath));
@@ -877,11 +877,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             detachVolumeCmd.setId(volume.getId());
             Volume result = volumeService.detachVolumeFromVM(detachVolumeCmd);
             if (result != null) {
-                logger.debug(String.format("Volume [uuid: %s] detached with success from VM [uuid: %s, name: %s], during the backup restore process (as this volume does not exist in the metadata of backup [uuid: %s]).",
-                        result.getUuid(), vmInstanceVO.getUuid(), vmInstanceVO.getInstanceName(), backup.getUuid()));
+                logger.debug("Volume [uuid: {}] detached with success from VM [uuid: {}, name: {}], during the backup restore process (as this volume does not exist in the metadata of backup [uuid: {}]).",
+                        result.getUuid(), vmInstanceVO.getUuid(), vmInstanceVO.getInstanceName(), backup.getUuid());
             } else {
-                logger.warn(String.format("Failed to detach volume [uuid: %s] from VM [uuid: %s, name: %s], during the backup restore process (as this volume does not exist in the metadata of backup [uuid: %s]).",
-                        volume.getUuid(), vmInstanceVO.getUuid(), vmInstanceVO.getInstanceName(), backup.getUuid()));
+                logger.warn("Failed to detach volume [uuid: {}] from VM [uuid: {}, name: {}], during the backup restore process (as this volume does not exist in the metadata of backup [uuid: {}]).",
+                        volume.getUuid(), vmInstanceVO.getUuid(), vmInstanceVO.getInstanceName(), backup.getUuid());
             }
         }
         return volume;
@@ -1159,7 +1159,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 + "in VM [%s] disks [%s].", volumeInfo.getSize(), volumeName, deviceId, vm.getVmName(), virtualDisks));
         for (VirtualDisk disk : virtualDisks) {
             VirtualDeviceBackingInfo backingInfo = disk.getBacking();
-            if(backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
+            if (backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
                 VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
                 if (disk.getCapacityInBytes().equals(volumeInfo.getSize()) && diskBackingInfo.getFileName().contains(volumeName) && disk.getUnitNumber() == deviceId) {
                     return disk;

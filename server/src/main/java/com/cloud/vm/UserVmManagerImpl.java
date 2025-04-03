@@ -2526,15 +2526,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected void removeBackupOfferingBeforeDeleteVmIfNeeded(UserVmVO vm) {
         if (vm.getBackupOfferingId() == null) {
             logger.debug("VM [{}] does not have a Backup Offering. Don't need to remove then.",
-                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName"));
+                    () -> ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName"));
             return;
         }
-        logger.debug("VM [{}] has backup offering with id [%s]. Trying to remove this backup offering.",
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName"), vm.getBackupOfferingId());
+        logger.debug("VM [{}] has backup offering with id [{}]. Trying to remove this backup offering.",
+                () -> ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName"), vm::getBackupOfferingId);
         List<Backup> backupsForVm = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
         if (CollectionUtils.isEmpty(backupsForVm)) {
             logger.debug("VM [{}] with backup offering [id: {}] does not have any backups. Trying to delete job.",
-                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName"), vm.getBackupOfferingId());
+                    () -> ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName"), vm::getBackupOfferingId);
             backupManager.removeVMFromBackupOffering(vm.getId(), true);
         } else if (backupManager.getName().equalsIgnoreCase("veeam")){
             logger.debug("VM [uuid: {}, name: {}] has a Backup Offering [id: {}, external id: {}] with {} backups. "

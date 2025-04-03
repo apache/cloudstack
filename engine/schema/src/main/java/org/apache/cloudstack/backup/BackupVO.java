@@ -42,8 +42,6 @@ import javax.persistence.TemporalType;
 @Entity
 @Table(name = "backups")
 public class BackupVO implements Backup {
-    private static final Gson GSON = new Gson();
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")

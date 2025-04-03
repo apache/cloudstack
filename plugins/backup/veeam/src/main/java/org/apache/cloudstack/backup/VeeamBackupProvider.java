@@ -27,9 +27,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
-import com.google.gson.Gson;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.backup.Backup.Metric;
@@ -48,7 +46,6 @@ import com.cloud.dc.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMap;
 import com.cloud.dc.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -219,7 +216,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
     @Override
     public boolean willDeleteBackupsOnOfferingRemoval() {
-        return true;
+        return false;
     }
 
     @Override
@@ -349,30 +346,6 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
         backupDao.persist(backup);
         return backup;
-    }
-
-    protected String createVolumeInfoFromVolumePaths(List<String> paths) {
-        List<VolumeVO> vmVolumes = new ArrayList<>();
-        try {
-            for (String diskName : paths) {
-                VolumeVO volumeVO = volumeDao.findByPath(diskName);
-                if (volumeVO != null) {
-                    vmVolumes.add(volumeVO);
-                }
-            }
-            List<Backup.VolumeInfo> list = new ArrayList<>();
-            for (VolumeVO vol : vmVolumes) {
-                list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize(), vol.getDeviceId()));
-            }
-            return new Gson().toJson(list.toArray(), Backup.VolumeInfo[].class);
-        } catch (Exception e) {
-            if (CollectionUtils.isEmpty(vmVolumes) || vmVolumes.get(0).getInstanceId() == null) {
-                logger.error("Failed to create VolumeInfo of VM [id: null] volumes due to: [{}].", e.getMessage(), e);
-            } else {
-                logger.error("Failed to create VolumeInfo of VM [id: {}] volumes due to: [{}].", vmVolumes.get(0).getInstanceId(), e.getMessage(), e);
-            }
-            throw e;
-        }
     }
 
     @Override

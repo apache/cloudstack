@@ -44,7 +44,6 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.gson.Gson;
 
 public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements BackupDao {
-    private static final Gson GSON = new Gson();
     @Inject
     AccountDao accountDao;
 
