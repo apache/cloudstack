@@ -1051,6 +1051,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     }
 
     protected T findById(ID id, boolean removed, Boolean lock) {
+        if (id == null) {
+            return null;
+        }
+
         StringBuilder sql = new StringBuilder(_selectByIdSql);
         if (!removed && _removed != null) {
             sql.append(" AND ").append(_removed.first());
@@ -1214,6 +1218,35 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         return executeList(sql.toString());
     }
 
+    private Object getIdObject() {
+        T entity = (T)_searchEnhancer.create();
+        try {
+            Method m = _entityBeanType.getMethod("getId");
+            return m.invoke(entity);
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {
+            logger.warn("Unable to get ID object for entity: {}", _entityBeanType.getSimpleName());
+        }
+        return null;
+    }
+
+    @Override
+    public List<ID> listAllIds() {
+        Object idObj = getIdObject();
+        if (idObj == null) {
+            return Collections.emptyList();
+        }
+        Class<ID> clazz = (Class<ID>)idObj.getClass();
+        GenericSearchBuilder<T, ID> sb = createSearchBuilder(clazz);
+        try {
+            Method m = sb.entity().getClass().getMethod("getId");
+            sb.selectFields(m.invoke(sb.entity()));
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException ignored) {
+            return Collections.emptyList();
+        }
+        sb.done();
+        return customSearch(sb.create(), null);
+    }
+
     @Override
     public boolean expunge(final ID id) {
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
@@ -1242,13 +1275,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
             logger.error("DB Exception on: " + pstmt, e);
             throw new CloudRuntimeException("Unable to expunge on DB, due to: " + e.getLocalizedMessage());
         }
-    }
-
-    // FIXME: Does not work for joins.
-    @Override
-    public int expunge(final SearchCriteria<T> sc, long limit) {
-        Filter filter = new Filter(limit);
-        return expunge(sc, filter);
     }
 
     @Override
@@ -1400,22 +1426,39 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
                     onClause.append("?");
                     joinAttrList.add(join.getFirstAttributes()[i]);
                 } else {
-                    onClause.append(joinedTableNames.getOrDefault(join.getFirstAttributes()[i].table, join.getFirstAttributes()[i].table))
-                    .append(".")
-                    .append(join.getFirstAttributes()[i].columnName);
-                }
-                onClause.append("=");
-                if (join.getSecondAttribute()[i].getValue() != null) {
-                    onClause.append("?");
-                    joinAttrList.add(join.getSecondAttribute()[i]);
-                } else {
-                    if(!joinTableAlias.equals(joinTableName)) {
-                        onClause.append(joinTableAlias);
+                    if ((join.getFirstAttributes()[i].table == null && join.getFirstAttributes()[i].value == null) ||
+                            (join.getSecondAttribute()[i].table == null && join.getSecondAttribute()[i].value == null)) {
+                        onClause.append(joinedTableNames.getOrDefault(join.getSecondAttribute()[i].table, join.getFirstAttributes()[i].table))
+                                .append(".");
+                        if (join.getFirstAttributes()[i].table == null && join.getFirstAttributes()[i].value == null) {
+                            onClause.append(join.getSecondAttribute()[i].columnName);
+                        } else {
+                            onClause.append(join.getFirstAttributes()[i].columnName);
+                        }
+
                     } else {
-                        onClause.append(joinTableName);
+                        onClause.append(joinedTableNames.getOrDefault(join.getFirstAttributes()[i].table, join.getFirstAttributes()[i].table))
+                                .append(".")
+                                .append(join.getFirstAttributes()[i].columnName);
                     }
-                    onClause.append(".")
-                    .append(join.getSecondAttribute()[i].columnName);
+                }
+                if ((join.getFirstAttributes()[i].table == null && join.getFirstAttributes()[i].value == null) ||
+                        (join.getSecondAttribute()[i].table == null && join.getSecondAttribute()[i].value == null)) {
+                    onClause.append(" IS NULL");
+                } else {
+                    onClause.append("=");
+                    if (join.getSecondAttribute()[i].getValue() != null) {
+                        onClause.append("?");
+                        joinAttrList.add(join.getSecondAttribute()[i]);
+                    } else {
+                        if (!joinTableAlias.equals(joinTableName)) {
+                            onClause.append(joinTableAlias);
+                        } else {
+                            onClause.append(joinTableName);
+                        }
+                        onClause.append(".")
+                                .append(join.getSecondAttribute()[i].columnName);
+                    }
                 }
             }
             onClause.append(" ");
@@ -2431,4 +2474,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         }
     }
 
+    public static class SumCount {
+        public long sum;
+        public long count;
+
+        public SumCount() {
+        }
+    }
 }

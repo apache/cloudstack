@@ -17,6 +17,30 @@
 
 package com.cloud.user;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
+
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
+import org.apache.cloudstack.region.RegionManager;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+
 import com.cloud.api.query.dao.DiskOfferingJoinDao;
 import com.cloud.api.query.dao.NetworkOfferingJoinDao;
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
@@ -44,29 +68,6 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.network.RoutedIpv4Manager;
-import org.apache.cloudstack.region.RegionManager;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.ArgumentMatchers;
-import org.mockito.Mock;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -211,7 +212,7 @@ public class DomainManagerImplTest {
 
     @Test
     public void testDeleteDomainNoCleanup() {
-        Mockito.when(_configMgr.releaseDomainSpecificVirtualRanges(Mockito.anyLong())).thenReturn(true);
+        Mockito.when(_configMgr.releaseDomainSpecificVirtualRanges(Mockito.any())).thenReturn(true);
         domainManager.deleteDomain(DOMAIN_ID, testDomainCleanup);
         Mockito.verify(domainManager).deleteDomain(domain, testDomainCleanup);
         Mockito.verify(domainManager).removeDomainWithNoAccountsForCleanupNetworksOrDedicatedResources(domain);
@@ -276,7 +277,7 @@ public class DomainManagerImplTest {
         Mockito.when(_accountDao.findCleanupsForRemovedAccounts(Mockito.anyLong())).thenReturn(new ArrayList<AccountVO>());
         Mockito.when(_dedicatedDao.listByDomainId(Mockito.anyLong())).thenReturn(new ArrayList<DedicatedResourceVO>());
         Mockito.when(domainDaoMock.remove(Mockito.anyLong())).thenReturn(true);
-        Mockito.when(_configMgr.releaseDomainSpecificVirtualRanges(Mockito.anyLong())).thenReturn(true);
+        Mockito.when(_configMgr.releaseDomainSpecificVirtualRanges(Mockito.any())).thenReturn(true);
 
         try {
             Assert.assertTrue(domainManager.deleteDomain(20l, false));
@@ -307,7 +308,7 @@ public class DomainManagerImplTest {
         Mockito.when(domainDaoMock.remove(Mockito.anyLong())).thenReturn(true);
         Mockito.when(_resourceCountDao.removeEntriesByOwner(Mockito.anyLong(), Mockito.eq(ResourceOwnerType.Domain))).thenReturn(1l);
         Mockito.when(_resourceLimitDao.removeEntriesByOwner(Mockito.anyLong(), Mockito.eq(ResourceOwnerType.Domain))).thenReturn(1l);
-        Mockito.when(_configMgr.releaseDomainSpecificVirtualRanges(Mockito.anyLong())).thenReturn(true);
+        Mockito.when(_configMgr.releaseDomainSpecificVirtualRanges(Mockito.any())).thenReturn(true);
 
         try {
             Assert.assertTrue(domainManager.deleteDomain(20l, true));

@@ -124,6 +124,9 @@
               </div>
             </div>
           </div>
+          <div v-else-if="item === 'usersource'">
+            {{ $t(getUserSourceLabel(dataResource[item])) }}
+          </div>
           <div v-else>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
@@ -146,6 +149,13 @@
           <strong>{{ $t('label.' + item.replace('date', '.date.and.time'))}}</strong>
           <br/>
           <div>{{ $toLocaleDate(dataResource[item]) }}</div>
+        </div>
+      </a-list-item>
+      <a-list-item v-else-if="item === 'details' && $route.meta.name === 'storagepool' && dataResource[item].rbd_default_data_pool">
+        <div>
+          <strong>{{ $t('label.data.pool') }}</strong>
+          <br/>
+          <div>{{ dataResource[item].rbd_default_data_pool }}</div>
         </div>
       </a-list-item>
     </template>
@@ -204,7 +214,7 @@ export default {
   },
   computed: {
     customDisplayItems () {
-      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider']
+      var items = ['ip4routes', 'ip6routes', 'privatemtu', 'publicmtu', 'provider', 'details']
       if (this.$route.meta.name === 'webhookdeliveries') {
         items.push('startdate')
         items.push('enddate')
@@ -406,6 +416,15 @@ export default {
       })
 
       return resources
+    },
+    getUserSourceLabel (source) {
+      if (source === 'saml2') {
+        source = 'saml'
+      } else if (source === 'saml2disabled') {
+        source = 'saml.disabled'
+      }
+
+      return `label.${source}`
     }
   }
 }

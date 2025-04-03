@@ -248,7 +248,7 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
      * @see com.cloud.network.NetworkModel#getNetworkWithSGWithFreeIPs(java.lang.Long)
      */
     @Override
-    public NetworkVO getNetworkWithSGWithFreeIPs(Long zoneId) {
+    public NetworkVO getNetworkWithSGWithFreeIPs(Account account, Long zoneId) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -966,7 +966,8 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
-    public boolean checkSecurityGroupSupportForNetwork(DataCenter zone, List<Long> networkIds, List<Long> securityGroupsIds) {
+    public boolean checkSecurityGroupSupportForNetwork(Account account, DataCenter zone,
+                                                       List<Long> networkIds, List<Long> securityGroupsIds) {
         return false;
     }
 }

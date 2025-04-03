@@ -152,7 +152,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Deprecated
     @SerializedName("memoryallocated")
     @Param(description = "the amount of the host's memory currently allocated")
-    private long memoryAllocated;
+    private Long memoryAllocated;
 
     @SerializedName("memoryallocatedpercentage")
     @Param(description = "the amount of the host's memory currently allocated in percentage")
@@ -186,9 +186,17 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Param(description = "the date and time the host was last pinged")
     private Date lastPinged;
 
-    @SerializedName("managementserverid")
+    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
+    @Param(description = "the virtual machine id for host type ConsoleProxy and SecondaryStorageVM", since = "4.21.0")
+    private String virtualMachineId;
+
+    @SerializedName(ApiConstants.MANAGEMENT_SERVER_ID)
     @Param(description = "the management server ID of the host")
     private String managementServerId;
+
+    @SerializedName(ApiConstants.MANAGEMENT_SERVER_NAME)
+    @Param(description = "the management server name of the host", since = "4.21.0")
+    private String managementServerName;
 
     @SerializedName("clusterid")
     @Param(description = "the cluster ID of the host")
@@ -407,7 +415,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.memWithOverprovisioning=memWithOverprovisioning;
     }
 
-    public void setMemoryAllocated(long memoryAllocated) {
+    public void setMemoryAllocated(Long memoryAllocated) {
         this.memoryAllocated = memoryAllocated;
     }
 
@@ -435,8 +443,16 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.lastPinged = lastPinged;
     }
 
+    public void setVirtualMachineId(String virtualMachineId) {
+        this.virtualMachineId = virtualMachineId;
+    }
+
     public void setManagementServerId(String managementServerId) {
         this.managementServerId = managementServerId;
+    }
+
+    public void setManagementServerName(String managementServerName) {
+        this.managementServerName = managementServerName;
     }
 
     public void setClusterId(String clusterId) {
@@ -687,8 +703,8 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return memoryTotal;
     }
 
-    public long getMemoryAllocated() {
-        return memoryAllocated;
+    public Long getMemoryAllocated() {
+        return memoryAllocated == null ? 0 : memoryAllocated;
     }
 
     public void setMemoryAllocatedPercentage(String memoryAllocatedPercentage) {
@@ -723,8 +739,16 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return lastPinged;
     }
 
+    public String getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
     public String getManagementServerId() {
         return managementServerId;
+    }
+
+    public String getManagementServerName() {
+        return managementServerName;
     }
 
     public String getClusterId() {

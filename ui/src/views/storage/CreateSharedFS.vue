@@ -151,7 +151,7 @@
       </span>
       <a-form-item ref="serviceofferingid" name="serviceofferingid">
         <template #label>
-          <tooltip-label :title="$t('label.compute.offering.for.vm')" :tooltip="apiParams.serviceofferingid.description || 'Service Offering'"/>
+          <tooltip-label :title="$t('label.compute.offering.for.sharedfs.instance')" :tooltip="apiParams.serviceofferingid.description || 'Service Offering'"/>
         </template>
         <a-select
           v-model:value="form.serviceofferingid"
@@ -273,14 +273,14 @@ export default {
     fetchOwnerOptions (OwnerOptions) {
       this.owner = {}
       console.log('fetching owner')
-      if (OwnerOptions.selectedAccountType === this.$t('label.account')) {
+      if (OwnerOptions.selectedAccountType === 'Account') {
         if (!OwnerOptions.selectedAccount) {
           return
         }
         console.log('fetched account')
         this.owner.account = OwnerOptions.selectedAccount
         this.owner.domainid = OwnerOptions.selectedDomain
-      } else if (OwnerOptions.selectedAccountType === this.$t('label.project')) {
+      } else if (OwnerOptions.selectedAccountType === 'Project') {
         if (!OwnerOptions.selectedProject) {
           return
         }

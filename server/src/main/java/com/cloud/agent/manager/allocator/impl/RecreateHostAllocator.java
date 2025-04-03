@@ -94,7 +94,7 @@ public class RecreateHostAllocator extends FirstFitRoutingAllocator {
             List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
             VolumeVO vol = vols.get(0);
             long podId = vol.getPodId();
-            logger.debug("Pod id determined from volume " + vol.getId() + " is " + podId);
+            logger.debug("Pod id determined from volume {} is {}", vol, podId);
             Iterator<PodCluster> it = pcs.iterator();
             while (it.hasNext()) {
                 PodCluster pc = it.next();

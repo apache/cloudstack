@@ -34,12 +34,12 @@
                   <resource-icon :image="getImage(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon)" size="4x" style="margin-right: 5px"/>
                 </span>
                 <span v-else>
-                  <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="4x" @update-osname="setResourceOsType"/>
+                  <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="3x" @update-osname="setResourceOsType"/>
                   <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :icon="$route.meta.icon" />
                   <font-awesome-icon
                     v-else-if="$route.meta.icon && Array.isArray($route.meta.icon)"
                     :icon="$route.meta.icon"
-                    size="4x"
+                    size="3x"
                     class="anticon"
                     :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
                   <render-icon v-else style="font-size: 36px" :svgIcon="$route.meta.icon" />
@@ -185,8 +185,18 @@
         <div class="resource-detail-item" v-if="('cpunumber' in resource && 'cpuspeed' in resource) || resource.cputotal">
           <div class="resource-detail-item__label">{{ $t('label.cpu') }}</div>
           <div class="resource-detail-item__details">
-            <appstore-outlined />
-            <span v-if="'cpunumber' in resource && 'cpuspeed' in resource">{{ resource.cpunumber }} CPU x {{ parseFloat(resource.cpuspeed / 1000.0).toFixed(2) }} Ghz</span>
+            <font-awesome-icon
+              :icon="['fa-solid', 'fa-microchip']"
+              class="anticon"
+              :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+            <span v-if="'cpunumber' in resource && 'cpuspeed' in resource">{{ resource.cpunumber }} CPU x {{ (resource.cpuspeed / 1000.0).toFixed(2) }} GHz
+              <a-tooltip placement="top">
+                <template #title>
+                  {{ resource.cpuspeed }} MHz
+                </template>
+                <QuestionCircleOutlined />
+              </a-tooltip>
+            </span>
             <span v-else>{{ resource.cputotal }}</span>
             <a-tag v-if="resource.arch" style="margin-left: 10px">
               {{ resource.arch }}
@@ -216,7 +226,11 @@
         <div class="resource-detail-item" v-if="'memory' in resource">
           <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
           <div class="resource-detail-item__details">
-            <bulb-outlined />{{ resource.memory + ' ' + $t('label.mb.memory') }}
+            <font-awesome-icon
+              :icon="['fa-solid', 'fa-memory']"
+              class="anticon"
+              :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+            {{ resource.memory + ' ' + $t('label.mb.memory') }}
           </div>
           <div>
             <span v-if="resource.memorykbs && resource.memoryintfreekbs">
@@ -233,7 +247,16 @@
         <div class="resource-detail-item" v-else-if="resource.memorytotalgb">
           <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
           <div class="resource-detail-item__details">
-            <bulb-outlined />{{ resource.memorytotalgb + ' ' + $t('label.memory') }}
+            <bulb-outlined />
+            <span>
+              {{ resource.memorytotalgb + ' ' + $t('label.memory') }}
+              <a-tooltip placement="top">
+                <template #title>
+                  {{ (resource.memorytotal/(1024**2)).toFixed(3) }} MB
+                </template>
+                <QuestionCircleOutlined />
+              </a-tooltip>
+            </span>
           </div>
           <div>
             <span v-if="resource.memoryusedgb">
@@ -348,7 +371,10 @@
                 v-for="(eth, index) in resource.nic"
                 :key="eth.id"
                 style="margin-left: -24px; margin-top: 5px;">
-                <api-outlined />
+                <font-awesome-icon
+                  :icon="['fa-solid', 'fa-ethernet']"
+                  class="anticon"
+                  :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
                 <strong>eth{{ index }}</strong>&nbsp;
                 <copy-label :label="eth.ip6address ? eth.ipaddress + ', ' + eth.ip6address : eth.ipaddress" />&nbsp;
                 <a-tag v-if="eth.isdefault">
@@ -373,7 +399,11 @@
                 v-for="network in resource.networks"
                 :key="network.id"
                 style="margin-top: 5px;">
-                <api-outlined />{{ network.name }}
+                <font-awesome-icon
+                  :icon="['fa-solid', 'fa-ethernet']"
+                  class="anticon"
+                  :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+                {{ network.name }}
                 <span v-if="resource.defaultnetworkid === network.id">
                   ({{ $t('label.default') }})
                 </span>
@@ -733,8 +763,18 @@
         </div>
       </div>
 
-      <div class="account-center-tags" v-if="showKeys">
+      <div class="account-center-tags" v-if="showKeys || resource.apikeyaccess">
         <a-divider/>
+      </div>
+      <div class="account-center-tags" v-if="resource.apikeyaccess && resource.account">
+        <div class="resource-detail-item">
+          <div class="resource-detail-item__label">{{ $t('label.apikeyaccess') }}</div>
+          <div class="resource-detail-item__details">
+            <status class="status" :text="resource.apikeyaccess" displayText/>
+          </div>
+        </div>
+      </div>
+      <div class="account-center-tags" v-if="showKeys">
         <div class="user-keys">
           <key-outlined />
           <strong>
@@ -1083,6 +1123,9 @@ export default {
       api('getUserKeys', { id: this.resource.id }).then(json => {
         this.showKeys = true
         this.newResource.secretkey = json.getuserkeysresponse.userkeys.secretkey
+        if (!this.isAdmin()) {
+          this.newResource.apikeyaccess = json.getuserkeysresponse.userkeys.apikeyaccess ? 'Enabled' : 'Disabled'
+        }
         this.$emit('change-resource', this.newResource)
       })
     },
@@ -1112,6 +1155,9 @@ export default {
       return ['Admin'].includes(this.$store.getters.userInfo.roletype) ||
         (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
         (this.resource.project && this.resource.projectid === this.$store.getters.project.id)
+    },
+    isAdmin () {
+      return ['Admin'].includes(this.$store.getters.userInfo.roletype)
     },
     showInput () {
       this.inputVisible = true
@@ -1162,6 +1208,14 @@ export default {
       if (item.value) {
         query[item.param] = this.resource[item.value]
       } else {
+        if (item.name === 'template') {
+          query.templatefilter = 'self'
+          query.filter = 'self'
+        } else if (item.name === 'iso') {
+          query.isofilter = 'self'
+          query.filter = 'self'
+        }
+
         if (item.param === 'account') {
           query[item.param] = this.resource.name
           query.domainid = this.resource.domainid

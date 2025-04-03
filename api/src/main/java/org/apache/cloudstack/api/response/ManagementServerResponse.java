@@ -24,7 +24,9 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.management.ManagementServerHost.State;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 @EntityReference(value = ManagementServerHost.class)
 public class ManagementServerResponse extends BaseResponse {
@@ -72,9 +74,29 @@ public class ManagementServerResponse extends BaseResponse {
     @Param(description = "the running OS kernel version for this Management Server")
     private String kernelVersion;
 
-    @SerializedName(ApiConstants.SERVICE_IP)
+    @SerializedName(ApiConstants.IP_ADDRESS)
     @Param(description = "the IP Address for this Management Server")
-    private String serviceIp;
+    private String ipAddress;
+
+    @SerializedName(ApiConstants.PEERS)
+    @Param(description = "the Management Server Peers")
+    private List<PeerManagementServerNodeResponse> peers;
+
+    @SerializedName(ApiConstants.LAST_AGENTS)
+    @Param(description = "the last agents this Management Server is responsible for, before shutdown or preparing for maintenance", since = "4.21.0.0")
+    private List<String> lastAgents;
+
+    @SerializedName(ApiConstants.AGENTS)
+    @Param(description = "the agents this Management Server is responsible for", since = "4.21.0.0")
+    private List<String> agents;
+
+    @SerializedName(ApiConstants.AGENTS_COUNT)
+    @Param(description = "the number of host agents this Management Server is responsible for", since = "4.21.0.0")
+    private Long agentsCount;
+
+    @SerializedName(ApiConstants.PENDING_JOBS_COUNT)
+    @Param(description = "the number of pending jobs in this Management Server", since = "4.21.0.0")
+    private Long pendingJobsCount;
 
     public String getId() {
         return this.id;
@@ -116,8 +138,24 @@ public class ManagementServerResponse extends BaseResponse {
         return lastBoot;
     }
 
-    public String getServiceIp() {
-        return serviceIp;
+    public String getIpAddress() {
+        return ipAddress;
+    }
+
+    public List<String> getLastAgents() {
+        return lastAgents;
+    }
+
+    public List<String> getAgents() {
+        return agents;
+    }
+
+    public Long getAgentsCount() {
+        return this.agentsCount;
+    }
+
+    public Long getPendingJobsCount() {
+        return this.pendingJobsCount;
     }
 
     public void setId(String id) {
@@ -164,11 +202,42 @@ public class ManagementServerResponse extends BaseResponse {
         this.kernelVersion = kernelVersion;
     }
 
-    public void setServiceIp(String serviceIp) {
-        this.serviceIp = serviceIp;
+    public void setIpAddress(String ipAddress) {
+        this.ipAddress = ipAddress;
+    }
+
+    public void setLastAgents(List<String> lastAgents) {
+        this.lastAgents = lastAgents;
+    }
+
+    public void setAgents(List<String> agents) {
+        this.agents = agents;
+    }
+
+    public void setAgentsCount(Long agentsCount) {
+        this.agentsCount = agentsCount;
+    }
+
+    public void setPendingJobsCount(Long pendingJobsCount) {
+        this.pendingJobsCount = pendingJobsCount;
     }
 
     public String getKernelVersion() {
         return kernelVersion;
+    }
+
+    public List<PeerManagementServerNodeResponse> getPeers() {
+        return peers;
+    }
+
+    public void setPeers(List<PeerManagementServerNodeResponse> peers) {
+        this.peers = peers;
+    }
+
+    public void addPeer(PeerManagementServerNodeResponse peer) {
+        if (peers == null) {
+            peers = new ArrayList<>();
+        }
+        peers.add(peer);
     }
 }

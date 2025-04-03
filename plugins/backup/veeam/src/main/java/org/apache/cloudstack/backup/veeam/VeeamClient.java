@@ -919,11 +919,11 @@ public class VeeamClient {
                 "}"
         );
         Pair<Boolean, String> response = executePowerShellCommands(cmds);
-        final List<Backup.RestorePoint> restorePoints = new ArrayList<>();
         if (response == null || !response.first()) {
-            return restorePoints;
+            return null;
         }
 
+        final List<Backup.RestorePoint> restorePoints = new ArrayList<>();
         for (final String block : response.second().split("\r\n\r\n")) {
             if (block.isEmpty()) {
                 continue;

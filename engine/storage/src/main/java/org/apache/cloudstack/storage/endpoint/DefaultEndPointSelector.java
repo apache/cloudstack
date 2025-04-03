@@ -299,7 +299,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
     @Override
     public EndPoint select(DataObject srcData, DataObject destData, StorageAction action, boolean encryptionRequired) {
-        logger.error("IR24 select BACKUPSNAPSHOT from primary to secondary " + srcData.getId() + " dest=" + destData.getId());
+        logger.error("IR24 select BACKUPSNAPSHOT from primary to secondary {} dest={}", srcData, destData);
         if (action == StorageAction.BACKUPSNAPSHOT && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
             SnapshotInfo srcSnapshot = (SnapshotInfo)srcData;
             VolumeInfo volumeInfo = srcSnapshot.getBaseVolume();

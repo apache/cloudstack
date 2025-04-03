@@ -47,7 +47,7 @@
         <div class="form__label">{{ $t('label.hypervisor') }}</div>
         <a-select
           v-model:value="hypervisor"
-          @change="resetAllFields"
+          @change="hypervisor => onChangeHypervisor(hypervisor)"
           showSearch
           optionFilterProp="value"
           :filterOption="(input, option) => {
@@ -109,19 +109,28 @@
         </div>
 
         <div class="form__item">
-          <div class="form__label">{{ $t('label.vcenterusername') }}</div>
-          <a-input v-model:value="username"></a-input>
-        </div>
-
-        <div class="form__item">
-          <div class="form__label">{{ $t('label.vcenterpassword') }}</div>
-          <a-input type="password" v-model:value="password"></a-input>
-        </div>
-
-        <div class="form__item">
           <div class="form__label">{{ $t('label.vcenterdatacenter') }}</div>
           <a-input v-model:value="dataCenter"></a-input>
         </div>
+
+        <div class="form__item" name="useDefaultVMwareCred">
+          <div class="form__label">{{ $t('label.use.existing.vcenter.credentials.from.zone') }}</div>
+          <a-switch v-model="useDefaultVMwareCred" :checked="useDefaultVMwareCred" @change="onChangeUseDefaultVMwareCred()" />
+        </div>
+
+        <template v-if="useDefaultVMwareCred === false">
+          <div class="form__item">
+            <div class="form__label"><span class="required">* </span>{{ $t('label.vcenterusername') }}</div>
+            <span class="required required-label" ref="requiredUsername">{{ $t('label.required') }}</span>
+            <a-input v-model:value="username"></a-input>
+          </div>
+
+          <div class="form__item">
+            <div class="form__label"><span class="required">* </span>{{ $t('label.vcenterpassword') }}</div>
+            <span class="required required-label" ref="requiredPassword">{{ $t('label.required') }}</span>
+            <a-input type="password" v-model:value="password"></a-input>
+          </div>
+        </template>
       </template>
 
       <div class="form__item">
@@ -176,6 +185,7 @@ export default {
       username: null,
       password: null,
       url: null,
+      useDefaultVMwareCred: true,
       host: null,
       dataCenter: null,
       ovm3pool: null,
@@ -257,6 +267,27 @@ export default {
         this.loading = false
       })
     },
+    fetchVMwareCred () {
+      this.loading = true
+      this.clustertype = 'ExternalManaged'
+      api('listVmwareDcs', {
+        zoneid: this.zoneId
+      }).then(response => {
+        var vmwaredcs = response.listvmwaredcsresponse.VMwareDC
+        if (vmwaredcs !== null) {
+          this.host = vmwaredcs[0].vcenter
+          this.dataCenter = vmwaredcs[0].name
+        }
+      }).catch(error => {
+        this.$notification.error({
+          message: `${this.$t('label.error')} ${error.response.status}`,
+          description: error.response.data.listvmwaredcsresponse.errortext,
+          duration: 0
+        })
+      }).finally(() => {
+        this.loading = false
+      })
+    },
     toggleDedicated () {
       this.dedicatedDomainId = null
       this.dedicatedAccount = null
@@ -270,34 +301,23 @@ export default {
       }
       this.$refs.requiredCluster.classList.remove('required-label--visible')
 
+      if (this.hypervisor === 'VMware' && this.useDefaultVMwareCred === false) {
+        if (!this.username) {
+          this.$refs.requiredUsername.classList.add('required-label--visible')
+          return
+        }
+        if (!this.password) {
+          this.$refs.requiredPassword.classList.add('required-label--visible')
+          return
+        }
+        this.$refs.requiredUsername.classList.remove('required-label--visible')
+        this.$refs.requiredPassword.classList.remove('required-label--visible')
+      }
+
       if (this.hypervisor === 'Ovm3') {
         this.ovm3pool = 'on'
         this.ovm3cluster = 'undefined'
         this.ovm3vip = ''
-      }
-
-      if (this.hypervisor === 'VMware') {
-        this.clustertype = 'ExternalManaged'
-        if ((this.host === null || this.host.length === 0) &&
-          (this.dataCenter === null || this.dataCenter.length === 0)) {
-          api('listVmwareDcs', {
-            zoneid: this.zoneId
-          }).then(response => {
-            var vmwaredcs = response.listvmwaredcsresponse.VMwareDC
-            if (vmwaredcs !== null) {
-              this.host = vmwaredcs[0].vcenter
-              this.dataCenter = vmwaredcs[0].name
-            }
-            this.addCluster()
-          }).catch(error => {
-            this.$notification.error({
-              message: `${this.$t('label.error')} ${error.response.status}`,
-              description: error.response.data.listvmwaredcsresponse.errortext,
-              duration: 0
-            })
-          })
-          return
-        }
       }
       this.addCluster()
     },
@@ -387,7 +407,7 @@ export default {
         this.loading = false
       })
     },
-    resetAllFields () {
+    onChangeHypervisor (hypervisor) {
       this.clustertype = 'CloudManaged'
       this.username = null
       this.password = null
@@ -397,6 +417,16 @@ export default {
       this.ovm3pool = null
       this.ovm3cluster = null
       this.ovm3vip = null
+      if (hypervisor === 'VMware') {
+        this.fetchVMwareCred()
+      }
+    },
+    onChangeUseDefaultVMwareCred () {
+      this.useDefaultVMwareCred = !this.useDefaultVMwareCred
+      if (this.useDefaultVMwareCred) {
+        this.username = null
+        this.password = null
+      }
     },
     returnPlaceholder (field) {
       this.params.find(i => {

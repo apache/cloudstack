@@ -781,7 +781,7 @@ export default {
       const csvData = this.csv({ data: this.acls })
 
       const hiddenElement = document.createElement('a')
-      hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURI(csvData)
+      hiddenElement.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvData)
       hiddenElement.target = '_blank'
       hiddenElement.download = 'AclRules-' + this.resource.name + '-' + this.resource.id + '.csv'
       hiddenElement.click()

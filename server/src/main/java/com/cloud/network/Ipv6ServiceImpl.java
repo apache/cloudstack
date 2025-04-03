@@ -35,6 +35,9 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6PrefixCmd;
@@ -53,7 +56,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Resource;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterGuestIpv6Prefix;
@@ -118,6 +120,8 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     @Inject
     VlanDao vlanDao;
     @Inject
+    DataCenterDao zoneDao;
+    @Inject
     DataCenterGuestIpv6PrefixDao dataCenterGuestIpv6PrefixDao;
     @Inject
     Ipv6GuestPrefixSubnetNetworkMapDao ipv6GuestPrefixSubnetNetworkMapDao;
@@ -129,6 +133,8 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     NetworkDetailsDao networkDetailsDao;
     @Inject
     NicDao nicDao;
+    @Inject
+    PhysicalNetworkDao physicalNetworkDao;
     @Inject
     DomainRouterDao domainRouterDao;
     @Inject
@@ -159,8 +165,8 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         NicVO nic = nicOptional.get();
         Optional<VlanVO> vlanOptional = ranges.stream().filter(v -> nic.getIPv6Cidr().equals(v.getIp6Cidr()) && nic.getIPv6Gateway().equals(v.getIp6Gateway())).findFirst();
         if (vlanOptional.isEmpty()) {
-            logger.error(String.format("Public IPv6 placeholder NIC with cidr: %s, gateway: %s for network ID: %d is not present in the allocated VLAN: %s",
-                    nic.getIPv6Cidr(), nic.getIPv6Gateway(),network.getId(), ranges.get(0).getVlanTag()));
+            logger.error("Public IPv6 placeholder NIC {} with cidr: {}, gateway: {} for network: {} is not present in the allocated VLAN: {}",
+                    nic, nic.getIPv6Cidr(), nic.getIPv6Gateway(), network, ranges.get(0).getVlanTag());
             return null;
         }
         return new Pair<>(nic.getIPv6Address(), vlanOptional.get());
@@ -205,9 +211,11 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     private Pair<String, ? extends Vlan> assignPublicIpv6ToNetworkInternal(Network network, String vlanId, String nicMacAddress) throws InsufficientAddressCapacityException {
         final List<VlanVO> ranges = vlanDao.listIpv6RangeByZoneIdAndVlanId(network.getDataCenterId(), vlanId);
         if (CollectionUtils.isEmpty(ranges)) {
-            logger.error(String.format("Unable to find IPv6 address for zone ID: %d, physical network ID: %d, VLAN: %s", network.getDataCenterId(), network.getPhysicalNetworkId(), vlanId));
+            DataCenterVO zone = zoneDao.findById(network.getDataCenterId());
+            logger.error("Unable to find IPv6 address for zone: {}, physical network: {}, VLAN: {}",
+                    zone, physicalNetworkDao.findById(network.getPhysicalNetworkId()), vlanId);
             InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, network.getDataCenterId());
-            ex.addProxyObject(ApiDBUtils.findZoneById(network.getDataCenterId()).getUuid());
+            ex.addProxyObject(zone.getUuid());
             throw ex;
         }
         Pair<String, ? extends Vlan> placeholderResult = getPublicIpv6FromNetworkPlaceholder(network, ranges);
@@ -330,11 +338,11 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
         return new Pair<>(used, total);
     }
 
-    public Pair<String, String> preAllocateIpv6SubnetForNetwork(long zoneId) throws ResourceAllocationException {
+    public Pair<String, String> preAllocateIpv6SubnetForNetwork(DataCenter zone) throws ResourceAllocationException {
         return Transaction.execute((TransactionCallbackWithException<Pair<String, String>, ResourceAllocationException>) status -> {
-            List<DataCenterGuestIpv6PrefixVO> prefixes = dataCenterGuestIpv6PrefixDao.listByDataCenterId(zoneId);
+            List<DataCenterGuestIpv6PrefixVO> prefixes = dataCenterGuestIpv6PrefixDao.listByDataCenterId(zone.getId());
             if (CollectionUtils.isEmpty(prefixes)) {
-                logger.error(String.format("IPv6 prefixes not found for the zone ID: %d", zoneId));
+                logger.error("IPv6 prefixes not found for the zone: {}", zone);
                 throw new ResourceAllocationException("Unable to allocate IPv6 network", Resource.ResourceType.network);
             }
             Ipv6GuestPrefixSubnetNetworkMapVO ip6Subnet = null;
@@ -492,7 +500,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
     public void checkNetworkIpv6Upgrade(Network network) throws InsufficientAddressCapacityException, ResourceAllocationException {
         List<DataCenterGuestIpv6PrefixVO> prefixes = dataCenterGuestIpv6PrefixDao.listByDataCenterId(network.getDataCenterId());
         if (CollectionUtils.isEmpty(prefixes)) {
-            logger.error(String.format("IPv6 prefixes not found for the zone ID: %d", network.getDataCenterId()));
+            logger.error("IPv6 prefixes not found for the zone: {}", zoneDao.findById(network.getDataCenterId()));
             throw new ResourceAllocationException("Unable to allocate IPv6 network", Resource.ResourceType.network);
         }
         List<IPAddressVO> addresses = network.getVpcId() == null ?
@@ -502,9 +510,11 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
             VlanVO vlan = vlanDao.findById(address.getVlanId());
             final List<VlanVO> ranges = vlanDao.listIpv6RangeByZoneIdAndVlanId(network.getDataCenterId(), vlan.getVlanTag());
             if (CollectionUtils.isEmpty(ranges)) {
-                logger.error(String.format("Unable to find IPv6 address for zone ID: %d, physical network ID: %d, VLAN: %s", network.getDataCenterId(), network.getPhysicalNetworkId(), vlan.getVlanTag()));
+                DataCenterVO zone = zoneDao.findById(network.getDataCenterId());
+                logger.error("Unable to find IPv6 address for zone: {}, physical network: {}, VLAN: {}",
+                        zone, physicalNetworkDao.findById(network.getPhysicalNetworkId()), vlan.getVlanTag());
                 InsufficientAddressCapacityException ex = new InsufficientAddressCapacityException("Insufficient address capacity", DataCenter.class, network.getDataCenterId());
-                ex.addProxyObject(ApiDBUtils.findZoneById(network.getDataCenterId()).getUuid());
+                ex.addProxyObject(zone.getUuid());
                 throw ex;
             }
         }
@@ -576,7 +586,7 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
             if (!supportedProtocols.contains(protocol.toLowerCase())) {
                 throw new InvalidParameterValueException(String.format("Protocol %s is not supported in zone", protocol));
             } else if (!supportedTrafficTypes.contains(trafficType.toString().toLowerCase())) {
-                throw new InvalidParameterValueException("Traffic Type " + trafficType + " is currently supported by Firewall in network " + networkId);
+                throw new InvalidParameterValueException(String.format("Traffic Type %s is currently supported by Firewall in network %s", trafficType, network));
             }
         }
 
@@ -653,9 +663,9 @@ public class Ipv6ServiceImpl extends ComponentLifecycleBase implements Ipv6Servi
             return false;
         }
         if (!FirewallRule.Purpose.Ipv6Firewall.equals(rule.getPurpose())) {
-            logger.error(String.format("Cannot apply IPv6 firewall rule with ID: %d as purpose %s is not %s", id, rule.getPurpose(), FirewallRule.Purpose.Ipv6Firewall));
+            logger.error("Cannot apply IPv6 firewall rule: {} as purpose {} is not {}", rule, rule.getPurpose(), FirewallRule.Purpose.Ipv6Firewall);
         }
-        logger.debug(String.format("Applying IPv6 firewall rules for rule with ID: %s", rule.getUuid()));
+        logger.debug(String.format("Applying IPv6 firewall rules for rule: %s", rule));
         List<FirewallRuleVO> rules = firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), rule.getPurpose(), FirewallRule.TrafficType.Egress);
         rules.addAll(firewallDao.listByNetworkPurposeTrafficType(rule.getNetworkId(), FirewallRule.Purpose.Ipv6Firewall, FirewallRule.TrafficType.Ingress));
         return firewallManager.applyFirewallRules(rules, false, CallContext.current().getCallingAccount());

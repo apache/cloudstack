@@ -1945,11 +1945,11 @@ public class ApiDBUtils {
     }
 
     public static UserResponse newUserResponse(UserAccountJoinVO usr) {
-        return newUserResponse(usr, null);
+        return newUserResponse(ResponseView.Restricted, null, usr);
     }
 
-    public static UserResponse newUserResponse(UserAccountJoinVO usr, Long domainId) {
-        UserResponse response = s_userAccountJoinDao.newUserResponse(usr);
+    public static UserResponse newUserResponse(ResponseView view, Long domainId, UserAccountJoinVO usr) {
+        UserResponse response = s_userAccountJoinDao.newUserResponse(view, usr);
         if(!AccountManager.UseSecretKeyInResponse.value()){
             response.setSecretKey(null);
         }
@@ -2137,7 +2137,7 @@ public class ApiDBUtils {
         for (DiskOfferingJoinVO offering : offerings) {
             DiskOfferingResponse response = s_diskOfferingJoinDao.newDiskOfferingResponse(offering);
             if (vmId != null) {
-                response.setSuitableForVm(suitability.get(offering.getId()));
+                response.setSuitableForVm(suitability.getOrDefault(offering.getId(), true));
             }
             list.add(response);
         }

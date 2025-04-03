@@ -129,11 +129,11 @@ public class CapabilitiesResponse extends BaseResponse {
     private Integer instancesDisksStatsRetentionTime;
 
     @SerializedName(ApiConstants.SHAREDFSVM_MIN_CPU_COUNT)
-    @Param(description = "the min CPU count for the service offering used by the shared filesystem VM", since = "4.20.0")
+    @Param(description = "the min CPU count for the service offering used by the shared filesystem instance", since = "4.20.0")
     private Integer sharedFsVmMinCpuCount;
 
     @SerializedName(ApiConstants.SHAREDFSVM_MIN_RAM_SIZE)
-    @Param(description = "the min Ram size for the service offering used by the shared filesystem VM", since = "4.20.0")
+    @Param(description = "the min Ram size for the service offering used by the shared filesystem instance", since = "4.20.0")
     private Integer sharedFsVmMinRamSize;
 
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {

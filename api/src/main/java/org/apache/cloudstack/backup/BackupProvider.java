@@ -49,22 +49,21 @@ public interface BackupProvider {
 
     /**
      * Assign a VM to a backup offering or policy
-     * @param vm
-     * @param backup
-     * @param policy
-     * @return
+     * @param vm the machine to back up
+     * @param backupOffering the SLA definition for the backup
+     * @return succeeded?
      */
     boolean assignVMToBackupOffering(VirtualMachine vm, BackupOffering backupOffering);
 
     /**
      * Removes a VM from a backup offering or policy
-     * @param vm
-     * @return
+     * @param vm the machine to stop backing up
+     * @return succeeded?
      */
     boolean removeVMFromBackupOffering(VirtualMachine vm, boolean removeBackups);
 
     /**
-     * Whether the provide will delete backups on removal of VM from the offfering
+     * Whether the provider will delete backups on removal of VM from the offering
      * @return boolean result
      */
     boolean willDeleteBackupsOnOfferingRemoval();
@@ -72,16 +71,16 @@ public interface BackupProvider {
     /**
      * Starts and creates an adhoc backup process
      * for a previously registered VM backup
-     * @param backup
-     * @return
+     * @param vm the machine to make a backup of
+     * @return the result and {code}Backup{code} {code}Object{code}
      */
-    boolean takeBackup(VirtualMachine vm);
+    Pair<Boolean, Backup> takeBackup(VirtualMachine vm);
 
     /**
      * Delete an existing backup
-     * @param backuo The backup to exclude
+     * @param backup The backup to exclude
      * @param forced Indicates if backup will be force removed or not
-     * @return
+     * @return succeeded?
      */
     boolean deleteBackup(Backup backup, boolean forced);
 
@@ -97,16 +96,23 @@ public interface BackupProvider {
 
     /**
      * Returns backup metrics for a list of VMs in a zone
-     * @param zoneId
-     * @param vms
-     * @return
+     * @param zoneId the zone for which to return metrics
+     * @param vms a list of machines to get measurements for
+     * @return a map of machine -> backup metrics
      */
     Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms);
 
     /**
-     * This method should reconcile and create backup entries for any backups created out-of-band
-     * @param vm
-     * @param metric
+     * This method should TODO
+     * @param vm the machine to get restore point for
      */
-    void syncBackups(VirtualMachine vm, Backup.Metric metric);
+    List<Backup.RestorePoint> listRestorePoints(VirtualMachine vm);
+
+    /**
+     * This method should TODO
+     * @param restorePoint the restore point to create a backup for
+     * @param vm The machine for which to create a backup
+     * @param metric the metric object to update with the new backup data
+     */
+    Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric);
 }

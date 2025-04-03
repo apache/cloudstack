@@ -191,7 +191,7 @@ public class WebhookVO implements Webhook {
 
     @Override
     public String toString() {
-        return String.format("Webhook [%s]",ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
+        return String.format("Webhook %s",ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
                 this, "id", "uuid", "name", "payloadUrl"));
     }
 

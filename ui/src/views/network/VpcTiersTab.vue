@@ -213,7 +213,7 @@
               @change="updateMtu()"/>
               <div style="color: red" v-if="errorPrivateMtu" v-html="errorPrivateMtu.replace('%x', privateMtuMax)"></div>
           </a-form-item>
-          <a-form-item v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan">
+          <a-form-item ref="vlan" name="vlan" v-if="!isObjectEmpty(selectedNetworkOffering) && selectedNetworkOffering.specifyvlan">
             <template #label>
               <tooltip-label :title="$t('label.vlan')" :tooltip="$t('label.vlan')"/>
             </template>
@@ -591,7 +591,7 @@ export default {
       }).then(async json => {
         var lbNetworks = json.listnetworksresponse.network || []
         if (lbNetworks.length > 0) {
-          this.publicLBExists = true
+          this.publicLBExists = false
           for (var idx = 0; idx < lbNetworks.length; idx++) {
             const lbNetworkOffering = await this.getNetworkOffering(lbNetworks[idx].networkofferingid)
             const index = lbNetworkOffering.service.map(svc => { return svc.name }).indexOf('Lb')
@@ -618,16 +618,23 @@ export default {
       api('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
         var filteredOfferings = []
-        if (this.publicLBExists) {
-          for (var index in this.networkOfferings) {
-            const offering = this.networkOfferings[index]
-            const idx = offering.service.map(svc => { return svc.name }).indexOf('Lb')
-            if (idx === -1 || this.lbProviderMap.publicLb.vpc.indexOf(offering.service.map(svc => { return svc.provider[0].name })[idx]) === -1) {
+        const vpcLbServiceIndex = this.resource.service.map(svc => { return svc.name }).indexOf('Lb')
+        for (var index in this.networkOfferings) {
+          const offering = this.networkOfferings[index]
+          const idx = offering.service.map(svc => { return svc.name }).indexOf('Lb')
+          if (this.publicLBExists && (idx === -1 || this.lbProviderMap.publicLb.vpc.indexOf(offering.service.map(svc => { return svc.provider[0].name })[idx]) === -1)) {
+            filteredOfferings.push(offering)
+          } else if (!this.publicLBExists && vpcLbServiceIndex > -1) {
+            const vpcLbServiceProviders = vpcLbServiceIndex === -1 ? undefined : this.resource.service[vpcLbServiceIndex].provider.map(provider => provider.name)
+            const offeringLbServiceProvider = idx === -1 ? undefined : offering.service[idx].provider[0].name
+            if (vpcLbServiceProviders && (!offeringLbServiceProvider || (offeringLbServiceProvider && vpcLbServiceProviders.includes(offeringLbServiceProvider)))) {
               filteredOfferings.push(offering)
             }
+          } else {
+            filteredOfferings.push(offering)
           }
-          this.networkOfferings = filteredOfferings
         }
+        this.networkOfferings = filteredOfferings
         if (this.isNsxEnabled) {
           this.networkOfferings = this.networkOfferings.filter(offering => offering.networkmode === (this.isOfferingNatMode ? 'NATTED' : 'ROUTED'))
         }

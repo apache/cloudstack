@@ -1283,6 +1283,7 @@ export default {
       if (this.isEdgeZone) {
         clusterName = 'Cluster-' + this.stepData.zoneReturned.name
       }
+      params.arch = this.prefillContent?.arch || null
 
       if (hypervisor === 'VMware') {
         params.username = this.prefillContent?.vCenterUsername || null
@@ -1485,6 +1486,10 @@ export default {
         const rbdpool = this.prefillContent?.primaryStorageRADOSPool || ''
         const rbdid = this.prefillContent?.primaryStorageRADOSUser || ''
         const rbdsecret = this.prefillContent?.primaryStorageRADOSSecret || ''
+
+        if (this.prefillContent?.primaryStorageDataPool) {
+          params['details[0].rbd_default_data_pool'] = this.prefillContent.primaryStorageDataPool
+        }
         url = this.rbdURL(rbdmonitor, rbdpool, rbdid, rbdsecret)
       } else if (protocol === 'Linstor') {
         url = this.linstorURL(server)

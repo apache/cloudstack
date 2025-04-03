@@ -64,7 +64,7 @@ public interface SharedFS extends ControlledEntity, Identity, InternalIdentity, 
             null,
             SharedFSFeatureEnabled.key());
 
-    String SharedFSVmNamePrefix = "fsvm";
+    String SharedFSVmNamePrefix = "sharedfs";
     String SharedFSPath = "/export";
 
     enum FileSystemType {
