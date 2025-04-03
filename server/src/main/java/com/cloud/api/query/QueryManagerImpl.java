@@ -18,6 +18,8 @@ package com.cloud.api.query;
 
 import static com.cloud.vm.VmDetailConstants.SSH_PUBLIC_KEY;
 
+
+import com.cloud.cluster.ManagementServerHostPeerJoinVO;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
