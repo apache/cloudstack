@@ -90,9 +90,13 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
             collectionType = CommandType.UUID,
             entityType = StoragePoolResponse.class,
             required = false,
+            authorized = RoleType.Admin,
             description = "A comma-separated list of IDs of the storage pools in other zones in which the snapshot will be made available. " +
                     "The snapshot will always be made available in the zone in which the volume is present. Currently supported for StorPool only")
     protected List<Long> storagePoolIds;
+
+    @Parameter (name = ApiConstants.USE_STORAGE_REPLICATION, type=CommandType.BOOLEAN, required = false, description = "This parameter enables the option the snapshot to be copied to supported primary storage")
+    protected Boolean useStorageReplication;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -121,6 +125,13 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
 
     public List<Long> getStoragePoolIds() {
         return storagePoolIds;
+    }
+
+    public Boolean useStorageReplication() {
+        if (useStorageReplication == null) {
+            return false;
+        }
+        return useStorageReplication;
     }
 
     @Override
@@ -166,7 +177,7 @@ public class CopySnapshotCmd extends BaseAsyncCmd implements UserCmd {
     @Override
     public void execute() throws ResourceUnavailableException {
         try {
-            if (destZoneId == null && CollectionUtils.isEmpty(destZoneIds) && CollectionUtils.isEmpty(storagePoolIds))
+            if (destZoneId == null && CollectionUtils.isEmpty(destZoneIds) && useStorageReplication())
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                         "Either destzoneid or destzoneids parameters have to be specified.");
 

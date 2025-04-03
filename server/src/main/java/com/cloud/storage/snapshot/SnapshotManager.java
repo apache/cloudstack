@@ -61,6 +61,8 @@ public interface SnapshotManager extends Configurable {
     ConfigKey<Integer> snapshotDeltaMax = new ConfigKey<>(Integer.class, "snapshot.delta.max", "Snapshots", "16", "Max delta snapshots between two full snapshots. " +
             "Only valid for KVM and XenServer.", true, ConfigKey.Scope.Global, null);
 
+    public static final ConfigKey<Boolean> UseStorageReplication = new ConfigKey<Boolean>(Boolean.class, "use.storage.replication", "Snapshots", "false", "For snapshot copy to another primary storage in a different zone. Supports only StorPool storage for now", true, ConfigKey.Scope.StoragePool, null);
+
     void deletePoliciesForVolume(Long volumeId);
 
     /**
