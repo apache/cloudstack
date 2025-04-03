@@ -298,7 +298,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection,
-                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm, kvmIncrementalSnapshot, snapshotDeltaMax, snapshotShowChainSize};
+                SnapshotInfo.BackupSnapshotAfterTakingSnapshot, VmStorageSnapshotKvm, kvmIncrementalSnapshot, snapshotDeltaMax, snapshotShowChainSize, UseStorageReplication};
     }
 
     @Override
@@ -2189,12 +2189,12 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         return failedZones;
     }
 
-    protected Pair<SnapshotVO, Long> getCheckedSnapshotForCopy(final SnapshotVO snapshot, final List<Long> destZoneIds, Long sourceZoneId, boolean canCopyBeteenStoragePools) {
+    protected Pair<SnapshotVO, Long> getCheckedSnapshotForCopy(final SnapshotVO snapshot, final List<Long> destZoneIds, Long sourceZoneId, boolean useStorageReplication) {
         // Verify snapshot is BackedUp and is on secondary store
-        if (!Snapshot.State.BackedUp.equals(snapshot.getState()) && !canCopyBeteenStoragePools) {
+        if (!Snapshot.State.BackedUp.equals(snapshot.getState()) && !useStorageReplication) {
             throw new InvalidParameterValueException("Snapshot is not backed up");
         }
-        if (snapshot.getLocationType() != null && !Snapshot.LocationType.SECONDARY.equals(snapshot.getLocationType()) && !canCopyBeteenStoragePools) {
+        if (snapshot.getLocationType() != null && !Snapshot.LocationType.SECONDARY.equals(snapshot.getLocationType()) && !useStorageReplication) {
             throw new InvalidParameterValueException("Snapshot is not backed up");
         }
         Volume volume = _volsDao.findById(snapshot.getVolumeId());
@@ -2202,9 +2202,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             sourceZoneId = volume.getDataCenterId();
         }
         if (CollectionUtils.isEmpty(destZoneIds)) {
-            if (!canCopyBeteenStoragePools) {
                 throw new InvalidParameterValueException("Please specify valid destination zone(s).");
-            }
         } else if (destZoneIds.contains(sourceZoneId)) {
             throw new InvalidParameterValueException("Please specify different source and destination zones.");
         }
@@ -2253,15 +2251,19 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         Long sourceZoneId = cmd.getSourceZoneId();
         List<Long> destZoneIds = cmd.getDestinationZoneIds();
         List<Long> storagePoolIds = cmd.getStoragePoolIds();
+        Boolean useStorageReplication = cmd.useStorageReplication();
         Account caller = CallContext.current().getCallingAccount();
         SnapshotVO snapshotVO = _snapshotDao.findById(snapshotId);
         if (snapshotVO == null) {
             throw new InvalidParameterValueException("Unable to find snapshot with id");
         }
-        boolean canCopyBetweenStoragePools = CollectionUtils.isNotEmpty(storagePoolIds) && canCopyOnPrimary(storagePoolIds, snapshotVO);
-        Pair<SnapshotVO, Long> snapshotZonePair = getCheckedSnapshotForCopy(snapshotVO, destZoneIds, sourceZoneId, canCopyBetweenStoragePools);
+
+        Pair<SnapshotVO, Long> snapshotZonePair = getCheckedSnapshotForCopy(snapshotVO, destZoneIds, sourceZoneId, useStorageReplication);
         SnapshotVO snapshot = snapshotZonePair.first();
         sourceZoneId = snapshotZonePair.second();
+        VolumeInfo volume = volFactory.getVolume(snapshot.getVolumeId());
+        storagePoolIds = snapshotHelper.addStoragePoolsForCopyToPrimary(volume, destZoneIds, storagePoolIds, useStorageReplication);
+        boolean canCopyBetweenStoragePools = CollectionUtils.isNotEmpty(storagePoolIds) && canCopyOnPrimary(storagePoolIds, snapshotVO);
         Map<Long, DataCenterVO> dataCenterVOs = new HashMap<>();
         boolean isRootAdminCaller = _accountMgr.isRootAdmin(caller.getId());
         for (Long destZoneId: destZoneIds) {

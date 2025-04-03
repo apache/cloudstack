@@ -21,6 +21,7 @@ package org.apache.cloudstack.snapshot;
 
 import com.cloud.api.query.dao.SnapshotJoinDao;
 import com.cloud.api.query.vo.SnapshotJoinVO;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
@@ -29,6 +30,7 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -39,6 +41,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -335,5 +338,31 @@ public class SnapshotHelper {
         if (moreThanOnePoolForZone) {
             throw new CloudRuntimeException("Cannot copy the snapshot on multiple storage pools in one zone");
         }
+    }
+
+    public List<Long> addStoragePoolsForCopyToPrimary(VolumeInfo volume, List<Long> destZoneIds, List<Long> storagePoolIds, Boolean useStorageReplication) {
+        if (useStorageReplication) {
+            if (volume == null) {
+                throw new InvalidParameterValueException("Could not find volume of a snapshot");
+            }
+            if (CollectionUtils.isEmpty(destZoneIds) && CollectionUtils.isEmpty(storagePoolIds)) {
+                throw new InvalidParameterValueException("There is no destination zone provided");
+            }
+            if (CollectionUtils.isEmpty(storagePoolIds)) {
+                storagePoolIds = new ArrayList<>();
+                for (Long destZone : destZoneIds) {
+                    List<StoragePoolVO> pools = primaryDataStoreDao.findPoolsByStorageTypeAndZone(volume.getStoragePoolType(), destZone);
+                    if (CollectionUtils.isNotEmpty(pools)) {
+                        StoragePoolVO storagePoolVO = pools.stream().filter(pool -> SnapshotManager.UseStorageReplication.valueIn(pool.getId()) == true).findFirst().get();
+                        storagePoolIds.add(storagePoolVO.getId());
+                    }
+                }
+                if (CollectionUtils.isEmpty(storagePoolIds)) {
+                    throw new InvalidParameterValueException("Cannot copy snapshot to primary storage. There aren't storage pools that support this operation");
+                }
+            }
+            destZoneIds.clear();
+        }
+        return storagePoolIds;
     }
 }

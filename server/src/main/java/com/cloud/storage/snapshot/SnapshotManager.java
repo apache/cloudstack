@@ -65,6 +65,8 @@ public interface SnapshotManager extends Configurable {
             "Whether to show chain size (sum of physical size of snapshot and all its parents) for incremental snapshots in the snapshot response",
             true, ConfigKey.Scope.Global, null);
 
+    public static final ConfigKey<Boolean> UseStorageReplication = new ConfigKey<Boolean>(Boolean.class, "use.storage.replication", "Snapshots", "false", "For snapshot copy to another primary storage in a different zone. Supports only StorPool storage for now", true, ConfigKey.Scope.StoragePool, null);
+
     void deletePoliciesForVolume(Long volumeId);
 
     /**

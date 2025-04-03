@@ -188,6 +188,7 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountService;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.User;
 import com.cloud.user.VmDiskStatisticsVO;
@@ -370,6 +371,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private VMSnapshotDetailsDao vmSnapshotDetailsDao;
 
     public static final String KVM_FILE_BASED_STORAGE_SNAPSHOT = "kvmFileBasedStorageSnapshot";
+
+    public AccountService _accountService;
 
     protected Gson _gson;
 
@@ -3809,9 +3812,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_CREATE, eventDescription = "taking snapshot", async = true)
     public Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm,
-         Snapshot.LocationType locationType, boolean asyncBackup, Map<String, String> tags, List<Long> zoneIds, List<Long> poolIds)
-            throws ResourceAllocationException {
-        final Snapshot snapshot = takeSnapshotInternal(volumeId, policyId, snapshotId, account, quiescevm, locationType, asyncBackup, zoneIds, poolIds);
+         Snapshot.LocationType locationType, boolean asyncBackup, Map<String, String> tags, List<Long> zoneIds, List<Long> poolIds, Boolean useStorageReplication)
+
+    throws ResourceAllocationException {
+        final Snapshot snapshot = takeSnapshotInternal(volumeId, policyId, snapshotId, account, quiescevm, locationType, asyncBackup, zoneIds, poolIds, useStorageReplication);
         if (snapshot != null && MapUtils.isNotEmpty(tags)) {
             taggedResourceService.createTags(Collections.singletonList(snapshot.getUuid()), ResourceTag.ResourceObjectType.Snapshot, tags, null);
         }
@@ -3819,10 +3823,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     private Snapshot takeSnapshotInternal(Long volumeId, Long policyId, Long snapshotId, Account account,
-          boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup, List<Long> zoneIds, List<Long> poolIds)
+          boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup, List<Long> zoneIds, List<Long> poolIds, Boolean useStorageReplication)
             throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
         VolumeInfo volume = volFactory.getVolume(volumeId);
+        poolIds = snapshotHelper.addStoragePoolsForCopyToPrimary(volume, zoneIds, poolIds, useStorageReplication);
+        canCopyOnPrimary(poolIds, volume,CollectionUtils.isEmpty(poolIds));
         if (volume == null) {
             throw new InvalidParameterValueException("Creating snapshot failed due to volume:" + volumeId + " doesn't exist");
         }
@@ -3982,7 +3988,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_CREATE, eventDescription = "allocating snapshot", create = true)
-    public Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType, List<Long> zoneIds, List<Long> poolIds) throws ResourceAllocationException {
+    public Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType, List<Long> zoneIds, Boolean useStorageReplication) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
 
         VolumeInfo volume = volFactory.getVolume(volumeId);
@@ -4031,7 +4037,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (storagePool == null) {
             throw new InvalidParameterValueException(String.format("Volume: %s please attach this volume to a VM before create snapshot for it", volume.getVolume()));
         }
-        boolean canCopyOnPrimary = canCopyOnPrimary(poolIds, volume, CollectionUtils.isEmpty(poolIds));
+        boolean canCopyOnPrimary = useStorageReplication;
 
         if (CollectionUtils.isNotEmpty(zoneIds)) {
             if (policyId != null && policyId > 0) {

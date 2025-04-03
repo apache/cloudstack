@@ -1398,7 +1398,7 @@ class Snapshot:
 
     @classmethod
     def create(cls, apiclient, volume_id, account=None,
-               domainid=None, projectid=None, locationtype=None, asyncbackup=None, zoneids=None, pool_ids=None):
+               domainid=None, projectid=None, locationtype=None, asyncbackup=None, zoneids=None, pool_ids=None, usestoragereplication=None):
         """Create Snapshot"""
         cmd = createSnapshot.createSnapshotCmd()
         cmd.volumeid = volume_id
@@ -1416,6 +1416,8 @@ class Snapshot:
             cmd.zoneids = zoneids
         if pool_ids:
             cmd.storageids = pool_ids
+        if usestoragereplication:
+            cmd.usestoragereplication = usestoragereplication
         return Snapshot(apiclient.createSnapshot(cmd).__dict__)
 
     def delete(self, apiclient, zone_id=None):
@@ -1437,7 +1439,7 @@ class Snapshot:
         return (apiclient.listSnapshots(cmd))
 
     @classmethod
-    def copy(cls, apiclient, snapshotid, zone_ids=None, source_zone_id=None, pool_ids=None):
+    def copy(cls, apiclient, snapshotid, zone_ids=None, source_zone_id=None, pool_ids=None, usestoragereplication=None):
         """ Copy snapshot to another zone or a primary storage in another zone"""
         cmd = copySnapshot.copySnapshotCmd()
         cmd.id = snapshotid
@@ -1447,6 +1449,8 @@ class Snapshot:
             cmd.zoneids = zone_ids
         if pool_ids:
             cmd.storageids = pool_ids
+        if usestoragereplication:
+            cmd.usestoragereplication = usestoragereplication
         return Snapshot(apiclient.copySnapshot(cmd).__dict__)
 
 

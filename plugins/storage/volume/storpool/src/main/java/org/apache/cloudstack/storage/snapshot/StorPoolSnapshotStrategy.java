@@ -364,7 +364,7 @@ public class StorPoolSnapshotStrategy implements SnapshotStrategy {
                 !Snapshot.State.Destroying.equals(snapshotVO.getState())) {
             throw new InvalidParameterValueException(String.format("Can't delete snapshot %s due to it is in %s Status", snapshotVO, snapshotVO.getState()));
         }
-        List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.listBySnapshot(snapshotId, DataStoreRole.Image);
+        List<SnapshotDataStoreVO> storeRefs = _snapshotStoreDao.listBySnapshotAndDataStoreRole(snapshotId, DataStoreRole.Image);
         if (zoneId != null) {
             storeRefs.removeIf(ref -> !zoneId.equals(dataStoreMgr.getStoreZoneId(ref.getDataStoreId(), ref.getRole())));
         }
