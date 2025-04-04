@@ -776,7 +776,8 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
                         if (answer != null && answer.getResult()) {
                             // successfully downloaded template to primary storage
-                            answer = createVolumeSnapshot(cmd, size, conn, volName, dstTO);
+                            TemplateObjectTO templ = (TemplateObjectTO) ((CopyCmdAnswer) answer).getNewData();
+                            answer = createVolumeSnapshot(cmd, size, conn, volName, templ);
                         } else {
                             err = answer != null ? answer.getDetails() : "Unknown error while downloading template. Null answer returned.";
                         }
