@@ -69,10 +69,10 @@ public class BackrollHttpClientProvider {
 
     private Logger logger = LogManager.getLogger(BackrollClient.class);
 
-    public static BackrollHttpClientProvider createProvider(final String url, final String appname, final String password,
+    public static BackrollHttpClientProvider createProvider(final BackrollHttpClientProvider backrollHttpClientProvider, final String url, final String appname, final String password,
         final boolean validateCertificate, final int timeout,
         final int restoreTimeout) throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
-        BackrollHttpClientProvider backrollHttpClientProvider = new BackrollHttpClientProvider();
+        //BackrollHttpClientProvider backrollHttpClientProvider = new BackrollHttpClientProvider();
         backrollHttpClientProvider.apiURI = new URI(url);
         backrollHttpClientProvider.appname = appname;
         backrollHttpClientProvider.password = password;
@@ -232,9 +232,6 @@ public class BackrollHttpClientProvider {
         public NotOkBodyException() {
             super();
         }
-        public NotOkBodyException(String errorMessage) {
-            super(errorMessage);
-        }
     }
 
     public String okBody(final CloseableHttpResponse response) throws NotOkBodyException {
@@ -257,14 +254,12 @@ public class BackrollHttpClientProvider {
                 }
             default:
                 try {
-                    HttpEntity bodyEntity2 = response.getEntity();
-                    result = EntityUtils.toString(bodyEntity2);
                     closeConnection(response);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
 
-                throw new NotOkBodyException("Error ok body, code: " + String.valueOf(response.getStatusLine().getStatusCode()) + " / body response: " + result);
+                throw new NotOkBodyException();
         }
     }
 
@@ -276,6 +271,7 @@ public class BackrollHttpClientProvider {
             String body = getWithoutParseResponse(url);
             if(!StringUtils.isEmpty(body)){
                 if (!body.contains(TaskState.PENDING)) {
+                    logger.debug("METRICS waitGetWithoutParseResponse : result {}", body);
                     T result = new ObjectMapper().readValue(body, classOfT);
                     return result;
                 }

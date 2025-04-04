@@ -168,11 +168,6 @@ public class BackrollClient {
         return isBackupDeleted;
     }
 
-    public void triggerTaskStatus(String urlToRequest)
-            throws IOException, BackrollApiException {
-        httpProvider.waitGetWithoutParseResponse(urlToRequest);
-    }
-
     public Metric getVirtualMachineMetrics(final String vmId) throws IOException, BackrollApiException {
         logger.info("Trying to retrieve virtual machine metric from Backroll for vm {}", vmId);
 
@@ -237,7 +232,7 @@ public class BackrollClient {
         return backups;
     }
 
-    private List<BackupInfos> getBackupInfosFromVm(String vmId)
+    public List<BackupInfos> getBackupInfosFromVm(String vmId)
             throws BackrollApiException, IOException {
         logger.info("Trying to retrieve all backups for vm {}", vmId);
         BackrollTaskRequestResponse requestResponse = httpProvider
@@ -260,7 +255,7 @@ public class BackrollClient {
         if (backupInfos != null && backupInfos.size() > 0) {
             for (BackupInfos infos : backupInfos) {
                 var dateStart = new DateTime(infos.start);
-                backups.add(new Backup.RestorePoint(infos.id + "," + infos.name, dateStart.toDate(), "INCREMENTAL"));
+                backups.add(new Backup.RestorePoint(infos.name, dateStart.toDate(), "INCREMENTAL"));
             }
         }
         return backups;

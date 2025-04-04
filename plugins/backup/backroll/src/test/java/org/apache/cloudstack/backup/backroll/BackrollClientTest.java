@@ -22,7 +22,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 
 import java.io.IOException;
 import java.util.Arrays;
@@ -282,49 +281,11 @@ public class BackrollClientTest {
         assertEquals(1, restorePoints.size());
 
         Backup.RestorePoint rp1 = restorePoints.get(0);
-        assertEquals("25d55ad283aa400af464c76d713c07ad7d163abdd3b8fbcdbdc46b827e5e0457", rp1.getId());
+        assertEquals("ROOT-00000", rp1.getId());
         assertEquals(new DateTime("2024-11-08T18:24:48.000000").toDate(), rp1.getCreated());
         assertEquals("INCREMENTAL", rp1.getType());
 
         Mockito.verify(backrollHttpClientProviderMock).get(Mockito.matches(".*/virtualmachines/.*"), Mockito.any());
         Mockito.verify(backrollHttpClientProviderMock).waitGet(anyString(), Mockito.any());
-    }
-
-    @Test
-    public void triggerTaskStatus_Test() throws IOException, BackrollApiException {
-        String urlToRequest = "/api/v1/task/status";
-
-        // Simuler le comportement normal sans exception
-        Mockito.doReturn("ok").when(backrollHttpClientProviderMock).waitGetWithoutParseResponse(urlToRequest);
-
-        // Appel de la méthode sous test
-        client.triggerTaskStatus(urlToRequest);
-
-        // Vérifier que la méthode a été appelée une fois avec le bon paramètre
-        Mockito.verify(backrollHttpClientProviderMock, times(1)).waitGetWithoutParseResponse(urlToRequest);
-    }
-
-    @Test(expected = IOException.class)
-    public void triggerTaskStatus_IOException_Test() throws IOException, BackrollApiException {
-        String urlToRequest = "/api/v1/task/status";
-
-        // Simuler une exception IOException
-        Mockito.doThrow(new IOException("IO Error")).when(backrollHttpClientProviderMock)
-                .waitGetWithoutParseResponse(urlToRequest);
-
-        // Appel de la méthode sous test (devrait lancer une IOException)
-        client.triggerTaskStatus(urlToRequest);
-    }
-
-    @Test(expected = BackrollApiException.class)
-    public void triggerTaskStatus_BackrollApiException_Test() throws IOException, BackrollApiException {
-        String urlToRequest = "/api/v1/task/status";
-
-        // Simuler une exception BackrollApiException
-        Mockito.doThrow(new BackrollApiException()).when(backrollHttpClientProviderMock)
-                .waitGetWithoutParseResponse(urlToRequest);
-
-        // Appel de la méthode sous test (devrait lancer une BackrollApiException)
-        client.triggerTaskStatus(urlToRequest);
     }
 }

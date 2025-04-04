@@ -115,7 +115,6 @@ public class BackrollHttpClientProviderTest {
         StatusLine statusLine = mock(StatusLine.class);
 
         doReturn(httpClient).when(backupHttpClientProvider).createHttpClient();
-
         doReturn(response).when(httpClient)
                 .execute(argThat(argument -> argument != null && argument.getURI().toString().contains("login")));
 
@@ -295,15 +294,15 @@ public class BackrollHttpClientProviderTest {
     @Test
     public void testAuthenticationFailure() throws Exception {
         doReturn(false).when(backupHttpClientProvider).isAuthenticated();
-        doNothing().when(backupHttpClientProvider).login(Mockito.anyString(), Mockito.anyString());
+        doNothing().when(backupHttpClientProvider).login();
         backupHttpClientProvider.loginIfAuthenticationFailed();
-        verify(backupHttpClientProvider).login(Mockito.anyString(), Mockito.anyString());
+        verify(backupHttpClientProvider).login();
     }
 
     @Test(expected = BackrollApiException.class)
     public void testLoginFailure() throws Exception {
         doReturn(false).when(backupHttpClientProvider).isAuthenticated();
-        doThrow(BackrollApiException.class).when(backupHttpClientProvider).login(Mockito.anyString(), Mockito.anyString());
+        doThrow(BackrollApiException.class).when(backupHttpClientProvider).login();
         backupHttpClientProvider.loginIfAuthenticationFailed();
     }
 
@@ -311,6 +310,6 @@ public class BackrollHttpClientProviderTest {
     public void testLoginSuccess() throws Exception {
         doReturn(true).when(backupHttpClientProvider).isAuthenticated();
         backupHttpClientProvider.loginIfAuthenticationFailed();
-        verify(backupHttpClientProvider, times(0)).login(Mockito.anyString(), Mockito.anyString());
+        verify(backupHttpClientProvider, times(0)).login();
     }
 }
