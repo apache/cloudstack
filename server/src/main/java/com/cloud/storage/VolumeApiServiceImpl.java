@@ -1318,10 +1318,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             volumeMigrateRequired = true;
         }
 
-        boolean volumeResizeRequired = false;
-        if (currentSize != newSize || !compareEqualsIncludingNullOrZero(newMaxIops, volume.getMaxIops()) || !compareEqualsIncludingNullOrZero(newMinIops, volume.getMinIops())) {
-            volumeResizeRequired = true;
-        }
+        boolean volumeResizeRequired = currentSize != newSize || !compareEqualsIncludingNullOrZero(newMaxIops, volume.getMaxIops()) || !compareEqualsIncludingNullOrZero(newMinIops, volume.getMinIops())
+                || !compareEqualsIncludingNullOrZero(newMaxIops, diskOffering.getIopsWriteRate()) || !compareEqualsIncludingNullOrZero(newMinIops, diskOffering.getIopsReadRate());
         if (!volumeMigrateRequired && !volumeResizeRequired && newDiskOffering != null) {
             _volsDao.updateDiskOffering(volume.getId(), newDiskOffering.getId());
             volume = _volsDao.findById(volume.getId());
@@ -1386,7 +1384,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     } else if (jobResult instanceof Throwable) {
                         throw new RuntimeException("Unexpected exception", (Throwable) jobResult);
                     } else if (jobResult instanceof Long) {
-                        return _volsDao.findById((Long) jobResult);
+                        Long volumeId = (Long) jobResult;
+                        if (newDiskOffering != null) {
+                            _volsDao.updateDiskOffering(volumeId, newDiskOffering.getId());
+                        }
+                        return _volsDao.findById(volumeId);
                     }
                 }
 

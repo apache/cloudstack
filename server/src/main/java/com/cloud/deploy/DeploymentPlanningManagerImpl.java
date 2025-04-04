@@ -31,7 +31,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TreeSet;
-import java.util.stream.Collectors;Res
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
