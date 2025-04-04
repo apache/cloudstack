@@ -152,7 +152,16 @@
         @click="handleSubmit"
       >{{ $t('label.login') }}</a-button>
     </a-form-item>
-    <translation-menu/>
+    <a-row justify="space-between">
+      <a-col>
+      <translation-menu/>
+      </a-col>
+      <a-col v-if="forgotPasswordEnabled">
+        <router-link :to="{ name: 'forgotPassword' }">
+          {{ $t('label.forgot.password') }}
+        </router-link>
+      </a-col>
+    </a-row>
     <div class="content" v-if="socialLogin">
       <p class="or">or</p>
     </div>
@@ -220,7 +229,8 @@ export default {
         loginBtn: false,
         loginType: 0
       },
-      server: ''
+      server: '',
+      forgotPasswordEnabled: false
     }
   },
   created () {
@@ -243,7 +253,9 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({
-        server: (this.server.apiHost || '') + this.server.apiBase
+        server: (this.server.apiHost || '') + this.server.apiBase,
+        username: this.$route.query?.username || '',
+        domain: this.$route.query?.domain || ''
       })
       this.rules = reactive({})
       this.setRules()
@@ -289,7 +301,6 @@ export default {
         if (response) {
           const oauthproviders = response.listoauthproviderresponse.oauthprovider || []
           oauthproviders.forEach(item => {
-            this.socialLogin = true
             if (item.provider === 'google') {
               this.googleprovider = item.enabled
               this.googleclientid = item.clientid
@@ -301,6 +312,16 @@ export default {
               this.githubredirecturi = item.redirecturi
             }
           })
+          this.socialLogin = this.googleprovider || this.githubprovider
+        }
+      })
+      api('forgotPassword', {}).then(response => {
+        this.forgotPasswordEnabled = response.forgotpasswordresponse.enabled
+      }).catch((err) => {
+        if (err?.response?.data === null) {
+          this.forgotPasswordEnabled = true
+        } else {
+          this.forgotPasswordEnabled = false
         }
       })
     },

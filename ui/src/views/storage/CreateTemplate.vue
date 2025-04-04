@@ -43,7 +43,7 @@
           v-model:value="form.displaytext"
           :placeholder="apiParams.displaytext.description" />
       </a-form-item>
-      <a-form-item ref="zoneid" name="zoneid">
+      <a-form-item v-if="resource.intervaltype" ref="zoneid" name="zoneid">
         <template #label>
           <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
         </template>
@@ -130,41 +130,40 @@
           </a-select>
       </a-form-item>
       <a-row :gutter="12">
-        <a-col :md="24" :lg="24">
-          <a-form-item ref="groupenabled" name="groupenabled">
-            <a-checkbox-group
-              v-model:value="form.groupenabled"
-              style="width: 100%;"
-            >
-              <a-row>
-                <a-col :span="12">
-                  <a-checkbox value="passwordenabled">
-                    {{ $t('label.passwordenabled') }}
-                  </a-checkbox>
-                </a-col>
-                <a-col :span="12">
-                  <a-checkbox value="isdynamicallyscalable">
-                    {{ $t('label.isdynamicallyscalable') }}
-                  </a-checkbox>
-                </a-col>
-                <a-col :span="12">
-                  <a-checkbox value="requireshvm">
-                    {{ $t('label.requireshvm') }}
-                  </a-checkbox>
-                </a-col>
-                <a-col :span="12" v-if="isAdminRole">
-                  <a-checkbox value="isfeatured">
-                    {{ $t('label.isfeatured') }}
-                  </a-checkbox>
-                </a-col>
-                <a-col :span="12" v-if="isAdminRole || $store.getters.features.userpublictemplateenabled">
-                  <a-checkbox value="ispublic">
-                    {{ $t('label.ispublic') }}
-                  </a-checkbox>
-                </a-col>
-              </a-row>
-            </a-checkbox-group>
+        <a-col :md="24" :lg="12">
+          <a-form-item ref="isdynamicallyscalable" name="isdynamicallyscalable">
+            <template #label>
+              <tooltip-label :title="$t('label.isdynamicallyscalable')" :tooltip="apiParams.isdynamicallyscalable.description"/>
+            </template>
+            <a-switch v-model:checked="form.isdynamicallyscalable" />
           </a-form-item>
+          <a-form-item ref="requireshvm" name="requireshvm">
+            <template #label>
+              <tooltip-label :title="$t('label.requireshvm')" :tooltip="apiParams.requireshvm.description"/>
+            </template>
+            <a-switch v-model:checked="form.requireshvm" />
+          </a-form-item>
+          <a-form-item ref="passwordenabled" name="passwordenabled">
+            <template #label>
+              <tooltip-label :title="$t('label.passwordenabled')" :tooltip="apiParams.passwordenabled.description"/>
+            </template>
+            <a-switch v-model:checked="form.passwordenabled" />
+          </a-form-item>
+          <a-form-item
+            ref="ispublic"
+            name="ispublic"
+            v-if="$store.getters.userInfo.roletype === 'Admin' || $store.getters.features.userpublictemplateenabled" >
+            <template #label>
+              <tooltip-label :title="$t('label.ispublic')" :tooltip="apiParams.ispublic.description"/>
+            </template>
+            <a-switch v-model:checked="form.ispublic" />
+          </a-form-item>
+          <a-form-item ref="isfeatured" name="isfeatured" v-if="$store.getters.userInfo.roletype === 'Admin'">
+              <template #label>
+                <tooltip-label :title="$t('label.isfeatured')" :tooltip="apiParams.isfeatured.description"/>
+              </template>
+              <a-switch v-model:checked="form.isfeatured" />
+            </a-form-item>
         </a-col>
       </a-row>
       <div :span="24" class="action-button">
@@ -234,7 +233,9 @@ export default {
     },
     fetchData () {
       this.fetchOsTypes()
-      this.fetchSnapshotZones()
+      if (this.resource.intervaltype) {
+        this.fetchSnapshotZones()
+      }
       if ('listDomains' in this.$store.getters.apis) {
         this.fetchDomains()
       }
@@ -300,21 +301,24 @@ export default {
         this.handleDomainChange(null)
       })
     },
-    handleDomainChange (domain) {
+    async handleDomainChange (domain) {
       this.domainid = domain
       this.form.account = null
       this.account = null
       if ('listAccounts' in this.$store.getters.apis) {
-        this.fetchAccounts()
+        await this.fetchAccounts()
       }
     },
     fetchAccounts () {
-      api('listAccounts', {
-        domainid: this.domainid
-      }).then(response => {
-        this.accounts = response.listaccountsresponse.account || []
-      }).catch(error => {
-        this.$notifyError(error)
+      return new Promise((resolve, reject) => {
+        api('listAccounts', {
+          domainid: this.domainid
+        }).then(response => {
+          this.accounts = response?.listaccountsresponse?.account || []
+          resolve(this.accounts)
+        }).catch(error => {
+          this.$notifyError(error)
+        })
       })
     },
     handleAccountChange (acc) {
@@ -329,17 +333,22 @@ export default {
       this.formRef.value.validate().then(() => {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
-        values.snapshotid = this.resource.id
-        if (values.groupenabled) {
-          const input = values.groupenabled
-          for (const index in input) {
-            const name = input[index]
-            values[name] = true
+        const params = {}
+        if (this.resource.intervaltype) {
+          params.snapshotid = this.resource.id
+        } else {
+          params.volumeid = this.resource.id
+        }
+
+        for (const key in values) {
+          const input = values[key]
+          if (input === undefined) {
+            continue
           }
-          delete values.groupenabled
+          params[key] = input
         }
         this.loading = true
-        api('createTemplate', values).then(response => {
+        api('createTemplate', params).then(response => {
           this.$pollJob({
             jobId: response.createtemplateresponse.jobid,
             title: this.$t('message.success.create.template'),

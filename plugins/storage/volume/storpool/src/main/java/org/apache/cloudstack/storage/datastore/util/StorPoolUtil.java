@@ -138,6 +138,8 @@ public class StorPoolUtil {
 
     public static final String SP_TIER = "SP_QOSCLASS";
 
+    public static final String OBJECT_DOES_NOT_EXIST = "objectDoesNotExist";
+
     public static enum StorpoolRights {
         RO("ro"), RW("rw"), DETACH("detach");
 
@@ -458,7 +460,7 @@ public class StorPoolUtil {
     }
 
     private static boolean objectExists(SpApiError err) {
-        if (!err.getName().equals("objectDoesNotExist")) {
+        if (!err.getName().equals(OBJECT_DOES_NOT_EXIST)) {
             throw new CloudRuntimeException(err.getDescr());
         }
         return false;
@@ -641,6 +643,12 @@ public class StorPoolUtil {
         return POST("MultiCluster/VolumeRevert/" + name, json, conn);
     }
 
+    /**
+     * @deprecated Use volumeSnapshot instead
+     * @param volumeName
+     * @param conn
+     * @return
+     */
     public static SpApiResponse volumeFreeze(final String volumeName, SpConnectionDesc conn) {
         return POST("MultiCluster/VolumeFreeze/" + volumeName, null, conn);
     }

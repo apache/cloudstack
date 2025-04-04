@@ -292,6 +292,7 @@ public class EventTypes {
 
     //register for user API and secret keys
     public static final String EVENT_REGISTER_FOR_SECRET_API_KEY = "REGISTER.USER.KEY";
+    public static final String API_KEY_ACCESS_UPDATE = "API.KEY.ACCESS.UPDATE";
 
     // Template Events
     public static final String EVENT_TEMPLATE_CREATE = "TEMPLATE.CREATE";
@@ -738,6 +739,13 @@ public class EventTypes {
     //Purge resources
     public static final String EVENT_PURGE_EXPUNGED_RESOURCES = "PURGE.EXPUNGED.RESOURCES";
 
+    // Management Server
+    public static final String EVENT_MS_MAINTENANCE_PREPARE = "MS.MAINTENANCE.PREPARE";
+    public static final String EVENT_MS_MAINTENANCE_CANCEL = "MS.MAINTENANCE.CANCEL";
+    public static final String EVENT_MS_SHUTDOWN_PREPARE = "MS.SHUTDOWN.PREPARE";
+    public static final String EVENT_MS_SHUTDOWN_CANCEL = "MS.SHUTDOWN.CANCEL";
+    public static final String EVENT_MS_SHUTDOWN = "MS.SHUTDOWN";
+
     // OBJECT STORE
     public static final String EVENT_OBJECT_STORE_CREATE = "OBJECT.STORE.CREATE";
     public static final String EVENT_OBJECT_STORE_DELETE = "OBJECT.STORE.DELETE";
@@ -783,6 +791,9 @@ public class EventTypes {
     public static final String EVENT_SHAREDFS_DESTROY = "SHAREDFS.DESTROY";
     public static final String EVENT_SHAREDFS_EXPUNGE = "SHAREDFS.EXPUNGE";
     public static final String EVENT_SHAREDFS_RECOVER = "SHAREDFS.RECOVER";
+
+    // Resource Limit
+    public static final String EVENT_RESOURCE_LIMIT_UPDATE = "RESOURCE.LIMIT.UPDATE";
 
     static {
 
@@ -1228,6 +1239,12 @@ public class EventTypes {
         entityEventDetails.put(EVENT_IMAGE_STORE_OBJECT_DOWNLOAD, ImageStore.class);
         entityEventDetails.put(EVENT_UPDATE_IMAGE_STORE_ACCESS_STATE, ImageStore.class);
         entityEventDetails.put(EVENT_LIVE_PATCH_SYSTEMVM, "SystemVMs");
+
+        entityEventDetails.put(EVENT_MS_MAINTENANCE_PREPARE, "ManagementServer");
+        entityEventDetails.put(EVENT_MS_MAINTENANCE_CANCEL, "ManagementServer");
+        entityEventDetails.put(EVENT_MS_SHUTDOWN_PREPARE, "ManagementServer");
+        entityEventDetails.put(EVENT_MS_SHUTDOWN_CANCEL, "ManagementServer");
+        entityEventDetails.put(EVENT_MS_SHUTDOWN, "ManagementServer");
 
         //Object Store
         entityEventDetails.put(EVENT_OBJECT_STORE_CREATE, ObjectStore.class);

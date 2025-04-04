@@ -24,9 +24,15 @@ export default {
   icon: 'team-outlined',
   docHelp: 'adminguide/accounts.html',
   permission: ['listAccounts'],
-  searchFilters: ['name', 'accounttype', 'domainid'],
+  searchFilters: () => {
+    var filters = ['name', 'accounttype', 'domainid']
+    if (store.getters.userInfo.roletype === 'Admin') {
+      filters.push('apikeyaccess')
+    }
+    return filters
+  },
   columns: ['name', 'state', 'rolename', 'roletype', 'domainpath'],
-  details: ['name', 'id', 'rolename', 'roletype', 'domainpath', 'networkdomain', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'created'],
+  details: ['name', 'id', 'rolename', 'roletype', 'domainpath', 'networkdomain', 'apikeyaccess', 'iptotal', 'vmtotal', 'volumetotal', 'receivedbytes', 'sentbytes', 'created'],
   related: [{
     name: 'accountuser',
     title: 'label.users',
@@ -54,6 +60,10 @@ export default {
   }, {
     name: 'template',
     title: 'label.templates',
+    param: 'account'
+  }, {
+    name: 'iso',
+    title: 'label.isos',
     param: 'account'
   }],
   filters: () => {
@@ -116,15 +126,8 @@ export default {
       icon: 'edit-outlined',
       label: 'label.action.edit.account',
       dataView: true,
-      args: ['newname', 'account', 'domainid', 'networkdomain', 'roleid'],
-      mapping: {
-        account: {
-          value: (record) => { return record.name }
-        },
-        domainid: {
-          value: (record) => { return record.domainid }
-        }
-      }
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/EditAccount.vue')))
     },
     {
       api: 'updateResourceCount',
