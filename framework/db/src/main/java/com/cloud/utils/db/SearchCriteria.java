@@ -200,6 +200,12 @@ public class SearchCriteria<K> {
 
     }
 
+    public void setJoinParametersIfNotNull(String joinName, String conditionName, Object... params) {
+        if (ArrayUtils.isNotEmpty(params) && (params.length > 1 || params[0] != null)) {
+            setJoinParameters(joinName, conditionName, params);
+        }
+    }
+
     public SearchCriteria<?> getJoin(String joinName) {
         return _joins.get(joinName).getT();
     }
