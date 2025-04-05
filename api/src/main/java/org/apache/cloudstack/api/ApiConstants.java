@@ -877,6 +877,7 @@ public class ApiConstants {
     public static final String VPC_OFF_ID = "vpcofferingid";
     public static final String VPC_OFF_NAME = "vpcofferingname";
     public static final String NETWORK = "network";
+    public static final String VPC_ACCESS = "vpcaccess";
     public static final String VPC_ID = "vpcid";
     public static final String VPC_NAME = "vpcname";
     public static final String GATEWAY_ID = "gatewayid";
