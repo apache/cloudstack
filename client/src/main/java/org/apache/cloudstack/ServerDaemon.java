@@ -32,7 +32,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
-import org.eclipse.jetty.server.NCSARequestLog;
 import org.eclipse.jetty.server.RequestLog;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
@@ -299,7 +298,7 @@ public class ServerDaemon implements Daemon {
     }
 
     private RequestLog createRequestLog() {
-        final NCSARequestLog log = new NCSARequestLog();
+        final ACSRequestLog log = new ACSRequestLog();
         final File logPath = new File(accessLogFile);
         final File parentFile = logPath.getParentFile();
         if (parentFile != null) {
