@@ -86,6 +86,14 @@ public class NicTO extends NetworkTO {
         this.nicUuid = uuid;
     }
 
+    public String getNicUuid() {
+        return nicUuid;
+    }
+
+    public void setNicUuid(String nicUuid) {
+        this.nicUuid = nicUuid;
+    }
+
     @Override
     public String toString() {
         return new StringBuilder("[Nic:").append(type).append("-").append(ip).append("-").append(broadcastUri).append("]").toString();
