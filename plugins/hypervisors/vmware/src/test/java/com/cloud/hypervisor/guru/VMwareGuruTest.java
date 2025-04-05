@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -29,10 +30,18 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
+import com.cloud.storage.VolumeApiService;
+import com.cloud.storage.dao.VolumeDao;
+import com.vmware.vim25.VirtualDisk;
+import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupVO;
 import org.apache.cloudstack.storage.NfsMountManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -65,7 +74,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
 import com.cloud.hypervisor.vmware.mo.HostMO;
-import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
@@ -77,6 +85,7 @@ import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.utils.Pair;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.utils.UuidUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
@@ -109,6 +118,12 @@ public class VMwareGuruTest {
 
     @Mock
     ClusterDetailsDao _clusterDetailsDao;
+
+    @Mock
+    VolumeDao volumeDao;
+
+    @Mock
+    VolumeApiService volumeService;
 
     AutoCloseable closeable;
 
@@ -175,6 +190,103 @@ public class VMwareGuruTest {
     }
 
     @Test
+    public void detachVolumeTestWhenVolumePathDontExistsInDb() {
+        VirtualDisk virtualDisk = Mockito.mock(VirtualDisk.class);
+        VirtualDiskFlatVer2BackingInfo info = Mockito.mock(VirtualDiskFlatVer2BackingInfo.class);
+        Mockito.when(virtualDisk.getBacking()).thenReturn(info);
+        Mockito.when(info.getFileName()).thenReturn("[ae4e2064cdbf3587908f726a23f9a5a3] i-2-444-VM/6b10e0316c5e441dbaeb23a806679c8d.vmdk");
+        Mockito.when(volumeDao.findByPath(Mockito.eq("6b10e0316c5e441dbaeb23a806679c8d"))).thenReturn(null);
+        VMInstanceVO vmInstanceVO = new VMInstanceVO();
+        BackupVO backupVO = new BackupVO();
+
+        VolumeVO detachVolume = vMwareGuru.detachVolume(vmInstanceVO, virtualDisk, backupVO);
+        Assert.assertEquals(null, detachVolume);
+    }
+
+    @Test
+    public void detachVolumeTestWhenVolumeExistsButIsOwnedByAnotherInstance() {
+        VirtualDisk virtualDisk = Mockito.mock(VirtualDisk.class);
+        VirtualDiskFlatVer2BackingInfo info = Mockito.mock(VirtualDiskFlatVer2BackingInfo.class);
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        VMInstanceVO vmInstanceVO = Mockito.mock(VMInstanceVO.class);
+
+        Mockito.when(virtualDisk.getBacking()).thenReturn(info);
+        Mockito.when(info.getFileName()).thenReturn("[ae4e2064cdbf3587908f726a23f9a5a3] i-2-444-VM/6b10e0316c5e441dbaeb23a806679c8d.vmdk");
+        Mockito.when(volumeDao.findByPath(Mockito.eq("6b10e0316c5e441dbaeb23a806679c8d"))).thenReturn(volumeVO);
+        Mockito.when(volumeVO.getInstanceId()).thenReturn(2L);
+        Mockito.when(vmInstanceVO.getId()).thenReturn(1L);
+        BackupVO backupVO = new BackupVO();
+
+        Mockito.verify(volumeService, Mockito.never()).detachVolumeFromVM(Mockito.any());
+        vMwareGuru.detachVolume(vmInstanceVO, virtualDisk, backupVO);
+    }
+
+    @Test
+    public void detachVolumeTestWhenVolumeExistsButIsRemoved() {
+        VirtualDisk virtualDisk = Mockito.mock(VirtualDisk.class);
+        VirtualDiskFlatVer2BackingInfo info = Mockito.mock(VirtualDiskFlatVer2BackingInfo.class);
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        VMInstanceVO vmInstanceVO = Mockito.mock(VMInstanceVO.class);
+
+        Mockito.when(volumeVO.getInstanceId()).thenReturn(1L);
+        Mockito.when(volumeVO.getRemoved()).thenReturn(new Date());
+        Mockito.when(virtualDisk.getBacking()).thenReturn(info);
+        Mockito.when(info.getFileName()).thenReturn("[ae4e2064cdbf3587908f726a23f9a5a3] i-2-444-VM/6b10e0316c5e441dbaeb23a806679c8d.vmdk");
+        Mockito.when(volumeDao.findByPath(Mockito.eq("6b10e0316c5e441dbaeb23a806679c8d"))).thenReturn(volumeVO);
+        Mockito.when(vmInstanceVO.getId()).thenReturn(1L);
+        BackupVO backupVO = new BackupVO();
+
+        Mockito.verify(volumeService, Mockito.never()).detachVolumeFromVM(Mockito.any());
+        vMwareGuru.detachVolume(vmInstanceVO, virtualDisk, backupVO);
+    }
+
+    @Test
+    public void detachVolumeTestWhenVolumeExistsButDetachFail() {
+        VirtualDisk virtualDisk = Mockito.mock(VirtualDisk.class);
+        VirtualDiskFlatVer2BackingInfo info = Mockito.mock(VirtualDiskFlatVer2BackingInfo.class);
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        VMInstanceVO vmInstanceVO = Mockito.mock(VMInstanceVO.class);
+        BackupVO backupVO = Mockito.mock(BackupVO.class);
+
+        Mockito.when(volumeVO.getInstanceId()).thenReturn(1L);
+        Mockito.when(volumeVO.getUuid()).thenReturn("123");
+        Mockito.when(backupVO.getUuid()).thenReturn("321");
+        Mockito.when(vmInstanceVO.getInstanceName()).thenReturn("test1");
+        Mockito.when(vmInstanceVO.getUuid()).thenReturn("1234");
+        Mockito.when(virtualDisk.getBacking()).thenReturn(info);
+        Mockito.when(info.getFileName()).thenReturn("[ae4e2064cdbf3587908f726a23f9a5a3] i-2-444-VM/6b10e0316c5e441dbaeb23a806679c8d.vmdk");
+        Mockito.when(volumeDao.findByPath(Mockito.eq("6b10e0316c5e441dbaeb23a806679c8d"))).thenReturn(volumeVO);
+        Mockito.when(vmInstanceVO.getId()).thenReturn(1L);
+        Mockito.when(volumeService.detachVolumeFromVM(Mockito.any())).thenReturn(null);
+
+        vMwareGuru.detachVolume(vmInstanceVO, virtualDisk, backupVO);
+        Mockito.verify(volumeService, Mockito.times(1)).detachVolumeFromVM(Mockito.any());
+    }
+
+    @Test
+    public void detachVolumeTestWhenVolumeExistsAndDetachDontFail() {
+        VirtualDisk virtualDisk = Mockito.mock(VirtualDisk.class);
+        VirtualDiskFlatVer2BackingInfo info = Mockito.mock(VirtualDiskFlatVer2BackingInfo.class);
+        VolumeVO volumeVO = Mockito.mock(VolumeVO.class);
+        VMInstanceVO vmInstanceVO = Mockito.mock(VMInstanceVO.class);
+        BackupVO backupVO = Mockito.mock(BackupVO.class);
+
+        Mockito.when(volumeVO.getInstanceId()).thenReturn(1L);
+        Mockito.when(volumeVO.getUuid()).thenReturn("123");
+        Mockito.when(backupVO.getUuid()).thenReturn("321");
+        Mockito.when(vmInstanceVO.getInstanceName()).thenReturn("test1");
+        Mockito.when(vmInstanceVO.getUuid()).thenReturn("1234");
+        Mockito.when(virtualDisk.getBacking()).thenReturn(info);
+        Mockito.when(info.getFileName()).thenReturn("[ae4e2064cdbf3587908f726a23f9a5a3] i-2-444-VM/6b10e0316c5e441dbaeb23a806679c8d.vmdk");
+        Mockito.when(volumeDao.findByPath(Mockito.eq("6b10e0316c5e441dbaeb23a806679c8d"))).thenReturn(volumeVO);
+        Mockito.when(vmInstanceVO.getId()).thenReturn(1L);
+        Mockito.when(volumeService.detachVolumeFromVM(Mockito.any())).thenReturn(volumeVO);
+
+        vMwareGuru.detachVolume(vmInstanceVO, virtualDisk, backupVO);
+        Mockito.verify(volumeService, Mockito.times(1)).detachVolumeFromVM(Mockito.any());
+    }
+
+    @Test
     public void createVolumeInfoFromVolumesTestEmptyVolumeListReturnEmptyArray() {
         String volumeInfo = vMwareGuru.createVolumeInfoFromVolumes(new ArrayList<>());
         assertEquals("[]", volumeInfo);
@@ -202,6 +314,19 @@ public class VMwareGuruTest {
         String expected = String.format("[{\"uuid\":\"%s\",\"type\":\"ROOT\",\"size\":555,\"path\":\"/root/dir\"},{\"uuid\":\"%s\",\"type\":\"DATADISK\",\"size\":1111000,\"path\":\"/root/dir/data\"}]", rootUuid, dataUuid);
 
         assertEquals(expected, result);
+    }
+
+    @Test
+    public void findRestoredVolumeTestNotFindRestoredVolume() throws Exception {
+        VirtualMachineMO vmInstanceVO = Mockito.mock(VirtualMachineMO.class);
+        Backup.VolumeInfo volumeInfo = Mockito.mock(Backup.VolumeInfo.class);
+        Mockito.when(volumeInfo.getSize()).thenReturn(52l);
+        Mockito.when(vmInstanceVO.getVirtualDisks()).thenReturn(new ArrayList<>());
+        try {
+            vMwareGuru.findRestoredVolume(volumeInfo, vmInstanceVO, null, 0);
+        } catch (Exception e) {
+            assertEquals("Volume to restore could not be found", e.getMessage());
+        }
     }
 
     @Test(expected=CloudRuntimeException.class)
@@ -387,6 +512,72 @@ public class VMwareGuruTest {
     }
 
     @Test
+    public void findRestoredVolumeTestFindRestoredVolume() throws Exception {
+        Backup.VolumeInfo volumeInfo = Mockito.mock(Backup.VolumeInfo.class);
+        VirtualMachineMO vmInstanceVO = Mockito.mock(VirtualMachineMO.class);
+        VirtualDisk virtualDisk = Mockito.mock(VirtualDisk.class);
+        VirtualDiskFlatVer2BackingInfo info = Mockito.mock(VirtualDiskFlatVer2BackingInfo.class);
+        ArrayList<VirtualDisk> disks = new ArrayList<>();
+        disks.add(virtualDisk);
+        Mockito.when(volumeInfo.getSize()).thenReturn(52l);
+        Mockito.when(virtualDisk.getCapacityInBytes()).thenReturn(52l);
+        Mockito.when(info.getFileName()).thenReturn("test.vmdk");
+        Mockito.when(virtualDisk.getBacking()).thenReturn(info);
+        Mockito.when(virtualDisk.getUnitNumber()).thenReturn(1);
+        Mockito.when(vmInstanceVO.getVirtualDisks()).thenReturn(disks);
+        VirtualDisk findRestoredVolume = vMwareGuru.findRestoredVolume(volumeInfo, vmInstanceVO, "test", 1);
+        assertNotNull(findRestoredVolume);
+    }
+
+    @Test
+    public void getPoolIdTestDatastoreNameIsUuid() {
+        VirtualDisk virtualDisk = Mockito.mock(VirtualDisk.class);
+        VirtualDiskFlatVer2BackingInfo backingInfo = Mockito.mock(VirtualDiskFlatVer2BackingInfo.class);
+        StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
+
+        Mockito.when(poolVO.getId()).thenReturn(10L);
+        Mockito.when(backingInfo.getFileName()).thenReturn("[5758578ed6a6454087a6c62f13df8ce2] test/test.vmdk");
+        Mockito.when(virtualDisk.getBacking()).thenReturn(backingInfo);
+        Mockito.when(_storagePoolDao.findByUuid("5758578e-d6a6-4540-87a6-c62f13df8ce2")).thenReturn(poolVO);
+
+        Long result = vMwareGuru.getPoolId(virtualDisk, 1L, 2L);
+        assertEquals(10l, (long)result);
+    }
+
+    @Test
+    public void getPoolIdTestDatastoreNameIsNotUuid() {
+        VirtualDisk virtualDisk = Mockito.mock(VirtualDisk.class);
+        VirtualDiskFlatVer2BackingInfo backingInfo = Mockito.mock(VirtualDiskFlatVer2BackingInfo.class);
+        StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
+
+        Mockito.when(poolVO.getId()).thenReturn(11L);
+        Mockito.when(backingInfo.getFileName()).thenReturn("[storage-name] test/test.vmdk");
+        Mockito.when(virtualDisk.getBacking()).thenReturn(backingInfo);
+        Mockito.when(_storagePoolDao.findPoolByName("storage-name", 1L, 2L)).thenReturn(poolVO);
+
+        Long result = vMwareGuru.getPoolId(virtualDisk, 1L, 2L);
+        assertEquals(11l, (long)result);
+    }
+
+    @Test
+    public void getPoolIdFromDatastoreNameOrPathTestStorageDoesNotExist() {
+        VirtualDisk virtualDisk = Mockito.mock(VirtualDisk.class);
+        VirtualDiskFlatVer2BackingInfo backingInfo = Mockito.mock(VirtualDiskFlatVer2BackingInfo.class);
+
+        Mockito.when(backingInfo.getFileName()).thenReturn("[storage-name] test/test.vmdk");
+        Mockito.when(virtualDisk.getBacking()).thenReturn(backingInfo);
+        Mockito.when(_storagePoolDao.findPoolByPathLike("storage-name", 1L, 2L)).thenReturn(null);
+
+        try {
+            vMwareGuru.getPoolId(virtualDisk, 1L, 2L);
+            fail();
+        } catch (Exception e) {
+            assertEquals("Could not find storage pool with name or path [storage-name].", e.getMessage());
+        }
+    }
+
+
+    @Test
     public void testCloneHypervisorVM() throws Exception {
         String vCenterHost = "10.1.1.2";
         String datacenterName = "datacenter";
@@ -484,6 +675,37 @@ public class VMwareGuruTest {
             vMwareGuru.createVMTemplateOutOfBand(hostIp, vmName, params, dataStore, -1);
         }
     }
+
+    @Test
+    public void getPoolIdFromDatastoreNameOrPathTestStorageNameExist() {
+        VirtualDisk virtualDisk = Mockito.mock(VirtualDisk.class);
+        VirtualDiskFlatVer2BackingInfo backingInfo = Mockito.mock(VirtualDiskFlatVer2BackingInfo.class);
+        StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
+
+        Mockito.when(poolVO.getId()).thenReturn(13l);
+        Mockito.when(_storagePoolDao.findPoolByName("storage-name", 1L, 2L)).thenReturn(poolVO);
+        Mockito.when(backingInfo.getFileName()).thenReturn("[storage-name] test/test.vmdk");
+        Mockito.when(virtualDisk.getBacking()).thenReturn(backingInfo);
+
+        Long result = vMwareGuru.getPoolId(virtualDisk, 1L, 2L);
+        assertEquals(13l, (long)result);
+    }
+
+    @Test
+    public void getPoolIdFromDatastoreNameOrPathTestStoragePathExist() {
+        VirtualDisk virtualDisk = Mockito.mock(VirtualDisk.class);
+        VirtualDiskFlatVer2BackingInfo backingInfo = Mockito.mock(VirtualDiskFlatVer2BackingInfo.class);
+        StoragePoolVO poolVO = Mockito.mock(StoragePoolVO.class);
+
+        Mockito.when(poolVO.getId()).thenReturn(14l);
+        Mockito.when(_storagePoolDao.findPoolByPathLike("storage-name", 1l, 2L)).thenReturn(poolVO);
+        Mockito.when(backingInfo.getFileName()).thenReturn("[storage-name] test/test.vmdk");
+        Mockito.when(virtualDisk.getBacking()).thenReturn(backingInfo);
+
+        Long result = vMwareGuru.getPoolId(virtualDisk, 1L, 2L);
+        assertEquals(14l, (long)result);
+    }
+
 
     @Test
     public void testCreateVMTemplateFileOutOfBand() throws Exception {
