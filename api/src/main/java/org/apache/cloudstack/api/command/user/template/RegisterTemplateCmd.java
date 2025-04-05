@@ -168,6 +168,11 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
             description = "(VMware only) true if VM deployments should preserve all the configurations defined for this template", since = "4.15.1")
     protected Boolean deployAsIs;
 
+    @Parameter(name=ApiConstants.FOR_CKS,
+            type = CommandType.BOOLEAN,
+            description = "if true, the templates would be available for deploying CKS clusters", since = "4.21.0")
+    protected Boolean forCks;
+
     @Parameter(name = ApiConstants.TEMPLATE_TYPE, type = CommandType.STRING,
             description = "the type of the template. Valid options are: USER/VNF (for all users) and SYSTEM/ROUTING/BUILTIN (for admins only).",
             since = "4.19.0")
@@ -293,6 +298,10 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
     public boolean isDeployAsIs() {
         return Hypervisor.HypervisorType.VMware.toString().equalsIgnoreCase(hypervisor) &&
                 Boolean.TRUE.equals(deployAsIs);
+    }
+
+    public boolean isForCks() {
+        return Boolean.TRUE.equals(forCks);
     }
 
     public String getTemplateType() {
