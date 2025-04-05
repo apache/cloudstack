@@ -93,7 +93,7 @@ public class IvsVifDriver extends VifDriverBase {
             vlanId = NetUtils.getPrimaryPvlanFromUri(nic.getBroadcastUri());
         }
         String trafficLabel = nic.getName();
-        Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
+        Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 125 : 0;
         if (nic.getType() == Networks.TrafficType.Guest) {
             if ((nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan || nic.getBroadcastType() == Networks.BroadcastDomainType.Pvlan) &&
                     !vlanId.equalsIgnoreCase("untagged")) {

@@ -48,7 +48,7 @@ public class DirectVifDriver extends VifDriverBase {
 
         if (Sets.newHashSet(Networks.TrafficType.Guest,
                             Networks.TrafficType.Public).contains(nic.getType())) {
-            Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 128 : 0;
+            Integer networkRateKBps = (nic.getNetworkRateMbps() != null && nic.getNetworkRateMbps().intValue() != -1) ? nic.getNetworkRateMbps().intValue() * 125 : 0;
             intf.defDirectNet(_libvirtComputingResource.getNetworkDirectDevice(), null, nic.getMac(), getGuestNicModel(guestOsType, nicAdapter),
                 _libvirtComputingResource.getNetworkDirectSourceMode(), networkRateKBps);
         }
