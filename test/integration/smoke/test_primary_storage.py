@@ -60,27 +60,21 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         return
 
     def tearDown(self):
-        try:
-            # Clean up, terminate the created templates
-            cleanup_resources(self.apiclient, self.cleanup)
-
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
+        super(TestPrimaryStorageServices, self).tearDown()
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_01_primary_storage_nfs(self):
         """Test primary storage pools - XEN, KVM, VMWare. Not Supported for hyperv
+
+        Validate the following:
+        1. List Clusters
+        2. verify that the cluster is in 'Enabled' allocation state
+        3. verify that the host is added successfully and
+           in Up state with listHosts api response
         """
 
         if self.hypervisor.lower() in ["hyperv"]:
             raise self.skipTest("NFS primary storage not supported for Hyper-V")
-
-        # Validate the following:
-        # 1. List Clusters
-        # 2. verify that the cluster is in 'Enabled' allocation state
-        # 3. verify that the host is added successfully and
-        #    in Up state with listHosts api response
 
         # Create NFS storage pools with on XEN/KVM/VMWare clusters
 
@@ -156,14 +150,17 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                 storage_response.type,
                 "Check storage pool type "
             )
-            # Call cleanup for reusing primary storage
-            cleanup_resources(self.apiclient, self.cleanup)
-            self.cleanup = []
             return
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
     def test_01_primary_storage_iscsi(self):
         """Test primary storage pools - XEN. Not Supported for kvm,hyperv,vmware
+
+        Validate the following:
+        1. List Clusters
+        2. verify that the cluster is in 'Enabled' allocation state
+        3. verify that the host is added successfully and
+           in Up state with listHosts api response
         """
 
         if self.hypervisor.lower() in ["kvm", "hyperv", "vmware", "lxc"]:
@@ -171,12 +168,6 @@ class TestPrimaryStorageServices(cloudstackTestCase):
 
         if not self.services["configurableData"]["iscsi"]["url"]:
             raise self.skipTest("iscsi test storage url not setup, skipping")
-
-        # Validate the following:
-        # 1. List Clusters
-        # 2. verify that the cluster is in 'Enabled' allocation state
-        # 3. verify that the host is added successfully and
-        #    in Up state with listHosts api response
 
         # Create iSCSI storage pools with on XEN/KVM clusters
         clusters = list_clusters(
@@ -251,10 +242,6 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                 storage_response.type,
                 "Check storage pool type "
             )
-            # Call cleanup for reusing primary storage
-            cleanup_resources(self.apiclient, self.cleanup)
-            self.cleanup = []
-
         return
 
     @attr(tags=["advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
@@ -293,7 +280,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                 zoneid=self.zone.id,
                 podid=self.pod.id
             )
-            # self.cleanup.append(storage_pool_2)
+            self.cleanup.append(storage_pool_2)
 
             # Enable host and disable others
             Host.update(self.apiclient, id=selected_host.id, allocationstate="Enable")
@@ -319,6 +306,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                     self.services["account"],
                     domainid=self.domain.id
                 )
+                self.cleanup.append(account)
 
                 service_offering = ServiceOffering.create(
                     self.apiclient,
@@ -336,7 +324,6 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                     serviceofferingid=service_offering.id
                 )
                 self.cleanup.append(self.virtual_machine)
-                self.cleanup.append(account)
             finally:
                 # cancel maintenance
                 for pool in storage_pool_list:
@@ -351,14 +338,13 @@ class TestPrimaryStorageServices(cloudstackTestCase):
                         continue
                     Host.update(self.apiclient, id=host.id, allocationstate="Enable")
 
-                cleanup_resources(self.apiclient, self.cleanup)
-                self.cleanup = []
                 StoragePool.enableMaintenance(self.apiclient, storage_pool_2.id)
                 time.sleep(30);
                 cmd = deleteStoragePool.deleteStoragePoolCmd()
                 cmd.id = storage_pool_2.id
                 cmd.forced = True
                 self.apiclient.deleteStoragePool(cmd)
+                self.cleanup.remove(storage_pool_2)
 
         return
 
