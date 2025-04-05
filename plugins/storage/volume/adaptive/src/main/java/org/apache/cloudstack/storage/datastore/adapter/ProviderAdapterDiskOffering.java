@@ -34,7 +34,7 @@ public class ProviderAdapterDiskOffering {
             this.type = ProvisioningType.getProvisioningType(hiddenDiskOffering.getProvisioningType().toString());
         }
         if (hiddenDiskOffering.getCacheMode() != null) {
-            this.diskCacheMode = DiskCacheMode.getDiskCasehMode(hiddenDiskOffering.getCacheMode().toString());
+            this.diskCacheMode = DiskCacheMode.getDiskCacheMode(hiddenDiskOffering.getCacheMode().toString());
         }
         if (hiddenDiskOffering.getState() != null) {
             this.state = State.valueOf(hiddenDiskOffering.getState().toString());
@@ -166,7 +166,7 @@ public class ProviderAdapterDiskOffering {
     }
 
     enum DiskCacheMode {
-        NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough");
+        NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough"), HYPERVISOR_DEFAULT("hypervisor_default");
 
         private final String _diskCacheMode;
 
@@ -179,13 +179,15 @@ public class ProviderAdapterDiskOffering {
             return _diskCacheMode;
         }
 
-        public static DiskCacheMode getDiskCasehMode(String cacheMode) {
+        public static DiskCacheMode getDiskCacheMode(String cacheMode) {
             if (cacheMode.equals(NONE._diskCacheMode)) {
                 return NONE;
             } else if (cacheMode.equals(WRITEBACK._diskCacheMode)) {
                 return WRITEBACK;
             } else if (cacheMode.equals(WRITETHROUGH._diskCacheMode)) {
                 return WRITETHROUGH;
+            } else if (cacheMode.equals(HYPERVISOR_DEFAULT._diskCacheMode)) {
+                return HYPERVISOR_DEFAULT;
             } else {
                 throw new NotImplementedException("Invalid cache mode specified: " + cacheMode);
             }
