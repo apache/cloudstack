@@ -30,17 +30,17 @@ write_files:
     owner: root:root
     content: |
       #!/bin/bash -e
-      
+
       if [[ -f "/home/cloud/success" ]]; then
         echo "Already provisioned!"
         exit 0
       fi
-      
+
       ISO_MOUNT_DIR=/mnt/etcddisk
       BINARIES_DIR=${ISO_MOUNT_DIR}/
       ATTEMPT_ONLINE_INSTALL=false
       setup_complete=false
-      
+
       OFFLINE_INSTALL_ATTEMPT_SLEEP={{ k8s.install.wait.time }}
       MAX_OFFLINE_INSTALL_ATTEMPTS={{ k8s.install.reattempts.count }}
       if [[ -z $OFFLINE_INSTALL_ATTEMPT_SLEEP || $OFFLINE_INSTALL_ATTEMPT_SLEEP -eq 0 ]]; then
@@ -89,7 +89,7 @@ write_files:
         sleep $OFFLINE_INSTALL_ATTEMPT_SLEEP
         offline_attempts=$[$offline_attempts + 1]
       done
-      
+
       if [[ "$PATH" != *:/opt/bin && "$PATH" != *:/opt/bin:* ]]; then
         export PATH=$PATH:/opt/bin
       fi

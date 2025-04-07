@@ -250,7 +250,7 @@ write_files:
       etcd:
         external:
           endpoints:
-          {{ etcd.etcd_endpoint_list }}  
+          {{ etcd.etcd_endpoint_list }}
       ---
       apiVersion: kubeadm.k8s.io/v1beta3
       kind: InitConfiguration
@@ -263,7 +263,7 @@ write_files:
         advertiseAddress: {{ k8s_control.server_ip }}
         bindPort: {{ k8s.api_server_port }}
       certificateKey: {{ k8s_control.certificate_key }}
-      
+
 
   - path: /opt/bin/deploy-kube-system
     permissions: '0700'
@@ -340,7 +340,7 @@ write_files:
       sudo touch /home/cloud/success
       echo "true" > /home/cloud/success
 
-{% if registry is defined %}
+  {% if registry is defined %}
   - path: /opt/bin/setup-containerd
     permissions: '0755'
     owner: root:root
@@ -358,7 +358,7 @@ write_files:
       echo "Restarting containerd service"
       systemctl daemon-reload
       systemctl restart containerd
-{% endif %}
+  {% endif %}
 
   - path: /etc/systemd/system/deploy-kube-system.service
     permissions: '0755'

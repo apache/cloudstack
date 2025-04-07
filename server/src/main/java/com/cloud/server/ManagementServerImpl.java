@@ -4890,7 +4890,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_REGISTER_CNI_CONFIG, eventDescription = "registering CNI configration", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_REGISTER_CNI_CONFIG, eventDescription = "registering CNI configuration", async = true)
     public UserData registerCniConfiguration(RegisterCniConfigurationCmd cmd) {
         final Account owner = getOwner(cmd);
         checkForUserDataByName(cmd, owner);
