@@ -1713,6 +1713,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             nwr.nameLabel = newName;
             nwr.tags = new HashSet<String>();
             nwr.tags.add(generateTimeStamp());
+            nwr.managed = true;
             vlanNetwork = Network.create(conn, nwr);
             vlanNic = getNetworkByName(conn, newName);
             if (vlanNic == null) { // Still vlanNic is null means we could not
@@ -2018,6 +2019,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 // started
                 otherConfig.put("assume_network_is_shared", "true");
                 rec.otherConfig = otherConfig;
+                rec.managed = true;
                 nw = Network.create(conn, rec);
                 logger.debug("### XenServer network for tunnels created:" + nwName);
             } else {
@@ -4882,6 +4884,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 configs.put("netmask", NetUtils.getLinkLocalNetMask());
                 configs.put("vswitch-disable-in-band", "true");
                 rec.otherConfig = configs;
+                rec.managed = true;
                 linkLocal = Network.create(conn, rec);
             } else {
                 linkLocal = networks.iterator().next();
@@ -5073,6 +5076,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 if (networks.size() == 0) {
                     rec.nameDescription = "vswitch network for " + nwName;
                     rec.nameLabel = nwName;
+                    rec.managed = true;
                     vswitchNw = Network.create(conn, rec);
                 } else {
                     vswitchNw = networks.iterator().next();
