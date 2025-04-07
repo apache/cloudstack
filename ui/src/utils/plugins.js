@@ -97,6 +97,12 @@ export const pollJobPlugin = {
       if (contextId) {
         contexts.push(contextId)
       }
+      if (jobId) {
+        const jobIdFirstPart = jobId.split('-')[0]
+        if (!contexts.includes(jobIdFirstPart)) {
+          contexts.push(jobIdFirstPart)
+        }
+      }
 
       eventBus.on('update-job-details', (args) => {
         const { jobId, resourceId } = args

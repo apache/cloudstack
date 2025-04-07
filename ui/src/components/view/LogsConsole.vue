@@ -38,7 +38,7 @@
         <!-- Container that holds both the scrollable content and the fixed footer -->
         <div class="drawer-container">
           <div class="tabs-wrapper">
-            <a-tabs :activeKey="activeTabKey">
+            <a-tabs v-model:activeKey="activeTabKey">
               <a-tab-pane
                 v-for="tab in tabs"
                 :key="tab.key"
@@ -176,7 +176,7 @@ export default {
           this.prepareTabsAndOpenWebSockets(session.websocket)
         }
       }).catch(error => {
-        console.log(error)
+        this.$notifyError(error)
       }).finally(() => {
         this.loading = false
         if (this.tabsValid) {
@@ -185,7 +185,7 @@ export default {
       })
     },
     prepareTabsAndOpenWebSockets (webSocketsDetails) {
-      this.tabs = []
+      var wsTabs = []
       for (var webSocketDetails of webSocketsDetails) {
         var tab = {
           key: webSocketDetails.managementserverid,
@@ -196,8 +196,9 @@ export default {
           logsErrorCount: 0,
           logsWarningCount: 0
         }
-        this.tabs.push(tab)
+        wsTabs.push(tab)
       }
+      this.tabs = wsTabs.sort((a, b) => a.title.localeCompare(b.title))
       this.openWebSockets()
     },
     openWebSockets () {
@@ -205,7 +206,7 @@ export default {
       if (!this.tabsValid) {
         return
       }
-      for (var tab of this.tabs) {
+      for (const tab of this.tabs) {
         tab.webSocket = new WebSocket(tab.webSocketUrl)
 
         tab.webSocket.addEventListener('message', (event) => {
@@ -264,7 +265,7 @@ export default {
       tempDiv.innerHTML = htmlString
       const plainTextData = tempDiv.textContent || tempDiv.innerText || ''
       var blob = new Blob([plainTextData], { type: 'text/plain' })
-      var filename = this.filters.join('-') + '.log'
+      var filename = this.currentTab.title + '-' + this.filters.join('-') + '.log'
       if (window.navigator.msSaveOrOpenBlob) {
         window.navigator.msSaveBlob(blob, filename)
       } else {
