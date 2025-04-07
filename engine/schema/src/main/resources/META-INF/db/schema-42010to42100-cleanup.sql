@@ -18,5 +18,3 @@
 --;
 -- Schema upgrade cleanup from 4.20.1.0 to 4.21.0.0
 --;
-
-DROP TABLE IF EXISTS `cloud`.`logs_web_session`;

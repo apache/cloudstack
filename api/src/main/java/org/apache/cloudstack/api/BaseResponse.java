@@ -16,6 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import com.google.gson.annotations.SerializedName;
 
 import com.cloud.serializer.Param;
@@ -32,9 +36,9 @@ public abstract class BaseResponse implements ResponseObject {
     @Param(description = "the current status of the latest async job acting on this object")
     private Integer jobStatus;
 
-    @SerializedName(ApiConstants.CONTEXT_ID)
-    @Param(description = "the ID of the executing context")
-    private String contextId;
+    @SerializedName(ApiConstants.LOG_IDS)
+    @Param(description = "the IDs of the logs for the request")
+    private List<String> logsIds;
 
     public BaseResponse() {
     }
@@ -89,12 +93,15 @@ public abstract class BaseResponse implements ResponseObject {
     }
 
     @Override
-    public String getContextId() {
-        return contextId;
+    public List<String> getLogIds() {
+        return logsIds;
     }
 
     @Override
-    public void setContextId(String contextId) {
-        this.contextId = contextId;
+    public void addLogIds(String... logId) {
+        if (this.logsIds == null) {
+            logsIds = new ArrayList<>();
+        }
+        this.logsIds.addAll(Arrays.asList(logId));
     }
 }

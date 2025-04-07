@@ -24,9 +24,10 @@ public class LogsWebSessionWebSocket {
     private ManagementServerHostVO managementServerHost;
     private int port;
     private String path;
+    private boolean ssl;
 
     public LogsWebSessionWebSocket(final ManagementServerHostVO managementServerHost, final int port,
-               final String path) {
+               final String path, final boolean ssl) {
         this.managementServerHost = managementServerHost;
         this.port = port;
         this.path = path;
@@ -42,5 +43,9 @@ public class LogsWebSessionWebSocket {
 
     public String getPath() {
         return path;
+    }
+
+    public boolean isSsl() {
+        return ssl;
     }
 }

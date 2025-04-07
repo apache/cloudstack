@@ -4763,9 +4763,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put(ApiConstants.SHAREDFSVM_MIN_RAM_SIZE, fsVmMinRam);
         if (isCallerRootAdmin) {
             capabilities.put(ApiConstants.EXTENSIONS_PATH, extensionsManager.getExtensionsPath());
+            capabilities.put(ApiConstants.LOGS_WEB_SERVER_ENABLED, logsWebServerEnabled);
         }
         capabilities.put(ApiConstants.ADDITONAL_CONFIG_ENABLED, UserVmManager.EnableAdditionalVmConfig.valueIn(caller.getId()));
-        capabilities.put(ApiConstants.LOGS_WEB_SERVER_ENABLED, logsWebServerEnabled);
 
         return capabilities;
     }

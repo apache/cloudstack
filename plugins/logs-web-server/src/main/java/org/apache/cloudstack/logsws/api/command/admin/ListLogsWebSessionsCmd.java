@@ -37,7 +37,7 @@ import org.apache.cloudstack.logsws.api.response.LogsWebSessionResponse;
         responseView = ResponseObject.ResponseView.Restricted,
         entityType = {LogsWebSession.class},
         authorized = {RoleType.Admin},
-        since = "4.21.0")
+        since = "4.23.0")
 public class ListLogsWebSessionsCmd extends BaseListAccountResourcesCmd {
 
     @Inject

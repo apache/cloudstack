@@ -18,11 +18,13 @@
 package org.apache.cloudstack.logsws.server;
 
 import org.apache.cloudstack.logsws.LogsWebSession;
+import org.apache.cloudstack.logsws.LogsWebSessionTokenPayload;
 
 public interface LogsWebSocketServerHelper {
     String getServerPath();
     String getLogFile();
     int getMaxReadExistingLines();
+    LogsWebSessionTokenPayload parseToken(String token);
     LogsWebSession getSession(String route);
     void updateSessionConnection(long sessionId, String clientAddress);
 }

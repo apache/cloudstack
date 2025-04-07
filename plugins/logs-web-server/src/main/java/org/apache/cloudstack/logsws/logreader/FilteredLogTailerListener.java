@@ -19,21 +19,19 @@ package org.apache.cloudstack.logsws.logreader;
 
 import java.util.List;
 
+import org.apache.cloudstack.framework.websocket.server.common.WebSocketSession;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.input.TailerListenerAdapter;
 import org.apache.commons.lang3.StringUtils;
 
-import io.netty.channel.Channel;
-import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-
-public class FilteredLogTailerListener  extends TailerListenerAdapter {
+public class FilteredLogTailerListener extends TailerListenerAdapter {
+    private final WebSocketSession session;
     private final List<String> filters;
-    private final Channel channel;
     private final boolean isFilterEmpty;
     private boolean isLastLineValid;
 
     public static boolean isValidLine(String line, boolean isFilterEmpty,
-          boolean isLastLineValid, List<String> filters) {
+                                      boolean isLastLineValid, List<String> filters) {
         if (StringUtils.isBlank(line)) {
             return false;
         }
@@ -51,9 +49,9 @@ public class FilteredLogTailerListener  extends TailerListenerAdapter {
         return false;
     }
 
-    public FilteredLogTailerListener(List<String> filters, Channel channel) {
+    public FilteredLogTailerListener(WebSocketSession session, List<String> filters) {
+        this.session = session;
         this.filters = filters;
-        this.channel = channel;
         isFilterEmpty = CollectionUtils.isEmpty(filters);
         isLastLineValid = false;
     }
@@ -62,10 +60,25 @@ public class FilteredLogTailerListener  extends TailerListenerAdapter {
     public void handle(String line) {
         // Check if the line contains the filter string
         if (isValidLine(line, isFilterEmpty, isLastLineValid, filters)) {
-            channel.writeAndFlush(new TextWebSocketFrame(line));
+            session.sendText(line);
             isLastLineValid = true;
         } else {
             isLastLineValid = false;
         }
+    }
+
+    @Override
+    public void fileNotFound() {
+        session.sendText("Log file not found.");
+    }
+
+    @Override
+    public void fileRotated() {
+        session.sendText("Log file rotated.");
+    }
+
+    @Override
+    public void handle(Exception ex) {
+        session.sendText("Tailer error: " + ex.getMessage());
     }
 }

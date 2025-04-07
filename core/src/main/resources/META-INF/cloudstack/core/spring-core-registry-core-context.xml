@@ -351,6 +351,10 @@
           class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
     </bean>
 
+    <bean id="clusterCommandProcessorRegistry"
+          class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+    </bean>
+
     <bean id="internalLoadBalancerElementServiceRegistry" class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="preRegistered">
             <list>

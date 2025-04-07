@@ -188,7 +188,7 @@
         <org.springframework.version>5.3.26</org.springframework.version>
         <cs.ini.version>0.5.4</cs.ini.version>
         <cs.caffeine.version>3.1.7</cs.caffeine.version>
-        <cs.netty.all.version>4.1.95.Final</cs.netty.all.version>
+        <cs.netty.version>4.1.95.Final</cs.netty.version>
     </properties>
 
     <distributionManagement>
@@ -274,6 +274,7 @@
         <module>client</module>
         <module>services</module>
         <module>quickcloud</module>
+        <module>framework/websocket-server</module>
     </modules>
 
     <dependencyManagement>
@@ -636,6 +637,17 @@
                 <version>${cs.jetty.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.eclipse.jetty.websocket</groupId>
+                <artifactId>websocket-server</artifactId>
+                <version>${cs.jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.websocket</groupId>
+                <artifactId>javax.websocket-api</artifactId>
+                <version>1.1</version>
+                <scope>provided</scope>
+            </dependency>
+            <dependency>
                 <groupId>org.eclipse.persistence</groupId>
                 <artifactId>javax.persistence</artifactId>
                 <version>${cs.jpa.version}</version>
@@ -739,7 +751,7 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-all</artifactId>
-                <version>${cs.netty.all.version}</version>
+                <version>${cs.netty.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

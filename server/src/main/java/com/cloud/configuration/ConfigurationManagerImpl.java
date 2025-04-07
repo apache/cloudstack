@@ -1095,7 +1095,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             paramCountCheck++;
         }
         if (managementServerId != null) {
-            scope = ConfigKey.Scope.ManagementServer.toString();
+            scope = ConfigKey.Scope.ManagementServer;
             id = managementServerId;
             paramCountCheck++;
         }
