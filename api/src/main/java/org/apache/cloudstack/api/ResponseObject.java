@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api;
 
+import java.util.List;
+
 public interface ResponseObject {
     /**
      * Get the name of the API response
@@ -76,8 +78,8 @@ public interface ResponseObject {
      */
     void setJobStatus(Integer jobStatus);
 
-    String getContextId();
-    void setContextId(String contextId);
+    List<String> getLogIds();
+    void addLogIds(String... contextId);
 
     public enum ResponseView {
         Full,

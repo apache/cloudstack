@@ -18,7 +18,7 @@
 import _ from 'lodash'
 import { i18n } from '@/locales'
 import { getAPI } from '@/api'
-import { message, notification, Modal } from 'ant-design-vue'
+import { message, notification, Modal, Button } from 'ant-design-vue'
 import { h } from 'vue'
 import eventBus from '@/config/eventBus'
 import store from '@/store'
@@ -27,21 +27,22 @@ import { toLocalDate, toLocaleDate } from '@/utils/date'
 
 export const pollJobPlugin = {
   install (app) {
-    function canViewLogs (contexts) {
+    function canViewLogs (logIds) {
+      console.log('canViewLogs', store.getters.features.logswebserverenabled, 'createLogsWebSession' in store.getters.apis, logIds, logIds && logIds.length > 0)
       return store.getters.features.logswebserverenabled &&
         'createLogsWebSession' in store.getters.apis &&
-        contexts && contexts.length > 0
+        logIds && logIds.length > 0
     }
 
-    function handleViewLogs (contexts) {
-      eventBus.emit('view-logs', contexts)
+    function handleViewLogs (logIds) {
+      eventBus.emit('view-logs', logIds)
     }
 
-    function getMessageContent (message, contexts) {
-      if (canViewLogs(contexts)) {
+    function getMessageContent (message, logIds) {
+      if (canViewLogs(logIds)) {
         return h('span', [
           message + ' ',
-          h(Button, { type: 'link', onClick: () => { handleViewLogs(contexts) } }, i18n.global.t('label.view.logs'))
+          h(Button, { type: 'link', onClick: () => { handleViewLogs(logIds) } }, i18n.global.t('label.view.logs'))
         ])
       }
       return message
@@ -65,7 +66,7 @@ export const pollJobPlugin = {
        * @param {Object} [action=null]
        * @param {Object} [bulkAction=false]
        * @param {String} resourceId
-       * @param {String} [contextId=null]
+       * @param {String} [logIds=() => []]
        */
       const {
         jobId,
@@ -84,8 +85,7 @@ export const pollJobPlugin = {
         action = null,
         bulkAction = false,
         resourceId = null,
-        contextId = null,
-        contexts = []
+        logIds = []
       } = options
 
       store.dispatch('AddHeaderNotice', {
@@ -95,10 +95,6 @@ export const pollJobPlugin = {
         status: 'progress',
         timestamp: new Date()
       })
-
-      if (contextId) {
-        contexts.push(contextId)
-      }
 
       eventBus.on('update-job-details', (args) => {
         const { jobId, resourceId } = args
@@ -117,13 +113,19 @@ export const pollJobPlugin = {
         this.$store.commit('SET_HEADER_NOTICES', jobs)
       })
 
+      const allLogIds = []
+      if (logIds) {
+        allLogIds.push(...logIds)
+      }
+
       options.originalPage = options.originalPage || this.$router.currentRoute.value.path
       getAPI('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
         eventBus.emit('update-job-details', { jobId, resourceId })
-        if (result.contextid) {
-          contexts.push(result.contextid)
+        if (result.logids) {
+          allLogIds.push(...result.logids)
         }
+        console.log('pollJobPlugin', result.logids, allLogIds)
         if (result.jobstatus === 1) {
           if (showSuccessMessage) {
             var content = successMessage
@@ -134,7 +136,7 @@ export const pollJobPlugin = {
               content = content + ' - ' + name
             }
             message.success({
-              content: getMessageContent(content, contexts),
+              content: getMessageContent(content, allLogIds),
               key: jobId,
               duration: 2
             })
@@ -160,7 +162,7 @@ export const pollJobPlugin = {
         } else if (result.jobstatus === 2) {
           if (!bulkAction) {
             message.error({
-              content: getMessageContent(errorMessage, contexts),
+              content: getMessageContent(errorMessage, allLogIds),
               key: jobId,
               duration: 1
             })
@@ -192,13 +194,13 @@ export const pollJobPlugin = {
             duration: 0,
             onClose: onClose
           }
-          if (canViewLogs(contexts)) {
+          if (canViewLogs(allLogIds)) {
             errorConfig.btn = h(
               Button,
               {
                 type: 'secondary',
                 size: 'small',
-                onClick: () => handleViewLogs(contexts)
+                onClick: () => handleViewLogs(allLogIds)
               },
               i18n.global.t('label.view.logs')
             )
@@ -223,7 +225,7 @@ export const pollJobPlugin = {
         } else if (result.jobstatus === 0) {
           if (showLoading) {
             message.loading({
-              content: getMessageContent(loadingMessage, contexts),
+              content: getMessageContent(loadingMessage, allLogIds),
               key: jobId,
               duration: 0
             })

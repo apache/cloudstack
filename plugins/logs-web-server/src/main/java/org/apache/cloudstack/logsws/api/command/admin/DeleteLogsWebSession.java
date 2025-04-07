@@ -39,7 +39,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
         responseObject = SuccessResponse.class,
         entityType = {LogsWebSession.class},
         authorized = {RoleType.Admin},
-        since = "4.21.0")
+        since = "4.23.0")
 public class DeleteLogsWebSession extends BaseCmd {
 
     @Inject

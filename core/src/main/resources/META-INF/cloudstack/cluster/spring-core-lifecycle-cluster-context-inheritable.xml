@@ -28,4 +28,9 @@
         <property name="typeClass" value="org.apache.cloudstack.cluster.ClusterDrsAlgorithm" />
     </bean>
 
+    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
+        <property name="registry" ref="clusterCommandProcessorRegistry" />
+        <property name="typeClass" value="org.apache.cloudstack.cluster.ClusterCommandProcessor" />
+    </bean>
+
 </beans>

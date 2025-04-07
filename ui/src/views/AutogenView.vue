@@ -1542,7 +1542,7 @@ export default {
         param.loading = false
       })
     },
-    pollActionCompletion (jobId, action, resourceName, resource, showLoading = true, contextId = null) {
+    pollActionCompletion (jobId, action, resourceName, resource, showLoading = true, logIds = null) {
       if (this.shouldNavigateBack(action)) {
         action.isFetchData = false
       }
@@ -1603,7 +1603,7 @@ export default {
           action,
           bulkAction: `${this.selectedItems.length > 0}` && this.showGroupActionModal,
           resourceId: resource,
-          contextId: contextId
+          logIds: logIds
         })
       })
     },
@@ -1716,7 +1716,7 @@ export default {
     handleResponse (response, resourceName, resource, action, showLoading = true) {
       return new Promise(resolve => {
         let jobId = null
-        let contextId = null
+        let logIds = null
         for (const obj in response) {
           if (obj.includes('response')) {
             if (response[obj].jobid) {
@@ -1752,8 +1752,8 @@ export default {
               }
               break
             }
-            if (response[obj].contextid) {
-              contextId = response[obj].contextid
+            if (response[obj].logids) {
+              logIds = response[obj].logids
             }
           }
         }
@@ -1762,7 +1762,7 @@ export default {
         }
         if (jobId) {
           eventBus.emit('update-resource-state', { selectedItems: this.selectedItems, resource, state: 'InProgress', jobid: jobId })
-          resolve(this.pollActionCompletion(jobId, action, resourceName, resource, showLoading, contextId))
+          resolve(this.pollActionCompletion(jobId, action, resourceName, resource, showLoading, logIds))
         }
         resolve(false)
       })

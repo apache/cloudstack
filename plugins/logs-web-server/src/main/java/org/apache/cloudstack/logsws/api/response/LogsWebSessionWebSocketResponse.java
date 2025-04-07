@@ -32,7 +32,7 @@ public class LogsWebSessionWebSocketResponse extends BaseResponse {
     @Param(description = "The name of the management for this websocket")
     private String managementServerName;
 
-    @SerializedName("host")
+    @SerializedName(ApiConstants.HOST)
     @Param(description = "the websocket host")
     private String host;
 
@@ -43,6 +43,10 @@ public class LogsWebSessionWebSocketResponse extends BaseResponse {
     @SerializedName(ApiConstants.PATH)
     @Param(description = "the websocket path")
     private String path;
+
+    @SerializedName(ApiConstants.USE_SSL)
+    @Param(description = "the websocket uses SSL or not")
+    private Boolean ssl;
 
     public String getManagementServerId() {
         return managementServerId;
@@ -82,5 +86,13 @@ public class LogsWebSessionWebSocketResponse extends BaseResponse {
 
     public void setPath(String path) {
         this.path = path;
+    }
+
+    public Boolean getSsl() {
+        return ssl;
+    }
+
+    public void setSsl(Boolean ssl) {
+        this.ssl = ssl;
     }
 }

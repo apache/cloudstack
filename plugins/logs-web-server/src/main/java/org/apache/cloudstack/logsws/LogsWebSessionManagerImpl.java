@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.logsws;
 
+import java.security.GeneralSecurityException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -30,45 +31,106 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.websocket.server.manager.WebSocketServerManager;
+import org.apache.cloudstack.logsws.command.GetLogsSessionWebSocketAnswer;
+import org.apache.cloudstack.logsws.command.GetLogsSessionWebSocketCommand;
 import org.apache.cloudstack.logsws.dao.LogsWebSessionDao;
-import org.apache.cloudstack.logsws.server.LogsWebSocketServer;
+import org.apache.cloudstack.logsws.server.LogsWebSocketRouteManager;
+import org.apache.cloudstack.logsws.server.LogsWebSocketRoutingHandler;
 import org.apache.cloudstack.logsws.server.LogsWebSocketServerHelper;
 import org.apache.cloudstack.logsws.vo.LogsWebSessionVO;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.cluster.ClusterCommandProcessor;
 import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
+import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.exception.InternalErrorException;
+import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 
-public class LogsWebSessionManagerImpl extends ManagerBase implements LogsWebSessionManager, LogsWebSocketServerHelper {
+public class LogsWebSessionManagerImpl extends ManagerBase implements LogsWebSessionManager, LogsWebSocketServerHelper,
+        ClusterCommandProcessor {
 
+    @Inject
+    WebSocketServerManager webSocketServerManager;
     @Inject
     LogsWebSessionDao logsWebSessionDao;
     @Inject
     ManagementServerHostDao managementServerHostDao;
+    @Inject
+    ClusterManager clusterManager;
 
-    private int serverPort;
     private String serverPath;
-    private int serverIdleTimeoutSeconds;
-    private LogsWebSocketServer loggerWebSocketServer;
+    private int idleTimeoutSeconds;
     private ScheduledExecutorService staleLogsWebSessionCleanupExecutor;
-    private Long managementServerId = null;
+    private ManagementServerHostVO managementServer = null;
+    private LogsWebSocketRouteManager logsWebSocketRouteManager;
+
+    private final static List<Class<?>> SUPPORTED_COMMANDS = List.of(
+            GetLogsSessionWebSocketCommand.class
+    );
+
+    protected ManagementServerHostVO getCurrentManagementServer() {
+        if (managementServer == null) {
+            managementServer =
+                    managementServerHostDao.findByMsid(ManagementServerNode.getManagementServerId());
+        }
+        return managementServer;
+    }
 
     protected Long getManagementServerId() {
-        if (managementServerId != null) {
-            ManagementServerHostVO managementServerHostVO =
-                    managementServerHostDao.findByMsid(ManagementServerNode.getManagementServerId());
-            if (managementServerHostVO != null) {
-                managementServerId = managementServerHostVO.getId();
-            }
+        return getCurrentManagementServer().getId();
+    }
+
+    protected Long getManagementServerRunId() {
+        return getCurrentManagementServer().getRunid();
+    }
+
+    protected void registerLogsWebSocketServerRoute() {
+        logsWebSocketRouteManager = new LogsWebSocketRouteManager();
+        logger.info("Registering Logs WebSocket server at path: {}", serverPath);
+        webSocketServerManager.registerRoute(serverPath + "/", new LogsWebSocketRoutingHandler(
+                logsWebSocketRouteManager, this), idleTimeoutSeconds);
+    }
+
+    protected LogsWebSessionWebSocket getLogsWebSessionWebSocket(LogsWebSessionTokenPayload payload) throws
+            InternalErrorException {
+        if (webSocketServerManager.isServerEnabled()) {
+            logger.warn("WebSocket server not running on this management server, websocket can not be " +
+                    "returned for LogsWebSession ID: {}", payload.getSessionUuid());
+            return null;
         }
-        return managementServerId;
+        ManagementServerHostVO managementServerHostVO = getCurrentManagementServer();
+        return new LogsWebSessionWebSocket(managementServerHostVO,
+                webSocketServerManager.getServerPort(),
+                getLogsWebSessionWebSocketPathForManagementServer(managementServerHostVO, payload),
+                webSocketServerManager.isServerSslEnabled());
+    }
+
+    protected GetLogsSessionWebSocketAnswer processGetLogsSessionWebSocketCommand(
+            GetLogsSessionWebSocketCommand cmd) {
+        LogsWebSessionTokenPayload payload = cmd.getTokenPayload();
+        LogsWebSessionWebSocket webSocket;
+        try {
+            webSocket = getLogsWebSessionWebSocket(payload);
+        } catch (InternalErrorException e) {
+            logger.error("Failed to process GetLogsSessionWebSocketCommand command for ID: {}",
+                    cmd.getSessionId(), e);
+            return new GetLogsSessionWebSocketAnswer(cmd, e.getMessage());
+        }
+        if (webSocket == null) {
+            return new GetLogsSessionWebSocketAnswer(cmd, "WebSocket server not running");
+        }
+        return new GetLogsSessionWebSocketAnswer(cmd, webSocket.getPort(), webSocket.getPath(), webSocket.isSsl());
     }
 
     @Override
@@ -82,7 +144,8 @@ public class LogsWebSessionManagerImpl extends ManagerBase implements LogsWebSes
             staleLogsWebSessionCleanupExecutor = Executors.newScheduledThreadPool(1,
                     new NamedThreadFactory("Logs-Web-Sessions-Stale-Cleanup-Worker"));
         } catch (final Exception e) {
-            throw new ConfigurationException("Unable to to configure " + LogsWebSessionManagerImpl.class.getSimpleName());
+            throw new ConfigurationException("Unable to to configure " +
+                    LogsWebSessionManagerImpl.class.getSimpleName());
         }
         return true;
     }
@@ -92,64 +155,47 @@ public class LogsWebSessionManagerImpl extends ManagerBase implements LogsWebSes
         if (!LogsWebServerEnabled.value()) {
             return true;
         }
-        serverPort = LogsWebServerPort.valueIn(getManagementServerId());
         serverPath = LogsWebServerPath.valueIn(getManagementServerId());
-        serverIdleTimeoutSeconds = LogsWebServerSessionIdleTimeout.valueIn(getManagementServerId());
-        startWebSocketServer();
+        idleTimeoutSeconds = LogsWebServerSessionIdleTimeout.value();
         long staleLogsWebSessionCleanupInterval = LogsWebServerSessionStaleCleanupInterval.value();
         staleLogsWebSessionCleanupExecutor.scheduleWithFixedDelay(new StaleLogsWebSessionCleanupWorker(),
                 staleLogsWebSessionCleanupInterval, staleLogsWebSessionCleanupInterval, TimeUnit.SECONDS);
+        registerLogsWebSocketServerRoute();
         return true;
     }
 
     @Override
     public boolean stop() {
-        stopWebSocketServer(1);
         logsWebSessionDao.markAllActiveAsDisconnected();
+        webSocketServerManager.unregisterRoute(serverPath + "/");
         return true;
     }
 
-    @Override
-    public void startWebSocketServer() {
-        if (loggerWebSocketServer != null && loggerWebSocketServer.isRunning()) {
-            logger.info("Logger Web Socket Server is already running!");
-            return;
-        }
-        loggerWebSocketServer = new LogsWebSocketServer(serverPort, serverPath, serverIdleTimeoutSeconds,
-                this);
-        try {
-            loggerWebSocketServer.start();
-        } catch (InterruptedException e) {
-            logger.error("Failed to start Logger Web Socket Server", e);
-        }
-    }
-
-    protected void stopWebSocketServer(Integer maxWaitSeconds) {
-        if (loggerWebSocketServer == null || !loggerWebSocketServer.isRunning()) {
-            logger.info("Logger Web Socket Server is already stopped!");
-            return;
-        }
-        loggerWebSocketServer.stop(maxWaitSeconds == null ? 5 : maxWaitSeconds);
-        loggerWebSocketServer = null;
-    }
-
-    @Override
-    public void stopWebSocketServer() {
-        stopWebSocketServer(null);
-    }
-
-    private String getLogsWebSessionWebSocketPathUsingVO(long msId, LogsWebSession session) {
-        LogsWebSessionVO sessionVO = null;
+    protected LogsWebSessionTokenPayload getLogsWebSessionWebSocketTokenPayloadUsingVO(LogsWebSession session) {
+        LogsWebSessionVO sessionVO;
         if (session instanceof LogsWebSessionVO) {
-            sessionVO = (LogsWebSessionVO)session;
+            sessionVO = (LogsWebSessionVO) session;
         } else {
             sessionVO = logsWebSessionDao.findById(session.getId());
         }
+        return new LogsWebSessionTokenPayload(sessionVO.getUuid(), sessionVO.getCreatorAddress());
+    }
+
+    protected String getLogsWebSessionWebSocketPathForManagementServer(ManagementServerHostVO managementServerHostVO,
+                   LogsWebSessionTokenPayload payload) throws InternalErrorException {
         String path = serverPath;
-        if (!Objects.equals(msId, getManagementServerId())) {
-            serverPath = LogsWebServerPath.valueIn(msId);
+        if (!Objects.equals(managementServerHostVO.getId(), getManagementServerId())) {
+            path = LogsWebServerPath.valueIn(managementServerHostVO.getId());
         }
-        return String.format("%s/%s", path, sessionVO.getUuid());
+        try {
+            return String.format("%s%s/%s",
+                    webSocketServerManager.getWebSocketBasePath(),
+                    path,
+                    LogsWebSessionTokenCryptoUtil.encrypt(payload, String.valueOf(managementServerHostVO.getRunid())));
+        } catch (GeneralSecurityException e) {
+            logger.error("Failed to encrypt token payload: {}", payload, e);
+            throw new InternalErrorException("Failed to encrypt token payload: " + payload, e);
+        }
     }
 
     @Override
@@ -161,12 +207,11 @@ public class LogsWebSessionManagerImpl extends ManagerBase implements LogsWebSes
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey[]{
                 LogsWebServerEnabled,
-                LogsWebServerPort,
                 LogsWebServerPath,
+                LogsWebServerSessionIdleTimeout,
                 LogsWebServerConcurrentSessions,
                 LogsWebServerLogFile,
                 LogsWebServerSessionTailExistingLines,
-                LogsWebServerSessionIdleTimeout,
                 LogsWebServerSessionStaleCleanupInterval
         };
     }
@@ -184,6 +229,16 @@ public class LogsWebSessionManagerImpl extends ManagerBase implements LogsWebSes
     @Override
     public int getMaxReadExistingLines() {
         return LogsWebServerSessionTailExistingLines.valueIn(getManagementServerId());
+    }
+
+    @Override
+    public LogsWebSessionTokenPayload parseToken(String token) {
+        try {
+            return LogsWebSessionTokenCryptoUtil.decrypt(token, String.valueOf(getManagementServerRunId()));
+        } catch (GeneralSecurityException e) {
+            logger.error("Failed to decrypt route token: {}", token, e);
+        }
+        return null;
     }
 
     @Override
@@ -205,6 +260,7 @@ public class LogsWebSessionManagerImpl extends ManagerBase implements LogsWebSes
             logsWebSessionVO.setConnectedTime(new Date());
             logsWebSessionVO.setClientAddress(clientAddress);
         } else {
+            logsWebSocketRouteManager.removeRoute(logsWebSessionVO.getUuid());
             if (logsWebSessionVO.getConnections() == 0) {
                 return;
             }
@@ -217,16 +273,53 @@ public class LogsWebSessionManagerImpl extends ManagerBase implements LogsWebSes
         logsWebSessionDao.update(sessionId, logsWebSessionVO);
     }
 
+    protected LogsWebSessionWebSocket getWebSocketResultFromAnswersString(String answersStr,
+                  LogsWebSession logsWebSession, ManagementServerHostVO msHost) {
+        Answer[] answers;
+        try {
+            answers = GsonHelper.getGson().fromJson(answersStr, Answer[].class);
+        } catch (Exception e) {
+            logger.error("Failed to parse answer JSON during get websocket for {} on {}: {}",
+                    logsWebSession, msHost, e.getMessage(), e);
+            return null;
+        }
+        Answer answer = answers != null && answers.length > 0 ? answers[0] : null;
+        String details = "Unknown error";
+        if (answer instanceof GetLogsSessionWebSocketAnswer && answer.getResult()) {
+            GetLogsSessionWebSocketAnswer wsAnswer = (GetLogsSessionWebSocketAnswer) answer;
+            return new LogsWebSessionWebSocket(msHost, wsAnswer.getPort(), wsAnswer.getPath(), wsAnswer.isSsl());
+        }
+        if (answer != null) {
+            details = answer.getDetails();
+        }
+        logger.error("Failed to get websocket for {} on {} due to {}", logsWebSession, msHost, details);
+        return null;
+    }
+
     @Override
-    public List<LogsWebSessionWebSocket> getLogsWebSessionWebSockets(final LogsWebSession logsWebSession) {
+    public List<LogsWebSessionWebSocket> getLogsWebSessionWebSockets(final LogsWebSession logsWebSession) throws
+            InternalErrorException {
         List<LogsWebSessionWebSocket> webSockets = new ArrayList<>();
         final List<ManagementServerHostVO> activeMsList =
                 managementServerHostDao.listBy(ManagementServerHost.State.Up);
-        for (ManagementServerHostVO managementServerHostVO : activeMsList) {
-            LogsWebSessionWebSocket logsWebSessionWebSocket = new LogsWebSessionWebSocket(managementServerHostVO,
-                    LogsWebServerPort.valueIn(managementServerHostVO.getId()),
-                    getLogsWebSessionWebSocketPathUsingVO(managementServerHostVO.getId(), logsWebSession));
-            webSockets.add(logsWebSessionWebSocket);
+        LogsWebSessionTokenPayload payload = getLogsWebSessionWebSocketTokenPayloadUsingVO(logsWebSession);
+        LogsWebSessionWebSocket localWebSocket = getLogsWebSessionWebSocket(payload);
+        if (localWebSocket != null) {
+            webSockets.add(localWebSocket);
+        }
+        for (ManagementServerHostVO msHost : activeMsList) {
+            if (Objects.equals(msHost.getId(), getManagementServerId())) {
+                continue;
+            }
+            final String msPeer = Long.toString(msHost.getMsid());
+            logger.debug("Sending get websocket command for {} to MS: {}", logsWebSession, msPeer);
+            final Command[] commands = new Command[1];
+            commands[0] = new GetLogsSessionWebSocketCommand(logsWebSession.getId(), payload);
+            String answersStr = clusterManager.execute(msPeer, 0L, GsonHelper.getGson().toJson(commands), true);
+            LogsWebSessionWebSocket webSocket = getWebSocketResultFromAnswersString(answersStr, logsWebSession, msHost);
+            if (webSocket != null) {
+                webSockets.add(webSocket);
+            }
         }
         return webSockets;
     }
@@ -238,6 +331,24 @@ public class LogsWebSessionManagerImpl extends ManagerBase implements LogsWebSes
             return true;
         }
         return maxSessions > logsWebSessionDao.countConnected();
+    }
+
+    @Override
+    public boolean supportsCommand(Class<?> clazz) {
+        return clazz != null && SUPPORTED_COMMANDS.contains(clazz);
+    }
+
+    @Override
+    public String processCommand(Command cmd) {
+        logger.debug("Processing command: {}", cmd);
+        String commandClass = cmd.getClass().getName();
+        if (cmd instanceof GetLogsSessionWebSocketCommand) {
+            GetLogsSessionWebSocketCommand getCmd = (GetLogsSessionWebSocketCommand) cmd;
+            GetLogsSessionWebSocketAnswer answer = processGetLogsSessionWebSocketCommand(getCmd);
+            return GsonHelper.getGson().toJson(answer);
+        }
+        return GsonHelper.getGson().toJson(new Answer(cmd, false,
+                "Unsupported command: " + commandClass));
     }
 
     public class StaleLogsWebSessionCleanupWorker extends ManagedContextRunnable {

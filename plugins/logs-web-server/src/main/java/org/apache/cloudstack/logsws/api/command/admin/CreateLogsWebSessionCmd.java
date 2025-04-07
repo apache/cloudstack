@@ -45,7 +45,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = true,
         authorized = {RoleType.Admin},
-        since = "4.21.0")
+        since = "4.23.0")
 public class CreateLogsWebSessionCmd extends BaseCmd {
 
     @Inject
@@ -56,12 +56,8 @@ public class CreateLogsWebSessionCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.FILTERS, type = CommandType.LIST, collectionType = CommandType.STRING,
-            description = "List of filter keywords")
+            description = "Comma separated list of keywords to filter the logs")
     private List<String> filters;
-
-    @Parameter(name = ApiConstants.TOKEN, type = CommandType.STRING,
-            description = "(Optional) extra security token, valid when the extra validation is enabled")
-    private String extraSecurityToken;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -69,10 +65,6 @@ public class CreateLogsWebSessionCmd extends BaseCmd {
 
     public List<String> getFilters() {
         return filters;
-    }
-
-    public String getExtraSecurityToken() {
-        return extraSecurityToken;
     }
 
     @Override

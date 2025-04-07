@@ -31,5 +31,4 @@ public interface LogsWebSessionApiService extends PluggableService {
     ListResponse<LogsWebSessionResponse> listLogsWebSessions(ListLogsWebSessionsCmd cmd);
     LogsWebSessionResponse createLogsWebSession(CreateLogsWebSessionCmd cmd) throws CloudRuntimeException;
     boolean deleteLogsWebSession(DeleteLogsWebSession cmd) throws CloudRuntimeException;
-    LogsWebSessionResponse createLogsWebSessionResponse(long logsEndpointId);
 }

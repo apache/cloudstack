@@ -164,7 +164,7 @@ public class CapabilitiesResponse extends BaseResponse {
     private Map<String, Object> vpnCustomerGatewayParameters;
 
     @SerializedName(ApiConstants.LOGS_WEB_SERVER_ENABLED)
-    @Param(description = "true if Logs Web Server plugin is enabled, false otherwise", since = "4.21.0")
+    @Param(description = "true if Logs Web Server plugin is enabled, false otherwise", since = "4.23.0")
     private boolean logsWebServerEnabled;
 
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {

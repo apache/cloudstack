@@ -99,7 +99,6 @@ public class ListCfgsByCmd extends BaseListCmd {
             type = CommandType.UUID,
             entityType = ManagementServerResponse.class,
             description = "the ID of the Management Server to update the parameter value for corresponding management server",
-            validations = ApiArgValidator.PositiveNumber,
             since = "4.21.0")
     private Long managementServerId;
 

@@ -17,8 +17,14 @@
 
 package org.apache.cloudstack.logsws;
 
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -36,22 +42,29 @@ import org.apache.cloudstack.logsws.api.response.LogsWebSessionResponse;
 import org.apache.cloudstack.logsws.api.response.LogsWebSessionWebSocketResponse;
 import org.apache.cloudstack.logsws.dao.LogsWebSessionDao;
 import org.apache.cloudstack.logsws.vo.LogsWebSessionVO;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.api.ApiServlet;
 import com.cloud.domain.Domain;
+import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.DomainService;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 
-public class LogsWebSessionApiServiceImpl implements LogsWebSessionApiService {
+public class LogsWebSessionApiServiceImpl extends ManagerBase implements LogsWebSessionApiService {
 
     @Inject
     LogsWebSessionManager logsWSManager;
@@ -65,6 +78,9 @@ public class LogsWebSessionApiServiceImpl implements LogsWebSessionApiService {
     @Override
     public ListResponse<LogsWebSessionResponse> listLogsWebSessions(ListLogsWebSessionsCmd cmd) {
         final Long id = cmd.getId();
+        if (!accountService.isRootAdmin(CallContext.current().getCallingAccountId())) {
+            throw new PermissionDeniedException("Invalid request");
+        }
         List<LogsWebSessionResponse> responsesList = new ArrayList<>();
         SearchBuilder<LogsWebSessionVO> sb = logsWebSessionDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
@@ -75,24 +91,33 @@ public class LogsWebSessionApiServiceImpl implements LogsWebSessionApiService {
 
         Filter searchFilter = new Filter(LogsWebSessionVO.class, "id", true, cmd.getStartIndex(),
                 cmd.getPageSizeVal());
-        Pair<List<LogsWebSessionVO>, Integer> webhooksAndCount = logsWebSessionDao.searchAndCount(sc, searchFilter);
-        for (LogsWebSessionVO webhook : webhooksAndCount.first()) {
-            LogsWebSessionResponse response = createLogsWebSessionResponse(webhook);
-            responsesList.add(response);
+        Pair<List<LogsWebSessionVO>, Integer> logsWebSessionsAndCount = logsWebSessionDao.searchAndCount(sc, searchFilter);
+        for (LogsWebSessionVO session : logsWebSessionsAndCount.first()) {
+            try {
+                LogsWebSessionResponse response = createLogsWebSessionResponse(session);
+                responsesList.add(response);
+            } catch (InternalErrorException exception) {
+                logger.error("Failed to create response for {}", session, exception);
+            }
         }
         ListResponse<LogsWebSessionResponse> response = new ListResponse<>();
-        response.setResponses(responsesList, webhooksAndCount.second());
+        response.setResponses(responsesList, logsWebSessionsAndCount.second());
         return response;
     }
 
     @Override
     public LogsWebSessionResponse createLogsWebSession(CreateLogsWebSessionCmd cmd) throws CloudRuntimeException {
+        final Account caller = CallContext.current().getCallingAccount();
         final List<String> filters = cmd.getFilters();
-        final String extraSecurityToken = cmd.getExtraSecurityToken();
-        String clientAddress = null;
-        Map<String, String> params = cmd.getFullUrlParams();
+        final Map<String, String> params = cmd.getFullUrlParams();
+        String clientAddress;
         if (MapUtils.isNotEmpty(params)) {
             clientAddress = params.get(ApiServlet.CLIENT_INET_ADDRESS_KEY);
+        } else {
+            clientAddress = null;
+        }
+        if (!accountService.isRootAdmin(caller.getAccountId())) {
+            throw new PermissionDeniedException("Invalid request");
         }
         for (String filter : filters) {
             if (StringUtils.isBlank(filter)) {
@@ -101,38 +126,73 @@ public class LogsWebSessionApiServiceImpl implements LogsWebSessionApiService {
             }
         }
         if (!logsWSManager.canCreateNewLogsWebSession()) {
-            throw new CloudRuntimeException("Max Logs Web Session limit reached");
+            throw new CloudRuntimeException("Failed to create logs web session as max session limit reached");
         }
-        final Account account = CallContext.current().getCallingAccount();
-        LogsWebSessionVO logsWebSessionVO = new LogsWebSessionVO(filters, account.getDomainId(), account.getAccountId(),
-                clientAddress);
-        logsWebSessionVO = logsWebSessionDao.persist(logsWebSessionVO);
-        return createLogsWebSessionResponse(logsWebSessionVO);
+        try {
+            return Transaction.execute((TransactionCallbackWithException<LogsWebSessionResponse, InternalErrorException>) status -> {
+                LogsWebSessionVO logsWebSessionVO = new LogsWebSessionVO(filters, caller.getDomainId(), caller.getAccountId(),
+                        clientAddress);
+                logsWebSessionVO = logsWebSessionDao.persist(logsWebSessionVO);
+                return createLogsWebSessionResponse(logsWebSessionVO);
+            });
+        } catch (InternalErrorException e) {
+            throw new CloudRuntimeException("Failed to create logs web session as unable to prepare response", e);
+        }
     }
 
     @Override
     public boolean deleteLogsWebSession(DeleteLogsWebSession cmd) throws CloudRuntimeException {
         final long id = cmd.getId();
+        if (!accountService.isRootAdmin(CallContext.current().getCallingAccountId())) {
+            throw new PermissionDeniedException("Invalid request");
+        }
         return logsWebSessionDao.remove(id);
     }
 
+    protected String getRealIp4Address() {
+        try {
+            Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+            while (interfaces.hasMoreElements()) {
+                NetworkInterface iface = interfaces.nextElement();
+                if (iface.isLoopback() || iface.isPointToPoint() || !iface.isUp()) continue;
+
+                for (InterfaceAddress addr : iface.getInterfaceAddresses()) {
+                    InetAddress inetAddr = addr.getAddress();
+                    if (inetAddr instanceof Inet4Address && !inetAddr.isLoopbackAddress()) {
+                        return inetAddr.getHostAddress();
+                    }
+                }
+            }
+        } catch (SocketException ignored) {}
+        return null;
+    }
+
     protected Set<LogsWebSessionWebSocketResponse> getLogsWebSessionWebSocketResponses(
-            final LogsWebSessionVO logsWebSessionVO) {
+            final LogsWebSessionVO logsWebSessionVO) throws InternalErrorException {
         Set<LogsWebSessionWebSocketResponse> responses = new HashSet<>();
         List<LogsWebSessionWebSocket> webSockets = logsWSManager.getLogsWebSessionWebSockets(logsWebSessionVO);
         for (LogsWebSessionWebSocket socket : webSockets) {
             LogsWebSessionWebSocketResponse webSocketResponse = new LogsWebSessionWebSocketResponse();
             webSocketResponse.setManagementServerId(socket.getManagementServerHost().getUuid());
             webSocketResponse.setManagementServerName(socket.getManagementServerHost().getName());
-            webSocketResponse.setHost(socket.getManagementServerHost().getServiceIP());
+            String serviceIp = socket.getManagementServerHost().getServiceIP();
+            if (ManagementServerNode.getManagementServerId() == socket.getManagementServerHost().getMsid() &&
+                    NetUtils.isLocalAddress(serviceIp)) {
+                String realIp = getRealIp4Address();
+                if (realIp != null) {
+                    serviceIp = realIp;
+                }
+            }
+            webSocketResponse.setHost(serviceIp);
             webSocketResponse.setPort(socket.getPort());
             webSocketResponse.setPath(socket.getPath());
+            webSocketResponse.setSsl(socket.isSsl());
             responses.add(webSocketResponse);
         }
         return responses;
     }
 
-    protected LogsWebSessionResponse createLogsWebSessionResponse(final LogsWebSessionVO logsWebSessionVO) {
+    protected LogsWebSessionResponse createLogsWebSessionResponse(final LogsWebSessionVO logsWebSessionVO) throws InternalErrorException {
         LogsWebSessionResponse response = new LogsWebSessionResponse();
         response.setObjectName("logswebsession");
         response.setId(logsWebSessionVO.getUuid());
@@ -149,15 +209,6 @@ public class LogsWebSessionApiServiceImpl implements LogsWebSessionApiService {
         response.setCreated(logsWebSessionVO.getCreated());
         response.setWebsocketResponse(getLogsWebSessionWebSocketResponses(logsWebSessionVO));
         return response;
-    }
-
-    @Override
-    public LogsWebSessionResponse createLogsWebSessionResponse(long logsEndpointId) {
-        LogsWebSessionVO logsWebSessionVO = logsWebSessionDao.findById(logsEndpointId);
-        if (logsWebSessionVO == null) {
-            return null;
-        }
-        return createLogsWebSessionResponse(logsWebSessionVO);
     }
 
     @Override

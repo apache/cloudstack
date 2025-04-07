@@ -22,15 +22,26 @@ import java.util.List;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
+import com.cloud.exception.InternalErrorException;
 import com.cloud.utils.component.PluggableService;
 
 public interface LogsWebSessionManager extends PluggableService, Configurable {
-    int WS_PORT = 8822;
     String WS_PATH = "/logger";
 
     ConfigKey<Boolean> LogsWebServerEnabled = new ConfigKey<>("Advanced", Boolean.class,
             "logs.web.server.enabled", "false",
             "Indicates whether Logs Web Server plugin is enabled or not",
+            false);
+
+    ConfigKey<String> LogsWebServerPath = new ConfigKey<>("Advanced", String.class,
+            "logs.web.server.path", WS_PATH,
+            "The path prefix to be used for Logs Web Server",
+            false,
+            ConfigKey.Scope.ManagementServer);
+
+    ConfigKey<Integer> LogsWebServerSessionIdleTimeout = new ConfigKey<>("Advanced", Integer.class,
+            "logs.web.server.session.idle.timeout", "60",
+            "Time(in seconds) after which a Logs Web Server session will be automatically disconnected if in idle state",
             false);
 
     ConfigKey<Integer> LogsWebServerConcurrentSessions = new ConfigKey<>("Advanced", Integer.class,
@@ -42,24 +53,6 @@ public interface LogsWebSessionManager extends PluggableService, Configurable {
             "logs.web.server.session.stale.cleanup.interval", "600",
             "Time(in seconds) after which a stale (not connected or disconnected) Logs Web Server session will be automatically deleted",
             false);
-
-    ConfigKey<Integer> LogsWebServerPort = new ConfigKey<>("Advanced", Integer.class,
-            "logs.web.server.port", String.valueOf(WS_PORT),
-            "The port to be used for Logs Web Server",
-            false,
-            ConfigKey.Scope.ManagementServer);
-
-    ConfigKey<String> LogsWebServerPath = new ConfigKey<>("Advanced", String.class,
-            "logs.web.server.path", WS_PATH,
-            "The path prefix to be used for Logs Web Server",
-            false,
-            ConfigKey.Scope.ManagementServer);
-
-    ConfigKey<Integer> LogsWebServerSessionIdleTimeout = new ConfigKey<>("Advanced", Integer.class,
-            "logs.web.server.session.idle.timeout", "60",
-            "Time(in seconds) after which a Logs Web Server session will be automatically disconnected if in idle state",
-            false,
-            ConfigKey.Scope.ManagementServer);
 
     ConfigKey<String> LogsWebServerLogFile = new ConfigKey<>("Advanced", String.class,
             "logs.web.server.log.file", "/var/logs/cloudstack/management/management-server.log",
@@ -73,8 +66,6 @@ public interface LogsWebSessionManager extends PluggableService, Configurable {
             true,
             ConfigKey.Scope.ManagementServer);
 
-    void startWebSocketServer();
-    void stopWebSocketServer();
-    List<LogsWebSessionWebSocket> getLogsWebSessionWebSockets(final LogsWebSession logsWebSession);
+    List<LogsWebSessionWebSocket> getLogsWebSessionWebSockets(final LogsWebSession logsWebSession) throws InternalErrorException;
     boolean canCreateNewLogsWebSession();
 }

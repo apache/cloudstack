@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.cloudstack.framework.websocket.server.common.WebSocketSession;
 import org.apache.cloudstack.logsws.LogsWebSession;
 import org.apache.cloudstack.logsws.logreader.FilteredLogTailerListener;
 import org.apache.commons.collections.CollectionUtils;
@@ -37,22 +38,18 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
-import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
-import io.netty.handler.timeout.IdleState;
-import io.netty.handler.timeout.IdleStateEvent;
-import io.netty.util.ReferenceCountUtil;
 
-public class LogsWebSocketBroadcastHandler extends ChannelInboundHandlerAdapter {
-    protected static Logger LOGGER = LogManager.getLogger(LogsWebSocketBroadcastHandler.class);
+public class LogsStreamer implements AutoCloseable {
+    protected static Logger LOGGER = LogManager.getLogger(LogsStreamer.class);
     private String route;
     private Tailer tailer;
     private ExecutorService tailerExecutor;
+    private final LogsWebSession logsWebSession;
     private final LogsWebSocketServerHelper serverHelper;
-    private LogsWebSession logsWebSession;
 
-    public LogsWebSocketBroadcastHandler(final LogsWebSocketServerHelper serverHelper) {
+    public LogsStreamer(final LogsWebSession logsWebSession, final LogsWebSocketServerHelper serverHelper) {
+        this.logsWebSession = logsWebSession;
         this.serverHelper = serverHelper;
     }
 
@@ -68,12 +65,12 @@ public class LogsWebSocketBroadcastHandler extends ChannelInboundHandlerAdapter 
         }, 0, 5, TimeUnit.SECONDS);
     }
 
-    private void processExistingLines(final ChannelHandlerContext ctx, File logFile, final List<String> filters) {
+    private void processExistingLines(final WebSocketSession session, File logFile, final List<String> filters) {
         try (ReversedLinesFileReader reader = new ReversedLinesFileReader(logFile, StandardCharsets.UTF_8)) {
             List<String> lastLines = new ArrayList<>();
             String line;
             int count = 0;
-            // Read lines in reverse order up to 200 lines
+            // Read lines in reverse order up to LogsWebSocketServerHelper.getMaxReadExistingLines lines
             while ((line = reader.readLine()) != null && count < serverHelper.getMaxReadExistingLines()) {
                 lastLines.add(line);
                 count++;
@@ -85,20 +82,20 @@ public class LogsWebSocketBroadcastHandler extends ChannelInboundHandlerAdapter 
             boolean isLastLineValid = false;
             for (String l : lastLines) {
                 if (FilteredLogTailerListener.isValidLine(l, isFilterEmpty, isLastLineValid, filters)) {
-                    ctx.writeAndFlush(new TextWebSocketFrame(l));
+                    session.sendText(l);
                     isLastLineValid = true;
                 } else {
                     isLastLineValid = false;
                 }
             }
         } catch (IOException e) {
-            ctx.writeAndFlush(new TextWebSocketFrame("Error reading existing log lines: " + e.getMessage()));
+            session.sendText(String.format("Error reading existing log lines: %s", e.getMessage()));
         }
     }
 
-    private void startLogTailing(ChannelHandlerContext ctx, List<String> filters, File logFile) {
+    private void startLogTailing(WebSocketSession session, List<String> filters, File logFile) {
         // Create the listener to filter new log lines
-        FilteredLogTailerListener listener = new FilteredLogTailerListener(filters, ctx.channel());
+        FilteredLogTailerListener listener = new FilteredLogTailerListener(session, filters);
         // Use 'true' to start tailing from the end of the file (since we've already processed existing lines)
         tailer = new Tailer(logFile, listener, 100, true);
 
@@ -107,23 +104,54 @@ public class LogsWebSocketBroadcastHandler extends ChannelInboundHandlerAdapter 
         tailerExecutor.submit(tailer);
     }
 
-    private void startLogsBroadcasting(final ChannelHandlerContext ctx) {
-        route = ctx.channel().attr(LogsWebSocketRoutingHandler.LOGGER_ROUTE_ATTR).get();
-        logsWebSession = serverHelper.getSession(route);
-        if (logsWebSession == null) {
-            LOGGER.warn("Unauthorized session for route: {}", route);
-            ctx.close();
-            return;
-        }
+    public void start(WebSocketSession session, String route) {
+        LOGGER.debug("Starting log streaming for route: {}", route);
+        // Resolve log file
         File logFile = new File(serverHelper.getLogFile());
         if (!logFile.exists() || !logFile.canRead()) {
-            ctx.channel().writeAndFlush(new TextWebSocketFrame("Log file not available or cannot be read."));
+            session.sendText("Log file not available or cannot be read.");
             return;
         }
-        InetSocketAddress clientAddress = (InetSocketAddress) ctx.channel().remoteAddress();
-        serverHelper.updateSessionConnection(logsWebSession.getId(), clientAddress.getAddress().getHostAddress());
-        processExistingLines(ctx, logFile, logsWebSession.getFilters());
-        startLogTailing(ctx, logsWebSession.getFilters(), logFile);
+
+        // (Optional) update server-side session with remote address if available
+        try {
+            String remoteStr = session.getAttr("remoteAddress");
+            if (remoteStr != null && remoteStr.contains("/")) {
+                // Netty: "/1.2.3.4:5678"
+                String host = new InetSocketAddress(remoteStr, 0).getAddress().getHostAddress();
+                serverHelper.updateSessionConnection(logsWebSession.getId(), host);
+            } else if (remoteStr != null) {
+                serverHelper.updateSessionConnection(logsWebSession.getId(), remoteStr);
+            }
+        } catch (Throwable ignore) {
+        }
+
+        // 1) Send backlog
+        processExistingLines(session, logFile, logsWebSession.getFilters());
+
+        // 2) Start tailer from end (since backlog was already sent)
+        startLogTailing(session, logsWebSession.getFilters(), logFile);
+    }
+
+    @Override
+    public void close() {
+        try {
+            if (tailer != null) {
+                tailer.stop();
+                tailer = null;
+            }
+        } catch (Throwable ignore) {
+        }
+        if (tailerExecutor != null && !tailerExecutor.isShutdown()) {
+            tailerExecutor.shutdownNow();
+            tailerExecutor = null;
+        }
+        try {
+            if (logsWebSession != null) {
+                serverHelper.updateSessionConnection(logsWebSession.getId(), null);
+            }
+        } catch (Throwable ignore) {
+        }
     }
 
     private void stopLogsBroadcasting() {
@@ -136,40 +164,5 @@ public class LogsWebSocketBroadcastHandler extends ChannelInboundHandlerAdapter 
         if (logsWebSession != null) {
             serverHelper.updateSessionConnection(logsWebSession.getId(), null);
         }
-    }
-
-    @Override
-    public void channelActive(final ChannelHandlerContext ctx) throws Exception {
-        LOGGER.debug("Channel is active, context: {}", ctx.hashCode());
-        super.channelActive(ctx);
-    }
-
-    @Override
-    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        LOGGER.debug("Channel is being closed for route: {}, context: {}", route, ctx.hashCode());
-        stopLogsBroadcasting();
-        super.channelInactive(ctx);
-    }
-
-    @Override
-    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        LOGGER.debug("User event triggered: {}, context: {}", evt, ctx.hashCode());
-        if (evt instanceof WebSocketServerProtocolHandler.HandshakeComplete) {
-            startLogsBroadcasting(ctx);
-        } else if (evt instanceof IdleStateEvent) {
-            IdleStateEvent event = (IdleStateEvent) evt;
-            if (IdleState.WRITER_IDLE.equals(event.state())) {
-                ctx.channel().writeAndFlush(new TextWebSocketFrame("Connection idle for 1 minute, closing connection."));
-                ctx.close();
-                return;
-            }
-        }
-        super.userEventTriggered(ctx, evt);
-    }
-
-    @Override
-    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        // Discard any messages received from the client.
-        ReferenceCountUtil.release(msg);
     }
 }
