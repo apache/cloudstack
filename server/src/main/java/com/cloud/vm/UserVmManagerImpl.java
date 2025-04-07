@@ -6341,7 +6341,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // vm must have associated lease during deployment
         UserVmDetailVO vmDetail = userVmDetailsDao.findDetail(instance.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
         if (vmDetail == null || StringUtils.isEmpty(vmDetail.getValue())) {
-            logger.debug("Lease wont be applied on instance with id: {}, it doesn't have " +
+            logger.debug("Lease won't be applied on instance with id: {}, it doesn't have " +
                     "leased associated during deployment", instanceUuid);
             return;
         }

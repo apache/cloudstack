@@ -628,8 +628,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
                     params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
                     _agentManager.propagateChangeToAgents(params);
-                } else if (VMLeaseManagerImpl.InstanceLeaseEnabled.key().equals(globalSettingUpdated) && !VMLeaseManagerImpl.InstanceLeaseEnabled.value()) {
-                    vmLeaseManager.cancelLeaseOnExistingInstances();
+                } else if (VMLeaseManagerImpl.InstanceLeaseEnabled.key().equals(globalSettingUpdated)) {
+                    vmLeaseManager.onLeaseFeatureToggle();
                 }
             }
         });

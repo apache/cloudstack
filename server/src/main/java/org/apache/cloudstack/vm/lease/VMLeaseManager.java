@@ -32,19 +32,15 @@ public interface VMLeaseManager extends Manager {
 
     ConfigKey<Long> InstanceLeaseSchedulerInterval = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
             "instance.lease.scheduler.interval", "3600", "VM Lease Scheduler interval in seconds",
-            true, List.of(ConfigKey.Scope.Global));
+            false, List.of(ConfigKey.Scope.Global));
 
     ConfigKey<Long> InstanceLeaseAlertSchedule = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
             "instance.lease.alertscheduler.interval", "86400", "Lease Alert Scheduler interval in seconds",
-            true, List.of(ConfigKey.Scope.Global));
+            false, List.of(ConfigKey.Scope.Global));
 
     ConfigKey<Long> InstanceLeaseExpiryAlertDaysBefore = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
             "instance.lease.alert.daysbefore", "7", "Indicates how many days in advance the alert will be triggered before expiry.",
             true, List.of(ConfigKey.Scope.Global));
 
-    /**
-     * This method will cancel lease on instances running under lease
-     * will be primarily used when feature gets disabled
-     */
-    void cancelLeaseOnExistingInstances();
+    void onLeaseFeatureToggle();
 }

@@ -107,30 +107,27 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        try {
-            vmLeaseExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("VMLeasePollExecutor"));
-            vmLeaseAlertExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("VMLeaseAlertPollExecutor"));
-        } catch (final Exception e) {
-            throw new ConfigurationException("Unable to to configure VMLeaseManagerImpl");
+        if (InstanceLeaseEnabled.value()) {
+           scheduleLeaseExecutors();
         }
         return true;
     }
 
     @Override
     public boolean start() {
-        vmLeaseExecutor.scheduleAtFixedRate(new VMLeaseSchedulerTask(),5L, InstanceLeaseSchedulerInterval.value(), TimeUnit.SECONDS);
-        vmLeaseAlertExecutor.scheduleAtFixedRate(new VMLeaseAlertSchedulerTask(), 5L, InstanceLeaseAlertSchedule.value(), TimeUnit.SECONDS);
         return true;
     }
 
     @Override
     public boolean stop() {
-        vmLeaseExecutor.shutdown();
-        vmLeaseAlertExecutor.shutdown();
+        shutDownLeaseExecutors();
         return true;
     }
 
-    @Override
+    /**
+     * This method will cancel lease on instances running under lease
+     * will be primarily used when feature gets disabled
+     */
     public void cancelLeaseOnExistingInstances() {
         List<UserVmJoinVO> leaseExpiringForInstances = userVmJoinDao.listLeaseInstancesExpiringInDays(-1);
         logger.debug("Total instances found for lease cancellation: {}", leaseExpiringForInstances.size());
@@ -139,6 +136,45 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             String leaseCancellationMsg = String.format("Lease is cancelled for the instancedId: %s ", instance.getUuid());
             ActionEventUtils.onActionEvent(instance.getUserId(), instance.getAccountId(), instance.getDomainId(),
                     EventTypes.VM_LEASE_CANCELLED, leaseCancellationMsg, instance.getId(), ApiCommandResourceType.VirtualMachine.toString());
+        }
+    }
+
+    @Override
+    public void onLeaseFeatureToggle() {
+        boolean isLeaseFeatureEnabled = VMLeaseManagerImpl.InstanceLeaseEnabled.value();
+        if (isLeaseFeatureEnabled) {
+            scheduleLeaseExecutors();
+        } else {
+            cancelLeaseOnExistingInstances();
+            shutDownLeaseExecutors();
+        }
+    }
+
+    private void scheduleLeaseExecutors() {
+        if (vmLeaseExecutor == null || vmLeaseExecutor.isShutdown()) {
+            logger.debug("Scheduling lease executor");
+            vmLeaseExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("VMLeasePollExecutor"));
+            vmLeaseExecutor.scheduleAtFixedRate(new VMLeaseSchedulerTask(),5L, InstanceLeaseSchedulerInterval.value(), TimeUnit.SECONDS);
+        }
+
+        if (vmLeaseAlertExecutor == null || vmLeaseAlertExecutor.isShutdown()) {
+            logger.debug("Scheduling lease alert executor");
+            vmLeaseAlertExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("VMLeaseAlertPollExecutor"));
+            vmLeaseAlertExecutor.scheduleAtFixedRate(new VMLeaseAlertSchedulerTask(), 5L, InstanceLeaseAlertSchedule.value(), TimeUnit.SECONDS);
+        }
+    }
+
+    private void shutDownLeaseExecutors() {
+        if (vmLeaseExecutor != null) {
+                logger.debug("Shutting down lease executor");
+            vmLeaseExecutor.shutdown();
+            vmLeaseExecutor = null;
+        }
+
+        if (vmLeaseAlertExecutor != null) {
+            logger.debug("Shutting down lease alert executor");
+            vmLeaseAlertExecutor.shutdown();
+            vmLeaseAlertExecutor = null;
         }
     }
 
