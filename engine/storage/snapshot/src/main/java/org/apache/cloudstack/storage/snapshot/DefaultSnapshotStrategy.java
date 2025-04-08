@@ -356,6 +356,11 @@ public class DefaultSnapshotStrategy extends SnapshotStrategyBase {
             snapshotDataStoreVo = snapshotStoreDao.findBySnapshotIdAndDataStoreRoleAndState(snapshotVo.getSnapshotId(), DataStoreRole.Primary, State.Destroyed);
         }
 
+        // Snapshot is hidden, no need to update endOfChain
+        if (snapshotDataStoreVo == null) {
+            return;
+        }
+
         if (!snapshotDataStoreVo.isEndOfChain() || snapshotDataStoreVo.getParentSnapshotId() <= 0) {
             return;
         }
