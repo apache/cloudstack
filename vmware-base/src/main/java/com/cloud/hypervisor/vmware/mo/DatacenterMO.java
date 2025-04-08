@@ -73,7 +73,7 @@ public class DatacenterMO extends BaseMO {
         return _context.getVimClient().getDynamicProperty(_mor, "name");
     }
 
-    public VirtualMachineMO findVm(String vmName) throws Exception {
+    public VirtualMachineMO findVmEx(String vmName) throws Exception {
         int key = getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
         if (key == 0) {
             s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
@@ -82,7 +82,7 @@ public class DatacenterMO extends BaseMO {
         List<ObjectContent> ocs = getVmProperties(new String[] {"name", instanceNameCustomField});
         return HypervisorHostHelper.findVmFromObjectContent(_context, ocs.toArray(new ObjectContent[0]), vmName, instanceNameCustomField);
     }
-    public VirtualMachineMO findVm2(String vmName) throws Exception {
+    public VirtualMachineMO findVm(String vmName) throws Exception {
         int key = getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
         if (key == 0) {
             logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
