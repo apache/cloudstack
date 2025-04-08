@@ -1104,7 +1104,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
 
 
-        setVpcIdInResponse(ipAddr.getVpcId(), ipResponse::setVpcId, ipResponse::setVpcName);
+        setVpcIdInResponse(ipAddr.getVpcId(), ipResponse::setVpcId, ipResponse::setVpcName, ipResponse::setVpcAccess);
 
 
         // Network id the ip is associated with (if associated networkId is
@@ -1176,20 +1176,43 @@ public class ApiResponseHelper implements ResponseGenerator {
         return ipResponse;
     }
 
-
-    private void setVpcIdInResponse(Long vpcId, Consumer<String> vpcUuidSetter, Consumer<String> vpcNameSetter) {
-        if (vpcId != null) {
-            Vpc vpc = ApiDBUtils.findVpcById(vpcId);
-            if (vpc != null) {
-                try {
-                    _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, false, vpc);
-                    vpcUuidSetter.accept(vpc.getUuid());
-                } catch (PermissionDeniedException e) {
-                    logger.debug("Not setting the vpcId to the response because the caller does not have access to the VPC");
-                }
-                vpcNameSetter.accept(vpc.getName());
-            }
+    protected void setVpcIdInResponse(Long vpcId, Consumer<String> vpcUuidSetter, Consumer<String> vpcNameSetter, Consumer<Boolean> vpcAccessSetter) {
+        if (vpcId == null) {
+            return;
         }
+        Vpc vpc = ApiDBUtils.findVpcById(vpcId);
+        if (vpc == null) {
+            return;
+        }
+
+        try {
+            _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, false, vpc);
+            vpcAccessSetter.accept(true);
+        } catch (PermissionDeniedException e) {
+            vpcAccessSetter.accept(false);
+            logger.debug("Setting [{}] as false because the caller does not have access to the VPC [{}].", ApiConstants.VPC_ACCESS, vpc);
+        }
+        vpcNameSetter.accept(vpc.getName());
+        vpcUuidSetter.accept(vpc.getUuid());
+    }
+
+    protected void setAclIdInResponse(Network network, NetworkResponse response) {
+        if (network.getNetworkACLId() == null) {
+            return;
+        }
+
+        NetworkACL acl = ApiDBUtils.findByNetworkACLId(network.getNetworkACLId());
+        if (acl == null) {
+            return;
+        }
+
+        if (Boolean.FALSE.equals(response.getVpcAccess()) && acl.getVpcId() != 0) {
+            logger.debug("[{}] not set in response, since caller does not have access to it.", acl);
+            return;
+        }
+
+        response.setAclId(acl.getUuid());
+        response.setAclName(acl.getName());
     }
 
     private void showVmInfoForSharedNetworks(boolean forVirtualNetworks, IpAddress ipAddr, IPAddressResponse ipResponse) {
@@ -2701,7 +2724,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setSpecifyIpRanges(network.getSpecifyIpRanges());
 
 
-        setVpcIdInResponse(network.getVpcId(), response::setVpcId, response::setVpcName);
+        setVpcIdInResponse(network.getVpcId(), response::setVpcId, response::setVpcName, response::setVpcAccess);
+        setAclIdInResponse(network, response);
 
         setResponseAssociatedNetworkInformation(response, network.getId());
 
@@ -2717,14 +2741,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setTags(tagResponses);
         response.setHasAnnotation(annotationDao.hasAnnotations(network.getUuid(), AnnotationService.EntityType.NETWORK.name(),
                 _accountMgr.isRootAdmin(CallContext.current().getCallingAccount().getId())));
-
-        if (network.getNetworkACLId() != null) {
-            NetworkACL acl = ApiDBUtils.findByNetworkACLId(network.getNetworkACLId());
-            if (acl != null) {
-                response.setAclId(acl.getUuid());
-                response.setAclName(acl.getName());
-            }
-        }
 
         response.setStrechedL2Subnet(network.isStrechedL2Network());
         if (network.isStrechedL2Network()) {
