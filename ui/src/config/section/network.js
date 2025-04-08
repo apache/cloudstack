@@ -230,7 +230,7 @@ export default {
         return fields
       },
       details: ['name', 'id', 'displaytext', 'cidr', 'networkdomain', 'ip4routing', 'ip4routes', 'ip6routes', 'ispersistent', 'redundantvpcrouter', 'restartrequired', 'zonename', 'account', 'domain', 'dns1', 'dns2', 'ip6dns1', 'ip6dns2', 'publicmtu'],
-      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'tags'],
+      searchFilters: ['name', 'zoneid', 'domainid', 'account', 'restartrequired', 'tags'],
       related: [{
         name: 'vm',
         title: 'label.instances',
@@ -320,10 +320,7 @@ export default {
           return false
         }
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
-        if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
-          return false
-        }
-        return true
+        return (listZoneHaveSGEnabled && listZoneHaveSGEnabled.length > 0) || store.getters.showSecurityGroups
       },
       actions: [
         {
