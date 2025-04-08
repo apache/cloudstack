@@ -85,7 +85,7 @@ public class DatacenterMO extends BaseMO {
     public VirtualMachineMO findVm(String vmName) throws Exception {
         int key = getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
         if (key == 0) {
-            logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
+            s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
         }
         String instanceNameCustomField = "value[" + key + "]";
         List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name", instanceNameCustomField});
