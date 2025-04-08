@@ -22,11 +22,13 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.agent.api.PrepareStorageClientCommand;
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
 import org.apache.cloudstack.storage.datastore.manager.ScaleIOSDCManager;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
@@ -158,8 +160,43 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
                 }
             }
         }
+
+        validateMdmState(details);
+
         MapStorageUuidToStoragePool.put(uuid, storagePool);
         return storagePool;
+    }
+
+    /**
+     * Validate Storage Pool state to ensure it healthy and can operate requests.
+     * There is observed situation where ScaleIO configuration file has different values than ScaleIO CLI.
+     * Validation compares values from both drv_cfg.txt and drv_cfg CLI and throws exception if there is mismatch.
+     *
+     * @param details see {@link PrepareStorageClientCommand#getDetails()}
+     *                and {@link @UnprepareStorageClientCommand#getDetails()}, expected to contain
+     *                {@link ScaleIOSDCManager#ValidateMdmsOnConnect#key()}
+     * @throws CloudRuntimeException in case if Storage Pool is not operate-able
+     */
+    private void validateMdmState(Map<String, String> details) {
+
+        String configKey = ScaleIOSDCManager.ValidateMdmsOnConnect.key();
+        String configValue = details.get(configKey);
+
+        // be as much verbose as possible, otherwise it will be difficult to troubleshoot operational issue without logs
+        if (StringUtils.isEmpty(configValue)) {
+            LOGGER.debug(String.format("Skipped ScaleIO validation as property %s not sent by Management Server", configKey));
+        } else if (Boolean.valueOf(configValue).equals(Boolean.FALSE)) {
+            LOGGER.debug(String.format("Skipped ScaleIO validation as property %s received as %s", configKey, configValue));
+        } else {
+            Collection<String> mdmsConfig = ScaleIOUtil.getMdmsFromConfig();
+            Collection<String> mdmsCli = ScaleIOUtil.getMdmsFromCli();
+            if (!mdmsCli.equals(mdmsConfig)) {
+                String msg = String.format("MDM addresses from memory and configuration file don't match. " +
+                        "Memory values: %s, configuration file values: %s", mdmsCli, mdmsConfig);
+                LOGGER.warn(msg);
+                throw new CloudRuntimeException(msg);
+            }
+        }
     }
 
     @Override
@@ -617,13 +654,16 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             String mdms = details.get(ScaleIOGatewayClient.STORAGE_POOL_MDMS);
             String[] mdmAddresses = mdms.split(",");
             if (mdmAddresses.length > 0) {
-                if (ScaleIOUtil.mdmAdded(mdmAddresses[0])) {
+                if (ScaleIOUtil.isMdmPresent(mdmAddresses[0])) {
                     return new Ternary<>(true, getSDCDetails(details), "MDM added, no need to prepare the SDC client");
                 }
 
-                ScaleIOUtil.addMdms(Arrays.asList(mdmAddresses));
-                if (!ScaleIOUtil.mdmAdded(mdmAddresses[0])) {
+                ScaleIOUtil.addMdms(mdmAddresses);
+                if (!ScaleIOUtil.isMdmPresent(mdmAddresses[0])) {
                     return new Ternary<>(false, null, "Failed to add MDMs");
+                } else {
+                    LOGGER.debug(String.format("MDMs %s added to storage pool %s", mdms, uuid));
+                    applyTimeout(details);
                 }
             }
         }
@@ -646,18 +686,64 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             String mdms = details.get(ScaleIOGatewayClient.STORAGE_POOL_MDMS);
             String[] mdmAddresses = mdms.split(",");
             if (mdmAddresses.length > 0) {
-                if (!ScaleIOUtil.mdmAdded(mdmAddresses[0])) {
+                if (!ScaleIOUtil.isMdmPresent(mdmAddresses[0])) {
                     return new Pair<>(true, "MDM not added, no need to unprepare the SDC client");
+                } else if (!ScaleIOUtil.isRemoveMdmCliSupported() && !ScaleIOUtil.getVolumeIds().isEmpty()) {
+                    return new Pair<>(false, "Failed to remove MDMs, SDC client requires service to be restarted, but there are Volumes attached to the Host");
                 }
 
-                ScaleIOUtil.removeMdms(Arrays.asList(mdmAddresses));
-                if (ScaleIOUtil.mdmAdded(mdmAddresses[0])) {
+                ScaleIOUtil.removeMdms(mdmAddresses);
+                if (ScaleIOUtil.isMdmPresent(mdmAddresses[0])) {
                     return new Pair<>(false, "Failed to remove MDMs, unable to unprepare the SDC client");
+                } else {
+                    LOGGER.debug(String.format("MDMs %s removed from storage pool %s", mdms, uuid));
+                    applyTimeout(details);
                 }
             }
         }
 
+        /*
+         * TODO:
+         * 1. Verify on-demand is true
+         * 2. If on-demand is true check whether other MDM addresses are still present
+         * 3. If there are no MDM addresses, then stop SDC service.
+         */
+
         return new Pair<>(true, "Unprepared SDC client successfully");
+    }
+
+    /**
+     * Check whether details map has timeout configured and do "apply timeout" pause before returning response
+     * (to have ScaleIO changes applied).
+     *
+     * @param details see {@link PrepareStorageClientCommand#getDetails()}
+     *                and {@link @UnprepareStorageClientCommand#getDetails()}, expected to contain
+     *                {@link ScaleIOSDCManager#MdmsChangeApplyTimeout#key()}
+     */
+    private void applyTimeout(Map<String, String> details) {
+        String configKey = ScaleIOSDCManager.MdmsChangeApplyTimeout.key();
+        String configValue = details.get(configKey);
+
+        if (StringUtils.isEmpty(configValue)) {
+            LOGGER.debug(String.format("Apply timeout value not defined in property %s, skip", configKey));
+            return;
+        }
+        long timeoutMs;
+        try {
+            timeoutMs = Long.parseLong(configValue);
+        } catch (NumberFormatException e) {
+            LOGGER.warn(String.format("Invalid apply timeout value defined in property %s, skip", configKey), e);
+            return;
+        }
+        if (timeoutMs < 1) {
+            LOGGER.warn(String.format("Apply timeout value is too small (%s ms), skipping", timeoutMs));
+            return;
+        }
+        try {
+            Thread.sleep(timeoutMs);
+        } catch (InterruptedException e) {
+            LOGGER.warn(String.format("Apply timeout %s ms interrupted", timeoutMs), e);
+        }
     }
 
     private Map<String, String> getSDCDetails(Map<String, String> details) {

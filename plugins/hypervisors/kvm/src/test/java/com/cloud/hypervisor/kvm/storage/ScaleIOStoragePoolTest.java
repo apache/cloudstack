@@ -96,7 +96,7 @@ public class ScaleIOStoragePoolTest {
 
         try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
             when(Script.runSimpleBashScript(
-                    "/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms|grep 218ce1797566a00f|awk '{print $5}'")).thenReturn(
+                    "/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms --file /etc/emc/scaleio/drv_cfg.txt|grep 218ce1797566a00f|awk '{print $5}'")).thenReturn(
                     sdcId);
 
             ScaleIOStoragePool pool1 = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type,
@@ -117,9 +117,9 @@ public class ScaleIOStoragePoolTest {
 
         try (MockedStatic<Script> ignored = Mockito.mockStatic(Script.class)) {
             when(Script.runSimpleBashScript(
-                    "/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms|grep 218ce1797566a00f|awk '{print $5}'")).thenReturn(
+                    "/opt/emc/scaleio/sdc/bin/drv_cfg --query_mdms --file /etc/emc/scaleio/drv_cfg.txt|grep 218ce1797566a00f|awk '{print $5}'")).thenReturn(
                     null);
-            when(Script.runSimpleBashScript("/opt/emc/scaleio/sdc/bin/drv_cfg --query_guid")).thenReturn(sdcGuid);
+            when(Script.runSimpleBashScript("/opt/emc/scaleio/sdc/bin/drv_cfg --query_guid --file /etc/emc/scaleio/drv_cfg.txt")).thenReturn(sdcGuid);
 
             ScaleIOStoragePool pool1 = new ScaleIOStoragePool(uuid, "192.168.1.19", 443, "a519be2f00000000", type,
                     details, adapter);
