@@ -52,7 +52,7 @@ public interface ScaleIOSDCManager {
 
     ConfigKey<Boolean> BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached = new ConfigKey<>("Storage",
             Boolean.class,
-            "powerflex.block.sdc.unprepare.if.service.restart.needed.and.volumes.attached",
+            "powerflex.block.sdc.unprepare",
             Boolean.FALSE.toString(),
             "Block Storage Client un-preparation if SDC service restart needed but there are Volumes attached to the Host",
             Boolean.TRUE);
