@@ -165,6 +165,8 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
 
     private static final Pattern REGEX_PASSWORD_DETAILS_INDEX = Pattern.compile("details(\\[|%5B)\\d*(\\]|%5D)");
 
+    private static final Pattern REGEX_SESSION_KEY = Pattern.compile("sessionkey=(\\p{Alnum}*)");
+
     private static final Pattern REGEX_REDUNDANT_AND = Pattern.compile("(&|%26)(&|%26)+");
 
     // Responsible for stripping sensitive content from request and response strings
@@ -173,6 +175,7 @@ public class StringUtils extends org.apache.commons.lang3.StringUtils {
         if (stringToClean != null) {
             cleanResult = REGEX_PASSWORD_QUERYSTRING.matcher(stringToClean).replaceAll("");
             cleanResult = REGEX_PASSWORD_JSON.matcher(cleanResult).replaceAll("");
+            cleanResult = REGEX_SESSION_KEY.matcher(cleanResult).replaceFirst("");
             final Matcher detailsMatcher = REGEX_PASSWORD_DETAILS.matcher(cleanResult);
             while (detailsMatcher.find()) {
                 final Matcher detailsIndexMatcher = REGEX_PASSWORD_DETAILS_INDEX.matcher(detailsMatcher.group());
