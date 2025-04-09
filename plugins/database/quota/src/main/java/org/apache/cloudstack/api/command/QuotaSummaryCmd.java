@@ -97,7 +97,7 @@ public class QuotaSummaryCmd extends BaseListCmd {
     }
 
     public Boolean isListAll() {
-        return BooleanUtils.toBoolean(listAll);
+        return ObjectUtils.defaultIfNull(listAll, Boolean.FALSE);
     }
 
     public void setListAll(Boolean listAll) {
