@@ -37,3 +37,26 @@ WHERE rp.rule = 'quotaStatement'
 AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaCreditsList');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'last_mgmt_server_id', 'bigint unsigned DEFAULT NULL COMMENT "last management server this host is connected to" AFTER `mgmt_server_id`');
+
+-- Add table for reconcile commands
+CREATE TABLE IF NOT EXISTS `cloud`.`reconcile_commands` (
+    `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
+    `management_server_id` bigint unsigned NOT NULL COMMENT 'node id of the management server',
+    `host_id` bigint unsigned NOT NULL COMMENT 'id of the host',
+    `request_sequence` bigint unsigned NOT NULL COMMENT 'sequence of the request',
+    `resource_id` bigint unsigned DEFAULT NULL COMMENT 'id of the resource',
+    `resource_type` varchar(255) COMMENT 'type if the resource',
+    `state_by_management` varchar(255) COMMENT 'state of the command updated by management server',
+    `state_by_agent` varchar(255) COMMENT 'state of the command updated by cloudstack agent',
+    `command_name` varchar(255) COMMENT 'name of the command',
+    `command_info` MEDIUMTEXT COMMENT 'info of the command',
+    `answer_name` varchar(255) COMMENT 'name of the answer',
+    `answer_info` MEDIUMTEXT COMMENT 'info of the answer',
+    `created` datetime COMMENT 'date the reconcile command was created',
+    `removed` datetime COMMENT 'date the reconcile command was removed',
+    `updated` datetime COMMENT 'date the reconcile command was updated',
+    `retry_count` bigint unsigned DEFAULT 0 COMMENT 'The retry count of reconciliation',
+    PRIMARY KEY(`id`),
+    INDEX `i_reconcile_command__host_id`(`host_id`),
+    CONSTRAINT `fk_reconcile_command__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
