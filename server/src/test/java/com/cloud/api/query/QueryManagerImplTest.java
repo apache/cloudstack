@@ -114,7 +114,7 @@ public class QueryManagerImplTest {
 
     @Spy
     @InjectMocks
-    private QueryManagerImpl queryManagerImplSpy = new QueryManagerImpl();
+    private QueryManagerImpl queryManagerImplSpy;
 
     @Mock
     EntityManager entityManager;
@@ -225,7 +225,7 @@ public class QueryManagerImplTest {
         Mockito.when(entityManager.findByUuidIncludingRemoved(Network.class, uuid)).thenReturn(network);
         Mockito.doNothing().when(accountManager).checkAccess(account, SecurityChecker.AccessType.ListEntry, true, network);
         Mockito.when(eventDao.searchAndCount(Mockito.any(), Mockito.any(Filter.class))).thenReturn(pair);
-        Mockito.when(eventJoinDao.searchByIds(Mockito.any())).thenReturn(eventJoins);
+        Mockito.lenient().when(eventJoinDao.searchByIds(Mockito.any())).thenReturn(eventJoins);
         List<EventResponse> respList = new ArrayList<EventResponse>();
         for (EventJoinVO vt : eventJoins) {
             respList.add(eventJoinDao.newEventResponse(vt));

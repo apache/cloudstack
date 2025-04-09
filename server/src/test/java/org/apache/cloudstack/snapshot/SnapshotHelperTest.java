@@ -286,7 +286,7 @@ public class SnapshotHelperTest {
 
     @Test (expected = CloudRuntimeException.class)
     public void validateThrowCloudRuntimeExceptionOfSnapshotsOnlyInPrimaryStorage() {
-        Mockito.doReturn(new ArrayList<>()).when(snapshotDaoMock).listByIds(Mockito.any());
+        Mockito.lenient().doReturn(new ArrayList<>()).when(snapshotDaoMock).listByIds(Mockito.any());
         snapshotHelperSpy.throwCloudRuntimeExceptionOfSnapshotsOnlyInPrimaryStorage(null, new HashSet<>());
     }
 

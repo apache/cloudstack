@@ -704,7 +704,7 @@ public class LibvirtMigrateCommandWrapperTest {
 
     @Test
     public void deleteOrDisconnectDisksOnSourcePoolTest() {
-        LibvirtMigrateCommandWrapper spyLibvirtMigrateCmdWrapper = Mockito.spy(libvirtMigrateCmdWrapper);
+        LibvirtMigrateCommandWrapper spyLibvirtMigrateCmdWrapper = libvirtMigrateCmdWrapper;
         Mockito.doNothing().when(spyLibvirtMigrateCmdWrapper).deleteLocalVolume("volPath");
 
         List<MigrateDiskInfo> migrateDiskInfoList = new ArrayList<>();

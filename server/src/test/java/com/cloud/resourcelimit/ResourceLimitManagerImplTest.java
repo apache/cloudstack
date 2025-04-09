@@ -86,13 +86,11 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vpc.MockResourceLimitManagerImpl;
 
-import junit.framework.TestCase;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
-public class ResourceLimitManagerImplTest extends TestCase {
+public class ResourceLimitManagerImplTest {
     private Logger logger = LogManager.getLogger(ResourceLimitManagerImplTest.class);
 
     MockResourceLimitManagerImpl _resourceLimitService = new MockResourceLimitManagerImpl();
@@ -142,14 +140,11 @@ public class ResourceLimitManagerImplTest extends TestCase {
         f.set(configKey, o);
     }
 
+
     @Before
-    public void setUp() {
-        try {
-            overrideDefaultConfigValue(ResourceLimitService.ResourceLimitHostTags, "_defaultValue", StringUtils.join(hostTags, ","));
-            overrideDefaultConfigValue(ResourceLimitService.ResourceLimitStorageTags, "_defaultValue", StringUtils.join(storageTags, ","));
-        } catch (IllegalAccessException | NoSuchFieldException e) {
-            logger.error("Failed to update configurations");
-        }
+    public void setUp() throws Exception {
+        overrideDefaultConfigValue(ResourceLimitService.ResourceLimitHostTags, "_defaultValue", StringUtils.join(hostTags, ","));
+        overrideDefaultConfigValue(ResourceLimitService.ResourceLimitStorageTags, "_defaultValue", StringUtils.join(storageTags, ","));
 
         Account account = mock(Account.class);
         User user = mock(User.class);
@@ -288,6 +283,7 @@ public class ResourceLimitManagerImplTest extends TestCase {
         Mockito.when(template.getTemplateTag()).thenReturn(hostTags.get(0));
         Account account = Mockito.mock(Account.class);
         try {
+            Mockito.doNothing().when(resourceLimitManager).checkResourceLimitWithTag(Mockito.any(), Mockito.any(), Mockito.any());
             Mockito.doNothing().when(resourceLimitManager).checkResourceLimitWithTag(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
             resourceLimitManager.checkVmResourceLimit(account, true, serviceOffering, template);
             List<String> tags = new ArrayList<>();
@@ -347,6 +343,7 @@ public class ResourceLimitManagerImplTest extends TestCase {
         Mockito.when(diskOffering.getTagsArray()).thenReturn(new String[]{checkTag});
         Account account = Mockito.mock(Account.class);
         try {
+            Mockito.doNothing().when(resourceLimitManager).checkResourceLimitWithTag(Mockito.any(), Mockito.any(), Mockito.any());
             Mockito.doNothing().when(resourceLimitManager).checkResourceLimitWithTag(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
             resourceLimitManager.checkVolumeResourceLimit(account, true, 100L, diskOffering);
             List<String> tags = new ArrayList<>();
