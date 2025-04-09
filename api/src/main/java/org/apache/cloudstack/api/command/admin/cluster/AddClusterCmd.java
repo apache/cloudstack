@@ -65,8 +65,11 @@ public class AddClusterCmd extends BaseCmd {
     @Parameter(name = ApiConstants.HYPERVISOR,
                type = CommandType.STRING,
                required = true,
-               description = "hypervisor type of the cluster: XenServer,KVM,VMware,Hyperv,BareMetal,Simulator,Ovm3")
+               description = "hypervisor type of the cluster: XenServer,KVM,VMware,Hyperv,BareMetal,Simulator,Ovm3,External")
     private String hypervisor;
+
+    @Parameter(name = ApiConstants.EXTERNAL_PROVISIONER, type = CommandType.STRING, description = "Name of the provisioner for the external host, this is mandatory input in case of hypervisor type external", since = "4.21.0")
+    private String provisioner;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
             description = "the CPU arch of the cluster. Valid options are: x86_64, aarch64",
@@ -118,6 +121,19 @@ public class AddClusterCmd extends BaseCmd {
     private String ovm3cluster;
     @Parameter(name = ApiConstants.OVM3_VIP, type = CommandType.STRING, required = false,  description = "Ovm3 vip to use for pool (and cluster)")
     private String ovm3vip;
+
+    public AddClusterCmd() {
+    }
+
+    public AddClusterCmd(String name, Long zoneId, Long podId, String clusterType, String hypervisor, String externalProvisioner) {
+        this.clusterName = name;
+        this.zoneId = zoneId;
+        this.podId = podId;
+        this.clusterType = clusterType;
+        this.hypervisor = hypervisor;
+        this.provisioner = externalProvisioner;
+    }
+
     public String getOvm3Pool() {
          return ovm3pool;
     }
@@ -182,6 +198,10 @@ public class AddClusterCmd extends BaseCmd {
 
     public String getHypervisor() {
         return hypervisor;
+    }
+
+    public String getExternalProvisioner() {
+        return provisioner;
     }
 
     public String getClusterType() {
