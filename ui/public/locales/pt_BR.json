@@ -2388,6 +2388,7 @@
 "message.success.change.affinity.group": "Grupos de afinidade alterados com sucesso",
 "message.success.change.offering": "Oferta alterada com sucesso",
 "message.success.change.password": "Senha alterada com sucesso",
+"message.success.change.host.password": "Senha do host \"{name}\" foi alterada com sucesso",
 "message.success.config.backup.schedule": "Agendamento de backup de VM configurado com sucesso",
 "message.success.config.sticky.policy": "Sticky policy configurada com sucesso",
 "message.success.copy.clipboard": "Copiado com sucesso para a \u00e1rea de transfer\u00eancia",
