@@ -144,7 +144,7 @@
           <div>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
-      <a-list-item v-else-if="['startdate', 'enddate'].includes(item)">
+      <a-list-item v-else-if="['startdate', 'enddate', 'leaseexpirydate'].includes(item)">
         <div>
           <strong>{{ $t('label.' + item.replace('date', '.date.and.time'))}}</strong>
           <br/>
@@ -218,6 +218,9 @@ export default {
       if (this.$route.meta.name === 'webhookdeliveries') {
         items.push('startdate')
         items.push('enddate')
+      }
+      if (this.$route.meta.name === 'vm') {
+        items.push('leaseexpirydate')
       }
       return items
     },
