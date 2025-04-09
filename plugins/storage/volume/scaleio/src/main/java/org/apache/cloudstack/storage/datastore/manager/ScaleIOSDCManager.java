@@ -50,6 +50,13 @@ public interface ScaleIOSDCManager {
             "Flag to validate MDMs on Host, present in configuration file and in CLI, default value: false",
             Boolean.TRUE);
 
+    ConfigKey<Boolean> BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached = new ConfigKey<>("Storage",
+            Boolean.class,
+            "powerflex.block.sdc.unprepare.if.service.restart.needed.and.volumes.attached",
+            Boolean.FALSE.toString(),
+            "Block Storage Client un-preparation if SDC service restart needed but there are Volumes attached to the Host",
+            Boolean.TRUE);
+
     /**
      * Checks SDC connections limit.
      * @param storagePoolId the storage pool id
