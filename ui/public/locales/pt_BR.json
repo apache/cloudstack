@@ -463,6 +463,8 @@
 "label.dashboard": "Dashboard",
 "label.data.disk": "Disco de dados",
 "label.data.disk.offering": "Oferta de disco adicional",
+"label.data.pool": "Data pool",
+"label.data.pool.description": "\u00c9 necess\u00e1rio informar um data pool ao utilizar um Ceph pool com erasure code",
 "label.date": "Data",
 "label.day": "Dia",
 "label.day.of.month": "Dia do m\u00eas",
