@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.network.tungsten.service;
 
+import org.apache.cloudstack.acl.ApiKeyPairVO;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -360,6 +361,10 @@ public class TungstenElementTest {
         when(lbStickinessPolicy.getMethodName()).thenReturn("AppCookie");
         List<Pair<String, String>> pairList = List.of(new Pair<>("cookieName", "cookieValue"));
 
+        ApiKeyPairVO latest = new ApiKeyPairVO();
+        latest.setApiKey("apikey");
+        latest.setSecretKey("secretkey");
+        when(ApiDBUtils.searchForLatestUserKeyPair(Mockito.anyLong())).thenReturn(latest);
         when(lbStickinessPolicy.getParams()).thenReturn(pairList);
         when(loadBalancingRule1.getId()).thenReturn(1L);
         when(loadBalancingRule1.getState()).thenReturn(FirewallRule.State.Add);
