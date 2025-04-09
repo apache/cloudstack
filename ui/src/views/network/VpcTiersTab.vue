@@ -242,18 +242,18 @@
           </a-form-item>
           <a-form-item ref="gateway" name="gateway" :colon="false">
             <template #label>
-              <tooltip-label :title="$t('label.gateway')" :tooltip="$t('label.create.tier.gateway.description')"/>
+              <tooltip-label :title="$t('label.gateway')" :tooltip="gatewayPlaceholder"/>
             </template>
             <a-input
-              :placeholder="$t('label.create.tier.gateway.description')"
+              :placeholder="gatewayPlaceholder"
               v-model:value="form.gateway"></a-input>
           </a-form-item>
           <a-form-item ref="netmask" name="netmask" :colon="false">
             <template #label>
-              <tooltip-label :title="$t('label.netmask')" :tooltip="$t('label.create.tier.netmask.description')"/>
+              <tooltip-label :title="$t('label.netmask')" :tooltip="netmaskPlaceholder"/>
             </template>
             <a-input
-              :placeholder="$t('label.create.tier.netmask.description')"
+              :placeholder="netmaskPlaceholder"
               v-model:value="form.netmask"></a-input>
           </a-form-item>
           <a-form-item ref="externalId" name="externalId" :colon="false">
@@ -363,6 +363,7 @@ import { api } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import Status from '@/components/widgets/Status'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import { getNetmaskFromCidr } from '@/utils/network'
 
 export default {
   name: 'VpcTiersTab',
@@ -400,6 +401,8 @@ export default {
       selectedNetworkOffering: {},
       privateMtuMax: 1500,
       errorPrivateMtu: '',
+      gatewayPlaceholder: '',
+      netmaskPlaceholder: '',
       algorithms: {
         Source: 'source',
         'Round-robin': 'roundrobin',
@@ -696,6 +699,13 @@ export default {
       this.initForm()
       this.fetchNetworkAclList()
       this.fetchNetworkOfferings()
+      const cidr = this.resource.cidr
+      const netmask = getNetmaskFromCidr(cidr)
+      if (netmask) {
+        this.gatewayPlaceholder = this.$t('label.create.tier.gateway.description', { value: cidr })
+        this.netmaskPlaceholder = this.$t('label.create.tier.netmask.description', { value: netmask })
+      }
+
       this.showCreateNetworkModal = true
       this.rules = {
         name: [{ required: true, message: this.$t('label.required') }],
