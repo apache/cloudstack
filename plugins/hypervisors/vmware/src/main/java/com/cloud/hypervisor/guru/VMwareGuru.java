@@ -27,9 +27,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.storage.VolumeApiService;
+import com.cloud.utils.LogUtils;
 import com.cloud.agent.api.CleanupVMCommand;
 import javax.inject.Inject;
 
+import com.google.common.collect.Lists;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.cpu.CPU;
 import com.cloud.hypervisor.vmware.mo.DatastoreMO;
@@ -40,6 +43,7 @@ import com.cloud.utils.script.Script;
 import com.cloud.vm.VmDetailConstants;
 import com.vmware.vim25.VirtualMachinePowerState;
 import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
@@ -200,6 +204,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Inject DiskOfferingDao diskOfferingDao;
     @Inject PhysicalNetworkDao physicalNetworkDao;
     @Inject StoragePoolHostDao storagePoolHostDao;
+    @Inject
+    protected VolumeApiService volumeService;
     @Inject NfsMountManager mountManager;
 
     protected VMwareGuru() {
@@ -527,7 +533,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             if (vm == null) {
                 throw new CloudRuntimeException("Failed to find the volumes details from the VM backup");
             }
-            List<Backup.VolumeInfo> backedUpVolumes = vm.getBackupVolumeList();
+            List<Backup.VolumeInfo> backedUpVolumes = backup.getBackedUpVolumes();
             for (Backup.VolumeInfo backedUpVolume : backedUpVolumes) {
                 if (backedUpVolume.getSize().equals(disk.getCapacityInBytes())) {
                     return backedUpVolume.getType().equals(Volume.Type.ROOT);
@@ -583,13 +589,33 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     /**
      * Get pool ID for disk
      */
-    private Long getPoolId(long zoneId, VirtualDisk disk) {
+    protected Long getPoolId(VirtualDisk disk, long datacenterId, long clusterId) {
         VirtualDeviceBackingInfo backing = disk.getBacking();
         checkBackingInfo(backing);
         VirtualDiskFlatVer2BackingInfo info = (VirtualDiskFlatVer2BackingInfo)backing;
         String[] fileNameParts = info.getFileName().split(" ");
-        String datastoreUuid = StringUtils.substringBetween(fileNameParts[0], "[", "]");
-        return getPoolIdFromDatastoreUuid(zoneId, datastoreUuid);
+        String datastore = StringUtils.substringBetween(fileNameParts[0], "[", "]");
+        if (UuidUtils.isUuidWithoutHyphens(datastore)) {
+            return getPoolIdFromDatastoreUuid(datacenterId, datastore);
+        }
+        return getPoolIdFromDatastoreNameOrPath(datastore, datacenterId, clusterId);
+    }
+
+    protected Long getPoolIdFromDatastoreNameOrPath(String datastore, long datacenterId, long clusterId) {
+        logger.debug("Trying to find pool Id for datastore: [{}].", datastore);
+
+        String errorMessage = String.format("Could not find storage pool with name or path [%s].", datastore);
+        StoragePoolVO poolVO = _storagePoolDao.findPoolByName(datastore, datacenterId, clusterId);
+        if (poolVO != null) {
+            return poolVO.getId();
+        }
+        logger.debug("Could not find storage pool with name [{}]. Trying to search by path [{}] in datacenter [{}] and cluster [{}].", datastore, datastore, datacenterId, clusterId);
+
+        poolVO = _storagePoolDao.findPoolByPathLike(datastore, datacenterId, clusterId);
+        if (poolVO == null) {
+            throw new CloudRuntimeException(errorMessage);
+        }
+        return poolVO.getId();
     }
 
     /**
@@ -821,18 +847,46 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
         String operation = "";
         for (VirtualDisk disk : virtualDisks) {
-            Long poolId = getPoolId(zoneId, disk);
+            Long clusterId = vmManager.findClusterAndHostIdForVm(instanceId).first();
+            Long poolId = getPoolId(disk, zoneId, clusterId);
             Volume volume = null;
-            if (disksMapping.containsKey(disk) && disksMapping.get(disk) != null) {
-                volume = updateVolume(disk, disksMapping, vmToImport, poolId, vmInstanceVO);
-                operation = "updated";
+            if (disksMapping.containsKey(disk)) {
+                if (disksMapping.get(disk) != null) {
+                    volume = updateVolume(disk, disksMapping, vmToImport, poolId, vmInstanceVO);
+                    operation = "updated";
+                } else {
+                    volume = createVolume(disk, vmToImport, domainId, zoneId, accountId, instanceId, poolId, templateId, backup, true);
+                    operation = "created";
+                }
             } else {
-                volume = createVolume(disk, vmToImport, domainId, zoneId, accountId, instanceId, poolId, templateId, backup, true);
-                operation = "created";
+                volume = detachVolume(vmInstanceVO, disk, backup);
+                operation = "detached";
             }
             logger.debug(String.format("Sync volumes to %s in backup restore operation: %s volume [id: %s].", vmInstanceVO, operation, volume.getUuid()));
         }
     }
+
+    protected VolumeVO detachVolume(VMInstanceVO vmInstanceVO, VirtualDisk disk, Backup backup) {
+        VolumeVO volume = null;
+        logger.debug(() -> LogUtils.logGsonWithoutException("Disk [%s] of VM [uuid: %s, name: %s] does not exist in the metadata of backup [uuid: %s]. Therefore, we need to detach it.",
+                disk, vmInstanceVO.getUuid(), vmInstanceVO.getInstanceName(), backup.getUuid()));
+        String volumeFullPath = getVolumeFullPath(disk);
+        volume = _volumeDao.findByPath(getVolumeNameFromFileName(volumeFullPath));
+        if (volume != null && vmInstanceVO.getId() == volume.getInstanceId() && volume.getRemoved() == null) {
+            DetachVolumeCmd detachVolumeCmd = new DetachVolumeCmd();
+            detachVolumeCmd.setId(volume.getId());
+            Volume result = volumeService.detachVolumeFromVM(detachVolumeCmd);
+            if (result != null) {
+                logger.debug("Volume [uuid: {}] detached with success from VM [uuid: {}, name: {}], during the backup restore process (as this volume does not exist in the metadata of backup [uuid: {}]).",
+                        result.getUuid(), vmInstanceVO.getUuid(), vmInstanceVO.getInstanceName(), backup.getUuid());
+            } else {
+                logger.warn("Failed to detach volume [uuid: {}] from VM [uuid: {}, name: {}], during the backup restore process (as this volume does not exist in the metadata of backup [uuid: {}]).",
+                        volume.getUuid(), vmInstanceVO.getUuid(), vmInstanceVO.getInstanceName(), backup.getUuid());
+            }
+        }
+        return volume;
+    }
+
 
     private VirtualMachineDiskInfo getDiskInfo(VirtualMachineMO vmMo, Long poolId, String volumeName) throws Exception {
         VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
@@ -845,7 +899,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         if (vm == null) {
             throw new CloudRuntimeException("Failed to find the backup volume information from the VM backup");
         }
-        List<Backup.VolumeInfo> backedUpVolumes = vm.getBackupVolumeList();
+        List<Backup.VolumeInfo> backedUpVolumes = backup.getBackedUpVolumes();
         Volume.Type type = Volume.Type.DATADISK;
         Long size = disk.getCapacityInBytes();
         if (isImport) {
@@ -870,7 +924,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         try {
             List<Backup.VolumeInfo> list = new ArrayList<>();
             for (VolumeVO vol : vmVolumes) {
-                list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize()));
+                list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize(), vol.getDeviceId()));
             }
             return GSON.toJson(list.toArray(), Backup.VolumeInfo[].class);
         } catch (Exception e) {
@@ -1066,28 +1120,16 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             throw new CloudRuntimeException("Failed to find the volumes details from the VM backup");
         }
 
-        List<Backup.VolumeInfo> backedUpVolumes = vm.getBackupVolumeList();
+        List<Backup.VolumeInfo> backedUpVolumes = backup.getBackedUpVolumes();
         Map<String, Boolean> usedVols = new HashMap<>();
         Map<VirtualDisk, VolumeVO> map = new HashMap<>();
 
         for (Backup.VolumeInfo backedUpVol : backedUpVolumes) {
-            VolumeVO volumeExtra = _volumeDao.findByUuid(backedUpVol.getUuid());
-            if (volumeExtra != null) {
-                logger.debug(String.format("Marking volume [id: %s] of VM [%s] as removed for the backup process.", backedUpVol.getUuid(), ReflectionToStringBuilderUtils.reflectOnlySelectedFields(vm, "uuid", "instanceName")));
-                _volumeDao.remove(volumeExtra.getId());
-
-                if (vm.getType() == Type.User) {
-                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DETACH, volumeExtra.getAccountId(), volumeExtra.getDataCenterId(), volumeExtra.getId(),
-                            volumeExtra.getName(), volumeExtra.getDiskOfferingId(), null, volumeExtra.getSize(), Volume.class.getName(),
-                            volumeExtra.getUuid(), volumeExtra.isDisplayVolume());
-                    _resourceLimitService.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.volume, volumeExtra.isDisplayVolume());
-                    _resourceLimitService.decrementResourceCount(vm.getAccountId(), Resource.ResourceType.primary_storage, volumeExtra.isDisplayVolume(), volumeExtra.getSize());
-                }
-            }
             for (VirtualDisk disk : virtualDisks) {
                 if (!map.containsKey(disk) && backedUpVol.getSize().equals(disk.getCapacityInBytes()) && !usedVols.containsKey(backedUpVol.getUuid())) {
                     String volId = backedUpVol.getUuid();
                     VolumeVO vol = _volumeDao.findByUuidIncludingRemoved(volId);
+                    vol.setDeviceId(backedUpVol.getDeviceId());
                     usedVols.put(backedUpVol.getUuid(), true);
                     map.put(disk, vol);
                     logger.debug("VM restore mapping for disk " + disk.getBacking() + " (capacity: " + toHumanReadableSize(disk.getCapacityInBytes()) + ") with volume ID" + vol.getId());
@@ -1111,15 +1153,22 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     /**
      * Find restored volume based on volume info
      */
-    private VirtualDisk findRestoredVolume(Backup.VolumeInfo volumeInfo, VirtualMachineMO vm) throws Exception {
-        List<VirtualDisk> virtualDisks = vm.getVirtualDisks();
+    protected VirtualDisk findRestoredVolume(Backup.VolumeInfo volumeInfo, VirtualMachineMO vm, String volumeName, int deviceId) throws Exception {
+        List<VirtualDisk> virtualDisks = Lists.reverse(vm.getVirtualDisks());
+        logger.debug(LogUtils.logGsonWithoutException("Trying to find restored volume with size [%s], name [%s] and deviceId (unitNumber in VMWare) [%s] "
+                + "in VM [%s] disks [%s].", volumeInfo.getSize(), volumeName, deviceId, vm.getVmName(), virtualDisks));
         for (VirtualDisk disk : virtualDisks) {
-            if (disk.getCapacityInBytes().equals(volumeInfo.getSize())) {
-                return disk;
+            VirtualDeviceBackingInfo backingInfo = disk.getBacking();
+            if (backingInfo instanceof VirtualDiskFlatVer2BackingInfo) {
+                VirtualDiskFlatVer2BackingInfo diskBackingInfo = (VirtualDiskFlatVer2BackingInfo)backingInfo;
+                if (disk.getCapacityInBytes().equals(volumeInfo.getSize()) && diskBackingInfo.getFileName().contains(volumeName) && disk.getUnitNumber() == deviceId) {
+                    return disk;
+                }
             }
         }
         throw new CloudRuntimeException("Volume to restore could not be found");
     }
+
 
     /**
      * Get volume full path
@@ -1187,8 +1236,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             throws Exception {
         DatacenterMO dcMo = getDatacenterMO(zoneId);
         VirtualMachineMO vmRestored = findVM(dcMo, location);
+        int newDeviceId = (int) (_volumeDao.findByInstance(vm.getId()).stream().mapToLong(VolumeVO::getDeviceId).max().orElse(0L) + 1);
         VirtualMachineMO vmMo = findVM(dcMo, vm.getInstanceName());
-        VirtualDisk restoredDisk = findRestoredVolume(volumeInfo, vmRestored);
+        VirtualDisk restoredDisk = findRestoredVolume(volumeInfo, vmRestored, location.split(".vmdk")[0], newDeviceId);
         String diskPath = vmRestored.getVmdkFileBaseName(restoredDisk);
 
         logger.debug("Restored disk size=" + toHumanReadableSize(restoredDisk.getCapacityInKB() * Resource.ResourceType.bytesToKiB) + " path=" + diskPath);
