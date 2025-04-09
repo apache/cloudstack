@@ -73,7 +73,7 @@ public class DatacenterMO extends BaseMO {
         return _context.getVimClient().getDynamicProperty(_mor, "name");
     }
 
-    public VirtualMachineMO findVm(String vmName) throws Exception {
+    public VirtualMachineMO findVmEx(String vmName) throws Exception {
         int key = getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
         if (key == 0) {
             s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
@@ -81,6 +81,49 @@ public class DatacenterMO extends BaseMO {
         String instanceNameCustomField = "value[" + key + "]";
         List<ObjectContent> ocs = getVmProperties(new String[] {"name", instanceNameCustomField});
         return HypervisorHostHelper.findVmFromObjectContent(_context, ocs.toArray(new ObjectContent[0]), vmName, instanceNameCustomField);
+    }
+    public VirtualMachineMO findVm(String vmName) throws Exception {
+        int key = getCustomFieldKey("VirtualMachine", CustomFieldConstants.CLOUD_VM_INTERNAL_NAME);
+        if (key == 0) {
+            s_logger.warn("Custom field " + CustomFieldConstants.CLOUD_VM_INTERNAL_NAME + " is not registered ?!");
+        }
+        String instanceNameCustomField = "value[" + key + "]";
+        List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name", instanceNameCustomField});
+        return HypervisorHostHelper.findVmFromObjectContent(_context, ocs.toArray(new ObjectContent[0]), vmName, instanceNameCustomField);
+    }
+
+    public List<ObjectContent> getVmPropertiesOnDatacenterVmFolder(String[] propertyPaths) throws Exception {
+        PropertySpec pSpec = new PropertySpec();
+        pSpec.setType("VirtualMachine");
+        pSpec.getPathSet().addAll(Arrays.asList(propertyPaths));
+
+        TraversalSpec dc2VmFolderTraversal = new TraversalSpec();
+        dc2VmFolderTraversal.setType("Datacenter");
+        dc2VmFolderTraversal.setPath("vmFolder");
+        dc2VmFolderTraversal.setName("dc2VmFolderTraversal");
+
+        SelectionSpec recurseFolders = new SelectionSpec();
+        recurseFolders.setName("folder2childEntity");
+
+        TraversalSpec folder2childEntity = new TraversalSpec();
+        folder2childEntity.setType("Folder");
+        folder2childEntity.setPath("childEntity");
+        folder2childEntity.setName(recurseFolders.getName());
+        folder2childEntity.getSelectSet().add(recurseFolders);
+        dc2VmFolderTraversal.getSelectSet().add(folder2childEntity);
+
+        ObjectSpec oSpec = new ObjectSpec();
+        oSpec.setObj(_mor);
+        oSpec.setSkip(Boolean.TRUE);
+        oSpec.getSelectSet().add(dc2VmFolderTraversal);
+
+        PropertyFilterSpec pfSpec = new PropertyFilterSpec();
+        pfSpec.getPropSet().add(pSpec);
+        pfSpec.getObjectSet().add(oSpec);
+        List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
+        pfSpecArr.add(pfSpec);
+
+        return _context.getService().retrieveProperties(_context.getPropertyCollector(), pfSpecArr);
     }
 
     public List<VirtualMachineMO> findVmByNameAndLabel(String vmLabel) throws Exception {
