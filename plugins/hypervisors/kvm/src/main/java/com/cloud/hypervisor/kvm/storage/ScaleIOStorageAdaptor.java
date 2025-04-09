@@ -688,8 +688,20 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             if (mdmAddresses.length > 0) {
                 if (!ScaleIOUtil.isMdmPresent(mdmAddresses[0])) {
                     return new Pair<>(true, "MDM not added, no need to unprepare the SDC client");
-                } else if (!ScaleIOUtil.isRemoveMdmCliSupported() && !ScaleIOUtil.getVolumeIds().isEmpty()) {
-                    return new Pair<>(false, "Failed to remove MDMs, SDC client requires service to be restarted, but there are Volumes attached to the Host");
+                } else {
+                    String configKey =
+                            details.get(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.key());
+                    String configValue = details.get(configKey);
+
+                    if (StringUtils.isEmpty(configValue)) {
+                        LOGGER.debug(String.format("Configuration key %s not provided", configKey));
+                    } else {
+                        LOGGER.debug(String.format("Configuration key %s provided as %s", configKey, configValue));
+                    }
+                    Boolean blockUnprepare = Boolean.valueOf(configKey);
+                    if (!ScaleIOUtil.isRemoveMdmCliSupported() && !ScaleIOUtil.getVolumeIds().isEmpty() && Boolean.TRUE.equals(blockUnprepare)) {
+                        return new Pair<>(false, "Failed to remove MDMs, SDC client requires service to be restarted, but there are Volumes attached to the Host");
+                    }
                 }
 
                 ScaleIOUtil.removeMdms(mdmAddresses);

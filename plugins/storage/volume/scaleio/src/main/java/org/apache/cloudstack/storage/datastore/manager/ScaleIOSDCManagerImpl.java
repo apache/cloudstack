@@ -480,6 +480,6 @@ public class ScaleIOSDCManagerImpl implements ScaleIOSDCManager, Configurable {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[]{ConnectOnDemand, MdmsChangeApplyTimeout, ValidateMdmsOnConnect};
+        return new ConfigKey[]{ConnectOnDemand, MdmsChangeApplyTimeout, ValidateMdmsOnConnect, BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached};
     }
 }

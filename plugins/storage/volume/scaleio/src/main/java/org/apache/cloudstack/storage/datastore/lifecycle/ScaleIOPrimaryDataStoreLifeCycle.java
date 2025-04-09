@@ -309,6 +309,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
         Map<String,String> details = new HashMap<>();
         details.put(ScaleIOSDCManager.MdmsChangeApplyTimeout.key(), String.valueOf(ScaleIOSDCManager.MdmsChangeApplyTimeout.value()));
         details.put(ScaleIOSDCManager.ValidateMdmsOnConnect.key(), String.valueOf(ScaleIOSDCManager.ValidateMdmsOnConnect.value()));
+        details.put(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.key(), String.valueOf(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.value()));
         StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
         if (systemIdDetail != null) {
             details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemIdDetail.getValue());
@@ -332,6 +333,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
             details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemIdDetail.getValue());
             details.put(ScaleIOSDCManager.MdmsChangeApplyTimeout.key(), String.valueOf(ScaleIOSDCManager.MdmsChangeApplyTimeout.value()));
             details.put(ScaleIOSDCManager.ValidateMdmsOnConnect.key(), String.valueOf(ScaleIOSDCManager.ValidateMdmsOnConnect.value()));
+            details.put(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.key(), String.valueOf(ScaleIOSDCManager.BlockSdcUnprepareIfRestartNeededAndVolumesAreAttached.value()));
             sdcManager = ComponentContext.inject(sdcManager);
             if (sdcManager.areSDCConnectionsWithinLimit(store.getId())) {
                 StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(store.getId());
