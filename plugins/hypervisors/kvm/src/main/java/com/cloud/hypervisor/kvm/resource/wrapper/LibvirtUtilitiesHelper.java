@@ -22,6 +22,10 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
+import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.libvirt.Connect;
@@ -145,4 +149,10 @@ public class LibvirtUtilitiesHelper {
                 result.second() ? "" : " does not"));
         return result.second();
     }
+
+    public KVMStoragePool getPrimaryPoolFromDataTo(DataTO dataTO, KVMStoragePoolManager storageManager) {
+        PrimaryDataStoreTO primaryDataStoreTO = (PrimaryDataStoreTO) dataTO.getDataStore();
+        return storageManager.getStoragePool(primaryDataStoreTO.getPoolType(), primaryDataStoreTO.getUuid());
+    }
+
 }
