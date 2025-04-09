@@ -14,17 +14,28 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+
 package org.apache.cloudstack.storage.heuristics.presetvariables;
 
-public class Domain extends GenericHeuristicPresetVariable {
-    private String id;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
 
-    public String getId() {
-        return id;
+@RunWith(MockitoJUnitRunner.class)
+public class DomainTest {
+
+    @Test
+    public void toStringTestReturnsValidJson() {
+        Domain variable = new Domain();
+        variable.setName("test name");
+        variable.setId("test id");
+
+        String expected = ReflectionToStringBuilderUtils.reflectOnlySelectedFields(variable, "name", "id");
+        String result = variable.toString();
+
+        Assert.assertEquals(expected, result);
     }
 
-    public void setId(String id) {
-        this.id = id;
-        fieldNamesToIncludeInToString.add("id");
-    }
 }
