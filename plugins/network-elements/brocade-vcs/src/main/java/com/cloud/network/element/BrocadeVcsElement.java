@@ -27,6 +27,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.IpAddress;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.springframework.stereotype.Component;
@@ -191,6 +192,11 @@ public class BrocadeVcsElement extends AdapterBase implements NetworkElement, Re
             return false;
         }
 
+        return true;
+    }
+
+    @Override
+    public boolean releaseIp(IpAddress ipAddress) {
         return true;
     }
 

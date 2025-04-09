@@ -17,6 +17,7 @@
 package org.apache.cloudstack.service;
 
 import com.cloud.network.Network;
+import com.cloud.network.SDNProviderNetworkRule;
 import com.cloud.network.nsx.NsxService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.vmware.nsx.cluster.Status;
@@ -1025,7 +1026,8 @@ public class NsxApiClient {
     }
 
     public void deleteDistributedFirewallRules(String segmentName, List<NsxNetworkRule> nsxRules) {
-        for(NsxNetworkRule rule : nsxRules) {
+        for(NsxNetworkRule nsxRule : nsxRules) {
+            SDNProviderNetworkRule rule = nsxRule.getBaseRule();
             String ruleId = NsxControllerUtils.getNsxDistributedFirewallPolicyRuleId(segmentName, rule.getRuleId());
            String svcName = getServiceName(ruleId, rule.getPrivatePort(), rule.getProtocol(), rule.getIcmpType(), rule.getIcmpCode());
             // delete rules
@@ -1043,10 +1045,11 @@ public class NsxApiClient {
         if (Objects.isNull(groupPath)) {
             throw new CloudRuntimeException(String.format("Failed to find group for segment %s", segmentName));
         }
-        for (NsxNetworkRule rule : nsxRules) {
+        for (NsxNetworkRule nsxRule : nsxRules) {
+            SDNProviderNetworkRule rule = nsxRule.getBaseRule();
             String ruleId = NsxControllerUtils.getNsxDistributedFirewallPolicyRuleId(segmentName, rule.getRuleId());
             Rule ruleToAdd = new Rule.Builder()
-                    .setAction(rule.getAclAction().toString())
+                    .setAction(nsxRule.getAclAction().toString())
                     .setId(ruleId)
                     .setDisplayName(ruleId)
                     .setResourceType("SecurityPolicy")
@@ -1060,7 +1063,7 @@ public class NsxApiClient {
         return rules;
     }
 
-    private List<String> getServicesListForDistributedFirewallRule(NsxNetworkRule rule, String segmentName) {
+    private List<String> getServicesListForDistributedFirewallRule(SDNProviderNetworkRule rule, String segmentName) {
         List<String> services = List.of("ANY");
         if (!rule.getProtocol().equalsIgnoreCase("all")) {
             String ruleName = String.format("%s-R%s", segmentName, rule.getRuleId());
@@ -1071,7 +1074,7 @@ public class NsxApiClient {
         return services;
     }
 
-    protected List<String> getGroupsForTraffic(NsxNetworkRule rule,
+    protected List<String> getGroupsForTraffic(SDNProviderNetworkRule rule,
                                              String segmentName, boolean source) {
         List<String> segmentGroup = List.of(String.format("%s/%s", GROUPS_PATH_PREFIX, segmentName));
         List<String> sourceCidrList = rule.getSourceCidrList();
