@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
-public class Xenserver84Resource extends CitrixResourceBase {
+public class Xenserver84Resource extends XenServer650Resource {
     @Override
     protected String getPatchFilePath() {
         return "scripts/vm/hypervisor/xenserver/xenserver84/patch";
