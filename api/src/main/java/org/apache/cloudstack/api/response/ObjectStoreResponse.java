@@ -47,7 +47,7 @@ public class ObjectStoreResponse extends BaseResponseWithAnnotations {
     private Long storageTotal;
 
     @SerializedName("storageallocated")
-    @Param(description = "the object store currently allocated size")
+    @Param(description = "the allocated size of the object store")
     private Long storageAllocated;
 
     @SerializedName("storageused")

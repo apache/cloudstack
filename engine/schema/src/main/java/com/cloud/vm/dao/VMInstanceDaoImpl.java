@@ -1226,7 +1226,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
-    public List<VMInstanceVO> listByIds(List<Long> ids) {
+    public List<VMInstanceVO> listByIdsIncludingRemoved(List<Long> ids) {
         SearchBuilder<VMInstanceVO> idsSearch = createSearchBuilder();
         idsSearch.and("ids", idsSearch.entity().getId(), SearchCriteria.Op.IN);
         idsSearch.done();

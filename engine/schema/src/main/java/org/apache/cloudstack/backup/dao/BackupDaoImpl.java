@@ -210,7 +210,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     public boolean update(Long id, BackupVO backup) {
         return Transaction.execute((TransactionCallback<Boolean>) status -> {
             boolean result = super.update(id, backup);
-            if (result == true) {
+            if (result) {
                 saveDetails(backup);
             }
             return result;
@@ -295,7 +295,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         if (vm.getState() != VirtualMachine.State.Expunging) {
             response.setVmId(vm.getUuid());
         }
-        if (vm.getBackupOfferingId() != backup.getBackupOfferingId()) {
+        if (vm.getBackupOfferingId() == null || vm.getBackupOfferingId() != backup.getBackupOfferingId()) {
             response.setVmOfferingRemoved(true);
         }
         response.setExternalId(backup.getExternalId());

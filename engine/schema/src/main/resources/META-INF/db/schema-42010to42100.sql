@@ -35,7 +35,7 @@ AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.r
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'last_mgmt_server_id', 'bigint unsigned DEFAULT NULL COMMENT "last management server this host is connected to" AFTER `mgmt_server_id`');
 
 -- Add column max_backup to backup_schedule table
-ALTER TABLE `cloud`.`backup_schedule` ADD COLUMN `max_backups` int(8) default NULL COMMENT 'maximum number of backups to maintain';
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'max_backups', 'int(8) default NULL COMMENT "maximum number of backups to maintain"');
 
 -- Add columns name, description and backup_interval_type to backup table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'name', 'VARCHAR(255) NOT NULL COMMENT "name of the backup"');
@@ -50,7 +50,7 @@ CREATE TABLE `cloud`.`backup_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `backup_id` bigint unsigned NOT NULL COMMENT 'backup id',
   `name` varchar(255) NOT NULL,
-  `value` varchar(1024) NOT NULL,
+  `value` varchar(65536) NOT NULL,
   `display` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should detail be displayed to the end user',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_backup_details__backup_id` FOREIGN KEY `fk_backup_details__backup_id`(`backup_id`) REFERENCES `backups`(`id`) ON DELETE CASCADE

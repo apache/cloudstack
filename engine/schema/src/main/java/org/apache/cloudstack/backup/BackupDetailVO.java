@@ -39,7 +39,7 @@ public class BackupDetailVO implements ResourceDetail {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "value", length = 1024)
+    @Column(name = "value", length = 65536)
     private String value;
 
     @Column(name = "display")
@@ -48,8 +48,8 @@ public class BackupDetailVO implements ResourceDetail {
     public BackupDetailVO() {
     }
 
-    public BackupDetailVO(long templateId, String name, String value, boolean display) {
-        this.resourceId = templateId;
+    public BackupDetailVO(long backupId, String name, String value, boolean display) {
+        this.resourceId = backupId;
         this.name = name;
         this.value = value;
         this.display = display;

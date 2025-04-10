@@ -151,8 +151,8 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.DATADISKS_DETAILS,
             type = CommandType.MAP,
             since = "4.21.0",
-            description = "Disk offering details for creating multiple data volumes. Mutually exclusibe with diskOfferingId." +
-                    " Example: datadisksdetails[0].diskofferingid=1&datadisksdetails[0].size=10&datadisksdetails[0].miniops=100&datadisksdetails[0].maxiops=200")
+            description = "Disk offering details for creating multiple data volumes. Mutually exclusive with diskOfferingId." +
+                    " Example: datadisksdetails[0].diskofferingid=a2a73a84-19db-4852-8930-dfddef053341&datadisksdetails[0].size=10&datadisksdetails[0].miniops=100&datadisksdetails[0].maxiops=200")
     private Map dataDisksDetails;
 
     @Parameter(name = ApiConstants.GROUP, type = CommandType.STRING, description = "an optional group for the virtual machine")

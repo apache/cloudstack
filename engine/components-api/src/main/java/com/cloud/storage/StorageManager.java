@@ -221,7 +221,7 @@ public interface StorageManager extends StorageService {
             "Number of worker threads to be used to connect hosts to a primary storage", true);
 
     ConfigKey<Float> ObjectStorageCapacityThreshold = new ConfigKey<>("Alert", Float.class,
-            "zone.objectStorage.capacity.notificationthreshold",
+            "objectStorage.capacity.notificationthreshold",
             "0.75",
             "Percentage (as a value between 0 and 1) of object storage utilization above which alerts will be sent about low storage available.",
             true,

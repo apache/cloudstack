@@ -1687,7 +1687,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         private void updateBackupUsageRecords(final BackupProvider backupProvider, DataCenter dataCenter) {
             List<Long> vmIdsWithBackups = backupDao.listVmIdsWithBackupsInZone(dataCenter.getId());
-            List<VMInstanceVO> vmsWithBackups = vmInstanceDao.listByIds(vmIdsWithBackups);
+            List<VMInstanceVO> vmsWithBackups = vmInstanceDao.listByIdsIncludingRemoved(vmIdsWithBackups);
             List<VMInstanceVO> vmsWithBackupOffering = vmInstanceDao.listByZoneAndBackupOffering(dataCenter.getId(), null); //should return including removed
             Set<VMInstanceVO> vms =  Stream.concat(vmsWithBackups.stream(), vmsWithBackupOffering.stream()) .collect(Collectors.toSet());
 

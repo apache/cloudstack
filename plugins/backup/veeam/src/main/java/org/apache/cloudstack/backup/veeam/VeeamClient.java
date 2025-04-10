@@ -716,7 +716,10 @@ public class VeeamClient {
                 throw new CloudRuntimeException("Could not get backup metrics via Veeam B&R API");
             }
             for (final BackupFile backupFile : backupFiles.getBackupFiles()) {
-                String backupFileId = backupFile.getUid().substring(backupFile.getUid().lastIndexOf(':') + 1);
+                String backupFileId = StringUtils.substringAfterLast(backupFile.getUid(), ":");
+                if (backupFileId.isEmpty()) {
+                    continue;
+                }
                 Long backupSize = null;
                 Long dataSize = null;
                 if (backupFile.getBackupSize() != null) {
@@ -795,7 +798,13 @@ public class VeeamClient {
             }
         }
         Backup.Metric metric = metricsMap.get(id);
-        return new Backup.RestorePoint(id, created, type, metric.getBackupSize(), metric.getDataSize());
+        Long backupSize = null;
+        Long dataSize = null;
+        if (metric != null) {
+            backupSize = metric.getBackupSize();
+            dataSize = metric.getDataSize();
+        }
+        return new Backup.RestorePoint(id, created, type, backupSize, dataSize);
     }
 
     public List<Backup.RestorePoint> listRestorePointsLegacy(String backupName, String vmInternalName, Map<String, Backup.Metric> metricsMap) {
@@ -849,7 +858,7 @@ public class VeeamClient {
             final ObjectMapper objectMapper = new XmlMapper();
             final VmRestorePoints vmRestorePoints = objectMapper.readValue(content, VmRestorePoints.class);
             final String hierarchyId = findDCHierarchy(vmwareDcName);
-            final String hierarchyUuid = hierarchyId.substring(hierarchyId.lastIndexOf(":") + 1);
+            final String hierarchyUuid = StringUtils.substringAfterLast(hierarchyId, ":");
             if (vmRestorePoints == null) {
                 throw new CloudRuntimeException("Could not get VM restore points via Veeam B&R API");
             }
@@ -860,7 +869,7 @@ public class VeeamClient {
                     continue;
                 }
                 boolean isReady = true;
-                String backupFileId = null;
+                String backupFileId = "";
                 List<Link> links = vmRestorePoint.getLink();
                 for (Link link : links) {
                     if (Arrays.asList(BACKUP_FILE_REFERENCE, RESTORE_POINT_REFERENCE).contains(link.getType()) && !link.getRel().equals("Up")) {
@@ -869,19 +878,19 @@ public class VeeamClient {
                         break;
                     }
                     if (link.getType() != null && link.getType().equals(BACKUP_FILE_REFERENCE)) {
-                        backupFileId = link.getHref().substring(link.getHref().lastIndexOf('/') + 1);
+                        backupFileId = StringUtils.substringAfterLast(link.getHref(), "/");
                     }
                 }
                 if (!isReady) {
                     continue;
                 }
-                String vmRestorePointId = vmRestorePoint.getUid().substring(vmRestorePoint.getUid().lastIndexOf(':') + 1);
+                String vmRestorePointId = StringUtils.substringAfterLast(vmRestorePoint.getUid(), ":");
                 Date created = formatDate(vmRestorePoint.getCreationTimeUtc());
                 String type = vmRestorePoint.getPointType();
                 logger.debug(String.format("Adding restore point %s, %s, %s", vmRestorePointId, created, type));
                 Long backupSize = null;
                 Long dataSize = null;
-                if (backupFileId != null) {
+                if (!backupFileId.isEmpty()) {
                     Backup.Metric metric = metricsMap.get(backupFileId);
                     if (metric != null) {
                         backupSize = metric.getBackupSize();
