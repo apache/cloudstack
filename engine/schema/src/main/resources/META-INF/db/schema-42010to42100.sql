@@ -50,7 +50,7 @@ CREATE TABLE `cloud`.`backup_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `backup_id` bigint unsigned NOT NULL COMMENT 'backup id',
   `name` varchar(255) NOT NULL,
-  `value` varchar(65536) NOT NULL,
+  `value` TEXT NOT NULL,
   `display` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should detail be displayed to the end user',
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_backup_details__backup_id` FOREIGN KEY `fk_backup_details__backup_id`(`backup_id`) REFERENCES `backups`(`id`) ON DELETE CASCADE
