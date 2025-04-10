@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -1180,7 +1180,7 @@ def cleanup_rules(session, args):
 
         chainscmd = "iptables-save | grep '^:' | awk '{print $1}' | cut -d':' -f2 | sed 's/-def//'| sed 's/-eg//' | sort|uniq"
         chains = util.pread2(['/bin/bash', '-c', chainscmd]).split('\n')
-        vmchains = [ch  for ch in chains if 1 in [ ch.startswith(c) for c in ['r-', 'i-', 's-', 'v-', 'l-']]]
+        vmchains = [ch for ch in chains if 1 in [ ch.startswith(c) for c in ['r-', 'i-', 's-', 'v-', 'l-']]]
         util.SMlog('cleanup_rules: vmchains= %s' %vmchains)
         util.SMlog('cleanup_rules: found %s iptables chains for vms on this host %s' % (len(vmchains), hostname[0]))
         cleaned = 0
@@ -1192,14 +1192,14 @@ def cleanup_rules(session, args):
             #after trimming the vm names which more than 29 chars, resident vm name and iptables chain name is substring of
             #of resident vm.
             for rvm in resident_vms:
-                if vmname  in rvm:
+                if vmname in rvm:
                     vmpresent = True
                     break
 
             if vmpresent is False:
                 vmname = chain + "-untagged"
                 for rvm in resident_vms:
-                    if vmname  in rvm:
+                    if vmname in rvm:
                         vmpresent = True
                         break
             #vm chain is present but vm is not running on the host. So remove the rules
