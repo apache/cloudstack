@@ -1256,6 +1256,9 @@ export default {
       }
       var paramName = param.name
       var extractedParamName = paramName.replace('ids', '').replace('id', '').toLowerCase()
+      if (extractedParamName.endsWith('ory')) {
+        extractedParamName = extractedParamName.slice(0, -3) + 'orie'
+      }
       var params = { listall: true }
       for (const filter in filters) {
         params[filter] = filters[filter]

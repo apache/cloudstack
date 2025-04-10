@@ -27,4 +27,6 @@ public interface GuestOsCategory extends Identity, InternalIdentity {
 
     void setName(String name);
 
+    boolean isFeatured();
+
 }

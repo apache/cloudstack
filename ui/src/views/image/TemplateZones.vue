@@ -54,6 +54,12 @@
         <template v-if="column.key === 'actions'">
           <tooltip-button
             style="margin-right: 5px"
+            :disabled="!('deployVirtualMachine' in $store.getters.apis) || !record.isready"
+            :title="$t('label.vm.add')"
+            icon="rocket-outlined"
+            @onClick="onAddInstance(record)"/>
+          <tooltip-button
+            style="margin-right: 5px"
             :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
             :title="$t('label.action.copy.template')"
             icon="copy-outlined"
@@ -298,7 +304,8 @@ export default {
         confirmMessage: this.$t('label.confirm.delete.templates')
       },
       modalWidth: '30vw',
-      showTable: false
+      showTable: false,
+      osCategoryId: null
     }
   },
   beforeCreate () {
@@ -359,7 +366,7 @@ export default {
         key: 'actions',
         title: '',
         dataIndex: 'actions',
-        width: 100
+        width: 120
       })
     }
 
@@ -406,6 +413,7 @@ export default {
         this.fetchLoading = false
       })
       this.fetchZoneData()
+      this.fetchOsCategoryId()
     },
     fetchZoneIcon (zoneid) {
       const zoneItem = this.zones.filter(zone => zone.id === zoneid)
@@ -571,6 +579,19 @@ export default {
         this.zoneLoading = false
       })
     },
+    fetchOsCategoryId () {
+      const needed = this.$route.meta.name === 'template' &&
+        'listOsTypes' in this.$store.getters.apis &&
+        this.resource && this.resource.ostypeid &&
+        (this.$config.imageSelectionInterface === undefined ||
+        this.$config.imageSelectionInterface === 'modern')
+      if (!needed) {
+        return
+      }
+      api('listOsTypes', { id: this.resource.ostypeid }).then(json => {
+        this.osCategoryId = json?.listostypesresponse?.ostype?.[0]?.oscategoryid || null
+      })
+    },
     showCopyTemplate (record) {
       this.currentRecord = record
       this.form.zoneid = []
@@ -633,6 +654,19 @@ export default {
         })
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
+      })
+    },
+    onAddInstance (record) {
+      const query = { templateid: this.resource.id, zoneid: record.zoneid }
+      if (this.resource.arch) {
+        query.arch = this.resource.arch
+      }
+      if (this.osCategoryId) {
+        query.oscategoryid = this.osCategoryId
+      }
+      this.$router.push({
+        path: '/action/deployVirtualMachine',
+        query: query
       })
     }
   }

@@ -20,6 +20,8 @@ import com.cloud.cpu.CPU;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
+
+import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -110,6 +112,11 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
             description = "the CPU arch of the template. Valid options are: x86_64, aarch64",
             since = "4.20")
     private String arch;
+
+    @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType= GuestOSCategoryResponse.class,
+            description = "the ID of the OS category for the template",
+            since = "4.20.1")
+    private Long osCategoryId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -203,6 +210,10 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
             return null;
         }
         return CPU.CPUArch.fromType(arch);
+    }
+
+    public Long getOsCategoryId() {
+        return osCategoryId;
     }
 
     @Override

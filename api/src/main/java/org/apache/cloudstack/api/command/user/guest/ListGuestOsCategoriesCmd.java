@@ -26,7 +26,9 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 
+import com.cloud.cpu.CPU;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.utils.Pair;
 
@@ -39,11 +41,36 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestOSCategoryResponse.class, description = "list Os category by id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestOSCategoryResponse.class, description = "List OS category by id")
     private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "list os category by name", since = "3.0.1")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List OS category by name", since = "3.0.1")
     private String name;
+
+    @Parameter(name = ApiConstants.IS_FEATURED,
+            type = CommandType.BOOLEAN,
+            description = "List available OS categories by featured or not",
+            since = "4.20.1")
+    private Boolean featured;
+
+    @Parameter(name = ApiConstants.IS_ISO,
+            type = CommandType.BOOLEAN,
+            description = "List OS categories types for which an ISO is available",
+            since = "4.20.1")
+    private Boolean iso;
+
+    @Parameter(name = ApiConstants.ZONE_ID,
+            type = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            description = "List available OS categories types for the zone",
+            since = "4.20.1")
+    private Long zoneId;
+
+    @Parameter(name = ApiConstants.ARCH,
+            type = CommandType.STRING,
+            description = "List OS categories types available for given CPU architecture",
+            since = "4.20.1")
+    private String arch;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -57,6 +84,22 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
         return name;
     }
 
+    public Boolean isFeatured() {
+        return featured;
+    }
+
+    public Boolean isIso() {
+        return iso;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    public CPU.CPUArch getArch() {
+        return arch == null ? null : CPU.CPUArch.fromType(arch);
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -67,11 +110,7 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
         ListResponse<GuestOSCategoryResponse> response = new ListResponse<GuestOSCategoryResponse>();
         List<GuestOSCategoryResponse> osCatResponses = new ArrayList<GuestOSCategoryResponse>();
         for (GuestOsCategory osCategory : result.first()) {
-            GuestOSCategoryResponse categoryResponse = new GuestOSCategoryResponse();
-            categoryResponse.setId(osCategory.getUuid());
-            categoryResponse.setName(osCategory.getName());
-
-            categoryResponse.setObjectName("oscategory");
+            GuestOSCategoryResponse categoryResponse = _responseGenerator.createGuestOSCategoryResponse(osCategory);
             osCatResponses.add(categoryResponse);
         }
 

@@ -25,6 +25,7 @@ import java.util.Set;
 import com.cloud.bgp.ASNumber;
 import com.cloud.bgp.ASNumberRange;
 
+import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -227,6 +228,7 @@ import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceIcon;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSHypervisor;
+import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.StoragePool;
@@ -480,6 +482,8 @@ public interface ResponseGenerator {
     AutoScaleVmProfileResponse createAutoScaleVmProfileResponse(AutoScaleVmProfile profile);
 
     AutoScaleVmGroupResponse createAutoScaleVmGroupResponse(AutoScaleVmGroup vmGroup);
+
+    GuestOSCategoryResponse createGuestOSCategoryResponse(GuestOsCategory guestOsCategory);
 
     GuestOSResponse createGuestOSResponse(GuestOS os);
 
