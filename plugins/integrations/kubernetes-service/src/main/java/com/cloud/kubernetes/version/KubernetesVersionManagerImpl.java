@@ -94,6 +94,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         if (template.getState() != null) {
             response.setIsoState(template.getState().toString());
         }
+        response.setIsoArch(template.getArch().getType());
         response.setDirectDownload(template.isDirectDownload());
     }
 
