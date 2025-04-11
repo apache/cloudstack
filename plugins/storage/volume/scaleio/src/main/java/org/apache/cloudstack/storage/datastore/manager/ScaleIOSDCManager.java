@@ -40,7 +40,7 @@ public interface ScaleIOSDCManager {
             Integer.class,
             "powerflex.mdm.change.apply.timeout.ms",
             "1000",
-            "Timeout for Host to wait after MDM changes made on Host until changes will be applied, default value: 1000 ms",
+            "Timeout (in ms) for Host to wait after MDM changes made on Host until changes will be applied, default value: 1000 ms",
             Boolean.TRUE);
 
     ConfigKey<Boolean> ValidateMdmsOnConnect = new ConfigKey<>("Storage",
