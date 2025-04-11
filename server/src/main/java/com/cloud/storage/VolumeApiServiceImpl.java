@@ -4115,7 +4115,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         Optional<String> extractUrl = setExtractVolumeSearchCriteria(sc, volume);
         if (extractUrl.isPresent()) {
-            return extractUrl.get();
+            String url = extractUrl.get();
+            CallContext.current().setEventDetails(String.format("Download URL: %s, volume ID: %s", url, volume.getUuid()));
+            return url;
         }
 
         VMInstanceVO vm = null;
@@ -4132,7 +4134,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 VmWorkJobVO placeHolder = null;
                 placeHolder = createPlaceHolderWork(vm.getId());
                 try {
-                    return orchestrateExtractVolume(volume.getId(), zoneId);
+                    String url = orchestrateExtractVolume(volume.getId(), zoneId);
+                    CallContext.current().setEventDetails(String.format("Download URL: %s, volume ID: %s", url, volume.getUuid()));
+                    return url;
                 } finally {
                     _workJobDao.expunge(placeHolder.getId());
                 }
@@ -4161,13 +4165,17 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
                 // retrieve the entity url from job result
                 if (jobResult != null && jobResult instanceof String) {
-                    return (String)jobResult;
+                    String url = (String) jobResult;
+                    CallContext.current().setEventDetails(String.format("Download URL: %s, volume ID: %s", url, volume.getUuid()));
+                    return url;
                 }
                 return null;
             }
         }
 
-        return orchestrateExtractVolume(volume.getId(), zoneId);
+        String url = orchestrateExtractVolume(volume.getId(), zoneId);
+        CallContext.current().setEventDetails(String.format("Download URL: %s, volume ID: %s", url, volume.getUuid()));
+        return url;
     }
 
     @Override
