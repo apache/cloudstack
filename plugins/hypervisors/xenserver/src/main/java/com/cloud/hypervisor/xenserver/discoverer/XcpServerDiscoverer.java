@@ -30,6 +30,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.hypervisor.xenserver.resource.XcpServer83Resource;
 import com.cloud.hypervisor.xenserver.resource.Xenserver84Resource;
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import org.apache.commons.collections.CollectionUtils;
@@ -438,6 +439,8 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             return new XcpOssResource();
         } else if (prodBrand.equals("XenServer") && prodVersion.equals("8.4.0")) {
             return new Xenserver84Resource();
+        }  else if (prodBrand.equals("XCP-ng") && (prodVersion.equals("8.3.0"))) {
+            return new XcpServer83Resource();
         } else if (prodBrand.equals("XenServer") || prodBrand.equals("XCP-ng") || prodBrand.equals("Citrix Hypervisor")) {
             final String[] items = prodVersion.split("\\.");
             if ((Integer.parseInt(items[0]) > 6) ||
