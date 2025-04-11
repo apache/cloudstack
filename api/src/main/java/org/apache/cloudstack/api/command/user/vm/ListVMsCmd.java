@@ -46,9 +46,11 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.cpu.CPU;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
@@ -152,6 +154,11 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
 
     @Parameter(name = ApiConstants.USER_DATA_ID, type = CommandType.UUID, entityType = UserDataResponse.class, required = false, description = "the instances by userdata", since = "4.20.1")
     private Long userdataId;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
+            description = "CPU arch of the VM",
+            since = "4.20.1")
+    private String arch;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -290,6 +297,10 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
 
     public Boolean getVnf() {
         return isVnf;
+    }
+
+    public CPU.CPUArch getArch() {
+        return StringUtils.isBlank(arch) ? null : CPU.CPUArch.fromType(arch);
     }
 
     /////////////////////////////////////////////////////

@@ -35,7 +35,8 @@ import {
   resourceTypePlugin,
   fileSizeUtilPlugin,
   genericUtilPlugin,
-  localesPlugin
+  localesPlugin,
+  cpuArchitectureUtilPlugin
 } from './utils/plugins'
 import { VueAxios } from './utils/request'
 import directives from './utils/directives'
@@ -51,6 +52,7 @@ vueApp.use(resourceTypePlugin)
 vueApp.use(fileSizeUtilPlugin)
 vueApp.use(localesPlugin)
 vueApp.use(genericUtilPlugin)
+vueApp.use(cpuArchitectureUtilPlugin)
 vueApp.use(extensions)
 vueApp.use(directives)
 
