@@ -213,16 +213,19 @@ public class ScaleIOUtil {
             }
             // remove MDM via CLI if it is supported
             if (removeMdmCliSupported) {
-                removeMdm(mdmAddress);
                 if (removeMdm(mdmAddress)) {
                     changesApplied = true;
                 }
             } else {
                 String command = String.format(REMOVE_MDM_CMD_TEMPLATE, mdmAddress, DRV_CFG_FILE);
-                Script.runSimpleBashScript(command);
-                // restart SDC needed only if configuration file modified manually (not by CLI)
-                restartSDC = true;
-                changesApplied = true;
+                String stdErr = Script.executeCommand(command).second();
+                if(StringUtils.isEmpty(stdErr)) {
+                    // restart SDC needed only if configuration file modified manually (not by CLI)
+                    restartSDC = true;
+                    changesApplied = true;
+                } else {
+                    LOGGER.error(String.format("Failed to remove MDM %s from %s: %s", mdmAddress, DRV_CFG_FILE, stdErr));
+                }
             }
         }
         if (restartSDC) {
