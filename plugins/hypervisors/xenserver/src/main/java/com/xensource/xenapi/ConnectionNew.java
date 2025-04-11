@@ -27,6 +27,7 @@ import org.apache.xmlrpc.common.TypeFactory;
 import org.apache.xmlrpc.common.TypeFactoryImpl;
 import org.apache.xmlrpc.common.XmlRpcStreamConfig;
 import org.apache.xmlrpc.parser.MapParser;
+import org.apache.xmlrpc.parser.RecursiveTypeParserImpl;
 import org.apache.xmlrpc.parser.TypeParser;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -94,7 +95,7 @@ public class ConnectionNew extends Connection {
         return config;
     }
 
-    static class CustomerMapParser extends MapParser {
+    static class CustomerMapParser extends RecursiveTypeParserImpl {
 
         private int level = 0;
         private StringBuffer nameBuffer = new StringBuffer();
