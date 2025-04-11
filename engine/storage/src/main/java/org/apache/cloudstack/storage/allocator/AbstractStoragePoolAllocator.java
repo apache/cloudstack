@@ -16,6 +16,43 @@
 // under the License.
 package org.apache.cloudstack.storage.allocator;
 
+import com.cloud.api.query.dao.StoragePoolJoinDao;
+import com.cloud.capacity.Capacity;
+import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.dc.ClusterVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
+import com.cloud.storage.StorageUtil;
+import com.cloud.storage.Volume;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.Pair;
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.vm.DiskProfile;
+import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -24,45 +61,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import com.cloud.api.query.dao.StoragePoolJoinDao;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.StoragePoolStatus;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.apache.commons.collections.CollectionUtils;
-
-import com.cloud.utils.Pair;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-
-import com.cloud.capacity.Capacity;
-import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.dc.ClusterVO;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.deploy.DeploymentPlan;
-import com.cloud.deploy.DeploymentPlanner.ExcludeList;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Storage;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StorageUtil;
-import com.cloud.storage.Volume;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.user.Account;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VirtualMachineProfile;
 
 public abstract class AbstractStoragePoolAllocator extends AdapterBase implements StoragePoolAllocator {
 
@@ -95,7 +93,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             String globalStorageOverprovisioningFactor = configs.get("storage.overprovisioning.factor");
             storageOverprovisioningFactor = new BigDecimal(NumbersUtil.parseFloat(globalStorageOverprovisioningFactor, 2.0f));
             extraBytesPerVolume = 0;
-            String allocationAlgorithm = configs.get("vm.allocation.algorithm");
+            String allocationAlgorithm = VolumeOrchestrationService.VolumeAllocationAlgorithm.value();
             if (allocationAlgorithm != null) {
                 this.allocationAlgorithm = allocationAlgorithm;
             }
@@ -227,13 +225,12 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     }
 
     List<StoragePool> reorderStoragePoolsBasedOnAlgorithm(List<StoragePool> pools, DeploymentPlan plan, Account account) {
-        logger.debug(String.format("Using allocation algorithm [%s] to reorder pools.", allocationAlgorithm));
-
+        logger.debug("Using volume allocation algorithm {} to reorder pools.", allocationAlgorithm);
         if (allocationAlgorithm.equals("random") || allocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
             reorderRandomPools(pools);
         } else if (StringUtils.equalsAny(allocationAlgorithm, "userdispersing", "firstfitleastconsumed")) {
             if (logger.isTraceEnabled()) {
-                logger.trace(String.format("Using reordering algorithm [%s]", allocationAlgorithm));
+                logger.trace("Using reordering algorithm {}", allocationAlgorithm);
             }
 
             if (allocationAlgorithm.equals("userdispersing")) {
@@ -248,7 +245,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     void reorderRandomPools(List<StoragePool> pools) {
         StorageUtil.traceLogStoragePools(pools, logger, "pools to choose from: ");
         if (logger.isTraceEnabled()) {
-            logger.trace(String.format("Shuffle this so that we don't check the pools in the same order. Algorithm == '%s' (or no account?)", allocationAlgorithm));
+            logger.trace("Shuffle this so that we don't check the pools in the same order. Algorithm == {} (or no account?)", allocationAlgorithm);
         }
         StorageUtil.traceLogStoragePools(pools, logger, "pools to shuffle: ");
         Collections.shuffle(pools, secureRandom);

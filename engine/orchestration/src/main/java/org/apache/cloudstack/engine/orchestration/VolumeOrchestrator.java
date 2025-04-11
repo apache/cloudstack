@@ -2018,7 +2018,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {RecreatableSystemVmEnabled, MaxVolumeSize, StorageHAMigrationEnabled, StorageMigrationEnabled, CustomDiskOfferingMaxSize, CustomDiskOfferingMinSize, VolumeUrlCheck};
+        return new ConfigKey<?>[] {
+                RecreatableSystemVmEnabled, MaxVolumeSize, StorageHAMigrationEnabled, StorageMigrationEnabled,
+                CustomDiskOfferingMaxSize, CustomDiskOfferingMinSize, VolumeUrlCheck, VolumeAllocationAlgorithm};
     }
 
     @Override
