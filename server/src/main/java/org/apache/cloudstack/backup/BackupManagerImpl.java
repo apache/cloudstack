@@ -49,7 +49,6 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.DomainManager;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -314,11 +313,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Override
     public Map<String, String> getVmDetailsForBackup(VirtualMachine vm) {
         HashMap<String, String> details = new HashMap<>();
-        details.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
         ServiceOffering serviceOffering =  serviceOfferingDao.findById(vm.getServiceOfferingId());
         details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
-        VirtualMachineTemplate template =  vmTemplateDao.findById(vm.getTemplateId());
-        details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
         List<UserVmJoinVO> userVmJoinVOs = userVmJoinDao.searchByIds(vm.getId());
         if (userVmJoinVOs != null && !userVmJoinVOs.isEmpty()) {
             Set<String> networkIds = new HashSet<>();

@@ -25,7 +25,12 @@ import java.util.Objects;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.storage.Storage;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.db.GenericSearchBuilder;
+
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupDetailVO;
@@ -62,6 +67,9 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
 
     @Inject
     VMInstanceDao vmInstanceDao;
+
+    @Inject
+    private VMTemplateDao templateDao;
 
     @Inject
     BackupOfferingDao backupOfferingDao;
@@ -326,6 +334,10 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
 
         if (Boolean.TRUE.equals(listVmDetails)) {
             Map<String, String> details = backupDetailsDao.listDetailsKeyPairs(backup.getId(), true);
+            details.put(ApiConstants.HYPERVISOR, vm.getHypervisorType().toString());
+            VirtualMachineTemplate template = templateDao.findById(vm.getTemplateId());
+            details.put(ApiConstants.TEMPLATE_ID, template.getUuid());
+            details.put(ApiConstants.IS_ISO, String.valueOf(template.getFormat().equals(Storage.ImageFormat.ISO)));
             if (details != null) {
                 response.setVmDetails(details);
             }

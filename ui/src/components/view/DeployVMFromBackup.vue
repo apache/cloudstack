@@ -97,52 +97,84 @@
                 </template>
               </a-step>
               <a-step
-                :title="$t('label.template')"
+                :title="$t('label.templateiso')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div v-if="zoneSelected" style="margin-top: 15px">
-                    <a-card>
-                      {{ $t('message.template.desc') }}
-                      <div v-if="isZoneSelectedMultiArch" style="width: 100%; margin-top: 5px">
-                        {{ $t('message.template.arch') }}
-                        <a-select
-                          style="width: 100%"
-                          v-model:value="selectedArchitecture"
-                          :defaultValue="architectureTypes.opts[0].id"
-                          @change="arch => changeArchitecture(arch, true)">
-                          <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
-                            {{ opt.name || opt.description }}
-                          </a-select-option>
-                        </a-select>
+                    <a-card
+                      :tabList="tabList"
+                      :activeTabKey="tabKey"
+                      @tabChange="key => onTabChange(key, 'tabKey')">
+                      <div v-if="tabKey === 'templateid'">
+                        {{ $t('message.template.desc') }}
+                        <div v-if="isZoneSelectedMultiArch" style="width: 100%; margin-top: 5px">
+                          {{ $t('message.template.arch') }}
+                          <a-select
+                            style="width: 100%"
+                            v-model:value="selectedArchitecture"
+                            :defaultValue="architectureTypes.opts[0].id"
+                            @change="arch => changeArchitecture(arch, true)">
+                            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+                              {{ opt.name || opt.description }}
+                            </a-select-option>
+                          </a-select>
+                        </div>
+                        <template-iso-selection
+                          input-decorator="templateid"
+                          :items="options.templates"
+                          :selected="form.templateid"
+                          :loading="loading.templates"
+                          :preFillContent="dataPreFill"
+                          :key="templateKey"
+                          @handle-search-filter="($event) => fetchAllTemplates($event)"
+                          @update-template-iso="updateFieldValue" />
+                         <div>
+                          {{ $t('label.override.rootdisk.size') }}
+                          <a-switch
+                            v-model:checked="form.rootdisksizeitem"
+                            :disabled="rootDiskSizeFixed > 0 || template.deployasis || showOverrideDiskOfferingOption"
+                            @change="val => { showRootDiskSizeChanger = val }"
+                            style="margin-left: 10px;"/>
+                          <div v-if="template.deployasis">  {{ $t('message.deployasis') }} </div>
+                        </div>
+                        <disk-size-selection
+                          v-if="showRootDiskSizeChanger"
+                          input-decorator="rootdisksize"
+                          :preFillContent="dataPreFill"
+                          :isCustomized="true"
+                          :minDiskSize="dataPreFill.minrootdisksize"
+                          @update-disk-size="updateFieldValue"
+                          style="margin-top: 10px;"/>
                       </div>
-                      <template-iso-selection
-                        input-decorator="templateid"
-                        :items="options.templates"
-                        :loading="loading.templates"
-                        :preFillContent="dataPreFill"
-                        :key="templateKey"
-                        @handle-search-filter="($event) => fetchAllTemplates($event)"
-                        @update-template-iso="updateFieldValue" />
-                       <div>
-                        {{ $t('label.override.rootdisk.size') }}
-                        <a-switch
-                          v-model:checked="form.rootdisksizeitem"
-                          :disabled="rootDiskSizeFixed > 0 || template.deployasis || showOverrideDiskOfferingOption"
-                          @change="val => { showRootDiskSizeChanger = val }"
-                          style="margin-left: 10px;"/>
-                        <div v-if="template.deployasis">  {{ $t('message.deployasis') }} </div>
+                      <div v-else>
+                        {{ $t('message.iso.desc') }}
+                        <div v-if="isZoneSelectedMultiArch" style="width: 100%; margin-top: 5px">
+                          {{ $t('message.iso.arch') }}
+                          <a-select
+                            style="width: 100%"
+                            v-model:value="selectedArchitecture"
+                            :defaultValue="architectureTypes.opts[0].id"
+                            @change="arch => changeArchitecture(arch, false)">
+                            <a-select-option v-for="opt in architectureTypes.opts" :key="opt.id">
+                              {{ opt.name || opt.description }}
+                            </a-select-option>
+                          </a-select>
+                        </div>
+                        <template-iso-selection
+                          input-decorator="isoid"
+                          :items="options.isos"
+                          :selected="tabKey"
+                          :loading="loading.isos"
+                          :preFillContent="dataPreFill"
+                          @handle-search-filter="($event) => fetchAllIsos($event)"
+                          @update-template-iso="updateFieldValue" />
                       </div>
-                      <disk-size-selection
-                        v-if="showRootDiskSizeChanger"
-                        input-decorator="rootdisksize"
-                        :preFillContent="dataPreFill"
-                        :isCustomized="true"
-                        :minDiskSize="dataPreFill.minrootdisksize"
-                        @update-disk-size="updateFieldValue"
-                        style="margin-top: 10px;"/>
                     </a-card>
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.templateid" />
+                    </a-form-item>
+                    <a-form-item class="form-item-hidden">
+                      <a-input v-model:value="form.isoid" />
                     </a-form-item>
                     <a-form-item class="form-item-hidden">
                       <a-input v-model:value="form.rootdisksize" />
@@ -224,7 +256,7 @@
                         <a-input v-model:value="form.memory"/>
                       </a-form-item>
                     </span>
-                    <span>
+                    <span v-if="tabKey!=='isoid'">
                       {{ $t('label.override.root.diskoffering') }}
                       <a-switch
                         v-model:checked="showOverrideDiskOfferingOption"
@@ -233,7 +265,7 @@
                         @change="val => { updateOverrideRootDiskShowParam(val) }"
                         style="margin-left: 10px;"/>
                     </span>
-                    <span v-if="serviceOffering && !serviceOffering.diskofferingstrictness">
+                    <span v-if="tabKey!=='isoid' && serviceOffering && !serviceOffering.diskofferingstrictness">
                       <a-step
                         :status="zoneSelected ? 'process' : 'wait'"
                         v-if="!template.deployasis && template.childtemplates && template.childtemplates.length > 0" >
@@ -260,6 +292,7 @@
                               :value="overrideDiskOffering ? overrideDiskOffering.id : ''"
                               :loading="loading.diskOfferings"
                               :preFillContent="dataPreFill"
+                              :isIsoSelected="tabKey==='isoid'"
                               :isRootDiskOffering="true"
                               @on-selected-root-disk-size="onSelectRootDiskSize"
                               @select-disk-offering-item="($event) => updateOverrideDiskOffering($event)"
@@ -300,8 +333,41 @@
                 </template>
               </a-step>
               <a-step
-                v-else
+                v-if="!(!template.deployasis && template.childtemplates && template.childtemplates.length > 0) && tabKey === 'isoid'"
+                :title="$t('label.disk.size')"
+                :status="zoneSelected ? 'process' : 'wait'">
+                <template #description>
+                  <div v-if="zoneSelected">
+                    <disk-offering-selection
+                      :items="options.diskOfferings"
+                      :row-count="rowCount.diskOfferings"
+                      :zoneId="zoneId"
+                      :value="diskOffering ? diskOffering.id : ''"
+                      :loading="loading.diskOfferings"
+                      :preFillContent="dataPreFill"
+                      :isIsoSelected="tabKey==='isoid'"
+                      @on-selected-disk-size="onSelectDiskSize"
+                      @select-disk-offering-item="($event) => updateDiskOffering($event)"
+                      @handle-search-filter="($event) => handleSearchFilter('diskOfferings', $event)"
+                    ></disk-offering-selection>
+                    <disk-size-selection
+                      v-if="diskOffering && (diskOffering.iscustomized || diskOffering.iscustomizediops)"
+                      input-decorator="size"
+                      :preFillContent="dataPreFill"
+                      :diskSelected="diskSelected"
+                      :isCustomized="diskOffering.iscustomized"
+                      @handler-error="handlerError"
+                      @update-disk-size="updateFieldValue"
+                      @update-iops-value="updateIOPSValue"/>
+                    <a-form-item class="form-item-hidden">
+                      <a-input v-model:value="form.size"/>
+                    </a-form-item>
+                  </div>
+                </template>
+              </a-step>
+              <a-step
                 :title="$t('label.data.disk')"
+                v-if="!(!template.deployasis && template.childtemplates && template.childtemplates.length > 0)"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div v-if="zoneSelected">
@@ -478,7 +544,7 @@
                     </div>
                     <a-form-item
                       :label="$t('label.bootintosetup')"
-                      v-if="zoneSelected && (template && template.hypervisor === 'VMware')"
+                      v-if="zoneSelected && ((tabKey === 'isoid' && hypervisor === 'VMware') || (tabKey === 'templateid' && template && template.hypervisor === 'VMware'))"
                       name="bootintosetup"
                       ref="bootintosetup">
                       <a-switch v-model:checked="form.bootintosetup" />
@@ -641,7 +707,6 @@ import eventBus from '@/config/eventBus'
 import OwnershipSelection from '@views/compute/wizard/OwnershipSelection'
 import InfoCard from '@/components/view/InfoCard'
 import ResourceIcon from '@/components/view/ResourceIcon'
-import OsLogo from '@/components/widgets/OsLogo'
 import ComputeOfferingSelection from '@views/compute/wizard/ComputeOfferingSelection'
 import ComputeSelection from '@views/compute/wizard/ComputeSelection'
 import DiskOfferingSelection from '@views/compute/wizard/DiskOfferingSelection'
@@ -677,7 +742,6 @@ export default {
     ComputeSelection,
     SecurityGroupSelection,
     ResourceIcon,
-    OsLogo,
     TooltipLabel,
     InstanceNicsNetworkSelectListView
   },
@@ -724,6 +788,7 @@ export default {
       },
       options: {
         templates: {},
+        isos: {},
         hypervisors: [],
         serviceOfferings: [],
         diskOfferings: [],
@@ -746,6 +811,7 @@ export default {
       loading: {
         deploy: false,
         templates: false,
+        isos: false,
         hypervisors: false,
         serviceOfferings: false,
         diskOfferings: false,
@@ -766,8 +832,16 @@ export default {
       instanceConfig: {},
       template: {},
       templates: [],
+      iso: {},
       defaultBootType: '',
       defaultBootMode: '',
+      tabKey: 'templateid',
+      isoFilter: [
+        'featured',
+        'community',
+        'selfexecutable',
+        'sharedexecutable'
+      ],
       templateConfigurations: [],
       templateNics: [],
       templateLicenses: [],
@@ -775,6 +849,7 @@ export default {
       selectedTemplateConfiguration: {},
       hypervisor: '',
       serviceOffering: {},
+      diskOffering: {},
       affinityGroups: [],
       networks: [],
       networksAdd: [],
@@ -800,6 +875,7 @@ export default {
       rootDiskSizeFixed: 0,
       hasError: false,
       error: false,
+      diskSelected: {},
       rootDiskSelected: {},
       diskIOpsMin: 0,
       diskIOpsMax: 0,
@@ -827,17 +903,6 @@ export default {
     rootDiskSize () {
       return this.showRootDiskSizeChanger && this.rootDiskSizeFixed > 0
     },
-    templateSelectOptions () {
-      return this.options.templates.map((template) => {
-        return {
-          label: template.name,
-          value: template.id,
-          icon: template?.icon?.base64image || '',
-          ostypeid: template.ostypeid,
-          ostypename: template.ostypename
-        }
-      })
-    },
     isNormalAndDomainUser () {
       return ['DomainAdmin', 'User'].includes(this.$store.getters.userInfo.roletype)
     },
@@ -846,20 +911,32 @@ export default {
     },
     diskSize () {
       const customRootDiskSize = _.get(this.instanceConfig, 'rootdisksize', null)
+      const customDataDiskSize = _.get(this.instanceConfig, 'size', null)
       let computeOfferingDiskSize = _.get(this.serviceOffering, 'rootdisksize', null)
       computeOfferingDiskSize = computeOfferingDiskSize > 0 ? computeOfferingDiskSize : null
+      const diskOfferingDiskSize = _.get(this.diskOffering, 'disksize', null)
       const overrideDiskOfferingDiskSize = _.get(this.overrideDiskOffering, 'disksize', null)
 
-      const rootDiskSize = this.overrideDiskOffering?.iscustomized ? customRootDiskSize : overrideDiskOfferingDiskSize || computeOfferingDiskSize || this.dataPreFill.minrootdisksize
+      let rootDiskSize
+      let dataDiskSize
+      if (this.vm.isoid != null) {
+        rootDiskSize = this.diskOffering?.iscustomized ? customDataDiskSize : diskOfferingDiskSize
+      } else {
+        rootDiskSize = this.overrideDiskOffering?.iscustomized ? customRootDiskSize : overrideDiskOfferingDiskSize || computeOfferingDiskSize || this.dataPreFill.minrootdisksize
+        dataDiskSize = this.diskOffering?.iscustomized ? customDataDiskSize : diskOfferingDiskSize
+      }
 
       const size = []
       if (rootDiskSize) {
         size.push(`${rootDiskSize} GB (Root)`)
       }
+      if (dataDiskSize) {
+        size.push(`${dataDiskSize} GB (Data)`)
+      }
       return size.join(' | ')
     },
     rootDiskOffering () {
-      const rootDiskOffering = this.overrideDiskOffering
+      const rootDiskOffering = this.vm.isoid != null ? this.diskOffering : this.overrideDiskOffering
 
       const id = _.get(rootDiskOffering, 'id', null)
       const displayText = _.get(rootDiskOffering, 'displaytext', null)
@@ -867,6 +944,19 @@ export default {
       return {
         id: id,
         displayText: `${displayText} (Root)`
+      }
+    },
+    dataDiskOffering () {
+      if (this.vm.isoid != null) {
+        return null
+      }
+
+      const id = _.get(this.diskOffering, 'id', null)
+      const displayText = _.get(this.diskOffering, 'displaytext', null)
+
+      return {
+        id: id,
+        displayText: `${displayText} (Data)`
       }
     },
     affinityGroupIds () {
@@ -1070,14 +1160,39 @@ export default {
     isUserAllowedToListSshKeys () {
       return Boolean('listSSHKeyPairs' in this.$store.getters.apis)
     },
-    isUserAllowedToListUserDatas () {
-      return Boolean('listUserData' in this.$store.getters.apis)
-    },
     dynamicScalingVmConfigValue () {
       return this.options.dynamicScalingVmConfig?.[0]?.value === 'true'
     },
     isCustomizedIOPS () {
       return this.rootDiskSelected?.iscustomizediops || this.serviceOffering?.iscustomizediops || false
+    },
+    tabList () {
+      let tabList = []
+      if (this.templateId) {
+        tabList = [{
+          key: 'templateid',
+          tab: this.$t('label.templates')
+        }]
+      } else if (this.isoId) {
+        tabList = [{
+          key: 'isoid',
+          tab: this.$t('label.isos')
+        }]
+      } else {
+        tabList = [{
+          key: 'templateid',
+          tab: this.$t('label.templates')
+        },
+        {
+          key: 'isoid',
+          tab: this.$t('label.isos')
+        }]
+      }
+
+      return tabList
+    },
+    isoId () {
+      return this.$route.query.isoid || null
     }
   },
   watch: {
@@ -1097,6 +1212,15 @@ export default {
           }
         }
 
+        this.iso = ''
+        for (const key in this.options.isos) {
+          var iso = _.find(_.get(this.options.isos[key], 'iso', []), (option) => option.id === instanceConfig.isoid)
+          if (iso) {
+            this.iso = iso
+            break
+          }
+        }
+
         if (instanceConfig.hypervisor) {
           var hypervisorItem = _.find(this.options.hypervisors, (option) => option.name === instanceConfig.hypervisor)
           this.hypervisor = hypervisorItem ? hypervisorItem.name : null
@@ -1111,15 +1235,40 @@ export default {
           this.overrideDiskOffering = null
         }
 
+        if (iso && this.serviceOffering?.diskofferingid) {
+          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === this.serviceOffering.diskofferingid)
+        } else if (!iso && this.diskSelected) {
+          this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
+        }
+
         this.zone = _.find(this.options.zones, (option) => option.id === this.instanceConfig.zoneid)
         this.affinityGroups = _.filter(this.options.affinityGroups, (option) => _.includes(instanceConfig.affinitygroupids, option.id))
         this.networks = this.getSelectedNetworksWithExistingConfig(_.filter(this.options.networks, (option) => _.includes(instanceConfig.networkids, option.id)))
 
+        this.diskOffering = _.find(this.options.diskOfferings, (option) => option.id === instanceConfig.diskofferingid)
         this.sshKeyPair = _.find(this.options.sshKeyPairs, (option) => option.name === instanceConfig.keypair)
 
         if (this.zone) {
           this.vm.zoneid = this.zone.id
           this.vm.zonename = this.zone.name
+        }
+
+        const pod = _.find(this.options.pods, (option) => option.id === instanceConfig.podid)
+        if (pod) {
+          this.vm.podid = pod.id
+          this.vm.podname = pod.name
+        }
+
+        const cluster = _.find(this.options.clusters, (option) => option.id === instanceConfig.clusterid)
+        if (cluster) {
+          this.vm.clusterid = cluster.id
+          this.vm.clustername = cluster.name
+        }
+
+        const host = _.find(this.options.hosts, (option) => option.id === instanceConfig.hostid)
+        if (host) {
+          this.vm.hostid = host.id
+          this.vm.hostname = host.name
         }
 
         if (this.diskSize) {
@@ -1140,6 +1289,17 @@ export default {
           this.vm.ostypename = this.template.ostypename
         }
 
+        if (this.iso) {
+          this.vm.isoid = this.iso.id
+          this.vm.templateid = this.iso.id
+          this.vm.templatename = this.iso.displaytext
+          this.vm.ostypeid = this.iso.ostypeid
+          this.vm.ostypename = this.iso.ostypename
+          if (this.hypervisor) {
+            this.vm.hypervisor = this.hypervisor
+          }
+        }
+
         if (this.serviceOffering) {
           this.vm.serviceofferingid = this.serviceOffering.id
           this.vm.serviceofferingname = this.serviceOffering.displaytext
@@ -1154,12 +1314,20 @@ export default {
           }
         }
 
-        this.vm.diskofferingid = ''
-        this.vm.diskofferingname = ''
-        this.vm.diskofferingsize = ''
+        if (!this.template.deployasis && this.template.childtemplates && this.template.childtemplates.length > 0) {
+          this.vm.diskofferingid = ''
+          this.vm.diskofferingname = ''
+          this.vm.diskofferingsize = ''
+        } else if (this.diskOffering) {
+          this.vm.diskofferingid = this.diskOffering.id
+          this.vm.diskofferingname = this.diskOffering.displaytext
+          this.vm.diskofferingsize = this.diskOffering.disksize
+        }
 
         this.vm.rootdiskofferingid = this.rootDiskOffering?.id
         this.vm.rootdiskofferingdisplaytext = this.rootDiskOffering?.displayText
+        this.vm.datadiskofferingid = this.dataDiskOffering?.id
+        this.vm.datadiskofferingdisplaytext = this.dataDiskOffering?.displayText
 
         if (this.affinityGroups) {
           this.vm.affinitygroup = this.affinityGroups
@@ -1187,11 +1355,19 @@ export default {
     this.initForm()
     this.dataPreFill = this.preFillContent && Object.keys(this.preFillContent).length > 0 ? this.preFillContent : {}
     this.showOverrideDiskOfferingOption = this.dataPreFill.overridediskoffering
+
+    if (this.dataPreFill.isIso) {
+      this.tabKey = 'isoid'
+    } else {
+      this.tabKey = 'templateid'
+    }
+
     this.fetchData()
   },
   provide () {
     return {
       vmFetchTemplates: this.fetchAllTemplates,
+      vmFetchIsos: this.fetchAllIsos,
       vmFetchNetworks: this.fetchNetwork
     }
   },
@@ -1278,6 +1454,11 @@ export default {
           params.listall = true
           params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
           params.id = this.templateId
+        } else if (this.isoId) {
+          apiName = 'listIsos'
+          params.listall = true
+          params.isofilter = this.isNormalAndDomainUser ? 'executable' : 'all'
+          params.id = this.isoId
         } else if (this.networkId) {
           params.listall = true
           params.id = this.networkId
@@ -1420,6 +1601,7 @@ export default {
     },
     updateFieldValue (name, value) {
       if (name === 'templateid') {
+        this.tabKey = 'templateid'
         this.form.templateid = value
         this.form.isoid = null
         this.resetFromTemplateConfiguration()
@@ -1454,6 +1636,15 @@ export default {
             this.dataPreFill.macAddressArray = JSON.parse(template.details['vmware-to-kvm-mac-addresses'])
           }
         }
+      } else if (name === 'isoid') {
+        this.templateConfigurations = []
+        this.selectedTemplateConfiguration = {}
+        this.templateNics = []
+        this.templateLicenses = []
+        this.templateProperties = {}
+        this.tabKey = 'isoid'
+        this.form.isoid = value
+        this.form.templateid = null
       } else if (['cpuspeed', 'cpunumber', 'memory'].includes(name)) {
         this.vm[name] = value
         this.form[name] = value
@@ -1466,6 +1657,13 @@ export default {
       setTimeout(() => {
         this.updateTemplateConfigurationOfferingDetails(id)
       }, 500)
+    },
+    updateDiskOffering (id) {
+      if (id === '0') {
+        this.form.diskofferingid = undefined
+        return
+      }
+      this.form.diskofferingid = id
     },
     updateOverrideDiskOffering (id) {
       if (id === '0') {
@@ -1508,7 +1706,11 @@ export default {
     },
     changeArchitecture (arch, isTemplate) {
       this.selectedArchitecture = arch
-      this.fetchAllTemplates()
+      if (isTemplate) {
+        this.fetchAllTemplates()
+      } else {
+        this.fetchAllIsos()
+      }
     },
     closeAction () {
       this.$emit('close-action')
@@ -1525,10 +1727,30 @@ export default {
       if (this.loading.deploy) return
       this.formRef.value.validate().then(async () => {
         const values = toRaw(this.form)
+        if (!values.templateid && !values.isoid) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.template.iso')
+          })
+          return
+        } else if (values.isoid && (!values.diskofferingid || values.diskofferingid === '0')) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('message.step.3.continue')
+          })
+          return
+        }
         if (!values.computeofferingid) {
           this.$notification.error({
             message: this.$t('message.request.failed'),
             description: this.$t('message.step.2.continue')
+          })
+          return
+        }
+        if (this.error) {
+          this.$notification.error({
+            message: this.$t('message.request.failed'),
+            description: this.$t('error.form.message')
           })
           return
         }
@@ -1544,6 +1766,9 @@ export default {
 
         // step 1 : select zone
         deployVmData.zoneid = values.zoneid
+        deployVmData.podid = values.podid
+        deployVmData.clusterid = values.clusterid
+        deployVmData.hostid = values.hostid
         deployVmData.keyboard = values.keyboard
         if (!this.template?.deployasis) {
           deployVmData.boottype = values.boottype
@@ -1555,9 +1780,13 @@ export default {
         deployVmData.nicmultiqueuenumber = values.nicmultiqueuenumber
         deployVmData.nicpackedvirtqueuesenabled = values.nicpackedvirtqueuesenabled
 
-        // step 2: select template
-        deployVmData.templateid = values.templateid
-        values.hypervisor = null
+        // step 2: select template/iso
+        if (this.tabKey === 'templateid') {
+          deployVmData.templateid = values.templateid
+          values.hypervisor = null
+        } else {
+          deployVmData.templateid = values.isoid
+        }
 
         if (this.showRootDiskSizeChanger && values.rootdisksize && values.rootdisksize > 0) {
           deployVmData.rootdisksize = values.rootdisksize
@@ -1587,7 +1816,7 @@ export default {
         if (this.selectedTemplateConfiguration) {
           deployVmData['details[0].configurationId'] = this.selectedTemplateConfiguration.id
         }
-        if (!this.serviceOffering.diskofferingstrictness && values.overridediskofferingid) {
+        if (!this.serviceOffering.diskofferingstrictness && values.overridediskofferingid && !values.isoid) {
           deployVmData.overridediskofferingid = values.overridediskofferingid
           if (values.rootdisksize && values.rootdisksize > 0) {
             deployVmData.rootdisksize = values.rootdisksize
@@ -1609,6 +1838,16 @@ export default {
               i++
             })
           }
+        } else {
+          deployVmData.diskofferingid = values.diskofferingid
+          if (values.size) {
+            deployVmData.size = values.size
+          }
+        }
+
+        if (this.isCustomizedDiskIOPS) {
+          deployVmData['details[0].minIopsDo'] = this.diskIOpsMin
+          deployVmData['details[0].maxIopsDo'] = this.diskIOpsMax
         }
 
         if (values.volumesdiskoffering) {
@@ -1847,7 +2086,7 @@ export default {
       param.loading = true
       param.opts = []
       const options = param.options || {}
-      if (!('listall' in options) && !['dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
+      if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
         options.listall = true
       }
       api(param.list, options).then((response) => {
@@ -1951,8 +2190,64 @@ export default {
     filterOption (input, option) {
       return option.label.toUpperCase().indexOf(input.toUpperCase()) >= 0
     },
+    onTabChange (key, type) {
+      this[type] = key
+      if (key === 'isoid') {
+        this.fetchAllIsos()
+      }
+    },
+    fetchIsos (isoFilter, params) {
+      const args = params || {}
+      args.zoneid = this.zoneId
+      args.account = this.owner.account
+      args.domainid = this.owner.domainid
+      args.projectid = this.owner.projectid
+      args.page = 1
+      args.pageSize = 10
+      args.showremoved = false
+      args.bootable = true
+      args.listall = true
+      args.isofilter = isoFilter
+      args.details = 'all'
+      args.showicon = 'true'
+      args.id = this.isoId
+      if (this.isZoneSelectedMultiArch) {
+        args.architecture = this.selectedArchitecture
+      }
+
+      return new Promise((resolve, reject) => {
+        api('listIsos', args).then((response) => {
+          resolve(response)
+        }).catch((reason) => {
+          // ToDo: Handle errors
+          reject(reason)
+        })
+      })
+    },
+    fetchAllIsos (params) {
+      const promises = []
+      const isos = {}
+      this.loading.isos = true
+      this.isoFilter.forEach((filter) => {
+        isos[filter] = { count: 0, iso: [] }
+        promises.push(this.fetchIsos(filter, params))
+      })
+      this.options.isos = isos
+      Promise.all(promises).then((response) => {
+        response.forEach((resItem, idx) => {
+          isos[this.isoFilter[idx]] = _.isEmpty(resItem.listisosresponse) ? { count: 0, iso: [] } : resItem.listisosresponse
+          this.options.isos = { ...isos }
+        })
+      }).catch((reason) => {
+        console.log(reason)
+      }).finally(() => {
+        this.loading.isos = false
+      })
+    },
     onSelectZoneId (value) {
       this.zoneId = value
+      this.podId = null
+      this.clusterId = null
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.isZoneSelectedMultiArch = this.zone.ismultiarch
       if (this.isZoneSelectedMultiArch) {
@@ -1963,6 +2258,15 @@ export default {
       this.selectedZone = this.zoneId
       this.form.zoneid = this.zoneId
       this.form.templateid = undefined
+      this.form.isoid = undefined
+
+      if (this.dataPreFill.isIso) {
+        this.tabKey = 'isoid'
+      } else if (this.isoId) {
+        this.tabKey = 'isoid'
+      } else {
+        this.tabKey = 'templateid'
+      }
 
       _.each(this.params, (param, name) => {
         if (this.networkId && name === 'networks') {
@@ -1974,7 +2278,11 @@ export default {
           this.fetchOptions(param, name, ['zones'])
         }
       })
-      this.fetchAllTemplates()
+      if (this.tabKey === 'templateid') {
+        this.fetchAllTemplates()
+      } else {
+        this.fetchAllIsos()
+      }
       this.updateTemplateKey()
       this.formModel = toRaw(this.form)
     },
@@ -2252,6 +2560,9 @@ export default {
     },
     onSelectRootDiskSize (rowSelected) {
       this.rootDiskSelected = rowSelected
+    },
+    onSelectDiskSize (rowSelected) {
+      this.diskSelected = rowSelected
     },
     updateIOPSValue (input, value) {
       this[input] = value

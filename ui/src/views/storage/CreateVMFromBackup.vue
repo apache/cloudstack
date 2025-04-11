@@ -104,6 +104,7 @@ export default {
     },
     populatePreFillData () {
       this.dataPreFill.zoneid = this.resource.zoneid
+      this.dataPreFill.isIso = (this.vmdetails.isiso === 'true')
       this.dataPreFill.backupid = this.resource.id
       this.dataPreFill.computeofferingid = this.vmdetails.serviceofferingid
       this.dataPreFill.templateid = this.vmdetails.templateid
@@ -131,7 +132,7 @@ export default {
         type: volume.type,
         diskofferingid: this.diskofferingids[index]
       })).filter(volume => volume.type === 'ROOT')
-      if (this.serviceOffering.diskofferingid === rootdisksdetails[0].diskofferingid) {
+      if (this.serviceOffering.diskofferingid === rootdisksdetails[0].diskofferingid || this.dataPreFill.isIso) {
         this.dataPreFill.overridediskoffering = false
       } else {
         this.dataPreFill.overridediskoffering = true
