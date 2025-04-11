@@ -132,6 +132,10 @@ export default {
         type: volume.type,
         diskofferingid: this.diskofferingids[index]
       })).filter(volume => volume.type === 'ROOT')
+      if (this.dataPreFill.isIso) {
+        this.dataPreFill.diskofferingid = rootdisksdetails[0].diskofferingid
+        this.dataPreFill.size = rootdisksdetails[0].size
+      }
       if (this.serviceOffering.diskofferingid === rootdisksdetails[0].diskofferingid || this.dataPreFill.isIso) {
         this.dataPreFill.overridediskoffering = false
       } else {

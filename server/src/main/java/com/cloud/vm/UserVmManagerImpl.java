@@ -9096,6 +9096,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        Long size = null;
         Long diskOfferingId = cmd.getDiskOfferingId();
         if (diskOfferingId != null) {
             if (!isIso) {
@@ -9119,6 +9120,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             diskOfferingId = rootDiskOfferingInfo.getDiskOffering().getId();
             updateDetailsWithRootDiskAttributes(cmd.getDetails(), rootDiskOfferingInfo);
+            size = rootDiskOfferingInfo.getSize();
         }
 
         if (!isIso && overrideDiskOfferingId == null) {
@@ -9190,7 +9192,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         String name = cmd.getName();
         String displayName = cmd.getDisplayName();
-        Long size = cmd.getSize();
+        if (size == null) {
+            size = cmd.getSize();
+        }
         Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
         List<String> sshKeyPairs = new ArrayList<String>();
         String ipAddress = cmd.getIpAddress();

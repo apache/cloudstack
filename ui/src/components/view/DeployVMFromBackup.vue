@@ -2257,17 +2257,15 @@ export default {
       this.form.startvm = true
       this.selectedZone = this.zoneId
       this.form.zoneid = this.zoneId
+      this.form.clusterid = undefined
+      this.form.podid = undefined
+      this.form.hostid = undefined
       this.form.templateid = undefined
       this.form.isoid = undefined
-
-      if (this.dataPreFill.isIso) {
+      this.tabKey = 'templateid'
+      if (this.isoId) {
         this.tabKey = 'isoid'
-      } else if (this.isoId) {
-        this.tabKey = 'isoid'
-      } else {
-        this.tabKey = 'templateid'
       }
-
       _.each(this.params, (param, name) => {
         if (this.networkId && name === 'networks') {
           param.options = {
