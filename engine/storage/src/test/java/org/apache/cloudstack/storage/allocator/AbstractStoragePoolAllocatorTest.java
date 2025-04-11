@@ -82,7 +82,7 @@ public class AbstractStoragePoolAllocatorTest {
 
     @Test
     public void reorderStoragePoolsBasedOnAlgorithm_userdispersing() {
-        allocator.allocationAlgorithm = "userdispersing";
+        allocator.volumeAllocationAlgorithm = "userdispersing";
         Mockito.doReturn(pools).when(allocator).reorderPoolsByNumberOfVolumes(plan, pools, account);
         allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account);
         Mockito.verify(allocator, Mockito.times(0)).reorderPoolsByCapacity(plan, pools);
@@ -92,7 +92,7 @@ public class AbstractStoragePoolAllocatorTest {
 
     @Test
     public void reorderStoragePoolsBasedOnAlgorithm_userdispersing_reorder_check() {
-        allocator.allocationAlgorithm = "userdispersing";
+        allocator.volumeAllocationAlgorithm = "userdispersing";
         allocator.volumeDao = volumeDao;
 
         when(plan.getDataCenterId()).thenReturn(1l);
@@ -115,7 +115,7 @@ public class AbstractStoragePoolAllocatorTest {
 
     @Test
     public void reorderStoragePoolsBasedOnAlgorithm_firstfitleastconsumed() {
-        allocator.allocationAlgorithm = "firstfitleastconsumed";
+        allocator.volumeAllocationAlgorithm = "firstfitleastconsumed";
         Mockito.doReturn(pools).when(allocator).reorderPoolsByCapacity(plan, pools);
         allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account);
         Mockito.verify(allocator, Mockito.times(1)).reorderPoolsByCapacity(plan, pools);

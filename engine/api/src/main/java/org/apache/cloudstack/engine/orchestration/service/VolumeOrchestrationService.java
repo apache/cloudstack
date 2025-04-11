@@ -83,6 +83,17 @@ public interface VolumeOrchestrationService {
             "The maximum size for a volume (in GiB).",
             true);
 
+    ConfigKey<String> VolumeAllocationAlgorithm = new ConfigKey<>(
+            String.class,
+            "volume.allocation.algorithm",
+            "Advanced",
+            "random",
+            "Order in which storage pool within a cluster will be considered for volume allocation. The value can be 'random', 'firstfit', 'userdispersing', 'userconcentratedpod_random', 'userconcentratedpod_firstfit', or 'firstfitleastconsumed'.",
+            false,
+            ConfigKey.Scope.Global, null, null, null, null, null,
+            ConfigKey.Kind.Select,
+            "random,firstfit,userdispersing,userconcentratedpod_random,userconcentratedpod_firstfit,firstfitleastconsumed");
+
     VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType)
         throws ConcurrentOperationException, StorageUnavailableException;
 
