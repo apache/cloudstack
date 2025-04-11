@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.backup.dao;
 
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -40,6 +43,9 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.Storage;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.SearchBuilder;
@@ -73,6 +79,9 @@ public class BackupDaoImplTest {
 
     @Mock
     BackupOfferingDao backupOfferingDao;
+
+    @Mock
+    private VMTemplateDao templateDao;
 
     @Test
     public void testLoadDetails() {
@@ -115,6 +124,9 @@ public class BackupDaoImplTest {
         Long vmOfferingId = 5L;
         Long backupOfferingId = 6L;
         Long backupId = 7L;
+        Long templateId = 8L;
+        String templateUuid = "template-uuid1";
+
         BackupVO backup = new BackupVO();
         ReflectionTestUtils.setField(backup, "id", backupId);
         ReflectionTestUtils.setField(backup, "uuid", "backup-uuid");
@@ -130,6 +142,7 @@ public class BackupDaoImplTest {
                 0L, Hypervisor.HypervisorType.Simulator, 0L, domainId, accountId, 0L, false);
         vm.setDataCenterId(zoneId);
         vm.setBackupOfferingId(vmOfferingId);
+        vm.setTemplateId(templateId);
 
         AccountVO account = new AccountVO();
         account.setUuid("account-uuid");
@@ -152,8 +165,12 @@ public class BackupDaoImplTest {
         Mockito.when(dataCenterDao.findByIdIncludingRemoved(zoneId)).thenReturn(zone);
         Mockito.when(backupOfferingDao.findByIdIncludingRemoved(backupOfferingId)).thenReturn(offering);
 
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(template.getUuid()).thenReturn(templateUuid);
+        when(templateDao.findById(templateId)).thenReturn(template);
         Map<String, String> details = new HashMap<>();
-        details.put(ApiConstants.HYPERVISOR, String.valueOf(Hypervisor.HypervisorType.KVM));
+
         Mockito.when(backupDetailsDao.listDetailsKeyPairs(backup.getId(), true)).thenReturn(details);
 
         BackupResponse response = backupDao.newBackupResponse(backup, true);
@@ -169,7 +186,7 @@ public class BackupDaoImplTest {
         Assert.assertEquals("offering-uuid", response.getBackupOfferingId());
         Assert.assertEquals("test-offering", response.getBackupOffering());
         Assert.assertEquals("MANUAL", response.getIntervalType());
-        Assert.assertEquals("{hypervisor=KVM}", response.getVmDetails().toString());
+        Assert.assertEquals("{isiso=false, hypervisor=Simulator, templateid=template-uuid1}", response.getVmDetails().toString());
         Assert.assertEquals(true, response.getVmOfferingRemoved());
     }
 }

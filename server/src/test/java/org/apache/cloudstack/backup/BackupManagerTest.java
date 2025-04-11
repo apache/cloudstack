@@ -770,18 +770,12 @@ public class BackupManagerTest {
     public void testGetVmDetailsForBackup() {
         Long vmId = 1L;
         VirtualMachine vm = mock(VirtualMachine.class);
-        when(vm.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         when(vm.getServiceOfferingId()).thenReturn(1L);
-        when(vm.getTemplateId()).thenReturn(1L);
         when(vm.getId()).thenReturn(vmId);
 
         ServiceOfferingVO serviceOffering = mock(ServiceOfferingVO.class);
         when(serviceOffering.getUuid()).thenReturn("service-offering-uuid");
         when(serviceOfferingDao.findById(1L)).thenReturn(serviceOffering);
-
-        VMTemplateVO template = mock(VMTemplateVO.class);
-        when(template.getUuid()).thenReturn("template-uuid");
-        when(vmTemplateDao.findById(1L)).thenReturn(template);
 
         UserVmJoinVO userVmJoinVO = mock(UserVmJoinVO.class);
         when(userVmJoinVO.getNetworkUuid()).thenReturn("mocked-network-uuid");
@@ -790,9 +784,7 @@ public class BackupManagerTest {
 
         Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
 
-        assertEquals("KVM", details.get(ApiConstants.HYPERVISOR));
         assertEquals("service-offering-uuid", details.get(ApiConstants.SERVICE_OFFERING_ID));
-        assertEquals("template-uuid", details.get(ApiConstants.TEMPLATE_ID));
         assertEquals("mocked-network-uuid", details.get(ApiConstants.NETWORK_IDS));
     }
 

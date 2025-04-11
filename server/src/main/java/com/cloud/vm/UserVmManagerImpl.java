@@ -9058,7 +9058,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         verifyDetails(cmd.getDetails());
 
-        VMInstanceVO backupVm = _vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
+        UserVmVO backupVm = _vmDao.findByIdIncludingRemoved(backup.getVmId());
         HypervisorType hypervisorType = backupVm.getHypervisorType();
 
         Long templateId;

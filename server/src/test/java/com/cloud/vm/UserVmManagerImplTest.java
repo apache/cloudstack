@@ -3183,13 +3183,19 @@ public class UserVmManagerImplTest {
         when(diskOffering.isCustomizedIops()).thenReturn(true);
         when(entityManager.findByUuid(DiskOffering.class, "disk-offering-uuid")).thenReturn(diskOffering);
 
-        VMTemplateVO template = mock(VMTemplateVO.class);
-        when(templateDao.findById(templateId)).thenReturn(template);
-
         BackupVO backup = mock(BackupVO.class);
         when(backup.getZoneId()).thenReturn(zoneId);
+        when(backup.getVmId()).thenReturn(vmId);
         when(backupDao.findById(backupId)).thenReturn(backup);
         when(backup.getDetail(ApiConstants.NETWORK_IDS)).thenReturn("network-uuid");
+
+        UserVmVO userVmVO = new UserVmVO();
+        userVmVO.setTemplateId(templateId);
+        when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(templateDao.findById(templateId)).thenReturn(template);
+
         NetworkVO network = mock(NetworkVO.class);
         when(network.getId()).thenReturn(networkId);
         when(_networkDao.findByUuid("network-uuid")).thenReturn(network);
@@ -3233,17 +3239,21 @@ public class UserVmManagerImplTest {
 
         BackupVO backup = mock(BackupVO.class);
         when(backup.getZoneId()).thenReturn(zoneId);
+        when(backup.getVmId()).thenReturn(vmId);
         when(backupDao.findById(backupId)).thenReturn(backup);
+
+        UserVmVO userVmVO = new UserVmVO();
+        userVmVO.setTemplateId(templateId);
+        when(userVmDao.findByIdIncludingRemoved(vmId)).thenReturn(userVmVO);
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
+        when(templateDao.findById(templateId)).thenReturn(template);
 
         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
         when(backup.getDetail(ApiConstants.SERVICE_OFFERING_ID)).thenReturn("service-offering-uuid");
         when(_serviceOfferingDao.findByUuid("service-offering-uuid")).thenReturn(serviceOffering);
         when(serviceOffering.getDiskOfferingId()).thenReturn(rootDiskOfferingId);
         when(diskOfferingDao.findById(rootDiskOfferingId)).thenReturn(diskOffering);
-
-        when(backup.getDetail(ApiConstants.TEMPLATE_ID)).thenReturn("template-uuid");
-        VMTemplateVO template = mock(VMTemplateVO.class);
-        when(templateDao.findByUuid("template-uuid")).thenReturn(template);
 
         when(backup.getDetail(ApiConstants.NETWORK_IDS)).thenReturn("net1-uuid,net2-uuid");
         NetworkVO network1 = mock(NetworkVO.class);
