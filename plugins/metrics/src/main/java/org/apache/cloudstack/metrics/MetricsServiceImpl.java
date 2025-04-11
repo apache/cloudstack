@@ -21,10 +21,12 @@ import static com.cloud.utils.NumbersUtil.toReadableSize;
 
 import java.lang.reflect.InvocationTargetException;
 import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -461,8 +463,8 @@ public class MetricsServiceImpl extends MutualExclusiveIdsManagerBase implements
      * @return the set of responses that was created.
      */
     protected List<StatsResponse> createStatsResponse(List<VmStatsVO> vmStatsList) {
-        List<StatsResponse> statsResponseList = new ArrayList<StatsResponse>();
-        DecimalFormat decimalFormat = new DecimalFormat("#.##");
+        List<StatsResponse> statsResponseList = new ArrayList<>();
+        DecimalFormat decimalFormat = new DecimalFormat("#.##", DecimalFormatSymbols.getInstance(Locale.ENGLISH));
         for (VmStatsVO vmStats : vmStatsList) {
             StatsResponse response = new StatsResponse();
             response.setTimestamp(vmStats.getTimestamp());
