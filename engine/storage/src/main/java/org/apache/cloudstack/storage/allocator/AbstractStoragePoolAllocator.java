@@ -36,9 +36,11 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineProfile;
+
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
@@ -48,8 +50,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -65,7 +67,7 @@ import java.util.Map;
 public abstract class AbstractStoragePoolAllocator extends AdapterBase implements StoragePoolAllocator {
 
     protected BigDecimal storageOverprovisioningFactor = new BigDecimal(1);
-    protected String allocationAlgorithm = "random";
+    protected String volumeAllocationAlgorithm = "random";
     protected long extraBytesPerVolume = 0;
     @Inject protected DataStoreManager dataStoreMgr;
     @Inject protected PrimaryDataStoreDao storagePoolDao;
@@ -93,9 +95,9 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             String globalStorageOverprovisioningFactor = configs.get("storage.overprovisioning.factor");
             storageOverprovisioningFactor = new BigDecimal(NumbersUtil.parseFloat(globalStorageOverprovisioningFactor, 2.0f));
             extraBytesPerVolume = 0;
-            String allocationAlgorithm = VolumeOrchestrationService.VolumeAllocationAlgorithm.value();
-            if (allocationAlgorithm != null) {
-                this.allocationAlgorithm = allocationAlgorithm;
+            String volAllocationAlgorithm = VolumeOrchestrationService.VolumeAllocationAlgorithm.value();
+            if (volAllocationAlgorithm != null) {
+                this.volumeAllocationAlgorithm = volAllocationAlgorithm;
             }
             return true;
         }
@@ -225,15 +227,15 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     }
 
     List<StoragePool> reorderStoragePoolsBasedOnAlgorithm(List<StoragePool> pools, DeploymentPlan plan, Account account) {
-        logger.debug("Using volume allocation algorithm {} to reorder pools.", allocationAlgorithm);
-        if (allocationAlgorithm.equals("random") || allocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
+        logger.debug("Using volume allocation algorithm {} to reorder pools.", volumeAllocationAlgorithm);
+        if (volumeAllocationAlgorithm.equals("random") || volumeAllocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
             reorderRandomPools(pools);
-        } else if (StringUtils.equalsAny(allocationAlgorithm, "userdispersing", "firstfitleastconsumed")) {
+        } else if (StringUtils.equalsAny(volumeAllocationAlgorithm, "userdispersing", "firstfitleastconsumed")) {
             if (logger.isTraceEnabled()) {
-                logger.trace("Using reordering algorithm {}", allocationAlgorithm);
+                logger.trace("Using reordering algorithm {}", volumeAllocationAlgorithm);
             }
 
-            if (allocationAlgorithm.equals("userdispersing")) {
+            if (volumeAllocationAlgorithm.equals("userdispersing")) {
                 pools = reorderPoolsByNumberOfVolumes(plan, pools, account);
             } else {
                 pools = reorderPoolsByCapacity(plan, pools);
@@ -245,7 +247,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     void reorderRandomPools(List<StoragePool> pools) {
         StorageUtil.traceLogStoragePools(pools, logger, "pools to choose from: ");
         if (logger.isTraceEnabled()) {
-            logger.trace("Shuffle this so that we don't check the pools in the same order. Algorithm == {} (or no account?)", allocationAlgorithm);
+            logger.trace("Shuffle this so that we don't check the pools in the same order. Algorithm == {} (or no account?)", volumeAllocationAlgorithm);
         }
         StorageUtil.traceLogStoragePools(pools, logger, "pools to shuffle: ");
         Collections.shuffle(pools, secureRandom);
