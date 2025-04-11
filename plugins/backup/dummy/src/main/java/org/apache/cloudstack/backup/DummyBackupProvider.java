@@ -18,14 +18,14 @@ package org.apache.cloudstack.backup;
 
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 
-import com.cloud.configuration.Resource;
+import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VolumeDao;
+
 import org.apache.cloudstack.backup.dao.BackupDao;
 
 import com.cloud.utils.Pair;
@@ -35,12 +35,12 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 
 public class DummyBackupProvider extends AdapterBase implements BackupProvider {
-
-
     @Inject
     private BackupDao backupDao;
     @Inject
     private VolumeDao volumeDao;
+    @Inject
+    private BackupManager backupManager;
 
     @Override
     public String getName() {
@@ -85,19 +85,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         throw new CloudRuntimeException("Dummy plugin does not support this feature");
     }
 
-    @Override
-    public Map<VirtualMachine, Backup.Metric> getBackupMetrics(Long zoneId, List<VirtualMachine> vms) {
-        final Map<VirtualMachine, Backup.Metric> metrics = new HashMap<>();
-        final Backup.Metric metric = new Backup.Metric(1000L, 100L);
-        if (vms == null || vms.isEmpty()) {
-            return metrics;
-        }
-        for (VirtualMachine vm : vms) {
-            if (vm != null) {
-                metrics.put(vm, metric);
-            }
-        }
-        return metrics;
+    public void syncBackupMetrics(Long zoneId) {
     }
 
     @Override
@@ -106,7 +94,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm, Backup.Metric metric) {
+    public Backup createNewBackupEntryForRestorePoint(Backup.RestorePoint restorePoint, VirtualMachine vm) {
         return null;
     }
 
@@ -118,7 +106,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Override
     public boolean willDeleteBackupsOnOfferingRemoval() {
-        return true;
+        return false;
     }
 
     @Override
@@ -130,20 +118,51 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         backup.setExternalId("dummy-external-id");
         backup.setType("FULL");
         backup.setDate(new Date());
-        backup.setSize(1024000L);
-        backup.setProtectedSize(Resource.ResourceType.bytesToGiB);
+        long virtualSize = 0L;
+        for (final Volume volume: volumeDao.findByInstance(vm.getId())) {
+            if (Volume.State.Ready.equals(volume.getState())) {
+                virtualSize += volume.getSize();
+            }
+        }
+        backup.setSize(virtualSize);
+        backup.setProtectedSize(virtualSize);
         backup.setStatus(Backup.Status.BackedUp);
         backup.setBackupOfferingId(vm.getBackupOfferingId());
         backup.setAccountId(vm.getAccountId());
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
+        backup.setName(backupManager.getBackupNameFromVM(vm));
         backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+        Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
+        backup.setDetails(details);
+        Map<String, String> diskOfferingDetails = backupManager.getDiskOfferingDetailsForBackup(vm.getId());
+        backup.addDetails(diskOfferingDetails);
+
         backup = backupDao.persist(backup);
         return new Pair<>(true, backup);
     }
 
     @Override
     public boolean deleteBackup(Backup backup, boolean forced) {
+        return backupDao.remove(backup.getId());
+    }
+
+    @Override
+    public boolean supportsInstanceFromBackup() {
+        return true;
+    }
+
+    @Override
+    public Pair<Long, Long> getBackupStorageStats(Long zoneId) {
+        return new Pair<>(8L * 1024 * 1024 * 1024, 10L * 1024 * 1024 * 1024);
+    }
+
+    @Override
+    public void syncBackupStorageStats(Long zoneId) {
+    }
+
+    @Override
+    public boolean restoreBackupToVM(VirtualMachine vm, Backup backup, String hostIp, String dataStoreUuid) {
         return true;
     }
 }
