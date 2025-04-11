@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.query;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -97,12 +98,15 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.vm.VmDetailConstants;
 
 /**
  * Service used for list api query.
  *
  */
 public interface QueryService {
+
+    List<String> RootAdminOnlyVmSettings = Arrays.asList(VmDetailConstants.GUEST_CPU_MODE, VmDetailConstants.GUEST_CPU_MODEL);
 
     // Config keys
     ConfigKey<Boolean> AllowUserViewDestroyedVM = new ConfigKey<>("Advanced", Boolean.class, "allow.user.view.destroyed.vm", "false",
