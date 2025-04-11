@@ -214,7 +214,9 @@ public class ScaleIOUtil {
             // remove MDM via CLI if it is supported
             if (removeMdmCliSupported) {
                 removeMdm(mdmAddress);
-                changesApplied = true;
+                if (removeMdm(mdmAddress)) {
+                    changesApplied = true;
+                }
             } else {
                 String command = String.format(REMOVE_MDM_CMD_TEMPLATE, mdmAddress, DRV_CFG_FILE);
                 Script.runSimpleBashScript(command);
