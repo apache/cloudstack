@@ -133,10 +133,12 @@ public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthentic
         }
 
         if (userUuid != null && domainUuid != null) {
+            s_logger.debug("User [" + currentUserAccount.getUsername() + "] is requesting to switch from user profile [" + currentUserAccount.getId() + "] to useraccount [" + userUuid + "] in domain [" + domainUuid + "]");
             final User user = _userDao.findByUuid(userUuid);
             final Domain domain = _domainDao.findByUuid(domainUuid);
             final UserAccount nextUserAccount = _accountService.getUserAccountById(user.getId());
             if (nextUserAccount != null && !nextUserAccount.getAccountState().equals(Account.State.ENABLED.toString())) {
+                s_logger.warn("User [" + currentUserAccount.getUsername() + "] is requesting to switch from user profile [" + currentUserId + "] to user profile [" + userUuid + "] in domain [" + domainUuid + "] but the associated target account [" + nextUserAccount.getAccountName() + "] is not enabled");
                 throw new ServerApiException(ApiErrorCode.ACCOUNT_ERROR, _apiServer.getSerializedApiError(ApiErrorCode.PARAM_ERROR.getHttpCode(),
                         "The requested user account is locked and cannot be switched to, please contact your administrator.",
                         params, responseType));
@@ -147,20 +149,26 @@ public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthentic
                     || !nextUserAccount.getExternalEntity().equals(currentUserAccount.getExternalEntity())
                     || (nextUserAccount.getDomainId() != domain.getId())
                     || (nextUserAccount.getSource() != User.Source.SAML2)) {
+                s_logger.warn("User [" + currentUserAccount.getUsername() + "] is requesting to switch from user profile [" + currentUserId + "] to user profile [" + userUuid + "] in domain [" + domainUuid + "] but the associated target account is not found or invalid");
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, _apiServer.getSerializedApiError(ApiErrorCode.PARAM_ERROR.getHttpCode(),
                         "User account is not allowed to switch to the requested account",
                         params, responseType));
             }
             try {
                 if (_apiServer.verifyUser(nextUserAccount.getId())) {
+                    s_logger.info("User [" + currentUserAccount.getUsername() + "] user profile switch is accepted: from [" + currentUserId + "] to user profile [" + userUuid + "] in domain [" + domainUuid + "] with account [" + nextUserAccount.getAccountName() + "]");
+                    // need to set a sessoin variable to inform the login function of the specific user to login as, rather than using email only (which could have multiple matches)
+                    session.setAttribute("nextUserId", user.getId());
                     final LoginCmdResponse loginResponse = (LoginCmdResponse) _apiServer.loginUser(session, nextUserAccount.getUsername(), nextUserAccount.getUsername() + nextUserAccount.getSource().toString(),
                             nextUserAccount.getDomainId(), null, remoteAddress, params);
                     SAMLUtils.setupSamlUserCookies(loginResponse, resp);
-                    resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
+                    session.removeAttribute("nextUserId");
+                    s_logger.debug("User [" + currentUserAccount.getUsername() + "] user profile switch cookies set: from [" + currentUserId + "] to user profile [" + userUuid + "] in domain [" + domainUuid + "] with account [" + nextUserAccount.getAccountName() + "]");
+                    //resp.sendRedirect(SAML2AuthManager.SAMLCloudStackRedirectionUrl.value());
                     return ApiResponseSerializer.toSerializedString(loginResponse, responseType);
                 }
             } catch (CloudAuthenticationException | IOException exception) {
-                s_logger.debug("Failed to switch to request SAML user account due to: " + exception.getMessage());
+                s_logger.debug("User [" + currentUserAccount.getUsername() + "] user profile switch cookies set FAILED: from [" + currentUserId + "] to user profile [" + userUuid + "] in domain [" + domainUuid + "] with account [" + nextUserAccount.getAccountName() + "]", exception);
             }
         } else {
             List<UserAccountVO> switchableAccounts = _userAccountDao.getAllUsersByNameAndEntity(currentUserAccount.getUsername(), currentUserAccount.getExternalEntity());
@@ -178,6 +186,9 @@ public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthentic
                     accountResponse.setAccountName(userAccount.getAccountName());
                     accountResponse.setIdpId(user.getExternalEntity());
                     accountResponses.add(accountResponse);
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Returning available useraccount for [" + currentUserAccount.getUsername() + "]: UserUUID: [" + user.getUuid() + "], DomainUUID: [" + domain.getUuid() + "], Account: [" + userAccount.getAccountName() + "]");
+                    }
                 }
                 ListResponse<SamlUserAccountResponse> response = new ListResponse<SamlUserAccountResponse>();
                 response.setResponses(accountResponses);
