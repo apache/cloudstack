@@ -17,14 +17,17 @@
 package org.apache.cloudstack.storage.allocator;
 
 
-import static org.mockito.Mockito.when;
-
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import com.cloud.deploy.DeploymentPlan;
+import com.cloud.deploy.DeploymentPlanner;
+import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.user.Account;
+import com.cloud.vm.DiskProfile;
+import com.cloud.vm.VirtualMachineProfile;
 
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -34,14 +37,12 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import com.cloud.deploy.DeploymentPlan;
-import com.cloud.deploy.DeploymentPlanner;
-import com.cloud.storage.Storage;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.user.Account;
-import com.cloud.vm.DiskProfile;
-import com.cloud.vm.VirtualMachineProfile;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AbstractStoragePoolAllocatorTest {
@@ -74,7 +75,7 @@ public class AbstractStoragePoolAllocatorTest {
 
     @Test
     public void reorderStoragePoolsBasedOnAlgorithm_random() {
-        allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account);
+        allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account, "random");
         Mockito.verify(allocator, Mockito.times(0)).reorderPoolsByCapacity(plan, pools);
         Mockito.verify(allocator, Mockito.times(0)).reorderPoolsByNumberOfVolumes(plan, pools, account);
         Mockito.verify(allocator, Mockito.times(1)).reorderRandomPools(pools);
@@ -82,9 +83,8 @@ public class AbstractStoragePoolAllocatorTest {
 
     @Test
     public void reorderStoragePoolsBasedOnAlgorithm_userdispersing() {
-        allocator.volumeAllocationAlgorithm = "userdispersing";
         Mockito.doReturn(pools).when(allocator).reorderPoolsByNumberOfVolumes(plan, pools, account);
-        allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account);
+        allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account,"userdispersing");
         Mockito.verify(allocator, Mockito.times(0)).reorderPoolsByCapacity(plan, pools);
         Mockito.verify(allocator, Mockito.times(1)).reorderPoolsByNumberOfVolumes(plan, pools, account);
         Mockito.verify(allocator, Mockito.times(0)).reorderRandomPools(pools);
@@ -92,7 +92,6 @@ public class AbstractStoragePoolAllocatorTest {
 
     @Test
     public void reorderStoragePoolsBasedOnAlgorithm_userdispersing_reorder_check() {
-        allocator.volumeAllocationAlgorithm = "userdispersing";
         allocator.volumeDao = volumeDao;
 
         when(plan.getDataCenterId()).thenReturn(1l);
@@ -104,7 +103,7 @@ public class AbstractStoragePoolAllocatorTest {
         poolIds.add(9l);
         when(volumeDao.listPoolIdsByVolumeCount(1l,1l,1l,1l)).thenReturn(poolIds);
 
-        List<StoragePool> reorderedPools = allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account);
+        List<StoragePool> reorderedPools = allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account, "userdispersing");
         Assert.assertEquals(poolIds.size(),reorderedPools.size());
 
         Mockito.verify(allocator, Mockito.times(0)).reorderPoolsByCapacity(plan, pools);
@@ -115,9 +114,8 @@ public class AbstractStoragePoolAllocatorTest {
 
     @Test
     public void reorderStoragePoolsBasedOnAlgorithm_firstfitleastconsumed() {
-        allocator.volumeAllocationAlgorithm = "firstfitleastconsumed";
         Mockito.doReturn(pools).when(allocator).reorderPoolsByCapacity(plan, pools);
-        allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account);
+        allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account, "firstfitleastconsumed");
         Mockito.verify(allocator, Mockito.times(1)).reorderPoolsByCapacity(plan, pools);
         Mockito.verify(allocator, Mockito.times(0)).reorderPoolsByNumberOfVolumes(plan, pools, account);
         Mockito.verify(allocator, Mockito.times(0)).reorderRandomPools(pools);

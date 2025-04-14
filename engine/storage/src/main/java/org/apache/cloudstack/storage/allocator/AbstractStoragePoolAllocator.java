@@ -67,7 +67,6 @@ import java.util.Map;
 public abstract class AbstractStoragePoolAllocator extends AdapterBase implements StoragePoolAllocator {
 
     protected BigDecimal storageOverprovisioningFactor = new BigDecimal(1);
-    protected String volumeAllocationAlgorithm = "random";
     protected long extraBytesPerVolume = 0;
     @Inject protected DataStoreManager dataStoreMgr;
     @Inject protected PrimaryDataStoreDao storagePoolDao;
@@ -95,10 +94,6 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             String globalStorageOverprovisioningFactor = configs.get("storage.overprovisioning.factor");
             storageOverprovisioningFactor = new BigDecimal(NumbersUtil.parseFloat(globalStorageOverprovisioningFactor, 2.0f));
             extraBytesPerVolume = 0;
-            String volAllocationAlgorithm = VolumeOrchestrationService.VolumeAllocationAlgorithm.value();
-            if (volAllocationAlgorithm != null) {
-                this.volumeAllocationAlgorithm = volAllocationAlgorithm;
-            }
             return true;
         }
         return false;
@@ -209,7 +204,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             account = vmProfile.getOwner();
         }
 
-        pools = reorderStoragePoolsBasedOnAlgorithm(pools, plan, account);
+        pools = reorderStoragePoolsBasedOnAlgorithm(pools, plan, account, VolumeOrchestrationService.VolumeAllocationAlgorithm.value());
 
         if (vmProfile.getVirtualMachine() == null) {
             if (logger.isTraceEnabled()) {
@@ -226,7 +221,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         return pools;
     }
 
-    List<StoragePool> reorderStoragePoolsBasedOnAlgorithm(List<StoragePool> pools, DeploymentPlan plan, Account account) {
+    List<StoragePool> reorderStoragePoolsBasedOnAlgorithm(List<StoragePool> pools, DeploymentPlan plan, Account account, String volumeAllocationAlgorithm) {
         logger.debug("Using volume allocation algorithm {} to reorder pools.", volumeAllocationAlgorithm);
         if (volumeAllocationAlgorithm.equals("random") || volumeAllocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
             reorderRandomPools(pools);
@@ -247,7 +242,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     void reorderRandomPools(List<StoragePool> pools) {
         StorageUtil.traceLogStoragePools(pools, logger, "pools to choose from: ");
         if (logger.isTraceEnabled()) {
-            logger.trace("Shuffle this so that we don't check the pools in the same order. Algorithm == {} (or no account?)", volumeAllocationAlgorithm);
+            logger.trace("Shuffle this so that we don't check the pools in the same order. Algorithm == 'random' (or no account?)");
         }
         StorageUtil.traceLogStoragePools(pools, logger, "pools to shuffle: ");
         Collections.shuffle(pools, secureRandom);
