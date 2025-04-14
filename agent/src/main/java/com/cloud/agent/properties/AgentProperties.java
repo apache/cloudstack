@@ -816,7 +816,7 @@ public class AgentProperties{
      * Data type: Integer.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<Integer> SSL_HANDSHAKE_TIMEOUT = new Property<>("ssl.handshake.timeout", null, Integer.class);
+    public static final Property<Integer> SSL_HANDSHAKE_TIMEOUT = new Property<>("ssl.handshake.timeout", 30, Integer.class);
 
     public static class Property <T>{
         private String name;
