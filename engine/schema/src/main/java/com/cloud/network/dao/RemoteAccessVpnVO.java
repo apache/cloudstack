@@ -69,6 +69,9 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     @Column(name = "display", updatable = true, nullable = false)
     protected boolean display = true;
 
+    @Column(name = "provider_name")
+    private String providerName;
+
     public RemoteAccessVpnVO() {
         uuid = UUID.randomUUID().toString();
     }
@@ -98,6 +101,11 @@ public class RemoteAccessVpnVO implements RemoteAccessVpn {
     @Override
     public long getAccountId() {
         return accountId;
+    }
+
+    @Override
+    public String getProvider() {
+        return providerName;
     }
 
     @Override

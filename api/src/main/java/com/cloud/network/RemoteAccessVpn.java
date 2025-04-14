@@ -26,6 +26,8 @@ public interface RemoteAccessVpn extends ControlledEntity, InternalIdentity, Ide
         Added, Running, Removed
     }
 
+    String getProvider();
+
     long getServerAddressId();
 
     String getIpRange();

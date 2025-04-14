@@ -31,6 +31,7 @@ import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
+import com.cloud.network.vpn.RemoteAccessVpnProviderManagerService;
 import org.apache.cloudstack.acl.ProjectRoleService;
 import org.apache.cloudstack.acl.RoleService;
 import org.apache.cloudstack.acl.RoleType;
@@ -159,6 +160,8 @@ public abstract class BaseCmd {
     public LoadBalancingRulesService _lbService;
     @Inject
     public RemoteAccessVpnService _ravService;
+    @Inject
+    public RemoteAccessVpnProviderManagerService _ravpmService;
     @Inject
     public ProjectService _projectService;
     @Inject

@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
+import com.cloud.exception.VPNProviderNotFoundException;
+import com.cloud.network.vpn.RemoteAccessVpnProvider;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
@@ -83,17 +85,20 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     @Parameter(name = "listenport",
             type = CommandType.INTEGER,
             description = "Port on which the VPN server will be listening")
-    private Boolean listenPort;
+    private Integer listenPort;
 
-    @Parameter(name = "protocol",
+    @Parameter(name = "provider",
             type = CommandType.STRING,
             description = "Name of the protocol used for the VPN")
-    private String protocol;
+    private String providerName;
 
     @Parameter(name = "implementationdata",
             type = CommandType.STRING,
             description = "JSON-encoded protocol-specific data for the VPN")
     private String implementationData;
+
+
+    private RemoteAccessVpnProvider provider;
 
 
     /////////////////////////////////////////////////////
@@ -125,12 +130,12 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
         return Objects.requireNonNullElse(openFirewall, true);
     }
 
-    public Boolean getListenPort() {
+    public Integer getListenPort() {
         return listenPort;
     }
 
-    public String getProtocol() {
-        return protocol;
+    public String getProviderName() {
+        return providerName;
     }
 
     public String getImplementationData() {
@@ -165,29 +170,43 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     @Override
     public void create() {
         try {
-            RemoteAccessVpn vpn = _ravService.createRemoteAccessVpn(publicIpId, ipRange, getOpenFirewall(), isDisplay());
+
+            this.provider = _ravpmService.GetProvider(getProviderName());
+
+            RemoteAccessVpn vpn = provider.createRemoteAccessVpn(publicIpId, ipRange, getOpenFirewall(), isDisplay(), getListenPort(), getImplementationData());
             if (vpn != null) {
                 setEntityId(vpn.getId());
                 setEntityUuid(vpn.getUuid());
+
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create remote access vpn");
             }
+
         } catch (NetworkRuleConflictException e) {
+
             s_logger.info("Network rule conflict: " + e.getMessage());
             s_logger.trace("Network Rule Conflict: ", e);
             throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, e.getMessage());
+        } catch (VPNProviderNotFoundException e) {
+
+            s_logger.info(e.getMessage());
+            s_logger.trace(e);
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
         }
     }
 
     @Override
     public void execute() {
         try {
-            RemoteAccessVpn result = _ravService.startRemoteAccessVpn(publicIpId, getOpenFirewall());
+
+            RemoteAccessVpn result = this.provider.startRemoteAccessVpn(getEntityId(), getOpenFirewall());
             if (result != null) {
+
                 RemoteAccessVpnResponse response = _responseGenerator.createRemoteAccessVpnResponse(result);
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
+
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create remote access vpn");
             }
         } catch (ResourceUnavailableException ex) {
