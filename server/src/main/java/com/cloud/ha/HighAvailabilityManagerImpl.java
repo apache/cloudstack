@@ -717,6 +717,10 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             s_logger.info("Unable to find vm: " + vmId + ", skipping migrate.");
             return null;
         }
+        if (VirtualMachine.State.Stopped.equals(vm.getState())) {
+            s_logger.info(String.format("vm %s is Stopped, skipping migrate.", vm));
+            return null;
+        }
         if (VirtualMachine.State.Running.equals(vm.getState()) && srcHostId != vm.getHostId()) {
             s_logger.info(String.format("VM %s is running on a different host %s, skipping migration", vm, vm.getHostId()));
             return null;
