@@ -204,7 +204,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
             account = vmProfile.getOwner();
         }
 
-        pools = reorderStoragePoolsBasedOnAlgorithm(pools, plan, account, VolumeOrchestrationService.VolumeAllocationAlgorithm.value());
+        pools = reorderStoragePoolsBasedOnAlgorithm(pools, plan, account);
 
         if (vmProfile.getVirtualMachine() == null) {
             if (logger.isTraceEnabled()) {
@@ -221,7 +221,8 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
         return pools;
     }
 
-    List<StoragePool> reorderStoragePoolsBasedOnAlgorithm(List<StoragePool> pools, DeploymentPlan plan, Account account, String volumeAllocationAlgorithm) {
+    List<StoragePool> reorderStoragePoolsBasedOnAlgorithm(List<StoragePool> pools, DeploymentPlan plan, Account account) {
+        String volumeAllocationAlgorithm = VolumeOrchestrationService.VolumeAllocationAlgorithm.value();
         logger.debug("Using volume allocation algorithm {} to reorder pools.", volumeAllocationAlgorithm);
         if (volumeAllocationAlgorithm.equals("random") || volumeAllocationAlgorithm.equals("userconcentratedpod_random") || (account == null)) {
             reorderRandomPools(pools);

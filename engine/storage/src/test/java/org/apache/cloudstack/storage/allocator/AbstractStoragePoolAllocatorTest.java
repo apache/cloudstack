@@ -26,6 +26,8 @@ import com.cloud.user.Account;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineProfile;
 
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 
 import org.junit.After;
@@ -37,6 +39,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -74,26 +77,28 @@ public class AbstractStoragePoolAllocatorTest {
     }
 
     @Test
-    public void reorderStoragePoolsBasedOnAlgorithm_random() {
-        allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account, "random");
+    public void reorderStoragePoolsBasedOnAlgorithm_random() throws Exception {
+        overrideDefaultConfigValue( VolumeOrchestrationService.VolumeAllocationAlgorithm, "random");
+        allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account);
         Mockito.verify(allocator, Mockito.times(0)).reorderPoolsByCapacity(plan, pools);
         Mockito.verify(allocator, Mockito.times(0)).reorderPoolsByNumberOfVolumes(plan, pools, account);
         Mockito.verify(allocator, Mockito.times(1)).reorderRandomPools(pools);
     }
 
     @Test
-    public void reorderStoragePoolsBasedOnAlgorithm_userdispersing() {
+    public void reorderStoragePoolsBasedOnAlgorithm_userdispersing() throws Exception {
+        overrideDefaultConfigValue(VolumeOrchestrationService.VolumeAllocationAlgorithm, "userdispersing");
         Mockito.doReturn(pools).when(allocator).reorderPoolsByNumberOfVolumes(plan, pools, account);
-        allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account,"userdispersing");
+        allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account);
         Mockito.verify(allocator, Mockito.times(0)).reorderPoolsByCapacity(plan, pools);
         Mockito.verify(allocator, Mockito.times(1)).reorderPoolsByNumberOfVolumes(plan, pools, account);
         Mockito.verify(allocator, Mockito.times(0)).reorderRandomPools(pools);
     }
 
     @Test
-    public void reorderStoragePoolsBasedOnAlgorithm_userdispersing_reorder_check() {
+    public void reorderStoragePoolsBasedOnAlgorithm_userdispersing_reorder_check() throws Exception {
+        overrideDefaultConfigValue(VolumeOrchestrationService.VolumeAllocationAlgorithm, "userdispersing");
         allocator.volumeDao = volumeDao;
-
         when(plan.getDataCenterId()).thenReturn(1l);
         when(plan.getPodId()).thenReturn(1l);
         when(plan.getClusterId()).thenReturn(1l);
@@ -103,7 +108,7 @@ public class AbstractStoragePoolAllocatorTest {
         poolIds.add(9l);
         when(volumeDao.listPoolIdsByVolumeCount(1l,1l,1l,1l)).thenReturn(poolIds);
 
-        List<StoragePool> reorderedPools = allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account, "userdispersing");
+        List<StoragePool> reorderedPools = allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account);
         Assert.assertEquals(poolIds.size(),reorderedPools.size());
 
         Mockito.verify(allocator, Mockito.times(0)).reorderPoolsByCapacity(plan, pools);
@@ -113,9 +118,10 @@ public class AbstractStoragePoolAllocatorTest {
     }
 
     @Test
-    public void reorderStoragePoolsBasedOnAlgorithm_firstfitleastconsumed() {
+    public void reorderStoragePoolsBasedOnAlgorithm_firstfitleastconsumed() throws Exception {
+        overrideDefaultConfigValue(VolumeOrchestrationService.VolumeAllocationAlgorithm, "firstfitleastconsumed");
         Mockito.doReturn(pools).when(allocator).reorderPoolsByCapacity(plan, pools);
-        allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account, "firstfitleastconsumed");
+        allocator.reorderStoragePoolsBasedOnAlgorithm(pools, plan, account);
         Mockito.verify(allocator, Mockito.times(1)).reorderPoolsByCapacity(plan, pools);
         Mockito.verify(allocator, Mockito.times(0)).reorderPoolsByNumberOfVolumes(plan, pools, account);
         Mockito.verify(allocator, Mockito.times(0)).reorderRandomPools(pools);
@@ -129,6 +135,12 @@ public class AbstractStoragePoolAllocatorTest {
             firstchoice.add(pools.get(0).getId());
         }
         Assert.assertTrue(firstchoice.size() > 2);
+    }
+
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String value) throws IllegalAccessException, NoSuchFieldException {
+        final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+        f.setAccessible(true);
+        f.set(configKey, value);
     }
 }
 
