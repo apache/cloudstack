@@ -1110,7 +1110,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     _mshostDao.update(_mshostId, mshost);
                     mshostStatusDao.update(mshostStatus.getId(), mshostStatus);
                 } else {
-                    s_logger.warn(String.format("Found a management server host [%s] without a status. This should never happen!", mshost));
+                    logger.warn(String.format("Found a management server host [%s] without a status. This should never happen!", mshost));
                     mshostStatus = new ManagementServerStatusVO();
                     mshostStatus.setMsId(mshost.getUuid());
                     mshostStatus.setLastSystemBoot(new Date());
