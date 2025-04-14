@@ -378,23 +378,21 @@ public class ConfigKey<T> {
         if (type.isAssignableFrom(Boolean.class)) {
             return (T)Boolean.valueOf(value);
         } else if (type.isAssignableFrom(Integer.class)) {
-            return (T)new Integer(Integer.parseInt(value) * multiplier.intValue());
+            return (T)Integer.valueOf(Integer.parseInt(value) * multiplier.intValue());
         } else if (type.isAssignableFrom(Long.class)) {
-            return (T)new Long(Long.parseLong(value) * multiplier.longValue());
+            return (T)Long.valueOf(Long.parseLong(value) * multiplier.longValue());
         } else if (type.isAssignableFrom(Short.class)) {
-            return (T)new Short(Short.parseShort(value));
+            return (T)Short.valueOf(Short.parseShort(value));
         } else if (type.isAssignableFrom(String.class)) {
             return (T)value;
         } else if (type.isAssignableFrom(Float.class)) {
-            return (T)new Float(Float.parseFloat(value) * multiplier.floatValue());
+            return (T)Float.valueOf(Float.parseFloat(value) * multiplier.floatValue());
         } else if (type.isAssignableFrom(Double.class)) {
-            return (T)new Double(Double.parseDouble(value) * multiplier.doubleValue());
-        } else if (type.isAssignableFrom(String.class)) {
-            return (T)value;
+            return (T)Double.valueOf(Double.parseDouble(value) * multiplier.doubleValue());
         } else if (type.isAssignableFrom(Date.class)) {
             return (T)Date.valueOf(value);
         } else if (type.isAssignableFrom(Character.class)) {
-            return (T)new Character(value.charAt(0));
+            return (T)Character.valueOf(value.charAt(0));
         } else {
             throw new CloudRuntimeException("Unsupported data type for config values: " + type);
         }
