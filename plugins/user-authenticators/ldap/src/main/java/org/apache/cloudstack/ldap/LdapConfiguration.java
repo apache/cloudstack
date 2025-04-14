@@ -173,7 +173,7 @@ public class LdapConfiguration implements Configurable{
             "ldap.truststore",
             null,
             "Sets the path to the truststore to use for SSL",
-            true,
+            false,
             ConfigKey.Scope.Domain);
     private static final ConfigKey<String> ldapTrustStorePassword = new ConfigKey<String>(
             "Secure",
@@ -181,7 +181,7 @@ public class LdapConfiguration implements Configurable{
             "ldap.truststore.password",
             null,
             "Sets the password for the truststore",
-            true,
+            false,
             ConfigKey.Scope.Domain);
 
     private final static int scope = SearchControls.SUBTREE_SCOPE;
