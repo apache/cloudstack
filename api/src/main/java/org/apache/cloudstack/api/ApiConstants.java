@@ -46,7 +46,6 @@ public class ApiConstants {
     public static final String BACKUP_OFFERING_NAME = "backupofferingname";
     public static final String BACKUP_OFFERING_ID = "backupofferingid";
     public static final String BASE64_IMAGE = "base64image";
-    public static final String BATCH_SIZE = "batchsize";
     public static final String BITS = "bits";
     public static final String BOOTABLE = "bootable";
     public static final String BIND_DN = "binddn";
@@ -438,12 +437,11 @@ public class ApiConstants {
     public static final String STATE = "state";
     public static final String STATS = "stats";
     public static final String STATUS = "status";
+    public static final String STORAGE_TYPE = "storagetype";
+    public static final String STORAGE_POLICY = "storagepolicy";
+    public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
     public static final String STORAGE_CAPABILITIES = "storagecapabilities";
     public static final String STORAGE_CUSTOM_STATS = "storagecustomstats";
-    public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
-    public static final String STORAGE_POLICY = "storagepolicy";
-    public static final String STORAGE_POOL = "storagepool";
-    public static final String STORAGE_TYPE = "storagetype";
     public static final String SUBNET = "subnet";
     public static final String OWNER = "owner";
     public static final String SWAP_OWNER = "swapowner";
@@ -1108,7 +1106,6 @@ public class ApiConstants {
     public static final String PARAMETER_DESCRIPTION_IS_TAG_A_RULE = "Whether the informed tag is a JS interpretable rule or not.";
 
     public static final String NFS_MOUNT_OPTIONS = "nfsmountopts";
-    public static final String VMWARE_DC = "vmwaredc";
 
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
