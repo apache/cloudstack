@@ -48,6 +48,7 @@ import java.util.regex.Pattern;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.configuration.ConfigurationManager;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -1728,9 +1729,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                 final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(routerJoinVO.getNetworkId()).getNetworkOfferingId());
                 if (offering.getConcurrentConnections() == null) {
-                    loadBalancingData.append("maxconn=").append(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
+                    loadBalancingData.append("maxconn=").append(ConfigurationManager.NETWORK_LB_HAPROXY_MAX_CONN.value());
                 } else {
-                    loadBalancingData.append("maxconn=").append(offering.getConcurrentConnections().toString());
+                    loadBalancingData.append("maxconn=").append(offering.getConcurrentConnections());
                 }
 
                 loadBalancingData.append(",sourcePortStart=").append(firewallRuleVO.getSourcePortStart())
