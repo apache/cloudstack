@@ -1185,20 +1185,20 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     private List<String> getFailingChecks(DomainRouterVO router, GetRouterMonitorResultsAnswer answer) {
 
         if (answer == null) {
-            logger.warn("Unable to fetch monitor results for router " + router);
-            resetRouterHealthChecksAndConnectivity(router.getId(), false, false, "Communication failed");
+            logger.warn("Unable to fetch monitor results for router {}", router);
+            resetRouterHealthChecksAndConnectivity(router.getId(), RouterHealthStatus.UNKNOWN, RouterHealthStatus.UNKNOWN, "Communication failed");
             return Arrays.asList(CONNECTIVITY_TEST);
         } else if (!answer.getResult()) {
             logger.warn("Failed to fetch monitor results from router " + router + " with details: " + answer.getDetails());
             if (StringUtils.isNotBlank(answer.getDetails()) && answer.getDetails().equalsIgnoreCase(READONLY_FILESYSTEM_ERROR)) {
-                resetRouterHealthChecksAndConnectivity(router.getId(), true, false, "Failed to write: " + answer.getDetails());
+                resetRouterHealthChecksAndConnectivity(router.getId(), RouterHealthStatus.SUCCESS, RouterHealthStatus.FAILURE, "Failed to write: " + answer.getDetails());
                 return Arrays.asList(FILESYSTEM_WRITABLE_TEST);
             } else {
-                resetRouterHealthChecksAndConnectivity(router.getId(), false, false, "Failed to fetch results with details: " + answer.getDetails());
+                resetRouterHealthChecksAndConnectivity(router.getId(), RouterHealthStatus.FAILURE, RouterHealthStatus.UNKNOWN, "Failed to fetch results with details: " + answer.getDetails());
                 return Arrays.asList(CONNECTIVITY_TEST);
             }
         } else {
-            resetRouterHealthChecksAndConnectivity(router.getId(), true, true, "Successfully fetched data");
+            resetRouterHealthChecksAndConnectivity(router.getId(), RouterHealthStatus.SUCCESS, RouterHealthStatus.SUCCESS, "Successfully fetched data");
             updateDbHealthChecksFromRouterResponse(router, answer.getMonitoringResults());
             return answer.getFailingChecks();
         }
@@ -1297,7 +1297,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
     /**
      * Attempts recreation of router by restarting with cleanup a VPC if any or a guest network associated in case no VPC.
-     * @param routerId - the id of the router to be recreated.
+     * @param router - the router to be recreated.
      * @return true if successfully restart is attempted else false.
      */
     private boolean recreateRouter(DomainRouterVO router) {
@@ -1337,13 +1337,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         return healthCheckResults;
     }
 
-    private void resetRouterHealthChecksAndConnectivity(final long routerId, boolean connected, boolean writable, String message) {
+    private void resetRouterHealthChecksAndConnectivity(final long routerId, VirtualNetworkApplianceService.RouterHealthStatus connected, VirtualNetworkApplianceService.RouterHealthStatus writable, String message) {
         routerHealthCheckResultDao.expungeHealthChecks(routerId);
-        updateRouterHealthCheckResult(routerId, CONNECTIVITY_TEST, "basic", connected, connected ? "Successfully connected to router" : message);
-        updateRouterHealthCheckResult(routerId, FILESYSTEM_WRITABLE_TEST, "basic", writable, writable ? "Successfully written to file system" : message);
+        updateRouterHealthCheckResult(routerId, CONNECTIVITY_TEST, "basic", connected, connected.equals(RouterHealthStatus.SUCCESS) ? "Successfully connected to router" : message);
+        updateRouterHealthCheckResult(routerId, FILESYSTEM_WRITABLE_TEST, "basic", writable, writable.equals(RouterHealthStatus.SUCCESS) ? "Successfully written to file system" : message);
     }
 
-    private void updateRouterHealthCheckResult(final long routerId, String checkName, String checkType, boolean checkResult, String checkMessage) {
+    private void updateRouterHealthCheckResult(final long routerId, String checkName, String checkType, VirtualNetworkApplianceService.RouterHealthStatus checkResult, String checkMessage) {
         boolean newHealthCheckEntry = false;
         RouterHealthCheckResultVO connectivityVO = routerHealthCheckResultDao.getRouterHealthCheckResult(routerId, checkName, checkType);
         if (connectivityVO == null) {
@@ -1367,7 +1367,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     private RouterHealthCheckResultVO parseHealthCheckVOFromJson(final long routerId,
             final String checkName, final String checkType, final Map<String, String> checkData,
             final Map<String, Map<String, RouterHealthCheckResultVO>> checksInDb) {
-        boolean success = Boolean.parseBoolean(checkData.get("success"));
+        VirtualNetworkApplianceService.RouterHealthStatus success = RouterHealthStatus.valueOf(checkData.get("success"));
         Date lastUpdate = new Date(Long.parseLong(checkData.get("lastUpdate")));
         double lastRunDuration = Double.parseDouble(checkData.get("lastRunDuration"));
         String message = checkData.get("message");
@@ -1574,7 +1574,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         List<String> failingChecks = getFailingChecks(router, answer);
         handleFailingChecks(router, failingChecks);
 
-        return new Pair<Boolean, String>(success, resultDetails);
+        return new Pair<>(success, resultDetails);
     }
 
     protected class UpdateRouterHealthChecksConfigTask extends ManagedContextRunnable {
