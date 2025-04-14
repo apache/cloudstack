@@ -64,6 +64,7 @@ import org.apache.cloudstack.api.command.admin.backup.ImportBackupOfferingCmd;
 import org.apache.cloudstack.api.command.admin.backup.ListBackupProviderOfferingsCmd;
 import org.apache.cloudstack.api.command.admin.backup.ListBackupProvidersCmd;
 import org.apache.cloudstack.api.command.admin.backup.UpdateBackupOfferingCmd;
+import org.apache.cloudstack.api.command.admin.vm.CreateVMFromBackupCmdByAdmin;
 import org.apache.cloudstack.api.command.user.backup.AssignVirtualMachineToBackupOfferingCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.CreateBackupScheduleCmd;
@@ -1400,6 +1401,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(DeleteBackupRepositoryCmd.class);
         cmdList.add(ListBackupRepositoriesCmd.class);
         cmdList.add(CreateVMFromBackupCmd.class);
+        cmdList.add(CreateVMFromBackupCmdByAdmin.class);
         return cmdList;
     }
 

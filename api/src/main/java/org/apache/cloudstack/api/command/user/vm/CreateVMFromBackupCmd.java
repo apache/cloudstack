@@ -19,14 +19,16 @@ package org.apache.cloudstack.api.command.user.vm;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.backup.BackupManager;
 
@@ -46,11 +48,14 @@ import com.cloud.vm.VirtualMachine;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true,
         since = "4.21.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-
-public class CreateVMFromBackupCmd extends DeployVMCmd implements UserCmd {
+public class CreateVMFromBackupCmd extends BaseDeployVMCmd {
 
     @Inject
     BackupManager backupManager;
+
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.BACKUP_ID,
             type = CommandType.UUID,
@@ -59,8 +64,28 @@ public class CreateVMFromBackupCmd extends DeployVMCmd implements UserCmd {
             description = "backup ID to create the VM from")
     private Long backupId;
 
+    @ACL
+    @Parameter(name = ApiConstants.SERVICE_OFFERING_ID, type = CommandType.UUID, entityType = ServiceOfferingResponse.class, description = "the ID of the service offering for the virtual machine")
+    private Long serviceOfferingId;
+
+    @ACL
+    @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "the ID of the template for the virtual machine")
+    private Long templateId;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
     public Long getBackupId() {
         return backupId;
+    }
+
+    public Long getServiceOfferingId() {
+        return serviceOfferingId;
+    }
+
+    public Long getTemplateId() {
+        return templateId;
     }
 
     @Override

@@ -70,6 +70,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.admin.vm.CreateVMFromBackupCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.DeployVMCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.vm.ExpungeVMCmd;
 import org.apache.cloudstack.api.command.admin.vm.RecoverVMCmd;
@@ -9259,7 +9260,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (cmd.getStartVm()) {
-            vm = startVirtualMachine(vmId, null, null, null, diskOfferingMap, additonalParams, null);
+            Long podId = null;
+            Long clusterId = null;
+            if (cmd instanceof CreateVMFromBackupCmdByAdmin) {
+                CreateVMFromBackupCmdByAdmin adminCmd = (CreateVMFromBackupCmdByAdmin)cmd;
+                podId = adminCmd.getPodId();
+                clusterId = adminCmd.getClusterId();
+            }
+            vm = startVirtualMachine(vmId, podId, clusterId, cmd.getHostId(), diskOfferingMap, additonalParams, cmd.getDeploymentPlanner());
         }
         return vm;
     }
