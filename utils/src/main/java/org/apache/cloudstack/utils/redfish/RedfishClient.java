@@ -29,6 +29,7 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -340,7 +341,7 @@ public class RedfishClient {
         try {
             in = response.getEntity().getContent();
             BufferedReader streamReader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-            jsonString = streamReader.readLine();
+            jsonString = streamReader.lines().collect(Collectors.joining());
         } catch (UnsupportedOperationException | IOException e) {
             throw new RedfishException("Failed to process system Response", e);
         }
@@ -384,8 +385,7 @@ public class RedfishClient {
         try {
             in = response.getEntity().getContent();
             BufferedReader streamReader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-
-            jsonString = streamReader.readLine();
+            jsonString = streamReader.lines().collect(Collectors.joining());
             String powerState = new JsonParser().parse(jsonString).getAsJsonObject().get(POWER_STATE).getAsString();
             return RedfishPowerState.valueOf(powerState);
         } catch (UnsupportedOperationException | IOException e) {
