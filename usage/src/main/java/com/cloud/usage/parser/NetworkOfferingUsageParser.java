@@ -116,7 +116,7 @@ public class NetworkOfferingUsageParser {
             // Only create a usage record if we have a runningTime of bigger than zero.
             if (useTime > 0L) {
                 NOInfo info = noMap.get(noIdKey);
-                createUsageRecord(UsageTypes.NETWORK_OFFERING, useTime, startDate, endDate, account, info.getVmId(), info.getNOId(), info.getZoneId(), info.isDefault());
+                createUsageRecord(UsageTypes.NETWORK_OFFERING, useTime, startDate, endDate, account, info.getVmId(), info.getNOId(), info.getZoneId());
             }
         }
 
@@ -135,8 +135,7 @@ public class NetworkOfferingUsageParser {
         usageDataMap.put(key, noUsageInfo);
     }
 
-    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, long noId, long zoneId,
-        boolean isDefault) {
+    private static void createUsageRecord(int type, long runningTime, Date startDate, Date endDate, AccountVO account, long vmId, long noId, long zoneId) {
         // Our smallest increment is hourly for now
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Total running time " + runningTime + "ms");
@@ -155,9 +154,8 @@ public class NetworkOfferingUsageParser {
         // Create the usage record
         String usageDesc = "Network offering:" + noId + " for Vm : " + vmId + " usage time";
 
-        long defaultNic = (isDefault) ? 1 : 0;
         UsageVO usageRecord =
-            new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), vmId, null, noId, null, defaultNic,
+            new UsageVO(zoneId, account.getId(), account.getDomainId(), usageDesc, usageDisplay + " Hrs", type, new Double(usage), vmId, null, noId, null, noId,
                 null, startDate, endDate);
         s_usageDao.persist(usageRecord);
     }
