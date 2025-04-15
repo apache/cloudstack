@@ -256,19 +256,13 @@ export default {
     listZoneVmwareDcs () {
       this.loading = true
       api('listVmwareDcs', { zoneid: this.sourcezoneid }).then(response => {
-
         if (response.listvmwaredcsresponse.VMwareDC && response.listvmwaredcsresponse.VMwareDC.length > 0) {
           this.existingvcenter = response.listvmwaredcsresponse.VMwareDC
         }
       }).catch(error => {
-        if (doNotify) {
-          this.$notifyError(error)
-        }
-        this.hosts = []
-        return false
+        this.$notifyError(error)
       }).finally(() => {
         this.loading = false
-        return true
       })
     },
     onSelectExistingVmwareDatacenter (value) {
