@@ -132,6 +132,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected SearchBuilder<HostVO> ResponsibleMsSearch;
     protected SearchBuilder<HostVO> ResponsibleMsDcSearch;
     protected GenericSearchBuilder<HostVO, String> ResponsibleMsIdSearch;
+    protected GenericSearchBuilder<HostVO, String> LastMsIdSearch;
     protected SearchBuilder<HostVO> HostTypeClusterCountSearch;
     protected SearchBuilder<HostVO> HostTypeZoneCountSearch;
     protected SearchBuilder<HostVO> ClusterStatusSearch;
@@ -211,6 +212,11 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         ResponsibleMsIdSearch.selectFields(ResponsibleMsIdSearch.entity().getUuid());
         ResponsibleMsIdSearch.and("managementServerId", ResponsibleMsIdSearch.entity().getManagementServerId(), SearchCriteria.Op.EQ);
         ResponsibleMsIdSearch.done();
+
+        LastMsIdSearch = createSearchBuilder(String.class);
+        LastMsIdSearch.selectFields(LastMsIdSearch.entity().getUuid());
+        LastMsIdSearch.and("lastManagementServerId", LastMsIdSearch.entity().getLastManagementServerId(), SearchCriteria.Op.EQ);
+        LastMsIdSearch.done();
 
         HostTypeClusterCountSearch = createSearchBuilder();
         HostTypeClusterCountSearch.and("cluster", HostTypeClusterCountSearch.entity().getClusterId(), SearchCriteria.Op.EQ);
@@ -1573,6 +1579,13 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public List<String> listByLastMs(long msId) {
+        SearchCriteria<String> sc = LastMsIdSearch.create();
+        sc.addAnd("lastManagementServerId", SearchCriteria.Op.EQ, msId);
+        return customSearch(sc, null);
+    }
+
+    @Override
     public List<String> listOrderedHostsHypervisorVersionsInDatacenter(long datacenterId, HypervisorType hypervisorType) {
         PreparedStatement pstmt;
         List<String> result = new ArrayList<>();
@@ -1748,13 +1761,15 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
-    public List<Long> findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(final Long zoneId, final Long clusterId,
+    public List<Long> findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(final Long zoneId,
+                final Long clusterId, final Long managementServerId,
                 final List<ResourceState> resourceStates, final List<Type> types,
                 final List<Hypervisor.HypervisorType> hypervisorTypes) {
         GenericSearchBuilder<HostVO, Long> sb = createSearchBuilder(Long.class);
         sb.selectFields(sb.entity().getId());
         sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        sb.and("msId", sb.entity().getManagementServerId(), SearchCriteria.Op.EQ);
         sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.IN);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.IN);
         if (CollectionUtils.isNotEmpty(hypervisorTypes)) {
@@ -1769,6 +1784,9 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
         if (clusterId != null) {
             sc.setParameters("clusterId", clusterId);
+        }
+        if (managementServerId != null) {
+            sc.setParameters("msId", managementServerId);
         }
         if (CollectionUtils.isNotEmpty(hypervisorTypes)) {
             sc.setParameters("hypervisorTypes", hypervisorTypes.toArray());

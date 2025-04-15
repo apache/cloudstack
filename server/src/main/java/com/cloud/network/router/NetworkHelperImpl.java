@@ -446,7 +446,9 @@ public class NetworkHelperImpl implements NetworkHelper {
         final int retryIndex = 5;
         final ExcludeList[] avoids = new ExcludeList[5];
         avoids[0] = new ExcludeList();
-        avoids[0].addPod(routerToBeAvoid.getPodIdToDeployIn());
+        if (routerToBeAvoid.getPodIdToDeployIn() != null) {
+            avoids[0].addPod(routerToBeAvoid.getPodIdToDeployIn());
+        }
         avoids[1] = new ExcludeList();
         avoids[1].addCluster(_hostDao.findById(routerToBeAvoid.getHostId()).getClusterId());
         avoids[2] = new ExcludeList();

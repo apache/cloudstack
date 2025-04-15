@@ -53,6 +53,9 @@ import com.cloud.agent.api.Command;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
+import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.StringUtils;
@@ -109,6 +112,25 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
     }
 
     @Override
+    public boolean stop() {
+        ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
+        if (msHost != null) {
+            updateLastManagementServerForHosts(msHost.getMsid());
+        }
+        return true;
+    }
+
+    private void updateLastManagementServerForHosts(long msId) {
+        List<HostVO> hosts = hostDao.listHostsByMs(msId);
+        for (HostVO host : hosts) {
+            if (host != null) {
+                host.setLastManagementServerId(msId);
+                hostDao.update(host.getId(), host);
+            }
+        }
+    }
+
+    @Override
     public void registerListener(ManagementServerMaintenanceListener listener) {
         synchronized (_listeners) {
             logger.info("Register management server maintenance listener " + listener.getClass());
@@ -121,6 +143,26 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         synchronized (_listeners) {
             logger.info("Unregister management server maintenance listener " + listener.getClass());
             _listeners.remove(listener);
+        }
+    }
+
+    @Override
+    public void onPreparingForMaintenance() {
+        synchronized (_listeners) {
+            for (final ManagementServerMaintenanceListener listener : _listeners) {
+                logger.info("Invoke, on preparing for maintenance for listener " + listener.getClass());
+                listener.onManagementServerPreparingForMaintenance();
+            }
+        }
+    }
+
+    @Override
+    public void onCancelPreparingForMaintenance() {
+        synchronized (_listeners) {
+            for (final ManagementServerMaintenanceListener listener : _listeners) {
+                logger.info("Invoke, on cancel preparing for maintenance for listener " + listener.getClass());
+                listener.onManagementServerCancelPreparingForMaintenance();
+            }
         }
     }
 
@@ -243,6 +285,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         this.maintenanceStartTime = System.currentTimeMillis();
         this.lbAlgorithm = lbAlorithm;
         jobManager.disableAsyncJobs();
+        onPreparingForMaintenance();
         waitForPendingJobs();
     }
 
@@ -257,8 +300,13 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         jobManager.enableAsyncJobs();
         cancelWaitForPendingJobs();
         ManagementServerHostVO msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
-        if (msHost != null && State.Maintenance.equals(msHost.getState())) {
-            onCancelMaintenance();
+        if (msHost != null) {
+            if (State.PreparingForMaintenance.equals(msHost.getState())) {
+                onCancelPreparingForMaintenance();
+            }
+            if (State.Maintenance.equals(msHost.getState())) {
+                onCancelMaintenance();
+            }
         }
     }
 
@@ -284,6 +332,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_MS_SHUTDOWN_PREPARE, eventDescription = "preparing for shutdown")
     public ManagementServerMaintenanceResponse prepareForShutdown(PrepareForShutdownCmd cmd) {
         ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
         if (msHost == null) {
@@ -294,19 +343,18 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
             throw new CloudRuntimeException("Management server is not in the right state to prepare for shutdown");
         }
 
+        checkAnyMsInPreparingStates("prepare for shutdown");
+
         final Command[] cmds = new Command[1];
         cmds[0] = new PrepareForShutdownManagementServerHostCommand(msHost.getMsid());
-        String result = clusterManager.execute(String.valueOf(msHost.getMsid()), 0, gson.toJson(cmds), true);
-        logger.info("PrepareForShutdownCmd result : " + result);
-        if (!result.startsWith("Success")) {
-            throw new CloudRuntimeException(result);
-        }
+        executeCmd(msHost, cmds);
 
         msHostDao.updateState(msHost.getId(), State.PreparingForShutDown);
         return prepareMaintenanceResponse(cmd.getManagementServerId());
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_MS_SHUTDOWN, eventDescription = "triggering shutdown")
     public ManagementServerMaintenanceResponse triggerShutdown(TriggerShutdownCmd cmd) {
         ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
         if (msHost == null) {
@@ -319,22 +367,20 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         }
 
         if (State.Up.equals(msHost.getState())) {
+            checkAnyMsInPreparingStates("trigger shutdown");
             msHostDao.updateState(msHost.getId(), State.PreparingForShutDown);
         }
 
         final Command[] cmds = new Command[1];
         cmds[0] = new TriggerShutdownManagementServerHostCommand(msHost.getMsid());
-        String result = clusterManager.execute(String.valueOf(msHost.getMsid()), 0, gson.toJson(cmds), true);
-        logger.info("TriggerShutdownCmd result : " + result);
-        if (!result.startsWith("Success")) {
-            throw new CloudRuntimeException(result);
-        }
+        executeCmd(msHost, cmds);
 
         msHostDao.updateState(msHost.getId(), State.ShuttingDown);
         return prepareMaintenanceResponse(cmd.getManagementServerId());
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_MS_SHUTDOWN_CANCEL, eventDescription = "cancelling shutdown")
     public ManagementServerMaintenanceResponse cancelShutdown(CancelShutdownCmd cmd) {
         ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
         if (msHost == null) {
@@ -347,17 +393,14 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
 
         final Command[] cmds = new Command[1];
         cmds[0] = new CancelShutdownManagementServerHostCommand(msHost.getMsid());
-        String result = clusterManager.execute(String.valueOf(msHost.getMsid()), 0, gson.toJson(cmds), true);
-        logger.info("CancelShutdownCmd result : " + result);
-        if (!result.startsWith("Success")) {
-            throw new CloudRuntimeException(result);
-        }
+        executeCmd(msHost, cmds);
 
         msHostDao.updateState(msHost.getId(), State.Up);
         return prepareMaintenanceResponse(cmd.getManagementServerId());
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_MS_MAINTENANCE_PREPARE, eventDescription = "preparing for maintenance")
     public ManagementServerMaintenanceResponse prepareForMaintenance(PrepareForMaintenanceCmd cmd) {
         if (StringUtils.isNotBlank(cmd.getAlgorithm())) {
             indirectAgentLB.checkLBAlgorithmName(cmd.getAlgorithm());
@@ -381,10 +424,7 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
             throw new CloudRuntimeException("Management server is not in the right state to prepare for maintenance");
         }
 
-        final List<ManagementServerHostVO> preparingForMaintenanceMsList = msHostDao.listBy(State.PreparingForMaintenance);
-        if (CollectionUtils.isNotEmpty(preparingForMaintenanceMsList)) {
-            throw new CloudRuntimeException("Cannot prepare for maintenance, there are other management servers preparing for maintenance");
-        }
+        checkAnyMsInPreparingStates("prepare for maintenance");
 
         if (indirectAgentLB.haveAgentBasedHosts(msHost.getMsid())) {
             List<String> indirectAgentMsList = indirectAgentLB.getManagementServerList();
@@ -396,23 +436,16 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
             }
         }
 
-        List<String> lastAgents = hostDao.listByMs(cmd.getManagementServerId());
-        agentMgr.setLastAgents(lastAgents);
-
         final Command[] cmds = new Command[1];
         cmds[0] = new PrepareForMaintenanceManagementServerHostCommand(msHost.getMsid(), cmd.getAlgorithm());
-        String result = clusterManager.execute(String.valueOf(msHost.getMsid()), 0, gson.toJson(cmds), true);
-        logger.info("PrepareForMaintenanceCmd result : " + result);
-        if (!result.startsWith("Success")) {
-            agentMgr.setLastAgents(null);
-            throw new CloudRuntimeException(result);
-        }
+        executeCmd(msHost, cmds);
 
         msHostDao.updateState(msHost.getId(), State.PreparingForMaintenance);
         return prepareMaintenanceResponse(cmd.getManagementServerId());
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_MS_MAINTENANCE_CANCEL, eventDescription = "cancelling maintenance")
     public ManagementServerMaintenanceResponse cancelMaintenance(CancelMaintenanceCmd cmd) {
         ManagementServerHostVO msHost = msHostDao.findById(cmd.getManagementServerId());
         if (msHost == null) {
@@ -425,15 +458,29 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
 
         final Command[] cmds = new Command[1];
         cmds[0] = new CancelMaintenanceManagementServerHostCommand(msHost.getMsid());
-        String result = clusterManager.execute(String.valueOf(msHost.getMsid()), 0, gson.toJson(cmds), true);
-        logger.info("CancelMaintenanceCmd result : " + result);
+        executeCmd(msHost, cmds);
+
+        msHostDao.updateState(msHost.getId(), State.Up);
+        return prepareMaintenanceResponse(cmd.getManagementServerId());
+    }
+
+    private void executeCmd(ManagementServerHostVO msHost, Command[] cmds) {
+        if (msHost == null) {
+            throw new CloudRuntimeException("Management server node not specified, to execute the cmd");
+        }
+        if (cmds == null || cmds.length <= 0) {
+            throw new CloudRuntimeException(String.format("Cmd not specified, to execute on the management server node %s", msHost));
+        }
+        String result = clusterManager.execute(String.valueOf(msHost.getMsid()), 0, gson.toJson(cmds), false);
+        if (result == null) {
+            String msg = String.format("Unable to reach or execute %s on the management server node: %s", cmds[0], msHost);
+            logger.warn(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        logger.info(String.format("Cmd %s - result: %s", cmds[0], result));
         if (!result.startsWith("Success")) {
             throw new CloudRuntimeException(result);
         }
-
-        msHostDao.updateState(msHost.getId(), State.Up);
-        agentMgr.setLastAgents(null);
-        return prepareMaintenanceResponse(cmd.getManagementServerId());
     }
 
     @Override
@@ -445,7 +492,15 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         if (msHost == null) {
             msHost = msHostDao.findByMsid(ManagementServerNode.getManagementServerId());
         }
+        onCancelPreparingForMaintenance();
         msHostDao.updateState(msHost.getId(), State.Up);
+    }
+
+    private void checkAnyMsInPreparingStates(String operation) {
+        final List<ManagementServerHostVO> preparingForMaintenanceOrShutDownMsList = msHostDao.listBy(State.PreparingForMaintenance, State.PreparingForShutDown);
+        if (CollectionUtils.isNotEmpty(preparingForMaintenanceOrShutDownMsList)) {
+            throw new CloudRuntimeException(String.format("Cannot %s, there are other management servers preparing for maintenance/shutdown", operation));
+        }
     }
 
     private ManagementServerMaintenanceResponse prepareMaintenanceResponse(Long managementServerId) {
@@ -465,8 +520,8 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
         boolean maintenanceInitiatedForMS = Arrays.asList(maintenanceStates).contains(msHost.getState());
         boolean shutdownTriggeredForMS = Arrays.asList(shutdownStates).contains(msHost.getState());
         msIds = new Long[]{msHost.getMsid()};
-        List<String> agents = hostDao.listByMs(managementServerId);
-        long agentsCount = hostDao.countByMs(managementServerId);
+        List<String> agents = hostDao.listByMs(msHost.getMsid());
+        long agentsCount = agents.size();
         long pendingJobCount = countPendingJobs(msIds);
         return new ManagementServerMaintenanceResponse(msHost.getUuid(), msHost.getState(), maintenanceInitiatedForMS, shutdownTriggeredForMS,  pendingJobCount == 0, pendingJobCount, agentsCount, agents);
     }
@@ -535,7 +590,6 @@ public class ManagementServerMaintenanceManagerImpl extends ManagerBase implemen
                 // No more pending jobs. Good to terminate
                 if (managementServerMaintenanceManager.isShutdownTriggered()) {
                     logger.info("MS is Shutting Down Now");
-                    // update state to down ?
                     System.exit(0);
                 }
                 if (managementServerMaintenanceManager.isPreparingForMaintenance()) {

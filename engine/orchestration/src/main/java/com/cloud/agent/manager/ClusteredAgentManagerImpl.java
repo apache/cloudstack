@@ -151,11 +151,11 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         super();
     }
 
-    protected final ConfigKey<Boolean> EnableLB = new ConfigKey<>(Boolean.class, "agent.lb.enabled", "Advanced", "false", "Enable agent load balancing between management server nodes", true);
+    protected final ConfigKey<Boolean> EnableLB = new ConfigKey<>(Boolean.class, "agent.lb.enabled", "Advanced", "false", "Enable direct agents load balancing between management server nodes", true);
     protected final ConfigKey<Double> ConnectedAgentThreshold = new ConfigKey<>(Double.class, "agent.load.threshold", "Advanced", "0.7",
-            "What percentage of the agents can be held by one management server before load balancing happens", true, EnableLB.key());
-    protected final ConfigKey<Integer> LoadSize = new ConfigKey<>(Integer.class, "direct.agent.load.size", "Advanced", "16", "How many agents to connect to in each round", true);
-    protected final ConfigKey<Integer> ScanInterval = new ConfigKey<>(Integer.class, "direct.agent.scan.interval", "Advanced", "90", "Interval between scans to load agents", false,
+            "What percentage of the direct agents can be held by one management server before load balancing happens", true, EnableLB.key());
+    protected final ConfigKey<Integer> LoadSize = new ConfigKey<>(Integer.class, "direct.agent.load.size", "Advanced", "16", "How many direct agents to connect to in each round", true);
+    protected final ConfigKey<Integer> ScanInterval = new ConfigKey<>(Integer.class, "direct.agent.scan.interval", "Advanced", "90", "Interval between scans to load direct agents", false,
             ConfigKey.Scope.Global, 1000);
 
     @Override
@@ -1395,7 +1395,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             return false;
         }
 
-        long transferStartTime = System.currentTimeMillis();
+        long transferStartTimeInMs = System.currentTimeMillis();
         if (CollectionUtils.isEmpty(getDirectAgentHosts(fromMsId))) {
             logger.info("No direct agent hosts available on management server node {} (id: {}), to transfer", fromMsId, fromMsUuid);
             return true;
@@ -1417,7 +1417,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             }
             logger.debug("Transferring {} direct agents from management server node {} (id: {}) of zone {}", directAgentHostsInDc.size(), fromMsId, fromMsUuid, dc);
             for (HostVO host : directAgentHostsInDc) {
-                long transferElapsedTimeInMs = System.currentTimeMillis() - transferStartTime;
+                long transferElapsedTimeInMs = System.currentTimeMillis() - transferStartTimeInMs;
                 if (transferElapsedTimeInMs >= timeoutDurationInMs) {
                     logger.debug("Stop transferring remaining direct agents from management server node {} (id: {}), timed out", fromMsId, fromMsUuid);
                     return false;
@@ -1484,6 +1484,18 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             hostVO.setLastManagementServerId(msId);
             _hostDao.update(hostId, hostVO);
         }
+    }
+
+    @Override
+    public void onManagementServerPreparingForMaintenance() {
+        logger.debug("Management server preparing for maintenance");
+        super.onManagementServerPreparingForMaintenance();
+    }
+
+    @Override
+    public void onManagementServerCancelPreparingForMaintenance() {
+        logger.debug("Management server cancel preparing for maintenance");
+        super.onManagementServerPreparingForMaintenance();
     }
 
     @Override

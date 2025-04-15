@@ -99,7 +99,7 @@ if [[ -f $destdir/template.properties ]]; then
   failed 2 "Data already exists at destination $destdir"
 fi
 
-destfiles=$(find $destdir -name \*.$ext)
+destfiles=$(sudo find $destdir -name \*.$ext)
 if [[ "$destfiles" != "" ]]; then
   failed 2 "Data already exists at destination $destdir"
 fi
@@ -108,12 +108,12 @@ tmpfolder=/tmp/cloud/templates/
 mkdir -p $tmpfolder
 tmplfile=$tmpfolder/$localfile
 
-sudo touch $tmplfile
+touch $tmplfile
 if [[ $? -ne 0 ]]; then
   failed 2 "Failed to create temporary file in directory $tmpfolder -- is it read-only or full?\n"
 fi
 
-destcap=$(df -P $destdir | awk '{print $4}' | tail -1 )
+destcap=$(sudo df -P $destdir | awk '{print $4}' | tail -1 )
 [ $destcap -lt $DISKSPACE ] && echo "Insufficient free disk space for target folder $destdir: avail=${destcap}k req=${DISKSPACE}k" && failed 4
 
 localcap=$(df -P $tmpfolder | awk '{print $4}' | tail -1 )
@@ -146,9 +146,9 @@ fi
 
 
 tmpltfile=$destdir/$localfile
-tmpltsize=$(ls -l $tmpltfile | awk -F" " '{print $5}')
+tmpltsize=$(sudo ls -l $tmpltfile | awk -F" " '{print $5}')
 if [[ "$ext" == "qcow2" ]]; then
-  vrtmpltsize=$($qemuimgcmd info $tmpltfile | grep -i 'virtual size' | sed -ne 's/.*(\([0-9]*\).*/\1/p' | xargs)
+  vrtmpltsize=$(sudo $qemuimgcmd info $tmpltfile | grep -i 'virtual size' | sed -ne 's/.*(\([0-9]*\).*/\1/p' | xargs)
 else
   vrtmpltsize=$tmpltsize
 fi
