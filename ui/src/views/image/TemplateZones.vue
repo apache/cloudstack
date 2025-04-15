@@ -49,7 +49,7 @@
           <span v-else>{{ $t('label.no') }}</span>
         </template>
         <template v-else-if="column.key === 'created'">
-          <span>{{ $toLocaleDate(record.created) }}</span>
+          <span v-if="record.created">{{ $toLocaleDate(record.created) }}</span>
         </template>
         <template v-if="column.key === 'actions'">
           <tooltip-button
