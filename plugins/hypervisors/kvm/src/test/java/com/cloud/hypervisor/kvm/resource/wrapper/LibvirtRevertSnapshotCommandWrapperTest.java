@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.to.DataStoreTO;
@@ -42,7 +43,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @RunWith(MockitoJUnitRunner.class)
 public class LibvirtRevertSnapshotCommandWrapperTest {
 
-    LibvirtRevertSnapshotCommandWrapper libvirtRevertSnapshotCommandWrapperSpy = Mockito.spy(LibvirtRevertSnapshotCommandWrapper.class);
+    @Spy
+    LibvirtRevertSnapshotCommandWrapper libvirtRevertSnapshotCommandWrapperSpy;
 
     @Mock
     KVMStoragePool kvmStoragePoolPrimaryMock;
@@ -107,7 +109,7 @@ public class LibvirtRevertSnapshotCommandWrapperTest {
         Mockito.doReturn(snapshotPath).when(snapshotObjectToPrimaryMock).getPath();
 
         try (MockedStatic<Files> ignored = Mockito.mockStatic(Files.class)) {
-            Mockito.when(Files.exists(Mockito.any(Path.class), Mockito.any())).thenReturn(true);
+            Mockito.when(Files.exists(Mockito.any(Path.class))).thenReturn(true);
 
             Pair<String, SnapshotObjectTO> result = libvirtRevertSnapshotCommandWrapperSpy.getSnapshot(
                     snapshotObjectToPrimaryMock, snapshotObjectToSecondaryMock,
