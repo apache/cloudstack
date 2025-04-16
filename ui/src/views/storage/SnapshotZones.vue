@@ -137,7 +137,10 @@
               </a-select-option>
             </a-select>
           </a-form-item>
-          <a-form-item ref="storageid" name="storageid" :label="$t('label.storagepools')">
+          <a-form-item :label="$t('label.useStorageReplication')" name="useStorageReplication" ref="useStorageReplication">
+            <a-switch v-model:checked="form.useStorageReplication" />
+          </a-form-item>
+          <a-form-item v-if="isAdmin && form.useStorageReplication" ref="storageid" name="storageid" :label="$t('label.storagepools')">
             <a-select
               id="storage-selection"
               mode="multiple"
@@ -229,6 +232,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
+import { isAdmin } from '@/role'
 import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -331,12 +335,17 @@ export default {
   computed: {
     isCopySnapshotSubmitDisabled () {
       return this.form.storageid.length === 0 && this.form.zoneid.length === 0
+    },
+    isAdmin () {
+      return isAdmin()
     }
   },
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
+      this.form = reactive({
+        useStorageReplication: false
+      })
       this.rules = reactive({
         zoneid: [{ type: 'array', required: false }]
       })
@@ -543,7 +552,9 @@ export default {
       this.form.zoneid = []
       this.form.storageid = []
       this.fetchZoneData()
-      this.fetchStoragePoolData()
+      if (isAdmin) {
+        this.fetchStoragePoolData()
+      }
       this.showCopyActionForm = true
     },
     onShowDeleteModal (record) {
@@ -572,6 +583,7 @@ export default {
         const params = {
           id: this.currentRecord.id,
           sourcezoneid: this.currentRecord.zoneid,
+          useStorageReplication: values.useStorageReplication,
           destzoneids: values.zoneid.join(),
           storageids: values.storageid.join()
         }

@@ -1446,7 +1446,7 @@ class Snapshot:
         if source_zone_id:
             cmd.sourcezoneid = source_zone_id
         if zone_ids:
-            cmd.zoneids = zone_ids
+            cmd.destzoneids = zone_ids
         if pool_ids:
             cmd.storageids = pool_ids
         if usestoragereplication:
