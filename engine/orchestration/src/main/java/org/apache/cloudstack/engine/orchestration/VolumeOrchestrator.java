@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VMTemplateVO;
@@ -73,6 +74,7 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
@@ -257,6 +259,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     StoragePoolHostDao storagePoolHostDao;
     @Inject
     DiskOfferingDao diskOfferingDao;
+    @Inject
+    ConfigDepot configDepot;
+    @Inject
+    ConfigurationDao configurationDao;
 
     @Inject
     protected SnapshotHelper snapshotHelper;
@@ -2030,6 +2036,18 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        return true;
+    }
+
+    @Override
+    public boolean start() {
+        if (configDepot.isNewConfig(VolumeOrchestrationService.VolumeAllocationAlgorithm)) {
+            String vmAllocationAlgo = DeploymentClusterPlanner.VmAllocationAlgorithm.value();
+            if (com.cloud.utils.StringUtils.isNotEmpty(vmAllocationAlgo) && !"random".equalsIgnoreCase(vmAllocationAlgo)) {
+                logger.debug("Updating value for configuration: {} to {}", VolumeOrchestrationService.VolumeAllocationAlgorithm.key(), vmAllocationAlgo);
+                configurationDao.update(VolumeOrchestrationService.VolumeAllocationAlgorithm.key(), vmAllocationAlgo);
+            }
+        }
         return true;
     }
 

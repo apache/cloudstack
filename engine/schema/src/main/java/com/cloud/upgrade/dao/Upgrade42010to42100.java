@@ -23,7 +23,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 
@@ -61,7 +60,6 @@ public class Upgrade42010to42100 extends DbUpgradeAbstractImpl implements DbUpgr
     @Override
     public void performDataMigration(Connection conn) {
         migrateConfigurationScopeToBitmask(conn);
-        migrateVolumeAllocationAlgorithm(conn);
     }
 
     @Override
@@ -118,40 +116,6 @@ public class Upgrade42010to42100 extends DbUpgradeAbstractImpl implements DbUpgr
         } catch (SQLException e) {
             logger.error("Failed to migrate existing configuration scope values to bitmask", e);
             throw new CloudRuntimeException(String.format("Failed to migrate existing configuration scope values to bitmask due to: %s", e.getMessage()));
-        }
-    }
-
-    void migrateVolumeAllocationAlgorithm(Connection conn) {
-        ResultSet rs = null;
-        PreparedStatement pstmt = null;
-        try {
-            String vmAllocationAlgo = "random";
-            pstmt = conn.prepareStatement("SELECT value FROM `cloud`.`configuration` where name = 'vm.allocation.algorithm'");
-            rs = pstmt.executeQuery();
-            if (rs.next()) {
-                vmAllocationAlgo = rs.getString(1);
-            }
-            rs.close();
-            pstmt.close();
-
-            if (!"random".equalsIgnoreCase(vmAllocationAlgo)) {
-                pstmt = conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = 'volume.allocation.algorithm'");
-                pstmt.setString(1, vmAllocationAlgo);
-                pstmt.executeUpdate();
-            }
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to migrate the volume.allocation.algorithm", e);
-        } finally {
-            try {
-                if (rs != null) {
-                    rs.close();
-                }
-                if (pstmt != null) {
-                    pstmt.close();
-                }
-            } catch (SQLException e) {
-                logger.info("[ignored]",e);
-            }
         }
     }
 }

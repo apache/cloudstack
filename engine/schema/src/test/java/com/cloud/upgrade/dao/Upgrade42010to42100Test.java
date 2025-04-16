@@ -16,15 +16,12 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -41,22 +38,7 @@ public class Upgrade42010to42100Test {
     Upgrade42010to42100 upgrade;
 
     @Mock
-    private PreparedStatement mockPreparedStatement;
-    @Mock
-    private ResultSet mockResultSet;
-    @Mock
     private Connection conn;
-
-
-    @Before
-    public void setup() throws Exception {
-        when(conn.prepareStatement("SELECT value FROM `cloud`.`configuration` where name = 'vm.allocation.algorithm'"))
-                .thenReturn(mockPreparedStatement);
-        when(mockPreparedStatement.executeQuery()).thenReturn(mockResultSet);
-        when(mockResultSet.next()).thenReturn(true);
-        when(mockResultSet.getString(1)).thenReturn("random");
-    }
-
 
     @Test
     public void testPerformDataMigration() throws SQLException {
@@ -87,18 +69,5 @@ public class Upgrade42010to42100Test {
                 Mockito.verify(pstmt, Mockito.times(1)).executeUpdate();
             }
         }
-    }
-
-    @Test
-    public void testPerformDataMigrationShouldUpdateVolumeAlgorithm() throws SQLException {
-        when(mockResultSet.getString(1)).thenReturn("userdispersing");
-
-        PreparedStatement updateStmt = Mockito.mock(PreparedStatement.class);
-        when(conn.prepareStatement("UPDATE `cloud`.`configuration` SET value = ? WHERE name = 'volume.allocation.algorithm'"))
-                .thenReturn(updateStmt);
-        doNothing().when(upgrade).migrateConfigurationScopeToBitmask(conn);
-        upgrade.performDataMigration(conn);
-        Mockito.verify(updateStmt).setString(1, "userdispersing");
-        Mockito.verify(updateStmt).executeUpdate();
     }
 }
