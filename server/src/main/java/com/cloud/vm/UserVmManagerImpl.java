@@ -3139,8 +3139,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isVMware = (vm.getHypervisorType() == HypervisorType.VMware);
 
         if (securityGroupIdList != null && isVMware) {
-            throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
-        } else if (securityGroupIdList != null){
+            throw new InvalidParameterValueException("Security group feature is not supported for VMware hypervisor");
+        } else if (securityGroupIdList != null) {
             DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
             List<Long> networkIds = new ArrayList<>();
             try {
@@ -3187,7 +3187,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // Add instance in provided groups
             _securityGroupMgr.addInstanceToGroups(vm, securityGroupIdList);
         } else {
-            throw new InvalidParameterValueException("Virtual machine must be stopped prior to update security groups ");
+            throw new InvalidParameterValueException(String.format("VM %s must be stopped prior to update security groups", vm.getUuid()));
         }
     }
 
@@ -3698,7 +3698,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware || (hypervisor != null && hypervisor == HypervisorType.VMware));
 
         if (securityGroupIdList != null && isVmWare) {
-            throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+            throw new InvalidParameterValueException("Security group feature is not supported for VMware hypervisor");
         } else if (!isVmWare && _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkModel.canAddDefaultSecurityGroup()) {
             //add the default securityGroup only if no security group is specified
             if (securityGroupIdList == null || securityGroupIdList.isEmpty()) {
@@ -3758,7 +3758,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         } else if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
             if (isVmWare) {
-                throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+                throw new InvalidParameterValueException("Security group feature is not supported for VMware hypervisor");
             }
             // Only one network can be specified, and it should be security group enabled
             if (networkIdList.size() > 1 && template.getHypervisorType() != HypervisorType.KVM && hypervisor != HypervisorType.KVM) {
