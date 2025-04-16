@@ -139,7 +139,6 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
         Long clusterId = (Long)dsInfos.get("clusterId");
         Long podId = (Long)dsInfos.get("podId");
         Long zoneId = (Long)dsInfos.get("zoneId");
-        String url = (String)dsInfos.get("url");
         String providerName = (String)dsInfos.get("providerName");
         HypervisorType hypervisorType = (HypervisorType)dsInfos.get("hypervisorType");
         if (clusterId != null && podId == null) {

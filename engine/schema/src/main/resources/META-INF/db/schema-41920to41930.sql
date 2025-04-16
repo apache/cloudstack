@@ -19,5 +19,6 @@
 -- Schema upgrade from 4.19.2.0 to 4.19.3.0
 --;
 
--- Updated display to false for password detail of the storage pool details
+-- Updated display to false for password/token detail of the storage pool details
 UPDATE `cloud`.`storage_pool_details` SET display = 0 WHERE name LIKE '%password%';
+UPDATE `cloud`.`storage_pool_details` SET display = 0 WHERE name LIKE '%token%';

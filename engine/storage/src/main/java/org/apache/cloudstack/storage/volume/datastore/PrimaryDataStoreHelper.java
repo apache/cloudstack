@@ -85,8 +85,7 @@ public class PrimaryDataStoreHelper {
     DataStoreProviderManager dataStoreProviderMgr;
 
     public DataStore createPrimaryDataStore(PrimaryDataStoreParameters params) {
-        if(params == null)
-        {
+        if (params == null) {
             throw new InvalidParameterValueException("createPrimaryDataStore: Input params is null, please check");
         }
         StoragePoolVO dataStoreVO = dataStoreDao.findPoolByUUID(params.getUuid());
