@@ -68,8 +68,8 @@ export default {
       api('listVmwareDcs', {
         zoneid: this.resource.id
       }).then(response => {
-        if (response.listvmwaredcsresponse.VMwareDC && response.listvmwaredcsresponse.VMwareDC.length > 0) {
-          this.vmwaredc = response.listvmwaredcsresponse.VMwareDC[0]
+        if (response.listvmwaredcsresponse.vmwaredc && response.listvmwaredcsresponse.vmwaredc.length > 0) {
+          this.vmwaredc = response.listvmwaredcsresponse.vmwaredc[0]
         }
       }).catch(error => {
         this.$notifyError(error)
