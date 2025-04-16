@@ -87,6 +87,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -2738,7 +2739,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             _inSystemVM = true;
         }
 
-        _storageIp = (String)params.get("storageip");
+        _storageIp = (String)ObjectUtils.firstNonNull(params.get("storageip"), _eth1ip);
         if (_storageIp == null && _inSystemVM) {
             s_logger.warn("There is no storageip in /proc/cmdline, something wrong!");
         }
