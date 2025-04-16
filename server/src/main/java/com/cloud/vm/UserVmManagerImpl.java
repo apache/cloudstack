@@ -3136,6 +3136,24 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     .getUuid(), nic.getId(), extraDhcpOptionsMap);
         }
 
+        checkAndUpdateSecurityGroupForVM(securityGroupIdList, vm, networks);
+
+        _vmDao.updateVM(id, displayName, ha, osTypeId, userData, userDataId,
+                userDataDetails, isDisplayVmEnabled, isDynamicallyScalable,
+                deleteProtection, customId, hostName, instanceName);
+
+        if (updateUserdata) {
+            updateUserData(vm);
+        }
+
+        if (State.Running == vm.getState()) {
+            updateDns(vm, hostName);
+        }
+
+        return _vmDao.findById(id);
+    }
+
+    private void checkAndUpdateSecurityGroupForVM(List<Long> securityGroupIdList, UserVmVO vm, List<NetworkVO> networks) {
         boolean isVMware = (vm.getHypervisorType() == HypervisorType.VMware);
 
         if (securityGroupIdList != null && isVMware) {
@@ -3164,20 +3182,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 updateSecurityGroup(vm, securityGroupIdList);
             }
         }
-
-        _vmDao.updateVM(id, displayName, ha, osTypeId, userData, userDataId,
-                userDataDetails, isDisplayVmEnabled, isDynamicallyScalable,
-                deleteProtection, customId, hostName, instanceName);
-
-        if (updateUserdata) {
-            updateUserData(vm);
-        }
-
-        if (State.Running == vm.getState()) {
-            updateDns(vm, hostName);
-        }
-
-        return _vmDao.findById(id);
     }
 
     private void updateSecurityGroup(UserVmVO vm, List<Long> securityGroupIdList) {
