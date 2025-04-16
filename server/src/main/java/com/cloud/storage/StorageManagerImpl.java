@@ -1020,9 +1020,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         Map<String, String> details = extractApiParamAsMap(cmd.getDetails());
         checkNFSMountOptionsForCreate(details, hypervisorType, uriParams.get("scheme"));
-        if (StringUtils.isNotBlank(cmd.getUrl())) {
-            details.put("url", cmd.getUrl());
-        }
 
         DataCenterVO zone = _dcDao.findById(cmd.getZoneId());
         if (zone == null) {
