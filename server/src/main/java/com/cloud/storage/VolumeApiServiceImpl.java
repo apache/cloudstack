@@ -210,7 +210,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.DiskProfile;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
 import com.cloud.vm.UserVmVO;
@@ -232,7 +232,7 @@ import com.cloud.vm.VmWorkResizeVolume;
 import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.VmWorkTakeVolumeSnapshot;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -278,7 +278,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     private UserVmDao _userVmDao;
     @Inject
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private UserVmService _userVmService;
     @Inject
@@ -1562,13 +1562,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
             _volsDao.update(volume.getId(), volume);
             if (Volume.Type.ROOT.equals(volume.getVolumeType()) && userVm != null) {
-                UserVmDetailVO userVmDetailVO = userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE);
-                if (userVmDetailVO != null) {
-                    userVmDetailVO.setValue(String.valueOf(newSize/ GiB_TO_BYTES));
-                    userVmDetailsDao.update(userVmDetailVO.getId(), userVmDetailVO);
+                VMInstanceDetailVO vmInstanceDetailVO = vmInstanceDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE);
+                if (vmInstanceDetailVO != null) {
+                    vmInstanceDetailVO.setValue(String.valueOf(newSize/ GiB_TO_BYTES));
+                    vmInstanceDetailsDao.update(vmInstanceDetailVO.getId(), vmInstanceDetailVO);
                 } else {
-                    UserVmDetailVO detailVO = new UserVmDetailVO(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(newSize/ GiB_TO_BYTES), true);
-                    userVmDetailsDao.persist(detailVO);
+                    VMInstanceDetailVO detailVO = new VMInstanceDetailVO(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE, String.valueOf(newSize/ GiB_TO_BYTES), true);
+                    vmInstanceDetailsDao.persist(detailVO);
                 }
             }
 

@@ -161,7 +161,7 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.SecondaryStorageVmVO;
 import com.cloud.vm.UserVmCloneSettingVO;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
@@ -176,7 +176,7 @@ import com.cloud.vm.VmWorkTakeVolumeSnapshot;
 import com.cloud.vm.dao.SecondaryStorageVmDao;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
 
@@ -246,7 +246,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @Inject
     TemplateService templateService;
     @Inject
-    UserVmDetailsDao userVmDetailsDao;
+    VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private SecondaryStorageVmDao secondaryStorageVmDao;
     @Inject
@@ -990,7 +990,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 logger.info("Could not find a running SSVM in datacenter [{}] for deploying VM as is. Not deploying VM [{}] as is.",
                         vm.getDataCenterId(), vm);
             } else {
-                UserVmDetailVO configurationDetail = userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.DEPLOY_AS_IS_CONFIGURATION);
+                VMInstanceDetailVO configurationDetail = vmInstanceDetailsDao.findDetail(vm.getId(), VmDetailConstants.DEPLOY_AS_IS_CONFIGURATION);
                 if (configurationDetail != null) {
                     configurationId = configurationDetail.getValue();
                 }
@@ -1059,13 +1059,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             String diskControllerSubType = disksAsIs.get(0).getDiskControllerSubType();
             if (StringUtils.isNotBlank(diskControllerSubType)) {
                 long vmId = vm.getId();
-                UserVmDetailVO detail = userVmDetailsDao.findDetail(vmId, VmDetailConstants.ROOT_DISK_CONTROLLER);
+                VMInstanceDetailVO detail = vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.ROOT_DISK_CONTROLLER);
                 if (detail != null) {
                     detail.setValue(diskControllerSubType);
-                    userVmDetailsDao.update(detail.getId(), detail);
+                    vmInstanceDetailsDao.update(detail.getId(), detail);
                 } else {
-                    detail = new UserVmDetailVO(vmId, VmDetailConstants.ROOT_DISK_CONTROLLER, diskControllerSubType, false);
-                    userVmDetailsDao.persist(detail);
+                    detail = new VMInstanceDetailVO(vmId, VmDetailConstants.ROOT_DISK_CONTROLLER, diskControllerSubType, false);
+                    vmInstanceDetailsDao.persist(detail);
                 }
             }
         }
@@ -1554,7 +1554,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     private void setIoDriverPolicy(Map<String, String> details, StoragePoolVO storagePool, VolumeVO volume) {
         if (volume.getInstanceId() != null) {
-            UserVmDetailVO ioDriverPolicy = userVmDetailsDao.findDetail(volume.getInstanceId(),
+            VMInstanceDetailVO ioDriverPolicy = vmInstanceDetailsDao.findDetail(volume.getInstanceId(),
                     VmDetailConstants.IO_POLICY);
             if (ioDriverPolicy != null) {
                 if (IoDriverPolicy.STORAGE_SPECIFIC.toString().equals(ioDriverPolicy.getValue())) {
