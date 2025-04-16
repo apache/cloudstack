@@ -95,15 +95,6 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
     @Param(description = "the timezone user was created in")
     private String timezone;
 
-    @SerializedName("apikey")
-    @Param(description = "the api key of the user", isSensitive = true)
-    private String apiKey;
-
-    @Deprecated
-    @SerializedName("secretkey")
-    @Param(description = "the secret key of the user", isSensitive = true)
-    private String secretKey;
-
     @SerializedName("accountid")
     @Param(description = "the account ID of the user")
     private String accountId;
@@ -131,6 +122,16 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
     @SerializedName(ApiConstants.API_KEY_ACCESS)
     @Param(description = "whether api key access is Enabled, Disabled or set to Inherit (it inherits the value from the parent)", since = "4.20.1.0")
     ApiConstants.ApiKeyAccess apiKeyAccess;
+
+    @SerializedName(ApiConstants.API_KEY)
+    @Param(description = "the api key of the user", isSensitive = true)
+    private String apiKey;
+
+    @Deprecated
+    @SerializedName(ApiConstants.SECRET_KEY)
+    @Param(description = "the secret key of the user", isSensitive = true)
+    private String secretKey;
+
 
     @Override
     public String getObjectId() {
