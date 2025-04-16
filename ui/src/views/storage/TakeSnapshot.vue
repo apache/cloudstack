@@ -37,7 +37,7 @@
             :placeholder="apiParams.name.description"
             v-focus="true" />
         </a-form-item>
-        <a-form-item ref="zoneids" name="zoneids">
+        <a-form-item ref="zoneids" name="zoneids" :required="(!isAdmin && form.useStorageReplication)">
           <template #label>
             <tooltip-label :title="$t('label.zones')" :tooltip="''"/>
           </template>
@@ -66,7 +66,10 @@
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item ref="storageids" name="storageids">
+        <a-form-item :label="$t('label.useStorageReplication')" name="useStorageReplication" ref="useStorageReplication">
+          <a-switch v-model:checked="form.useStorageReplication" />
+        </a-form-item>
+        <a-form-item v-if="isAdmin && form.useStorageReplication" ref="storageids" name="storageids">
           <template #label>
             <tooltip-label :title="$t('label.storagepools')" :tooltip="''"/>
           </template>
@@ -149,6 +152,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
+import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -200,12 +204,14 @@ export default {
     }
 
     this.supportsStorageSnapshot = this.resource.supportsstoragesnapshot
-    this.fetchZoneData()
-    this.fetchStoragePoolData()
+    this.fetchData()
   },
   computed: {
     formattedAdditionalZoneMessage () {
       return `${this.$t('message.snapshot.additional.zones').replace('%x', this.resource.zonename)}`
+    },
+    isAdmin () {
+      return isAdmin()
     }
   },
   methods: {
@@ -213,10 +219,17 @@ export default {
       this.formRef = ref()
       this.form = reactive({
         name: undefined,
+        useStorageReplication: false,
         asyncbackup: undefined,
         quiescevm: false
       })
       this.rules = reactive({})
+    },
+    fetchData () {
+      this.fetchZoneData()
+      if (isAdmin()) {
+        this.fetchStoragePoolData()
+      }
     },
     fetchZoneData () {
       const params = {}
@@ -257,6 +270,10 @@ export default {
         params.volumeId = this.resource.id
         if (values.name) {
           params.name = values.name
+        }
+        params.useStorageReplication = false
+        if (values.useStorageReplication) {
+          params.useStorageReplication = values.useStorageReplication
         }
         params.asyncBackup = false
         if (values.asyncbackup) {
