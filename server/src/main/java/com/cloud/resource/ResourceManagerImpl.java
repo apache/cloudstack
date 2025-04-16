@@ -3266,12 +3266,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public List<HypervisorType> listAvailHypervisorInZone(final Long zoneId) {
-        List<VMTemplateVO> systemVMTemplates = _templateDao.listAllReadySystemVMTemplates(zoneId);
-        final Set<HypervisorType> hypervisors = new HashSet<>();
-        for (final VMTemplateVO systemVMTemplate : systemVMTemplates) {
-            hypervisors.add(systemVMTemplate.getHypervisorType());
+        final SearchCriteria<String> sc = _hypervisorsInDC.create();
+        if (zoneId != null) {
+            sc.setParameters("dataCenter", zoneId);
         }
-        return new ArrayList<>(hypervisors);
+        sc.setParameters("type", Host.Type.Routing);
+
+        return _hostDao.customSearch(sc, null).stream()
+                // The search is not able to return list of enums, so getting
+                // list of hypervisors as strings and then converting them to enum
+                .map(HypervisorType::getType).collect(Collectors.toList());
     }
 
     @Override
