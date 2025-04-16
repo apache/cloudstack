@@ -343,6 +343,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     private List<UserTwoFactorAuthenticator> userTwoFactorAuthenticationProviders;
 
+    private long validUserLastAuthTimeDurationInMs = 0L;
+    private static final long DEFAULT_USER_AUTH_TIME_DURATION_MS = 350L;
+
     public static ConfigKey<Boolean> enableUserTwoFactorAuthentication = new ConfigKey<>("Advanced",
             Boolean.class,
             "enable.user.2fa",
@@ -1557,7 +1560,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         for (UserAuthenticator userAuthenticator : _userPasswordEncoders) {
             Pair<Boolean, ActionOnFailedAuthentication> authenticationResult = userAuthenticator.authenticate(user.getUsername(), currentPassword, userAccount.getDomainId(), null);
             if (authenticationResult == null) {
-                s_logger.trace(String.format("Authenticator [%s] is returning null for the authenticate mehtod.", userAuthenticator.getClass()));
+                s_logger.trace(String.format("Authenticator [%s] is returning null for the authenticate method.", userAuthenticator.getClass()));
                 continue;
             }
             if (BooleanUtils.toBoolean(authenticationResult.first())) {
@@ -2561,107 +2564,17 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public UserAccount authenticateUser(final String username, final String password, final Long domainId, final InetAddress loginIpAddress, final Map<String, Object[]> requestParameters) {
+        long authStartTimeInMs = System.currentTimeMillis();
         UserAccount user = null;
         final String[] oAuthProviderArray = (String[])requestParameters.get(ApiConstants.PROVIDER);
         final String[] secretCodeArray = (String[])requestParameters.get(ApiConstants.SECRET_CODE);
         String oauthProvider = ((oAuthProviderArray == null) ? null : oAuthProviderArray[0]);
         String secretCode = ((secretCodeArray == null) ? null : secretCodeArray[0]);
 
-
         if ((password != null && !password.isEmpty()) || (oauthProvider != null && secretCode != null)) {
             user = getUserAccount(username, password, domainId, requestParameters);
         } else {
-            String key = _configDao.getValue("security.singlesignon.key");
-            if (key == null) {
-                // the SSO key is gone, don't authenticate
-                return null;
-            }
-
-            String singleSignOnTolerance = _configDao.getValue("security.singlesignon.tolerance.millis");
-            if (singleSignOnTolerance == null) {
-                // the SSO tolerance is gone (how much time before/after system time we'll allow the login request to be
-                // valid),
-                // don't authenticate
-                return null;
-            }
-
-            long tolerance = Long.parseLong(singleSignOnTolerance);
-            String signature = null;
-            long timestamp = 0L;
-            String unsignedRequest = null;
-            StringBuffer unsignedRequestBuffer = new StringBuffer();
-
-            // - build a request string with sorted params, make sure it's all lowercase
-            // - sign the request, verify the signature is the same
-            List<String> parameterNames = new ArrayList<String>();
-
-            for (Object paramNameObj : requestParameters.keySet()) {
-                parameterNames.add((String)paramNameObj); // put the name in a list that we'll sort later
-            }
-
-            Collections.sort(parameterNames);
-
-            try {
-                for (String paramName : parameterNames) {
-                    // parameters come as name/value pairs in the form String/String[]
-                    String paramValue = ((String[])requestParameters.get(paramName))[0];
-
-                    if ("signature".equalsIgnoreCase(paramName)) {
-                        signature = paramValue;
-                    } else {
-                        if ("timestamp".equalsIgnoreCase(paramName)) {
-                            String timestampStr = paramValue;
-                            try {
-                                // If the timestamp is in a valid range according to our tolerance, verify the request
-                                // signature, otherwise return null to indicate authentication failure
-                                timestamp = Long.parseLong(timestampStr);
-                                long currentTime = System.currentTimeMillis();
-                                if (Math.abs(currentTime - timestamp) > tolerance) {
-                                    if (s_logger.isDebugEnabled()) {
-                                        s_logger.debug("Expired timestamp passed in to login, current time = " + currentTime + ", timestamp = " + timestamp);
-                                    }
-                                    return null;
-                                }
-                            } catch (NumberFormatException nfe) {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Invalid timestamp passed in to login: " + timestampStr);
-                                }
-                                return null;
-                            }
-                        }
-
-                        if (unsignedRequestBuffer.length() != 0) {
-                            unsignedRequestBuffer.append("&");
-                        }
-                        unsignedRequestBuffer.append(paramName).append("=").append(URLEncoder.encode(paramValue, "UTF-8"));
-                    }
-                }
-
-                if ((signature == null) || (timestamp == 0L)) {
-                    if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Missing parameters in login request, signature = " + signature + ", timestamp = " + timestamp);
-                    }
-                    return null;
-                }
-
-                unsignedRequest = unsignedRequestBuffer.toString().toLowerCase().replaceAll("\\+", "%20");
-
-                Mac mac = Mac.getInstance("HmacSHA1");
-                SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(), "HmacSHA1");
-                mac.init(keySpec);
-                mac.update(unsignedRequest.getBytes());
-                byte[] encryptedBytes = mac.doFinal();
-                String computedSignature = new String(Base64.encodeBase64(encryptedBytes));
-                boolean equalSig = ConstantTimeComparator.compareStrings(signature, computedSignature);
-                if (!equalSig) {
-                    s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
-                } else {
-                    user = _userAccountDao.getUserAccount(username, domainId);
-                }
-            } catch (Exception ex) {
-                s_logger.error("Exception authenticating user", ex);
-                return null;
-            }
+            user = getUserAccountForSSO(username, domainId, requestParameters);
         }
 
         if (user != null) {
@@ -2695,18 +2608,35 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 }
             }
 
+            ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN, "user has logged in from IP Address " + loginIpAddress, user.getId(), ApiCommandResourceType.User.toString());
+
+            validUserLastAuthTimeDurationInMs = System.currentTimeMillis() - authStartTimeInMs;
             // Here all is fine!
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
+                s_logger.debug(String.format("User: %s in domain %d has successfully logged in, auth time duration - %d ms", username, domainId, validUserLastAuthTimeDurationInMs));
             }
-
-            ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN, "user has logged in from IP Address " + loginIpAddress, user.getId(), ApiCommandResourceType.User.toString());
 
             return user;
         } else {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("User: " + username + " in domain " + domainId + " has failed to log in");
             }
+
+            long waitTimeDurationInMs;
+            long invalidUserAuthTimeDurationInMs = System.currentTimeMillis() - authStartTimeInMs;
+            if (validUserLastAuthTimeDurationInMs > 0) {
+                waitTimeDurationInMs = validUserLastAuthTimeDurationInMs - invalidUserAuthTimeDurationInMs;
+            } else {
+                waitTimeDurationInMs = DEFAULT_USER_AUTH_TIME_DURATION_MS - invalidUserAuthTimeDurationInMs;
+            }
+
+            if (waitTimeDurationInMs > 0) {
+                try {
+                    Thread.sleep(waitTimeDurationInMs);
+                } catch (final InterruptedException e) {
+                }
+            }
+
             return null;
         }
     }
@@ -2718,7 +2648,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
 
         boolean authenticated = false;
-        HashSet<ActionOnFailedAuthentication> actionsOnFailedAuthenticaion = new HashSet<ActionOnFailedAuthentication>();
+        HashSet<ActionOnFailedAuthentication> actionsOnFailedAuthenticaion = new HashSet<>();
         User.Source userSource = userAccount != null ? userAccount.getSource() : User.Source.UNKNOWN;
         for (UserAuthenticator authenticator : _userAuthenticators) {
             final String[] secretCodeArray = (String[])requestParameters.get(ApiConstants.SECRET_CODE);
@@ -2744,7 +2674,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         boolean updateIncorrectLoginCount = actionsOnFailedAuthenticaion.contains(ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
 
         if (authenticated) {
-
             Domain domain = _domainMgr.getDomain(domainId);
             String domainName = null;
             if (domain != null) {
@@ -2784,6 +2713,103 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
             return null;
         }
+    }
+
+    private UserAccount getUserAccountForSSO(String username, Long domainId, Map<String, Object[]> requestParameters) {
+        String key = _configDao.getValue("security.singlesignon.key");
+        if (key == null) {
+            // the SSO key is gone, don't authenticate
+            return null;
+        }
+
+        String singleSignOnTolerance = _configDao.getValue("security.singlesignon.tolerance.millis");
+        if (singleSignOnTolerance == null) {
+            // the SSO tolerance is gone (how much time before/after system time we'll allow the login request to be
+            // valid),
+            // don't authenticate
+            return null;
+        }
+
+        UserAccount user = null;
+        long tolerance = Long.parseLong(singleSignOnTolerance);
+        String signature = null;
+        long timestamp = 0L;
+        String unsignedRequest;
+        StringBuffer unsignedRequestBuffer = new StringBuffer();
+
+        // - build a request string with sorted params, make sure it's all lowercase
+        // - sign the request, verify the signature is the same
+        List<String> parameterNames = new ArrayList<>();
+
+        for (Object paramNameObj : requestParameters.keySet()) {
+            parameterNames.add((String)paramNameObj); // put the name in a list that we'll sort later
+        }
+
+        Collections.sort(parameterNames);
+
+        try {
+            for (String paramName : parameterNames) {
+                // parameters come as name/value pairs in the form String/String[]
+                String paramValue = ((String[])requestParameters.get(paramName))[0];
+
+                if ("signature".equalsIgnoreCase(paramName)) {
+                    signature = paramValue;
+                } else {
+                    if ("timestamp".equalsIgnoreCase(paramName)) {
+                        String timestampStr = paramValue;
+                        try {
+                            // If the timestamp is in a valid range according to our tolerance, verify the request
+                            // signature, otherwise return null to indicate authentication failure
+                            timestamp = Long.parseLong(timestampStr);
+                            long currentTime = System.currentTimeMillis();
+                            if (Math.abs(currentTime - timestamp) > tolerance) {
+                                if (s_logger.isDebugEnabled()) {
+                                    s_logger.debug("Expired timestamp passed in to login, current time = " + currentTime + ", timestamp = " + timestamp);
+                                }
+                                return null;
+                            }
+                        } catch (NumberFormatException nfe) {
+                            if (s_logger.isDebugEnabled()) {
+                                s_logger.debug("Invalid timestamp passed in to login: " + timestampStr);
+                            }
+                            return null;
+                        }
+                    }
+
+                    if (unsignedRequestBuffer.length() != 0) {
+                        unsignedRequestBuffer.append("&");
+                    }
+                    unsignedRequestBuffer.append(paramName).append("=").append(URLEncoder.encode(paramValue, "UTF-8"));
+                }
+            }
+
+            if ((signature == null) || (timestamp == 0L)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Missing parameters in login request, signature = " + signature + ", timestamp = " + timestamp);
+                }
+                return null;
+            }
+
+            unsignedRequest = unsignedRequestBuffer.toString().toLowerCase().replaceAll("\\+", "%20");
+
+            Mac mac = Mac.getInstance("HmacSHA1");
+            SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(), "HmacSHA1");
+            mac.init(keySpec);
+            mac.update(unsignedRequest.getBytes());
+            byte[] encryptedBytes = mac.doFinal();
+            String computedSignature = new String(Base64.encodeBase64(encryptedBytes));
+            boolean equalSig = ConstantTimeComparator.compareStrings(signature, computedSignature);
+            if (!equalSig) {
+                s_logger.info("User signature: " + signature + " is not equaled to computed signature: " + computedSignature);
+            } else {
+                user = _userAccountDao.getUserAccount(username, domainId);
+            }
+        } catch (Exception ex) {
+            s_logger.error("Exception authenticating user", ex);
+            return null;
+        }
+
+        return user;
     }
 
     protected void updateLoginAttemptsWhenIncorrectLoginAttemptsEnabled(UserAccount account, boolean updateIncorrectLoginCount,
