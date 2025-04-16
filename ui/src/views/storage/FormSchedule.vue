@@ -139,7 +139,7 @@
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="24" v-if="resourceType === 'Volume'">
-              <a-form-item ref="zoneids" name="zoneids">
+              <a-form-item ref="zoneids" name="zoneids" :required="(!isAdmin && form.useStorageReplication)">
                 <template #label>
                   <tooltip-label :title="$t('label.zones')" :tooltip="''"/>
                 </template>
@@ -170,7 +170,10 @@
               </a-form-item>
             </a-col>
             <a-col :md="24" :lg="24" v-if="resourceType === 'Volume'">
-              <a-form-item ref="storageids" name="storageids">
+              <a-form-item :label="$t('label.useStorageReplication')" name="useStorageReplication" ref="useStorageReplication">
+                <a-switch v-model:checked="form.useStorageReplication" />
+              </a-form-item>
+              <a-form-item v-if="isAdmin && form.useStorageReplication" ref="storageids" name="storageids">
                 <template #label>
                   <tooltip-label :title="$t('label.storagepools')" :tooltip="''"/>
                 </template>
@@ -250,6 +253,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { getAPI, postAPI } from '@/api'
+import { isAdmin } from '@/role'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 import { timeZone } from '@/utils/timezone'
@@ -310,6 +314,9 @@ export default {
   computed: {
     formattedAdditionalZoneMessage () {
       return `${this.$t('message.snapshot.additional.zones').replace('%x', this.resource.zonename)}`
+    },
+    isAdmin () {
+      return isAdmin()
     }
   },
   methods: {
@@ -322,7 +329,8 @@ export default {
         'day-of-week': undefined,
         'day-of-month': undefined,
         maxsnaps: undefined,
-        timezone: undefined
+        timezone: undefined,
+        useStorageReplication: false
       })
       this.rules = reactive({
         time: [{ type: 'number', required: true, message: this.$t('message.error.required.input') }],
@@ -461,6 +469,7 @@ export default {
         params.intervaltype = values.intervaltype
         params.timezone = values.timezone
         params.maxsnaps = values.maxsnaps
+        params.useStorageReplication = values.useStorageReplication
         if (values.zoneids && values.zoneids.length > 0) {
           params.zoneids = values.zoneids.join()
         }
