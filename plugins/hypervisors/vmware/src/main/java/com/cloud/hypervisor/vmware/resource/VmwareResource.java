@@ -2350,13 +2350,58 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                     continue;
                 }
 
+                VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(diskInfoBuilder, vol, hyperHost, context);
+                VolumeObjectTO volumeTO = (VolumeObjectTO) vol.getData();
+                DataStoreTO primaryStore = volumeTO.getDataStore();
+                Map<String, String> details = vol.getDetails();
+                boolean managed = false;
+                String iScsiName = null;
+
+                if (details != null) {
+                    managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+                    iScsiName = details.get(DiskTO.IQN);
+                }
+
+                String primaryStoreUuid = primaryStore.getUuid();
+                // if the storage is managed, iScsiName should not be null
+                String datastoreName = managed ? VmwareResource.getDatastoreName(iScsiName) : primaryStoreUuid;
+                Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(datastoreName);
+
+                assert (volumeDsDetails != null);
+                if (volumeDsDetails == null) {
+                    throw new Exception("Primary datastore " + primaryStore.getUuid() + " is not mounted on host.");
+                }
+
+                if (vol.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && vol.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
+                    if (diskInfoBuilder != null && matchingExistingDisk != null) {
+                        String[] diskChain = matchingExistingDisk.getDiskChain();
+                        if (diskChain != null && diskChain.length > 0) {
+                            DatastoreFile file = new DatastoreFile(diskChain[0]);
+                            if (!file.getFileBaseName().equalsIgnoreCase(volumeTO.getPath())) {
+                                if (s_logger.isInfoEnabled())
+                                    s_logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumeTO.getPath() + " -> " + file.getFileBaseName());
+                                volumeTO.setPath(file.getFileBaseName());
+                            }
+                        }
+                        DatastoreMO diskDatastoreMofromVM = getDataStoreWhereDiskExists(hyperHost, context, diskInfoBuilder, vol, diskDatastores);
+                        if (diskDatastoreMofromVM != null) {
+                            String actualPoolUuid = diskDatastoreMofromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
+                            if (actualPoolUuid != null && !actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
+                                volumeDsDetails = new Pair<>(diskDatastoreMofromVM.getMor(), diskDatastoreMofromVM);
+                                if (s_logger.isInfoEnabled())
+                                    s_logger.info("Detected datastore uuid change on volume: " + volumeTO.getId() + " " + primaryStore.getUuid() + " -> " + actualPoolUuid);
+                                ((PrimaryDataStoreTO)primaryStore).setUuid(actualPoolUuid);
+                            }
+                        }
+                    }
+                }
+
                 if (deployAsIs && vol.getType() == Volume.Type.ROOT) {
                     rootDiskTO = vol;
                     resizeRootDiskOnVMStart(vmMo, rootDiskTO, hyperHost, context);
                     continue;
                 }
 
-                VirtualMachineDiskInfo matchingExistingDisk = getMatchingExistingDisk(diskInfoBuilder, vol, hyperHost, context);
                 String diskController = getDiskController(vmMo, matchingExistingDisk, vol, chosenDiskControllers, deployAsIs);
                 if (DiskControllerType.getType(diskController) == DiskControllerType.ide) {
                     controllerKey = vmMo.getIDEControllerKey(ideUnitNumber);
@@ -2365,7 +2410,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                         // Ensure maximum of 2 data volumes over IDE controller, 3 includeing root volume
                         if (vmMo.getNumberOfVirtualDisks() > 3) {
                             throw new CloudRuntimeException("Found more than 3 virtual disks attached to this VM [" + vmMo.getVmName() + "]. Unable to implement the disks over "
-                                    + diskController + " controller, as maximum number of devices supported over IDE controller is 4 includeing CDROM device.");
+                                    + diskController + " controller, as maximum number of devices supported over IDE controller is 4 including CDROM device.");
                         }
                     }
                 } else {
@@ -2384,51 +2429,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                 }
                 if (!hasSnapshot) {
                     deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
-
-                    VolumeObjectTO volumeTO = (VolumeObjectTO) vol.getData();
-                    DataStoreTO primaryStore = volumeTO.getDataStore();
-                    Map<String, String> details = vol.getDetails();
-                    boolean managed = false;
-                    String iScsiName = null;
-
-                    if (details != null) {
-                        managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
-                        iScsiName = details.get(DiskTO.IQN);
-                    }
-
-                    String primaryStoreUuid = primaryStore.getUuid();
-                    // if the storage is managed, iScsiName should not be null
-                    String datastoreName = managed ? VmwareResource.getDatastoreName(iScsiName) : primaryStoreUuid;
-                    Pair<ManagedObjectReference, DatastoreMO> volumeDsDetails = dataStoresDetails.get(datastoreName);
-
-                    assert (volumeDsDetails != null);
-                    if (volumeDsDetails == null) {
-                        throw new Exception("Primary datastore " + primaryStore.getUuid() + " is not mounted on host.");
-                    }
-
-                    if (vol.getDetails().get(DiskTO.PROTOCOL_TYPE) != null && vol.getDetails().get(DiskTO.PROTOCOL_TYPE).equalsIgnoreCase("DatastoreCluster")) {
-                        if (diskInfoBuilder != null && matchingExistingDisk != null) {
-                            String[] diskChain = matchingExistingDisk.getDiskChain();
-                            if (diskChain != null && diskChain.length > 0) {
-                                DatastoreFile file = new DatastoreFile(diskChain[0]);
-                                if (!file.getFileBaseName().equalsIgnoreCase(volumeTO.getPath())) {
-                                    if (s_logger.isInfoEnabled())
-                                        s_logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumeTO.getPath() + " -> " + file.getFileBaseName());
-                                    volumeTO.setPath(file.getFileBaseName());
-                                }
-                            }
-                            DatastoreMO diskDatastoreMofromVM = getDataStoreWhereDiskExists(hyperHost, context, diskInfoBuilder, vol, diskDatastores);
-                            if (diskDatastoreMofromVM != null) {
-                                String actualPoolUuid = diskDatastoreMofromVM.getCustomFieldValue(CustomFieldConstants.CLOUD_UUID);
-                                if (actualPoolUuid != null && !actualPoolUuid.equalsIgnoreCase(primaryStore.getUuid())) {
-                                    volumeDsDetails = new Pair<>(diskDatastoreMofromVM.getMor(), diskDatastoreMofromVM);
-                                    if (s_logger.isInfoEnabled())
-                                        s_logger.info("Detected datastore uuid change on volume: " + volumeTO.getId() + " " + primaryStore.getUuid() + " -> " + actualPoolUuid);
-                                    ((PrimaryDataStoreTO)primaryStore).setUuid(actualPoolUuid);
-                                }
-                            }
-                        }
-                    }
 
                     String[] diskChain = syncDiskChain(dcMo, vmMo, vol, matchingExistingDisk, volumeDsDetails.second());
 
