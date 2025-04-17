@@ -1644,9 +1644,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (ipv4 && Objects.isNull(startIP)) {
                 throw new CloudRuntimeException("IPv4 address range needs to be provided");
             }
-            if (ipv6 && Objects.isNull(startIPv6)) {
-                throw new CloudRuntimeException("IPv6 address range needs to be provided");
-            }
+            // if (ipv6) ignore entries
         }
         Pair<Integer, Integer> interfaceMTUs = validateMtuConfig(publicMtu, privateMtu, zone.getId());
         mtuCheckForVpcNetwork(vpcId, interfaceMTUs, publicMtu);
