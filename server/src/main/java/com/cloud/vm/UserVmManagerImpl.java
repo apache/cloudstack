@@ -3807,11 +3807,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         s_logger.info("Loading UserVm " + vmId + " from DB");
         UserVmVO userVm = _vmDao.findById(vmId);
         if (userVm == null) {
-            s_logger.info("Loaded UserVm " + vmId + " (" + userVm.getUuid() + ") from DB");
-        } else {
             s_logger.warn("UserVm " + vmId + " does not exist in DB");
-            VMTemplateVO template = _templateDao.findById(userVm.getTemplateId());
+        } else {
+            s_logger.info("Loaded UserVm " + vmId + " (" + userVm.getUuid() + ") from DB");
+            VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
             if (template != null && template.isEnablePassword()) {
+                s_logger.debug(String.format("Generating a random password for %s", userVm));
                 String password = _mgr.generateRandomPassword();
                 _vmDao.loadDetails(userVm);
                 userVm.setPassword(password);
