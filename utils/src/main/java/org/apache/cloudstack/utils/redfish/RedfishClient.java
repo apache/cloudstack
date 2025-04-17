@@ -37,7 +37,9 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.TrustManager;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.TrustAllManager;
+import com.google.gson.JsonElement;
 import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpResponse;
@@ -84,6 +86,7 @@ public class RedfishClient {
     private final static String ACCEPT = "accept";
     private final static String ODATA_ID = "@odata.id";
     private final static String MEMBERS = "Members";
+    private final static String LINKS = "Links";
     private final static String EXPECTED_HTTP_STATUS = "2XX";
     private final static int WAIT_FOR_REQUEST_RETRY = 2;
 
@@ -306,8 +309,8 @@ public class RedfishClient {
 
         int statusCode = response.getStatusLine().getStatusCode();
         if (statusCode < HttpStatus.SC_OK || statusCode >= HttpStatus.SC_MULTIPLE_CHOICES) {
-            throw new RedfishException(String.format("Failed to get System power state for host '%s' with request '%s: %s'. The expected HTTP status code is '%s' but it got '%s'.",
-                    HttpGet.METHOD_NAME, url, hostAddress, EXPECTED_HTTP_STATUS, statusCode));
+            throw new RedfishException(String.format("Failed to execute System power command for host by performing '%s' request on URL '%s' and host address '%s'. The expected HTTP status code is '%s' but it got '%s'.",
+                    HttpPost.METHOD_NAME, url, hostAddress, EXPECTED_HTTP_STATUS, statusCode));
         }
         logger.debug(String.format("Sending ComputerSystem.Reset Command '%s' to host '%s' with request '%s %s'", resetCommand, hostAddress, HttpPost.METHOD_NAME, url));
     }
@@ -348,9 +351,18 @@ public class RedfishClient {
 
         // retrieving the system ID (e.g. 'System.Embedded.1') via JsonParser:
         // (...) Members":[{"@odata.id":"/redfish/v1/Systems/System.Embedded.1"}] (...)
-        JsonArray jArray = new JsonParser().parse(jsonString).getAsJsonObject().get(MEMBERS).getAsJsonArray();
-        JsonObject jsonnObject = jArray.get(0).getAsJsonObject();
-        String jsonObjectAsString = jsonnObject.get(ODATA_ID).getAsString();
+        JsonArray jArray = null;
+        JsonElement jsonElement = new JsonParser().parse(jsonString);
+        if (jsonElement.getAsJsonObject().get(MEMBERS) != null) {
+            jArray = jsonElement.getAsJsonObject().get(MEMBERS).getAsJsonArray();
+        } else if (jsonElement.getAsJsonObject().get(LINKS) != null){
+            jArray = jsonElement.getAsJsonObject().get(LINKS).getAsJsonObject().get(MEMBERS).getAsJsonArray();
+        }
+        if (jArray == null || jArray.size() < 1) {
+            throw new CloudRuntimeException("Members not found in the Redfish Systems JSON, unable to determine Redfish system ID");
+        }
+        JsonObject jsonObject = jArray.get(0).getAsJsonObject();
+        String jsonObjectAsString = jsonObject.get(ODATA_ID).getAsString();
         String[] arrayOfStrings = StringUtils.split(jsonObjectAsString, '/');
 
         return arrayOfStrings[arrayOfStrings.length - 1];
