@@ -642,6 +642,11 @@
            <artifactId>cloud-utils</artifactId>
            <version>${project.version}</version>
        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-plugin-remote-access-vpn-l2tp</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

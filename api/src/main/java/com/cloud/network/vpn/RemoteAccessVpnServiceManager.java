@@ -14,23 +14,13 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.network.dao;
+package com.cloud.network.vpn;
 
-import java.util.List;
+import com.cloud.exception.VPNProviderNotFoundException;
 
-import com.cloud.network.RemoteAccessVpn;
-import com.cloud.utils.db.GenericDao;
+import java.util.Map;
 
-public interface RemoteAccessVpnDao extends GenericDao<RemoteAccessVpnVO, Long> {
-    RemoteAccessVpnVO findByPublicIpAddressAndPort(long ipAddressId, Integer port);
-
-    RemoteAccessVpnVO findByPublicIpAddressStateAndPort(long ipAddressId, RemoteAccessVpn.State state, Integer port);
-
-    RemoteAccessVpnVO findByAccountNetworkAndPort(Long accountId, Long networkId, Integer port);
-
-    RemoteAccessVpnVO findByAccountVpcAndPort(Long accountId, Long vpcId, Integer port);
-
-    List<RemoteAccessVpnVO> findByAccount(Long accountId);
-
-    List<RemoteAccessVpnVO> listByNetworkId(Long networkId);
+public interface RemoteAccessVpnServiceManager {
+    Map<String, RemoteAccessVpnService> GetAvailableProviders();
+    RemoteAccessVpnService GetProvider(String key) throws VPNProviderNotFoundException;
 }

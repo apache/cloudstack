@@ -534,7 +534,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             }
 
             // 5) RE-APPLY ALL REMOTE ACCESS VPNs
-            final RemoteAccessVpnVO vpn = _vpnDao.findByAccountAndVpc(domainRouterVO.getAccountId(), domainRouterVO.getVpcId());
+            final RemoteAccessVpnVO vpn = _vpnDao.findByAccountVpcAndPort(domainRouterVO.getAccountId(), domainRouterVO.getVpcId());
             if (vpn != null) {
                 _commandSetupHelper.createApplyVpnCommands(true, vpn, domainRouterVO, cmds);
             }

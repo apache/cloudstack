@@ -16,24 +16,22 @@
 // under the License.
 package com.cloud.network.dao;
 
-import java.util.List;
-
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.network.RemoteAccessVpn;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.apache.log4j.Logger;
 
-@Component
-public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Long> implements RemoteAccessVpnDao {
-    private static final Logger s_logger = Logger.getLogger(RemoteAccessVpnDaoImpl.class);
+import java.util.List;
+import java.util.stream.Collectors;
 
-    private final SearchBuilder<RemoteAccessVpnVO> AllFieldsSearch;
+public class RemoteAccessVpnL2TPDao extends GenericDaoBase<RemoteAccessVpnL2TPVO, Long> {
 
-    protected RemoteAccessVpnDaoImpl() {
+    private static final Logger s_logger = Logger.getLogger(RemoteAccessVpnL2TPDao.class);
+
+    private final SearchBuilder<RemoteAccessVpnL2TPVO> AllFieldsSearch;
+
+    public RemoteAccessVpnL2TPDao() {
         AllFieldsSearch = createSearchBuilder();
         AllFieldsSearch.and("accountId", AllFieldsSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("networkId", AllFieldsSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
@@ -43,52 +41,50 @@ public class RemoteAccessVpnDaoImpl extends GenericDaoBase<RemoteAccessVpnVO, Lo
         AllFieldsSearch.done();
     }
 
-    @Override
-    public RemoteAccessVpnVO findByPublicIpAddressAndPort(long ipAddressId, Integer port) {
-        SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
+
+    public RemoteAccessVpn findByPublicIpAddressAndPort(long ipAddressId, Integer port) {
+
+        SearchCriteria<RemoteAccessVpnL2TPVO> sc = AllFieldsSearch.create();
         sc.setParameters("ipAddress", ipAddressId);
         sc.setParameters("port", port);
         return findOneBy(sc);
     }
 
-    @Override
-    public RemoteAccessVpnVO findByAccountNetworkAndPort(Long accountId, Long networkId, Integer port) {
-        SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
+    public RemoteAccessVpn findByPublicIpAddressAndState(long ipAddressId, RemoteAccessVpn.State state) {
+        return null;
+    }
+
+    public RemoteAccessVpn findByAccountNetworkAndPort(Long accountId, Long networkId, Integer port) {
+        SearchCriteria<RemoteAccessVpnL2TPVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("networkId", networkId);
         sc.setParameters("port", port);
         return findOneBy(sc);
     }
 
-    @Override
-    public RemoteAccessVpnVO findByAccountVpcAndPort(Long accountId, Long vpcId, Integer port) {
-        SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
+    public RemoteAccessVpn findByAccountVpcAndPort(Long accountId, Long vpcId, Integer port) {
+        SearchCriteria<RemoteAccessVpnL2TPVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
         sc.setParameters("vpcId", vpcId);
         sc.setParameters("port", port);
         return findOneBy(sc);
     }
 
-    @Override
-    public RemoteAccessVpnVO findByPublicIpAddressStateAndPort(long ipAddressId, RemoteAccessVpn.State state, Integer port) {
-        SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
-        sc.setParameters("ipAddress", ipAddressId);
-        sc.setParameters("state", state);
-        sc.setParameters("port", port);
-        return findOneBy(sc);
-    }
-
-    @Override
-    public List<RemoteAccessVpnVO> findByAccount(Long accountId) {
-        SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
+    public List<RemoteAccessVpn> findByAccount(Long accountId) {
+        SearchCriteria<RemoteAccessVpnL2TPVO> sc = AllFieldsSearch.create();
         sc.setParameters("accountId", accountId);
-        return listBy(sc);
+        return listBy(sc)
+                .stream()
+                .map(vpn -> (RemoteAccessVpn) vpn)
+                .collect(Collectors.toList());
     }
 
-    @Override
-    public List<RemoteAccessVpnVO> listByNetworkId(Long networkId) {
-        SearchCriteria<RemoteAccessVpnVO> sc = AllFieldsSearch.create();
+    public List<RemoteAccessVpn> listByNetworkId(Long networkId) {
+        SearchCriteria<RemoteAccessVpnL2TPVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkId", networkId);
-        return listBy(sc);
+        return listBy(sc)
+                .stream()
+                .map(vpn -> (RemoteAccessVpn) vpn)
+                .collect(Collectors.toList());
     }
 }

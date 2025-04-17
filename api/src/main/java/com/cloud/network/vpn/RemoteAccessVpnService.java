@@ -17,6 +17,7 @@
 package com.cloud.network.vpn;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
 import org.apache.cloudstack.api.command.user.vpn.ListVpnUsersCmd;
@@ -31,11 +32,18 @@ import com.cloud.utils.Pair;
 public interface RemoteAccessVpnService {
     static final String RemoteAccessVpnClientIpRangeCK = "remote.access.vpn.client.iprange";
 
-    RemoteAccessVpn createRemoteAccessVpn(long vpnServerAddressId, String ipRange, boolean openFirewall, Boolean forDisplay) throws NetworkRuleConflictException;
+    String GetName();
+
+    // TODO: add method to export all available specific fields with
+    //  - name
+    //  - required flags
+    //  - description
+
+    RemoteAccessVpn createRemoteAccessVpn(long vpnServerAddressId, String ipRange, boolean openFirewall, Boolean forDisplay, Integer listenPort, Map<String, String> implementationData) throws NetworkRuleConflictException;
 
     boolean destroyRemoteAccessVpnForIp(long ipId, Account caller, boolean forceCleanup) throws ResourceUnavailableException;
 
-    RemoteAccessVpn startRemoteAccessVpn(long vpnServerAddressId, boolean openFirewall) throws ResourceUnavailableException;
+    RemoteAccessVpn startRemoteAccessVpn(long vpnServerId, boolean openFirewall) throws ResourceUnavailableException;
 
     VpnUser addVpnUser(long vpnOwnerId, String userName, String password);
 

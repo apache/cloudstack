@@ -17,7 +17,7 @@
 package org.apache.cloudstack.api.command.user.vpn;
 
 import com.cloud.exception.VPNProviderNotFoundException;
-import com.cloud.network.vpn.RemoteAccessVpnProvider;
+import com.cloud.network.vpn.RemoteAccessVpnService;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.log4j.Logger;
 
@@ -40,6 +40,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.IpAddress;
 import com.cloud.network.RemoteAccessVpn;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 @APICommand(name = "createRemoteAccessVpn", description = "Creates a l2tp/ipsec remote access vpn", responseObject = RemoteAccessVpnResponse.class, entityType = {RemoteAccessVpn.class},
@@ -93,12 +95,12 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     private String providerName;
 
     @Parameter(name = "implementationdata",
-            type = CommandType.STRING,
-            description = "JSON-encoded protocol-specific data for the VPN")
-    private String implementationData;
+            type = CommandType.MAP,
+            description = "protocol-specific data for the VPN")
+    private Map<String, String> implementationData;
 
 
-    private RemoteAccessVpnProvider provider;
+    private RemoteAccessVpnService vpnProtocol;
 
 
     /////////////////////////////////////////////////////
@@ -138,7 +140,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
         return providerName;
     }
 
-    public String getImplementationData() {
+    public Map<String, String> getImplementationData() {
         return implementationData;
     }
 
@@ -171,9 +173,9 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     public void create() {
         try {
 
-            this.provider = _ravpmService.GetProvider(getProviderName());
+            this.vpnProtocol = _ravpmService.GetProvider(getProviderName());
 
-            RemoteAccessVpn vpn = provider.createRemoteAccessVpn(publicIpId, ipRange, getOpenFirewall(), isDisplay(), getListenPort(), getImplementationData());
+            RemoteAccessVpn vpn = vpnProtocol.createRemoteAccessVpn(publicIpId, ipRange, getOpenFirewall(), isDisplay(), getListenPort(), getImplementationData());
             if (vpn != null) {
                 setEntityId(vpn.getId());
                 setEntityUuid(vpn.getUuid());
@@ -199,7 +201,7 @@ public class CreateRemoteAccessVpnCmd extends BaseAsyncCreateCmd {
     public void execute() {
         try {
 
-            RemoteAccessVpn result = this.provider.startRemoteAccessVpn(getEntityId(), getOpenFirewall());
+            RemoteAccessVpn result = this.vpnProtocol.startRemoteAccessVpn(getEntityId(), getOpenFirewall());
             if (result != null) {
 
                 RemoteAccessVpnResponse response = _responseGenerator.createRemoteAccessVpnResponse(result);

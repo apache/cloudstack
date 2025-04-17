@@ -2489,7 +2489,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 }
 
                 if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Vpn, provider)) {
-                    final RemoteAccessVpn vpn = _vpnDao.findByPublicIpAddress(ip.getId());
+                    final RemoteAccessVpn vpn = _vpnDao.findByPublicIpAddressAndPort(ip.getId());
                     if (vpn != null) {
                         vpns.add(vpn);
                     }

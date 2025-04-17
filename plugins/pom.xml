@@ -39,6 +39,14 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>9</source>
+                    <target>9</target>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <modules>
@@ -111,6 +119,8 @@
         <module>network-elements/stratosphere-ssp</module>
         <module>network-elements/brocade-vcs</module>
         <module>network-elements/vxlan</module>
+
+        <module>remote-access-vpn/l2tp</module>
 
         <module>outofbandmanagement-drivers/ipmitool</module>
         <module>outofbandmanagement-drivers/nested-cloudstack</module>

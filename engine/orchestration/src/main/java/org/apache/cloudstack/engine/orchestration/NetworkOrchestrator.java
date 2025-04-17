@@ -1907,7 +1907,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         //do not remove vpn service for vpc networks.
         if (services.contains(Service.Vpn.getName()) && network.getVpcId() == null) {
-            RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findByAccountAndNetwork(network.getAccountId(), networkId);
+            RemoteAccessVpnVO vpn = _remoteAccessVpnDao.findByAccountNetworkAndPort(network.getAccountId(), networkId);
             try {
                 _vpnMgr.destroyRemoteAccessVpnForIp(vpn.getServerAddressId(), caller, true);
             } catch (ResourceUnavailableException ex) {

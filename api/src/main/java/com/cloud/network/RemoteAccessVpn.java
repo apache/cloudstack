@@ -26,12 +26,17 @@ public interface RemoteAccessVpn extends ControlledEntity, InternalIdentity, Ide
         Added, Running, Removed
     }
 
-    String getProvider();
+    String getProviderName();
 
-    long getServerAddressId();
+    Long getServerAddressId();
 
     String getIpRange();
 
+    // TODO: DELETE THIS, it is only for ipsec
+
+    /**
+     * @deprecated
+     */
     String getIpsecPresharedKey();
 
     String getLocalIp();
@@ -41,6 +46,8 @@ public interface RemoteAccessVpn extends ControlledEntity, InternalIdentity, Ide
     Long getVpcId();
 
     State getState();
+
+    Integer getPort();
 
     @Override
     boolean isDisplay();
