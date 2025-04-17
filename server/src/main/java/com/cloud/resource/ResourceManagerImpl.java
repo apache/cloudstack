@@ -32,7 +32,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import javax.inject.Inject;
@@ -60,10 +59,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ObjectUtils;
-
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -175,6 +172,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.Manager;
@@ -201,7 +199,6 @@ import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.cloud.utils.ssh.SshException;
 import com.cloud.vm.UserVmManager;
-import com.cloud.utils.StringUtils;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
