@@ -2041,11 +2041,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Override
     public boolean start() {
-        if (configDepot.isNewConfig(VolumeOrchestrationService.VolumeAllocationAlgorithm)) {
+        if (configDepot.isNewConfig(VolumeAllocationAlgorithm)) {
             String vmAllocationAlgo = DeploymentClusterPlanner.VmAllocationAlgorithm.value();
-            if (com.cloud.utils.StringUtils.isNotEmpty(vmAllocationAlgo) && !"random".equalsIgnoreCase(vmAllocationAlgo)) {
-                logger.debug("Updating value for configuration: {} to {}", VolumeOrchestrationService.VolumeAllocationAlgorithm.key(), vmAllocationAlgo);
-                configurationDao.update(VolumeOrchestrationService.VolumeAllocationAlgorithm.key(), vmAllocationAlgo);
+            if (com.cloud.utils.StringUtils.isNotEmpty(vmAllocationAlgo) && !VolumeAllocationAlgorithm.defaultValue().equalsIgnoreCase(vmAllocationAlgo)) {
+                logger.debug("Updating value for configuration: {} to {}", VolumeAllocationAlgorithm.key(), vmAllocationAlgo);
+                configurationDao.update(VolumeAllocationAlgorithm.key(), vmAllocationAlgo);
             }
         }
         return true;
