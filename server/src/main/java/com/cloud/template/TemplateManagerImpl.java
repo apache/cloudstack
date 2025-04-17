@@ -488,7 +488,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String mode = cmd.getMode();
         Long eventId = cmd.getStartEventId();
 
-        return extract(account, templateId, url, zoneId, mode, eventId, true);
+        String extractUrl = extract(account, templateId, url, zoneId, mode, eventId, true);
+        CallContext.current().setEventDetails(String.format("Download URL: %s, ISO ID: %s", extractUrl, _tmpltDao.findById(templateId).getUuid()));
+        return extractUrl;
     }
 
     @Override
@@ -506,7 +508,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             throw new InvalidParameterValueException("unable to find template with id " + templateId);
         }
 
-        return extract(caller, templateId, url, zoneId, mode, eventId, false);
+        String extractUrl = extract(caller, templateId, url, zoneId, mode, eventId, false);
+        CallContext.current().setEventDetails(String.format("Download URL: %s, template ID: %s", extractUrl, template.getUuid()));
+        return extractUrl;
     }
 
     @Override

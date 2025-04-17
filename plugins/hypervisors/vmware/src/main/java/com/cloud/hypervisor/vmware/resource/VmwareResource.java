@@ -5104,9 +5104,9 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             answer.setVolumeChainInfo(chainInfo);
             return answer;
         } catch (Exception e) {
-            String msg = "Catch Exception " + e.getClass().getName() + " due to " + e.toString();
+            String msg = "Catch Exception " + e.getClass().getName() + " due to " + e.getMessage();
             logger.error(msg, e);
-            return new MigrateVolumeAnswer(cmd, false, msg, null);
+            return new MigrateVolumeAnswer(cmd, false, e.getMessage(), null);
         }
     }
 
