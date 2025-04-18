@@ -88,6 +88,15 @@
           <a-switch v-model:checked="form.directdownload"/>
         </a-form-item>
 
+        <a-form-item ref="checksum" name="checksum">
+          <template #label>
+            <tooltip-label :title="$t('label.checksum')" :tooltip="apiParams.checksum.description"/>
+          </template>
+          <a-input
+            v-model:value="form.checksum"
+            :placeholder="apiParams.checksum.description" />
+        </a-form-item>
+
         <a-form-item ref="zoneid" name="zoneid">
           <template #label>
             <tooltip-label :title="$t('label.zoneid')" :tooltip="apiParams.zoneid.description"/>
