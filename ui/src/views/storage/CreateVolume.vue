@@ -269,6 +269,9 @@ export default {
           values.virtualmachineid = this.resource.id
           values.zoneid = this.resource.zoneid
         }
+        if (this.customDiskOffering) {
+          values.size = values.size.trim()
+        }
         if (this.createVolumeFromSnapshot) {
           values.snapshotid = this.resource.id
         }
