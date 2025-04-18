@@ -2148,10 +2148,15 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (EventTypes.EVENT_NETWORK_DELETE.equals(event.getType())) {
             usageNetworksDao.remove(event.getResourceId(), event.getCreateDate());
         } else if (EventTypes.EVENT_NETWORK_CREATE.equals(event.getType())) {
-            s_logger.debug(String.format("Marking existing helper entries for network [%s] as removed.", event.getResourceId()));
-            usageNetworksDao.remove(event.getResourceId(), event.getCreateDate());
+            List<UsageNetworksVO> entries = usageNetworksDao.listAll(event.getResourceId());
+            if (!entries.isEmpty()) {
+                s_logger.warn(String.format("Active helper entries already exist for network [%s]; we will not create a new one.",
+                        event.getResourceId()));
+                return;
+            }
             s_logger.debug(String.format("Creating a helper entry for network [%s].", event.getResourceId()));
-            UsageNetworksVO usageNetworksVO = new UsageNetworksVO(event.getResourceId(), event.getOfferingId(), event.getZoneId(), event.getAccountId(), domainId, Network.State.Allocated.name(), event.getCreateDate(), null);
+            UsageNetworksVO usageNetworksVO = new UsageNetworksVO(event.getResourceId(), event.getOfferingId(), event.getZoneId(),
+                    event.getAccountId(), domainId, Network.State.Allocated.name(), event.getCreateDate(), null);
             usageNetworksDao.persist(usageNetworksVO);
         } else if (EventTypes.EVENT_NETWORK_UPDATE.equals(event.getType())) {
             usageNetworksDao.update(event.getResourceId(), event.getOfferingId(), event.getResourceType());
@@ -2166,8 +2171,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (EventTypes.EVENT_VPC_DELETE.equals(event.getType())) {
             usageVpcDao.remove(event.getResourceId(), event.getCreateDate());
         } else if (EventTypes.EVENT_VPC_CREATE.equals(event.getType())) {
-            s_logger.debug(String.format("Marking existing helper entries for VPC [%s] as removed.", event.getResourceId()));
-            usageVpcDao.remove(event.getResourceId(), event.getCreateDate());
+            List<UsageVpcVO> entries = usageVpcDao.listAll(event.getResourceId());
+            if (!entries.isEmpty()) {
+                s_logger.warn(String.format("Active helper entries already exist for VPC [%s]; we will not create a new one.",
+                        event.getResourceId()));
+                return;
+            }
             s_logger.debug(String.format("Creating a helper entry for VPC [%s].", event.getResourceId()));
             UsageVpcVO usageVPCVO = new UsageVpcVO(event.getResourceId(), event.getZoneId(), event.getAccountId(), domainId, Vpc.State.Enabled.name(), event.getCreateDate(), null);
             usageVpcDao.persist(usageVPCVO);
