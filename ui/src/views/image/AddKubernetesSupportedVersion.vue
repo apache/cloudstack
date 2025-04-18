@@ -216,7 +216,7 @@ export default {
       })
     },
     fetchData () {
-      this.fetchArchitectureTypes()
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
       this.fetchZoneData()
     },
     isValidValueForKey (obj, key) {
@@ -224,19 +224,6 @@ export default {
     },
     arrayHasItems (array) {
       return array !== null && array !== undefined && Array.isArray(array) && array.length > 0
-    },
-    fetchArchitectureTypes () {
-      this.architectureTypes.opts = []
-      const typesList = []
-      typesList.push({
-        id: 'x86_64',
-        description: 'AMD 64 bits (x86_64)'
-      })
-      typesList.push({
-        id: 'aarch64',
-        description: 'ARM 64 bits (aarch64)'
-      })
-      this.architectureTypes.opts = typesList
     },
     fetchZoneData () {
       const params = {}

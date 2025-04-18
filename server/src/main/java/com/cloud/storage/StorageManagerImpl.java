@@ -178,6 +178,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.VsphereStoragePolicyVO;
@@ -3585,17 +3586,49 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         return (ImageStore)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Image);
     }
 
+    protected void registerSystemVmTemplateForHypervisorArch(final HypervisorType hypervisorType,
+                 final CPU.CPUArch arch, final Long zoneId, final String url, final DataStore store,
+                 final SystemVmTemplateRegistration systemVmTemplateRegistration, final String filePath,
+                 final Pair<String, Long> storeUrlAndId, final String nfsVersion) {
+        if (HypervisorType.Simulator.equals(hypervisorType)) {
+            return;
+        }
+        String templateName = getValidTemplateName(zoneId, hypervisorType);
+        VMTemplateVO registeredTemplate = systemVmTemplateRegistration.getRegisteredTemplate(templateName, arch);
+        TemplateDataStoreVO templateDataStoreVO = null;
+        if (registeredTemplate != null) {
+            templateDataStoreVO = _templateStoreDao.findByStoreTemplate(store.getId(), registeredTemplate.getId());
+            if (templateDataStoreVO != null) {
+                try {
+                    if (systemVmTemplateRegistration.validateIfSeeded(templateDataStoreVO, url,
+                            templateDataStoreVO.getInstallPath(), nfsVersion)) {
+                        return;
+                    }
+                } catch (Exception e) {
+                    logger.error("Failed to validated if template is seeded", e);
+                }
+            }
+        }
+        SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath, nfsVersion);
+        if (templateDataStoreVO != null) {
+            systemVmTemplateRegistration.validateAndRegisterTemplate(hypervisorType, templateName,
+                    storeUrlAndId.second(), registeredTemplate, templateDataStoreVO, filePath);
+        } else {
+            systemVmTemplateRegistration.validateAndRegisterTemplateForNonExistingEntries(hypervisorType, arch,
+                    templateName, storeUrlAndId, filePath);
+        }
+    }
+
     private void registerSystemVmTemplateOnFirstNfsStore(Long zoneId, String providerName, String url, DataStore store) {
         if (DataStoreProvider.NFS_IMAGE.equals(providerName) && zoneId != null) {
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(final TransactionStatus status) {
-                    List<ImageStoreVO> stores = _imageStoreDao.listAllStoresInZone(zoneId, providerName, DataStoreRole.Image);
-                    stores = stores.stream().filter(str -> str.getId() != store.getId()).collect(Collectors.toList());
-                    // Check if it's the only/first store in the zone
-                    if (stores.size() == 0) {
-                        List<HypervisorType> hypervisorTypes = _clusterDao.getAvailableHypervisorInZone(zoneId);
-                        Set<HypervisorType> hypSet = new HashSet<>(hypervisorTypes);
+                    List<ImageStoreVO> stores = _imageStoreDao.listAllStoresInZoneExceptId(zoneId, providerName,
+                            DataStoreRole.Image, store.getId());
+                    if (CollectionUtils.isEmpty(stores)) {
+                        List<Pair<HypervisorType, CPU.CPUArch>> hypervisorTypes =
+                                _clusterDao.listDistinctHypervisorsArchAcrossClusters(zoneId);
                         TransactionLegacy txn = TransactionLegacy.open("AutomaticTemplateRegister");
                         SystemVmTemplateRegistration systemVmTemplateRegistration = new SystemVmTemplateRegistration();
                         String filePath = null;
@@ -3606,40 +3639,15 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             }
                             Pair<String, Long> storeUrlAndId = new Pair<>(url, store.getId());
                             String nfsVersion = imageStoreDetailsUtil.getNfsVersion(store.getId());
-                            for (HypervisorType hypervisorType : hypSet) {
+                            for (Pair<HypervisorType, CPU.CPUArch> hypervisorArchType : hypervisorTypes) {
                                 try {
-                                    if (HypervisorType.Simulator == hypervisorType) {
-                                        continue;
-                                    }
-                                    String templateName = getValidTemplateName(zoneId, hypervisorType);
-                                    Pair<Hypervisor.HypervisorType, String> hypervisorAndTemplateName =
-                                            new Pair<>(hypervisorType, templateName);
-                                    Long templateId = systemVmTemplateRegistration.getRegisteredTemplateId(hypervisorAndTemplateName);
-                                    VMTemplateVO vmTemplateVO = null;
-                                    TemplateDataStoreVO templateVO = null;
-                                    if (templateId != null) {
-                                        vmTemplateVO = _templateDao.findById(templateId);
-                                        templateVO = _templateStoreDao.findByStoreTemplate(store.getId(), templateId);
-                                        if (templateVO != null) {
-                                            try {
-                                                if (systemVmTemplateRegistration.validateIfSeeded(
-                                                        templateVO, url, templateVO.getInstallPath(), nfsVersion)) {
-                                                    continue;
-                                                }
-                                            } catch (Exception e) {
-                                                logger.error("Failed to validated if template is seeded", e);
-                                            }
-                                        }
-                                    }
-                                    SystemVmTemplateRegistration.mountStore(storeUrlAndId.first(), filePath, nfsVersion);
-                                    if (templateVO != null && vmTemplateVO != null) {
-                                        systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, vmTemplateVO, templateVO, filePath);
-                                    } else {
-                                        systemVmTemplateRegistration.registerTemplate(hypervisorAndTemplateName, storeUrlAndId, filePath);
-                                    }
+                                    registerSystemVmTemplateForHypervisorArch(hypervisorArchType.first(),
+                                            hypervisorArchType.second(), zoneId, url, store,
+                                            systemVmTemplateRegistration, filePath, storeUrlAndId, nfsVersion);
                                 } catch (CloudRuntimeException e) {
                                     SystemVmTemplateRegistration.unmountStore(filePath);
-                                    logger.error(String.format("Failed to register systemVM template for hypervisor: %s", hypervisorType.name()), e);
+                                    logger.error("Failed to register system VM template for hypervisor: {} {}",
+                                            hypervisorArchType.first().name(), hypervisorArchType.second().name(), e);
                                 }
                             }
                         } catch (Exception e) {
