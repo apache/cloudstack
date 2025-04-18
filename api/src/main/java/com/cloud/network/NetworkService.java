@@ -268,4 +268,6 @@ public interface NetworkService {
     InternalLoadBalancerElementService getInternalLoadBalancerElementByNetworkServiceProviderId(long networkProviderId);
     InternalLoadBalancerElementService getInternalLoadBalancerElementById(long providerId);
     List<InternalLoadBalancerElementService> getInternalLoadBalancerElements();
+
+    String getNsxSegmentId(long domainId, long accountId, long zoneId, Long vpcId, long networkId);
 }
