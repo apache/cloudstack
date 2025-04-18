@@ -932,4 +932,15 @@ public class NetUtilsTest {
         Assert.assertEquals("192.168.0.0/24", NetUtils.transformCidr("192.168.0.100/24"));
         Assert.assertEquals("10.10.10.10/32", NetUtils.transformCidr("10.10.10.10/32"));
     }
+
+    @Test
+    public void testVpnIpRange() {
+        String ipRange = "10.1.2.1-10.1.2.8";
+        String startIp = ipRange.split("-")[0];
+        String endIp = ipRange.split("-")[1];
+        int cidrSize = NetUtils.getBigCidrSizeOfIpRange(NetUtils.ip2Long(startIp), NetUtils.ip2Long(endIp));
+        Assert.assertEquals(28, cidrSize);
+        String cidr = NetUtils.transformCidr(startIp + "/" + cidrSize);
+        Assert.assertEquals("10.1.2.0/28", cidr);
+    }
 }
