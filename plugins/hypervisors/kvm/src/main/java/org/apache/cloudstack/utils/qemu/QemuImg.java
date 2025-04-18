@@ -787,6 +787,46 @@ public class QemuImg {
     }
 
     /**
+     * Commits an image.
+     *
+     * This method is a facade for 'qemu-img commit'.
+     *
+     * @param file
+     *            The file to be commited.
+     * @param base
+     *            If base is not specified, the immediate backing file of the top image (which is {@code file}) will be used.
+     * @param deleteFile
+     *            If true, the commited file(s) will be deleted.
+     */
+    public void commit( QemuImgFile file, QemuImgFile base, boolean deleteFile) throws QemuImgException {
+        if (file == null) {
+            throw new QemuImgException("File should not be null");
+        }
+
+        final Script s = new Script(_qemuImgPath, timeout);
+        s.add("commit");
+        if (deleteFile) {
+            s.add("-d");
+        }
+
+        if (file.getFormat() != null) {
+            s.add("-f");
+            s.add(file.getFormat().format);
+        }
+
+        if (base != null) {
+            s.add("-b");
+            s.add(base.getFileName());
+        }
+
+        s.add(file.getFileName());
+        final String result = s.execute();
+        if (result != null) {
+            throw new QemuImgException(result);
+        }
+    }
+
+    /**
      * Does qemu-img support --target-is-zero
      * @return boolean
      */
