@@ -328,7 +328,7 @@ for example:
     def grabSystemInfo(self):
         def getIpAddr():
             try:
-                ip = socket.gethostbyname(socket.gethostname())
+                ip = socket.gethostbyname(socket.gethostname() + ".local")
                 return ip
             except Exception as e:
                 return "127.0.0.1"
