@@ -19,6 +19,12 @@
 -- Schema upgrade from 4.20.0.0 to 4.20.1.0
 --;
 
+-- Delete user vm details for guest CPU mode/model which are root admin only
+DELETE FROM `cloud`.`user_vm_details` WHERE `name` IN ('guest.cpu.mode','guest.cpu.model');
+
+-- Delete template details for guest CPU mode/model which are root admin only
+DELETE FROM `cloud`.`vm_template_details` WHERE `name` IN ('guest.cpu.mode','guest.cpu.model');
+
 -- Add column api_key_access to user and account tables
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user', 'api_key_access', 'boolean DEFAULT NULL COMMENT "is api key access allowed for the user" AFTER `secret_key`');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.account', 'api_key_access', 'boolean DEFAULT NULL COMMENT "is api key access allowed for the account" ');
