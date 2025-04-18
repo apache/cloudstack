@@ -631,6 +631,7 @@ public class ResourceCleanupServiceImplTest {
                 days);
         Date today = new Date();
         long diff = today.getTime() - result.getTime();
+        long res = TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
         Assert.assertEquals(days, TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS));
     }
 

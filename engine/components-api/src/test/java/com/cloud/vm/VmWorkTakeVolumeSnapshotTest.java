@@ -26,8 +26,9 @@ public class VmWorkTakeVolumeSnapshotTest {
     @Test
     public void testVmWorkTakeVolumeSnapshotZoneIds() {
         List<Long> zoneIds = List.of(10L, 20L);
+        List<Long> poolIds = List.of(10L, 20L);
         VmWorkTakeVolumeSnapshot work = new VmWorkTakeVolumeSnapshot(1L, 1L, 1L, "handler",
-                1L, 1L, 1L, false, null, false, zoneIds);
+                1L, 1L, 1L, false, null, false, zoneIds, poolIds);
         Assert.assertNotNull(work.getZoneIds());
         Assert.assertEquals(zoneIds.size(), work.getZoneIds().size());
         Assert.assertEquals(zoneIds.get(0), work.getZoneIds().get(0));

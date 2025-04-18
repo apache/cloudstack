@@ -37,7 +37,7 @@
             :placeholder="apiParams.name.description"
             v-focus="true" />
         </a-form-item>
-        <a-form-item ref="zoneids" name="zoneids">
+        <a-form-item ref="zoneids" name="zoneids" :required="(!isAdmin && form.useStorageReplication)">
           <template #label>
             <tooltip-label :title="$t('label.zones')" :tooltip="''"/>
           </template>
@@ -58,6 +58,33 @@
             :loading="zoneLoading"
             :placeholder="''">
             <a-select-option v-for="opt in zones" :key="opt.id" :label="opt.name || opt.description">
+              <span>
+                <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                <global-outlined v-else style="margin-right: 5px" />
+                {{ opt.name || opt.description }}
+              </span>
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item :label="$t('label.useStorageReplication')" name="useStorageReplication" ref="useStorageReplication">
+          <a-switch v-model:checked="form.useStorageReplication" />
+        </a-form-item>
+        <a-form-item v-if="isAdmin && form.useStorageReplication" ref="storageids" name="storageids">
+          <template #label>
+            <tooltip-label :title="$t('label.storagepools')" :tooltip="''"/>
+          </template>
+          <a-select
+            id="storagepool-selection"
+            v-model:value="form.storageids"
+            mode="multiple"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="storagePoolLoading"
+            :placeholder="''">
+            <a-select-option v-for="opt in storagePools" :key="opt.id" :label="opt.name || opt.description">
               <span>
                 <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
                 <global-outlined v-else style="margin-right: 5px" />
@@ -125,6 +152,7 @@
 <script>
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
+import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -158,6 +186,8 @@ export default {
       inputVisible: '',
       zones: [],
       zoneLoading: false,
+      storagePools: [],
+      storagePoolLoading: false,
       tags: [],
       dataSource: []
     }
@@ -169,11 +199,14 @@ export default {
     this.initForm()
     this.quiescevm = this.resource.quiescevm
     this.supportsStorageSnapshot = this.resource.supportsstoragesnapshot
-    this.fetchZoneData()
+    this.fetchData()
   },
   computed: {
     formattedAdditionalZoneMessage () {
       return `${this.$t('message.snapshot.additional.zones').replace('%x', this.resource.zonename)}`
+    },
+    isAdmin () {
+      return isAdmin()
     }
   },
   methods: {
@@ -181,10 +214,17 @@ export default {
       this.formRef = ref()
       this.form = reactive({
         name: undefined,
+        useStorageReplication: false,
         asyncbackup: undefined,
         quiescevm: false
       })
       this.rules = reactive({})
+    },
+    fetchData () {
+      this.fetchZoneData()
+      if (isAdmin()) {
+        this.fetchStoragePoolData()
+      }
     },
     fetchZoneData () {
       const params = {}
@@ -200,6 +240,20 @@ export default {
         this.zoneLoading = false
       })
     },
+    fetchStoragePoolData () {
+      const params = {}
+      params.showicon = true
+      this.storagePoolsLoading = true
+      api('listStoragePools', params).then(json => {
+        const listStoragePools = json.liststoragepoolsresponse.storagepool
+        if (listStoragePools) {
+          this.storagePools = listStoragePools
+          this.storagePools = this.storagePools.filter(pool => pool.storagecapabilities.CAN_COPY_SNAPSHOT_BETWEEN_ZONES_AND_SAME_POOL_TYPE && pool.zoneid !== this.resource.zoneid)
+        }
+      }).finally(() => {
+        this.storagePoolsLoading = false
+      })
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.actionLoading) return
@@ -212,6 +266,10 @@ export default {
         if (values.name) {
           params.name = values.name
         }
+        params.useStorageReplication = false
+        if (values.useStorageReplication) {
+          params.useStorageReplication = values.useStorageReplication
+        }
         params.asyncBackup = false
         if (values.asyncbackup) {
           params.asyncBackup = values.asyncbackup
@@ -222,6 +280,9 @@ export default {
         }
         if (values.zoneids && values.zoneids.length > 0) {
           params.zoneids = values.zoneids.join()
+        }
+        if (values.storageids && values.storageids.length > 0) {
+          params.storageids = values.storageids.join()
         }
         for (let i = 0; i < this.tags.length; i++) {
           const formattedTagData = {}
