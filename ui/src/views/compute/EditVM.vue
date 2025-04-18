@@ -177,7 +177,6 @@ export default {
         ostypeid: this.resource.ostypeid,
         isdynamicallyscalable: this.resource.isdynamicallyscalable,
         group: this.resource.group,
-        securitygroupids: this.resource.securitygroup.map(x => x.id),
         userdata: '',
         haenable: this.resource.haenable
       })
