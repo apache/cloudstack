@@ -260,4 +260,15 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
 
         return update(vo, sc);
     }
+
+    @Override
+    public List<HaWorkVO> listPendingHAWorkForHost(long hostId) {
+        SearchBuilder<HaWorkVO> sb = createSearchBuilder();
+        sb.and("hostId", sb.entity().getHostId(), Op.EQ);
+        sb.and("type", sb.entity().getWorkType(), Op.EQ);
+        SearchCriteria<HaWorkVO> sc = sb.create();
+        sc.setParameters("hostId", hostId);
+        sc.setParameters("type", WorkType.HA);
+        return listBy(sc);
+    }
 }

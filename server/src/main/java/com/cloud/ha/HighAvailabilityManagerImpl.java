@@ -265,6 +265,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         s_logger.warn("Scheduling restart for VMs on host " + host.getId() + "-" + host.getName());
 
         final List<VMInstanceVO> vms = _instanceDao.listByHostId(host.getId());
+        final List<HaWorkVO> pendingHaWorks = _haDao.listPendingHAWorkForHost(host.getId());
         final DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
 
         // send an email alert that the host is down
@@ -294,6 +295,10 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
                 "Host [" + hostDesc + "] is down." + ((sb != null) ? sb.toString() : ""));
 
         for (VMInstanceVO vm : reorderedVMList) {
+            VMInstanceVO finalVm = vm;
+            if (pendingHaWorks.stream().anyMatch(h -> h.getInstanceId() == finalVm.getId())) {
+                continue;
+            }
             ServiceOfferingVO vmOffering = _serviceOfferingDao.findById(vm.getServiceOfferingId());
             if (_itMgr.isRootVolumeOnLocalStorage(vm.getId())) {
                 if (s_logger.isDebugEnabled()){
