@@ -313,7 +313,7 @@ const user = {
           commit('SET_CUSTOM_COLUMNS', cachedCustomColumns)
 
           // Ensuring we get the user info so that store.getters.user is never empty when the page is freshly loaded
-          api('listUsers', { username: Cookies.get('username'), listall: true }).then(response => {
+          api('listUsers', { id: Cookies.get('userid'), listall: true }).then(response => {
             const result = response.listusersresponse.user[0]
             commit('SET_INFO', result)
             commit('SET_NAME', result.firstname + ' ' + result.lastname)
@@ -386,7 +386,7 @@ const user = {
           }).catch(ignored => {})
         }
 
-        api('listUsers', { username: Cookies.get('username') }).then(response => {
+        api('listUsers', { id: Cookies.get('userid') }).then(response => {
           const result = response.listusersresponse.user[0]
           commit('SET_INFO', result)
           commit('SET_NAME', result.firstname + ' ' + result.lastname)

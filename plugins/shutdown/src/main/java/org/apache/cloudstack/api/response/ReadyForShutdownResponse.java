@@ -38,10 +38,10 @@ public class ReadyForShutdownResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.MANAGEMENT_SERVER_ID)
     @Param(description = "The id of the management server")
-    private Long msId;
+    private String msUuid;
 
-    public ReadyForShutdownResponse(Long msId, Boolean shutdownTriggered, Boolean readyForShutdown, long pendingJobsCount) {
-        this.msId = msId;
+    public ReadyForShutdownResponse(String msUuid, Boolean shutdownTriggered, Boolean readyForShutdown, long pendingJobsCount) {
+        this.msUuid = msUuid;
         this.shutdownTriggered = shutdownTriggered;
         this.readyForShutdown = readyForShutdown;
         this.pendingJobsCount = pendingJobsCount;
@@ -69,13 +69,5 @@ public class ReadyForShutdownResponse extends BaseResponse {
 
     public void setPendingJobsCount(Long pendingJobsCount) {
         this.pendingJobsCount = pendingJobsCount;
-    }
-
-    public Long getMsId() {
-        return msId;
-    }
-
-    public void setMsId(Long msId) {
-        this.msId = msId;
     }
 }

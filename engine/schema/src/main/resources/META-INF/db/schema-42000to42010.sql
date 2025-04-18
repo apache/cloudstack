@@ -87,3 +87,25 @@ CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (2, 'Debian GNU/Linux 12 (64-bit)', 'KV
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows 11 (64-bit)', 'KVM', 'default', 'Windows 11');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows Server 2025', 'KVM', 'default', 'Windows Server 2025');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (10, 'Ubuntu 24.04 LTS', 'KVM', 'default', 'Ubuntu 24.04 LTS');
+
+-- Grant access to 2FA APIs for the "Read-Only User - Default" role
+
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Read-Only User - Default', 'setupUserTwoFactorAuthentication', 'ALLOW');
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Read-Only User - Default', 'validateUserTwoFactorAuthenticationCode', 'ALLOW');
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Read-Only User - Default', 'listUserTwoFactorAuthenticatorProviders', 'ALLOW');
+
+-- Grant access to 2FA APIs for the "Support User - Default" role
+
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Support User - Default', 'setupUserTwoFactorAuthentication', 'ALLOW');
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Support User - Default', 'validateUserTwoFactorAuthenticationCode', 'ALLOW');
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Support User - Default', 'listUserTwoFactorAuthenticatorProviders', 'ALLOW');
+
+-- Grant access to 2FA APIs for the "Read-Only Admin - Default" role
+
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Read-Only Admin - Default', 'setupUserTwoFactorAuthentication', 'ALLOW');
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Read-Only Admin - Default', 'validateUserTwoFactorAuthenticationCode', 'ALLOW');
+
+-- Grant access to 2FA APIs for the "Support Admin - Default" role
+
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Support Admin - Default', 'setupUserTwoFactorAuthentication', 'ALLOW');
+CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Support Admin - Default', 'validateUserTwoFactorAuthenticationCode', 'ALLOW');
