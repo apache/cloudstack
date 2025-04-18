@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -179,4 +180,9 @@ public interface VolumeOrchestrationService {
      * Unmanage VM volumes
      */
     void unmanageVolumes(long vmId);
+
+    /**
+     * Retrieves the volume's checkpoints paths to be used in the KVM processor. If there are no checkpoints, it will return an empty list.
+     */
+    Pair<List<String>, Set<String>> getVolumeCheckpointPathsAndImageStoreUrls(long volumeId, HypervisorType hypervisorType);
 }
