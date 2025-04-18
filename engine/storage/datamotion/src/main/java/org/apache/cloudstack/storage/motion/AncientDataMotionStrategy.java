@@ -69,6 +69,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot.Type;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
@@ -459,6 +460,16 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         StoragePool srcPool = (StoragePool)dataStoreMgr.getDataStore(srcData.getDataStore().getId(), DataStoreRole.Primary);
         StoragePool destPool = (StoragePool)dataStoreMgr.getDataStore(destData.getDataStore().getId(), DataStoreRole.Primary);
         MigrateVolumeCommand command = new MigrateVolumeCommand(volume.getId(), volume.getPath(), destPool, volume.getAttachedVmName(), volume.getVolumeType(), waitInterval, volume.getChainInfo());
+
+        if (volume.getpayload() instanceof DiskOfferingVO) {
+            DiskOfferingVO offering = (DiskOfferingVO) volume.getpayload();
+            Long newIops = null;
+            if (offering.getIopsReadRate() != null && offering.getIopsWriteRate() != null) {
+                newIops = offering.getIopsReadRate() + offering.getIopsWriteRate();
+            }
+            command.setNewIops(newIops);
+        }
+
         if (srcPool.getParent() != 0) {
             command.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
         }
