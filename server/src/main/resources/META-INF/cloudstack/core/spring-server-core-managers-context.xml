@@ -382,4 +382,7 @@
     <bean id="sharedFSServiceImpl" class="org.apache.cloudstack.storage.sharedfs.SharedFSServiceImpl">
         <property name="sharedFSProviders" value="#{sharedFSProvidersRegistry.registered}" />
     </bean>
+
+    <bean id="reconcileCommandServiceImpl" class="org.apache.cloudstack.command.ReconcileCommandServiceImpl">
+    </bean>
 </beans>
