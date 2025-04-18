@@ -131,7 +131,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import org.mockito.MockedStatic;
@@ -210,7 +210,7 @@ public class UserVmManagerImplTest {
     private EntityManager entityManager;
 
     @Mock
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Mock
     private UserVmVO userVmVoMock;
@@ -483,7 +483,7 @@ public class UserVmManagerImplTest {
         verifyMethodsThatAreAlwaysExecuted();
 
         Mockito.verify(userVmManagerImpl).updateDisplayVmFlag(false, vmId, userVmVoMock);
-        Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(anyLong(), anyString());
+        Mockito.verify(vmInstanceDetailsDao, Mockito.times(0)).removeDetail(anyLong(), anyString());
     }
 
     @Test
@@ -500,8 +500,8 @@ public class UserVmManagerImplTest {
 
         userVmManagerImpl.updateVirtualMachine(updateVmCommand);
         verifyMethodsThatAreAlwaysExecuted();
-        Mockito.verify(userVmDetailsDao).removeDetail(vmId, "userdetail");
-        Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(vmId, "systemdetail");
+        Mockito.verify(vmInstanceDetailsDao).removeDetail(vmId, "userdetail");
+        Mockito.verify(vmInstanceDetailsDao, Mockito.times(0)).removeDetail(vmId, "systemdetail");
         Mockito.verify(userVmManagerImpl, Mockito.times(0)).updateDisplayVmFlag(false, vmId, userVmVoMock);
     }
 
@@ -526,13 +526,13 @@ public class UserVmManagerImplTest {
         prepareAndExecuteMethodDealingWithDetails(false, false);
     }
 
-    private List<UserVmDetailVO> prepareExistingDetails(Long vmId, String... existingDetailKeys) {
-        List<UserVmDetailVO> existingDetails = new ArrayList<>();
+    private List<VMInstanceDetailVO> prepareExistingDetails(Long vmId, String... existingDetailKeys) {
+        List<VMInstanceDetailVO> existingDetails = new ArrayList<>();
         for (String detail : existingDetailKeys) {
-            existingDetails.add(new UserVmDetailVO(vmId, detail, "foo", true));
+            existingDetails.add(new VMInstanceDetailVO(vmId, detail, "foo", true));
         }
-        existingDetails.add(new UserVmDetailVO(vmId, "systemdetail", "bar", false));
-        Mockito.when(userVmDetailsDao.listDetails(vmId)).thenReturn(existingDetails);
+        existingDetails.add(new VMInstanceDetailVO(vmId, "systemdetail", "bar", false));
+        Mockito.when(vmInstanceDetailsDao.listDetails(vmId)).thenReturn(existingDetails);
         return existingDetails;
     }
 
@@ -567,15 +567,15 @@ public class UserVmManagerImplTest {
         verifyMethodsThatAreAlwaysExecuted();
 
         Mockito.verify(userVmVoMock, Mockito.times(cleanUpDetails || isDetailsEmpty ? 0 : 1)).setDetails(details);
-        Mockito.verify(userVmDetailsDao, Mockito.times(cleanUpDetails ? 1 : 0)).removeDetail(vmId, "existingdetail");
-        Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(vmId, "systemdetail");
+        Mockito.verify(vmInstanceDetailsDao, Mockito.times(cleanUpDetails ? 1 : 0)).removeDetail(vmId, "existingdetail");
+        Mockito.verify(vmInstanceDetailsDao, Mockito.times(0)).removeDetail(vmId, "systemdetail");
         Mockito.verify(userVmDao, Mockito.times(cleanUpDetails || isDetailsEmpty ? 0 : 1)).saveDetails(userVmVoMock);
         Mockito.verify(userVmManagerImpl, Mockito.times(0)).updateDisplayVmFlag(false, vmId, userVmVoMock);
     }
 
     private void configureDoNothingForDetailsMethod() {
         Mockito.lenient().doNothing().when(userVmManagerImpl).updateDisplayVmFlag(false, vmId, userVmVoMock);
-        Mockito.doNothing().when(userVmDetailsDao).removeDetail(anyLong(), anyString());
+        Mockito.doNothing().when(vmInstanceDetailsDao).removeDetail(anyLong(), anyString());
         Mockito.doNothing().when(userVmDao).saveDetails(userVmVoMock);
     }
 
@@ -1683,9 +1683,9 @@ public class UserVmManagerImplTest {
         Mockito.when(diskOffering.getDiskSize()).thenReturn(8L * GiB_TO_BYTES);
         Map<String, String> details = new HashMap<>();
         details.put(VmDetailConstants.ROOT_DISK_SIZE, "16");
-        UserVmDetailVO vmRootDiskSizeDetail = Mockito.mock(UserVmDetailVO.class);
+        VMInstanceDetailVO vmRootDiskSizeDetail = Mockito.mock(VMInstanceDetailVO.class);
         Mockito.when(vmRootDiskSizeDetail.getValue()).thenReturn("20");
-        Mockito.when(userVmDetailsDao.findDetail(1L, VmDetailConstants.ROOT_DISK_SIZE)).thenReturn(vmRootDiskSizeDetail);
+        Mockito.when(vmInstanceDetailsDao.findDetail(1L, VmDetailConstants.ROOT_DISK_SIZE)).thenReturn(vmRootDiskSizeDetail);
         Long actualSize = userVmManagerImpl.getRootVolumeSizeForVmRestore(null, template, userVm, diskOffering, details, false);
         Assert.assertEquals(16 * GiB_TO_BYTES, actualSize.longValue());
     }
@@ -1698,9 +1698,9 @@ public class UserVmManagerImplTest {
         Mockito.when(userVm.getId()).thenReturn(1L);
         DiskOffering diskOffering = null;
         Map<String, String> details = new HashMap<>();
-        UserVmDetailVO vmRootDiskSizeDetail = Mockito.mock(UserVmDetailVO.class);
+        VMInstanceDetailVO vmRootDiskSizeDetail = Mockito.mock(VMInstanceDetailVO.class);
         Mockito.when(vmRootDiskSizeDetail.getValue()).thenReturn("20");
-        Mockito.when(userVmDetailsDao.findDetail(1L, VmDetailConstants.ROOT_DISK_SIZE)).thenReturn(vmRootDiskSizeDetail);
+        Mockito.when(vmInstanceDetailsDao.findDetail(1L, VmDetailConstants.ROOT_DISK_SIZE)).thenReturn(vmRootDiskSizeDetail);
         Long actualSize = userVmManagerImpl.getRootVolumeSizeForVmRestore(null, template, userVm, diskOffering, details, false);
         Assert.assertEquals(20 * GiB_TO_BYTES, actualSize.longValue());
     }

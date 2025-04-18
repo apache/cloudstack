@@ -21,14 +21,14 @@ import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 
 @Component
-public class UserVmDetailsDaoImpl extends ResourceDetailsDaoBase<UserVmDetailVO> implements UserVmDetailsDao {
+public class VMInstanceDetailsDaoImpl extends ResourceDetailsDaoBase<VMInstanceDetailVO> implements VMInstanceDetailsDao {
 
     @Override
     public void addDetail(long resourceId, String key, String value, boolean display) {
-        super.addDetail(new UserVmDetailVO(resourceId, key, value, display));
+        super.addDetail(new VMInstanceDetailVO(resourceId, key, value, display));
     }
 
 }

@@ -37,3 +37,8 @@ WHERE rp.rule = 'quotaStatement'
 AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.role_id AND rp_.rule = 'quotaCreditsList');
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'last_mgmt_server_id', 'bigint unsigned DEFAULT NULL COMMENT "last management server this host is connected to" AFTER `mgmt_server_id`');
+
+-- Rename user_vm_details to vm_instance_details
+ALTER TABLE `cloud`.`user_vm_details` RENAME TO `cloud`.`vm_instance_details`;
+ALTER TABLE `cloud`.`vm_instance_details` DROP FOREIGN KEY `fk_user_vm_details__vm_id`;
+ALTER TABLE `cloud`.`vm_instance_details` ADD CONSTRAINT `fk_vm_instance_details__vm_id` FOREIGN KEY (vm_id) REFERENCES vm_instance(id) ON DELETE CASCADE;
