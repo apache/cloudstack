@@ -31,6 +31,9 @@ export function api (command, args = {}, method = 'GET', data = {}) {
   if (data) {
     params = new URLSearchParams()
     Object.entries(data).forEach(([key, value]) => {
+      if (typeof value === 'string' && value.trim() !== '') {
+        value = value.trim()
+      }
       params.append(key, value)
     })
   }
