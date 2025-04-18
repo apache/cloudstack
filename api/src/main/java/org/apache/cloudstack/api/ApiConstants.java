@@ -29,6 +29,7 @@ public class ApiConstants {
     public static final String ADDRESS = "address";
     public static final String ALGORITHM = "algorithm";
     public static final String ALIAS = "alias";
+    public static final String ALLOCATED = "allocated";
     public static final String ALLOCATED_DATE = "allocateddate";
     public static final String ALLOCATED_ONLY = "allocatedonly";
     public static final String ALLOCATED_TIME = "allocated";
@@ -59,6 +60,7 @@ public class ApiConstants {
     public static final String BACKUP_STORAGE_AVAILABLE = "backupstorageavailable";
     public static final String BACKUP_STORAGE_LIMIT = "backupstoragelimit";
     public static final String BACKUP_STORAGE_TOTAL = "backupstoragetotal";
+    public static final String BACKUP_VM_OFFERING_REMOVED = "vmbackupofferingremoved";
     public static final String BACKUP_TOTAL = "backuptotal";
     public static final String BASE64_IMAGE = "base64image";
     public static final String BGP_PEERS = "bgppeers";
@@ -144,6 +146,7 @@ public class ApiConstants {
     public static final String MAX_IOPS = "maxiops";
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
     public static final String DATACENTER_NAME = "datacentername";
+    public static final String DATADISKS_DETAILS = "datadisksdetails";
     public static final String DATADISK_OFFERING_LIST = "datadiskofferinglist";
     public static final String DEFAULT_VALUE = "defaultvalue";
     public static final String DELETE_PROTECTION = "deleteprotection";
@@ -152,6 +155,7 @@ public class ApiConstants {
     public static final String DESTINATION_ZONE_ID = "destzoneid";
     public static final String DETAILS = "details";
     public static final String DEVICE_ID = "deviceid";
+    public static final String DEVICE_IDS = "deviceids";
     public static final String DIRECT_DOWNLOAD = "directdownload";
     public static final String DISK = "disk";
     public static final String DISK_OFFERING_ID = "diskofferingid";
@@ -163,7 +167,9 @@ public class ApiConstants {
     public static final String DISK_IO_WRITE = "diskiowrite";
     public static final String DISK_IO_PSTOTAL = "diskiopstotal";
     public static final String DISK_SIZE = "disksize";
+    public static final String DISK_SIZES = "disksizes";
     public static final String DISK_SIZE_STRICTNESS = "disksizestrictness";
+    public static final String DISK_OFFERING_IDS = "diskofferingids";
     public static final String DISK_OFFERING_STRICTNESS = "diskofferingstrictness";
     public static final String DOWNLOAD_DETAILS = "downloaddetails";
     public static final String UTILIZATION = "utilization";
@@ -517,6 +523,7 @@ public class ApiConstants {
     public static final String TRUST_STORE_PASSWORD = "truststorepass";
     public static final String URL = "url";
     public static final String USAGE_INTERFACE = "usageinterface";
+    public static final String USED = "used";
     public static final String USED_SUBNETS = "usedsubnets";
     public static final String USED_IOPS = "usediops";
     public static final String USER_DATA = "userdata";
@@ -559,8 +566,10 @@ public class ApiConstants {
     public static final String ISOLATION_URI = "isolationuri";
     public static final String IS_ALLOCATED = "isallocated";
     public static final String IS_DEDICATED = "isdedicated";
+    public static final String IS_ISO = "isiso";
     public static final String TAKEN = "taken";
     public static final String VM_AVAILABLE = "vmavailable";
+    public static final String VM_DETAILS = "vmdetails";
     public static final String VM_LIMIT = "vmlimit";
     public static final String VM_TOTAL = "vmtotal";
     public static final String VM_TYPE = "vmtype";
@@ -744,6 +753,7 @@ public class ApiConstants {
     public static final String LIST_ALL = "listall";
     public static final String LIST_ONLY_REMOVED = "listonlyremoved";
     public static final String LIST_SYSTEM_VMS = "listsystemvms";
+    public static final String LIST_VM_DETAILS = "listvmdetails";
     public static final String IP_RANGES = "ipranges";
     public static final String IPV4_ROUTING = "ip4routing";
     public static final String IPV4_ROUTES = "ip4routes";

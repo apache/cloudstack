@@ -19,6 +19,7 @@ package org.apache.cloudstack.backup;
 
 import com.cloud.utils.db.GenericDao;
 import com.google.gson.Gson;
+
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -26,6 +27,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -38,6 +40,7 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 
 @Entity
 @Table(name = "backups")
@@ -47,11 +50,17 @@ public class BackupVO implements Backup {
     @Column(name = "id")
     private long id;
 
+    @Column(name = "name")
+    private String name;
+
+    @Column(name = "description")
+    private String description;
+
     @Column(name = "uuid")
     private String uuid;
 
     @Column(name = "vm_id")
-    private long vmId;
+    private Long vmId;
 
     @Column(name = "external_id")
     private String externalId;
@@ -89,10 +98,13 @@ public class BackupVO implements Backup {
     private long zoneId;
 
     @Column(name = "backup_interval_type")
-    private short backupIntervalType;
+    private Short backupIntervalType;
 
     @Column(name = "backed_volumes", length = 65535)
     protected String backedUpVolumes;
+
+    @Transient
+    Map<String, String> details;
 
     public BackupVO() {
         this.uuid = UUID.randomUUID().toString();
@@ -115,11 +127,11 @@ public class BackupVO implements Backup {
     }
 
     @Override
-    public long getVmId() {
+    public Long getVmId() {
         return vmId;
     }
 
-    public void setVmId(long vmId) {
+    public void setVmId(Long vmId) {
         this.vmId = vmId;
     }
 
@@ -211,7 +223,8 @@ public class BackupVO implements Backup {
         this.zoneId = zoneId;
     }
 
-    public short getBackupIntervalType() {
+    @Override
+    public Short getBackupIntervalType() {
         return backupIntervalType;
     }
 
@@ -226,7 +239,22 @@ public class BackupVO implements Backup {
 
     @Override
     public String getName() {
-        return null;
+        return name;
+    }
+
+    @Override
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+    @Override
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public List<VolumeInfo> getBackedUpVolumes() {
@@ -240,10 +268,32 @@ public class BackupVO implements Backup {
         this.backedUpVolumes = backedUpVolumes;
     }
 
+    @Override
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    public void setDetail(String name, String value) {
+        assert (details != null) : "Did you forget to load the details?";
+        this.details.put(name, value);
+    }
+
+    @Override
+    public String getDetail(String name) {
+        return this.details.get(name);
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
+    }
+
+    public void addDetails(Map<String, String> details) {
+        this.details.putAll(details);
+    }
+
     public Date getRemoved() {
         return removed;
     }
-
     public void setRemoved(Date removed) {
         this.removed = removed;
     }
