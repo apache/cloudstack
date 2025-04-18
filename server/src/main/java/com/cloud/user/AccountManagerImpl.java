@@ -1297,7 +1297,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // Check permissions
         checkAccess(getCurrentCallingAccount(), domain);
 
-        if (!userAllowMultipleAccounts.valueInDomain(domainId) && !_userAccountDao.validateUsernameInDomain(userName, domainId)) {
+        if (!userAllowMultipleAccounts.valueInScope(ConfigKey.Scope.Domain, domainId) && !_userAccountDao.validateUsernameInDomain(userName, domainId)) {
             throw new InvalidParameterValueException(String.format("The user %s already exists in domain %s", userName, domain));
         }
 
@@ -1485,7 +1485,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new PermissionDeniedException(String.format("Account: %s is a system account, can't add a user to it", account));
         }
 
-        if (!userAllowMultipleAccounts.valueInDomain(domainId) && !_userAccountDao.validateUsernameInDomain(userName, domainId)) {
+        if (!userAllowMultipleAccounts.valueInScope(ConfigKey.Scope.Domain, domainId) && !_userAccountDao.validateUsernameInDomain(userName, domainId)) {
             throw new CloudRuntimeException("The user " + userName + " already exists in domain " + domainId);
         }
         List<UserVO> duplicatedUsers = _userDao.findUsersByName(userName);
@@ -1636,7 +1636,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             // duplicate usernames cannot exist in same domain unless explicitly configured
-            if (!userAllowMultipleAccounts.valueInDomain(newAccount.getDomainId())) {
+            if (!userAllowMultipleAccounts.valueInScope(ConfigKey.Scope.Domain, newAccount.getDomainId())) {
                 assertUserNotAlreadyInDomain(existingUser, newAccount);
             }
 
