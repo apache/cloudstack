@@ -68,6 +68,7 @@ import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -125,7 +126,6 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
         Long clusterId = (Long)dsInfos.get("clusterId");
         Long podId = (Long)dsInfos.get("podId");
         Long zoneId = (Long)dsInfos.get("zoneId");
-        String url = (String)dsInfos.get("url");
         String providerName = (String)dsInfos.get("providerName");
         HypervisorType hypervisorType = (HypervisorType)dsInfos.get("hypervisorType");
         if (clusterId != null && podId == null) {
@@ -134,17 +134,41 @@ public class CloudStackPrimaryDataStoreLifeCycleImpl extends BasePrimaryDataStor
 
         PrimaryDataStoreParameters parameters = new PrimaryDataStoreParameters();
 
-        String tags = (String)dsInfos.get("tags");
         Map<String, String> details = (Map<String, String>)dsInfos.get("details");
 
+        if (dsInfos.get("capacityBytes") != null) {
+            Long capacityBytes = (Long)dsInfos.get("capacityBytes");
+            if (capacityBytes <= 0) {
+                throw new IllegalArgumentException("'capacityBytes' must be greater than 0.");
+            }
+            if (details == null) {
+                details = new HashMap<>();
+            }
+            details.put(PrimaryDataStoreLifeCycle.CAPACITY_BYTES, String.valueOf(capacityBytes));
+            parameters.setCapacityBytes(capacityBytes);
+        }
+
+        if (dsInfos.get("capacityIops") != null) {
+            Long capacityIops = (Long)dsInfos.get("capacityIops");
+            if (capacityIops <= 0) {
+                throw new IllegalArgumentException("'capacityIops' must be greater than 0.");
+            }
+            if (details == null) {
+                details = new HashMap<>();
+            }
+            details.put(PrimaryDataStoreLifeCycle.CAPACITY_IOPS, String.valueOf(capacityIops));
+            parameters.setCapacityIops(capacityIops);
+        }
+
+        parameters.setDetails(details);
+
+        String tags = (String)dsInfos.get("tags");
         parameters.setTags(tags);
         parameters.setIsTagARule((Boolean)dsInfos.get("isTagARule"));
-        parameters.setDetails(details);
 
         String scheme = dsInfos.get("scheme").toString();
         String storageHost = dsInfos.get("host").toString();
         String hostPath = dsInfos.get("hostPath").toString();
-        String uri = String.format("%s://%s%s", scheme, storageHost, hostPath);
 
         Object localStorage = dsInfos.get("localStorage");
         if (localStorage != null) {
