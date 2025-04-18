@@ -16,26 +16,26 @@
 // under the License.
 package org.apache.cloudstack.storage.allocator;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import com.cloud.storage.VolumeApiServiceImpl;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.springframework.stereotype.Component;
-
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.VolumeApiServiceImpl;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineProfile;
+
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocator {
@@ -116,14 +116,6 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-
-        if (configDao != null) {
-            Map<String, String> configs = configDao.getConfiguration(params);
-            String allocationAlgorithm = configs.get("vm.allocation.algorithm");
-            if (allocationAlgorithm != null) {
-                this.allocationAlgorithm = allocationAlgorithm;
-            }
-        }
         return true;
     }
 }
