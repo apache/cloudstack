@@ -165,7 +165,7 @@ public class DirectAgentAttache extends AgentAttache {
                     PingCommand cmd = resource.getCurrentStatus(_id);
                     int retried = 0;
                     while (cmd == null && ++retried <= _HostPingRetryCount.value()) {
-                        Thread.sleep(1000*_HostPingRetryTimer.value());
+                        wait(1000 * _HostPingRetryTimer.value());
                         cmd = resource.getCurrentStatus(_id);
                     }
 
