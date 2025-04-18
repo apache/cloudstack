@@ -87,4 +87,9 @@ public interface VirtualNetworkApplianceService {
     Pair<Boolean, String> performRouterHealthChecks(long routerId);
 
     <T extends VirtualRouter> void collectNetworkStatistics(T router, Nic nic);
+
+    enum RouterHealthStatus{
+        UNKNOWN, SUCCESS, WARNING, FAILURE;
+    }
+
 }
