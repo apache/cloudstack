@@ -129,33 +129,11 @@
         &nbsp;
         <tooltip-label :title="$t('label.press.enter')" :tooltip="$t('label.press.enter.tooltip')"/>
       </div>
-      <div
-        v-if="selectedExistingVcenterId || (vcenterSelectedOption === 'new')">
-        <a-form-item :label="$t('label.esx.host')" ref="host" name="host" v-if="hosts.length > 0">
-          <a-select
-            v-model:value="form.host"
-            :loading="loading"
-            optionFilterProp="label"
-            :filterOption="(input, option) => {
-              return  option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-            }"
-            :placeholder="$t('label.esx.host')"
-            @change="onSelectExistingVmwareHost">
-            <a-select-option key="" label="">{{ }}</a-select-option>
-            <a-select-option v-for="opt in hosts" :key="opt.name">
-                {{ 'ESXi: ' + opt.name }}
-            </a-select-option>
-          </a-select>
-        </a-form-item>
-        <div v-else>
-          {{ $t('message.list.zone.vmware.hosts.empty') }}
-        </div>
-      </div>
       <div class="card-footer">
         <a-button
           v-if="vcenterSelectedOption == 'existing' || vcenterSelectedOption == 'new'"
           :disabled="(vcenterSelectedOption === 'new' && (vcenter === '' || datacentername === '' || username === '' || password === '')) ||
-            (vcenterSelectedOption === 'existing' && selectedExistingVcenterId === '') && host === ''"
+            (vcenterSelectedOption === 'existing' && selectedExistingVcenterId === '')"
           :loading="loading"
           type="primary"
           @click="listVmwareDatacenterVms">{{ $t('label.list.vmware.vcenter.vms') }}</a-button>
@@ -186,8 +164,6 @@ export default {
       zones: {},
       vcenterSelectedOption: '',
       existingvcenter: [],
-      hosts: [],
-      selectedHost: '',
       selectedExistingVcenterId: '',
       selectedPoweredOnVm: false,
       vmwareDcVms: [],
@@ -251,7 +227,6 @@ export default {
       } else {
         params.existingvcenterid = this.selectedExistingVcenterId
       }
-      params.host = this.selectedHost
       api('listVmwareDcVms', params).then(json => {
         const obj = {
           params: params,
@@ -281,8 +256,8 @@ export default {
     listZoneVmwareDcs () {
       this.loading = true
       api('listVmwareDcs', { zoneid: this.sourcezoneid }).then(response => {
-        if (response.listvmwaredcsresponse.vmwaredc && response.listvmwaredcsresponse.vmwaredc.length > 0) {
-          this.existingvcenter = response.listvmwaredcsresponse.vmwaredc
+        if (response.listvmwaredcsresponse.VMwareDC && response.listvmwaredcsresponse.VMwareDC.length > 0) {
+          this.existingvcenter = response.listvmwaredcsresponse.VMwareDC
         }
       }).catch(error => {
         this.$notifyError(error)
@@ -290,43 +265,8 @@ export default {
         this.loading = false
       })
     },
-    loadZoneVmwareDcHosts (doNotify) {
-      this.loading = true
-      const params = {}
-      if (this.vcenterSelectedOption === 'new') {
-        params.datacentername = this.datacenter
-        params.vcenter = this.vcenter
-        params.username = this.username
-        params.password = this.password
-      } else {
-        params.existingvcenterid = this.selectedExistingVcenterId
-      }
-      api('listVmwareDcHosts', params).then(response => {
-        if (response.listvmwaredchostsresponse.host && response.listvmwaredchostsresponse.host.length > 0) {
-          this.hosts = response.listvmwaredchostsresponse.host
-        }
-      }).catch(error => {
-        if (doNotify) {
-          this.$notifyError(error)
-        }
-        this.hosts = []
-        return false
-      }).finally(() => {
-        this.loading = false
-        return true
-      })
-    },
     onSelectExistingVmwareDatacenter (value) {
       this.selectedExistingVcenterId = value
-      this.loadZoneVmwareDcHosts(true)
-    },
-    onSelectExternalVmwareDatacenter (value) {
-      if (this.vcenterSelectedOption === 'new' && !(this.vcenter === '' || this.datacentername === '' || this.username === '' || this.password === '')) {
-        this.loadZoneVmwareDcHosts(false)
-      }
-    },
-    onSelectExistingVmwareHost (value) {
-      this.selectedHost = value
     },
     onVcenterTypeChange () {
       this.$emit('onVcenterTypeChanged', this.vcenterSelectedOption)

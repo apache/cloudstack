@@ -16,10 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.vmware.util;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -38,23 +36,19 @@ import javax.xml.ws.handler.Handler;
 import javax.xml.ws.handler.HandlerResolver;
 import javax.xml.ws.handler.PortInfo;
 
+
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
-
-import com.cloud.utils.StringUtils;
-
-import org.apache.log4j.Logger;
-
-import org.w3c.dom.Element;
-
 import com.vmware.pbm.PbmPortType;
 import com.vmware.pbm.PbmService;
 import com.vmware.pbm.PbmServiceInstanceContent;
 
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.w3c.dom.Element;
+
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.InvalidCollectorVersionFaultMsg;
-import com.vmware.vim25.InvalidLocaleFaultMsg;
-import com.vmware.vim25.InvalidLoginFaultMsg;
 import com.vmware.vim25.InvalidPropertyFaultMsg;
 import com.vmware.vim25.LocalizedMethodFault;
 import com.vmware.vim25.ManagedObjectReference;
@@ -164,7 +158,7 @@ public class VmwareClient {
      * @throws Exception
      *             the exception
      */
-    public void connect(String url, String userName, String password) throws RuntimeFaultFaultMsg, URISyntaxException, VmwareClientException, InvalidLocaleFaultMsg, InvalidLoginFaultMsg {
+    public void connect(String url, String userName, String password) throws Exception {
         svcInstRef.setType(SVC_INST_NAME);
         svcInstRef.setValue(SVC_INST_NAME);
 
@@ -194,7 +188,7 @@ public class VmwareClient {
             if (cookies == null) {
                 String msg = "Login successful, but failed to get server cookies from url :[" + url + "]";
                 s_logger.error(msg);
-                throw new  VmwareClientException(msg);
+                throw new Exception(msg);
             }
         }
 
@@ -210,7 +204,7 @@ public class VmwareClient {
         isConnected = true;
     }
 
-    private void pbmConnect(String url, String cookieValue) throws URISyntaxException {
+    private void pbmConnect(String url, String cookieValue) throws Exception {
         URI uri = new URI(url);
         String pbmurl = "https://" + uri.getHost() + "/pbm";
         String[] tokens = cookieValue.split("=");
@@ -354,8 +348,8 @@ public class VmwareClient {
      *             in case of error.
      */
     @SuppressWarnings("unchecked")
-    public <T> T getDynamicProperty(ManagedObjectReference mor, String propertyName) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-        List<String> props = new ArrayList<>();
+    public <T> T getDynamicProperty(ManagedObjectReference mor, String propertyName) throws Exception {
+        List<String> props = new ArrayList<String>();
         props.add(propertyName);
         List<ObjectContent> objContent = retrieveMoRefProperties(mor, props);
 
@@ -385,7 +379,7 @@ public class VmwareClient {
         return (T)propertyValue;
     }
 
-    private List<ObjectContent> retrieveMoRefProperties(ManagedObjectReference mObj, List<String> props) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
+    private List<ObjectContent> retrieveMoRefProperties(ManagedObjectReference mObj, List<String> props) throws Exception {
         PropertySpec pSpec = new PropertySpec();
         pSpec.setAll(false);
         pSpec.setType(mObj.getType());
@@ -710,7 +704,7 @@ public class VmwareClient {
      *
      * @return First ManagedObjectReference of the type / name pair found
      */
-    public ManagedObjectReference getDecendentMoRef(ManagedObjectReference root, String type, String name) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
+    public ManagedObjectReference getDecendentMoRef(ManagedObjectReference root, String type, String name) throws Exception {
         if (name == null || name.length() == 0) {
             return null;
         }
