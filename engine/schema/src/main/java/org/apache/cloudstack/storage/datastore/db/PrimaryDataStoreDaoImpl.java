@@ -62,6 +62,10 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     private final SearchBuilder<StoragePoolVO> DcLocalStorageSearch;
     private final GenericSearchBuilder<StoragePoolVO, Long> StatusCountSearch;
     private final SearchBuilder<StoragePoolVO> ClustersSearch;
+    private final SearchBuilder<StoragePoolVO> PathLikeSearchClusterWide;
+    private final SearchBuilder<StoragePoolVO> PathLikeSearchZoneWide;
+    private final SearchBuilder<StoragePoolVO> NameSearchClusterWide;
+    private final SearchBuilder<StoragePoolVO> NameSearchZoneWide;
     private final SearchBuilder<StoragePoolVO> IdsSearch;
 
     @Inject
@@ -155,6 +159,26 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         IdsSearch.and("ids", IdsSearch.entity().getId(), SearchCriteria.Op.IN);
         IdsSearch.done();
 
+        PathLikeSearchClusterWide = createSearchBuilder();
+        PathLikeSearchClusterWide.and("path", PathLikeSearchClusterWide.entity().getPath(), Op.LIKE);
+        PathLikeSearchClusterWide.and("datacenterId", PathLikeSearchClusterWide.entity().getDataCenterId(), Op.EQ);
+        PathLikeSearchClusterWide.and("clusterId", PathLikeSearchClusterWide.entity().getClusterId(), Op.EQ);
+        PathLikeSearchClusterWide.done();
+
+        PathLikeSearchZoneWide = createSearchBuilder();
+        PathLikeSearchZoneWide.and("path", PathLikeSearchZoneWide.entity().getPath(), Op.LIKE);
+        PathLikeSearchZoneWide.and("datacenterId", PathLikeSearchZoneWide.entity().getDataCenterId(), Op.EQ);
+        PathLikeSearchZoneWide.and("clusterId", PathLikeSearchZoneWide.entity().getClusterId(), Op.NULL);
+
+        NameSearchClusterWide = createSearchBuilder();
+        NameSearchClusterWide.and("name", NameSearchClusterWide.entity().getName(), Op.EQ);
+        NameSearchClusterWide.and("datacenterId", NameSearchClusterWide.entity().getDataCenterId(), Op.EQ);
+        NameSearchClusterWide.and("clusterId", NameSearchClusterWide.entity().getClusterId(), Op.EQ);
+
+        NameSearchZoneWide = createSearchBuilder();
+        NameSearchZoneWide.and("name", NameSearchZoneWide.entity().getName(), Op.EQ);
+        NameSearchZoneWide.and("datacenterId", NameSearchZoneWide.entity().getDataCenterId(), Op.EQ);
+        NameSearchZoneWide.and("clusterId", NameSearchZoneWide.entity().getClusterId(), Op.NULL);
     }
 
     @Override
@@ -711,6 +735,34 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
         } catch (Throwable e) {
             throw new CloudRuntimeException("Caught: " + sql, e);
         }
+    }
+
+    @Override
+    public StoragePoolVO findPoolByPathLike(String datastore, Long datacenterId, Long clusterId) {
+        SearchCriteria<StoragePoolVO> sc = null;
+        if (clusterId != null) {
+            sc = PathLikeSearchClusterWide.create();
+            sc.setParameters("clusterId", clusterId);
+        } else  {
+            sc = PathLikeSearchZoneWide.create();
+        }
+        sc.setParameters("path", "%/" + datastore);
+        sc.setParameters("datacenterId", datacenterId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public StoragePoolVO findPoolByName(String datastore, Long datacenterId, Long clusterId) {
+        SearchCriteria<StoragePoolVO> sc = null;
+        if (clusterId != null) {
+            sc = NameSearchClusterWide.create();
+            sc.setParameters("clusterId", clusterId);
+        } else {
+            sc = NameSearchZoneWide.create();
+        }
+        sc.setParameters("name", datastore);
+        sc.setParameters("datacenterId", datacenterId);
+        return findOneBy(sc);
     }
 
     @Override

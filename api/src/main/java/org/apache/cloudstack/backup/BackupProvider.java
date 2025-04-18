@@ -60,7 +60,7 @@ public interface BackupProvider {
      * @param vm the machine to stop backing up
      * @return succeeded?
      */
-    boolean removeVMFromBackupOffering(VirtualMachine vm);
+    boolean removeVMFromBackupOffering(VirtualMachine vm, boolean removeBackups);
 
     /**
      * Whether the provider will delete backups on removal of VM from the offering
