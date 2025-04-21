@@ -3087,12 +3087,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 s_logger.debug("Lock is acquired for network " + network + " as a part of network shutdown");
             }
 
-            if (network.getState() == Network.State.Allocated) {
+            final Network.State initialState = network.getState();
+            if (initialState == Network.State.Allocated) {
                 s_logger.debug(String.format("Network [%s] is in Allocated state, no need to shutdown.", network));
                 return true;
             }
 
-            if (network.getState() != Network.State.Implemented && network.getState() != Network.State.Shutdown) {
+            if (initialState != Network.State.Implemented && initialState != Network.State.Shutdown) {
                 s_logger.debug("Network is not implemented: " + network);
                 return false;
             }
@@ -3139,7 +3140,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         }
                         _networksDao.update(networkFinal.getId(), networkFinal);
                         _networksDao.clearCheckForGc(networkId);
-                        publishNetworkUpdate(networkFinal);
+                        if (initialState == Network.State.Implemented) {
+                            publishNetworkUpdate(networkFinal);
+                        }
                         result = true;
                     } else {
                         try {
