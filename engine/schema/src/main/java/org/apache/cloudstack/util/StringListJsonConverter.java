@@ -47,4 +47,3 @@ public class StringListJsonConverter implements AttributeConverter<List<String>,
         }
     }
 }
-
