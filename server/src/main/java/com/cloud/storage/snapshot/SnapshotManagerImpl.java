@@ -1416,7 +1416,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
         } catch (CloudRuntimeException cre) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Failed to create snapshot" + cre.getLocalizedMessage());
+                s_logger.debug("Failed to create snapshot - " + cre.getLocalizedMessage());
             }
             _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.snapshot);
             _resourceLimitMgr.decrementResourceCount(snapshotOwner.getId(), ResourceType.secondary_storage, new Long(volume.getSize()));
