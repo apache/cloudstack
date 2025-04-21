@@ -55,7 +55,7 @@
             v-model:value="form.name"
             :placeholder="apiParams.name.description"/>
         </a-form-item>
-        <a-form-item name="quiescevm" ref="quiescevm" v-if="isQuiesceVm">
+        <a-form-item name="quiescevm" ref="quiescevm" v-if="isQuiesceVm && hypervisorSupportsQuiesceVm">
           <template #label>
             <tooltip-label :title="$t('label.quiescevm')" :tooltip="apiParams.quiescevm.description"/>
           </template>
@@ -98,6 +98,7 @@ export default {
     return {
       loading: false,
       isQuiesceVm: false,
+      hypervisorSupportsQuiesceVm: false,
       supportsStorageSnapshot: false,
       listVolumes: []
     }
@@ -119,6 +120,9 @@ export default {
     },
     fetchData () {
       this.loading = true
+      if (['KVM', 'VMware'].includes(this.resource.hypervisor)) {
+        this.hypervisorSupportsQuiesceVm = true
+      }
 
       api('listVolumes', { virtualMachineId: this.resource.id, listall: true })
         .then(json => {
