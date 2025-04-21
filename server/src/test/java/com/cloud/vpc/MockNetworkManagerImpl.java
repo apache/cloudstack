@@ -1053,6 +1053,18 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
+    public void publishNetworkCreation(Network network) {
+    }
+
+    @Override
+    public void publishNetworkUpdate(Network network) {
+    }
+
+    @Override
+    public void publishNetworkDeletion(Network network) {
+    }
+
+    @Override
     public Pair<List<? extends GuestVlan>, Integer> listGuestVlans(ListGuestVlansCmd cmd) {
         return null;
     }

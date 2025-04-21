@@ -348,4 +348,10 @@ public interface NetworkOrchestrationService {
     Pair<NicProfile, Integer> importNic(final String macAddress, int deviceId, final Network network, final Boolean isDefaultNic, final VirtualMachine vm, final Network.IpAddresses ipAddresses, final DataCenter datacenter, boolean forced) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
 
     void unmanageNics(VirtualMachineProfile vm);
+
+    void publishNetworkCreation(Network network);
+
+    void publishNetworkUpdate(Network network);
+
+    void publishNetworkDeletion(Network network);
 }
