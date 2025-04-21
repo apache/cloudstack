@@ -2820,7 +2820,7 @@
 "message.attach.volume.progress": "Attaching volume",
 "message.attach.volume.success": "Successfully attached the volume to the instance",
 "message.authorization.failed": "Session expired, authorization verification failed.",
-"message.autoscale.loadbalancer.update": "The load balancer rule can be updated only when autoscaling group is DISABLED.",
+"message.autoscale.loadbalancer.update": "The load balancer rule can be updated. However, instance can be removed only when autoscaling group is DISABLED.",
 "message.autoscale.policies.update": "The scale up/down policies can be updated only when autoscaling group is DISABLED.",
 "message.autoscale.vm.networks": "Please choose at least one Network for Instances in the autoscaling group. The default Network must be an Isolated Network or VPC Network Tier which supports Instance AutoScaling and has load balancing rules.",
 "message.autoscale.vmprofile.update": "The autoscale Instance profile can be updated only when autoscaling group is DISABLED.",
