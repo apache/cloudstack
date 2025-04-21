@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.usage.dao;
 
-import com.cloud.usage.UsageNetworksVO;
 import com.cloud.usage.UsageVpcVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.GenericDaoBase;

@@ -2143,23 +2143,29 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     }
 
     private void handleNetworkEvent(UsageEventVO event) {
+        long networkId = event.getResourceId();
         Account account = _accountDao.findByIdIncludingRemoved(event.getAccountId());
         long domainId = account.getDomainId();
         if (EventTypes.EVENT_NETWORK_DELETE.equals(event.getType())) {
-            usageNetworksDao.remove(event.getResourceId(), event.getCreateDate());
+            usageNetworksDao.remove(networkId, event.getCreateDate());
         } else if (EventTypes.EVENT_NETWORK_CREATE.equals(event.getType())) {
-            List<UsageNetworksVO> entries = usageNetworksDao.listAll(event.getResourceId());
+            List<UsageNetworksVO> entries = usageNetworksDao.listAll(networkId);
             if (!entries.isEmpty()) {
-                s_logger.warn(String.format("Active helper entries already exist for network [%s]; we will not create a new one.",
-                        event.getResourceId()));
+                s_logger.warn(String.format("Received a NETWORK.CREATE event for a network [%s] that already has helper entries; " +
+                                "therefore, we will not create a new one.", networkId));
                 return;
             }
-            s_logger.debug(String.format("Creating a helper entry for network [%s].", event.getResourceId()));
-            UsageNetworksVO usageNetworksVO = new UsageNetworksVO(event.getResourceId(), event.getOfferingId(), event.getZoneId(),
+            s_logger.debug(String.format("Creating a helper entry for network [%s].", networkId));
+            UsageNetworksVO usageNetworksVO = new UsageNetworksVO(networkId, event.getOfferingId(), event.getZoneId(),
                     event.getAccountId(), domainId, Network.State.Allocated.name(), event.getCreateDate(), null);
             usageNetworksDao.persist(usageNetworksVO);
         } else if (EventTypes.EVENT_NETWORK_UPDATE.equals(event.getType())) {
-            usageNetworksDao.update(event.getResourceId(), event.getOfferingId(), event.getResourceType());
+            s_logger.debug(String.format("Marking previous helper entries of network [%s] as removed.", networkId));
+            usageNetworksDao.remove(networkId, event.getCreateDate());
+            s_logger.debug(String.format("Creating an updated helper entry for network [%s].", networkId));
+            UsageNetworksVO usageNetworksVO = new UsageNetworksVO(networkId, event.getOfferingId(), event.getZoneId(),
+                    event.getAccountId(), domainId, event.getResourceType(), event.getCreateDate(), null);
+            usageNetworksDao.persist(usageNetworksVO);
         } else {
             s_logger.error(String.format("Unknown event type [%s] in Networks event parser. Skipping it.", event.getType()));
         }
@@ -2173,7 +2179,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         } else if (EventTypes.EVENT_VPC_CREATE.equals(event.getType())) {
             List<UsageVpcVO> entries = usageVpcDao.listAll(event.getResourceId());
             if (!entries.isEmpty()) {
-                s_logger.warn(String.format("Active helper entries already exist for VPC [%s]; we will not create a new one.",
+                s_logger.warn(String.format("Active helper entries already exist for VPC [%s]; therefore, we will not create a new one.",
                         event.getResourceId()));
                 return;
             }
