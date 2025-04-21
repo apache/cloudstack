@@ -141,7 +141,10 @@ export default {
         if (values.asyncbackup) {
           params.asyncbackup = values.asyncbackup
         }
-        params.quiescevm = values.quiescevm
+        params.quiescevm = false
+        if (values.quiescevm) {
+          params.quiescevm = values.quiescevm
+        }
 
         const title = this.$t('label.action.vmstoragesnapshot.create')
         const description = values.name || values.volumeid
