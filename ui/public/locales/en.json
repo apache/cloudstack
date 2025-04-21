@@ -845,6 +845,7 @@
 "label.encrypt": "Encrypt",
 "label.encryptroot": "Encrypt Root Disk",
 "label.end": "End",
+"label.enter.account.name": "Enter the account name",
 "label.end.date.and.time": "End date and time",
 "label.end.ip": "End IP",
 "label.end.reserved.system.ip": "End reserved system IP",
