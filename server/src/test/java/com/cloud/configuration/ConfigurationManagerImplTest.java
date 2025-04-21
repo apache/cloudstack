@@ -866,14 +866,9 @@ public class ConfigurationManagerImplTest {
     @Test
     public void testResetConfigurations() {
         Long poolId = 1L;
-        ResetCfgCmd cmd = Mockito.mock(ResetCfgCmd.class);
-        Mockito.when(cmd.getCfgName()).thenReturn("pool.storage.capacity.disablethreshold");
-        Mockito.when(cmd.getStoragepoolId()).thenReturn(poolId);
-        Mockito.when(cmd.getZoneId()).thenReturn(null);
-        Mockito.when(cmd.getClusterId()).thenReturn(null);
-        Mockito.when(cmd.getAccountId()).thenReturn(null);
-        Mockito.when(cmd.getDomainId()).thenReturn(null);
-        Mockito.when(cmd.getImageStoreId()).thenReturn(null);
+        ResetCfgCmd cmd = new ResetCfgCmd();
+        ReflectionTestUtils.setField(cmd, "storagePoolId", poolId);
+        ReflectionTestUtils.setField(cmd, "cfgName", "pool.storage.capacity.disablethreshold");
 
         ConfigurationVO cfg = new ConfigurationVO("Advanced", "DEFAULT", "test", "pool.storage.capacity.disablethreshold", null, "description");
         cfg.setScope(10);

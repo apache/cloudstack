@@ -19,25 +19,23 @@ package org.apache.cloudstack.api.command.admin.config;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.cloudstack.api.ApiArgValidator;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.ManagementServerResponse;
-import org.apache.commons.lang3.StringUtils;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
@@ -100,7 +98,6 @@ public class ListCfgsByCmd extends BaseListCmd {
             type = CommandType.UUID,
             entityType = ManagementServerResponse.class,
             description = "the ID of the Management Server to update the parameter value for corresponding management server",
-            validations = ApiArgValidator.PositiveNumber,
             since = "4.21.0")
     private Long managementServerId;
 
