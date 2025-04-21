@@ -121,7 +121,7 @@ export default {
           dataView: true,
           groupAction: true,
           popup: true,
-          groupMap: (selection, values) => { return selection.map(x => { return { id: x, considerlasthost: values.considerlasthost } }) },
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, considerlasthost: values.considerlasthost === true } }) },
           args: (record, store) => {
             if (['Admin'].includes(store.userInfo.roletype)) {
               return ['considerlasthost']
@@ -919,7 +919,7 @@ export default {
       related: [{
         name: 'vm',
         title: 'label.instances',
-        param: 'userdata'
+        param: 'userdataid'
       }],
       tabs: [
         {
