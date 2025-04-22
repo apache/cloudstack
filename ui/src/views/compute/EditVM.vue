@@ -206,7 +206,7 @@ export default {
         zoneid: this.resource.zoneid
       }).then(response => {
         const zone = response?.listzonesresponse?.zone || []
-        this.securityGroupsEnabled = zone?.[0]?.securitygroupsenabled
+        this.securityGroupsEnabled = zone?.[0]?.securitygroupsenabled || this.$store.getters.showSecurityGroups
       })
     },
     fetchSecurityGroups () {
