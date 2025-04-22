@@ -188,8 +188,6 @@ public class NetrisProviderServiceImplTest {
         NetrisProviderVO provider = Mockito.mock(NetrisProviderVO.class);
         Mockito.when(provider.getZoneId()).thenReturn(ZONE_ID);
         Mockito.when(provider.getName()).thenReturn(NAME);
-        Mockito.when(provider.getHostname()).thenReturn(HOSTNAME);
-        Mockito.when(provider.getPort()).thenReturn(PORT);
         Mockito.when(provider.getSiteName()).thenReturn(SITE_NAME);
         Mockito.when(provider.getTenantName()).thenReturn(TENANT_NAME);
         Mockito.when(provider.getNetrisTag()).thenReturn(NETRIS_TAG);
@@ -204,8 +202,6 @@ public class NetrisProviderServiceImplTest {
         // Verify
         Assert.assertNotNull(response);
         Assert.assertEquals(NAME, response.getName());
-        Assert.assertEquals(HOSTNAME, response.getHostname());
-        Assert.assertEquals(PORT, response.getPort());
         Assert.assertEquals(SITE_NAME, response.getSiteName());
         Assert.assertEquals(TENANT_NAME, response.getTenantName());
         Assert.assertEquals(NETRIS_TAG, response.getNetrisTag());
