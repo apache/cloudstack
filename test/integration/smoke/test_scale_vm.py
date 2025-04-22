@@ -32,7 +32,6 @@ from marvin.lib.base import (Account,
 from marvin.lib.common import (get_zone,
                                get_template,
                                get_test_template,
-                               get_builtin_template_info,
                                get_domain)
 from nose.plugins.attrib import attr
 from marvin.sshClient import SshClient
@@ -665,42 +664,44 @@ class TestScaleVm(cloudstackTestCase):
         # update setting allow.diskOffering.change.during.scale.vm to true
         # scale up the VM to serviceoffering3
         # Check disk offering of root volume to be diskoffering3 since setting allow.diskOffering.change.during.scale.vm is true
+        template = self.template
+        if self.hypervisor.lower() in ['xenserver']:
+            test_template = get_test_template(self.apiclient, self.zone.id, self.hypervisor)
+            self.services["template_2"]["url"] = test_template["url"]
+            self.services["template_2"]["hypervisor"] = test_template["hypervisor"]
+            self.services["template_2"]["format"] = test_template["format"]
+            self.services["template_2"]["ostype"] = "CentOS 5.6 (64-bit)"
 
-        builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
-        self.services["template_2"]["url"] = builtin_info[0]
-        self.services["template_2"]["hypervisor"] = builtin_info[1]
-        self.services["template_2"]["format"] = builtin_info[2]
+            try:
+                template = Template.register(self.apiclient,
+                                             self.services["template_2"],
+                                             zoneid=self.zone.id,
+                                             account=self.account.name,
+                                             domainid=self.account.domainid,
+                                             hypervisor=self.hypervisor
+                                             )
 
-        try:
-            template = Template.register(self.apiclient,
-                                         self.services["template_2"],
-                                         zoneid=self.zone.id,
-                                         account=self.account.name,
-                                         domainid=self.account.domainid,
-                                         hypervisor=self.hypervisor
-                                         )
+                template.download(self.apiclient)
+            except Exception as e:
+                self.fail("Failed to register template: %s" % e)
 
-            template.download(self.apiclient)
-        except Exception as e:
-            self.fail("Failed to register template: %s" % e)
+            time.sleep(120)
 
-        time.sleep(120)
+            template = Template.update(
+                template,
+                self.apiclient,
+                isdynamicallyscalable='true'
+            )
 
-        template = Template.update(
-            template,
-            self.apiclient,
-            isdynamicallyscalable='true'
-        )
+            templates = Template.list(self.apiclient,
+                                      templatefilter= \
+                                          self.services["template_2"]["templatefilter"],
+                                      id=template.id,
+                                      )
 
-        templates = Template.list(self.apiclient,
-                                  templatefilter= \
-                                      self.services["template_2"]["templatefilter"],
-                                  id=template.id,
-                                  )
+            template = templates[0]
 
-        template = templates[0]
         disk_offering = self.services["disk_offering"]
-        disk_offering["disksize"] = 25
         disk_offering["name"] = "Disk Offering 1"
         self.disk_offering1 = DiskOffering.create(
             self.apiclient,
@@ -770,7 +771,7 @@ class TestScaleVm(cloudstackTestCase):
         disk_offering2["name"] = "Disk Offering 2"
         self.disk_offering2 = DiskOffering.create(
             self.apiclient,
-            disk_offering2,
+            disk_offering2
         )
         self._cleanup.append(self.disk_offering2)
         offering_data = {
@@ -934,7 +935,6 @@ class TestScaleVm(cloudstackTestCase):
             listall=True
         )[0]
 
-        self.debug("After scaling 3: Volume disk offering %s and disk offering 3: %s" % (volume_response.diskofferingid, self.disk_offering3.id))
         self.assertEqual(
             volume_response.diskofferingid,
             self.disk_offering3.id,
