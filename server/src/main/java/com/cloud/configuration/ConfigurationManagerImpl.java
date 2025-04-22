@@ -979,40 +979,40 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return _configDao.findByName(name);
         }
 
-        String scope = null;
+        ConfigKey.Scope scope = ConfigKey.Scope.Global;
         Long id = null;
         int paramCountCheck = 0;
 
         if (zoneId != null) {
-            scope = ConfigKey.Scope.Zone.toString();
+            scope = ConfigKey.Scope.Zone;
             id = zoneId;
             paramCountCheck++;
         }
         if (clusterId != null) {
-            scope = ConfigKey.Scope.Cluster.toString();
+            scope = ConfigKey.Scope.Cluster;
             id = clusterId;
             paramCountCheck++;
         }
         if (accountId != null) {
             Account account = _accountMgr.getAccount(accountId);
             _accountMgr.checkAccess(caller, null, false, account);
-            scope = ConfigKey.Scope.Account.toString();
+            scope = ConfigKey.Scope.Account;
             id = accountId;
             paramCountCheck++;
         }
         if (domainId != null) {
             _accountMgr.checkAccess(caller, _domainDao.findById(domainId));
-            scope = ConfigKey.Scope.Domain.toString();
+            scope = ConfigKey.Scope.Domain;
             id = domainId;
             paramCountCheck++;
         }
         if (storagepoolId != null) {
-            scope = ConfigKey.Scope.StoragePool.toString();
+            scope = ConfigKey.Scope.StoragePool;
             id = storagepoolId;
             paramCountCheck++;
         }
         if (imageStoreId != null) {
-            scope = ConfigKey.Scope.ImageStore.toString();
+            scope = ConfigKey.Scope.ImageStore;
             id = imageStoreId;
             paramCountCheck++;
         }
@@ -1026,8 +1026,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (value.isEmpty() || value.equals("null")) {
             value = (id == null) ? null : "";
         }
-        final String updatedValue = updateConfiguration(userId, name, category, value, scope, id);
+
+        String currentValueInScope = getConfigurationValueInScope(config, name, scope, id);
+        final String updatedValue = updateConfiguration(userId, name, category, value, scope.name(), id);
         if (value == null && updatedValue == null || updatedValue.equalsIgnoreCase(value)) {
+            logger.debug("Config: {} value is updated from: {} to {} for scope: {}", name,
+                    encryptEventValueIfConfigIsEncrypted(config, currentValueInScope),
+                    encryptEventValueIfConfigIsEncrypted(config, value),
+                    scope != null ? scope : ConfigKey.Scope.Global.name());
+
             return _configDao.findByName(name);
         } else {
             throw new CloudRuntimeException("Unable to update configuration parameter " + name);
@@ -1120,6 +1127,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         String newValue = null;
         ConfigKey.Scope scopeVal = ConfigKey.Scope.valueOf(scope);
+        String currentValueInScope = getConfigurationValueInScope(config, name, scopeVal, id);
         switch (scopeVal) {
             case Zone:
                 final DataCenterVO zone = _zoneDao.findById(id);
@@ -1205,10 +1213,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 newValue = optionalValue.isPresent() ? optionalValue.get().toString() : defaultValue;
         }
 
+        logger.debug("Config: {} value is updated from: {} to {} for scope: {}", name,
+                encryptEventValueIfConfigIsEncrypted(config, currentValueInScope),
+                encryptEventValueIfConfigIsEncrypted(config, newValue), scopeVal);
+
         _configDepot.invalidateConfigCache(name, scopeVal, id);
 
         CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : defaultValue == null ? "" : defaultValue));
         return new Pair<Configuration, String>(_configDao.findByName(name), newValue);
+    }
+
+    private String getConfigurationValueInScope(ConfigurationVO config, String name, ConfigKey.Scope scope, Long id) {
+        String configValue;
+        if (ConfigKey.Scope.Global.equals(scope)) {
+            configValue = config.getValue();
+        } else {
+            ConfigKey<?> configKey = _configDepot.get(name);
+            Object currentValue = configKey.valueInScope(scope, id);
+            configValue = currentValue != null ? currentValue.toString() : null;
+        }
+        return configValue;
     }
 
     /**
