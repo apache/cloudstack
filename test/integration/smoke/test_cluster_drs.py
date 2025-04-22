@@ -45,7 +45,7 @@ class TestClusterDRS(cloudstackTestCase):
         zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.zone = Zone(zone.__dict__)
         cls.hypervisor = cls.testClient.getHypervisorInfo()
-        cls.template = cls.template = get_test_template(
+        cls.template = get_test_template(
             cls.apiclient,
             cls.zone.id,
             cls.hypervisor
