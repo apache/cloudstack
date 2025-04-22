@@ -484,16 +484,10 @@ export default {
           required: true
         },
         {
-          title: 'label.netris.provider.hostname',
-          key: 'hostname',
-          placeHolder: 'message.installwizard.tooltip.netris.provider.hostname',
+          title: 'label.netris.provider.url',
+          key: 'url',
+          placeHolder: 'message.installwizard.tooltip.netris.provider.url',
           required: true
-        },
-        {
-          title: 'label.netris.provider.port',
-          key: 'netrisPort',
-          placeHolder: 'message.installwizard.tooltip.netris.provider.port',
-          required: false
         },
         {
           title: 'label.netris.provider.username',

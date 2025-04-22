@@ -22,8 +22,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 public interface NetrisProvider extends InternalIdentity, Identity {
     long getZoneId();
     String getName();
-    String getHostname();
-    String getPort();
+    String getUrl();
     String getUsername();
     String getSiteName();
     String getTenantName();

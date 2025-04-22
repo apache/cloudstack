@@ -48,11 +48,8 @@ public class NetrisProviderVO implements NetrisProvider {
     @Column(name = "host_id")
     private long hostId;
 
-    @Column(name = "hostname")
-    private String hostname;
-
-    @Column(name = "port")
-    private String port;
+    @Column(name = "url")
+    private String url;
 
     @Column(name = "username")
     private String username;
@@ -124,21 +121,12 @@ public class NetrisProviderVO implements NetrisProvider {
     }
 
     @Override
-    public String getHostname() {
-        return hostname;
+    public String getUrl() {
+        return url;
     }
 
-    public void setHostname(String hostname) {
-        this.hostname = hostname;
-    }
-
-    @Override
-    public String getPort() {
-        return port;
-    }
-
-    public void setPort(String port) {
-        this.port = port;
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     @Override
@@ -202,8 +190,7 @@ public class NetrisProviderVO implements NetrisProvider {
         private long zoneId;
         private long hostId;
         private String name;
-        private String hostname;
-        private String port;
+        private String url;
         private String username;
         private String password;
         private String siteName;
@@ -229,13 +216,8 @@ public class NetrisProviderVO implements NetrisProvider {
             return this;
         }
 
-        public Builder setHostname(String hostname) {
-            this.hostname = hostname;
-            return this;
-        }
-
-        public Builder setPort(String port) {
-            this.port = port;
+        public Builder setUrl(String url) {
+            this.url = url;
             return this;
         }
 
@@ -270,8 +252,7 @@ public class NetrisProviderVO implements NetrisProvider {
             provider.setHostId(this.hostId);
             provider.setUuid(UUID.randomUUID().toString());
             provider.setName(this.name);
-            provider.setHostname(this.hostname);
-            provider.setPort(this.port);
+            provider.setUrl(this.url);
             provider.setUsername(this.username);
             provider.setPassword(this.password);
             provider.setSiteName(this.siteName);

@@ -80,8 +80,7 @@ public class NetrisProviderServiceImpl implements NetrisProviderService {
     public NetrisProvider addProvider(AddNetrisProviderCmd cmd) {
         final Long zoneId = cmd.getZoneId();
         final String name = cmd.getName();
-        final String hostname = cmd.getHostname();
-        final String port = cmd.getPort();
+        final String url = cmd.getUrl();
         final String username = cmd.getUsername();
         final String password = cmd.getPassword();
         final String tenantName = cmd.getTenantName();
@@ -92,8 +91,7 @@ public class NetrisProviderServiceImpl implements NetrisProviderService {
         params.put("guid", UUID.randomUUID().toString());
         params.put("zoneId", zoneId.toString());
         params.put("name", name);
-        params.put("hostname", hostname);
-        params.put("port", port);
+        params.put("url", url);
         params.put("username", username);
         params.put("password", password);
         params.put("siteName", siteName);
@@ -105,7 +103,7 @@ public class NetrisProviderServiceImpl implements NetrisProviderService {
 
         NetrisResource netrisResource = new NetrisResource();
         try {
-            netrisResource.configure(hostname, hostdetails);
+            netrisResource.configure(url, hostdetails);
             final Host host = resourceManager.addHost(zoneId, netrisResource, netrisResource.getType(), params);
             if (host != null) {
                 netrisProvider = Transaction.execute((TransactionCallback<NetrisProviderVO>) status -> {
@@ -113,8 +111,7 @@ public class NetrisProviderServiceImpl implements NetrisProviderService {
                             .setZoneId(zoneId)
                             .setHostId(host.getId())
                             .setName(name)
-                            .setPort(port)
-                            .setHostname(hostname)
+                            .setUrl(url)
                             .setUsername(username)
                             .setPassword(password)
                             .setSiteName(siteName)
@@ -187,8 +184,7 @@ public class NetrisProviderServiceImpl implements NetrisProviderService {
         NetrisProviderResponse response = new NetrisProviderResponse();
         response.setName(provider.getName());
         response.setUuid(provider.getUuid());
-        response.setHostname(provider.getHostname());
-        response.setPort(provider.getPort());
+        response.setHostname(provider.getUrl());
         response.setZoneId(zone.getUuid());
         response.setZoneName(zone.getName());
         response.setSiteName(provider.getSiteName());

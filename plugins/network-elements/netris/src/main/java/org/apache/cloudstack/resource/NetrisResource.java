@@ -59,7 +59,7 @@ public class NetrisResource implements ServerResource {
     protected Logger logger = LogManager.getLogger(getClass());
 
     private String name;
-    protected String hostname;
+    protected String endpointUrl;
     protected String username;
     protected String password;
     protected String guid;
@@ -182,9 +182,9 @@ public class NetrisResource implements ServerResource {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-        hostname = (String) params.get("hostname");
-        if (hostname == null) {
-            throw new ConfigurationException("Missing Netris hostname from params: " + params);
+        endpointUrl = (String) params.get("url");
+        if (endpointUrl == null) {
+            throw new ConfigurationException("Missing Netris provider URL from params: " + params);
         }
 
         username = (String) params.get("username");
@@ -222,7 +222,7 @@ public class NetrisResource implements ServerResource {
             throw new ConfigurationException("Unable to find the Netris admin tenant name");
         }
 
-        netrisApiClient = new NetrisApiClientImpl(hostname, username, password, siteName, adminTenantName);
+        netrisApiClient = new NetrisApiClientImpl(endpointUrl, username, password, siteName, adminTenantName);
         return netrisApiClient.isSessionAlive();
     }
 

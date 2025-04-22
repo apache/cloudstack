@@ -50,11 +50,8 @@ public class AddNetrisProviderCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Netris provider name")
     private String name;
 
-    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, required = true, description = "Netris provider hostname / IP address")
-    private String hostname;
-
-    @Parameter(name = ApiConstants.PORT, type = CommandType.STRING, description = "Netris provider port")
-    private String port;
+    @Parameter(name = ApiConstants.URL, type = CommandType.STRING, required = true, description = "Netris provider URL")
+    private String url;
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, required = true, description = "Username to log into Netris")
     private String username;
@@ -83,12 +80,8 @@ public class AddNetrisProviderCmd extends BaseCmd {
         return name;
     }
 
-    public String getHostname() {
-        return hostname;
-    }
-
-    public String getPort() {
-        return port;
+    public String getUrl() {
+        return url;
     }
 
     public String getUsername() {

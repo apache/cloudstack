@@ -36,7 +36,7 @@ public class NetrisProviderDaoImpl extends GenericDaoBase<NetrisProviderVO, Long
                 SearchCriteria.Op.EQ);
         allFieldsSearch.and("uuid", allFieldsSearch.entity().getUuid(),
                 SearchCriteria.Op.EQ);
-        allFieldsSearch.and("hostname", allFieldsSearch.entity().getHostname(),
+        allFieldsSearch.and("hostname", allFieldsSearch.entity().getUrl(),
                 SearchCriteria.Op.EQ);
         allFieldsSearch.and("zone_id", allFieldsSearch.entity().getZoneId(),
                 SearchCriteria.Op.EQ);
