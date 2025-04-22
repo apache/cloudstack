@@ -161,8 +161,8 @@ public class DatacenterMO extends BaseMO {
         return null;
     }
 
-    public List<UnmanagedInstanceTO> getAllVmsOnDatacenter() throws Exception {
-        List<UnmanagedInstanceTO> vms = new ArrayList<>();
+    public List<VirtualMachineMO> getAllVmsOnDatacenter() throws Exception {
+        List<VirtualMachineMO> vms = new ArrayList<>();
         List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name"});
         if (ocs != null) {
             for (ObjectContent oc : ocs) {
@@ -171,12 +171,10 @@ public class DatacenterMO extends BaseMO {
                     VirtualMachineMO vmMo = new VirtualMachineMO(_context, vmMor);
                     try {
                         if (!vmMo.isTemplate()) {
-                            HostMO hostMO = vmMo.getRunningHost();
-                            UnmanagedInstanceTO unmanagedInstance = VmwareHelper.getUnmanagedInstance(hostMO, vmMo);
-                            vms.add(unmanagedInstance);
+                            vms.add(vmMo);
                         }
                     } catch (Exception e) {
-                        s_logger.debug(String.format("Unexpected error checking unmanaged instance %s, excluding it: %s", vmMo.getVmName(), e.getMessage()), e);
+                        s_logger.debug(String.format("Unexpected error checking instance %s, excluding it: %s", vmMo.getVmName(), e.getMessage()), e);
                     }
                 }
             }

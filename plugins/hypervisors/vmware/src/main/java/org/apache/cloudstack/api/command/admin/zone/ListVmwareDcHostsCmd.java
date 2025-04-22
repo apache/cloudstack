@@ -21,20 +21,20 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
+import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.user.Account;
-import com.cloud.utils.exception.CloudRuntimeException;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
-import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.VmwareDatacenterResponse;
-import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -42,10 +42,10 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = "listVmwareDcVms", responseObject = UnmanagedInstanceResponse.class,
-        description = "Lists the VMs in a VMware Datacenter",
+@APICommand(name = "listVmwareDcHosts", responseObject = HostResponse.class,
+        description = "Lists the Hosts in a Vmware Datacenter",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListVmwareDcVmsCmd extends BaseListCmd implements ListVmwareDcItems {
+public class ListVmwareDcHostsCmd extends BaseListCmd implements ListVmwareDcItems {
 
     @Inject
     public VmwareDatacenterService _vmwareDatacenterService;
@@ -61,11 +61,8 @@ public class ListVmwareDcVmsCmd extends BaseListCmd implements ListVmwareDcItems
             description = "The name/ip of vCenter. Make sure it is IP address or full qualified domain name for host running vCenter server.")
     private String vcenter;
 
-    @Parameter(name = ApiConstants.DATACENTER_NAME, type = CommandType.STRING, description = "Name of VMware datacenter.")
+    @Parameter(name = ApiConstants.DATACENTER_NAME, type = CommandType.STRING, description = "Name of Vmware datacenter.")
     private String datacenterName;
-
-    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, description = "Get only the VMs from the specified host.")
-    private String hostName;
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "The Username required to connect to resource.")
     private String username;
@@ -89,10 +86,6 @@ public class ListVmwareDcVmsCmd extends BaseListCmd implements ListVmwareDcItems
         return datacenterName;
     }
 
-    public String getHostName() {
-        return hostName;
-    }
-
     public Long getExistingVcenterId() {
         return existingVcenterId;
     }
@@ -101,26 +94,30 @@ public class ListVmwareDcVmsCmd extends BaseListCmd implements ListVmwareDcItems
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         checkParameters();
         try {
-            List<UnmanagedInstanceTO> vms = _vmwareDatacenterService.listVMsInDatacenter(this);
-            List<BaseResponse> baseResponseList = new ArrayList<>();
-            if (CollectionUtils.isNotEmpty(vms)) {
-                for (UnmanagedInstanceTO vmwareVm : vms) {
-                    UnmanagedInstanceResponse resp = _responseGenerator.createUnmanagedInstanceResponse(vmwareVm, null, null);
+            List<HostMO> hosts = _vmwareDatacenterService.listHostsInDatacenter(this);
+            ListResponse<HostResponse> response = new ListResponse<>();
+            List<HostResponse> baseResponseList = new ArrayList<>();
+            if (CollectionUtils.isNotEmpty(hosts)) {
+                for (HostMO vmwareHost : hosts) {
+                    HostResponse resp = createHostResponse(vmwareHost);
                     baseResponseList.add(resp);
                 }
             }
-            List<BaseResponse> pagingList = com.cloud.utils.StringUtils.applyPagination(baseResponseList, this.getStartIndex(), this.getPageSizeVal());
-            if (CollectionUtils.isEmpty(pagingList)) {
-                pagingList = baseResponseList;
-            }
-            ListResponse<BaseResponse> response = new ListResponse<>();
-            response.setResponses(pagingList, baseResponseList.size());
+            response.setResponses(baseResponseList, baseResponseList.size());
             response.setResponseName(getCommandName());
             setResponseObject(response);
-        } catch (CloudRuntimeException e) {
-            String errorMsg = String.format("Error retrieving VMs from VMware VC: %s", e.getMessage());
+        } catch (Exception e) {
+            String errorMsg = String.format("Error retrieving VMs from Vmware VC: %s", e.getMessage());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMsg);
         }
+    }
+
+    private HostResponse createHostResponse(HostMO hostInstance) throws Exception {
+        HostResponse response = new HostResponse();
+        response.setHypervisor(Hypervisor.HypervisorType.VMware.toString());
+        response.setName(hostInstance.getHostName());
+        response.setObjectName("host");
+        return response;
     }
 
     private void checkParameters() {
@@ -137,10 +134,5 @@ public class ListVmwareDcVmsCmd extends BaseListCmd implements ListVmwareDcItems
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
-    }
-
-    @Override
-    public String getCommandName() {
-        return "listvmwaredcvmsresponse";
     }
 }
