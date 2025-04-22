@@ -267,7 +267,6 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
                 } catch (Exception e) {
                     logger.debug("Caught exception during logout", e);
                 }
-                conn.dispose();
                 conn = null;
             }
 
