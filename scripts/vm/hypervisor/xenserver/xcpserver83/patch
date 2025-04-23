@@ -56,6 +56,7 @@ upgrade_snapshot.sh=..,0755,/opt/cloud/bin
 cloud-clean-vlan.sh=..,0755,/opt/cloud/bin
 cloud-prepare-upgrade.sh=..,0755,/opt/cloud/bin
 add_to_vcpus_params_live.sh=..,0755,/opt/cloud/bin
+cloud-plugin-storage=../xenserver84/,0755,/etc/xapi.d/plugins
 
 ###add cloudstack plugin script for XCP
 cloudstack_plugins.conf=..,0644,/etc/xensource
