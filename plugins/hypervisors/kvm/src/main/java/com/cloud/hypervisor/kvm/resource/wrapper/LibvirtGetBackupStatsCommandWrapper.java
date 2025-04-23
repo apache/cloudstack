@@ -61,8 +61,8 @@ public class LibvirtGetBackupStatsCommandWrapper extends CommandWrapper<GetBacku
         BackupStorageStatsAnswer answer = new BackupStorageStatsAnswer(command, false, result.second());
 
         String [] stats = result.second().split("\\s+");
-        Long total = Long.parseLong(stats[1]);
-        Long used = Long.parseLong(stats[2]);
+        Long total = Long.parseLong(stats[1]) * 1024;
+        Long used = Long.parseLong(stats[2]) * 1024;
         answer.setTotalSize(total);
         answer.setUsedSize(used);
 
