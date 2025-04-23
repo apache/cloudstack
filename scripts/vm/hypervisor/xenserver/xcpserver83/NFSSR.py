@@ -91,7 +91,7 @@ class NFSSR(FileSR.FileSR):
 
     def check_server(self):
         try:
-            nfs.check_server_tcp(self.remoteserver)
+            nfs.check_server_tcp(self.remoteserver, self.transport)
         except nfs.NfsException as exc:
             raise xs_errors.XenError('NFSVersion',
                                      opterr=exc.errstr)
@@ -226,6 +226,21 @@ class NFSSR(FileSR.FileSR):
         dom = nfs.scan_exports(target)
         print >>sys.stderr,dom.toprettyxml()
 
+    def _isvalidpathstring(self, path):
+        if not path.startswith("/"):
+            return False
+        l = self._splitstring(path)
+        for char in l:
+            if char.isalpha():
+                continue
+            elif char.isdigit():
+                continue
+            elif char in ['/','-','_','.',':']:
+                continue
+            else:
+                return False
+        return True
+
 class NFSFileVDI(FileSR.FileVDI):
     def attach(self, sr_uuid, vdi_uuid):
         try:
@@ -254,21 +269,6 @@ class NFSFileVDI(FileSR.FileVDI):
             timestamp_after += 1
             os.utime(self.sr.path, (timestamp_after, timestamp_after))
         return ret
-
-    def _isvalidpathstring(self, path):
-        if not path.startswith("/"):
-            return False
-        l = self._splitstring(path)
-        for char in l:
-            if char.isalpha():
-                continue
-            elif char.isdigit():
-                continue
-            elif char in ['/','-','_','.',':']:
-                continue
-            else:
-                return False
-        return True
 
 
 
