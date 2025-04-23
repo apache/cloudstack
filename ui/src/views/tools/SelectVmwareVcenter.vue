@@ -89,7 +89,6 @@
           <a-input
             v-model:value="vcenter"
             :placeholder="apiParams.vcenter.description"
-            @change="onSelectExternalVmwareDatacenter"
             @blur="onSelectExternalVmwareDatacenter"
             @pressEnter="onSelectExternalVmwareDatacenter"
           />
@@ -101,7 +100,6 @@
           <a-input
             v-model:value="datacenter"
             :placeholder="apiParams.datacentername.description"
-            @change="onSelectExternalVmwareDatacenter"
             @blur="onSelectExternalVmwareDatacenter"
             @pressEnter="onSelectExternalVmwareDatacenter"
           />
@@ -113,7 +111,6 @@
           <a-input
             v-model:value="username"
             :placeholder="apiParams.username.description"
-            @change="onSelectExternalVmwareDatacenter"
             @blur="onSelectExternalVmwareDatacenter"
             @pressEnter="onSelectExternalVmwareDatacenter"
           />
@@ -125,7 +122,6 @@
           <a-input-password
             v-model:value="password"
             :placeholder="apiParams.password.description"
-            @change="onSelectExternalVmwareDatacenter"
             @blur="onSelectExternalVmwareDatacenter"
             @pressEnter="onSelectExternalVmwareDatacenter"
           />
@@ -157,8 +153,8 @@
       <div class="card-footer">
         <a-button
           v-if="vcenterSelectedOption == 'existing' || vcenterSelectedOption == 'new'"
-          :disabled="(vcenterSelectedOption === 'new' && (vcenter === '' || datacentername === '' || username === '' || password === '')) ||
-            (vcenterSelectedOption === 'existing' && selectedExistingVcenterId === '') && host === ''"
+          :disabled="(vcenterSelectedOption === 'new' && (vcenter === '' || datacentername === '' || username === '' || password === '' || selectedHost === '')) ||
+            (vcenterSelectedOption === 'existing' && selectedExistingVcenterId === '' && selectedHost === '')"
           :loading="loading"
           type="primary"
           @click="listVmwareDatacenterVms">{{ $t('label.list.vmware.vcenter.vms') }}</a-button>
@@ -254,7 +250,7 @@ export default {
       } else {
         params.existingvcenterid = this.selectedExistingVcenterId
       }
-      params.host = this.selectedHost
+      params.hostname = this.selectedHost
       api('listVmwareDcVms', params).then(json => {
         const obj = {
           params: params,
@@ -284,8 +280,8 @@ export default {
     listZoneVmwareDcs () {
       this.loading = true
       api('listVmwareDcs', { zoneid: this.sourcezoneid }).then(response => {
-        if (response.listvmwaredcsresponse.vmwaredc && response.listvmwaredcsresponse.vmwaredc.length > 0) {
-          this.existingvcenter = response.listvmwaredcsresponse.vmwaredc
+        if (response.listvmwaredcsresponse.VMwareDC && response.listvmwaredcsresponse.VMwareDC.length > 0) {
+          this.existingvcenter = response.listvmwaredcsresponse.VMwareDC
         }
       }).catch(error => {
         this.$notifyError(error)
@@ -327,6 +323,14 @@ export default {
       this.selectedHost = value
     },
     onVcenterTypeChange () {
+      if (this.vcenterSelectedOption === 'new') {
+        this.hosts = []
+      } else if (this.vcenterSelectedOption === 'existing') {
+        this.form.sourcezoneid = null
+        this.selectedExistingVcenterId = ''
+        this.selectedHost = ''
+        this.form.vmwaredatacenter = null
+      }
       this.$emit('onVcenterTypeChanged', this.vcenterSelectedOption)
     }
   }

@@ -1117,6 +1117,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         cmdList.add(ListVsphereStoragePoliciesCmd.class);
         cmdList.add(ListVsphereStoragePolicyCompatiblePoolsCmd.class);
         cmdList.add(ListVmwareDcVmsCmd.class);
+        cmdList.add(ListVmwareDcHostsCmd.class);
         return cmdList;
     }
 
@@ -1634,7 +1635,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         return vmwaredc;
     }
 
-    private VmwareContext getVmwareContext(String vcenter, String username, String password) throws Exception {
+    private static VmwareContext getVmwareContext(String vcenter, String username, String password) throws Exception {
         s_logger.debug(String.format("Connecting to the VMware vCenter %s", vcenter));
         String serviceUrl = String.format("https://%s/sdk/vimService", vcenter);
         VmwareClient vimClient = new VmwareClient(vcenter);
@@ -1659,8 +1660,14 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             List<VirtualMachineMO> vms;
             if (StringUtils.isNotBlank(esxiHostName)) {
                 // List VMs in a specific ESXi Host
-                HostMO hostMO = VmwareHelper.getHostMOFromHostName(context, esxiHostName);
-                vms = hostMO.listVmsOnHyperHostWithHypervisorName(null);
+                ManagedObjectReference hostMor = dcMo.findHost(esxiHostName);
+                if (hostMor == null) {
+                    String errorMsg = String.format("Cannot find a host with name %s on vcenter %s", esxiHostName, vcenter);
+                    s_logger.error(errorMsg);
+                    throw new CloudRuntimeException(errorMsg);
+                }
+                HostMO hostMO = new HostMO(context, hostMor);
+                vms = hostMO.listAllVmsInHost();
             } else {
                 // Long lasting method, not recommended - retrieves all the VMs in a datacenter
                 vms = dcMo.getAllVmsOnDatacenter();
