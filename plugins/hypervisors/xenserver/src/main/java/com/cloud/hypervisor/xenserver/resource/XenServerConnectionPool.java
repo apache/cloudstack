@@ -412,7 +412,7 @@ public class XenServerConnectionPool {
         return s_instance;
     }
 
-    public class XenServerConnection extends Connection {
+    public class XenServerConnection extends ConnectionNew {
         long _interval;
         int _retries;
         String _ip;

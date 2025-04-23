@@ -95,7 +95,7 @@ public class ConnectionNew extends Connection {
         return config;
     }
 
-    static class CustomerMapParser extends RecursiveTypeParserImpl {
+    static class CustomMapParser extends RecursiveTypeParserImpl {
 
         private int level = 0;
         private StringBuffer nameBuffer = new StringBuffer();
@@ -105,7 +105,7 @@ public class ConnectionNew extends Connection {
         private boolean inValue;
         private boolean doneValue;
 
-        public CustomerMapParser(XmlRpcStreamConfig pConfig, NamespaceContextImpl pContext, TypeFactory pFactory) {
+        public CustomMapParser(XmlRpcStreamConfig pConfig, NamespaceContextImpl pContext, TypeFactory pFactory) {
             super(pConfig, pContext, pFactory);
         }
 
@@ -251,7 +251,7 @@ public class ConnectionNew extends Connection {
             public TypeParser getParser(XmlRpcStreamConfig pConfig, NamespaceContextImpl pContext, String pURI, String pLocalName) {
                 TypeParser parser = super.getParser(pConfig, pContext, pURI, pLocalName);
                 if (parser instanceof MapParser) {
-                    return new CustomerMapParser(pConfig, pContext, this);
+                    return new CustomMapParser(pConfig, pContext, this);
                 }
                 return parser;
             }
