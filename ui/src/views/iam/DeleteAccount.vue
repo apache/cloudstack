@@ -16,64 +16,46 @@
 // under the License.
 
 <template>
-  <div>
-    <!-- Error view for enabled accounts -->
-    <template v-if="resource.state !== 'disabled'">
-      <div style="margin-bottom: 10px">
-        <a-alert type="error">
-          <template #message>
-            <div>{{ $t('message.delete.account.not.disabled') }}</div>
-          </template>
-        </a-alert>
-      </div>
-      <div :span="24" class="actions">
-        <a-button type="primary" @click="closeModal">{{ $t('label.ok') }}</a-button>
-      </div>
-    </template>
-    <!-- Delete confirmation for disabled accounts -->
-    <a-form
-      v-else
-      class="form"
-      :ref="formRef"
-      :model="form"
-      :rules="rules"
-      layout="vertical"
-      @finish="handleSubmit"
-      v-ctrl-enter="handleSubmit"
-    >
-      <div style="margin-bottom: 10px">
-        <a-alert type="warning">
-          <template #message>
-            <div v-html="$t('message.delete.account.warning')"></div>
-          </template>
-        </a-alert>
-      </div>
-      <div style="margin-bottom: 10px">
-        <a-alert>
-          <template #message>
-            <div v-html="$t('message.delete.account.confirm')"></div>
-          </template>
-        </a-alert>
-      </div>
-      <a-form-item name="name" ref="name">
-        <a-input
-          v-model:value="form.name"
-          :placeholder="$t('label.enter.account.name')"
-          style="width: 100%"/>
-      </a-form-item>
-      <p v-if="error" class="error">{{ error }}</p>
-      <div :span="24" class="actions">
-        <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
-        <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
-      </div>
-    </a-form>
-  </div>
+  <a-form
+    class="form"
+    :ref="formRef"
+    :model="form"
+    :rules="rules"
+    layout="vertical"
+    @finish="handleSubmit"
+    v-ctrl-enter="handleSubmit"
+   >
+    <div style="margin-bottom: 10px">
+      <a-alert type="warning">
+        <template #message>
+          <div v-html="$t('message.delete.account.warning')"></div>
+        </template>
+    </a-alert>
+    </div>
+    <div style="margin-bottom: 10px">
+      <a-alert>
+        <template #message>
+          <div v-html="$t('message.delete.account.confirm')"></div>
+        </template>
+      </a-alert>
+    </div>
+    <a-form-item name="name" ref="name">
+      <a-input
+        v-model:value="form.name"
+        :placeholder="$t('label.enter.account.name')"
+        style="width: 100%"/>
+    </a-form-item>
+    <p v-if="error" class="error">{{ error }}</p>
+    <div :span="24" class="actions">
+      <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
+      <a-button type="primary" ref="submit" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
+    </div>
+  </a-form>
 </template>
 
 <script>
 import { ref, reactive } from 'vue'
 import { api } from '@/api'
-
 export default {
   name: 'DeleteAccount',
   props: {
@@ -84,17 +66,11 @@ export default {
   },
   data () {
     return {
-      error: '',
-      formRef: null,
-      form: null,
-      rules: null
+      error: ''
     }
   },
   created () {
-    // Only initialize form if account is disabled
-    if (this.resource.state === 'disabled') {
-      this.initForm()
-    }
+    this.initForm()
   },
   methods: {
     initForm () {
@@ -109,10 +85,6 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
-      // Safety check in case button is clicked somehow when disabled
-      if (this.resource.state !== 'disabled') {
-        return
-      }
       this.formRef.value.validate().then(async () => {
         if (this.form.name !== this.resource.name) {
           this.error = `${this.$t('message.error.account.delete.name.mismatch')}`
@@ -138,9 +110,7 @@ export default {
           this.$notifyError(error)
         })
       }).catch((error) => {
-        if (error.errorFields && error.errorFields.length > 0) {
-          this.formRef.value.scrollToField(error.errorFields[0].name)
-        }
+        this.formRef.value.scrollToField(error.errorFields[0].name)
       })
     }
   }
