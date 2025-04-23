@@ -33,7 +33,6 @@ import org.apache.cloudstack.quota.dao.QuotaAccountDao;
 import org.apache.cloudstack.quota.dao.QuotaEmailConfigurationDaoImpl;
 import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
-import org.apache.cloudstack.quota.vo.QuotaEmailConfigurationVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.junit.Assert;
 import org.junit.Before;
