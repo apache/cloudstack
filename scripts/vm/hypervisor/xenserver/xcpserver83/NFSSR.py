@@ -257,7 +257,7 @@ class NFSFileVDI(FileSR.FileVDI):
         return super(NFSFileVDI, self).attach(sr_uuid, vdi_uuid)
 
     def get_mtime(self, path):
-        st = util.ioretry_stat(lambda: os.stat(path))
+        st = util.ioretry_stat(path)
         return st[stat.ST_MTIME]
 
     def clone(self, sr_uuid, vdi_uuid):
