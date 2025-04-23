@@ -75,8 +75,7 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({
-      })
+      this.form = reactive({})
       this.rules = reactive({
         name: [{ required: true, message: this.$t('label.required') }]
       })
@@ -89,6 +88,9 @@ export default {
       this.formRef.value.validate().then(async () => {
         if (this.form.name !== this.resource.name) {
           this.error = `${this.$t('message.error.account.delete.name.mismatch')}`
+          return
+        }
+        if (this.hasActiveResources) {
           return
         }
         api('deleteAccount', {

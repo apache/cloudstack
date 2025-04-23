@@ -1,4 +1,8 @@
 {
+"message.delete.account.not.disabled": "First, disable the account to delete it.",
+"label": {
+  "warning": "Warning"
+},
 "alert.service.domainrouter": "Domain router",
 "error.dedicate.cluster.failed": "Failed to dedicate cluster.",
 "error.dedicate.host.failed": "Failed to dedicate host.",
