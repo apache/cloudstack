@@ -1215,6 +1215,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (arch != null) {
+            List<CPU.CPUArch> archTypes = _hostDao.listDistinctArchTypes(cluster.getId());
+            if (archTypes.stream().anyMatch(a -> !a.equals(arch))) {
+                throw new InvalidParameterValueException(String.format(
+                        "Cluster has host(s) present with arch type(s): %s",
+                        StringUtils.join(archTypes.stream().map(CPU.CPUArch::getType).toArray())));
+            }
             cluster.setArch(arch.getType());
             doUpdate = true;
         }

@@ -1776,6 +1776,21 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     }
 
     @Override
+    public List<CPU.CPUArch> listDistinctArchTypes(final Long clusterId) {
+        GenericSearchBuilder<HostVO, CPU.CPUArch> sb = createSearchBuilder(CPU.CPUArch.class);
+        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+        sb.select(null, Func.DISTINCT, sb.entity().getHypervisorType());
+        sb.done();
+        SearchCriteria<CPU.CPUArch> sc = sb.create();
+        if (clusterId != null) {
+            sc.setParameters("clusterId", clusterId);
+        }
+        sc.setParameters("type", Type.Routing);
+        return customSearch(sc, null);
+    }
+
+    @Override
     public List<HostVO> listByIds(List<Long> ids) {
         if (CollectionUtils.isEmpty(ids)) {
             return new ArrayList<>();
