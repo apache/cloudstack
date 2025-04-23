@@ -3434,6 +3434,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final ControlledEntity[] volumesToDelete = volumesToBeDeleted.toArray(new ControlledEntity[0]);
         _accountMgr.checkAccess(ctx.getCallingAccount(), null, true, volumesToDelete);
 
+        if (expunge) {
+            backupManager.checkAndRemoveBackupOfferingBeforeExpunge(vm);
+        }
+
         stopVirtualMachine(vmId, VmDestroyForcestop.value());
 
         // Detach all data disks from VM
