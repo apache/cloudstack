@@ -37,7 +37,8 @@ from marvin.lib.base import (Account,
 
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template)
+                               get_template,
+                               get_test_template)
 
 
 class TestNonStrictAffinityGroups(cloudstackTestCase):
@@ -54,7 +55,11 @@ class TestNonStrictAffinityGroups(cloudstackTestCase):
 
         zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.zone = Zone(zone.__dict__)
-        cls.template = get_template(cls.apiclient, cls.zone.id)
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() not in ["xenserver"]:
+            cls.template = get_template(cls.apiclient, cls.zone.id)
+        else:
+            cls.template = get_test_template(cls.apiclient, cls.zone.id, cls.hypervisor)
         cls._cleanup = []
 
         cls.logger = logging.getLogger("TestNonStrictAffinityGroups")
