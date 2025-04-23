@@ -228,7 +228,7 @@ export default {
         return (record.id !== 'undefined' && store.userInfo.accountid === record.id)
       },
       popup: true,
-      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/DeleteAccountWrapper.vue')))
+      component: shallowRef(defineAsyncComponent(() => import('@/views/iam/DeleteAccount.vue')))
     }
   ]
 }
