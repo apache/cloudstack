@@ -27,6 +27,7 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -142,12 +143,13 @@ public class HostDaoImplTest {
         Long zoneId = 1L;
         List<Hypervisor.HypervisorType> mockResults = List.of(Hypervisor.HypervisorType.KVM, Hypervisor.HypervisorType.XenServer);
         HostVO host = mock(HostVO.class);
-        GenericSearchBuilder<HostVO, Hypervisor.HypervisorType> sb = mock(GenericSearchBuilder.class);
+        GenericSearchBuilder<HostVO, String> sb = mock(GenericSearchBuilder.class);
         when(sb.entity()).thenReturn(host);
-        SearchCriteria<Hypervisor.HypervisorType> sc = mock(SearchCriteria.class);
+        SearchCriteria<String> sc = mock(SearchCriteria.class);
         when(sb.create()).thenReturn(sc);
-        doReturn(sb).when(hostDao).createSearchBuilder(Hypervisor.HypervisorType.class);
-        doReturn(mockResults).when(hostDao).customSearch(any(SearchCriteria.class), any());
+        doReturn(sb).when(hostDao).createSearchBuilder(String.class);
+        doReturn(mockResults.stream().map(h -> h.name()).collect(Collectors.toList())).when(hostDao)
+                .customSearch(any(SearchCriteria.class), any());
         List<Hypervisor.HypervisorType> hypervisorTypes = hostDao.listDistinctHypervisorTypes(zoneId);
         assertEquals(mockResults, hypervisorTypes);
         Mockito.verify(sc).setParameters("zoneId", zoneId);
@@ -226,5 +228,23 @@ public class HostDaoImplTest {
         assertEquals(1, result.size());
         assertEquals(Hypervisor.HypervisorType.VMware, result.get(0).first());
         assertEquals(CPU.CPUArch.amd64, result.get(0).second());
+    }
+
+    @Test
+    public void testListDistinctArchTypes() {
+        Long clusterId = 1L;
+        List<CPU.CPUArch> mockResults = List.of(CPU.CPUArch.amd64, CPU.CPUArch.arm64);
+        HostVO host = mock(HostVO.class);
+        GenericSearchBuilder<HostVO, String> sb = mock(GenericSearchBuilder.class);
+        when(sb.entity()).thenReturn(host);
+        SearchCriteria<String> sc = mock(SearchCriteria.class);
+        when(sb.create()).thenReturn(sc);
+        doReturn(sb).when(hostDao).createSearchBuilder(String.class);
+        doReturn(mockResults.stream().map(h -> h.getType()).collect(Collectors.toList())).when(hostDao)
+                .customSearch(any(SearchCriteria.class), any());
+        List<CPU.CPUArch> hypervisorTypes = hostDao.listDistinctArchTypes(clusterId);
+        assertEquals(mockResults, hypervisorTypes);
+        Mockito.verify(sc).setParameters("clusterId", clusterId);
+        Mockito.verify(sc).setParameters("type", Host.Type.Routing);
     }
 }
