@@ -66,19 +66,19 @@ class NFSSR(FileSR.FileSR):
         self.ops_exclusive = FileSR.OPS_EXCLUSIVE
         self.lock = Lock(vhdutil.LOCK_TYPE_SR, self.uuid)
         self.sr_vditype = SR.DEFAULT_TAP
-        if not self.dconf.has_key('server'):
+        if 'server' not in self.dconf:
             raise xs_errors.XenError('ConfigServerMissing')
         self.remoteserver = self.dconf['server']
         self.path = os.path.join(SR.MOUNT_BASE, sr_uuid)
 
         # Test for the optional 'nfsoptions' dconf attribute
         self.transport = DEFAULT_TRANSPORT
-        if self.dconf.has_key('useUDP') and self.dconf['useUDP'] == 'true':
+        if 'useUDP' in self.dconf and self.dconf['useUDP'] == 'true':
             self.transport = "udp"
 
 
     def validate_remotepath(self, scan):
-        if not self.dconf.has_key('serverpath'):
+        if 'serverpath' not in self.dconf:
             if scan:
                 try:
                     self.scan_exports(self.dconf['server'])
@@ -254,6 +254,22 @@ class NFSFileVDI(FileSR.FileVDI):
             timestamp_after += 1
             os.utime(self.sr.path, (timestamp_after, timestamp_after))
         return ret
+
+    def _isvalidpathstring(self, path):
+        if not path.startswith("/"):
+            return False
+        l = self._splitstring(path)
+        for char in l:
+            if char.isalpha():
+                continue
+            elif char.isdigit():
+                continue
+            elif char in ['/','-','_','.',':']:
+                continue
+            else:
+                return False
+        return True
+
 
 
 if __name__ == '__main__':
