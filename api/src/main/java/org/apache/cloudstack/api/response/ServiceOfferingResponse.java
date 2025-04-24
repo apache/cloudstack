@@ -239,7 +239,7 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     private Boolean purgeResources;
 
     @SerializedName(ApiConstants.INSTANCE_LEASE_DURATION)
-    @Param(description = "Instance lease duration for service offering", since = "4.21.0")
+    @Param(description = "Instance lease duration (in days) for service offering", since = "4.21.0")
     private Integer leaseDuration;
 
     @SerializedName(ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION)

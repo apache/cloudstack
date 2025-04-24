@@ -18,7 +18,6 @@
 
 package org.apache.cloudstack.vm.lease;
 
-import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiGsonHelper;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -76,15 +75,12 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
     private UserVmJoinDao userVmJoinDao;
 
     @Inject
-    private AlertManager alertManager;
-
-    @Inject
     private AsyncJobManager asyncJobManager;
 
     private AsyncJobDispatcher asyncJobDispatcher;
 
     ScheduledExecutorService vmLeaseExecutor;
-    ScheduledExecutorService vmLeaseAlertExecutor;
+    ScheduledExecutorService vmLeaseExpiryEventExecutor;
 
     @Override
     public String getConfigComponentName() {
@@ -96,8 +92,8 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         return new ConfigKey[]{
                 InstanceLeaseEnabled,
                 InstanceLeaseSchedulerInterval,
-                InstanceLeaseAlertSchedule,
-                InstanceLeaseExpiryAlertDaysBefore
+                InstanceLeaseExpiryEventSchedulerInterval,
+                InstanceLeaseExpiryEventDaysBefore
         };
     }
 
@@ -110,11 +106,6 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         if (InstanceLeaseEnabled.value()) {
            scheduleLeaseExecutors();
         }
-        return true;
-    }
-
-    @Override
-    public boolean start() {
         return true;
     }
 
@@ -132,8 +123,9 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         List<UserVmJoinVO> leaseExpiringForInstances = userVmJoinDao.listLeaseInstancesExpiringInDays(-1);
         logger.debug("Total instances found for lease cancellation: {}", leaseExpiringForInstances.size());
         for (UserVmJoinVO instance : leaseExpiringForInstances) {
-            userVmDetailsDao.addDetail(instance.getId(), VmDetailConstants.INSTANCE_LEASE_EXECUTION, "CANCELLED", false);
-            String leaseCancellationMsg = String.format("Lease is cancelled for the instancedId: %s ", instance.getUuid());
+            userVmDetailsDao.addDetail(instance.getId(), VmDetailConstants.INSTANCE_LEASE_EXECUTION,
+                    LeaseActionExecution.CANCELLED.name(), false);
+            String leaseCancellationMsg = String.format("Lease is cancelled for the instance: %s (id: %s) ", instance.getName(), instance.getUuid());
             ActionEventUtils.onActionEvent(instance.getUserId(), instance.getAccountId(), instance.getDomainId(),
                     EventTypes.VM_LEASE_CANCELLED, leaseCancellationMsg, instance.getId(), ApiCommandResourceType.VirtualMachine.toString());
         }
@@ -157,10 +149,10 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             vmLeaseExecutor.scheduleAtFixedRate(new VMLeaseSchedulerTask(),5L, InstanceLeaseSchedulerInterval.value(), TimeUnit.SECONDS);
         }
 
-        if (vmLeaseAlertExecutor == null || vmLeaseAlertExecutor.isShutdown()) {
-            logger.debug("Scheduling lease alert executor");
-            vmLeaseAlertExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("VMLeaseAlertPollExecutor"));
-            vmLeaseAlertExecutor.scheduleAtFixedRate(new VMLeaseAlertSchedulerTask(), 5L, InstanceLeaseAlertSchedule.value(), TimeUnit.SECONDS);
+        if (vmLeaseExpiryEventExecutor == null || vmLeaseExpiryEventExecutor.isShutdown()) {
+            logger.debug("Scheduling lease expiry event executor");
+            vmLeaseExpiryEventExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("VmLeaseExpiryEventExecutor"));
+            vmLeaseExpiryEventExecutor.scheduleAtFixedRate(new VMLeaseExpiryEventSchedulerTask(), 5L, InstanceLeaseExpiryEventSchedulerInterval.value(), TimeUnit.SECONDS);
         }
     }
 
@@ -171,10 +163,10 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             vmLeaseExecutor = null;
         }
 
-        if (vmLeaseAlertExecutor != null) {
-            logger.debug("Shutting down lease alert executor");
-            vmLeaseAlertExecutor.shutdown();
-            vmLeaseAlertExecutor = null;
+        if (vmLeaseExpiryEventExecutor != null) {
+            logger.debug("Shutting down lease expiry event executor");
+            vmLeaseExpiryEventExecutor.shutdown();
+            vmLeaseExpiryEventExecutor = null;
         }
     }
 
@@ -204,7 +196,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         }
     }
 
-    class VMLeaseAlertSchedulerTask extends ManagedContextRunnable {
+    class VMLeaseExpiryEventSchedulerTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
             // as feature is disabled, no action is required
@@ -212,13 +204,14 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
                 return;
             }
 
-            GlobalLock scanLock = GlobalLock.getInternLock("VMLeaseAlertSchedulerTask");
+            GlobalLock scanLock = GlobalLock.getInternLock("VMLeaseExpiryEventSchedulerTask");
             try {
                 if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
                     try {
-                        List<UserVmJoinVO> leaseExpiringForInstances = userVmJoinDao.listLeaseInstancesExpiringInDays(InstanceLeaseExpiryAlertDaysBefore.value().intValue());
+                        List<UserVmJoinVO> leaseExpiringForInstances = userVmJoinDao.listLeaseInstancesExpiringInDays(InstanceLeaseExpiryEventDaysBefore.value().intValue());
                         for (UserVmJoinVO instance : leaseExpiringForInstances) {
-                            String leaseExpiryEventMsg =  String.format("Lease expiring for for instanceId: %s with action: %s", instance.getUuid(), instance.getLeaseExpiryAction());
+                            String leaseExpiryEventMsg =  String.format("Lease expiring for for instance: %s (id: %s) with action: %s",
+                                    instance.getName(), instance.getUuid(), instance.getLeaseExpiryAction());
                             ActionEventUtils.onActionEvent(instance.getUserId(), instance.getAccountId(), instance.getDomainId(),
                                     EventTypes.VM_LEASE_EXPIRING, leaseExpiryEventMsg, instance.getId(), ApiCommandResourceType.VirtualMachine.toString());
                         }
@@ -245,7 +238,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             // skip instance with delete protection for DESTROY action
             if (ExpiryAction.DESTROY.name().equals(userVmVO.getLeaseExpiryAction())
                     && userVmVO.isDeleteProtection() != null && userVmVO.isDeleteProtection()) {
-                logger.debug("Ignoring DESTROY action on instance with id: {} as deleteProtection is enabled", userVmVO.getUuid());
+                logger.debug("Ignoring DESTROY action on instance: {} (id: {}) as deleteProtection is enabled", userVmVO.getName(), userVmVO.getUuid());
                 continue;
             }
             actionableInstanceIds.add(userVmVO.getId());
@@ -266,13 +259,13 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             // for qualified vms, prepare Stop/Destroy(Cmd) and submit to Job Manager
             final long eventId = ActionEventUtils.onCompletedActionEvent(User.UID_SYSTEM, instance.getAccountId(), null,
                     EventTypes.VM_LEASE_EXPIRED, true,
-                    String.format("Executing lease expiry action (%s) for instanceId: %s", instance.getLeaseExpiryAction(), instance.getUuid()),
+                    String.format("Executing lease expiry action (%s) for instance: %s (id: %s)", instance.getLeaseExpiryAction(), instance.getName(), instance.getUuid()),
                     instance.getId(), ApiCommandResourceType.VirtualMachine.toString(), 0);
 
             Long jobId = executeExpiryAction(instance, expiryAction, eventId);
             if (jobId != null) {
                 submittedJobIds.add(jobId);
-                userVmDetailsDao.addDetail(instanceId, VmDetailConstants.INSTANCE_LEASE_EXECUTION, "DONE", false);
+                userVmDetailsDao.addDetail(instanceId, VmDetailConstants.INSTANCE_LEASE_EXECUTION, LeaseActionExecution.DONE.name(), false);
             } else {
                 failedToSubmitInstanceIds.add(instanceId);
             }
@@ -287,16 +280,16 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         // for qualified vms, prepare Stop/Destroy(Cmd) and submit to Job Manager
         switch (expiryAction) {
             case STOP: {
-                logger.debug("Stopping instance with id: {} on lease expiry", instance.getUuid());
+                logger.debug("Stopping instance: {} (id: {}) on lease expiry", instance.getName(), instance.getUuid());
                 return executeStopInstanceJob(instance, true, eventId);
             }
             case DESTROY: {
-                logger.debug("Destroying instance with id: {} on lease expiry", instance.getUuid());
+                logger.debug("Destroying instance: {} (id: {}) on lease expiry", instance.getName(), instance.getUuid());
                 return executeDestroyInstanceJob(instance, true, eventId);
             }
             default: {
-                logger.error("Invalid configuration for instance.lease.expiryaction for vm id: {}, " +
-                        "valid values are: \"STOP\" and  \"DESTROY\"", instance.getUuid());
+                logger.error("Invalid configuration for instance.lease.expiryaction for instance: {} (id: {}), " +
+                        "valid values are: \"STOP\" and  \"DESTROY\"", instance.getName(), instance.getUuid());
             }
         }
         return null;
@@ -346,7 +339,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         try {
             expiryAction = ExpiryAction.valueOf(action);
         } catch (Exception ex) {
-            logger.error("Invalid expiry action configured for instance with id: {}", instance.getUuid(), ex);
+            logger.error("Invalid expiry action configured for instance: {} (id: {})", instance.getName(), instance.getUuid(), ex);
         }
         return expiryAction;
     }

@@ -152,7 +152,7 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
     private Boolean deleteProtection;
 
     @Parameter(name = ApiConstants.INSTANCE_LEASE_DURATION, type = CommandType.INTEGER, since = "4.21.0",
-            description = "Number of days instance is leased for.")
+            description = "Number of days to lease the instance from now onward. Use -1 to remove the existing lease")
     private Integer leaseDuration;
 
     @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, type = CommandType.STRING, since = "4.21.0",

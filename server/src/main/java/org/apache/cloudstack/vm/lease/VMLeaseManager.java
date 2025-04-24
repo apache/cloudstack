@@ -30,16 +30,23 @@ public interface VMLeaseManager extends Manager {
         DESTROY
     }
 
+    enum LeaseActionExecution {
+        PENDING,
+        DISABLED,
+        DONE,
+        CANCELLED
+    }
+
     ConfigKey<Long> InstanceLeaseSchedulerInterval = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
             "instance.lease.scheduler.interval", "3600", "VM Lease Scheduler interval in seconds",
             false, List.of(ConfigKey.Scope.Global));
 
-    ConfigKey<Long> InstanceLeaseAlertSchedule = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
-            "instance.lease.alertscheduler.interval", "86400", "Lease Alert Scheduler interval in seconds",
+    ConfigKey<Long> InstanceLeaseExpiryEventSchedulerInterval = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
+            "instance.lease.eventscheduler.interval", "86400", "Lease expiry event Scheduler interval in seconds",
             false, List.of(ConfigKey.Scope.Global));
 
-    ConfigKey<Long> InstanceLeaseExpiryAlertDaysBefore = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
-            "instance.lease.alert.daysbefore", "7", "Indicates how many days in advance the alert will be triggered before expiry.",
+    ConfigKey<Long> InstanceLeaseExpiryEventDaysBefore = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
+            "instance.lease.expiryevent.daysbefore", "7", "Indicates how many days in advance, expiry events will be created before expiry.",
             true, List.of(ConfigKey.Scope.Global));
 
     void onLeaseFeatureToggle();
