@@ -30,6 +30,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.GpuOfferingResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.VsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -262,6 +263,19 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, type = CommandType.STRING, since = "4.21.0",
             description = "Lease expiry action, valid values are STOP and DESTROY")
     private String leaseExpiryAction;
+
+    @Parameter(name = ApiConstants.GPU_OFFERING_ID,
+            type = CommandType.UUID,
+            entityType = GpuOfferingResponse .class,
+            description = "the ID of the GPU offering to which service offering should be mapped",
+            since = "4.21")
+    private Long gpuOfferingId;
+
+    @Parameter(name = ApiConstants.GPU_COUNT,
+            type = CommandType.INTEGER,
+            description = "Count of GPUs to be assigned to the VM. This is applicable only for GPU enabled service offerings",
+            since = "4.21")
+    private Integer gpuCount;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -515,6 +529,14 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public boolean isPurgeResources() {
         return Boolean.TRUE.equals(purgeResources);
+    }
+
+    public Long getGpuOfferingId() {
+        return gpuOfferingId;
+    }
+
+    public Integer getGpuCount() {
+        return gpuCount;
     }
 
     /////////////////////////////////////////////////////

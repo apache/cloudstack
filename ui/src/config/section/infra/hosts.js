@@ -50,6 +50,10 @@ export default {
     name: 'details',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
   }, {
+    name: 'gpu',
+    resourceType: 'Host',
+    component: shallowRef(defineAsyncComponent(() => import('@/components/view/GPUTab.vue')))
+  }, {
     name: 'events',
     resourceType: 'Host',
     component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
@@ -160,6 +164,15 @@ export default {
       docHelp: 'adminguide/hosts.html#maintaining-hypervisors-on-hosts',
       dataView: true,
       show: (record) => { return record.resourcestate === 'Maintenance' || record.resourcestate === 'ErrorInMaintenance' || record.resourcestate === 'PrepareForMaintenance' || record.resourcestate === 'ErrorInPrepareForMaintenance' }
+    },
+    {
+      api: 'discoverGpuDevices',
+      icon: 'file-sync-outlined',
+      label: 'label.discover.gpu.devices',
+      message: 'label.discover.gpu.devices',
+      docHelp: 'adminguide/hosts.html#discovering-gpu-devices', // TODO: add doc help
+      dataView: true,
+      popup: true
     },
     {
       api: 'configureOutOfBandManagement',

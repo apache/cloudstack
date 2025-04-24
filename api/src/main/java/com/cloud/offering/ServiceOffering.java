@@ -36,6 +36,8 @@ public interface ServiceOffering extends InfrastructureEntity, InternalIdentity,
 
     static final String PURGE_DB_ENTITIES_KEY = "purge.db.entities";
 
+    Integer getGpuCount();
+
     enum State {
         Inactive, Active,
     }
@@ -142,4 +144,6 @@ public interface ServiceOffering extends InfrastructureEntity, InternalIdentity,
     Boolean getDiskOfferingStrictness();
 
     void setDiskOfferingStrictness(boolean diskOfferingStrictness);
+
+    Long getGpuOfferingId();
 }

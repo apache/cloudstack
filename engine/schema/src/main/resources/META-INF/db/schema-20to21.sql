@@ -148,7 +148,7 @@ ALTER TABLE `cloud`.`service_offering` ADD COLUMN `tags` varchar(255);
 
 ALTER TABLE `cloud`.`user_vm` MODIFY COLUMN `domain_router_id` bigint unsigned;	-- change from NOT NULL to NULL
 
-ALTER TABLE `cloud`.`event` ADD COLUMN `state` varchar(32) NOT NULL DEFAULT 'Completed';
+    ALTER TABLE `cloud`.`event` ADD COLUMN `state` varchar(32) NOT NULL DEFAULT 'Completed';
 ALTER TABLE `cloud`.`event` ADD COLUMN `start_id` bigint unsigned NOT NULL DEFAULT 0;
 
 ALTER TABLE `cloud`.`disk_offering` ADD COLUMN `tags` varchar(4096);

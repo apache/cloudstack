@@ -27,6 +27,8 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.gpu.GpuOfferingVO;
+import com.cloud.gpu.dao.GpuOfferingDao;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.user.Account;
@@ -109,6 +111,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     private ResourceManager _resourceMgr;
     @Inject
     protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
+    @Inject
+    protected GpuOfferingDao gpuOfferingDao;
     @Inject
     protected ServiceOfferingDao serviceOfferingDao;
     @Inject
@@ -325,7 +329,16 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
         // Set GPU details
         ServiceOfferingDetailsVO offeringDetail = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString());
-        if (offeringDetail != null) {
+        if (offering.getGpuOfferingId() != null) {
+            GpuOfferingVO gpuOffering = gpuOfferingDao.findById(offering.getGpuOfferingId());
+            if (gpuOffering != null) {
+                Integer gpuCount = offering.getGpuCount();
+                if (gpuCount == null) {
+                    gpuCount = 1;
+                }
+                to.setGpuDevice(_resourceMgr.getGPUDevice(vm, gpuOffering, gpuCount));
+            }
+        } else if (offeringDetail != null) {
             ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
             to.setGpuDevice(_resourceMgr.getGPUDevice(vm.getHostId(), groupName.getValue(), offeringDetail.getValue()));
         }

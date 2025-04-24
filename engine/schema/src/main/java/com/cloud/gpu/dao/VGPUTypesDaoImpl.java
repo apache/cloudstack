@@ -16,6 +16,17 @@
 //under the License.
 package com.cloud.gpu.dao;
 
+import com.cloud.agent.api.VgpuTypesInfo;
+import com.cloud.gpu.HostGpuGroupsVO;
+import com.cloud.gpu.VGPUTypesVO;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -25,31 +36,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
-import javax.inject.Inject;
-
-import org.springframework.stereotype.Component;
-
-import com.cloud.agent.api.VgpuTypesInfo;
-import com.cloud.gpu.HostGpuGroupsVO;
-import com.cloud.gpu.VGPUTypesVO;
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.exception.CloudRuntimeException;
-
 @Component
 public class VGPUTypesDaoImpl extends GenericDaoBase<VGPUTypesVO, Long> implements VGPUTypesDao {
 
-    private final SearchBuilder<VGPUTypesVO> _searchByGroupId;
-    private final SearchBuilder<VGPUTypesVO> _searchByGroupIdVGPUType;
-
-    @Inject protected HostGpuGroupsDao _hostGpuGroupsDao;
-
     private static final String LIST_ZONE_POD_CLUSTER_WIDE_GPU_CAPACITIES =
             "SELECT host_gpu_groups.group_name, vgpu_type, max_vgpu_per_pgpu, SUM(remaining_capacity) AS remaining_capacity, SUM(max_capacity) AS total_capacity FROM" +
-            " `cloud`.`vgpu_types` INNER JOIN `cloud`.`host_gpu_groups` ON vgpu_types.gpu_group_id = host_gpu_groups.id INNER JOIN `cloud`.`host`" +
-            " ON host_gpu_groups.host_id = host.id WHERE host.type =  'Routing' AND host.data_center_id = ?";
+                    " `cloud`.`vgpu_types` INNER JOIN `cloud`.`host_gpu_groups` ON vgpu_types.gpu_group_id = host_gpu_groups.id INNER JOIN `cloud`.`host`" +
+                    " ON host_gpu_groups.host_id = host.id WHERE host.type =  'Routing' AND host.data_center_id = ?";
+    private final SearchBuilder<VGPUTypesVO> _searchByGroupId;
+    private final SearchBuilder<VGPUTypesVO> _searchByGroupIdVGPUType;
+    @Inject
+    protected HostGpuGroupsDao _hostGpuGroupsDao;
 
     public VGPUTypesDaoImpl() {
 

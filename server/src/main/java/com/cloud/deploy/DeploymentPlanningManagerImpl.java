@@ -36,6 +36,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.gpu.GpuOfferingVO;
+import com.cloud.gpu.dao.GpuOfferingDao;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -248,6 +250,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     protected ClusterDetailsDao _clusterDetailsDao;
     @Inject
     protected ResourceManager _resourceMgr;
+    @Inject
+    protected GpuOfferingDao gpuOfferingDao;
     @Inject
     protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
 
@@ -582,13 +586,32 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             return false;
         }
 
-        ServiceOfferingDetailsVO offeringDetails = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString());
-        ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
-        if (offeringDetails != null && !_resourceMgr.isGPUDeviceAvailable(host, groupName.getValue(), offeringDetails.getValue())) {
-            logger.debug("Cannot deploy VM [{}] in the last host [{}] because this host does not have the required GPU devices available. Skipping this and trying other available hosts.",
-                    vm, host);
-            return false;
+        if (offering.getGpuOfferingId() != null) {
+            GpuOfferingVO gpuOffering = gpuOfferingDao.findById(offering.getGpuOfferingId());
+            if (gpuOffering == null) {
+                logger.debug("Cannot deploy VM [{}] in the last host [{}] because the GPU offering is not found. Skipping this and trying other available hosts.",
+                        vm, host);
+                return false;
+            }
+            Integer gpuCount = offering.getGpuCount();
+            if (gpuCount == null) {
+                gpuCount = 0;
+            }
+            if (!_resourceMgr.isGPUDeviceAvailable(host, vm.getId(), gpuOffering, gpuCount)) {
+                logger.debug("Cannot deploy VM [{}] in the last host [{}] because this host does not have GPU devices. Skipping this and trying other available hosts.",
+                        vm, host);
+                return false;
+            }
+        } else {
+            ServiceOfferingDetailsVO offeringDetails = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString());
+            ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
+            if (offeringDetails != null && !_resourceMgr.isGPUDeviceAvailable(host, groupName.getValue(), offeringDetails.getValue())) {
+                logger.debug("Cannot deploy VM [{}] in the last host [{}] because this host does not have the required GPU devices available. Skipping this and trying other available hosts.",
+                        vm, host);
+                return false;
+            }
         }
+
 
         if (volumesRequireEncryption && !Boolean.parseBoolean(host.getDetail(Host.HOST_VOLUME_ENCRYPTION))) {
             logger.warn("The last host of this VM {} does not support volume encryption, which is required by this VM.", host);

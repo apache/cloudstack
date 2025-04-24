@@ -45,6 +45,7 @@ public class StartupRoutingCommand extends StartupCommand {
     List<String> hostTags = new ArrayList<String>();
     String hypervisorVersion;
     HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = new HashMap<String, HashMap<String, VgpuTypesInfo>>();
+    List<VgpuTypesInfo> gpuDevices = new ArrayList<>();
     private Boolean hostHealthCheckResult;
 
     public StartupRoutingCommand() {
@@ -179,12 +180,20 @@ public class StartupRoutingCommand extends StartupCommand {
         this.hostTags = hostTags;
     }
 
-    public  HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetails() {
+    public HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetails() {
         return groupDetails;
     }
 
     public void setGpuGroupDetails(HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails) {
         this.groupDetails = groupDetails;
+    }
+
+    public List<VgpuTypesInfo> getGpuDevices() {
+        return gpuDevices;
+    }
+
+    public void setGpuDevices(List<VgpuTypesInfo> gpuDevices) {
+        this.gpuDevices = gpuDevices;
     }
 
     public boolean getSupportsClonedVolumes() {

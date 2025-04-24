@@ -64,12 +64,12 @@ public class AnnotationDaoImpl extends GenericDaoBase<AnnotationVO, Long> implem
             sc.addAnd("userUuid", SearchCriteria.Op.EQ, userUuid);
         }
         if (!isCallerAdmin) {
-            List<EntityType> adminOnlyTypes = Arrays.asList(EntityType.SERVICE_OFFERING, EntityType.DISK_OFFERING,
+            List<EntityType> adminOnlyTypes = Arrays.asList(EntityType.SERVICE_OFFERING, EntityType.DISK_OFFERING, EntityType.GPU_OFFERING,
                     EntityType.NETWORK_OFFERING, EntityType.ZONE, EntityType.POD, EntityType.CLUSTER, EntityType.HOST,
                     EntityType.DOMAIN, EntityType.PRIMARY_STORAGE, EntityType.SECONDARY_STORAGE,
                     EntityType.VR, EntityType.SYSTEM_VM);
             if (StringUtils.isBlank(entityType)) {
-                sc.setParameters("entityTypeNotIn", EntityType.SERVICE_OFFERING, EntityType.DISK_OFFERING,
+                sc.setParameters("entityTypeNotIn", EntityType.SERVICE_OFFERING, EntityType.DISK_OFFERING, EntityType.GPU_OFFERING,
                         EntityType.NETWORK_OFFERING, EntityType.ZONE, EntityType.POD, EntityType.CLUSTER, EntityType.HOST,
                         EntityType.DOMAIN, EntityType.PRIMARY_STORAGE, EntityType.SECONDARY_STORAGE,
                         EntityType.VR, EntityType.SYSTEM_VM);

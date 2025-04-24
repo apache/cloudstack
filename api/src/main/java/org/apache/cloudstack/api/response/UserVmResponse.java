@@ -1,4 +1,4 @@
-// Licensed to the Apache Software Foundation (ASF) under one
+        // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
 // regarding copyright ownership.  The ASF licenses this file
@@ -181,6 +181,18 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName("diskofferingname")
     @Param(description = "the name of the disk offering of the virtual machine. This parameter should not be used for retrieving disk offering details of DATA volumes. Use listVolumes API instead", since = "4.4")
     private String diskOfferingName;
+
+    @SerializedName(ApiConstants.GPU_OFFERING_ID)
+    @Param(description = "the ID of the GPU offering of the virtual machine.", since = "4.21")
+    private String gpuOfferingId;
+
+    @SerializedName(ApiConstants.GPU_OFFERING_NAME)
+    @Param(description = "the name of the GPU offering of the virtual machine.", since = "4.21")
+    private String gpuOfferingName;
+
+    @SerializedName(ApiConstants.GPU_COUNT)
+    @Param(description = "the count of GPUs on the virtual machine", since = "4.21")
+    private Integer gpuCount;
 
     @SerializedName(ApiConstants.BACKUP_OFFERING_ID)
     @Param(description = "the ID of the backup offering of the virtual machine", since = "4.14")
@@ -565,6 +577,18 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         return diskOfferingName;
     }
 
+    public String getGpuOfferingId() {
+        return gpuOfferingId;
+    }
+
+    public String getGpuOfferingName() {
+        return gpuOfferingName;
+    }
+
+    public Integer getGpuCount() {
+        return gpuCount;
+    }
+
     public String getBackupOfferingId() {
         return backupOfferingId;
     }
@@ -845,6 +869,18 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setDiskOfferingName(String diskOfferingName) {
         this.diskOfferingName = diskOfferingName;
+    }
+
+    public void setGpuOfferingId(String gpuOfferingId) {
+        this.gpuOfferingId = gpuOfferingId;
+    }
+
+    public void setGpuOfferingName(String gpuOfferingName) {
+        this.gpuOfferingName = gpuOfferingName;
+    }
+
+    public void setGpuCount(Integer gpuCount) {
+        this.gpuCount = gpuCount;
     }
 
     public void setBackupOfferingId(String backupOfferingId) {

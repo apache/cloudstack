@@ -260,7 +260,9 @@ known_categories = {
     'addNodesToKubernetesCluster': 'Kubernetes Service',
     'removeNodesFromKubernetesCluster': 'Kubernetes Service',
     'configureStorageAccess': 'Storage Access Groups',
-    'listStorageAccessGroups': 'Storage Access Groups'
+    'listStorageAccessGroups': 'Storage Access Groups',
+    'Gpu': 'GPU',
+    'Vgpu': 'GPU',
 }
 
 

@@ -18,6 +18,7 @@ package com.cloud.resource;
 
 import static com.cloud.configuration.ConfigurationManagerImpl.MIGRATE_VM_ACROSS_CLUSTERS;
 import static com.cloud.configuration.ConfigurationManagerImpl.SET_HOST_DOWN_TO_MAINTENANCE;
+import static org.apache.cloudstack.gpu.GpuService.GpuDetachOnStop;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -43,6 +44,8 @@ import com.cloud.storage.StoragePoolAndAccessGroupMapVO;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.utils.StringUtils;
+import com.cloud.gpu.GpuOfferingVO;
+import com.cloud.gpu.dao.GpuOfferingDao;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -64,6 +67,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.gpu.GpuDevice;
+import org.apache.cloudstack.gpu.GpuService;
+import org.apache.cloudstack.gpu.VgpuProfile;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -257,6 +263,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Inject
     protected VGPUTypesDao _vgpuTypesDao;
     @Inject
+    private GpuOfferingDao gpuOfferingDao;
+    @Inject
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
     private StoragePoolTagsDao _storagePoolTagsDao;
@@ -284,6 +292,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
     @Inject
     private UserVmManager userVmManager;
+    @Inject
+    private GpuService gpuService;
 
     private List<? extends Discoverer> _discoverers;
 
@@ -1409,8 +1419,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
 
             for (final VMInstanceVO vm : vms) {
+                ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getServiceOfferingId());
                 if (hosts == null || hosts.isEmpty() || !answer.getMigrate()
-                        || _serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.vgpuType.toString()) != null) {
+                    || offering.getGpuOfferingId() != null
+                    || _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) != null
+                ) {
                     handleVmForLastHostOrWithVGpu(host, vm);
                 } else if (HypervisorType.LXC.equals(host.getHypervisorType()) && VirtualMachine.Type.User.equals(vm.getType())){
                     //Migration is not supported for LXC Vms. Schedule restart instead.
@@ -2800,7 +2813,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         _gpuAvailability.and("groupName", _gpuAvailability.entity().getGroupName(), Op.EQ);
         final SearchBuilder<VGPUTypesVO> join1 = _vgpuTypesDao.createSearchBuilder();
         join1.and("vgpuType", join1.entity().getVgpuType(), Op.EQ);
-        join1.and("remainingCapacity", join1.entity().getRemainingCapacity(), Op.GT);
+        join1.and("remainingCapacity", join1.entity().getRemainingCapacity(), Op.GTEQ);
         _gpuAvailability.join("groupId", join1, _gpuAvailability.entity().getId(), join1.entity().getGpuGroupId(), JoinBuilder.JoinType.INNER);
         _gpuAvailability.done();
 
@@ -3543,9 +3556,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         host.setSpeed(ssCmd.getSpeed());
         host.setHypervisorType(hyType);
         host.setHypervisorVersion(ssCmd.getHypervisorVersion());
-        host.setGpuGroups(ssCmd.getGpuGroupDetails());
+        gpuService.addGpuDevicesToHost(host, ssCmd.getGpuDevices());
+        if (CollectionUtils.isNotEmpty(ssCmd.getGpuDevices())) {
+            host.setGpuGroups(gpuService.getGpuGroupDetailsFromGpuDevices(host));
+        } else {
+            host.setGpuGroups(ssCmd.getGpuGroupDetails());
+        }
         return host;
     }
+
 
     @Override
     public void deleteRoutingHost(final HostVO host, final boolean isForced, final boolean forceDestroyStorage) throws UnableDeleteHostException {
@@ -4167,7 +4186,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         sc.setParameters("hostId", hostId);
         sc.setParameters("groupName", groupName);
         sc.setJoinParameters("groupId", "vgpuType", vgpuType);
-        sc.setJoinParameters("groupId", "remainingCapacity", 0);
         return _hostGpuGroupsDao.customSearch(sc, searchFilter);
     }
 
@@ -4204,6 +4222,41 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    public boolean isGPUDeviceAvailable(Host host, Long vmId, GpuOfferingVO gpuOffering, int gpuCount) {
+        if (host.getHypervisorType().equals(HypervisorType.XenServer)) {
+            gpuOfferingDao.loadVgpuProfiles(gpuOffering);
+            if (CollectionUtils.isEmpty(gpuOffering.getVgpuProfiles())) {
+                return false;
+            }
+            VgpuProfile vgpuProfile = gpuOffering.getVgpuProfiles().get(0);
+            String groupName = gpuOffering.getName();
+            String vgpuType = vgpuProfile.getName();
+            return isGPUDeviceAvailable(host, groupName, vgpuType);
+        } else {
+            // Use GPU device
+            return gpuService.isGPUDeviceAvailable(host, vmId, gpuOffering, gpuCount);
+        }
+    }
+
+    @Override
+    public GPUDeviceTO getGPUDevice(VirtualMachine vm, GpuOfferingVO gpuOffering, int gpuCount) {
+        HostVO host = _hostDao.findById(vm.getHostId());
+        if (host.getHypervisorType().equals(HypervisorType.XenServer)) {
+            gpuOfferingDao.loadVgpuProfiles(gpuOffering);
+            if (CollectionUtils.isEmpty(gpuOffering.getVgpuProfiles())) {
+                return null;
+            }
+            VgpuProfile vgpuProfile = gpuOffering.getVgpuProfiles().get(0);
+            String groupName = gpuOffering.getName();
+            String vgpuType = vgpuProfile.getName();
+            return getGPUDevice(vm.getHostId(), groupName, vgpuType);
+        } else {
+            // Use GPU device
+            return gpuService.getGPUDevice(vm, gpuOffering, gpuCount);
+        }
+    }
+
+    @Override
     public GPUDeviceTO getGPUDevice(final long hostId, final String groupName, final String vgpuType) {
         final List<HostGpuGroupsVO> gpuDeviceList = listAvailableGPUDevice(hostId, groupName, vgpuType);
 
@@ -4218,12 +4271,41 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public void updateGPUDetails(final long hostId, final HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails) {
+        // TODO: Handle for KVM & Simulator
         // Update GPU group capacity
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         _hostGpuGroupsDao.persist(hostId, new ArrayList<>(groupDetails.keySet()));
         _vgpuTypesDao.persist(hostId, groupDetails);
         txn.commit();
+    }
+
+    @Override
+    public void updateGPUDetailsForVmStop(final VirtualMachine vm, final GPUDeviceTO gpuDevice) {
+        // TODO: Handle for KVM & Simulator
+        // Update GPU group capacity
+        HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails;
+        if (gpuDevice == null || gpuDevice.getGpuDevices() != null) {
+            HostVO host = _hostDao.findById(vm.getHostId());
+            if (GpuDetachOnStop.valueIn(vm.getDomainId())) {
+                gpuService.deallocateGpuDevicesForVmOnHost(vm.getId(), GpuDevice.State.Free);
+            }
+            groupDetails = gpuService.getGpuGroupDetailsFromGpuDevices(host);
+        } else {
+            groupDetails = gpuDevice.getGroupDetails();
+        }
+        updateGPUDetails(vm.getHostId(), groupDetails);
+    }
+
+    @Override
+    public void updateGPUDetailsForVmStart(long hostId, long vmId, GPUDeviceTO gpuDevice) {
+        HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = gpuDevice.getGroupDetails();
+        if (gpuDevice.getGpuDevices() != null) {
+            HostVO host = _hostDao.findById(hostId);
+            gpuService.assignGpuDevicesToVmOnHost(vmId, hostId, gpuDevice.getGpuDevices());
+            groupDetails = gpuService.getGpuGroupDetailsFromGpuDevices(host);
+        }
+        updateGPUDetails(hostId, groupDetails);
     }
 
     @Override
@@ -4239,7 +4321,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         } else {
             // now construct the result object
             if (answer instanceof GetGPUStatsAnswer) {
-                return ((GetGPUStatsAnswer)answer).getGroupDetails();
+                GetGPUStatsAnswer gpuStatsAnswer = (GetGPUStatsAnswer) answer;
+                HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails;
+                gpuService.addGpuDevicesToHost(host, gpuStatsAnswer.getGpuDevices());
+                if (CollectionUtils.isNotEmpty(gpuStatsAnswer.getGpuDevices())) {
+                    groupDetails = gpuService.getGpuGroupDetailsFromGpuDevices(host);
+                } else {
+                    groupDetails = gpuStatsAnswer.getGroupDetails();
+                }
+
+                return groupDetails;
             }
         }
         return null;

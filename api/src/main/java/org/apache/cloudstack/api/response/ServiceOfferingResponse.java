@@ -234,6 +234,18 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if virtual machine root disk will be encrypted on storage", since = "4.18")
     private Boolean encryptRoot;
 
+    @SerializedName(ApiConstants.GPU_OFFERING_ID)
+    @Param(description = "the ID of the gpu offering to which service offering is linked", since = "4.21")
+    private String gpuOfferingId;
+
+    @SerializedName(ApiConstants.GPU_OFFERING_NAME)
+    @Param(description = "the name of the gpu offering", since = "4.21")
+    private String gpuOfferingName;
+
+    @SerializedName(ApiConstants.GPU_COUNT)
+    @Param(description = "the count of GPUs to attach ", since = "4.21")
+    private Integer gpuCount;
+
     @SerializedName(ApiConstants.PURGE_RESOURCES)
     @Param(description = "Whether to cleanup VM and its associated resource upon expunge", since = "4.20")
     private Boolean purgeResources;
@@ -583,6 +595,30 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     }
 
     public void setEncryptRoot(Boolean encrypt) { this.encryptRoot = encrypt; }
+
+    public String getGpuOfferingName() {
+        return gpuOfferingName;
+    }
+
+    public void setGpuOfferingName(String gpuOfferingName) {
+        this.gpuOfferingName = gpuOfferingName;
+    }
+
+    public String getGpuOfferingId() {
+        return gpuOfferingId;
+    }
+
+    public void setGpuOfferingId(String gpuOfferingId) {
+        this.gpuOfferingId = gpuOfferingId;
+    }
+
+    public Integer getGpuCount() {
+        return gpuCount;
+    }
+
+    public void setGpuCount(Integer gpuCount) {
+        this.gpuCount = gpuCount;
+    }
 
     public void setPurgeResources(Boolean purgeResources) {
         this.purgeResources = purgeResources;
