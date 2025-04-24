@@ -39,6 +39,7 @@
             @keydown.esc="editableValueKey = null"
             @pressEnter="updateConfigurationValue(configrecord)"
             @change="value => setConfigurationEditable(configrecord, value)"
+            @keydown="e => handleInputNumberKeyDown(e, false)"
           />
         </a-tooltip>
       </span>
@@ -52,6 +53,7 @@
             @keydown.esc="editableValueKey = null"
             @pressEnter="updateConfigurationValue(configrecord)"
             @change="value => setConfigurationEditable(configrecord, value)"
+            @keydown="e => handleInputNumberKeyDown(e, true)"
           />
         </a-tooltip>
       </span>
@@ -87,6 +89,7 @@
                 @keydown.esc="editableValueKey = null"
                 @pressEnter="updateConfigurationValue(configrecord)"
                 @change="value => setConfigurationEditable(configrecord, value)"
+                @keydown="e => handleInputNumberKeyDown(e, true)"
               />
             </a-tooltip>
           </a-col>
@@ -176,7 +179,7 @@
           :disabled="valueLoading" />
         <tooltip-button
           :tooltip="$t('label.reset.config.value')"
-          @onClick="resetConfigurationValue(configrecord)"
+          @onClick="$resetConfigurationValueConfirm(configrecord, resetConfigurationValue)"
           v-if="editableValueKey === null"
           icon="reload-outlined"
           :disabled="(!('resetConfiguration' in $store.getters.apis) || configDisabled || valueLoading)" />
@@ -349,6 +352,26 @@ export default {
         this.editableValueKey = 'edit'
       } else {
         this.editableValueKey = null
+      }
+    },
+    handleInputNumberKeyDown (event, isDecimal) {
+      const allowedCodes = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Minus']
+
+      if (isDecimal) {
+        allowedCodes.push('Period')
+      }
+
+      if (
+        event.getModifierState('Control') ||
+        event.getModifierState('Meta') ||
+        event.getModifierState('Alt')
+      ) {
+        return
+      }
+
+      const isValid = allowedCodes.includes(event.code) || !isNaN(event.key)
+      if (!isValid) {
+        event.preventDefault()
       }
     }
   }

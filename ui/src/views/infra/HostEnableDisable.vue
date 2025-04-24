@@ -18,7 +18,7 @@
 <template>
   <div class="form-layout">
     <a-form
-      :ref="formRef"
+      ref="formRef"
       :model="form"
       :rules="rules"
       @finish="handleSubmit"
@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import { ref, reactive, toRaw } from 'vue'
+import { reactive, toRaw } from 'vue'
 import { api } from '@/api'
 
 export default {
@@ -78,11 +78,8 @@ export default {
     this.resourcestate = this.resource.resourcestate
     this.allocationstate = this.resourcestate === 'Enabled' ? 'Disable' : 'Enable'
   },
-  beforeCreate () {
-  },
   methods: {
     initForm () {
-      this.formRef = ref()
       this.form = reactive({})
       this.rules = reactive({})
     },
@@ -97,11 +94,9 @@ export default {
       })
     },
     handleSubmit (e) {
-      e.preventDefault()
-      this.formRef.value.validate().then(() => {
+      this.$refs.formRef.validate().then(() => {
         const values = toRaw(this.form)
-
-        var data = {
+        const data = {
           allocationstate: this.allocationstate,
           id: this.resource.id
         }
@@ -110,24 +105,27 @@ export default {
         }
         api('updateHost', data).then(_ => {
           this.$emit('close-action')
+          this.$emit('refresh-data')
+        }).catch(err => {
+          this.$message.error(err.message || 'Failed to update host status')
         })
+      }).catch(() => {
+        this.$message.error('Validation failed. Please check the inputs.')
       })
     }
   }
 }
-
 </script>
 
 <style scoped>
 .reason {
-  padding-top: 20px
+  padding-top: 20px;
 }
 
 .form-layout {
-    width: 30vw;
-
-    @media (min-width: 500px) {
-      width: 450px;
-    }
+  width: 30vw;
+  @media (min-width: 500px) {
+    width: 450px;
   }
+}
 </style>

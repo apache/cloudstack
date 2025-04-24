@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -1634,8 +1635,21 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             throwInvalidIdException("Network offering with specified id doesn't support adding multiple ip ranges", ntwkOff.getUuid(), NETWORK_OFFERING_ID);
         }
 
+
+
+        if (GuestType.Shared == ntwkOff.getGuestType()) {
+            if (!ntwkOff.isSpecifyIpRanges()) {
+                throw new CloudRuntimeException("The 'specifyipranges' parameter should be true for Shared Networks");
+            }
+            if (ipv4 && Objects.isNull(startIP)) {
+                throw new CloudRuntimeException("IPv4 address range needs to be provided");
+            }
+            if (ipv6) {
+                s_logger.info(String.format("ip range for network '%s' is specified as %s - %s", name, startIPv6, endIPv6));
+            }
+        }
         Pair<Integer, Integer> interfaceMTUs = validateMtuConfig(publicMtu, privateMtu, zone.getId());
-        mtuCheckForVpcNetwork(vpcId, interfaceMTUs, publicMtu, privateMtu);
+        mtuCheckForVpcNetwork(vpcId, interfaceMTUs, publicMtu);
 
         Network associatedNetwork = null;
         if (associatedNetworkId != null) {
@@ -1894,7 +1908,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         return ntwkOff;
     }
 
-    protected void mtuCheckForVpcNetwork(Long vpcId, Pair<Integer, Integer> interfaceMTUs, Integer publicMtu, Integer privateMtu) {
+    protected void mtuCheckForVpcNetwork(Long vpcId, Pair<Integer, Integer> interfaceMTUs, Integer publicMtu) {
         if (vpcId != null && publicMtu != null) {
             VpcVO vpc = _vpcDao.findById(vpcId);
             if (vpc == null) {
@@ -1902,7 +1916,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
             s_logger.warn(String.format("VPC public MTU already set at VPC creation phase to: %s. Ignoring public MTU " +
                     "passed during VPC network tier creation ", vpc.getPublicMtu()));
-            interfaceMTUs.set(vpc.getPublicMtu(), privateMtu);
+            interfaceMTUs.set(vpc.getPublicMtu(), interfaceMTUs.second());
         }
     }
 

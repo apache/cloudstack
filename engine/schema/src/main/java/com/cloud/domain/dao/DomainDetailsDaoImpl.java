@@ -24,8 +24,6 @@ import javax.inject.Inject;
 
 import com.cloud.domain.DomainDetailVO;
 import com.cloud.domain.DomainVO;
-import com.cloud.utils.crypt.DBEncryptionUtil;
-import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -35,9 +33,9 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 import org.apache.cloudstack.framework.config.ScopedConfigStorage;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
-public class DomainDetailsDaoImpl extends GenericDaoBase<DomainDetailVO, Long> implements DomainDetailsDao, ScopedConfigStorage {
+public class DomainDetailsDaoImpl extends ResourceDetailsDaoBase<DomainDetailVO> implements DomainDetailsDao, ScopedConfigStorage {
     protected final SearchBuilder<DomainDetailVO> domainSearch;
 
     @Inject
@@ -47,14 +45,14 @@ public class DomainDetailsDaoImpl extends GenericDaoBase<DomainDetailVO, Long> i
 
     protected DomainDetailsDaoImpl() {
         domainSearch = createSearchBuilder();
-        domainSearch.and("domainId", domainSearch.entity().getDomainId(), Op.EQ);
+        domainSearch.and("domainId", domainSearch.entity().getResourceId(), Op.EQ);
         domainSearch.done();
     }
 
     @Override
     public Map<String, String> findDetails(long domainId) {
         QueryBuilder<DomainDetailVO> sc = QueryBuilder.create(DomainDetailVO.class);
-        sc.and(sc.entity().getDomainId(), Op.EQ, domainId);
+        sc.and(sc.entity().getResourceId(), Op.EQ, domainId);
         List<DomainDetailVO> results = sc.list();
         Map<String, String> details = new HashMap<String, String>(results.size());
         for (DomainDetailVO r : results) {
@@ -80,9 +78,14 @@ public class DomainDetailsDaoImpl extends GenericDaoBase<DomainDetailVO, Long> i
     @Override
     public DomainDetailVO findDetail(long domainId, String name) {
         QueryBuilder<DomainDetailVO> sc = QueryBuilder.create(DomainDetailVO.class);
-        sc.and(sc.entity().getDomainId(), Op.EQ, domainId);
+        sc.and(sc.entity().getResourceId(), Op.EQ, domainId);
         sc.and(sc.entity().getName(), Op.EQ, name);
         return sc.find();
+    }
+
+    @Override
+    public void addDetail(long resourceId, String key, String value, boolean display) {
+        super.addDetail(new DomainDetailVO(resourceId, key, value));
     }
 
     @Override
@@ -128,14 +131,5 @@ public class DomainDetailsDaoImpl extends GenericDaoBase<DomainDetailVO, Long> i
             }
         }
         return vo == null ? null : getActualValue(vo);
-    }
-
-    @Override
-    public String getActualValue(DomainDetailVO domainDetailVO) {
-        ConfigurationVO configurationVO = _configDao.findByName(domainDetailVO.getName());
-        if (configurationVO != null && configurationVO.isEncrypted()) {
-            return DBEncryptionUtil.decrypt(domainDetailVO.getValue());
-        }
-        return domainDetailVO.getValue();
     }
 }

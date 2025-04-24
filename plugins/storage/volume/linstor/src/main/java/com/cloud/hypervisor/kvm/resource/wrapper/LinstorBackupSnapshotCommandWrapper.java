@@ -45,11 +45,17 @@ public final class LinstorBackupSnapshotCommandWrapper
 {
     private static final Logger s_logger = Logger.getLogger(LinstorBackupSnapshotCommandWrapper.class);
 
+    private static String zfsDatasetName(String zfsFullSnapshotUrl) {
+        String zfsFullPath = zfsFullSnapshotUrl.substring(6);
+        int atPos = zfsFullPath.indexOf('@');
+        return atPos >= 0 ? zfsFullPath.substring(0, atPos) : zfsFullPath;
+    }
+
     private String zfsSnapdev(boolean hide, String zfsUrl) {
-        Script script = new Script("/usr/bin/zfs", Duration.millis(5000));
+        Script script = new Script("zfs", Duration.millis(5000));
         script.add("set");
         script.add("snapdev=" + (hide ? "hidden" : "visible"));
-        script.add(zfsUrl.substring(6));  // cutting zfs://
+        script.add(zfsDatasetName(zfsUrl));  // cutting zfs:// and @snapshotname
         return script.execute();
     }
 
@@ -90,18 +96,23 @@ public final class LinstorBackupSnapshotCommandWrapper
         // NOTE: the qemu img will also contain the drbd metadata at the end
         final QemuImg qemu = new QemuImg(waitMilliSeconds);
         qemu.convert(srcFile, dstFile);
-        s_logger.info("Backup snapshot " + srcFile + " to " + dstPath);
+        s_logger.info(String.format("Backup snapshot '%s' to '%s'", srcPath, dstPath));
         return dstPath;
     }
 
     private SnapshotObjectTO setCorrectSnapshotSize(final SnapshotObjectTO dst, final String dstPath) {
         final File snapFile = new File(dstPath);
-        final long size = snapFile.exists() ? snapFile.length() : 0;
+        long size;
+        if (snapFile.exists()) {
+            size = snapFile.length();
+        } else {
+            s_logger.warn(String.format("Snapshot file %s does not exist. Reporting size 0", dstPath));
+            size = 0;
+        }
 
-        final SnapshotObjectTO snapshot = new SnapshotObjectTO();
-        snapshot.setPath(dst.getPath() + File.separator + dst.getName());
-        snapshot.setPhysicalSize(size);
-        return snapshot;
+        dst.setPath(dst.getPath() + File.separator + dst.getName());
+        dst.setPhysicalSize(size);
+        return dst;
     }
 
     @Override
@@ -133,10 +144,10 @@ public final class LinstorBackupSnapshotCommandWrapper
             s_logger.info("Src: " + srcPath + " | " + src.getName());
             if (srcPath.startsWith("zfs://")) {
                 zfsHidden = true;
-                if (zfsSnapdev(false, srcPath) != null) {
+                if (zfsSnapdev(false, src.getPath()) != null) {
                     return new CopyCmdAnswer("Unable to unhide zfs snapshot device.");
                 }
-                srcPath = "/dev/" + srcPath.substring(6);
+                srcPath = "/dev/zvol/" + srcPath.substring(6);
             }
 
             secondaryPool = storagePoolMgr.getStoragePoolByURI(dstDataStore.getUrl());
@@ -151,6 +162,7 @@ public final class LinstorBackupSnapshotCommandWrapper
             s_logger.info("Backup shrunk " + dstPath + " to actual size " + src.getVolume().getSize());
 
             SnapshotObjectTO snapshot = setCorrectSnapshotSize(dst, dstPath);
+            s_logger.info(String.format("Actual file size for '%s' is %d", dstPath, snapshot.getPhysicalSize()));
             return new CopyCmdAnswer(snapshot);
         } catch (final Exception e) {
             final String error = String.format("Failed to backup snapshot with id [%s] with a pool %s, due to %s",

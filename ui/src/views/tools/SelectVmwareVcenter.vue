@@ -89,6 +89,8 @@
           <a-input
             v-model:value="vcenter"
             :placeholder="apiParams.vcenter.description"
+            @blur="onSelectExternalVmwareDatacenter"
+            @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
         <a-form-item ref="datacenter" name="datacenter">
@@ -98,6 +100,8 @@
           <a-input
             v-model:value="datacenter"
             :placeholder="apiParams.datacentername.description"
+            @blur="onSelectExternalVmwareDatacenter"
+            @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
         <a-form-item ref="username" name="username">
@@ -107,6 +111,8 @@
           <a-input
             v-model:value="username"
             :placeholder="apiParams.username.description"
+            @blur="onSelectExternalVmwareDatacenter"
+            @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
         <a-form-item ref="password" name="password">
@@ -116,8 +122,12 @@
           <a-input-password
             v-model:value="password"
             :placeholder="apiParams.password.description"
+            @blur="onSelectExternalVmwareDatacenter"
+            @pressEnter="onSelectExternalVmwareDatacenter"
           />
         </a-form-item>
+        &nbsp;
+        <tooltip-label :title="$t('label.press.enter')" :tooltip="$t('label.press.enter.tooltip')"/>
       </div>
       <div class="card-footer">
         <a-button

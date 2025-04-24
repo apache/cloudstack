@@ -66,7 +66,7 @@
             iconTwoToneColor="#52c41a" />
           <tooltip-button
             :tooltip="$t('label.reset.config.value')"
-            @onClick="resetConfig(item)"
+            @onClick="$resetConfigurationValueConfirm(item, resetConfig)"
             v-if="editableValueKey !== index"
             icon="reload-outlined"
             :disabled="!('updateConfiguration' in $store.getters.apis)" />

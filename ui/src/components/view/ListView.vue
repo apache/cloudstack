@@ -32,7 +32,7 @@
         <a-menu>
           <a-menu-item v-for="(column, idx) in columnKeys" :key="idx" @click="updateSelectedColumns(column)">
             <a-checkbox :id="idx.toString()" :checked="selectedColumns.includes(getColumnKey(column))"/>
-            {{ $t('label.' + String(getColumTitle(column)).toLowerCase()) }}
+            {{ $t('label.' + String(getColumnTitle(column)).toLowerCase()) }}
           </a-menu-item>
         </a-menu>
       </div>
@@ -85,6 +85,9 @@
             <router-link :to="{ path: $route.path + '/' + record.uuid, query: { zoneid: record.zoneid } }" v-if="record.uuid && record.zoneid">{{ $t(text.toLowerCase()) }}</router-link>
             <router-link :to="{ path: $route.path + '/' + record.uuid, query: { zoneid: $route.query.zoneid } }" v-else-if="record.uuid && $route.query.zoneid">{{ $t(text.toLowerCase()) }}</router-link>
             <router-link :to="{ path: $route.path }" v-else>{{ $t(text.toLowerCase()) }}</router-link>
+          </span>
+          <span v-else-if="$route.path.startsWith('/guestnetwork') && record.id && record.displaynetwork === false">
+            <router-link :to="{ path: $route.path + '/' + record.id, query: { displaynetwork: false } }" v-if="record.id">{{ $t(text.toLowerCase()) }}</router-link>
           </span>
           <span v-else>
             <router-link :to="{ path: $route.path + '/' + record.id }" v-if="record.id">{{ text }}</router-link>
@@ -145,6 +148,10 @@
         <span v-if="record.isstaticnat">
           &nbsp;
           <a-tag>static-nat</a-tag>
+        </span>
+        <span v-if="record.issystem">
+          &nbsp;
+          <a-tag>system</a-tag>
         </span>
       </template>
       <template v-if="column.key === 'ip6address'" href="javascript:;">
@@ -219,6 +226,10 @@
       </template>
       <template v-if="column.key === 'allocationstate'">
         <status :text="text ? text : ''" displayText />
+      </template>
+      <template v-if="column.key === 'redundantstate'">
+        <status v-if="record && record.isredundantrouter" :text="text ? text : ''" displayText />
+        <status v-else :text="'N/A'" displayText :styles="{ 'min-width': '80px' }" />
       </template>
       <template v-if="column.key === 'resourcestate'">
         <status :text="text ? text : ''" displayText />
@@ -371,8 +382,8 @@
         <status :text="record.enabled ? record.enabled.toString() : 'false'" />
         {{ record.enabled ? 'Enabled' : 'Disabled' }}
       </template>
-      <template v-if="['created', 'sent'].includes(column.key)">
-        {{ $toLocaleDate(text) }}
+      <template v-if="['created', 'sent', 'allocated'].includes(column.key)">
+        {{ text && $toLocaleDate(text) }}
       </template>
       <template v-if="['startdate', 'enddate'].includes(column.key) && ['vm', 'vnfapp'].includes($route.path.split('/')[1])">
         {{ getDateAtTimeZone(text, record.timezone) }}
@@ -448,7 +459,7 @@
           iconTwoToneColor="#52c41a" />
         <tooltip-button
           :tooltip="$t('label.reset.config.value')"
-          @onClick="resetConfig(record)"
+          @onClick="$resetConfigurationValueConfirm(item, resetConfig)"
           v-if="editableValueKey !== record.key"
           icon="reload-outlined"
           :disabled="!('updateConfiguration' in $store.getters.apis)" />
@@ -904,16 +915,16 @@ export default {
       return host.state
     },
     getColumnKey (name) {
-      if (typeof name === 'object') {
-        name = Object.keys(name).includes('field') ? name.field : name.customTitle
+      if (typeof name !== 'object' || name === null) {
+        return name
       }
-      return name
+      return name.field ?? name.customTitle ?? Object.keys(name)[0]
     },
-    getColumTitle (name) {
-      if (typeof name === 'object') {
-        name = Object.keys(name).includes('customTitle') ? name.customTitle : name.field
+    getColumnTitle (name) {
+      if (typeof name !== 'object' || name === null) {
+        return name
       }
-      return name
+      return name.customTitle ?? name.field ?? Object.keys(name)[0]
     },
     updateSelectedColumns (name) {
       this.$emit('update-selected-columns', name)

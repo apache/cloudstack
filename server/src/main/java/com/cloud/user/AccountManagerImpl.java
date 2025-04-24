@@ -372,6 +372,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             "totp",
             "The default user two factor authentication provider. Eg. totp, staticpin", true, ConfigKey.Scope.Domain);
 
+    static ConfigKey<Boolean> userAllowMultipleAccounts = new ConfigKey<>("Advanced",
+            Boolean.class,
+            "user.allow.multiple.accounts",
+            "false",
+            "Determines if the same username can be added to more than one account in the same domain (SAML-only).",
+            true,
+            ConfigKey.Scope.Domain);
+
     protected AccountManagerImpl() {
         super();
     }
@@ -694,7 +702,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             for (SecurityChecker checker : _securityCheckers) {
                 if (checker.checkAccess(caller, entity, accessType, apiName)) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Access to " + entity + " granted to " + caller + " by " + checker.getName());
+                        User user = CallContext.current().getCallingUser();
+                        String userName = "";
+                        if (user != null)
+                            userName = user.getUsername();
+                        s_logger.debug("Access to " + entity + " granted to " + caller + " by " + checker.getName() + " on behalf of user " + userName);
                     }
                     granted = true;
                     break;
@@ -1248,8 +1260,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // Check permissions
         checkAccess(getCurrentCallingAccount(), domain);
 
-        if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
-            throw new InvalidParameterValueException("The user " + userName + " already exists in domain " + domainId);
+        if (!userAllowMultipleAccounts.valueInDomain(domainId) && !_userAccountDao.validateUsernameInDomain(userName, domainId)) {
+            throw new CloudRuntimeException("The user " + userName + " already exists in domain " + domainId);
         }
 
         if (networkDomain != null && networkDomain.length() > 0) {
@@ -1341,7 +1353,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      */
     private void checkRoleEscalation(Account caller, Account requested) {
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug(String.format("checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
+            s_logger.debug(String.format("Checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
                     caller.getAccountName(),
                     caller.getUuid(),
                     caller.getRoleId(),
@@ -1355,12 +1367,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 checkApiAccess(apiCheckers, requested, command);
             } catch (PermissionDeniedException pde) {
                 if (s_logger.isTraceEnabled()) {
-                    s_logger.trace(String.format("checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
+                    s_logger.trace(String.format(
+                            "Checking for permission to \"%s\" is irrelevant as it is not requested for %s [%s]",
                             command,
-                            pde.getAccount().getAccountName(),
-                            pde.getAccount().getUuid(),
-                            pde.getEntitiesInViolation()
-                            ));
+                            requested.getAccountName(),
+                            requested.getUuid()
+                        )
+                    );
                 }
                 continue;
             }
@@ -1431,9 +1444,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new PermissionDeniedException("Account id : " + account.getId() + " is a system account, can't add a user to it");
         }
 
-        if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
+        if (!userAllowMultipleAccounts.valueInDomain(domainId) && !_userAccountDao.validateUsernameInDomain(userName, domainId)) {
             throw new CloudRuntimeException("The user " + userName + " already exists in domain " + domainId);
         }
+
+        List<UserVO> duplicatedUsers = _userDao.findUsersByName(userName);
+        for (UserVO duplicatedUser : duplicatedUsers) {
+            // users can't exist in same account
+            assertUserNotAlreadyInAccount(duplicatedUser, account);
+        }
+
         UserVO user = null;
         user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone, userUUID, source);
         return user;
@@ -1559,7 +1579,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      *  <li> The username must be unique in each domain. Therefore, if there is already another user with the same username, an {@link InvalidParameterValueException} is thrown.
      * </ul>
      */
-    protected void validateAndUpdateUsernameIfNeeded(UpdateUserCmd updateUserCmd, UserVO user, Account account) {
+    protected void validateAndUpdateUsernameIfNeeded(UpdateUserCmd updateUserCmd, UserVO newUser, Account newAccount) {
         String userName = updateUserCmd.getUsername();
         if (userName == null) {
             return;
@@ -1567,18 +1587,21 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (StringUtils.isBlank(userName)) {
             throw new InvalidParameterValueException("Username cannot be empty.");
         }
-        List<UserVO> duplicatedUsers = _userDao.findUsersByName(userName);
-        for (UserVO duplicatedUser : duplicatedUsers) {
-            if (duplicatedUser.getId() == user.getId()) {
+        List<UserVO> existingUsers = _userDao.findUsersByName(userName);
+        for (UserVO existingUser : existingUsers) {
+            if (existingUser.getId() == newUser.getId()) {
                 continue;
             }
-            Account duplicatedUserAccountWithUserThatHasTheSameUserName = _accountDao.findById(duplicatedUser.getAccountId());
-            if (duplicatedUserAccountWithUserThatHasTheSameUserName.getDomainId() == account.getDomainId()) {
-                DomainVO domain = _domainDao.findById(duplicatedUserAccountWithUserThatHasTheSameUserName.getDomainId());
-                throw new InvalidParameterValueException(String.format("Username [%s] already exists in domain [id=%s,name=%s]", duplicatedUser.getUsername(), domain.getUuid(), domain.getName()));
+
+            // duplicate usernames cannot exist in same domain unless explicitly configured
+            if (!userAllowMultipleAccounts.valueInDomain(newAccount.getDomainId())) {
+                assertUserNotAlreadyInDomain(existingUser, newAccount);
             }
+
+            // can't rename a username to an existing one in the same account
+            assertUserNotAlreadyInAccount(existingUser, newAccount);
         }
-        user.setUsername(userName);
+        newUser.setUsername(userName);
     }
 
     /**
@@ -1815,7 +1838,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // make sure the account is enabled too
         // if the user is either locked already or disabled already, don't change state...only lock currently enabled
-// users
+        // users
         boolean success = true;
         if (user.getState().equals(State.LOCKED)) {
             // already locked...no-op
@@ -3312,7 +3335,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {UseSecretKeyInResponse, enableUserTwoFactorAuthentication,
-                userTwoFactorAuthenticationDefaultProvider, mandateUserTwoFactorAuthentication, userTwoFactorAuthenticationIssuer};
+                userTwoFactorAuthenticationDefaultProvider, mandateUserTwoFactorAuthentication, userTwoFactorAuthenticationIssuer,
+                userAllowMultipleAccounts};
     }
 
     public List<UserTwoFactorAuthenticator> getUserTwoFactorAuthenticationProviders() {
@@ -3475,4 +3499,43 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return userTwoFactorAuthenticationProvidersMap.get(name.toLowerCase());
     }
 
+    @Override
+    public UserAccount clearUserTwoFactorAuthenticationInSetupStateOnLogin(UserAccount user) {
+        return Transaction.execute((TransactionCallback<UserAccount>) status -> {
+            if (!user.isUser2faEnabled() && StringUtils.isBlank(user.getUser2faProvider())) {
+                return user;
+            }
+            UserDetailVO userDetailVO = _userDetailsDao.findDetail(user.getId(), UserDetailVO.Setup2FADetail);
+            if (userDetailVO != null && UserAccountVO.Setup2FAstatus.VERIFIED.name().equals(userDetailVO.getValue())) {
+                return user;
+            }
+            s_logger.info(String.format("Clearing 2FA configurations for %s as it is still in setup on a new login request", user));
+            if (userDetailVO != null) {
+                _userDetailsDao.remove(userDetailVO.getId());
+            }
+            UserAccountVO userAccountVO = _userAccountDao.findById(user.getId());
+            userAccountVO.setUser2faEnabled(false);
+            userAccountVO.setUser2faProvider(null);
+            userAccountVO.setKeyFor2fa(null);
+            _userAccountDao.update(user.getId(), userAccountVO);
+            return userAccountVO;
+        });
+    }
+
+    void assertUserNotAlreadyInAccount(User existingUser, Account newAccount) {
+        System.out.println(existingUser.getAccountId());
+        System.out.println(newAccount.getId());
+        if (existingUser.getAccountId() == newAccount.getId()) {
+            AccountVO existingAccount = _accountDao.findById(newAccount.getId());
+            throw new InvalidParameterValueException(String.format("Username [%s] already exists in account [id=%s,name=%s]", existingUser.getUsername(), existingAccount.getUuid(), existingAccount.getAccountName()));
+        }
+    }
+
+    void assertUserNotAlreadyInDomain(User existingUser, Account originalAccount) {
+        Account existingAccount = _accountDao.findById(existingUser.getAccountId());
+        if (existingAccount.getDomainId() == originalAccount.getDomainId()) {
+            DomainVO existingDomain = _domainDao.findById(existingAccount.getDomainId());
+            throw new InvalidParameterValueException(String.format("Username [%s] already exists in domain [id=%s,name=%s] user account [id=%s,name=%s]", existingUser.getUsername(), existingDomain.getUuid(), existingDomain.getName(), existingAccount.getUuid(), existingAccount.getAccountName()));
+        }
+    }
 }

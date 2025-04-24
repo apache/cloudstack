@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.api.query;
 
+import static com.cloud.vm.VmDetailConstants.SSH_PUBLIC_KEY;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -34,39 +36,6 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.event.EventVO;
-import com.cloud.event.dao.EventDao;
-import com.cloud.host.HostVO;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.service.ServiceOfferingDetailsVO;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.host.Host;
-import com.cloud.host.dao.HostDao;
-import com.cloud.network.as.AutoScaleVmGroupVmMapVO;
-import com.cloud.network.as.dao.AutoScaleVmGroupDao;
-import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.PublicIpQuarantineDao;
-import com.cloud.network.PublicIpQuarantine;
-import com.cloud.network.vo.PublicIpQuarantineVO;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.user.AccountVO;
-import com.cloud.user.SSHKeyPairVO;
-import com.cloud.user.dao.SSHKeyPairDao;
-import com.cloud.vm.InstanceGroupVMMapVO;
-import com.cloud.vm.NicVO;
-import com.cloud.vm.UserVmDetailVO;
-import com.cloud.vm.dao.InstanceGroupVMMapDao;
-import com.cloud.vm.dao.NicDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
-import com.cloud.storage.VolumeVO;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -108,6 +77,7 @@ import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.ListQuarantinedIpsCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCmd;
+import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
 import org.apache.cloudstack.api.command.user.job.ListAsyncJobsCmd;
@@ -129,6 +99,7 @@ import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.DetailOptionsResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -255,22 +226,38 @@ import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.EventVO;
+import com.cloud.event.dao.EventDao;
 import com.cloud.event.dao.EventJoinDao;
 import com.cloud.exception.CloudAuthenticationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.ha.HighAvailabilityManager;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.PublicIpQuarantine;
 import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.VNF;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
+import com.cloud.network.as.AutoScaleVmGroupVmMapVO;
+import com.cloud.network.as.dao.AutoScaleVmGroupDao;
+import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.dao.RouterHealthCheckResultDao;
 import com.cloud.network.dao.RouterHealthCheckResultVO;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
+import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -286,6 +273,7 @@ import com.cloud.server.ResourceManagerUtil;
 import com.cloud.server.ResourceMetaDataService;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
+import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
@@ -298,24 +286,34 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StoragePoolTagVO;
+import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiServiceImpl;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.BucketDao;
 import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate.State;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
 import com.cloud.user.DomainManager;
+import com.cloud.user.SSHKeyPairVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -331,18 +329,20 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.InstanceGroupVMMapVO;
+import com.cloud.vm.NicVO;
+import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.InstanceGroupVMMapDao;
+import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
-import org.apache.cloudstack.api.response.BucketResponse;
-
-import static com.cloud.vm.VmDetailConstants.SSH_PUBLIC_KEY;
 
 @Component
 public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements QueryService, Configurable {
@@ -1267,6 +1267,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long storageId = null;
         StoragePoolVO pool = null;
         Long userId = cmd.getUserId();
+        Long userdataId = cmd.getUserdataId();
         Map<String, String> tags = cmd.getTags();
 
         boolean isAdmin = false;
@@ -1339,6 +1340,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             userVmSearchBuilder.and("templateId", userVmSearchBuilder.entity().getTemplateId(), Op.EQ);
         }
 
+        if (userdataId != null) {
+            userVmSearchBuilder.and("userdataId", userVmSearchBuilder.entity().getUserDataId(), Op.EQ);
+        }
+
         if (hypervisor != null) {
             userVmSearchBuilder.and("hypervisorType", userVmSearchBuilder.entity().getHypervisorType(), Op.EQ);
         }
@@ -1377,6 +1382,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (networkId != null || vpcId != null) {
             SearchBuilder<NicVO> nicSearch = nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), Op.EQ);
+            nicSearch.and("removed", nicSearch.entity().getRemoved(), Op.NULL);
             if (vpcId != null) {
                 SearchBuilder<NetworkVO> networkSearch = networkDao.createSearchBuilder();
                 networkSearch.and("vpcId", networkSearch.entity().getVpcId(), Op.EQ);
@@ -1528,6 +1534,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (templateId != null) {
             userVmSearchCriteria.setParameters("templateId", templateId);
+        }
+
+        if (userdataId != null) {
+            userVmSearchCriteria.setParameters("userdataId", userdataId);
         }
 
         if (display != null) {
@@ -4977,7 +4987,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (HypervisorType.KVM.equals(hypervisorType)) {
             options.put(VmDetailConstants.NIC_ADAPTER, Arrays.asList("e1000", "virtio", "rtl8139", "vmxnet3", "ne2k_pci"));
-            options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "virtio"));
+            options.put(VmDetailConstants.ROOT_DISK_CONTROLLER, Arrays.asList("osdefault", "ide", "scsi", "virtio", "virtio-blk"));
             options.put(VmDetailConstants.VIDEO_HARDWARE, Arrays.asList("cirrus", "vga", "qxl", "virtio"));
             options.put(VmDetailConstants.VIDEO_RAM, Collections.emptyList());
             options.put(VmDetailConstants.IO_POLICY, Arrays.asList("threads", "native", "io_uring", "storage_specific"));
@@ -5626,7 +5636,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         Integer count = snapshotDataPair.second();
         if (count == 0) {
-            // empty result
             return snapshotDataPair;
         }
         List<SnapshotJoinVO> snapshotData = snapshotDataPair.first();
@@ -5636,7 +5645,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         } else {
             snapshots = snapshotJoinDao.searchBySnapshotStorePair(snapshotData.stream().map(SnapshotJoinVO::getSnapshotStorePair).toArray(String[]::new));
         }
-
         return new Pair<>(snapshots, count);
     }
 

@@ -629,7 +629,7 @@
             <span v-else>{{ resource.podname || resource.pod || resource.podid }}</span>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="resource.zoneid">
+        <div class="resource-detail-item" v-if="resource.zoneid && !['template', 'iso'].includes($route.path.split('/')[1])">
           <div class="resource-detail-item__label">{{ $t('label.zone') }}</div>
           <div class="resource-detail-item__details">
             <span v-if="images.zone">
@@ -700,7 +700,7 @@
             <span v-else>{{ resource.managementserver || resource.managementserverid }}</span>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="resource.created">
+        <div class="resource-detail-item" v-if="resource.created && !['template', 'iso'].includes($route.path.split('/')[1])">
           <div class="resource-detail-item__label">{{ $t('label.created') }}</div>
           <div class="resource-detail-item__details">
             <calendar-outlined />{{ $toLocaleDate(resource.created) }}
@@ -1159,6 +1159,11 @@ export default {
       if (item.value) {
         query[item.param] = this.resource[item.value]
       } else {
+        if (item.name === 'template') {
+          query.templatefilter = 'self'
+          query.filter = 'self'
+        }
+
         if (item.param === 'account') {
           query[item.param] = this.resource.name
           query.domainid = this.resource.domainid

@@ -40,6 +40,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
@@ -1533,6 +1534,16 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 verifyFormat(templateInfo.getFormat());
             }
 
+            // this blurb handles the case where the storage system can clone a volume from a template
+            String canCloneVolumeFromTemplate = templateInfo.getDataStore().getDriver().getCapabilities().get("CAN_CLONE_VOLUME_FROM_TEMPLATE");
+            if (canCloneVolumeFromTemplate != null && canCloneVolumeFromTemplate.toLowerCase().equals("true")) {
+                DataStoreDriver driver = templateInfo.getDataStore().getDriver();
+                driver.createAsync(volumeInfo.getDataStore(), volumeInfo, null);
+                volumeInfo = _volumeDataFactory.getVolume(volumeInfo.getId(), volumeInfo.getDataStore());
+                driver.copyAsync(templateInfo, volumeInfo, null);
+                return;
+            }
+
             HostVO hostVO = null;
 
             final boolean computeClusterSupportsVolumeClone;
@@ -1640,7 +1651,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 errMsg = "Create volume from template failed: " + ex.getMessage();
             }
 
-            throw new CloudRuntimeException(errMsg);
+            throw new CloudRuntimeException(errMsg, ex);
         }
         finally {
             if (copyCmdAnswer == null) {
@@ -1937,18 +1948,26 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     /**
      * Return expected MigrationOptions for a linked clone volume live storage migration
      */
-    protected MigrationOptions createLinkedCloneMigrationOptions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo, String srcVolumeBackingFile, String srcPoolUuid, Storage.StoragePoolType srcPoolType) {
+    protected MigrationOptions createLinkedCloneMigrationOptions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo, String srcVolumeBackingFile, StoragePoolVO srcPool) {
+        String srcPoolUuid = srcPool.getUuid();
+        Storage.StoragePoolType srcPoolType = srcPool.getPoolType();
+        Long srcPoolClusterId = srcPool.getClusterId();
         VMTemplateStoragePoolVO ref = templatePoolDao.findByPoolTemplate(destVolumeInfo.getPoolId(), srcVolumeInfo.getTemplateId(), null);
         boolean updateBackingFileReference = ref == null;
         String backingFile = !updateBackingFileReference ? ref.getInstallPath() : srcVolumeBackingFile;
-        return new MigrationOptions(srcPoolUuid, srcPoolType, backingFile, updateBackingFileReference, srcVolumeInfo.getDataStore().getScope().getScopeType());
+        ScopeType scopeType = srcVolumeInfo.getDataStore().getScope().getScopeType();
+        return new MigrationOptions(srcPoolUuid, srcPoolType, backingFile, updateBackingFileReference, scopeType, srcPoolClusterId);
     }
 
     /**
      * Return expected MigrationOptions for a full clone volume live storage migration
      */
-    protected MigrationOptions createFullCloneMigrationOptions(VolumeInfo srcVolumeInfo, VirtualMachineTO vmTO, Host srcHost, String srcPoolUuid, Storage.StoragePoolType srcPoolType) {
-        return new MigrationOptions(srcPoolUuid, srcPoolType, srcVolumeInfo.getPath(), srcVolumeInfo.getDataStore().getScope().getScopeType());
+    protected MigrationOptions createFullCloneMigrationOptions(VolumeInfo srcVolumeInfo, VirtualMachineTO vmTO, Host srcHost, StoragePoolVO srcPool) {
+        String srcPoolUuid = srcPool.getUuid();
+        Storage.StoragePoolType srcPoolType = srcPool.getPoolType();
+        Long srcPoolClusterId = srcPool.getClusterId();
+        ScopeType scopeType = srcVolumeInfo.getDataStore().getScope().getScopeType();
+        return new MigrationOptions(srcPoolUuid, srcPoolType, srcVolumeInfo.getPath(), scopeType, srcPoolClusterId);
     }
 
     /**
@@ -1971,9 +1990,9 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
         MigrationOptions migrationOptions;
         if (MigrationOptions.Type.LinkedClone.equals(migrationType)) {
-            migrationOptions = createLinkedCloneMigrationOptions(srcVolumeInfo, destVolumeInfo, srcVolumeBackingFile, srcPoolUuid, srcPoolType);
+            migrationOptions = createLinkedCloneMigrationOptions(srcVolumeInfo, destVolumeInfo, srcVolumeBackingFile, srcPool);
         } else {
-            migrationOptions = createFullCloneMigrationOptions(srcVolumeInfo, vmTO, srcHost, srcPoolUuid, srcPoolType);
+            migrationOptions = createFullCloneMigrationOptions(srcVolumeInfo, vmTO, srcHost, srcPool);
         }
         migrationOptions.setTimeout(StorageManager.KvmStorageOnlineMigrationWait.value());
         destVolumeInfo.setMigrationOptions(migrationOptions);
@@ -2633,7 +2652,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         catch (Exception ex) {
             errMsg = ex.getMessage();
 
-            throw new CloudRuntimeException(errMsg);
+            throw new CloudRuntimeException(errMsg, ex);
         }
         finally {
             if (copyCmdAnswer == null) {

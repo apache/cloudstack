@@ -39,10 +39,12 @@ import org.apache.cloudstack.auth.UserAuthenticator.ActionOnFailedAuthentication
 import org.apache.cloudstack.auth.UserTwoFactorAuthenticator;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.resourcedetail.UserDetailVO;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -1217,5 +1219,126 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
         Mockito.when(_projectAccountDao.listAdministratedProjectIds(accountId)).thenReturn(managedProjectIds);
         accountManagerImpl.checkIfAccountManagesProjects(accountId);
+    }
+
+    @Test
+    public void testClearUser2FA_When2FADisabled_NoChanges() {
+        UserAccount user = Mockito.mock(UserAccount.class);
+        Mockito.when(user.isUser2faEnabled()).thenReturn(false);
+        Mockito.when(user.getUser2faProvider()).thenReturn(null);
+        UserAccount result = accountManagerImpl.clearUserTwoFactorAuthenticationInSetupStateOnLogin(user);
+        Assert.assertSame(user, result);
+        Mockito.verifyNoInteractions(userDetailsDaoMock, userAccountDaoMock);
+    }
+
+    @Test
+    public void testClearUser2FA_When2FAInVerifiedState_NoChanges() {
+        UserAccount user = Mockito.mock(UserAccount.class);
+        Mockito.when(user.getId()).thenReturn(1L);
+        Mockito.when(user.isUser2faEnabled()).thenReturn(true);
+        UserDetailVO userDetail = new UserDetailVO();
+        userDetail.setValue(UserAccountVO.Setup2FAstatus.VERIFIED.name());
+        Mockito.when(userDetailsDaoMock.findDetail(1L, UserDetailVO.Setup2FADetail)).thenReturn(userDetail);
+        UserAccount result = accountManagerImpl.clearUserTwoFactorAuthenticationInSetupStateOnLogin(user);
+        Assert.assertSame(user, result);
+        Mockito.verify(userDetailsDaoMock).findDetail(1L, UserDetailVO.Setup2FADetail);
+        Mockito.verifyNoMoreInteractions(userDetailsDaoMock, userAccountDaoMock);
+    }
+
+    @Test
+    public void testClearUser2FA_When2FAInSetupState_Disable2FA() {
+        UserAccount user = Mockito.mock(UserAccount.class);
+        Mockito.when(user.getId()).thenReturn(1L);
+        Mockito.when(user.isUser2faEnabled()).thenReturn(true);
+        UserDetailVO userDetail = new UserDetailVO();
+        userDetail.setValue(UserAccountVO.Setup2FAstatus.ENABLED.name());
+        UserAccountVO userAccountVO = new UserAccountVO();
+        userAccountVO.setId(1L);
+        Mockito.when(userDetailsDaoMock.findDetail(1L, UserDetailVO.Setup2FADetail)).thenReturn(userDetail);
+        Mockito.when(userAccountDaoMock.findById(1L)).thenReturn(userAccountVO);
+        UserAccount result = accountManagerImpl.clearUserTwoFactorAuthenticationInSetupStateOnLogin(user);
+        Assert.assertNotNull(result);
+        Assert.assertFalse(result.isUser2faEnabled());
+        Assert.assertNull(result.getUser2faProvider());
+        Mockito.verify(userDetailsDaoMock).findDetail(1L, UserDetailVO.Setup2FADetail);
+        Mockito.verify(userDetailsDaoMock).remove(Mockito.anyLong());
+        Mockito.verify(userAccountDaoMock).findById(1L);
+        ArgumentCaptor<UserAccountVO> captor = ArgumentCaptor.forClass(UserAccountVO.class);
+        Mockito.verify(userAccountDaoMock).update(Mockito.eq(1L), captor.capture());
+        UserAccountVO updatedUser = captor.getValue();
+        Assert.assertFalse(updatedUser.isUser2faEnabled());
+        Assert.assertNull(updatedUser.getUser2faProvider());
+        Assert.assertNull(updatedUser.getKeyFor2fa());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAssertUserNotAlreadyInAccount_UserExistsInAccount() {
+        User existingUser = new UserVO();
+        existingUser.setUsername("testuser");
+        existingUser.setAccountId(1L);
+
+        Account newAccount = Mockito.mock(Account.class);
+        Mockito.when(newAccount.getId()).thenReturn(1L);
+
+        AccountVO existingAccount = Mockito.mock(AccountVO.class);
+        Mockito.when(existingAccount.getUuid()).thenReturn("existing-account-uuid");
+        Mockito.when(existingAccount.getAccountName()).thenReturn("existing-account");
+
+        Mockito.when(_accountDao.findById(1L)).thenReturn(existingAccount);
+
+        accountManagerImpl.assertUserNotAlreadyInAccount(existingUser, newAccount);
+    }
+
+    @Test
+    public void testAssertUserNotAlreadyInAccount_UserExistsInDiffAccount() {
+        User existingUser = new UserVO();
+        existingUser.setUsername("testuser");
+        existingUser.setAccountId(2L);
+
+        Account newAccount = Mockito.mock(Account.class);
+        Mockito.when(newAccount.getId()).thenReturn(1L);
+
+        accountManagerImpl.assertUserNotAlreadyInAccount(existingUser, newAccount);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAssertUserNotAlreadyInDomain_UserExistsInDomain() {
+        User existingUser = new UserVO();
+        existingUser.setUsername("testuser");
+        existingUser.setAccountId(1L);
+
+        Account originalAccount = Mockito.mock(Account.class);
+        Mockito.when(originalAccount.getDomainId()).thenReturn(1L);
+
+        AccountVO existingAccount = Mockito.mock(AccountVO.class);
+        Mockito.when(existingAccount.getDomainId()).thenReturn(1L);
+        Mockito.when(existingAccount.getUuid()).thenReturn("existing-account-uuid");
+        Mockito.when(existingAccount.getAccountName()).thenReturn("existing-account");
+
+        DomainVO existingDomain = Mockito.mock(DomainVO.class);
+        Mockito.when(existingDomain.getUuid()).thenReturn("existing-domain-uuid");
+        Mockito.when(existingDomain.getName()).thenReturn("existing-domain");
+
+        Mockito.when(_accountDao.findById(1L)).thenReturn(existingAccount);
+        Mockito.when(_domainDao.findById(1L)).thenReturn(existingDomain);
+
+        accountManagerImpl.assertUserNotAlreadyInDomain(existingUser, originalAccount);
+    }
+
+    @Test
+    public void testAssertUserNotAlreadyInDomain_UserExistsInDiffDomain() {
+        User existingUser = new UserVO();
+        existingUser.setUsername("testuser");
+        existingUser.setAccountId(1L);
+
+        Account originalAccount = Mockito.mock(Account.class);
+        Mockito.when(originalAccount.getDomainId()).thenReturn(1L);
+
+        AccountVO existingAccount = Mockito.mock(AccountVO.class);
+        Mockito.when(existingAccount.getDomainId()).thenReturn(2L);
+
+        Mockito.when(_accountDao.findById(1L)).thenReturn(existingAccount);
+
+        accountManagerImpl.assertUserNotAlreadyInDomain(existingUser, originalAccount);
     }
 }

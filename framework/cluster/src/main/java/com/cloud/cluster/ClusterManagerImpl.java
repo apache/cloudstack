@@ -1052,12 +1052,24 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         }
 
         if (_mshostId != null) {
-            final ManagementServerHostVO mshost = _mshostDao.findByMsid(_msId);
-            final ManagementServerStatusVO mshostStatus = mshostStatusDao.findByMsId(mshost.getUuid());
-            mshost.setState(ManagementServerHost.State.Down);
-            mshostStatus.setLastJvmStop(new Date());
-            _mshostDao.update(_mshostId, mshost);
-            mshostStatusDao.update(mshostStatus.getId(), mshostStatus);
+            ManagementServerHostVO mshost = _mshostDao.findByMsid(_msId);
+            if (mshost != null) {
+                ManagementServerStatusVO mshostStatus = mshostStatusDao.findByMsId(mshost.getUuid());
+                if (mshostStatus != null) {
+                    mshost.setState(ManagementServerHost.State.Down);
+                    mshostStatus.setLastJvmStop(new Date());
+                    _mshostDao.update(_mshostId, mshost);
+                    mshostStatusDao.update(mshostStatus.getId(), mshostStatus);
+                } else {
+                    s_logger.warn(String.format("Found a management server host [%s] without a status. This should never happen!", mshost));
+                    mshostStatus = new ManagementServerStatusVO();
+                    mshostStatus.setMsId(mshost.getUuid());
+                    mshostStatus.setLastSystemBoot(new Date());
+                    mshostStatus.setLastJvmStart(new Date());
+                    mshostStatus.setUpdated(new Date());
+                    mshostStatusDao.persist(mshostStatus);
+                }
+            }
         }
 
         _heartbeatScheduler.shutdownNow();
