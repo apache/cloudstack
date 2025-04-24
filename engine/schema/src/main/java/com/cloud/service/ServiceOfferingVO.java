@@ -124,6 +124,12 @@ public class ServiceOfferingVO implements ServiceOffering {
     @Column(name = "dynamic_scaling_enabled")
     private boolean dynamicScalingEnabled = true;
 
+    @Column(name = "gpu_offering_id")
+    private Long gpuOfferingId;
+
+    @Column(name = "gpu_count")
+    private Integer gpuCount;
+
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.
     // Call service offering dao to load it.
@@ -444,5 +450,23 @@ public class ServiceOfferingVO implements ServiceOffering {
 
     public void setDiskOfferingStrictness(boolean diskOfferingStrictness) {
         this.diskOfferingStrictness = diskOfferingStrictness;
+    }
+
+    @Override
+    public Long getGpuOfferingId() {
+        return gpuOfferingId;
+    }
+
+    public void setGpuOfferingId(Long gpuOfferingId) {
+        this.gpuOfferingId = gpuOfferingId;
+    }
+
+    @Override
+    public Integer getGpuCount() {
+        return gpuCount;
+    }
+
+    public void setGpuCount(Integer gpuCount) {
+        this.gpuCount = gpuCount;
     }
 }

@@ -51,7 +51,7 @@
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
                       v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
-                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes', 'computeoffering', 'systemoffering', 'diskoffering', 'sharedfs'].includes($route.name) ||
+                      ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes', 'computeoffering', 'systemoffering', 'diskoffering', 'gpuoffering', 'sharedfs'].includes($route.name) ||
                       ['account'].includes($route.name)"
                       key="all"
                       :label="$t('label.all')">
@@ -360,7 +360,12 @@
                     v-for="(opt, optIndex) in field.opts"
                     :key="optIndex"
                     :label="opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description">
-                    {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
+                    <a-span v-if="field.name === 'vgpuprofileids'">
+                      {{ opt.gpucardname + ' (' + opt.name + ')' }}
+                    </a-span>
+                    <a-span v-else>
+                      {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
+                    </a-span>
                   </a-select-option>
                 </a-select>
                 <a-input-number
@@ -701,7 +706,7 @@ export default {
       if (['volume'].includes(routeName)) {
         return 'user'
       }
-      if (['event', 'computeoffering', 'systemoffering', 'diskoffering', 'quotatariff'].includes(routeName)) {
+      if (['event', 'computeoffering', 'systemoffering', 'diskoffering', 'gpuoffering', 'quotatariff'].includes(routeName)) {
         return 'active'
       }
       return 'self'
@@ -779,7 +784,7 @@ export default {
         'isofilter' in params && this.routeName === 'iso') {
         params.isofilter = 'all'
       }
-      if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['computeoffering', 'systemoffering', 'diskoffering'].includes(this.routeName) && this.$route.params.id) {
+      if (['Admin', 'DomainAdmin'].includes(this.$store.getters.userInfo.roletype) && ['computeoffering', 'systemoffering', 'diskoffering', 'gpuoffering'].includes(this.routeName) && this.$route.params.id) {
         params.state = 'all'
       }
       if (Object.keys(this.$route.query).length > 0) {
@@ -1817,7 +1822,7 @@ export default {
         } else {
           query.clustertype = filter === 'cloud.managed' ? 'CloudManaged' : 'ExternalManaged'
         }
-      } else if (['computeoffering', 'systemoffering', 'diskoffering'].includes(this.$route.name)) {
+      } else if (['computeoffering', 'systemoffering', 'diskoffering', 'gpuoffering'].includes(this.$route.name)) {
         query.state = filter
       }
       query.filter = filter

@@ -233,3 +233,85 @@ CREATE TABLE IF NOT EXISTS `cloud`.`gui_themes_details` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_gui_themes_details__gui_theme_id` FOREIGN KEY (`gui_theme_id`) REFERENCES `gui_themes`(`id`)
 );
+
+-- Create the GPU card table to hold the GPU card information
+CREATE TABLE IF NOT EXISTS `cloud`.`gpu_card` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40) NOT NULL UNIQUE,
+  `device_id` varchar(255) NOT NULL COMMENT 'device id of the GPU card',
+  `device_name` varchar(255) NOT NULL COMMENT 'device name of the GPU card',
+  `name` varchar(255) NOT NULL COMMENT 'name of the GPU card',
+  `vendor_name` varchar(255) NOT NULL COMMENT 'vendor name of the GPU card',
+  `vendor_id` varchar(255) NOT NULL COMMENT 'vendor id of the GPU card',
+  `vram_size` bigint unsigned COMMENT 'VRAM size in MB',
+  `created` datetime NOT NULL COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY (`vendor_id`, `device_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='GPU cards supported by CloudStack';
+
+-- Create the vGPU profile table to hold the vGPU profile information.
+CREATE TABLE IF NOT EXISTS `cloud`.`vgpu_profile` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40) NOT NULL UNIQUE,
+  `name` varchar(255) NOT NULL COMMENT 'name of the vGPU profile',
+  `description` varchar(255) DEFAULT NULL COMMENT 'description of the vGPU profile',
+  `card_id` bigint unsigned NOT NULL COMMENT 'id of the GPU card',
+  `vram_size` bigint unsigned DEFAULT NULL COMMENT 'VRAM size in MB',
+  `created` datetime NOT NULL COMMENT 'date created',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY (`name`, `card_id`),
+  CONSTRAINT `fk_vgpu_profile_card_id` FOREIGN KEY (`card_id`) REFERENCES `gpu_card`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='vGPU profiles supported by CloudStack';
+
+
+-- Create the GPU device table to hold the GPU device information on different hosts
+CREATE TABLE IF NOT EXISTS `cloud`.`gpu_device` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40) NOT NULL UNIQUE,
+  `card_id` bigint unsigned NOT NULL COMMENT 'id of the GPU card',
+  `vgpu_profile_id` bigint unsigned DEFAULT NULL COMMENT 'id of the vGPU profile.',
+  `bus_address` varchar(255) NOT NULL COMMENT 'PCI bus address of the GPU device',
+  `type` varchar(32) NOT NULL COMMENT 'type of the GPU device. PCI or MDEV',
+  `host_id` bigint unsigned NOT NULL COMMENT 'id of the host where GPU is installed',
+  `vm_id` bigint unsigned DEFAULT NULL COMMENT 'id of the VM using this GPU device',
+  `parent_gpu_device_id` bigint unsigned DEFAULT NULL COMMENT 'id of the parent GPU device. null if it is a physical GPU device and for vGPUs points to the actual GPU',
+  `state` varchar(32) NOT NULL COMMENT 'state of the GPU device',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY (`bus_address`, `host_id`),
+  CONSTRAINT `fk_gpu_devices__card_id` FOREIGN KEY (`card_id`) REFERENCES `gpu_card` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_gpu_devices__host_id` FOREIGN KEY (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_gpu_devices__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE SET NULL,
+  CONSTRAINT `fk_gpu_devices__parent_gpu_device_id` FOREIGN KEY (`parent_gpu_device_id`) REFERENCES `gpu_device` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='GPU devices installed on hosts';
+
+CREATE TABLE IF NOT EXISTS `cloud`.`gpu_offering` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `uuid` varchar(40) NOT NULL UNIQUE,
+    `name` varchar(255) NOT NULL COMMENT 'name of the GPU offering',
+    `description` varchar(1024) COMMENT 'description of the GPU Offering',
+    `state` CHAR(40) NOT NULL DEFAULT 'Active' COMMENT 'state of service offering either Active or Inactive',
+    `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method',
+    `created` datetime NOT NULL COMMENT 'date created',
+    `removed` datetime COMMENT 'date removed if not null',
+    PRIMARY KEY  (`id`),
+    UNIQUE KEY `uk_gpu_offering__uuid` (`uuid`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`gpu_offering_detail` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+    `gpu_offering_id` bigint unsigned NOT NULL COMMENT 'GPU offering ID',
+    `name` varchar(255) NOT NULL COMMENT 'detail name',
+    `value` varchar(1024) NOT NULL COMMENT 'detail value',
+    `display` tinyint(1) NOT NULL DEFAULT '0' COMMENT 'True if the detail can be displayed to the end user',
+    PRIMARY KEY (`id`),
+    KEY `fk_gpu_offering_detail__gpu_offering_id` (`gpu_offering_id`),
+    KEY `i_gpu_offering_detail__name` (`name`),
+    CONSTRAINT `fk_gpu_offering_detail__gpu_offering_id` FOREIGN KEY (`gpu_offering_id`) REFERENCES `gpu_offering` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Details for gpu offerings';
+
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.service_offering', 'gpu_offering_id', 'bigint unsigned DEFAULT NULL COMMENT "GPU offering ID"');
+CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.service_offering','fk_service_offering__gpu_offering_id');
+CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.service_offering', 'fk_service_offering__gpu_offering_id', '(gpu_offering_id)', '`gpu_offering`(`id`)');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.service_offering', 'gpu_count', 'int unsigned DEFAULT NULL COMMENT "Number of GPUs"');
+

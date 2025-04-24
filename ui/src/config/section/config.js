@@ -340,6 +340,104 @@ export default {
           popup: true
         }
       ]
+    },
+    {
+      name: 'gpucard',
+      title: 'label.gpu.card',
+      docHelp: 'adminguide/guest_os.html#guest-os',
+      icon: 'laptop-outlined',
+      permission: ['listGpuCards'],
+      columns: ['name', 'deviceid', 'devicename', 'vendorid', 'vendorname', 'vramsize'],
+      details: ['name', 'deviceid', 'devicename', 'vendorid', 'vendorname', 'vramsize'],
+      related: [{
+        name: 'gpudevices',
+        title: 'label.gpu.device',
+        param: 'gpucardid'
+      }, {
+        name: 'vgpuprofile',
+        title: 'label.vgpu.profile',
+        param: 'gpucardid'
+      }],
+      actions: [
+        {
+          api: 'createGpuCard',
+          icon: 'plus-outlined',
+          label: 'label.add.gpu.card',
+          listView: true,
+          dataView: false,
+          args: ['name', 'deviceid', 'devicename', 'vendorid', 'vendorname', 'vramsize']
+          // mapping: {
+          //   deviceid: {
+          //     options: ['nvidia-gpu', 'amd-gpu']
+          //   }
+          // }
+        },
+        {
+          api: 'updateGpuCard',
+          icon: 'edit-outlined',
+          label: 'label.edit',
+          dataView: true,
+          popup: true,
+          args: ['name', 'devicename', 'vendorname', 'vramsize']
+        },
+        {
+          api: 'removeGpuCard',
+          icon: 'delete-outlined',
+          label: 'label.action.delete.gpu.card',
+          message: 'message.action.delete.gpu.card',
+          listView: true,
+          dataView: true,
+          popup: true,
+          groupAction: true,
+          groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
+        }
+      ]
+    },
+    {
+      name: 'vgpuprofile',
+      title: 'label.vgpu.profile',
+      docHelp: 'adminguide/guest_os.html#guest-os',
+      icon: 'laptop-outlined',
+      permission: ['listVgpuProfiles'],
+      columns: ['gpucardname', 'name', 'description', 'vramsize'],
+      details: ['gpucardname', 'name', 'description', 'vramsize'],
+      // related: [{
+      //   name: 'guestoshypervisormapping',
+      //   title: 'label.guest.os.hypervisor.mappings',
+      //   param: 'ostypeid'
+      // }],
+      actions: [
+        {
+          api: 'createVgpuProfile',
+          icon: 'plus-outlined',
+          label: 'label.add.vgpu.profile',
+          listView: true,
+          dataView: false,
+          args: ['name', 'description', 'vramsize', 'gpucardid']
+          // mapping: {
+          //   deviceid: {
+          //     options: ['nvidia-gpu', 'amd-gpu']
+          //   }
+          // }
+        },
+        {
+          api: 'updateVgpuProfile',
+          icon: 'edit-outlined',
+          label: 'label.edit',
+          dataView: true,
+          popup: true,
+          args: ['name', 'description', 'vramsize']
+        },
+        {
+          api: 'removeVgpuProfile',
+          icon: 'delete-outlined',
+          label: 'label.action.delete.vgpu.profile',
+          message: 'message.action.delete.vgpu.profile',
+          dataView: true,
+          popup: true,
+          groupAction: true
+        }
+      ]
     }
   ]
 }

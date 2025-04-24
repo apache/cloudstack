@@ -84,6 +84,8 @@ import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
+import org.apache.cloudstack.gpu.GpuDevice;
+import org.apache.cloudstack.gpu.GpuService;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
@@ -384,6 +386,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private UserVmDetailsDao userVmDetailsDao;
     @Inject
     private VolumeOrchestrationService volumeMgr;
+    @Inject
+    private GpuService gpuService;
     @Inject
     private DeploymentPlanningManager _dpMgr;
     @Inject
@@ -1367,7 +1371,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                             final GPUDeviceTO gpuDevice = startAnswer.getVirtualMachine().getGpuDevice();
                             if (gpuDevice != null) {
-                                _resourceMgr.updateGPUDetails(destHostId, gpuDevice.getGroupDetails());
+                                _resourceMgr.updateGPUDetailsForVmStart(destHostId, vm.getId(), gpuDevice);
                             }
 
                             if (userVmDetailsDao.findDetail(vm.getId(), VmDetailConstants.DEPLOY_VM) != null) {
@@ -1911,9 +1915,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 final GPUDeviceTO gpuDevice = stop.getGpuDevice();
-                if (gpuDevice != null) {
-                    _resourceMgr.updateGPUDetails(vm.getHostId(), gpuDevice.getGroupDetails());
-                }
+                _resourceMgr.updateGPUDetailsForVmStop(vm, gpuDevice);
                 if (!answer.getResult()) {
                     final String details = answer.getDetails();
                     logger.debug("Unable to stop VM due to {}", details);
@@ -2241,9 +2243,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
                 vmGuru.finalizeStop(profile, answer);
                 final GPUDeviceTO gpuDevice = stop.getGpuDevice();
-                if (gpuDevice != null) {
-                    _resourceMgr.updateGPUDetails(vm.getHostId(), gpuDevice.getGroupDetails());
-                }
+                _resourceMgr.updateGPUDetailsForVmStop(vm, gpuDevice);
             } else {
                 throw new CloudRuntimeException("Invalid answer received in response to a StopCommand on " + vm.instanceName);
             }
@@ -2355,6 +2355,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         advanceStop(vmUuid, VmDestroyForcestop.value());
 
         deleteVMSnapshots(vm, expunge);
+
+        gpuService.deallocateGpuDevicesForVmOnHost(vm.getId(), GpuDevice.State.Free);
 
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
             @Override
@@ -3740,6 +3742,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     List<Long> affectedVms = new ArrayList<>();
                     affectedVms.add(vm.getId());
                     _securityGroupManager.scheduleRulesetUpdateToHosts(affectedVms, true, null);
+                }
+                if (vmTo.getGpuDevice() != null) {
+                    _resourceMgr.updateGPUDetailsForVmStart(host.getId(), vm.getId(), vmTo.getGpuDevice());
                 }
                 return;
             }

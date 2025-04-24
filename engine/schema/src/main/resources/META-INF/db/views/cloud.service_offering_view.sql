@@ -55,6 +55,10 @@ SELECT
     `disk_offering`.`cache_mode` AS `cache_mode`,
     `disk_offering`.`disk_size` AS `root_disk_size`,
     `disk_offering`.`encrypt` AS `encrypt_root`,
+    `gpu_offering`.`id` AS `gpu_offering_id`,
+    `gpu_offering`.`uuid` AS `gpu_offering_uuid`,
+    `gpu_offering`.`name` AS `gpu_offering_name`,
+    `service_offering`.`gpu_count` AS `gpu_count`,
     `service_offering`.`cpu` AS `cpu`,
     `service_offering`.`speed` AS `speed`,
     `service_offering`.`ram_size` AS `ram_size`,
@@ -88,6 +92,8 @@ FROM
     `cloud`.`service_offering`
         INNER JOIN
     `cloud`.`disk_offering` ON service_offering.disk_offering_id = disk_offering.id
+        LEFT JOIN
+    `cloud`.`gpu_offering` ON service_offering.gpu_offering_id = gpu_offering.id
         LEFT JOIN
     `cloud`.`service_offering_details` AS `domain_details` ON `domain_details`.`service_offering_id` = `service_offering`.`id` AND `domain_details`.`name`='domainid'
         LEFT JOIN

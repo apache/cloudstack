@@ -15,10 +15,22 @@
 // specific language governing permissions and limitations
 // under the License.
 package com.cloud.agent.api;
+
+import org.apache.cloudstack.gpu.GpuDevice;
+
 public class VgpuTypesInfo {
 
+    private boolean passthroughEnabled = true;
+    private GpuDevice.DeviceType deviceType;
+    private String parentBusAddress;
+    private String busAddress;
+    private String deviceId;
+    private String deviceName;
+    private String vendorId;
+    private String vendorName;
     private String modelName;
     private String groupName;
+    private String vmName;
     private Long maxHeads;
     private Long videoRam;
     private Long maxResolutionX;
@@ -69,6 +81,89 @@ public class VgpuTypesInfo {
 
     public void setMaxVmCapacity(Long maxCapacity) {
         this.maxCapacity = maxCapacity;
+    }
+
+    public boolean isPassthroughEnabled() {
+        return passthroughEnabled;
+    }
+
+    public void setPassthroughEnabled(boolean passthroughEnabled) {
+        this.passthroughEnabled = passthroughEnabled;
+    }
+
+    public GpuDevice.DeviceType getDeviceType() {
+        return deviceType;
+    }
+
+    public void setDeviceType(GpuDevice.DeviceType deviceType) {
+        this.deviceType = deviceType;
+    }
+
+    public String getParentBusAddress() {
+        return parentBusAddress;
+    }
+
+    public void setParentBusAddress(String parentBusAddress) {
+        this.parentBusAddress = parentBusAddress;
+    }
+
+    public String getBusAddress() {
+        return busAddress;
+    }
+
+    public void setBusAddress(String busAddress) {
+        this.busAddress = busAddress;
+    }
+
+    public String getDeviceId() {
+        return deviceId;
+    }
+
+    public void setDeviceId(String deviceId) {
+        this.deviceId = deviceId;
+    }
+
+    public String getDeviceName() {
+        return deviceName;
+    }
+
+    public void setDeviceName(String deviceName) {
+        this.deviceName = deviceName;
+    }
+
+    public String getVendorId() {
+        return vendorId;
+    }
+
+    public void setVendorId(String vendorId) {
+        this.vendorId = vendorId;
+    }
+
+    public String getVendorName() {
+        return vendorName;
+    }
+
+    public void setVendorName(String vendorName) {
+        this.vendorName = vendorName;
+    }
+
+    public String getVmName() {
+        return vmName;
+    }
+
+    public void setVmName(String vmName) {
+        this.vmName = vmName;
+    }
+
+    public VgpuTypesInfo(GpuDevice.DeviceType deviceType, String groupName, String modelName, String busAddress, String vendorId, String vendorName, String deviceId, String deviceName) {
+        this.deviceType = deviceType;
+        this.groupName = groupName;
+        this.modelName = modelName;
+        this.busAddress = busAddress;
+        this.deviceId = deviceId;
+        this.deviceName = deviceName;
+        this.vendorId = vendorId;
+        this.vendorName = vendorName;
     }
 
     public VgpuTypesInfo(String groupName, String modelName, Long videoRam, Long maxHeads, Long maxResolutionX, Long maxResolutionY, Long maxVgpuPerGpu,

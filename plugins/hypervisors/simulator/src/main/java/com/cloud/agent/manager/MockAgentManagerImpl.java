@@ -21,11 +21,14 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
+import com.cloud.agent.api.GetGPUStatsAnswer;
+import com.cloud.agent.api.GetGPUStatsCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.api.commands.SimulatorAddSecondaryAgent;
 import com.cloud.dc.DataCenter;
@@ -40,10 +43,14 @@ import com.cloud.resource.AgentRoutingResource;
 import com.cloud.resource.AgentStorageResource;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.SimulatorDiscoverer;
 import com.cloud.resource.SimulatorSecondaryDiscoverer;
+import com.cloud.simulator.MockGpuDevice;
+import com.cloud.simulator.MockGpuDeviceVO;
 import com.cloud.simulator.MockHost;
 import com.cloud.simulator.MockHostVO;
 import com.cloud.simulator.MockVMVO;
+import com.cloud.simulator.dao.MockGpuDeviceDao;
 import com.cloud.simulator.dao.MockHostDao;
 import com.cloud.simulator.dao.MockVMDao;
 import com.cloud.user.AccountManager;
@@ -61,12 +68,14 @@ import org.apache.cloudstack.ca.SetupKeystoreAnswer;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.diagnostics.DiagnosticsAnswer;
 import org.apache.cloudstack.diagnostics.DiagnosticsCommand;
+import org.apache.cloudstack.gpu.GpuDevice;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +97,8 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
     @Inject
     MockVMDao _mockVmDao = null;
     @Inject
+    MockGpuDeviceDao _mockGpuDeviceDao = null;
+    @Inject
     SimulatorManager _simulatorMgr = null;
     @Inject
     AgentManager _agentMgr = null;
@@ -97,7 +108,8 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
     ResourceManager _resourceMgr;
     @Inject private AccountManager _accountMgr;
 
-    SimulatorSecondaryDiscoverer discoverer;
+    SimulatorDiscoverer discoverer;
+    SimulatorSecondaryDiscoverer ssDiscoverer;
     @Inject
     HostDao hostDao;
 
@@ -184,10 +196,19 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
             mockHost.setVersion(this.getClass().getPackage().getImplementationVersion());
             mockHost.setResource("com.cloud.agent.AgentRoutingResource");
 
+            // Create different types of GPU devices to simulate KVM-like behavior
+            // 1. Physical GPUs (passthrough only)
+            // 2. Physical GPUs that support VF (Virtual Functions)
+            // 3. Physical GPUs that support MDEV (Mediated Devices)
+
             TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
             try {
                 txn.start();
                 mockHost = _mockHostDao.persist(mockHost);
+
+                // Create physical GPU devices
+                createPhysicalGpuDevices(mockHost.getId());
+
                 txn.commit();
             } catch (Exception ex) {
                 txn.rollback();
@@ -215,6 +236,151 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
             }
         }
         return newResources;
+    }
+
+    /**
+     * Creates different types of GPU devices to simulate KVM-like behavior
+     *
+     * @param hostId The host ID to associate the GPU devices with
+     */
+    private void createPhysicalGpuDevices(long hostId) {
+        // 1. Create passthrough-only GPU devices
+        createPassthroughGpu(hostId, "00:01.0", "1234", "5678", "Apache CloudStack Simulator",
+                "Simulated Graphics Card Pro");
+        createPassthroughGpu(hostId, "00:02.0", "1234", "5678", "Apache CloudStack Simulator",
+                "Simulated Graphics Card Pro");
+        createPassthroughGpu(hostId, "00:03.0", "1234", "6789", "Apache CloudStack Simulator",
+                "Simulated Graphics Card Basic");
+        createPassthroughGpu(hostId, "00:04.0", "1234", "6789", "Apache CloudStack Simulator",
+                "Simulated Graphics Card Basic");
+
+        // 2. Create GPU with Virtual Functions support
+        MockGpuDeviceVO vfParentDevice = createVfCapableGpu(hostId, "00:05.0", "1234", "789a", "Apache CloudStack Simulator",
+                        "Simulated Graphics Card VF");
+        createVirtualFunctions(hostId, vfParentDevice);
+        vfParentDevice = createVfCapableGpu(hostId, "00:06.0", "1234", "789a", "Apache CloudStack Simulator",
+                "Simulated Graphics Card VF");
+        createVirtualFunctions(hostId, vfParentDevice);
+
+        // 3. Create GPU with MDEV support
+        MockGpuDeviceVO mdevParentDevice = createMdevCapableGpu(hostId, "00:07.0", "1234", "89ab", "Apache CloudStack Simulator",
+                "Simulated Graphics Card MDEV");
+        createMdevDevices(hostId, mdevParentDevice);
+
+        mdevParentDevice = createMdevCapableGpu(hostId, "00:08.0", "1234", "89ab", "Apache CloudStack Simulator",
+                "Simulated Graphics Card MDEV");
+        createMdevDevices(hostId, mdevParentDevice);
+    }
+
+    /**
+     * Creates a basic passthrough-only GPU device
+     */
+    private void createPassthroughGpu(long hostId, String busAddress, String vendorId, String deviceId,
+                                      String vendorName, String deviceName) {
+        MockGpuDeviceVO device = new MockGpuDeviceVO();
+        device.setBusAddress(busAddress);
+        device.setVendorId(vendorId);
+        device.setDeviceId(deviceId);
+        device.setVendorName(vendorName);
+        device.setDeviceName(deviceName);
+        device.setHostId(hostId);
+        device.setState(MockGpuDevice.State.Available);
+        device.setDeviceType(GpuDevice.DeviceType.PCI);
+        device.setProfileName("passthrough");
+        device.setPassthroughEnabled(true);
+        _mockGpuDeviceDao.persist(device);
+    }
+
+    /**
+     * Creates a GPU device capable of Virtual Functions
+     */
+    private MockGpuDeviceVO createVfCapableGpu(long hostId, String busAddress, String vendorId, String deviceId,
+                                    String vendorName, String deviceName) {
+        MockGpuDeviceVO device = new MockGpuDeviceVO();
+        device.setBusAddress(busAddress);
+        device.setVendorId(vendorId);
+        device.setDeviceId(deviceId);
+        device.setVendorName(vendorName);
+        device.setDeviceName(deviceName);
+        device.setHostId(hostId);
+        device.setState(MockGpuDevice.State.Available);
+        device.setDeviceType(GpuDevice.DeviceType.PCI);
+        device.setProfileName("passthrough");
+        device.setPassthroughEnabled(false);
+        MockGpuDeviceVO savedDevice = _mockGpuDeviceDao.persist(device);
+        return savedDevice;
+    }
+
+    /**
+     * Creates Virtual Function devices as children of a VF-capable GPU
+     */
+    private void createVirtualFunctions(long hostId, MockGpuDeviceVO parentDevice) {
+        // Create 2 Virtual Function devices
+        String[] vfProfiles = {"VF-P1", "VF-P2", "VF-P2"};
+        String parentBussAdressPrefix = parentDevice.getBusAddress().substring(0, parentDevice.getBusAddress().length() - 1);
+        String[] vfAddresses = {parentBussAdressPrefix + "1", parentBussAdressPrefix + "2", parentBussAdressPrefix + "3"};
+
+        for (int i = 0; i < vfAddresses.length; i++) {
+            MockGpuDeviceVO vfDevice = new MockGpuDeviceVO();
+            vfDevice.setBusAddress(vfAddresses[i]);
+            vfDevice.setVendorId("1234");
+            vfDevice.setDeviceId("789a"); // Different device ID for VF
+            vfDevice.setVendorName("Apache CloudStack Simulator");
+            vfDevice.setDeviceName("Simulated Graphics Card VF");
+            vfDevice.setHostId(hostId);
+            vfDevice.setState(MockGpuDevice.State.Available);
+            vfDevice.setDeviceType(GpuDevice.DeviceType.PCI);
+            vfDevice.setParentDeviceId(parentDevice.getId());
+            vfDevice.setProfileName(vfProfiles[i]);
+            vfDevice.setPassthroughEnabled(true);
+            _mockGpuDeviceDao.persist(vfDevice);
+        }
+    }
+
+    /**
+     * Creates a GPU device capable of MDEV (Mediated Devices)
+     */
+    private MockGpuDeviceVO createMdevCapableGpu(long hostId, String busAddress, String vendorId, String deviceId,
+                                      String vendorName, String deviceName) {
+        MockGpuDeviceVO device = new MockGpuDeviceVO();
+        device.setBusAddress(busAddress);
+        device.setVendorId(vendorId);
+        device.setDeviceId(deviceId);
+        device.setVendorName(vendorName);
+        device.setDeviceName(deviceName);
+        device.setHostId(hostId);
+        device.setState(MockGpuDevice.State.Available);
+        device.setDeviceType(GpuDevice.DeviceType.PCI);
+        device.setProfileName("passthrough");
+        device.setPassthroughEnabled(false); // MDEV parent doesn't use passthrough
+        MockGpuDeviceVO savedDevice = _mockGpuDeviceDao.persist(device);
+        return savedDevice;
+    }
+
+    /**
+     * Creates MDEV devices with different profiles
+     */
+    private void createMdevDevices(long hostId, MockGpuDeviceVO parentDevice) {
+        // Create MDEV devices with different profiles (similar to NVIDIA/Intel naming)
+        String[] mdevProfiles = { "sim-8q", "sim-4q", "sim-2q", "sim-1q", "sim-1q" };
+        String[] mdevUuids = {UUID.randomUUID().toString(), UUID.randomUUID().toString(), UUID.randomUUID().toString(),
+                              UUID.randomUUID().toString(), UUID.randomUUID().toString()};
+
+        for (int i = 0; i < mdevProfiles.length; i++) {
+            MockGpuDeviceVO mdevDevice = new MockGpuDeviceVO();
+            mdevDevice.setBusAddress(mdevUuids[i]); // MDEV uses UUID as bus address
+            mdevDevice.setVendorId("1234");
+            mdevDevice.setDeviceId("89ab"); // Different device ID for MDEV
+            mdevDevice.setVendorName("Apache CloudStack Simulator");
+            mdevDevice.setDeviceName("Simulated Graphics Card MDEV");
+            mdevDevice.setHostId(hostId);
+            mdevDevice.setState(MockGpuDevice.State.Available);
+            mdevDevice.setDeviceType(GpuDevice.DeviceType.MDEV);
+            mdevDevice.setParentDeviceId(parentDevice.getId());
+            mdevDevice.setProfileName(mdevProfiles[i]);
+            mdevDevice.setPassthroughEnabled(true); // MDEV devices don't use passthrough
+            _mockGpuDeviceDao.persist(mdevDevice);
+        }
     }
 
     @Override
@@ -371,7 +537,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
                     storageResource.configure("secondaryStorage", params);
                     storageResource.start();
                     _resources.put(this.guid, storageResource);
-                    discoverer.setResource(storageResource);
+                    ssDiscoverer.setResource(storageResource);
                     SimulatorAddSecondaryAgent cmd = new SimulatorAddSecondaryAgent("sim://" + this.guid, this.dcId);
                     try {
                         _resourceMgr.discoverHosts(cmd);
@@ -470,6 +636,63 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
     }
 
     @Override
+    public Answer getGpuStats(GetGPUStatsCommand cmd, long hostId) {
+        return new GetGPUStatsAnswer(cmd, getGPUDevices(hostId));
+    }
+
+    @Override
+    public List<VgpuTypesInfo> getGPUDevices(long hostId) {
+        List<VgpuTypesInfo> gpuDevices = new ArrayList<>();
+        List<MockGpuDeviceVO> mockGpuDevices;
+        // List all mock GPU devices from database
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
+        try {
+            txn.start();
+            mockGpuDevices = _mockGpuDeviceDao.listByHostId(hostId);
+
+            if (mockGpuDevices != null && !mockGpuDevices.isEmpty()) {
+                logger.debug("Found {} mock GPU devices in the database", mockGpuDevices.size());
+
+                for (MockGpuDeviceVO mockGpuDevice : mockGpuDevices) {
+                    String busAddress = mockGpuDevice.getBusAddress();
+                    String vendorId = mockGpuDevice.getVendorId();
+                    String deviceId = mockGpuDevice.getDeviceId();
+                    String vendorName = mockGpuDevice.getVendorName();
+                    String deviceName = mockGpuDevice.getDeviceName();
+                    String modelName = mockGpuDevice.getProfileName();
+                    boolean isPassthrough = mockGpuDevice.isPassthroughEnabled();
+
+                    VgpuTypesInfo vgpuTypesInfo = new VgpuTypesInfo(mockGpuDevice.getDeviceType(), modelName, modelName, busAddress,
+                            vendorId, vendorName, deviceId, deviceName);
+                    vgpuTypesInfo.setPassthroughEnabled(isPassthrough);
+
+                    if (mockGpuDevice.getVmId() != null) {
+                        MockVMVO mockVm = _mockVmDao.findById(mockGpuDevice.getVmId());
+                        vgpuTypesInfo.setVmName(mockVm.getName());
+                    }
+
+                    if (mockGpuDevice.getParentDeviceId() != null) {
+                        MockGpuDeviceVO parentDevice = _mockGpuDeviceDao.findById(mockGpuDevice.getParentDeviceId());
+                        if (parentDevice != null) {
+                            vgpuTypesInfo.setParentBusAddress(parentDevice.getBusAddress());
+                        }
+                    }
+                    gpuDevices.add(vgpuTypesInfo);
+                }
+            }
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("Unable to get GPU devices on hostId " + hostId + " due to " + ex.getMessage(), ex);
+        } finally {
+            txn.close();
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            txn.close();
+        }
+        return gpuDevices;
+    }
+
+    @Override
     public Answer pingTest(PingTestCommand cmd) {
         return new Answer(cmd);
     }
@@ -497,12 +720,14 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
     public boolean start() {
         for (Discoverer discoverer : discoverers) {
             if (discoverer instanceof SimulatorSecondaryDiscoverer) {
-                this.discoverer = (SimulatorSecondaryDiscoverer)discoverer;
-                break;
+                this.ssDiscoverer = (SimulatorSecondaryDiscoverer)discoverer;
+            }
+            if (discoverer instanceof SimulatorDiscoverer) {
+                this.discoverer = (SimulatorDiscoverer)discoverer;
             }
         }
 
-        if (this.discoverer == null) {
+        if (this.ssDiscoverer == null) {
             throw new IllegalStateException("Failed to find SimulatorSecondaryDiscoverer");
         }
 

@@ -74,6 +74,7 @@ import org.apache.cloudstack.command.CommandInfo;
 import org.apache.cloudstack.command.ReconcileCommandService;
 import org.apache.cloudstack.command.ReconcileCommandUtils;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.gpu.GpuDevice;
 import org.apache.cloudstack.storage.command.browser.ListDataStoreObjectsCommand;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -103,9 +104,9 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.ThreadContext;
+import org.apache.logging.log4j.Logger;
 import org.apache.xerces.impl.xpath.regex.Match;
 import org.joda.time.Duration;
 import org.libvirt.Connect;
@@ -130,7 +131,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.HostVmStateReportEntry;
@@ -143,6 +143,7 @@ import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.agent.api.VmNetworkStatsEntry;
 import com.cloud.agent.api.VmStatsEntry;
@@ -213,8 +214,8 @@ import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.AgentStatusUpdater;
-import com.cloud.resource.ResourceStatusUpdater;
 import com.cloud.resource.RequestWrapper;
+import com.cloud.resource.ResourceStatusUpdater;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.JavaStorageLayer;
@@ -241,6 +242,10 @@ import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VmDetailConstants;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -379,6 +384,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private String modifyVlanPath;
     private String versionStringPath;
+    private String gpuDiscoveryPath;
     private String patchScriptPath;
     private String createVmPath;
     private String manageSnapshotPath;
@@ -1037,6 +1043,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         versionStringPath = Script.findScript(kvmScriptsDir, "versions.sh");
         if (versionStringPath == null) {
             throw new ConfigurationException("Unable to find versions.sh");
+        }
+
+        gpuDiscoveryPath = Script.findScript(kvmScriptsDir, "gpudiscovery.sh");
+        if (gpuDiscoveryPath == null) {
+            throw new ConfigurationException("Unable to find gpudiscovery.sh");
         }
 
         patchScriptPath = Script.findScript(kvmScriptsDir, "patch.sh");
@@ -1953,6 +1964,102 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return false;
         }
         return true;
+    }
+
+    public List<VgpuTypesInfo> getGpuDevices() {
+        LOGGER.debug("Executing GPU discovery script at: {}", gpuDiscoveryPath);
+        final Script command = new Script(gpuDiscoveryPath, Duration.standardSeconds(30), LOGGER);
+
+        OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
+        String result = command.execute(parser);
+        if (result == null) {
+            LOGGER.debug("GPU discovery command executed successfully");
+            result = parser.getLines();
+        }
+
+        if (result == null || result.trim().isEmpty()) {
+            LOGGER.error("GPU discovery failed: command returned null or empty result. Script path: {}, Exit code: {}",
+                    gpuDiscoveryPath, command.getExitValue());
+            return Collections.emptyList();
+        }
+
+        LOGGER.debug("GPU discovery result: {}", result);
+
+        // TODO: Add running VMs to the list of GPU devices
+        // This will be used to update the GPU device list when agent on a host is unavailable or the VM is imported.
+        List<VgpuTypesInfo> gpuDevices = new ArrayList<>();
+        try {
+            JsonParser jsonParser = new JsonParser();
+            JsonArray jsonArray = jsonParser.parse(result).getAsJsonObject().get("gpus").getAsJsonArray();
+
+            for (JsonElement jsonElement : jsonArray) {
+                JsonObject jsonObject = jsonElement.getAsJsonObject();
+                String busAddress = jsonObject.get("pci_address").getAsString();
+                String vendorId = jsonObject.get("vendor_id").getAsString();
+                String vendorName = jsonObject.get("vendor").getAsString();
+                String deviceId = jsonObject.get("device_id").getAsString();
+                String deviceName = jsonObject.get("device").getAsString();
+
+                // vgpu instances uses mdev uuid
+                // vf instances uses vf_pci_address
+
+                JsonArray vgpuInstances = jsonObject.get("vgpu_instances").getAsJsonArray();
+                JsonArray vfInstances = jsonObject.get("vf_instances").getAsJsonArray();
+
+                JsonObject fullPassthrough = jsonObject.get("full_passthrough").getAsJsonObject();
+                boolean fullPassthroughEnabled = fullPassthrough.get("enabled").getAsInt() == 1;
+
+                VgpuTypesInfo vgpuType = new VgpuTypesInfo(GpuDevice.DeviceType.PCI, "passthrough", "passthrough", busAddress, vendorId,
+                                vendorName, deviceId, deviceName);
+                if (fullPassthroughEnabled) {
+                    vgpuType.setPassthroughEnabled(true);
+                } else {
+                    vgpuType.setPassthroughEnabled(false);
+                }
+                vgpuType.setVmName(getJsonStringValueOrNull(fullPassthrough, "used_by_vm"));
+
+                gpuDevices.add(vgpuType);
+
+                for (JsonElement vgpuInstance : vgpuInstances) {
+                    String mdevUuid = vgpuInstance.getAsJsonObject().get("mdev_uuid").getAsString();
+                    String profileName = vgpuInstance.getAsJsonObject().get("profile_name").getAsString();
+                    Long availableInstances = vgpuInstance.getAsJsonObject().get("available_instances").getAsLong();
+                    VgpuTypesInfo device = new VgpuTypesInfo(GpuDevice.DeviceType.MDEV, profileName, profileName, mdevUuid, vendorId, vendorName, deviceId, deviceName);
+                    device.setParentBusAddress(busAddress);
+                    device.setRemainingCapacity(availableInstances);
+                    device.setVmName(getJsonStringValueOrNull(vgpuInstance.getAsJsonObject(), "used_by_vm"));
+                    gpuDevices.add(device);
+                }
+
+                for (JsonElement vfInstance : vfInstances) {
+                    String vfPciAddress = vfInstance.getAsJsonObject().get("vf_pci_address").getAsString();
+                    String vfProfile = vfInstance.getAsJsonObject().get("vf_profile").getAsString();
+                    VgpuTypesInfo device = new VgpuTypesInfo(GpuDevice.DeviceType.PCI, vfProfile, vfProfile, vfPciAddress, vendorId, vendorName, deviceId, deviceName);
+                    device.setParentBusAddress(busAddress);
+                    device.setVmName(getJsonStringValueOrNull(vfInstance.getAsJsonObject(), "used_by_vm"));
+                    gpuDevices.add(device);
+                }
+            }
+
+        } catch (Exception e) {
+            LOGGER.error("Failed to parse GPU discovery result: {}", e.getMessage(), e);
+        }
+        return gpuDevices;
+    }
+
+    /**
+     * Safely extracts a string value from a JSON object, returning null if the field is missing or null.
+     *
+     * @param jsonObject the JSON object to extract from
+     * @param fieldName the name of the field to extract
+     * @return the string value of the field, or null if the field is missing or null
+     */
+    private String getJsonStringValueOrNull(JsonObject jsonObject, String fieldName) {
+        JsonElement element = jsonObject.get(fieldName);
+        if (element == null || element.isJsonNull()) {
+            return null;
+        }
+        return element.getAsString();
     }
 
     boolean isDirectAttachedNetwork(final String type) {
@@ -3946,6 +4053,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (cmd.getHostDetails().containsKey("Host.OS")) {
             hostDistro = cmd.getHostDetails().get("Host.OS");
         }
+
+        cmd.setGpuDevices(getGpuDevices());
 
         List<StartupCommand> startupCommands = new ArrayList<>();
         startupCommands.add(cmd);
@@ -6215,4 +6324,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return guestCpuArch;
     }
 
+    public void attachGpuDevices(final VirtualMachineTO vmSpec, final LibvirtVMDef vm) throws InternalErrorException, LibvirtException {
+        // GPU device is not set for the VM
+        if (vmSpec.getGpuDevice() == null || CollectionUtils.isEmpty(vmSpec.getGpuDevice().getGpuDevices())) {
+            return;
+        }
+        List<VgpuTypesInfo> gpuDevices = vmSpec.getGpuDevice().getGpuDevices();
+        for (VgpuTypesInfo gpuDevice : gpuDevices) {
+            LibvirtGpuDef gpu = new LibvirtGpuDef();
+
+            // TODO: Handle GPU devices
+            gpu.defGpu(gpuDevice);
+
+            vm.getDevices().addDevice(gpu);
+            LOGGER.info("Attached GPU device " + gpuDevice.getDeviceName() + " to VM " + vmSpec.getName());
+        }
+    }
 }

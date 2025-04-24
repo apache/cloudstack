@@ -19,7 +19,9 @@
 
 package com.cloud.agent.api;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 
@@ -27,6 +29,7 @@ import com.cloud.agent.api.LogLevel.Log4jLevel;
 public class GetGPUStatsAnswer extends Answer {
 
     private HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails;
+    private List<VgpuTypesInfo> gpuDevices = new ArrayList<>();
 
     public GetGPUStatsAnswer(final GetGPUStatsCommand cmd, final HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails) {
         super(cmd);
@@ -37,7 +40,21 @@ public class GetGPUStatsAnswer extends Answer {
         super(cmd, success, details);
     }
 
+    public GetGPUStatsAnswer(final GetGPUStatsCommand cmd, final List<VgpuTypesInfo> gpuDevices) {
+        super(cmd);
+        this.gpuDevices = gpuDevices;
+    }
+
+
     public HashMap<String, HashMap<String, VgpuTypesInfo>> getGroupDetails() {
         return groupDetails;
+    }
+
+    public List<VgpuTypesInfo> getGpuDevices() {
+        return gpuDevices;
+    }
+
+    public void setGpuDevices(List<VgpuTypesInfo> gpuDevices) {
+        this.gpuDevices = gpuDevices;
     }
 }

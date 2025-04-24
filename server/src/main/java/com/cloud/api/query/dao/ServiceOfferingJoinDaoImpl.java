@@ -137,6 +137,9 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setDomainId(offering.getDomainUuid());
         offeringResponse.setZone(offering.getZoneName());
         offeringResponse.setZoneId(offering.getZoneUuid());
+        offeringResponse.setGpuOfferingId(offering.getGpuOfferingUuid());
+        offeringResponse.setGpuOfferingName(offering.getGpuOfferingName());
+        offeringResponse.setGpuCount(offering.getGpuCount());
         offeringResponse.setNetworkRate(offering.getRateMbps());
         offeringResponse.setHostTag(offering.getHostTag());
         offeringResponse.setDeploymentPlanner(offering.getDeploymentPlanner());

@@ -2161,6 +2161,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             float capacityUsed = 0;
             long capacityMax = 0;
             for (VgpuTypesInfo capacity : gpuCapacities) {
+                // TODO: Fix calculation here and also take into account the gpu count for the VM.
                 if (vgpuVMs.containsKey(capacity.getGroupName().concat(capacity.getModelName()))) {
                     capacityUsed += (float)vgpuVMs.get(capacity.getGroupName().concat(capacity.getModelName())) / capacity.getMaxVpuPerGpu();
                 }

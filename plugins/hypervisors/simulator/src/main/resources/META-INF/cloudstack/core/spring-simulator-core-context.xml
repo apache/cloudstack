@@ -29,6 +29,7 @@
 
     <bean id="mockConfigurationDaoImpl" class="com.cloud.simulator.dao.MockConfigurationDaoImpl" />
     <bean id="mockHostDaoImpl" class="com.cloud.simulator.dao.MockHostDaoImpl" />
+    <bean id="mockGpuDeviceDaoImpl" class="com.cloud.simulator.dao.MockGpuDeviceDaoImpl" />
     <bean id="mockSecStorageDaoImpl" class="com.cloud.simulator.dao.MockSecStorageDaoImpl" />
     <bean id="mockSecurityRulesDaoImpl" class="com.cloud.simulator.dao.MockSecurityRulesDaoImpl" />
     <bean id="mockStoragePoolDaoImpl" class="com.cloud.simulator.dao.MockStoragePoolDaoImpl" />

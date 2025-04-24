@@ -51,6 +51,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.acl.RoleType;
+import com.cloud.gpu.GpuOfferingVO;
+import com.cloud.gpu.dao.GpuOfferingDao;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -354,6 +356,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     DiskOfferingDao _diskOfferingDao;
     @Inject
     DiskOfferingDetailsDao diskOfferingDetailsDao;
+    @Inject
+    GpuOfferingDao gpuOfferingDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao;
     @Inject
@@ -3424,6 +3428,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Integer leaseDuration = cmd.getLeaseDuration();
         VMLeaseManager.ExpiryAction leaseExpiryAction = validateAndGetLeaseExpiryAction(leaseDuration, cmd.getLeaseExpiryAction());
 
+        final Long gpuOfferingId = cmd.getGpuOfferingId();
+        if (gpuOfferingId != null) {
+            GpuOfferingVO gpuOffering = gpuOfferingDao.findById(gpuOfferingId);
+            if (gpuOffering == null) {
+                throw new InvalidParameterValueException("Please specify a valid GPU offering.");
+            }
+        }
+
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainIds(), cmd.getZoneIds(), cmd.getHostTag(),
                 cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, cmd.getRootDiskSize(), isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
@@ -3432,7 +3444,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
                 cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled(), diskOfferingId,
-                cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), cmd.isPurgeResources(), leaseDuration, leaseExpiryAction);
+                cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), gpuOfferingId, cmd.getGpuCount(), cmd.isPurgeResources(), leaseDuration, leaseExpiryAction);
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
@@ -3445,7 +3457,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                       Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
                                                       final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID,
                                                       final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness,
-                                                      final boolean isCustomized, final boolean encryptRoot, final boolean purgeResources, Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction) {
+                                                      final boolean isCustomized, final boolean encryptRoot, Long gpuOfferingId, final Integer gpuCount, final boolean purgeResources, Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction) {
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
@@ -3527,6 +3539,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         serviceOffering.setDiskOfferingStrictness(diskOfferingStrictness);
+        if (gpuOfferingId != null) {
+            serviceOffering.setGpuOfferingId(gpuOfferingId);
+            if (gpuCount == null || gpuCount < 1) {
+                serviceOffering.setGpuCount(1);
+            } else {
+                serviceOffering.setGpuCount(gpuCount);
+            }
+        } else {
+            serviceOffering.setGpuCount(null);
+            serviceOffering.setGpuOfferingId(null);
+        }
 
         DiskOfferingVO diskOffering = null;
         if (diskOfferingId == null) {

@@ -68,6 +68,7 @@ public class ApiConstants {
     public static final String BOOTABLE = "bootable";
     public static final String BIND_DN = "binddn";
     public static final String BIND_PASSWORD = "bindpass";
+    public static final String BUS_ADDRESS = "busaddress";
     public static final String BYTES_READ_RATE = "bytesreadrate";
     public static final String BYTES_READ_RATE_MAX = "bytesreadratemax";
     public static final String BYTES_READ_RATE_MAX_LENGTH = "bytesreadratemaxlength";
@@ -160,6 +161,7 @@ public class ApiConstants {
     public static final String DESTINATION_ZONE_ID = "destzoneid";
     public static final String DETAILS = "details";
     public static final String DEVICE_ID = "deviceid";
+    public static final String DEVICE_NAME = "devicename";
     public static final String DIRECT_DOWNLOAD = "directdownload";
     public static final String DISK = "disk";
     public static final String DISK_OFFERING_ID = "diskofferingid";
@@ -388,6 +390,11 @@ public class ApiConstants {
     public static final String OS_TYPE_ID = "ostypeid";
     public static final String OS_DISPLAY_NAME = "osdisplayname";
     public static final String OS_NAME_FOR_HYPERVISOR = "osnameforhypervisor";
+    public static final String GPU_CARD_ID = "gpucardid";
+    public static final String GPU_CARD_NAME = "gpucardname";
+    public static final String GPU_COUNT = "gpucount";
+    public static final String GPU_OFFERING_ID = "gpuofferingid";
+    public static final String GPU_OFFERING_NAME = "gpuofferingname";
     public static final String GUEST_OS_LIST = "guestoslist";
     public static final String GUEST_OS_COUNT = "guestoscount";
     public static final String OS_MAPPING_CHECK_ENABLED = "osmappingcheckenabled";
@@ -564,6 +571,11 @@ public class ApiConstants {
     public static final String USE_VIRTUAL_ROUTER_IP_RESOLVER = "userouteripresolver";
     public static final String UPDATE_IN_SEQUENCE = "updateinsequence";
     public static final String VALUE = "value";
+    public static final String VENDOR_ID = "vendorid";
+    public static final String VENDOR_NAME = "vendorname";
+    public static final String VGPU_PROFILE_ID = "vgpuprofileid";
+    public static final String VGPU_PROFILE_NAME = "vgpuprofilename";
+    public static final String VGPU_PROFILE_IDS = "vgpuprofileids";
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";
     public static final String VIRTUAL_MACHINE_NAME = "virtualmachinename";
@@ -572,6 +584,7 @@ public class ApiConstants {
     public static final String VIRTUAL_MACHINE_TYPE = "virtualmachinetype";
     public static final String VIRTUAL_MACHINE_STATE = "vmstate";
     public static final String VIRTUAL_MACHINES = "virtualmachines";
+    public static final String VRAM_SIZE = "vramsize";
     public static final String USAGE_ID = "usageid";
     public static final String USAGE_TYPE = "usagetype";
     public static final String INCLUDE_TAGS = "includetags";
@@ -1322,7 +1335,7 @@ public class ApiConstants {
     }
 
     public enum VMDetails {
-        all, group, nics, stats, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp, vnfnics;
+        all, group, nics, stats, secgrp, tmpl, servoff, diskoff, gpuoff, backoff, iso, volume, min, affgrp, vnfnics;
     }
 
     public enum DomainDetails {

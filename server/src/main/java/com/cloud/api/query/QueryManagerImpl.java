@@ -4010,6 +4010,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String storageType = cmd.getStorageType();
         ServiceOffering.State state = cmd.getState();
         final Long templateId = cmd.getTemplateId();
+        final Long gpuOfferingId = cmd.getGpuOfferingId();
 
         final Account owner = accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
 
@@ -4047,6 +4048,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (state != null) {
             serviceOfferingSearch.and("state", serviceOfferingSearch.entity().getState(), Op.EQ);
+        }
+
+        if (gpuOfferingId != null) {
+            serviceOfferingSearch.and("gpuOfferingId", serviceOfferingSearch.entity().getGpuOfferingId(), Op.EQ);
         }
 
         if (vmId != null) {
@@ -4333,6 +4338,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         SearchCriteria<ServiceOfferingVO> sc = serviceOfferingSearch.create();
         if (state != null) {
             sc.setParameters("state", state);
+        }
+
+        if (gpuOfferingId != null) {
+            sc.setParameters("gpuOfferingId", gpuOfferingId);
         }
 
         if (vmId != null) {
