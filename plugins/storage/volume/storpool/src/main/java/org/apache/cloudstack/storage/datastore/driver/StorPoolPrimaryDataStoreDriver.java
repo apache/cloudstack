@@ -429,7 +429,6 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     private void updateVolumeWithTheNewSize(VolumeObject vol, ResizeVolumePayload payload) {
-
         vol.setSize(payload.newSize);
         vol.update();
         if (payload.newMaxIops != null) {
@@ -479,7 +478,6 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     private static SpApiResponse updateVolumeByStorPoolQoS(ResizeVolumePayload payload, SpConnectionDesc conn, String name, String tier, String template) {
-
         SpApiResponse resp;
         Map<String, String> tags = StorPoolHelper.addStorPoolTags(null, null, null, null, tier);
         StorPoolVolumeDef spVolume = new StorPoolVolumeDef(name, payload.newSize, tags, null, null, template, null, null,
@@ -489,7 +487,6 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     private static SpApiResponse updateVolumeByOffering(VolumeObject vol, ResizeVolumePayload payload, SpConnectionDesc conn, String name) {
-
         SpApiResponse resp;
         long maxIops = payload.newMaxIops == null ? Long.valueOf(0) : payload.newMaxIops;
 
