@@ -58,14 +58,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, Configurable {
-    public static final String INSTANCE_LEASE_ENABLED = "instance.lease.enabled";
-
-    public static ConfigKey<Boolean> InstanceLeaseEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
-            INSTANCE_LEASE_ENABLED, "false", "Indicates whether to enable the Instance lease," +
-            " will be applicable only on instances created after lease is enabled. Disabling the feature cancels lease on existing instances with lease." +
-            "Re-enabling feature will not cause lease expiry actions on grandfathered instances",
-            true, List.of(ConfigKey.Scope.Global));
-
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 5;   // 5 seconds
 
     @Inject
@@ -133,7 +125,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
 
     @Override
     public void onLeaseFeatureToggle() {
-        boolean isLeaseFeatureEnabled = VMLeaseManagerImpl.InstanceLeaseEnabled.value();
+        boolean isLeaseFeatureEnabled = VMLeaseManager.InstanceLeaseEnabled.value();
         if (isLeaseFeatureEnabled) {
             scheduleLeaseExecutors();
         } else {

@@ -138,7 +138,6 @@ import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
-import org.apache.cloudstack.vm.lease.VMLeaseManagerImpl;
 import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.commons.collections.CollectionUtils;
@@ -2925,7 +2924,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        if (VMLeaseManagerImpl.InstanceLeaseEnabled.value()) {
+        if (VMLeaseManager.InstanceLeaseEnabled.value()) {
             applyLeaseOnUpdateInstance(vmInstance, cmd.getLeaseDuration(), cmd.getLeaseExpiryAction());
         }
 
@@ -6181,7 +6180,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        boolean isLeaseFeatureEnabled = VMLeaseManagerImpl.InstanceLeaseEnabled.value();
+        boolean isLeaseFeatureEnabled = VMLeaseManager.InstanceLeaseEnabled.value();
         if (isLeaseFeatureEnabled) {
             validateLeaseProperties(cmd.getLeaseDuration(), cmd.getLeaseExpiryAction());
         }

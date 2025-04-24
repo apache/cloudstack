@@ -37,6 +37,12 @@ public interface VMLeaseManager extends Manager {
         CANCELLED
     }
 
+    ConfigKey<Boolean> InstanceLeaseEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
+            "instance.lease.enabled", "false", "Indicates whether to enable the Instance lease," +
+            " will be applicable only on instances created after lease is enabled. Disabling the feature cancels lease on existing instances with lease." +
+            "Re-enabling feature will not cause lease expiry actions on grandfathered instances",
+            true, List.of(ConfigKey.Scope.Global));
+
     ConfigKey<Long> InstanceLeaseSchedulerInterval = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
             "instance.lease.scheduler.interval", "3600", "VM Lease Scheduler interval in seconds",
             false, List.of(ConfigKey.Scope.Global));

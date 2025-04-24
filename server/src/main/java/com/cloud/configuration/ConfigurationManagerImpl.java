@@ -273,7 +273,6 @@ import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
-import org.apache.cloudstack.vm.lease.VMLeaseManagerImpl;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
@@ -628,7 +627,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
                     params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
                     _agentManager.propagateChangeToAgents(params);
-                } else if (VMLeaseManagerImpl.InstanceLeaseEnabled.key().equals(globalSettingUpdated)) {
+                } else if (VMLeaseManager.InstanceLeaseEnabled.key().equals(globalSettingUpdated)) {
                     vmLeaseManager.onLeaseFeatureToggle();
                 }
             }
@@ -3493,7 +3492,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      * @return leaseExpiryAction
      */
     public static String validateAndGetLeaseExpiryAction(Integer leaseDuration, String cmdExpiryAction) {
-        if (!VMLeaseManagerImpl.InstanceLeaseEnabled.value() || ObjectUtils.allNull(leaseDuration, cmdExpiryAction)) { // both are null
+        if (!VMLeaseManager.InstanceLeaseEnabled.value() || ObjectUtils.allNull(leaseDuration, cmdExpiryAction)) { // both are null
             return null;
         }
 

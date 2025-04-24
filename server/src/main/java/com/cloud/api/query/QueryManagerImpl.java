@@ -163,7 +163,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
-import org.apache.cloudstack.vm.lease.VMLeaseManagerImpl;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.EnumUtils;
@@ -1332,7 +1331,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             }
         }
 
-        if (!VMLeaseManagerImpl.InstanceLeaseEnabled.value() && cmd.getOnlyLeasedInstances()) {
+        if (!VMLeaseManager.InstanceLeaseEnabled.value() && cmd.getOnlyLeasedInstances()) {
             throw new InvalidParameterValueException(" Cannot list leased instances because the Instance Lease feature " +
                     "is disabled, please enable it to list leased instances");
         }

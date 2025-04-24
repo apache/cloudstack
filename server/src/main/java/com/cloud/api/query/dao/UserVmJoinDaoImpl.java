@@ -68,7 +68,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
-import org.apache.cloudstack.vm.lease.VMLeaseManagerImpl;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -478,7 +477,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setUserDataPolicy(userVm.getUserDataPolicy());
         }
 
-        if (VMLeaseManagerImpl.InstanceLeaseEnabled.value() && userVm.getLeaseExpiryDate() != null &&
+        if (VMLeaseManager.InstanceLeaseEnabled.value() && userVm.getLeaseExpiryDate() != null &&
                 VMLeaseManager.LeaseActionExecution.PENDING.name().equals(userVm.getLeaseActionExecution())) {
 
                 userVmResponse.setLeaseExpiryAction(userVm.getLeaseExpiryAction());
