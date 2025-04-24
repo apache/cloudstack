@@ -478,16 +478,13 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     }
 
     private static SpApiResponse updateVolumeByStorPoolQoS(ResizeVolumePayload payload, SpConnectionDesc conn, String name, String tier, String template) {
-        SpApiResponse resp;
         Map<String, String> tags = StorPoolHelper.addStorPoolTags(null, null, null, null, tier);
         StorPoolVolumeDef spVolume = new StorPoolVolumeDef(name, payload.newSize, tags, null, null, template, null, null,
                 payload.shrinkOk);
-        resp = StorPoolUtil.volumeUpdate(spVolume, conn);
-        return resp;
+        return StorPoolUtil.volumeUpdate(spVolume, conn);
     }
 
     private static SpApiResponse updateVolumeByOffering(VolumeObject vol, ResizeVolumePayload payload, SpConnectionDesc conn, String name) {
-        SpApiResponse resp;
         long maxIops = payload.newMaxIops == null ? Long.valueOf(0) : payload.newMaxIops;
 
         StorPoolVolumeDef spVolume = new StorPoolVolumeDef(name, payload.newSize, null, null, maxIops, null, null, null,
@@ -495,9 +492,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         StorPoolUtil.spLog(
                 "StorpoolPrimaryDataStoreDriverImpl.resize: name=%s, uuid=%s, oldSize=%d, newSize=%s, shrinkOk=%s, maxIops=%s",
                 name, vol.getUuid(), vol.getSize(), payload.newSize, payload.shrinkOk, maxIops);
-
-        resp = StorPoolUtil.volumeUpdate(spVolume, conn);
-        return resp;
+        return StorPoolUtil.volumeUpdate(spVolume, conn);
     }
 
     @Override
