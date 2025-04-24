@@ -19,7 +19,7 @@ import _ from 'lodash'
 import { i18n } from '@/locales'
 import { api } from '@/api'
 import { h } from 'vue'
-import { message, notification, Button } from 'ant-design-vue'
+import { message, notification, Button, Modal } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
 import store from '@/store'
 import { sourceToken } from '@/utils/request'
@@ -571,4 +571,19 @@ export function createPathBasedOnVmType (vmtype, virtualmachineid) {
   }
 
   return path + virtualmachineid
+}
+
+export const dialogUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$resetConfigurationValueConfirm = function (configRecord, callback) {
+      Modal.confirm({
+        title: i18n.global.t('label.reset.config.value'),
+        content: `${i18n.global.t('message.confirm.reset.configuration.value').replace('%x', configRecord.name)}`,
+        okText: i18n.global.t('label.yes'),
+        cancelText: i18n.global.t('label.no'),
+        okType: 'primary',
+        onOk: () => callback(configRecord)
+      })
+    }
+  }
 }
