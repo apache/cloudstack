@@ -100,7 +100,6 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.HostVmStateReportEntry;
@@ -180,8 +179,8 @@ import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.Networks.RouterPrivateIpStrategy;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.resource.AgentStatusUpdater;
-import com.cloud.resource.ResourceStatusUpdater;
 import com.cloud.resource.RequestWrapper;
+import com.cloud.resource.ResourceStatusUpdater;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.JavaStorageLayer;
@@ -2995,6 +2994,42 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return useBLOCKDiskType(physicalDisk) ? DiskDef.DiskType.BLOCK : DiskDef.DiskType.FILE;
     }
 
+    /**
+     * Defines the disk configuration for the default pool type based on the provided parameters.
+     * It determines the appropriate disk settings depending on whether the disk is a data disk, whether
+     * it's a Windows template, whether UEFI is enabled, and whether secure boot is active.
+     *
+     * @param disk The disk definition object that will be configured with the disk settings.
+     * @param volume The volume (disk) object, containing information about the type of disk.
+     * @param isWindowsTemplate Flag indicating whether the template is a Windows template.
+     * @param isUefiEnabled Flag indicating whether UEFI is enabled.
+     * @param isSecureBoot Flag indicating whether secure boot is enabled.
+     * @param physicalDisk The physical disk object that contains the path to the disk.
+     * @param devId The device ID for the disk.
+     * @param diskBusType The disk bus type to use if not skipping force disk controller.
+     * @param diskBusTypeData The disk bus type to use for data disks, if applicable.
+     * @param details A map of VM details containing additional configuration values, such as whether to skip force
+     *                disk controller.
+     */
+    protected void defineDiskForDefaultPoolType(DiskDef disk, DiskTO volume, boolean isWindowsTemplate,
+                    boolean isUefiEnabled, boolean isSecureBoot, KVMPhysicalDisk physicalDisk, int devId,
+                    DiskDef.DiskBus diskBusType, DiskDef.DiskBus diskBusTypeData, Map<String, String> details) {
+        boolean skipForceDiskController = BooleanUtils.toBoolean(details.get(
+                VmDetailConstants.KVM_WIN_SKIP_FORCE_DISK_CONTROLLER));
+        boolean isDataDiskWithoutForceController = volume.getType() == Volume.Type.DATADISK &&
+                (!(isWindowsTemplate && isUefiEnabled) || skipForceDiskController);
+
+        if (isDataDiskWithoutForceController) {
+            disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData, DiskDef.DiskFmtType.QCOW2);
+        } else {
+            if (isSecureBoot) {
+                disk.defFileBasedDisk(physicalDisk.getPath(), devId, DiskDef.DiskFmtType.QCOW2, isWindowsTemplate);
+            } else {
+                disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusType, DiskDef.DiskFmtType.QCOW2);
+            }
+        }
+    }
+
     public void createVbd(final Connect conn, final VirtualMachineTO vmSpec, final String vmName, final LibvirtVMDef vm) throws InternalErrorException, LibvirtException, URISyntaxException {
         final Map<String, String> details = vmSpec.getDetails();
         final List<DiskTO> disks = Arrays.asList(vmSpec.getDisks());
@@ -3146,14 +3181,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                         disk.setDiscard(DiscardType.UNMAP);
                     }
                 } else {
-                    if (volume.getType() == Volume.Type.DATADISK && !(isWindowsTemplate && isUefiEnabled)) {
-                        disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusTypeData, DiskDef.DiskFmtType.QCOW2);
-                    } else {
-                        disk.defFileBasedDisk(physicalDisk.getPath(), devId, diskBusType, DiskDef.DiskFmtType.QCOW2);
-                    }
-
+                    defineDiskForDefaultPoolType(disk, volume, isWindowsTemplate, isUefiEnabled, isSecureBoot,
+                            physicalDisk,devId, diskBusType, diskBusTypeData, details);
                 }
-
             }
 
             if (data instanceof VolumeObjectTO) {

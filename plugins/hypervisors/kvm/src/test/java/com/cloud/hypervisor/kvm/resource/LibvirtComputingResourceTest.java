@@ -56,9 +56,6 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import com.cloud.utils.net.NetUtils;
-
-import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -217,13 +214,15 @@ import com.cloud.storage.template.TemplateLocation;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter.OneLineParser;
+import com.cloud.utils.script.Script;
 import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VmDetailConstants;
 
 @RunWith(MockitoJUnitRunner.class)
 public class LibvirtComputingResourceTest {
@@ -240,6 +239,19 @@ public class LibvirtComputingResourceTest {
     Connect connMock;
     @Mock
     LibvirtDomainXMLParser parserMock;
+    @Mock
+    private DiskDef diskDef;
+    @Mock
+    private DiskTO volume;
+    @Mock
+    private KVMPhysicalDisk physicalDisk;
+    @Mock
+    private Map<String, String> details;
+
+    private static final String PHYSICAL_DISK_PATH = "/path/to/disk";
+    private static final int DEV_ID = 1;
+    private static final DiskDef.DiskBus DISK_BUS_TYPE = DiskDef.DiskBus.VIRTIO;
+    private static final DiskDef.DiskBus DISK_BUS_TYPE_DATA = DiskDef.DiskBus.SCSI;
 
     @Spy
     private LibvirtComputingResource libvirtComputingResourceSpy = Mockito.spy(new LibvirtComputingResource());
@@ -6407,5 +6419,69 @@ public class LibvirtComputingResourceTest {
             assertEquals(DiskDef.DiskBus.VIRTIO, rootDisk.getBusType());
             assertEquals(DiskDef.DiscardType.UNMAP, rootDisk.getDiscard());
         }
+    }
+
+    @Test
+    public void testDefineDiskForDefaultPoolType_DataDiskNonWinSkipForceController() {
+        when(volume.getType()).thenReturn(Volume.Type.DATADISK);
+        when(details.get(VmDetailConstants.KVM_WIN_SKIP_FORCE_DISK_CONTROLLER)).thenReturn("true");
+        when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+        boolean isWindowsTemplate = false;
+        boolean isUefiEnabled = false;
+        boolean isSecureBoot = false;
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, isWindowsTemplate, isUefiEnabled, isSecureBoot,
+                physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+        verify(diskDef, times(1)).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE_DATA, DiskDef.DiskFmtType.QCOW2);
+    }
+
+    @Test
+    public void testDefineDiskForDefaultPoolType_DataDiskWinSecuredSkipForceController() {
+        when(volume.getType()).thenReturn(Volume.Type.DATADISK);
+        when(details.get(VmDetailConstants.KVM_WIN_SKIP_FORCE_DISK_CONTROLLER)).thenReturn("true");
+        when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+        boolean isWindowsTemplate = true;
+        boolean isUefiEnabled = true;
+        boolean isSecureBoot = true;
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, isWindowsTemplate, isUefiEnabled, isSecureBoot,
+                physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+        verify(diskDef, times(1)).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE_DATA, DiskDef.DiskFmtType.QCOW2);
+    }
+
+    @Test
+    public void testDefineDiskForDefaultPoolType_WinSecureBootEnabledForced() {
+        when(volume.getType()).thenReturn(Volume.Type.DATADISK);
+        when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+        boolean isWindowsTemplate = true;
+        boolean isUefiEnabled = true;
+        boolean isSecureBoot = true;
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, isWindowsTemplate, isUefiEnabled, isSecureBoot,
+                physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+        verify(diskDef, times(1)).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DiskDef.DiskFmtType.QCOW2, isWindowsTemplate);
+    }
+
+    @Test
+    public void testDefineDiskForDefaultPoolType_SecureBootDisabledForced() {
+        when(volume.getType()).thenReturn(Volume.Type.DATADISK);
+        when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+        boolean isWindowsTemplate = true;
+        boolean isUefiEnabled = false;
+        boolean isSecureBoot = false;
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, isWindowsTemplate, isUefiEnabled, isSecureBoot,
+                physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+        verify(diskDef, times(1)).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE_DATA, DiskDef.DiskFmtType.QCOW2);
+    }
+
+    @Test
+    public void testDefineDiskForDefaultPoolType_NotDataDisk() {
+        when(volume.getType()).thenReturn(Volume.Type.ROOT);
+        when(details.get(VmDetailConstants.KVM_WIN_SKIP_FORCE_DISK_CONTROLLER)).thenReturn("false");
+        when(physicalDisk.getPath()).thenReturn(PHYSICAL_DISK_PATH);
+        boolean isWindowsTemplate = false;
+        boolean isUefiEnabled = false;
+        boolean isSecureBoot = false;
+        libvirtComputingResourceSpy.defineDiskForDefaultPoolType(diskDef, volume, isWindowsTemplate, isUefiEnabled, isSecureBoot,
+                physicalDisk, DEV_ID, DISK_BUS_TYPE, DISK_BUS_TYPE_DATA, details);
+        verify(diskDef, never()).defFileBasedDisk(PHYSICAL_DISK_PATH, PHYSICAL_DISK_PATH, DISK_BUS_TYPE_DATA, DiskDef.DiskFmtType.QCOW2);
+        verify(diskDef, times(1)).defFileBasedDisk(PHYSICAL_DISK_PATH, DEV_ID, DISK_BUS_TYPE, DiskDef.DiskFmtType.QCOW2);
     }
 }
