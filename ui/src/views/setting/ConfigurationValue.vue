@@ -184,7 +184,7 @@
           :disabled="valueLoading" />
         <tooltip-button
           :tooltip="$t('label.reset.config.value')"
-          @onClick="resetConfigurationValue(configrecord)"
+          @onClick="$resetConfigurationValueConfirm(configrecord, resetConfigurationValue)"
           v-if="editableValueKey === null"
           icon="reload-outlined"
           :disabled="(!('resetConfiguration' in $store.getters.apis) || configDisabled || valueLoading)" />
