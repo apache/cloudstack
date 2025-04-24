@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.iso;
 
 
+import com.cloud.dc.DataCenter;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -101,7 +102,15 @@ public class ExtractIsoCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "extracting ISO: " + getId() + " from zone: " + getZoneId();
+        String isoId = this._uuidMgr.getUuid(VirtualMachineTemplate.class, getId());
+        String baseDescription = String.format("Extracting ISO: %s", isoId);
+
+        Long zoneId = getZoneId();
+        if (zoneId == null) {
+            return baseDescription;
+        }
+
+        return String.format("%s from zone: %s", baseDescription, this._uuidMgr.getUuid(DataCenter.class, zoneId));
     }
 
     @Override

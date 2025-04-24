@@ -113,6 +113,8 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
     @Mock
     private AccountVO accountVoMock;
+    @Mock
+    private AccountVO _systemAccount;
 
     @Mock
     private ProjectAccountVO projectAccountVO;
@@ -1405,5 +1407,76 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Assert.assertFalse(updatedUser.isUser2faEnabled());
         Assert.assertNull(updatedUser.getUser2faProvider());
         Assert.assertNull(updatedUser.getKeyFor2fa());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAssertUserNotAlreadyInAccount_UserExistsInAccount() {
+        User existingUser = new UserVO();
+        existingUser.setUsername("testuser");
+        existingUser.setAccountId(1L);
+
+        Account newAccount = Mockito.mock(Account.class);
+        Mockito.when(newAccount.getId()).thenReturn(1L);
+
+        AccountVO existingAccount = Mockito.mock(AccountVO.class);
+        Mockito.when(existingAccount.getUuid()).thenReturn("existing-account-uuid");
+        Mockito.when(existingAccount.getAccountName()).thenReturn("existing-account");
+
+        Mockito.when(_accountDao.findById(1L)).thenReturn(existingAccount);
+
+        accountManagerImpl.assertUserNotAlreadyInAccount(existingUser, newAccount);
+    }
+
+    @Test
+    public void testAssertUserNotAlreadyInAccount_UserExistsInDiffAccount() {
+        User existingUser = new UserVO();
+        existingUser.setUsername("testuser");
+        existingUser.setAccountId(2L);
+
+        Account newAccount = Mockito.mock(Account.class);
+        Mockito.when(newAccount.getId()).thenReturn(1L);
+
+        accountManagerImpl.assertUserNotAlreadyInAccount(existingUser, newAccount);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testAssertUserNotAlreadyInDomain_UserExistsInDomain() {
+        User existingUser = new UserVO();
+        existingUser.setUsername("testuser");
+        existingUser.setAccountId(1L);
+
+        Account originalAccount = Mockito.mock(Account.class);
+        Mockito.when(originalAccount.getDomainId()).thenReturn(1L);
+
+        AccountVO existingAccount = Mockito.mock(AccountVO.class);
+        Mockito.when(existingAccount.getDomainId()).thenReturn(1L);
+        Mockito.when(existingAccount.getUuid()).thenReturn("existing-account-uuid");
+        Mockito.when(existingAccount.getAccountName()).thenReturn("existing-account");
+
+        DomainVO existingDomain = Mockito.mock(DomainVO.class);
+        Mockito.when(existingDomain.getUuid()).thenReturn("existing-domain-uuid");
+        Mockito.when(existingDomain.getName()).thenReturn("existing-domain");
+
+        Mockito.when(_accountDao.findById(1L)).thenReturn(existingAccount);
+        Mockito.when(_domainDao.findById(1L)).thenReturn(existingDomain);
+
+        accountManagerImpl.assertUserNotAlreadyInDomain(existingUser, originalAccount);
+    }
+
+    @Test
+    public void testAssertUserNotAlreadyInDomain_UserExistsInDiffDomain() {
+        User existingUser = new UserVO();
+        existingUser.setUsername("testuser");
+        existingUser.setAccountId(1L);
+
+        Account originalAccount = Mockito.mock(Account.class);
+        Mockito.when(originalAccount.getDomainId()).thenReturn(1L);
+
+        AccountVO existingAccount = Mockito.mock(AccountVO.class);
+        Mockito.when(existingAccount.getDomainId()).thenReturn(2L);
+
+        Mockito.when(_accountDao.findById(1L)).thenReturn(existingAccount);
+
+        accountManagerImpl.assertUserNotAlreadyInDomain(existingUser, originalAccount);
     }
 }
