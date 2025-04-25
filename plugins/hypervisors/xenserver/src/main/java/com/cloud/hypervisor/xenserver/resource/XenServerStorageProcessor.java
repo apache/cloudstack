@@ -838,9 +838,17 @@ public class XenServerStorageProcessor implements StorageProcessor {
         String decoded = new String(utf8Bytes, "UTF-8");
         // Print each code unit as a Unicode escape
         StringBuilder unicodeEscaped = new StringBuilder();
-        for (char ch : decoded.toCharArray()) {
-            unicodeEscaped.append(String.format("\\u%04X", (int) ch));
+        for (int i = 0; i < decoded.length(); i++) {
+            char ch = decoded.charAt(i);
+            if (ch <= 127 && Character.isLetterOrDigit(ch)) {
+                // Keep ASCII alphanumerics as-is
+                unicodeEscaped.append(ch);
+            } else {
+                // Escape non-ASCII characters
+                unicodeEscaped.append(String.format("\\u%04X", (int) ch));
+            }
         }
+
         return unicodeEscaped.toString();
     }
 
