@@ -89,6 +89,6 @@ public interface VirtualNetworkApplianceService {
     <T extends VirtualRouter> void collectNetworkStatistics(T router, Nic nic);
 
     enum RouterHealthStatus{
-        SUCCESS, FAILURE, WARNING, UNKNOWN;
+        SUCCESS, FAILED, WARNING, UNKNOWN;
     }
 }
