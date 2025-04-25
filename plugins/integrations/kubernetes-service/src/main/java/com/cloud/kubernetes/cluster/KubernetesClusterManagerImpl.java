@@ -746,9 +746,7 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
         final Long nodeRootDiskSize = cmd.getNodeRootDiskSize();
         final String externalLoadBalancerIpAddress = cmd.getExternalLoadBalancerIpAddress();
 
-        if (name == null || name.isEmpty()) {
-            throw new InvalidParameterValueException("Invalid name for the Kubernetes cluster name: " + name);
-        }
+        validateKubernetesClusterName(name);
 
         if (controlNodeCount < 1) {
             throw new InvalidParameterValueException("Invalid cluster control nodes count: " + controlNodeCount);
@@ -835,6 +833,34 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
 
         if (!KubernetesClusterExperimentalFeaturesEnabled.value() && !StringUtils.isAllEmpty(dockerRegistryUrl, dockerRegistryUserName, dockerRegistryPassword)) {
             throw new CloudRuntimeException(String.format("Private registry for the Kubernetes cluster is an experimental feature. Use %s configuration for enabling experimental features", KubernetesClusterExperimentalFeaturesEnabled.key()));
+        }
+    }
+
+    /**
+     * Checks whether Kubernetes cluster name complies with the Kubernetes naming convention; throws an {@link InvalidParameterValueException} otherwise.
+     * @see <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names/"> Kubernetes documentation </a>
+     *
+     * @param name Kubernetes cluster name to be validated.
+     * @throws InvalidParameterValueException When Kubernetes cluster name does not comply with Kubernetes naming convention.
+     */
+    protected void validateKubernetesClusterName(String name) {
+        String baseErrorString = "Unable to create Kubernetes cluster. Reason: ";
+        if (!name.equals(name.toLowerCase())) {
+            String errorString = String.format("%s cluster name [%s] needs to be entirely in lowercase.", baseErrorString, name);
+            LOGGER.debug(errorString);
+            throw new InvalidParameterValueException(errorString);
+        }
+        if (name.length() > 43) {
+            String reason = "CloudStack appends the VM type and an 11-character hash to the cluster name to generate VM names, which must not exceed 63 characters. Please ensure the cluster name is 43 characters or fewer.";
+            String errorString = String.format("%s cluster name [%s] needs to contain at most 43 characters. %s", baseErrorString, name, reason);
+            LOGGER.debug(errorString);
+            throw new InvalidParameterValueException(errorString);
+        }
+        String pattern = "[a-z]($|[a-z\\d-]*[a-z\\d]$)";
+        if (!name.matches(pattern)) {
+            String errorString = String.format("%s cluster name [%s] needs to start with a letter and end with an alphanumeric character, and can contain only '-' aside from alphanumeric characters.", baseErrorString, name);
+            LOGGER.debug(errorString);
+            throw new InvalidParameterValueException(errorString);
         }
     }
 

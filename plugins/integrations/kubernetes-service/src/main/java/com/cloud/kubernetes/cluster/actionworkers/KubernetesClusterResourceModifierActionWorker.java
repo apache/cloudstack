@@ -773,18 +773,7 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
     }
 
     protected String getKubernetesClusterNodeNamePrefix() {
-        String prefix = kubernetesCluster.getName();
-        if (!NetUtils.verifyDomainNameLabel(prefix, true)) {
-            prefix = prefix.replaceAll("[^a-zA-Z0-9-]", "");
-            if (prefix.length() == 0) {
-                prefix = kubernetesCluster.getUuid();
-            }
-            prefix = "k8s-" + prefix;
-        }
-        if (prefix.length() > 40) {
-            prefix = prefix.substring(0, 40);
-        }
-        return prefix;
+        return kubernetesCluster.getName();
     }
 
     protected KubernetesClusterVO updateKubernetesClusterEntry(final Long cores, final Long memory, final Long size,

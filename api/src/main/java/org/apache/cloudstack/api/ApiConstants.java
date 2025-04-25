@@ -1107,6 +1107,10 @@ public class ApiConstants {
 
     public static final String NFS_MOUNT_OPTIONS = "nfsmountopts";
 
+    public static final String PARAMETER_DESCRIPTION_KUBERNETES_CLUSTER_NAME = "Kubernetes cluster's name. It must: " +
+            "contain at most 43 characters; contain only lowercase alphanumeric characters or '-'; " +
+            "start with a letter; end with an alphanumeric character.";
+
     /**
      * This enum specifies IO Drivers, each option controls specific policies on I/O.
      * Qemu guests support "threads" and "native" options Since 0.8.8 ; "io_uring" is supported Since 6.3.0 (QEMU 5.0).
