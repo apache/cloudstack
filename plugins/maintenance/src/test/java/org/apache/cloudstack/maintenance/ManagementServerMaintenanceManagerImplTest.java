@@ -154,7 +154,7 @@ public class ManagementServerMaintenanceManagerImplTest {
         ManagementServerHostVO msHost2 = mock(ManagementServerHostVO.class);
         List<ManagementServerHostVO> msHostList = new ArrayList<>();
         msHostList.add(msHost2);
-        Mockito.when(msHostDao.listBy(any())).thenReturn(msHostList);
+        Mockito.lenient().when(msHostDao.listBy(any())).thenReturn(msHostList);
         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
         PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
         Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
@@ -169,7 +169,7 @@ public class ManagementServerMaintenanceManagerImplTest {
         ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
         Mockito.when(msHost.getState()).thenReturn(ManagementServerHost.State.Up);
         List<ManagementServerHostVO> msHostList = new ArrayList<>();
-        Mockito.when(msHostDao.listBy(any())).thenReturn(msHostList);
+        Mockito.lenient().when(msHostDao.listBy(any())).thenReturn(msHostList);
         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost);
         PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
         Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
@@ -185,7 +185,7 @@ public class ManagementServerMaintenanceManagerImplTest {
         ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
         Mockito.when(msHost.getState()).thenReturn(ManagementServerHost.State.Up);
         List<ManagementServerHostVO> msHostList = new ArrayList<>();
-        Mockito.when(msHostDao.listBy(any())).thenReturn(msHostList);
+        Mockito.lenient().when(msHostDao.listBy(any())).thenReturn(msHostList);
         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost);
         PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
         Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
@@ -200,7 +200,7 @@ public class ManagementServerMaintenanceManagerImplTest {
     public void prepareForShutdownCmdSuccessResponseFromClusterManager() {
         ManagementServerHostVO msHost = mock(ManagementServerHostVO.class);
         Mockito.when(msHost.getState()).thenReturn(ManagementServerHost.State.Up);
-        Mockito.when(msHostDao.listBy(any())).thenReturn(new ArrayList<>());
+        Mockito.lenient().when(msHostDao.listBy(any())).thenReturn(new ArrayList<>());
         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost);
         Mockito.when(hostDao.listByMs(anyLong())).thenReturn(new ArrayList<>());
         PrepareForShutdownCmd cmd = mock(PrepareForShutdownCmd.class);
@@ -279,7 +279,7 @@ public class ManagementServerMaintenanceManagerImplTest {
         ManagementServerHostVO msHost2 = mock(ManagementServerHostVO.class);
         List<ManagementServerHostVO> msHostList = new ArrayList<>();
         msHostList.add(msHost2);
-        Mockito.when(msHostDao.listBy(any())).thenReturn(msHostList);
+        Mockito.lenient().when(msHostDao.listBy(any())).thenReturn(msHostList);
         Mockito.when(msHostDao.findById(1L)).thenReturn(msHost1);
         TriggerShutdownCmd cmd = mock(TriggerShutdownCmd.class);
         Mockito.when(cmd.getManagementServerId()).thenReturn(1L);
