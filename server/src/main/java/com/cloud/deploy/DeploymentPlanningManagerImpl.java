@@ -1540,11 +1540,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                                     continue;
                                 }
                             } catch (StorageUnavailableException e) {
-<<<<<<< HEAD
                                 logger.warn("Could not verify storage policy compliance against storage pool {} due to exception {}", storagePool, e.getMessage());
-=======
-                                logger.warn(String.format("Could not verify storage policy compliance against storage pool %s due to exception %s", storagePool.getUuid(), e.getMessage()));
->>>>>>> b833c077e5 (pre-commit upgrade codespell and fix spelling)
                                 continue;
                             }
                             haveEnoughSpace = true;
