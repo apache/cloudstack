@@ -135,10 +135,8 @@ export default {
       if (this.dataPreFill.isIso) {
         this.dataPreFill.diskofferingid = rootdisksdetails[0].diskofferingid
         this.dataPreFill.size = rootdisksdetails[0].size
-      }
-      if (this.serviceOffering.diskofferingid === rootdisksdetails[0].diskofferingid || this.dataPreFill.isIso) {
         this.dataPreFill.overridediskoffering = false
-      } else {
+      } else if (this.serviceOffering && this.serviceOffering.diskofferingid !== rootdisksdetails[0].diskofferingid) {
         this.dataPreFill.overridediskoffering = true
         this.dataPreFill.diskofferingid = rootdisksdetails[0].diskofferingid
         this.dataPreFill.size = rootdisksdetails[0].size
