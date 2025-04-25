@@ -23,14 +23,14 @@ public class GetVmIpAddressCommand extends Command {
 
     String vmName;
     String vmNetworkCidr;
-    String vmNicMac;
     boolean windows = false;
+    String macAddress;
 
-    public GetVmIpAddressCommand(String vmName, String vmNetworkCidr, String vmNicMac, boolean windows) {
+    public GetVmIpAddressCommand(String vmName, String vmNetworkCidr, boolean windows, String macAddress) {
         this.vmName = vmName;
         this.windows = windows;
         this.vmNetworkCidr = vmNetworkCidr;
-        this.vmNicMac = vmNicMac;
+        this.macAddress = macAddress;
     }
 
     @Override
@@ -50,7 +50,7 @@ public class GetVmIpAddressCommand extends Command {
         return vmNetworkCidr;
     }
 
-    public String getVmNicMac() {
-        return vmNicMac;
+    public String getMacAddress() {
+        return macAddress;
     }
 }

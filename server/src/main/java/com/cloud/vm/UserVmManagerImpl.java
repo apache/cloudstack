@@ -749,8 +749,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isWindows;
         Long hostId;
         String networkCidr;
+        String macAddress;
 
-        public VmIpAddrFetchThread(long vmId, String vmUuid, long nicId, String instanceName, boolean windows, Long hostId, String networkCidr) {
+        public VmIpAddrFetchThread(long vmId, String vmUuid, long nicId, String instanceName, boolean windows, Long hostId, String networkCidr, String macAddress) {
             this.vmId = vmId;
             this.vmUuid = vmUuid;
             this.nicId = nicId;
@@ -758,14 +759,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             this.isWindows = windows;
             this.hostId = hostId;
             this.networkCidr = networkCidr;
+            this.macAddress = macAddress;
         }
 
         @Override
         protected void runInContext() {
-            NicVO nic = _nicDao.findById(nicId);
-            GetVmIpAddressCommand cmd = new GetVmIpAddressCommand(vmName, networkCidr, nic.getMacAddress(), isWindows);
+            GetVmIpAddressCommand cmd = new GetVmIpAddressCommand(vmName, networkCidr, isWindows, macAddress);
             boolean decrementCount = true;
 
+            NicVO nic = _nicDao.findById(nicId);
             try {
                 logger.debug("Trying IP retrieval for VM [id: {}, uuid: {}, name: {}], nic {}", vmId, vmUuid, vmName, nic);
                 Answer answer = _agentMgr.send(hostId, cmd);
@@ -2686,7 +2688,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
 
                             _vmIpFetchThreadExecutor.execute(new VmIpAddrFetchThread(vmId, vmInstance.getUuid(), nicId, vmInstance.getInstanceName(),
-                                    isWindows, vm.getHostId(), network.getCidr()));
+                                    isWindows, vm.getHostId(), network.getCidr(), nicVo.getMacAddress()));
 
                         }
                     } catch (Exception e) {
