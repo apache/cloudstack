@@ -39,6 +39,7 @@ public interface MockAgentManager extends Manager {
     public static final long DEFAULT_HOST_MEM_SIZE = 8 * 1024 * 1024 * 1024L; // 8G, unit of Mbytes
     public static final int DEFAULT_HOST_CPU_CORES = 4; // 2 dual core CPUs (2 x 2)
     public static final int DEFAULT_HOST_SPEED_MHZ = 8000; // 1 GHz CPUs
+    public static final String DEFAULT_HOST_ARCH = "x86_64";
 
     @Override
     boolean configure(String name, Map<String, Object> params) throws ConfigurationException;
