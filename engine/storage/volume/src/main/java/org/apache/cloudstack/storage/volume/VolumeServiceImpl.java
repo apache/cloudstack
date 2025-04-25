@@ -328,6 +328,11 @@ public class VolumeServiceImpl implements VolumeService {
         } else {
             vo.processEvent(Event.OperationFailed);
             errMsg = result.getResult();
+            VolumeVO volume = volDao.findById(vo.getId());
+            if (volume != null && volume.getState() == State.Allocated && volume.getPodId() != null) {
+                volume.setPoolId(null);
+                volDao.update(volume.getId(), volume);
+            }
         }
         VolumeApiResult volResult = new VolumeApiResult((VolumeObject)vo);
         if (errMsg != null) {
@@ -1237,6 +1242,10 @@ public class VolumeServiceImpl implements VolumeService {
         }
 
         if (volume.getState() == State.Allocated) { // Possible states here: Allocated, Ready & Creating
+            if (volume.getPodId() != null) {
+                volume.setPoolId(null);
+                volDao.update(volume.getId(), volume);
+            }
             return;
         }
 
