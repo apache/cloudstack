@@ -16,11 +16,15 @@
 // under the License.
 package com.cloud.agent.manager.allocator.impl;
 
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -98,6 +102,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     UserVmDetailsDao _userVmDetailsDao;
 
     boolean _checkHvm = true;
+    static DecimalFormat decimalFormat = new DecimalFormat("#.##");
 
     @Override
     public List<Host> allocateTo(VirtualMachineProfile vmProfile, DeploymentPlan plan, Type type, ExcludeList avoid, int returnUpTo) {
@@ -373,9 +378,16 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         if("RAM".equalsIgnoreCase(capacityTypeToOrder)){
             capacityType = CapacityVO.CAPACITY_TYPE_MEMORY;
         }
-        List<Long> hostIdsByFreeCapacity = _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
+        Pair<List<Long>, Map<Long, Double>> result = _capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
+        List<Long> hostIdsByFreeCapacity = result.first();
+        Map<Long, String> sortedHostByCapacity = result.second().entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> decimalFormat.format(entry.getValue() * 100) + "%",
+                        (e1, e2) -> e1, LinkedHashMap::new));
         if (logger.isDebugEnabled()) {
-            logger.debug("List of hosts in descending order of free capacity in the cluster: "+ hostIdsByFreeCapacity);
+            logger.debug("List of hosts: [{}] in descending order of free capacity (percentage) in the cluster: {}",
+                    hostIdsByFreeCapacity, sortedHostByCapacity);
         }
 
         //now filter the given list of Hosts by this ordered list

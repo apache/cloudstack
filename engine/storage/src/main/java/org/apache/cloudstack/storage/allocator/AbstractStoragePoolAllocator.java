@@ -57,17 +57,22 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import java.math.BigDecimal;
 import java.security.SecureRandom;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public abstract class AbstractStoragePoolAllocator extends AdapterBase implements StoragePoolAllocator {
 
     protected BigDecimal storageOverprovisioningFactor = new BigDecimal(1);
     protected long extraBytesPerVolume = 0;
+    static DecimalFormat decimalFormat = new DecimalFormat("#.##");
     @Inject protected DataStoreManager dataStoreMgr;
     @Inject protected PrimaryDataStoreDao storagePoolDao;
     @Inject protected VolumeDao volumeDao;
@@ -137,12 +142,16 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
                 capacityType, storagePool.getName(), storagePool.getUuid(), storageType
         ));
 
-        List<Long> poolIdsByCapacity = capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
+        Pair<List<Long>, Map<Long, Double>> result = capacityDao.orderHostsByFreeCapacity(zoneId, clusterId, capacityType);
+        List<Long> poolIdsByCapacity = result.first();
+        Map<Long, String> sortedHostByCapacity = result.second().entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> decimalFormat.format(entry.getValue() * 100) + "%", (e1, e2) -> e1, LinkedHashMap::new));
+        logger.debug("List of pools in descending order of hostId: [{}] available capacity (percentage): {}",
+                poolIdsByCapacity, sortedHostByCapacity);
 
-        logger.debug(String.format("List of pools in descending order of available capacity [%s].", poolIdsByCapacity));
-
-
-      //now filter the given list of Pools by this ordered list
+        // now filter the given list of Pools by this ordered list
         Map<Long, StoragePool> poolMap = new HashMap<>();
         for (StoragePool pool : pools) {
             poolMap.put(pool.getId(), pool);
