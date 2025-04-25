@@ -3393,7 +3393,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             }
         }
         Network updatedNetwork = getNetwork(network.getId());
-        _networkMgr.publishNetworkUpdate(updatedNetwork);
+        UsageEventUtils.publishNetworkUpdate(updatedNetwork);
         return updatedNetwork;
     }
 

@@ -1520,7 +1520,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
             network.setRestartRequired(false);
             _networksDao.update(network.getId(), network);
-            publishNetworkUpdate(network);
+            UsageEventUtils.publishNetworkUpdate(network);
             implemented.set(guru, network);
             return implemented;
         } catch (final NoTransitionException e) {
@@ -3002,7 +3002,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (updateResourceCount) {
                     _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.network, isDisplayNetworkEnabled);
                 }
-                publishNetworkCreation(network);
+                UsageEventUtils.publishNetworkCreation(network);
 
                 return network;
             }
@@ -3141,7 +3141,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         _networksDao.update(networkFinal.getId(), networkFinal);
                         _networksDao.clearCheckForGc(networkId);
                         if (initialState == Network.State.Implemented) {
-                            publishNetworkUpdate(networkFinal);
+                            UsageEventUtils.publishNetworkUpdate(networkFinal);
                         }
                         result = true;
                     } else {
@@ -3395,7 +3395,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     final Pair<Class<?>, Long> networkMsg = new Pair<Class<?>, Long>(Network.class, networkFinal.getId());
                     _messageBus.publish(_name, EntityManager.MESSAGE_REMOVE_ENTITY_EVENT, PublishScope.LOCAL, networkMsg);
                 }
-                publishNetworkDeletion(network);
+                UsageEventUtils.publishNetworkDeletion(network);
                 return true;
             } catch (final CloudRuntimeException e) {
                 s_logger.error("Failed to delete network", e);
@@ -4779,27 +4779,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         Long.toString(nic.getId()), network.getNetworkOfferingId(), null, 0L, virtualMachine.getClass().getName(), virtualMachine.getUuid(), virtualMachine.isDisplay());
             }
         }
-    }
-
-    @Override
-    public void publishNetworkCreation(Network network) {
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_CREATE, network.getAccountId(), network.getDataCenterId(),
-                network.getId(), network.getName(), network.getNetworkOfferingId(), null, null, null, network.getState().name(),
-                network.getUuid());
-    }
-
-    @Override
-    public void publishNetworkUpdate(Network network) {
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_UPDATE, network.getAccountId(), network.getDataCenterId(),
-                network.getId(), network.getName(), network.getNetworkOfferingId(), null, network.getState().name(),
-                Network.class.getName(), network.getUuid(), true);
-    }
-
-    @Override
-    public void publishNetworkDeletion(Network network) {
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NETWORK_DELETE, network.getAccountId(), network.getDataCenterId(),
-                network.getId(), network.getName(), network.getNetworkOfferingId(), null, null, null,
-                Network.class.getName(), network.getUuid());
     }
 
     @Override
