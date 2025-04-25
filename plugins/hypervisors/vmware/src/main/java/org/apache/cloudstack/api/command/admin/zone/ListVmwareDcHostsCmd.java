@@ -107,7 +107,7 @@ public class ListVmwareDcHostsCmd extends BaseListCmd implements ListVmwareDcIte
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (Exception e) {
-            String errorMsg = String.format("Error retrieving VMs from Vmware VC: %s", e.getMessage());
+            String errorMsg = String.format("Error retrieving Hosts from VMware VC: %s", e.getMessage());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMsg);
         }
     }
