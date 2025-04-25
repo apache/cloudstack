@@ -1038,36 +1038,48 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     public void markPublicIpAsAllocated(final IPAddressVO addr) {
         synchronized (allocatedLock) {
-            Transaction.execute(new TransactionCallbackNoReturn() {
+            Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
                     Account owner = _accountMgr.getAccount(addr.getAllocatedToAccountId());
-                    if (_ipAddressDao.lockRow(addr.getId(), true) != null) {
-                        final IPAddressVO userIp = _ipAddressDao.findById(addr.getId());
-                        if (userIp.getState() == IpAddress.State.Allocating || addr.getState() == IpAddress.State.Free || addr.getState() == IpAddress.State.Reserved) {
-                            boolean shouldUpdateIpResourceCount = checkIfIpResourceCountShouldBeUpdated(addr);
-                            addr.setState(IpAddress.State.Allocated);
-                            if (_ipAddressDao.update(addr.getId(), addr)) {
-                                // Save usage event
-                                if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
-                                    VlanVO vlan = _vlanDao.findById(addr.getVlanId());
-                                    String guestType = vlan.getVlanType().toString();
-                                    if (!isIpDedicated(addr)) {
-                                        final boolean usageHidden = isUsageHidden(addr);
-                                        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(),
-                                                addr.getAddress().toString(), addr.isSourceNat(), guestType, addr.getSystem(), usageHidden,
-                                                addr.getClass().getName(), addr.getUuid());
-                                    }
-                                    if (shouldUpdateIpResourceCount) {
-                                        _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
-                                    }
-                                }
-                            } else {
-                                logger.error("Failed to mark public IP as allocated: {}", addr);
+                    final IPAddressVO userIp = _ipAddressDao.lockRow(addr.getId(), true);
+                    if (userIp == null) {
+                        logger.error(String.format("Failed to acquire row lock to mark public IP as allocated with ID [%s] and address [%s]", addr.getId(), addr.getAddress()));
+                        return;
+                    }
+
+                    List<IpAddress.State> expectedIpAddressStates = List.of(IpAddress.State.Allocating, IpAddress.State.Free, IpAddress.State.Reserved);
+                    if (!expectedIpAddressStates.contains(userIp.getState())) {
+                        logger.debug(String.format("Not marking public IP with ID [%s] and address [%s] as allocated, since it is in the [%s] state.", addr.getId(), addr.getAddress(), userIp.getState()));
+                        return;
+                    }
+
+                    boolean shouldUpdateIpResourceCount = checkIfIpResourceCountShouldBeUpdated(addr);
+                    addr.setState(IpAddress.State.Allocated);
+                    boolean updatedIpAddress = _ipAddressDao.update(addr.getId(), addr);
+                    if (!updatedIpAddress) {
+                        logger.error(String.format("Failed to mark public IP as allocated with ID [%s] and address [%s]", addr.getId(), addr.getAddress()));
+                        return;
+                    }
+
+                    if (owner.getAccountId() != Account.ACCOUNT_ID_SYSTEM) {
+                        if (shouldUpdateIpResourceCount) {
+                            try (CheckedReservation publicIpReservation = new CheckedReservation(owner, ResourceType.public_ip, 1L, reservationDao, _resourceLimitMgr)) {
+                                _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
+                            } catch (Exception e) {
+                                _ipAddressDao.unassignIpAddress(addr.getId());
+                                throw new CloudRuntimeException(e);
                             }
                         }
-                    } else {
-                        logger.error("Failed to acquire row lock to mark public IP as allocated: {}", addr);
+
+                        VlanVO vlan = _vlanDao.findById(addr.getVlanId());
+                        String guestType = vlan.getVlanType().toString();
+                        if (!isIpDedicated(addr)) {
+                            final boolean usageHidden = isUsageHidden(addr);
+                            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, owner.getId(), addr.getDataCenterId(), addr.getId(),
+                                    addr.getAddress().toString(), addr.isSourceNat(), guestType, addr.getSystem(), usageHidden,
+                                    addr.getClass().getName(), addr.getUuid());
+                        }
                     }
                 }
             });
@@ -1553,27 +1565,31 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
         boolean isSourceNat = isSourceNatAvailableForNetwork(owner, ipToAssoc, network);
 
-        logger.debug("Associating ip " + ipToAssoc + " to network " + network);
+        logger.debug(String.format("Associating IP [%s] to network [%s].", ipToAssoc, network));
 
         boolean success = false;
         IPAddressVO ip = null;
-        try (CheckedReservation publicIpReservation = new CheckedReservation(owner, ResourceType.public_ip, 1l, reservationDao, _resourceLimitMgr)) {
-            ip = _ipAddressDao.findById(ipId);
-            //update ip address with networkId
-            ip.setAssociatedWithNetworkId(networkId);
-            ip.setSourceNat(isSourceNat);
-            _ipAddressDao.update(ipId, ip);
+        try {
+            Pair<IPAddressVO, Boolean> updatedIpAddress = Transaction.execute((TransactionCallbackWithException<Pair<IPAddressVO, Boolean>, Exception>) status -> {
+                IPAddressVO ipAddress = _ipAddressDao.findById(ipId);
+                ipAddress.setAssociatedWithNetworkId(networkId);
+                ipAddress.setSourceNat(isSourceNat);
+                _ipAddressDao.update(ipId, ipAddress);
+                return new Pair<>(_ipAddressDao.findById(ipId), applyIpAssociations(network, false));
+            });
 
-            success = applyIpAssociations(network, false);
+            ip = updatedIpAddress.first();
+            success = updatedIpAddress.second();
             if (success) {
-                logger.debug("Successfully associated ip address " + ip.getAddress().addr() + " to network " + network);
+                logger.debug(String.format("Successfully associated IP address [%s] to network [%s]", ip.getAddress().addr(), network));
             } else {
-                logger.warn("Failed to associate ip address " + ip.getAddress().addr() + " to network " + network);
+                logger.warn(String.format("Failed to associate IP address [%s] to network [%s]", ip.getAddress().addr(), network));
             }
-            return _ipAddressDao.findById(ipId);
+            return ip;
         } catch (Exception e) {
-            logger.error(String.format("Failed to associate ip address %s to network %s", ipToAssoc, network), e);
-            throw new CloudRuntimeException(String.format("Failed to associate ip address %s to network %s", ipToAssoc, network), e);
+            String errorMessage = String.format("Failed to associate IP address [%s] to network [%s]", ipToAssoc, network);
+            logger.error(errorMessage, e);
+            throw new CloudRuntimeException(errorMessage, e);
         } finally {
             if (!success && releaseOnFailure) {
                 if (ip != null) {
