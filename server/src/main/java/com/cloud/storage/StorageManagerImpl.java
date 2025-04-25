@@ -1514,6 +1514,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         if (storagePoolId != null) {
             StoragePoolVO storagePool = _storagePoolDao.findById(storagePoolId);
+            if (ScopeType.HOST.equals(storagePool.getScope())) {
+                throw new CloudRuntimeException("Storage Access Groups are not suitable for local storage");
+            }
+
             if (logger.isDebugEnabled()) {
                 logger.debug("Updating Storage Pool Access Group Maps to :" + storageAccessGroups);
             }

@@ -84,7 +84,7 @@
             v-focus="true" />
         </a-form-item>
 
-        <a-form-item name="storageaccessgroups" ref="storageaccessgroups">
+        <a-form-item name="storageaccessgroups" ref="storageaccessgroups" v-if="resource.scope !== 'HOST'">
           <template #label>
             <tooltip-label :title="$t('label.storageaccessgroups')" :tooltip="apiParamsConfigureStorageAccess.storageaccessgroups.description"/>
           </template>
