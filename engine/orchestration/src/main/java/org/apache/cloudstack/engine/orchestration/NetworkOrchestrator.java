@@ -3557,8 +3557,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 final List<Long> networkIds = _networksDao.findNetworksToGarbageCollect();
                 final int netGcWait = NumbersUtil.parseInt(_configDao.getValue(NetworkGcWait.key()), 60);
                 final int netGcInterval = NumbersUtil.parseInt(_configDao.getValue(NetworkGcInterval.key()), 60);
-                logger.info("NetworkGarbageCollector uses '{}' seconds for GC wait.", netGcWait);
-                logger.info("NetworkGarbageCollector uses '{}' seconds for GC interval.", netGcInterval);
+                logger.info("NetworkGarbageCollector uses '{}' seconds for GC wait and '{} seconds for GC interval.", netGcWait, netGcInterval);
 
                 for (final Long networkId : networkIds) {
                     if (!_networkModel.isNetworkReadyForGc(networkId)) {

@@ -69,8 +69,3 @@ CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Read-Only Admin - Default', 'va
 
 CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Support Admin - Default', 'setupUserTwoFactorAuthentication', 'ALLOW');
 CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Support Admin - Default', 'validateUserTwoFactorAuthenticationCode', 'ALLOW');
-
--- Fix dynamic setting for the network.gc.interval
-
-UPDATE `cloud`.`configuration` SET `is_dynamic`=0 WHERE  `name`='network.gc.interval';
-
