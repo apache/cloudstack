@@ -1,5 +1,5 @@
 {
-"message.delete.account.not.disabled": "First, disable the account to delete it.",
+"message.delete.account.not.disabled": "Please disable the account before attempting to delete it.",
 "label": {
   "warning": "Warning"
 },
