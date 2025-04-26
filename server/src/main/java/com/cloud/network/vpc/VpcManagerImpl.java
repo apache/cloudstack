@@ -42,7 +42,6 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.resourcelimit.CheckedReservation;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -2928,32 +2927,27 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         // check permissions
         _accountMgr.checkAccess(caller, null, false, owner, vpc);
 
-        s_logger.debug("Associating ip " + ipToAssoc + " to vpc " + vpc);
+        s_logger.debug(String.format("Associating IP [%s] to VPC [%s]", ipToAssoc, vpc));
 
         final boolean isSourceNatFinal = isSrcNatIpRequired(vpc.getVpcOfferingId()) && getExistingSourceNatInVpc(vpc.getAccountId(), vpcId) == null;
-        try (CheckedReservation publicIpReservation = new CheckedReservation(owner, ResourceType.public_ip, 1l, reservationDao, _resourceLimitMgr)) {
-            Transaction.execute(new TransactionCallbackNoReturn() {
-                @Override
-                public void doInTransactionWithoutResult(final TransactionStatus status) {
+        try {
+            IPAddressVO updatedIpAddress = Transaction.execute((TransactionCallbackWithException<IPAddressVO, CloudRuntimeException>) status -> {
                 final IPAddressVO ip = _ipAddressDao.findById(ipId);
-                // update ip address with networkId
                 ip.setVpcId(vpcId);
                 ip.setSourceNat(isSourceNatFinal);
-
                 _ipAddressDao.update(ipId, ip);
-
-                // mark ip as allocated
                 _ipAddrMgr.markPublicIpAsAllocated(ip);
-                }
+                return _ipAddressDao.findById(ipId);
             });
-        } catch (Exception e) {
-            s_logger.error("Failed to associate ip " + ipToAssoc + " to vpc " + vpc, e);
-            throw new CloudRuntimeException("Failed to associate ip " + ipToAssoc + " to vpc " + vpc, e);
-        }
 
-        s_logger.debug("Successfully assigned ip " + ipToAssoc + " to vpc " + vpc);
-        CallContext.current().putContextParameter(IpAddress.class, ipToAssoc.getUuid());
-        return _ipAddressDao.findById(ipId);
+            s_logger.debug(String.format("Successfully assigned IP [%s] to VPC [%s]", ipToAssoc, vpc));
+            CallContext.current().putContextParameter(IpAddress.class, ipToAssoc.getUuid());
+            return updatedIpAddress;
+        } catch (Exception e) {
+            String errorMessage = String.format("Failed to associate IP address [%s] to VPC [%s]", ipToAssoc, vpc);
+            s_logger.error(errorMessage, e);
+            throw new CloudRuntimeException(errorMessage, e);
+        }
     }
 
     @Override
