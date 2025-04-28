@@ -2381,6 +2381,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                                 if (s_logger.isInfoEnabled())
                                     s_logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumeTO.getPath() + " -> " + file.getFileBaseName());
                                 volumeTO.setPath(file.getFileBaseName());
+                                vol.setPath(file.getFileBaseName());
                             }
                         }
                         DatastoreMO diskDatastoreMofromVM = getDataStoreWhereDiskExists(hyperHost, context, diskInfoBuilder, vol, diskDatastores);
