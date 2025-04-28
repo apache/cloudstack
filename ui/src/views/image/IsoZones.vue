@@ -54,6 +54,13 @@
         <template v-if="column.key === 'actions'">
           <span style="margin-right: 5px">
             <tooltip-button
+              :disabled="!('deployVirtualMachine' in $store.getters.apis) || !record.isready"
+              :title="$t('label.vm.add')"
+              icon="rocket-outlined"
+              @onClick="onAddInstance(record)"/>
+          </span>
+          <span style="margin-right: 5px">
+            <tooltip-button
               :tooltip="$t('label.action.copy.iso')"
               :disabled="!('copyIso' in $store.getters.apis && record.isready)"
               icon="copy-outlined"
@@ -314,7 +321,7 @@ export default {
         title: '',
         dataIndex: 'actions',
         fixed: 'right',
-        width: 100
+        width: 130
       })
     }
 
@@ -360,6 +367,7 @@ export default {
         this.fetchLoading = false
       })
       this.fetchZoneData()
+      this.fetchOsCategoryId()
     },
     fetchZoneIcon (zoneid) {
       const zoneItem = this.zones.filter(zone => zone.id === zoneid)
@@ -506,6 +514,19 @@ export default {
         this.zoneLoading = false
       })
     },
+    fetchOsCategoryId () {
+      const needed = this.$route.meta.name === 'iso' &&
+        'listOsTypes' in this.$store.getters.apis &&
+        this.resource && this.resource.ostypeid &&
+        (this.$config.imageSelectionInterface === undefined ||
+        this.$config.imageSelectionInterface === 'modern')
+      if (!needed) {
+        return
+      }
+      api('listOsTypes', { id: this.resource.ostypeid }).then(json => {
+        this.osCategoryId = json?.listostypesresponse?.ostype?.[0]?.oscategoryid || null
+      })
+    },
     showCopyIso (record) {
       this.currentRecord = record
       this.form.zoneid = []
@@ -558,6 +579,19 @@ export default {
     },
     closeModal () {
       this.showConfirmationAction = false
+    },
+    onAddInstance (record) {
+      const query = { isoid: this.resource.id, zoneid: record.zoneid }
+      if (this.resource.arch) {
+        query.arch = this.resource.arch
+      }
+      if (this.osCategoryId) {
+        query.oscategoryid = this.osCategoryId
+      }
+      this.$router.push({
+        path: '/action/deployVirtualMachine',
+        query: query
+      })
     }
   }
 }

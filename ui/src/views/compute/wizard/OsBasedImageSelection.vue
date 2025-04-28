@@ -21,6 +21,7 @@
       <a-radio-group
         v-model:value="localSelectedImageType"
         button-style="solid"
+        :disabled="imagePreSelected"
         @change="emitChangeImageType()">
         <a-radio-button value="templateid">{{ $t('label.template') }}</a-radio-button>
         <a-radio-button value="isoid">{{ $t('label.iso') }}</a-radio-button>
@@ -29,7 +30,11 @@
         {{ $t('message.' + localSelectedImageType.replace('id', '') + '.desc') }}
       </div>
     </a-form-item>
-    <a-form-item :label="$t('label.os')" name="guestoscategoryid" ref="guestoscategoryid">
+    <a-form-item
+      :label="$t('label.os')"
+      name="guestoscategoryid"
+      ref="guestoscategoryid"
+      v-if="!guestOsCategoriesSelectionDisallowed">
       <block-radio-group-select
         :maxBlocks="16"
         :items="guestOsCategories"
@@ -65,6 +70,7 @@
     </a-form-item>
     <a-card>
       <os-based-image-selection-search-view
+        v-if="!imagePreSelected"
         class="search-input"
         :filtersDisabled="searchFiltersDisabled"
         @search="handleImageSearch">
@@ -140,6 +146,14 @@ export default {
     selectedImageType: {
       type: String,
       default: 'templateid'
+    },
+    imagePreSelected: {
+      type: Boolean,
+      default: false
+    },
+    guestOsCategoriesSelectionDisallowed: {
+      type: Boolean,
+      default: false
     },
     guestOsCategories: {
       type: Array,

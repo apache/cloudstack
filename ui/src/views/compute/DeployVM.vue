@@ -127,13 +127,15 @@
                   <div v-if="zoneSelected" style="margin-top: 15px">
                     <os-based-image-selection
                       v-if="isModernImageSelection"
-                      :selectedImageType="form.imagetype"
+                      :selectedImageType="imageType"
+                      :imagePreSelected="this.queryTemplateId || this.queryIsoId"
+                      :guestOsCategoriesSelectionDisallowed="!this.queryGuestOsCategoryId && (this.queryTemplateId || this.queryIsoId)"
                       :guestOsCategories="options.guestOsCategories"
                       :guestOsCategoriesLoading="loading.guestOsCategories"
                       :selectedGuestOsCategoryId="form.guestoscategoryid"
-                      :imageItems="form.imagetype === 'isoid' ? options.isos : options.templates"
-                      :imagesLoading="form.imagetype === 'isoid' ? loading.isos : loading.templates"
-                      :diskSizeSelectionAllowed="form.imagetype !== 'isoid'"
+                      :imageItems="imageType === 'isoid' ? options.isos : options.templates"
+                      :imagesLoading="imageType === 'isoid' ? loading.isos : loading.templates"
+                      :diskSizeSelectionAllowed="imageType !== 'isoid'"
                       :diskSizeSelectionDeployAsIsMessageVisible="template && template.deployasis"
                       :rootDiskOverrideDisabled="rootDiskSizeFixed > 0 || (template && template.deployasis) || showOverrideDiskOfferingOption"
                       :rootDiskOverrideChecked="form.rootdisksizeitem"
@@ -150,14 +152,14 @@
                     <a-card
                       v-else
                       :tabList="imageTabList"
-                      :activeTabKey="form.imagetype"
+                      :activeTabKey="imageType"
                       @tabChange="key => changeImageType(key)">
-                      <div v-if="form.imagetype === 'templateid'">
+                      <div v-if="imageType === 'templateid'">
                         {{ $t('message.template.desc') }}
                         <template-iso-selection
                           input-decorator="templateid"
                           :items="options.templates"
-                          :selected="form.imagetype"
+                          :selected="imageType"
                           :loading="loading.templates"
                           :preFillContent="dataPreFill"
                           :key="templateKey"
@@ -186,7 +188,7 @@
                         <template-iso-selection
                           input-decorator="isoid"
                           :items="options.isos"
-                          :selected="form.imagetype"
+                          :selected="imageType"
                           :loading="loading.isos"
                           :preFillContent="dataPreFill"
                           @handle-search-filter="filters => fetchAllIsos(filters)"
@@ -289,7 +291,7 @@
                         <a-input v-model:value="form.memory"/>
                       </a-form-item>
                     </span>
-                    <span v-if="form.imagetype!=='isoid'">
+                    <span v-if="imageType!=='isoid'">
                       {{ $t('label.override.root.diskoffering') }}
                       <a-switch
                         v-model:checked="showOverrideDiskOfferingOption"
@@ -298,7 +300,7 @@
                         @change="val => { updateOverrideRootDiskShowParam(val) }"
                         style="margin-left: 10px;"/>
                     </span>
-                    <span v-if="form.imagetype!=='isoid' && serviceOffering && !serviceOffering.diskofferingstrictness">
+                    <span v-if="imageType!=='isoid' && serviceOffering && !serviceOffering.diskofferingstrictness">
                       <a-step
                         :status="zoneSelected ? 'process' : 'wait'"
                         v-if="template && !template.deployasis && template.childtemplates && template.childtemplates.length > 0" >
@@ -325,7 +327,7 @@
                               :value="overrideDiskOffering ? overrideDiskOffering.id : ''"
                               :loading="loading.diskOfferings"
                               :preFillContent="dataPreFill"
-                              :isIsoSelected="form.imagetype==='isoid'"
+                              :isIsoSelected="imageType==='isoid'"
                               :isRootDiskOffering="true"
                               @on-selected-root-disk-size="onSelectRootDiskSize"
                               @select-disk-offering-item="($event) => updateOverrideDiskOffering($event)"
@@ -367,7 +369,7 @@
               </a-step>
               <a-step
                 v-else
-                :title="form.imagetype === 'templateid' ? $t('label.data.disk') : $t('label.disk.size')"
+                :title="imageType === 'templateid' ? $t('label.data.disk') : $t('label.disk.size')"
                 :status="zoneSelected ? 'process' : 'wait'">
                 <template #description>
                   <div v-if="zoneSelected">
@@ -378,7 +380,7 @@
                       :value="diskOffering ? diskOffering.id : ''"
                       :loading="loading.diskOfferings"
                       :preFillContent="dataPreFill"
-                      :isIsoSelected="form.imagetype==='isoid'"
+                      :isIsoSelected="imageType==='isoid'"
                       @on-selected-disk-size="onSelectDiskSize"
                       @select-disk-offering-item="($event) => updateDiskOffering($event)"
                       @handle-search-filter="($event) => handleSearchFilter('diskOfferings', $event)"
@@ -564,7 +566,7 @@
                     </div>
                     <a-form-item
                       :label="$t('label.bootintosetup')"
-                      v-if="zoneSelected && ((form.imagetype === 'isoid' && hypervisor === 'VMware') || (form.imagetype === 'templateid' && template && template.hypervisor === 'VMware'))"
+                      v-if="zoneSelected && ((imageType === 'isoid' && hypervisor === 'VMware') || (imageType === 'templateid' && template && template.hypervisor === 'VMware'))"
                       name="bootintosetup"
                       ref="bootintosetup">
                       <a-switch v-model:checked="form.bootintosetup" />
@@ -1256,7 +1258,7 @@ export default {
           options: {
             zoneid: _.get(this.zone, 'id'),
             isfeatured: true,
-            isiso: _.get(this.form, 'imagetype') === 'isoid',
+            isiso: _.get(this, 'imageType') === 'isoid',
             arch: this.selectedArchitecture
           },
           field: 'guestoscategoryid'
@@ -1752,6 +1754,9 @@ export default {
     },
     async fetchData () {
       this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
+      if (this.queryArchId) {
+        this.architectureTypes.opts = this.architectureTypes.opts.filter(o => o.id === this.queryArchId)
+      }
       const zones = await this.fetchZoneByQuery()
       if (zones && zones.length === 1) {
         this.selectedZone = zones[0]
@@ -1868,26 +1873,21 @@ export default {
     },
     updateFieldValue (name, value) {
       if (name === 'templateid') {
-        this.form.imagetype = 'templateid'
+        this.imageType = 'templateid'
         this.form.templateid = value
         this.form.isoid = null
         this.resetFromTemplateConfiguration()
         let template = ''
-        for (const key in this.options.templates) {
-          var t = _.find(_.get(this.options.templates[key], 'template', []), (option) => option.id === value)
-          if (t) {
-            this.template = t
-            this.templateConfigurations = []
-            this.selectedTemplateConfiguration = {}
-            this.templateNics = []
-            this.templateLicenses = []
-            this.templateProperties = {}
-            this.updateTemplateParameters()
-            template = t
+        for (const entry of Object.values(this.options.templates)) {
+          template = entry?.template.find(option => option.id === value) || null
+          if (template) {
+            this.template = template
             break
           }
         }
         if (template) {
+          this.resetTemplateAssociatedResources()
+          this.updateTemplateParameters()
           var size = template.size / (1024 * 1024 * 1024) || 0 // bytes to GB
           this.dataPreFill.minrootdisksize = Math.ceil(size)
           this.updateTemplateLinkedUserData(template.userdataid)
@@ -1906,17 +1906,23 @@ export default {
           }
         }
       } else if (name === 'isoid') {
-        this.templateConfigurations = []
-        this.selectedTemplateConfiguration = {}
-        this.templateNics = []
-        this.templateLicenses = []
-        this.templateProperties = {}
-        this.form.imagetype = 'isoid'
+        this.imageType = 'isoid'
+        this.resetTemplateAssociatedResources()
         this.resetFromTemplateConfiguration()
         this.form.isoid = value
         this.form.templateid = null
-        this.updateTemplateLinkedUserData(this.iso.userdataid)
-        this.userdataDefaultOverridePolicy = this.iso.userdatapolicy
+        let iso = null
+        for (const entry of Object.values(this.options.isos)) {
+          iso = entry?.iso.find(option => option.id === value)
+          if (iso) {
+            this.iso = iso
+            break
+          }
+        }
+        if (iso) {
+          this.updateTemplateLinkedUserData(this.iso.userdataid)
+          this.userdataDefaultOverridePolicy = this.iso.userdatapolicy
+        }
       } else if (['cpuspeed', 'cpunumber', 'memory'].includes(name)) {
         this.vm[name] = value
         this.form[name] = value
@@ -2023,32 +2029,40 @@ export default {
     },
     fetchGuestOsCategories (skipFetchImages) {
       const key = 'guestOsCategories'
-      const param = this.params[key]
-      return this.fetchOptions(param, key, ['zones'])
+      const params = this.params[key]
+      if (this.queryGuestOsCategoryId) {
+        params.options.id = this.queryGuestOsCategoryId
+      } else if (this.queryTemplateId || this.queryIsoId) {
+        this.fetchImages()
+        return Promise.resolve()
+      }
+      return this.fetchOptions(params, key, ['zones'])
         .then((res) => {
           if (!this.options.guestOsCategories) {
             this.options.guestOsCategories = []
           }
-          if (this.showUserCategoryForModernImageSelection) {
-            const userCategory = {
-              id: '0',
-              name: this.$t('label.user'),
-              disableimagefilters: true
-            }
-            if (this.$store.getters.avatar) {
-              userCategory.icon = {
-                base64image: this.$store.getters.avatar
+          if (!this.queryGuestOsCategoryId) {
+            if (this.showUserCategoryForModernImageSelection) {
+              const userCategory = {
+                id: '0',
+                name: this.$t('label.user'),
+                disableimagefilters: true
               }
+              if (this.$store.getters.avatar) {
+                userCategory.icon = {
+                  base64image: this.$store.getters.avatar
+                }
+              }
+              this.options.guestOsCategories.push(userCategory)
             }
-            this.options.guestOsCategories.push(userCategory)
+            if (this.showAllCategoryForModernImageSelection) {
+              this.options.guestOsCategories.push({
+                id: '-1',
+                name: this.$t('label.all')
+              })
+            }
           }
-          if (this.showAllCategoryForModernImageSelection) {
-            this.options.guestOsCategories.push({
-              id: '-1',
-              name: this.$t('label.all')
-            })
-          }
-          this.form.guestoscategoryid = this.queryGuestOsCategoryId || this.options.guestOsCategories[0].id
+          this.form.guestoscategoryid = this.options.guestOsCategories[0].id
           if (skipFetchImages) {
             return
           }
@@ -2067,7 +2081,7 @@ export default {
       this.fetchImages()
     },
     changeImageType (imageType) {
-      this.form.imagetype = imageType
+      this.imageType = imageType
       if (this.isModernImageSelection) {
         this.fetchGuestOsCategories()
       } else {
@@ -2137,7 +2151,7 @@ export default {
           deployVmData.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
         // step 2: select template/iso
-        if (this.form.imagetype === 'templateid') {
+        if (this.imageType === 'templateid') {
           deployVmData.templateid = values.templateid
           values.hypervisor = null
         } else {
@@ -2565,7 +2579,7 @@ export default {
       })
     },
     fetchImages (params) {
-      if (this.form.imagetype === 'isoid') {
+      if (this.imageType === 'isoid') {
         this.fetchAllIsos(params)
         return
       }
@@ -2626,6 +2640,13 @@ export default {
       })
       this.options.templates = templates
     },
+    resetTemplateAssociatedResources () {
+      this.templateConfigurations = []
+      this.selectedTemplateConfiguration = {}
+      this.templateNics = []
+      this.templateLicenses = []
+      this.templateProperties = {}
+    },
     resetIsosList () {
       const isos = {}
       const isoFilters = this.getImageFilters(null, true)
@@ -2667,7 +2688,7 @@ export default {
       this.zoneSelected = true
       this.isZoneSelectedMultiArch = this.zone.ismultiarch
       if (this.isZoneSelectedMultiArch) {
-        this.selectedArchitecture = this.queryArchId || this.architectureTypes.opts[0].id
+        this.selectedArchitecture = this.architectureTypes.opts[0].id
       }
       this.form.startvm = true
       this.selectedZone = this.zoneId
@@ -2680,7 +2701,7 @@ export default {
       this.form.isoid = undefined
       this.resetTemplatesList()
       this.resetIsosList()
-      this.form.imagetype = this.queryIsoId ? 'isoid' : 'templateid'
+      this.imageType = this.queryIsoId ? 'isoid' : 'templateid'
       this.fetchZoneOptions()
     },
     onSelectPodId (value) {

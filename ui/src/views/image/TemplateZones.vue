@@ -52,27 +52,30 @@
           <span v-if="record.created">{{ $toLocaleDate(record.created) }}</span>
         </template>
         <template v-if="column.key === 'actions'">
-          <tooltip-button
-            style="margin-right: 5px"
-            :disabled="!('deployVirtualMachine' in $store.getters.apis) || !record.isready"
-            :title="$t('label.vm.add')"
-            icon="rocket-outlined"
-            @onClick="onAddInstance(record)"/>
-          <tooltip-button
-            style="margin-right: 5px"
-            :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
-            :title="$t('label.action.copy.template')"
-            icon="copy-outlined"
-            :loading="copyLoading"
-            @onClick="showCopyTemplate(record)" />
-          <tooltip-button
-            style="margin-right: 5px"
-            :disabled="!('deleteTemplate' in $store.getters.apis)"
-            :title="$t('label.action.delete.template')"
-            type="primary"
-            :danger="true"
-            icon="delete-outlined"
-            @onClick="onShowDeleteModal(record)"/>
+          <span style="margin-right: 5px">
+            <tooltip-button
+              :disabled="!('deployVirtualMachine' in $store.getters.apis) || !record.isready"
+              :title="$t('label.vm.add')"
+              icon="rocket-outlined"
+              @onClick="onAddInstance(record)"/>
+          </span>
+          <span style="margin-right: 5px">
+            <tooltip-button
+              :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
+              :title="$t('label.action.copy.template')"
+              icon="copy-outlined"
+              :loading="copyLoading"
+              @onClick="showCopyTemplate(record)" />
+          </span>
+          <span style="margin-right: 5px">
+            <tooltip-button
+              :disabled="!('deleteTemplate' in $store.getters.apis)"
+              :title="$t('label.action.delete.template')"
+              type="primary"
+              :danger="true"
+              icon="delete-outlined"
+              @onClick="onShowDeleteModal(record)"/>
+          </span>
         </template>
       </template>
       <template #expandedRowRender="{ record }">
@@ -366,7 +369,7 @@ export default {
         key: 'actions',
         title: '',
         dataIndex: 'actions',
-        width: 120
+        width: 130
       })
     }
 
