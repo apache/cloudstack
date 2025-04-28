@@ -53,7 +53,6 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
@@ -63,7 +62,6 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class VolumeObjectTest extends TestCase{
 
     @Spy
-    @InjectMocks
     VolumeObject volumeObjectSpy;
 
     @Mock
@@ -98,6 +96,7 @@ public class VolumeObjectTest extends TestCase{
 
     @Before
     public void setup(){
+        volumeObjectSpy.orchestrationService = orchestrationServiceMock;
         Mockito.doReturn(new Pair<>(List.of(), Set.of())).when(orchestrationServiceMock).getVolumeCheckpointPathsAndImageStoreUrls(Mockito.anyLong(), Mockito.any());
         Mockito.doReturn(Hypervisor.HypervisorType.KVM).when(volumeObjectSpy).getHypervisorType();
         volumeObjectSpy.configure(dataStoreMock, volumeVoMock);
