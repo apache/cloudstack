@@ -2940,6 +2940,7 @@
 "message.confirm.remove.vmware.datacenter": "Please confirm you want to remove VMware datacenter.",
 "message.confirm.remove.vpc.offering": "Are you sure you want to remove this VPC offering?",
 "message.confirm.replace.acl.new.one": "Do you want to replace the ACL with a new one?",
+"message.confirm.reset.configuration.value": "Are you sure you want reset configuration - %x?",
 "message.confirm.reset.network.permissions": "Are you sure you want to reset this Network permissions?",
 "message.confirm.scale.up.router.vm": "Do you really want to scale up the router Instance?",
 "message.confirm.scale.up.system.vm": "Do you really want to scale up the system VM?",

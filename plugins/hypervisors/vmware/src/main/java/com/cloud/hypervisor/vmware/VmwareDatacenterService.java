@@ -22,15 +22,12 @@ import com.cloud.dc.VmwareDatacenterVO;
 import com.cloud.dc.VsphereStoragePolicy;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.storage.StoragePool;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcVmsCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcHostsCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePolicyCompatiblePoolsCmd;
@@ -56,7 +53,5 @@ public interface VmwareDatacenterService extends PluggableService {
 
     List<StoragePool> listVsphereStoragePolicyCompatibleStoragePools(ListVsphereStoragePolicyCompatiblePoolsCmd cmd);
 
-    List<HostMO> listHostsInDatacenter(ListVmwareDcHostsCmd cmd);
-
-    Pair<String, List<UnmanagedInstanceTO>> listVMsInDatacenter(ListVmwareDcVmsCmd cmd);
+    List<UnmanagedInstanceTO> listVMsInDatacenter(ListVmwareDcVmsCmd cmd);
 }

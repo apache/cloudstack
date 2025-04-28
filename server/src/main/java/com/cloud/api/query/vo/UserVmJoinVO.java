@@ -16,21 +16,9 @@
 // under the License.
 package com.cloud.api.query.vo;
 
-import com.cloud.host.Status;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.Network.GuestType;
-import com.cloud.network.Networks.TrafficType;
-import com.cloud.resource.ResourceState;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.Volume;
-import com.cloud.user.Account;
-import com.cloud.util.StoragePoolTypeConverter;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
-import org.apache.cloudstack.util.HypervisorTypeConverter;
+import java.net.URI;
+import java.util.Date;
+import java.util.Map;
 
 import javax.persistence.AttributeOverride;
 import javax.persistence.Column;
@@ -43,9 +31,22 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
-import java.net.URI;
-import java.util.Date;
-import java.util.Map;
+
+import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.Network.GuestType;
+import com.cloud.network.Networks.TrafficType;
+import com.cloud.resource.ResourceState;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.Volume;
+import com.cloud.user.Account;
+import com.cloud.util.StoragePoolTypeConverter;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
+import org.apache.cloudstack.util.HypervisorTypeConverter;
 
 @Entity
 @Table(name = "user_vm_view")
@@ -439,6 +440,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     @Column(name = "delete_protection")
     protected Boolean deleteProtection;
+
+    @Column(name = "arch")
+    protected String arch;
 
     @Column(name = "lease_expiry_date")
     @Temporal(value = TemporalType.TIMESTAMP)
@@ -986,6 +990,10 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getUserDataDetails() {
         return userDataDetails;
+    }
+
+    public String getArch() {
+        return arch;
     }
 
     public Date getLeaseExpiryDate() {

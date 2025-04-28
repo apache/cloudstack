@@ -72,6 +72,9 @@
               <a-tag v-if="resource.broadcasturi">
                 {{ resource.broadcasturi }}
               </a-tag>
+              <a-tag v-if="resource.arch">
+                {{ resource.arch }}
+              </a-tag>
               <a-tag v-if="resource.hypervisor">
                 {{ resource.hypervisor }}
               </a-tag>
