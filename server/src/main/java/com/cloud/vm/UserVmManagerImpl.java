@@ -28,7 +28,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -2840,6 +2839,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final List<String> userDenyListedSettings = Stream.of(QueryService.UserVMDeniedDetails.value().split(","))
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
+        userDenyListedSettings.addAll(QueryService.RootAdminOnlyVmSettings);
         final List<String> userReadOnlySettings = Stream.of(QueryService.UserVMReadOnlyDetails.value().split(","))
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
@@ -3105,42 +3105,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        boolean isVMware = (vm.getHypervisorType() == HypervisorType.VMware);
-
-        if (securityGroupIdList != null && isVMware) {
-            throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
-        } else {
-            // Get default guest network in Basic zone
-            Network defaultNetwork = null;
-            try {
-                DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
-                if (zone.getNetworkType() == NetworkType.Basic) {
-                    // Get default guest network in Basic zone
-                    defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
-                } else if (_networkModel.checkSecurityGroupSupportForNetwork(_accountMgr.getActiveAccountById(vm.getAccountId()), zone, Collections.emptyList(), securityGroupIdList)) {
-                    NicVO defaultNic = _nicDao.findDefaultNicForVM(vm.getId());
-                    if (defaultNic != null) {
-                        defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
-                    }
-                }
-            } catch (InvalidParameterValueException e) {
-                if(logger.isDebugEnabled()) {
-                    logger.debug(e.getMessage(),e);
-                }
-                defaultNetwork = _networkModel.getDefaultNetworkForVm(id);
-            }
-
-            if (securityGroupIdList != null && _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkModel.canAddDefaultSecurityGroup()) {
-                if (vm.getState() == State.Stopped) {
-                    // Remove instance from security groups
-                    _securityGroupMgr.removeInstanceFromGroups(vm);
-                    // Add instance in provided groups
-                    _securityGroupMgr.addInstanceToGroups(vm, securityGroupIdList);
-                } else {
-                    throw new InvalidParameterValueException("Virtual machine must be stopped prior to update security groups ");
-                }
-            }
-        }
         List<? extends Nic> nics = _nicDao.listByVmId(vm.getId());
         if (hostName != null) {
             // Check is hostName is RFC compliant
@@ -3173,6 +3137,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     .getUuid(), nic.getId(), extraDhcpOptionsMap);
         }
 
+        checkAndUpdateSecurityGroupForVM(securityGroupIdList, vm, networks);
+
         _vmDao.updateVM(id, displayName, ha, osTypeId, userData, userDataId,
                 userDataDetails, isDisplayVmEnabled, isDynamicallyScalable,
                 deleteProtection, customId, hostName, instanceName);
@@ -3186,6 +3152,48 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return _vmDao.findById(id);
+    }
+
+    private void checkAndUpdateSecurityGroupForVM(List<Long> securityGroupIdList, UserVmVO vm, List<NetworkVO> networks) {
+        boolean isVMware = (vm.getHypervisorType() == HypervisorType.VMware);
+
+        if (securityGroupIdList != null && isVMware) {
+            throw new InvalidParameterValueException("Security group feature is not supported for VMware hypervisor");
+        } else if (securityGroupIdList != null) {
+            DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
+            List<Long> networkIds = new ArrayList<>();
+            try {
+                if (zone.getNetworkType() == NetworkType.Basic) {
+                    // Get default guest network in Basic zone
+                    Network defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
+                    networkIds.add(defaultNetwork.getId());
+                } else {
+                    networkIds = networks.stream().map(Network::getId).collect(Collectors.toList());
+                }
+            } catch (InvalidParameterValueException e) {
+                if(logger.isDebugEnabled()) {
+                    logger.debug(e.getMessage(),e);
+                }
+            }
+
+            if (_networkModel.checkSecurityGroupSupportForNetwork(
+                            _accountMgr.getActiveAccountById(vm.getAccountId()),
+                            zone, networkIds, securityGroupIdList)
+            ) {
+                updateSecurityGroup(vm, securityGroupIdList);
+            }
+        }
+    }
+
+    private void updateSecurityGroup(UserVmVO vm, List<Long> securityGroupIdList) {
+        if (vm.getState() == State.Stopped) {
+            // Remove instance from security groups
+            _securityGroupMgr.removeInstanceFromGroups(vm);
+            // Add instance in provided groups
+            _securityGroupMgr.addInstanceToGroups(vm, securityGroupIdList);
+        } else {
+            throw new InvalidParameterValueException(String.format("VM %s must be stopped prior to update security groups", vm.getUuid()));
+        }
     }
 
     protected void updateUserData(UserVm vm) throws ResourceUnavailableException, InsufficientCapacityException {
@@ -3695,7 +3703,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware || (hypervisor != null && hypervisor == HypervisorType.VMware));
 
         if (securityGroupIdList != null && isVmWare) {
-            throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+            throw new InvalidParameterValueException("Security group feature is not supported for VMware hypervisor");
         } else if (!isVmWare && _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkModel.canAddDefaultSecurityGroup()) {
             //add the default securityGroup only if no security group is specified
             if (securityGroupIdList == null || securityGroupIdList.isEmpty()) {
@@ -3755,7 +3763,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         } else if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
             if (isVmWare) {
-                throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+                throw new InvalidParameterValueException("Security group feature is not supported for VMware hypervisor");
             }
             // Only one network can be specified, and it should be security group enabled
             if (networkIdList.size() > 1 && template.getHypervisorType() != HypervisorType.KVM && hypervisor != HypervisorType.KVM) {

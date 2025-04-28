@@ -72,6 +72,9 @@
               <a-tag v-if="resource.broadcasturi">
                 {{ resource.broadcasturi }}
               </a-tag>
+              <a-tag v-if="resource.arch">
+                {{ resource.arch }}
+              </a-tag>
               <a-tag v-if="resource.hypervisor">
                 {{ resource.hypervisor }}
               </a-tag>
@@ -646,7 +649,7 @@
             <span v-else>{{ resource.podname || resource.pod || resource.podid }}</span>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="resource.zoneid">
+        <div class="resource-detail-item" v-if="resource.zoneid && !['template', 'iso'].includes($route.path.split('/')[1])">
           <div class="resource-detail-item__label">{{ $t('label.zone') }}</div>
           <div class="resource-detail-item__details">
             <span v-if="images.zone">
@@ -733,7 +736,7 @@
             <span v-else>{{ resource.managementserver || resource.managementserverid }}</span>
           </div>
         </div>
-        <div class="resource-detail-item" v-if="resource.created">
+        <div class="resource-detail-item" v-if="resource.created && !['template', 'iso'].includes($route.path.split('/')[1])">
           <div class="resource-detail-item__label">{{ $t('label.created') }}</div>
           <div class="resource-detail-item__details">
             <calendar-outlined />{{ $toLocaleDate(resource.created) }}

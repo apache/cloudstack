@@ -485,12 +485,11 @@ public class ApiConstants {
     public static final String STATE = "state";
     public static final String STATS = "stats";
     public static final String STATUS = "status";
+    public static final String STORAGE_TYPE = "storagetype";
+    public static final String STORAGE_POLICY = "storagepolicy";
+    public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
     public static final String STORAGE_CAPABILITIES = "storagecapabilities";
     public static final String STORAGE_CUSTOM_STATS = "storagecustomstats";
-    public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
-    public static final String STORAGE_POLICY = "storagepolicy";
-    public static final String STORAGE_POOL = "storagepool";
-    public static final String STORAGE_TYPE = "storagetype";
     public static final String SUBNET = "subnet";
     public static final String OWNER = "owner";
     public static final String SWAP_OWNER = "swapowner";
