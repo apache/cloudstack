@@ -37,7 +37,7 @@ import com.cloud.resource.ServerResource;
  * AgentManager manages hosts. It directly coordinates between the DAOs and the connections it manages.
  */
 public interface AgentManager {
-    static final ConfigKey<Integer> Wait = new ConfigKey<Integer>("Advanced", Integer.class, "wait", "1800", "Time in seconds to wait for control commands to return",
+    ConfigKey<Integer> Wait = new ConfigKey<Integer>("Advanced", Integer.class, "wait", "1800", "Time in seconds to wait for control commands to return",
             true);
     ConfigKey<Boolean> EnableKVMAutoEnableDisable = new ConfigKey<>(Boolean.class,
                     "enable.kvm.host.auto.enable.disable",
@@ -54,7 +54,7 @@ public interface AgentManager {
             "This timeout overrides the wait global config. This holds a comma separated key value pairs containing timeout (in seconds) for specific commands. " +
                     "For example: DhcpEntryCommand=600, SavePasswordCommand=300, VmDataCommand=300", false);
 
-    public enum TapAgentsAction {
+    enum TapAgentsAction {
         Add, Del, Contains,
     }
 
