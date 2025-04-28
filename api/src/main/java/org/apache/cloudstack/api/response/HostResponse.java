@@ -152,7 +152,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @Deprecated
     @SerializedName("memoryallocated")
     @Param(description = "the amount of the host's memory currently allocated")
-    private Long memoryAllocated;
+    private long memoryAllocated;
 
     @SerializedName("memoryallocatedpercentage")
     @Param(description = "the amount of the host's memory currently allocated in percentage")
@@ -415,7 +415,7 @@ public class HostResponse extends BaseResponseWithAnnotations {
         this.memWithOverprovisioning=memWithOverprovisioning;
     }
 
-    public void setMemoryAllocated(Long memoryAllocated) {
+    public void setMemoryAllocated(long memoryAllocated) {
         this.memoryAllocated = memoryAllocated;
     }
 
@@ -703,8 +703,8 @@ public class HostResponse extends BaseResponseWithAnnotations {
         return memoryTotal;
     }
 
-    public Long getMemoryAllocated() {
-        return memoryAllocated == null ? 0 : memoryAllocated;
+    public long getMemoryAllocated() {
+        return memoryAllocated;
     }
 
     public void setMemoryAllocatedPercentage(String memoryAllocatedPercentage) {

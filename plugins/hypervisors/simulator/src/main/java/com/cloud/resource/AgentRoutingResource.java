@@ -177,6 +177,7 @@ public class AgentRoutingResource extends AgentStorageResource {
         StartupRoutingCommand cmd =
             new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), HypervisorType.Simulator,
                 RouterPrivateIpStrategy.HostLocal);
+        cmd.setCpuArch((String)info.get(5));
 
         Map<String, String> hostDetails = new HashMap<String, String>();
         hostDetails.put(RouterPrivateIpStrategy.class.getCanonicalName(), RouterPrivateIpStrategy.DcGlobal.toString());
@@ -274,12 +275,14 @@ public class AgentRoutingResource extends AgentStorageResource {
         long cpus = agentHost.getCpuCount();
         long ram = agentHost.getMemorySize();
         long dom0Ram = agentHost.getMemorySize() / 10;
+        String arch = agentHost.getArch();
 
         info.add((int)cpus);
         info.add(speed);
         info.add(ram);
         info.add(agentHost.getCapabilities());
         info.add(dom0Ram);
+        info.add(arch);
 
         return info;
     }

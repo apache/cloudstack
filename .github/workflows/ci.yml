@@ -236,7 +236,7 @@ jobs:
 
       - name: Install Python dependencies
         run: |
-          python3 -m pip install --user --upgrade urllib3 lxml paramiko nose texttable ipmisim pyopenssl pycrypto mock flask netaddr pylint pycodestyle six astroid
+          python3 -m pip install --user --upgrade urllib3 lxml paramiko nose texttable ipmisim pyopenssl pycrypto mock flask netaddr pylint pycodestyle six astroid pynose
 
       - name: Install jacoco dependencies
         run: |

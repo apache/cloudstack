@@ -5318,10 +5318,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             workJob = newVmWorkJobAndInfo.first();
             VmWorkMigrateAway workInfo = new VmWorkMigrateAway(newVmWorkJobAndInfo.second(), srcHostId);
 
-            workJob.setCmdInfo(VmWorkSerializer.serialize(workInfo));
+            setCmdInfoAndSubmitAsyncJob(workJob, workInfo, vmId);
         }
 
-        _jobMgr.submitAsyncJob(workJob, VmWorkConstants.VM_WORK_QUEUE, vmId);
 
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
 
@@ -6161,5 +6160,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             result.put(diskOfferingId, isDiskOfferingSuitableForVm(vm, profile, cluster.getPodId(), clusterId, clusterAndHost.second(), diskOfferingId));
         }
         return result;
+    }
+
+    @Override
+    public void checkDeploymentPlan(VirtualMachine virtualMachine, VirtualMachineTemplate template,
+            ServiceOffering serviceOffering, Account systemAccount, DeploymentPlan plan)
+            throws InsufficientServerCapacityException {
+        final VirtualMachineProfileImpl vmProfile =
+                new VirtualMachineProfileImpl(virtualMachine, template, serviceOffering, systemAccount, null);
+        DeployDestination destination =
+                _dpMgr.planDeployment(vmProfile, plan, new DeploymentPlanner.ExcludeList(), null);
+        if (destination == null) {
+            throw new InsufficientServerCapacityException(String.format("Unable to create a deployment for %s",
+                    vmProfile), DataCenter.class, plan.getDataCenterId(), areAffinityGroupsAssociated(vmProfile));
+        }
     }
 }
