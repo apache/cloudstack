@@ -210,6 +210,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             "Number of maximum concurrent new connections server allows for remote agents. " +
                     "If set to zero (default value) then no limit will be enforced on concurrent new connections",
             false);
+    protected final ConfigKey<Integer> RemoteAgentNewConnectionsMonitorInterval = new ConfigKey<>("Advanced", Integer.class, "agent.connections.monitor.interval", "1800",
+            "Time in seconds to monitor the new agent connections and cleanup the expired connections.", false);
     protected final ConfigKey<Integer> AlertWait = new ConfigKey<Integer>("Advanced", Integer.class, "alert.wait", "1800",
             "Seconds to wait before alerting on a disconnected agent", true);
     protected final ConfigKey<Integer> DirectAgentLoadSize = new ConfigKey<Integer>("Advanced", Integer.class, "direct.agent.load.size", "16",
@@ -726,9 +728,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), mgmtServiceConf.getPingInterval(), mgmtServiceConf.getPingInterval(), TimeUnit.SECONDS);
 
-        final int cleanupTimeInSecs = Wait.value();
-        newAgentConnectionsMonitor.scheduleAtFixedRate(new AgentNewConnectionsMonitorTask(), cleanupTimeInSecs,
-                cleanupTimeInSecs, TimeUnit.SECONDS);
+        final int agentConnectionsMonitorTimeInSecs = RemoteAgentNewConnectionsMonitorInterval.value();
+        newAgentConnectionsMonitor.scheduleAtFixedRate(new AgentNewConnectionsMonitorTask(), agentConnectionsMonitorTimeInSecs,
+                agentConnectionsMonitorTimeInSecs, TimeUnit.SECONDS);
 
         return true;
     }
@@ -1857,7 +1859,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         @Override
         protected void runInContext() {
             logger.trace("Agent New Connections Monitor is started.");
-            final int cleanupTime = Wait.value();
+            final int cleanupTime = RemoteAgentNewConnectionsMonitorInterval.value();
             Set<Map.Entry<String, Long>> entrySet = newAgentConnections.entrySet();
             long cutOff = System.currentTimeMillis() - (cleanupTime * 1000L);
             List<String> expiredConnections = newAgentConnections.entrySet()
@@ -1952,7 +1954,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
                 DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait,
-                GranularWaitTimeForCommands, RemoteAgentSslHandshakeTimeout, RemoteAgentMaxConcurrentNewConnections };
+                GranularWaitTimeForCommands, RemoteAgentSslHandshakeTimeout, RemoteAgentMaxConcurrentNewConnections,
+                RemoteAgentNewConnectionsMonitorInterval };
     }
 
     protected class SetHostParamsListener implements Listener {
