@@ -23,15 +23,15 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.VmwareDatacenterResponse;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
@@ -42,10 +42,10 @@ import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 
-@APICommand(name = "listVmwareDcVms", responseObject = VmwareRequestResponse.class,
-        description = "Lists the VMs in a Vmware Datacenter",
+@APICommand(name = "listVmwareDcVms", responseObject = UnmanagedInstanceResponse.class,
+        description = "Lists the VMs in a VMware Datacenter",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListVmwareDcVmsCmd extends BaseCmd  implements ListVmwareDcItems {
+public class ListVmwareDcVmsCmd extends BaseListCmd {
 
     @Inject
     public VmwareDatacenterService _vmwareDatacenterService;
@@ -61,7 +61,7 @@ public class ListVmwareDcVmsCmd extends BaseCmd  implements ListVmwareDcItems {
             description = "The name/ip of vCenter. Make sure it is IP address or full qualified domain name for host running vCenter server.")
     private String vcenter;
 
-    @Parameter(name = ApiConstants.DATACENTER_NAME, type = CommandType.STRING, description = "Name of Vmware datacenter.")
+    @Parameter(name = ApiConstants.DATACENTER_NAME, type = CommandType.STRING, description = "Name of VMware datacenter.")
     private String datacenterName;
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "The Username required to connect to resource.")
@@ -69,18 +69,6 @@ public class ListVmwareDcVmsCmd extends BaseCmd  implements ListVmwareDcItems {
 
     @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "The password for specified username.")
     private String password;
-
-    @Parameter(name = ApiConstants.HOST, type = CommandType.STRING, description = "get only the VMs from the specified host.")
-    private String host;
-
-    @Parameter(name = ApiConstants.BATCH_SIZE, type = CommandType.INTEGER, description = "The maximum number of results to return.")
-    private Integer batchSize;
-
-    @Parameter(name = ApiConstants.TOKEN, type = CommandType.STRING,
-            description = "For listVmwareDcVms, if the maximum number of results (the `batchsize`) is exceeded, " +
-                    " a token is returned. This token can be used in subsequent calls to retrieve more results." +
-                    " As long as a token is returned, more results can be retrieved.")
-    private String token;
 
     public String getVcenter() {
         return vcenter;
@@ -92,18 +80,6 @@ public class ListVmwareDcVmsCmd extends BaseCmd  implements ListVmwareDcItems {
 
     public String getPassword() {
         return password;
-    }
-
-    public Integer getBatchSize() {
-        return batchSize;
-    }
-
-    public String getHost() {
-        return host;
-    }
-
-    public String getToken() {
-        return token;
     }
 
     public String getDatacenterName() {
@@ -118,8 +94,7 @@ public class ListVmwareDcVmsCmd extends BaseCmd  implements ListVmwareDcItems {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         checkParameters();
         try {
-            Pair<String, List<UnmanagedInstanceTO>> results = _vmwareDatacenterService.listVMsInDatacenter(this);
-            List<UnmanagedInstanceTO> vms = results.second();
+            List<UnmanagedInstanceTO> vms = _vmwareDatacenterService.listVMsInDatacenter(this);
             List<BaseResponse> baseResponseList = new ArrayList<>();
             if (CollectionUtils.isNotEmpty(vms)) {
                 for (UnmanagedInstanceTO vmwareVm : vms) {
@@ -127,13 +102,16 @@ public class ListVmwareDcVmsCmd extends BaseCmd  implements ListVmwareDcItems {
                     baseResponseList.add(resp);
                 }
             }
-            VmwareRequestResponse<BaseResponse> response = new VmwareRequestResponse<>();
-            response.setResponses(baseResponseList, baseResponseList.size());
+            List<BaseResponse> pagingList = com.cloud.utils.StringUtils.applyPagination(baseResponseList, this.getStartIndex(), this.getPageSizeVal());
+            if (CollectionUtils.isEmpty(pagingList)) {
+                pagingList = baseResponseList;
+            }
+            ListResponse<BaseResponse> response = new ListResponse<>();
+            response.setResponses(pagingList, baseResponseList.size());
             response.setResponseName(getCommandName());
-            response.setToken(results.first());
             setResponseObject(response);
         } catch (CloudRuntimeException e) {
-            String errorMsg = String.format("Error retrieving VMs from Vmware VC: %s", e.getMessage());
+            String errorMsg = String.format("Error retrieving VMs from VMware VC: %s", e.getMessage());
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, errorMsg);
         }
     }
@@ -156,6 +134,6 @@ public class ListVmwareDcVmsCmd extends BaseCmd  implements ListVmwareDcItems {
 
     @Override
     public String getCommandName() {
-        return "listVmwareDcVmsResponse".toLowerCase();
+        return "listvmwaredcvmsresponse";
     }
 }

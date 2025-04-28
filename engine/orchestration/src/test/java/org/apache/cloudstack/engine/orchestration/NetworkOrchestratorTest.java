@@ -891,7 +891,7 @@ public class NetworkOrchestratorTest extends TestCase {
         boolean shutdownNetworkStatus = testOrchestrator.shutdownNetwork(networkId, reservationContext, false);
         Assert.assertFalse(shutdownNetworkStatus);
 
-        verify(network, times(3)).getState();
+        verify(network).getState();
         verify(testOrchestrator._networksDao, times(1)).acquireInLockTable(networkId, NetworkLockTimeout.value());
         verify(testOrchestrator._networksDao, times(1)).releaseFromLockTable(networkId);
     }
