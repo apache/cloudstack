@@ -424,7 +424,7 @@ export default {
         {
           api: 'restoreBackup',
           icon: 'sync-outlined',
-          docHelp: 'adminguide/virtual_machines.html#restoring-vm-backups',
+          docHelp: 'adminguide/virtual_machines.html#restoring-instance-backups',
           label: 'label.backup.restore',
           message: 'message.backup.restore',
           dataView: true,
@@ -443,7 +443,7 @@ export default {
         {
           api: 'createVMFromBackup',
           icon: 'caret-right-outlined',
-          docHelp: 'adminguide/virtual_machines.html#restoring-vm-backups',
+          docHelp: 'adminguide/virtual_machines.html#creating-a-new-instance-from-backup',
           label: 'label.create.instance.from.backup',
           message: 'message.backup.restore',
           dataView: true,

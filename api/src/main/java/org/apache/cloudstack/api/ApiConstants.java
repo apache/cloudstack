@@ -285,6 +285,7 @@ public class ApiConstants {
     public static final String IP_ADDRESS = "ipaddress";
     public static final String IP_ADDRESSES = "ipaddresses";
     public static final String IP6_ADDRESS = "ip6address";
+    public static final String IP6_ADDRESSES = "ip6addresses";
     public static final String IP_ADDRESS_ID = "ipaddressid";
     public static final String IS_2FA_ENABLED = "is2faenabled";
     public static final String IS_2FA_VERIFIED = "is2faverified";
@@ -333,6 +334,7 @@ public class ApiConstants {
     public static final String LBID = "lbruleid";
     public static final String LB_PROVIDER = "lbprovider";
     public static final String MAC_ADDRESS = "macaddress";
+    public static final String MAC_ADDRESSES = "macaddresses";
     public static final String MAX = "max";
     public static final String MAX_SNAPS = "maxsnaps";
     public static final String MAX_BACKUPS = "maxbackups";
@@ -417,6 +419,7 @@ public class ApiConstants {
     public static final String POST_URL = "postURL";
     public static final String POWER_STATE = "powerstate";
     public static final String PRECEDENCE = "precedence";
+    public static final String PRESERVE_IP = "preserveip";
     public static final String PRIVATE_INTERFACE = "privateinterface";
     public static final String PRIVATE_IP = "privateip";
     public static final String PRIVATE_PORT = "privateport";

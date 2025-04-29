@@ -25,6 +25,17 @@
           </template>
         </a-alert>
       </div>
+      <a-form :model="form" layout="vertical">
+        <a-form-item :label="$t('label.name.optional')" name="name">
+          <a-input v-model:value="form.name" />
+        </a-form-item>
+        <a-form-item v-if="!resource.virtualmachineid" name="preserveIpAddresses" style="margin-top: 8px">
+          <a-switch v-model:checked="form.preserveIpAddresses" />
+          <template #label>
+            <tooltip-label :title="$t('label.use.backup.ip.address')" :tooltip="$t('label.use.backup.ip.address.tooltip')"/>
+          </template>
+        </a-form-item>
+      </a-form>
       <div class="card-footer">
         <a-button @click="closeAction">
           {{ $t('label.cancel') }}
@@ -50,6 +61,7 @@
 import { h } from 'vue'
 import { api } from '@/api'
 import { Button } from 'ant-design-vue'
+import TooltipLabel from '@/components/widgets/TooltipLabel'
 import eventBus from '@/config/eventBus'
 
 import DeployVMFromBackup from '@/components/view/DeployVMFromBackup'
@@ -57,7 +69,8 @@ import DeployVMFromBackup from '@/components/view/DeployVMFromBackup'
 export default {
   name: 'CreateVMFromBackup',
   components: {
-    DeployVMFromBackup
+    DeployVMFromBackup,
+    TooltipLabel
   },
   data () {
     return {
@@ -65,7 +78,11 @@ export default {
       dataPreFill: {},
       vmdetails: {},
       serviceOffering: {},
-      loading: true
+      loading: true,
+      form: {
+        name: '',
+        preserveIpAddresses: false
+      }
     }
   },
   props: {
@@ -108,7 +125,10 @@ export default {
       this.dataPreFill.backupid = this.resource.id
       this.dataPreFill.computeofferingid = this.vmdetails.serviceofferingid
       this.dataPreFill.templateid = this.vmdetails.templateid
+      this.dataPreFill.allowIpAddressesFetch = !this.resource.virtualmachineid
       this.dataPreFill.networkids = (this.vmdetails.networkids || '').split(',')
+      this.dataPreFill.ipAddresses = (this.vmdetails.ipaddresses || '').split(',')
+      this.dataPreFill.macAddresses = (this.vmdetails.macaddresses || '').split(',')
       this.diskofferingids = (this.vmdetails.diskofferingids || '').split(',')
       this.miniops = (this.vmdetails.miniops || '').split(',').map(item => item === 'null' ? '' : item)
       this.maxiops = (this.vmdetails.maxiops || '').split(',').map(item => item === 'null' ? '' : item)
@@ -155,6 +175,15 @@ export default {
       const args = {}
       args.zoneid = this.resource.zoneid
       args.backupid = this.resource.id
+
+      if (this.form.name) {
+        args.name = this.form.name
+        args.displayname = this.form.name
+      }
+
+      if (this.form.preserveIpAddresses) {
+        args.preserveip = this.form.preserveIpAddresses
+      }
 
       const title = this.$t('label.create.instance.from.backup')
       const description = ''

@@ -268,4 +268,5 @@ public interface NetworkService {
     InternalLoadBalancerElementService getInternalLoadBalancerElementByNetworkServiceProviderId(long networkProviderId);
     InternalLoadBalancerElementService getInternalLoadBalancerElementById(long providerId);
     List<InternalLoadBalancerElementService> getInternalLoadBalancerElements();
+    IpAddresses getIpAddressesFromIps(String ipAddress, String ip6Address, String macAddress);
 }

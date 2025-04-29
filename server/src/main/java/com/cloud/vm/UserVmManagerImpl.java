@@ -9173,22 +9173,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         Map<Long, IpAddresses> ipToNetworkMap = cmd.getIpToNetworkMap();
         if (networkIds == null && ipToNetworkMap == null) {
-            String networkIdsString = backup.getDetail(ApiConstants.NETWORK_IDS);
-            if (networkIdsString == null) {
-                throw new CloudRuntimeException("Backup doesn't contain network information. Please specify atleast one valid network while creating instance");
-            }
-            List<String> networkUuids = List.of(networkIdsString.split(","));
-            ipToNetworkMap = new LinkedHashMap<Long, IpAddresses>();
             networkIds = new ArrayList<Long>();
-            for (String networkUuid: networkUuids) {
-                Network network = _networkDao.findByUuid(networkUuid);
-                if (network == null) {
-                    throw new CloudRuntimeException("Unable to find network with the uuid " + networkUuid + "stored in backup. Please specify a valid network id while creating the instance");
-                }
-                Long networkId = network.getId();
-                ipToNetworkMap.put(networkId, null);
-                networkIds.add(networkId);
-            }
+            ipToNetworkMap = backupManager.getIpToNetworkMapFromBackup(backup, cmd.getPreserveIp(), networkIds);
         }
 
         if (cmd.getUserData() != null) {

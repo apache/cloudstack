@@ -3187,7 +3187,6 @@ public class UserVmManagerImplTest {
         when(backup.getZoneId()).thenReturn(zoneId);
         when(backup.getVmId()).thenReturn(vmId);
         when(backupDao.findById(backupId)).thenReturn(backup);
-        when(backup.getDetail(ApiConstants.NETWORK_IDS)).thenReturn("network-uuid");
 
         UserVmVO userVmVO = new UserVmVO();
         userVmVO.setTemplateId(templateId);
@@ -3195,10 +3194,6 @@ public class UserVmManagerImplTest {
         VMTemplateVO template = mock(VMTemplateVO.class);
         when(template.getFormat()).thenReturn(Storage.ImageFormat.QCOW2);
         when(templateDao.findById(templateId)).thenReturn(template);
-
-        NetworkVO network = mock(NetworkVO.class);
-        when(network.getId()).thenReturn(networkId);
-        when(_networkDao.findByUuid("network-uuid")).thenReturn(network);
 
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),
                 any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), nullable(Boolean.class), any(), any(), any(),
@@ -3255,13 +3250,8 @@ public class UserVmManagerImplTest {
         when(serviceOffering.getDiskOfferingId()).thenReturn(rootDiskOfferingId);
         when(diskOfferingDao.findById(rootDiskOfferingId)).thenReturn(diskOffering);
 
-        when(backup.getDetail(ApiConstants.NETWORK_IDS)).thenReturn("net1-uuid,net2-uuid");
         NetworkVO network1 = mock(NetworkVO.class);
         NetworkVO network2 = mock(NetworkVO.class);
-        when(_networkDao.findByUuid("net1-uuid")).thenReturn(network1);
-        when(_networkDao.findByUuid("net2-uuid")).thenReturn(network2);
-        when(network1.getId()).thenReturn(network1Id);
-        when(network2.getId()).thenReturn(network2Id);
         when(backupManager.getDataDiskOfferingListFromBackup(backup)).thenReturn(List.of(new DiskOfferingInfo(diskOffering, 10L, 1000L, 2000L)));
 
         Mockito.doReturn(userVmVoMock).when(userVmManagerImpl).createAdvancedVirtualMachine(any(), any(), any(), any(), any(), any(), any(),

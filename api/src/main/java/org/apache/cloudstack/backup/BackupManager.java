@@ -33,6 +33,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.Network;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
@@ -229,6 +230,8 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * Restore a full VM from backup
      */
     boolean restoreBackup(final Long backupId);
+
+    Map<Long, Network.IpAddresses> getIpToNetworkMapFromBackup(Backup backup, boolean preserveIps, List<Long> networkIds);
 
     /**
      * Restore a backup to a new Instance

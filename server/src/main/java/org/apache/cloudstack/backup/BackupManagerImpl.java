@@ -21,7 +21,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -38,6 +39,9 @@ import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.configuration.Resource;
 import com.cloud.exception.ResourceAllocationException;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkService;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.storage.Snapshot;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
@@ -187,6 +191,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Inject
     private UserVmJoinDao userVmJoinDao;
     @Inject
+    private NetworkDao networkDao;
+    @Inject
+    private NetworkService networkService;
+    @Inject
     private ApiDispatcher apiDispatcher;
     @Inject
     private AsyncJobManager asyncJobManager;
@@ -318,12 +326,21 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         details.put(ApiConstants.SERVICE_OFFERING_ID, serviceOffering.getUuid());
         List<UserVmJoinVO> userVmJoinVOs = userVmJoinDao.searchByIds(vm.getId());
         if (userVmJoinVOs != null && !userVmJoinVOs.isEmpty()) {
-            Set<String> networkIds = new HashSet<>();
+            Set<String> networkIds = new LinkedHashSet<>();
+            Set<String> ipAddresses = new LinkedHashSet<>();
+            Set<String> ip6Addresses = new LinkedHashSet<>();
+            Set<String> macAddresses = new LinkedHashSet<>();
             for (UserVmJoinVO userVmJoinVO : userVmJoinVOs) {
                 networkIds.add(userVmJoinVO.getNetworkUuid());
+                ipAddresses.add(userVmJoinVO.getIpAddress());
+                ip6Addresses.add(userVmJoinVO.getIp6Address());
+                macAddresses.add(userVmJoinVO.getMacAddress());
             }
             if (!networkIds.isEmpty()) {
                 details.put(ApiConstants.NETWORK_IDS, String.join(",", networkIds));
+                details.put(ApiConstants.IP_ADDRESSES, String.join(",", ipAddresses));
+                details.put(ApiConstants.IP6_ADDRESS, String.join(",", ip6Addresses));
+                details.put(ApiConstants.MAC_ADDRESSES, String.join(",", macAddresses));
             }
         }
         return details;
@@ -1057,6 +1074,64 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             diskOfferingInfoList.add(new DiskOfferingInfo(diskOffering, size, minIops, maxIops, deviceId));
         }
         return diskOfferingInfoList;
+    }
+
+    @Override
+    public Map<Long, Network.IpAddresses> getIpToNetworkMapFromBackup(Backup backup, boolean preserveIps, List<Long> networkIds)
+    {
+        Map<Long, Network.IpAddresses> ipToNetworkMap = new LinkedHashMap<Long, Network.IpAddresses>();
+
+        String networkIdsString = backup.getDetail(ApiConstants.NETWORK_IDS);
+        if (networkIdsString == null) {
+            throw new CloudRuntimeException("Backup doesn't contain network information. Please specify atleast one valid network while creating instance");
+        }
+        List<String> networkUuids = List.of(networkIdsString.split(","));
+
+        List<String> requestedIp = null;
+        List<String> requestedMac = null;
+        List<String> requestedIpv6 = null;
+        boolean preserveIpAddresses = false;
+        if (preserveIps) {
+            VMInstanceVO vm = vmInstanceDao.findById(backup.getVmId());
+            if (vm == null) {
+                preserveIpAddresses = true;
+            }
+        }
+        if (preserveIpAddresses) {
+            String ipAddressString = backup.getDetail(ApiConstants.IP_ADDRESSES);
+            String ip6AddressString = backup.getDetail(ApiConstants.IP6_ADDRESSES);
+            String macAddressString = backup.getDetail(ApiConstants.MAC_ADDRESSES);
+
+            if (ipAddressString != null) {
+                requestedIp = List.of(ipAddressString.split(","));
+            }
+            if (macAddressString != null) {
+                requestedMac = List.of(macAddressString.split(","));
+            }
+            if (ip6AddressString != null) {
+                requestedIpv6 = List.of(ip6AddressString.split(","));
+            }
+        }
+
+        int index = 0;
+        for (String networkUuid: networkUuids) {
+            Network network = networkDao.findByUuid(networkUuid);
+            if (network == null) {
+                throw new CloudRuntimeException("Unable to find network with the uuid " + networkUuid + "stored in backup. Please specify a valid network id while creating the instance");
+            }
+            Long networkId = network.getId();
+            Network.IpAddresses ipAddresses = null;
+            if (preserveIpAddresses) {
+                String ip = (requestedIp != null) ? requestedIp.get(index) : null;
+                String ipv6 = (requestedIpv6 != null) ? requestedIpv6.get(index) : null;
+                String mac = (requestedMac != null) ? requestedMac.get(index) : null;
+                ipAddresses = networkService.getIpAddressesFromIps(ip, ipv6, mac);
+            }
+            ipToNetworkMap.put(networkId, ipAddresses);
+            networkIds.add(networkId);
+            index += 1;
+        }
+        return ipToNetworkMap;
     }
 
     @Override

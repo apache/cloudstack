@@ -72,6 +72,9 @@ public class CreateVMFromBackupCmd extends BaseDeployVMCmd {
     @Parameter(name = ApiConstants.TEMPLATE_ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "the ID of the template for the virtual machine")
     private Long templateId;
 
+    @Parameter(name = ApiConstants.PRESERVE_IP, type = CommandType.BOOLEAN, description = "Use the same IP/MAC addresses as stored in the backup metadata. Works only if the original Instance is deleted and the IP/MAC address is avaialable.")
+    private Boolean preserveIp;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -86,6 +89,10 @@ public class CreateVMFromBackupCmd extends BaseDeployVMCmd {
 
     public Long getTemplateId() {
         return templateId;
+    }
+
+    public boolean getPreserveIp() {
+        return (preserveIp != null) ? preserveIp : false;
     }
 
     @Override
