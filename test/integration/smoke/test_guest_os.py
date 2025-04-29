@@ -181,7 +181,7 @@ class TestGuestOS(cloudstackTestCase):
             raise unittest.SkipTest("OS name check with hypervisor is supported only on XenServer and VMware")
 
         if self.hypervisor.hypervisor.lower() == "xenserver":
-            if tuple(map(int, self.hypervisor.hypervisorversion.split("."))) >= (8, 4, 0):
+            if tuple(map(int, self.hypervisor.hypervisorversion.split("."))) >= (8, 3, 0):
                 testosname = "Debian Bookworm 12"
             else:
                 testosname = "Debian Jessie 8.0"
