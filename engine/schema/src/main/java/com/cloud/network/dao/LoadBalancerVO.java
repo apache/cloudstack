@@ -144,4 +144,8 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
                         this, "id", "uuid", "name", "purpose", "state"));
     }
+
+    public void setCidrList(String cidrList) {
+        this.cidrList = cidrList;
+    }
 }
