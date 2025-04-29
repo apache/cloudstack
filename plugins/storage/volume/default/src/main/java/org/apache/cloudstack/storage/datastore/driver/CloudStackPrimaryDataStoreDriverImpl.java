@@ -28,6 +28,7 @@ import javax.inject.Inject;
 
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.storage.VolumeVO;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -435,6 +436,11 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         // if hosts are provided, they are where the VM last ran. We can use that.
         if (endpointsToRunResize == null || endpointsToRunResize.length == 0) {
             EndPoint ep = epSelector.select(data, encryptionRequired);
+            if (ep == null) {
+                String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
+                s_logger.error(errMsg);
+                throw new CloudRuntimeException(errMsg);
+            }
             endpointsToRunResize = new long[] {ep.getId()};
         }
         ResizeVolumeCommand resizeCmd = new ResizeVolumeCommand(vol.getPath(), new StorageFilerTO(pool), vol.getSize(),
