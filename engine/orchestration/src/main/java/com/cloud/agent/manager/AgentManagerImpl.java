@@ -51,8 +51,8 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.commons.collections.MapUtils;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
@@ -210,6 +210,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             "Number of maximum concurrent new connections server allows for remote agents. " +
                     "If set to zero (default value) then no limit will be enforced on concurrent new connections",
             false);
+    protected final ConfigKey<Integer> RemoteAgentNewConnectionsMonitorInterval = new ConfigKey<>("Advanced", Integer.class, "agent.connections.monitor.interval", "1800",
+            "Time in seconds to monitor the new agent connections and cleanup the expired connections.", false);
     protected final ConfigKey<Integer> AlertWait = new ConfigKey<Integer>("Advanced", Integer.class, "alert.wait", "1800",
             "Seconds to wait before alerting on a disconnected agent", true);
     protected final ConfigKey<Integer> DirectAgentLoadSize = new ConfigKey<Integer>("Advanced", Integer.class, "direct.agent.load.size", "16",
@@ -726,9 +728,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), mgmtServiceConf.getPingInterval(), mgmtServiceConf.getPingInterval(), TimeUnit.SECONDS);
 
-        final int cleanupTime = Wait.value();
-        newAgentConnectionsMonitor.scheduleAtFixedRate(new AgentNewConnectionsMonitorTask(), cleanupTime,
-                cleanupTime, TimeUnit.MINUTES);
+        final int agentConnectionsMonitorTimeInSecs = RemoteAgentNewConnectionsMonitorInterval.value();
+        newAgentConnectionsMonitor.scheduleAtFixedRate(new AgentNewConnectionsMonitorTask(), agentConnectionsMonitorTimeInSecs,
+                agentConnectionsMonitorTimeInSecs, TimeUnit.SECONDS);
 
         return true;
     }
@@ -1857,27 +1859,21 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         @Override
         protected void runInContext() {
             logger.trace("Agent New Connections Monitor is started.");
-            final int cleanupTime = Wait.value();
+            final int cleanupTime = RemoteAgentNewConnectionsMonitorInterval.value();
             Set<Map.Entry<String, Long>> entrySet = newAgentConnections.entrySet();
-            long cutOff = System.currentTimeMillis() - (cleanupTime * 60 * 1000L);
-            if (logger.isDebugEnabled()) {
-                List<String> expiredConnections = newAgentConnections.entrySet()
-                        .stream()
-                        .filter(e -> e.getValue() <= cutOff)
-                        .map(Map.Entry::getKey)
-                        .collect(Collectors.toList());
-                logger.debug(String.format("Currently %d active new connections, of which %d have expired - %s",
-                        entrySet.size(),
-                        expiredConnections.size(),
-                        StringUtils.join(expiredConnections)));
-            }
-            for (Map.Entry<String, Long> entry : entrySet) {
-                if (entry.getValue() <= cutOff) {
-                    if (logger.isTraceEnabled()) {
-                        logger.trace(String.format("Cleaning up new agent connection for %s", entry.getKey()));
-                    }
-                    newAgentConnections.remove(entry.getKey());
-                }
+            long cutOff = System.currentTimeMillis() - (cleanupTime * 1000L);
+            List<String> expiredConnections = newAgentConnections.entrySet()
+                    .stream()
+                    .filter(e -> e.getValue() <= cutOff)
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
+            logger.debug("Currently {} active new connections, of which {} have expired - {}",
+                    entrySet.size(),
+                    expiredConnections.size(),
+                    StringUtils.join(expiredConnections));
+            for (String connection : expiredConnections) {
+                logger.trace("Cleaning up new agent connection for {}", connection);
+                newAgentConnections.remove(connection);
             }
         }
     }
@@ -1958,7 +1954,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize,
                 DirectAgentPoolSize, DirectAgentThreadCap, EnableKVMAutoEnableDisable, ReadyCommandWait,
-                GranularWaitTimeForCommands, RemoteAgentSslHandshakeTimeout, RemoteAgentMaxConcurrentNewConnections };
+                GranularWaitTimeForCommands, RemoteAgentSslHandshakeTimeout, RemoteAgentMaxConcurrentNewConnections,
+                RemoteAgentNewConnectionsMonitorInterval };
     }
 
     protected class SetHostParamsListener implements Listener {

@@ -31,13 +31,13 @@ import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponseWithTagInformation;
 import org.apache.cloudstack.api.EntityReference;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.serializer.Param;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 import com.google.gson.annotations.SerializedName;
-import org.apache.commons.collections.CollectionUtils;
 
 @SuppressWarnings("unused")
 @EntityReference(value = {VirtualMachine.class, UserVm.class, VirtualRouter.class})
@@ -395,6 +395,10 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @SerializedName((ApiConstants.VM_TYPE))
     @Param(description = "User VM type", since = "4.20.0")
     private String vmType;
+
+    @SerializedName(ApiConstants.ARCH)
+    @Param(description = "CPU arch of the VM", since = "4.20.1")
+    private String arch;
 
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<>();
@@ -1168,5 +1172,13 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
 
     public void setIpAddress(String ipAddress) {
         this.ipAddress = ipAddress;
+    }
+
+    public String getArch() {
+        return arch;
+    }
+
+    public void setArch(String arch) {
+        this.arch = arch;
     }
 }

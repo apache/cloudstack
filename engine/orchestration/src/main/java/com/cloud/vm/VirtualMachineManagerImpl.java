@@ -427,7 +427,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     static final ConfigKey<Long> VmOpCleanupInterval = new ConfigKey<Long>("Advanced", Long.class, "vm.op.cleanup.interval", "86400",
             "Interval to run the thread that cleans up the vm operations (in seconds)", false);
     static final ConfigKey<Long> VmOpCleanupWait = new ConfigKey<Long>("Advanced", Long.class, "vm.op.cleanup.wait", "3600",
-            "Time (in seconds) to wait before cleanuping up any vm work items", true);
+            "Time (in seconds) to wait before cleaning up any vm work items", true);
     static final ConfigKey<Long> VmOpCancelInterval = new ConfigKey<Long>("Advanced", Long.class, "vm.op.cancel.interval", "3600",
             "Time (in seconds) to wait before cancelling a operation", false);
     static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
@@ -6082,5 +6082,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             result.put(diskOfferingId, isDiskOfferingSuitableForVm(vm, profile, cluster.getPodId(), clusterId, clusterAndHost.second(), diskOfferingId));
         }
         return result;
+    }
+
+    @Override
+    public void checkDeploymentPlan(VirtualMachine virtualMachine, VirtualMachineTemplate template,
+            ServiceOffering serviceOffering, Account systemAccount, DeploymentPlan plan)
+            throws InsufficientServerCapacityException {
+        final VirtualMachineProfileImpl vmProfile =
+                new VirtualMachineProfileImpl(virtualMachine, template, serviceOffering, systemAccount, null);
+        DeployDestination destination =
+                _dpMgr.planDeployment(vmProfile, plan, new DeploymentPlanner.ExcludeList(), null);
+        if (destination == null) {
+            throw new InsufficientServerCapacityException(String.format("Unable to create a deployment for %s",
+                    vmProfile), DataCenter.class, plan.getDataCenterId(), areAffinityGroupsAssociated(vmProfile));
+        }
     }
 }

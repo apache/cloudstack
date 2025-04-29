@@ -566,9 +566,20 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals("<cpu><topology sockets='4' cores='2' threads='1' /></cpu>", cpuModeDef.toString());
     }
 
+    @Test
     public void testTopologyNoInfo() {
         LibvirtVMDef.CpuModeDef cpuModeDef = new LibvirtVMDef.CpuModeDef();
         cpuModeDef.setTopology(-1, -1, 4);
         assertEquals("<cpu></cpu>", cpuModeDef.toString());
+    }
+
+    @Test
+    public void testTpmModel() {
+        LibvirtVMDef.TpmDef tpmDef = new LibvirtVMDef.TpmDef("tpm-tis", "2.0");
+        assertEquals(LibvirtVMDef.TpmDef.TpmModel.TIS, tpmDef.getModel());
+        assertEquals(LibvirtVMDef.TpmDef.TpmVersion.V2_0, tpmDef.getVersion());
+        assertEquals("<tpm model='tpm-tis'>\n" +
+                "<backend type='emulator' version='2.0'/>\n" +
+                "</tpm>\n", tpmDef.toString());
     }
 }
