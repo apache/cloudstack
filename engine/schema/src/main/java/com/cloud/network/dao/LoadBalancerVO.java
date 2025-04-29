@@ -136,4 +136,8 @@ public class LoadBalancerVO extends FirewallRuleVO implements LoadBalancer {
     public String getCidrList() {
         return cidrList;
     }
+
+    public void setCidrList(String cidrList) {
+        this.cidrList = cidrList;
+    }
 }
