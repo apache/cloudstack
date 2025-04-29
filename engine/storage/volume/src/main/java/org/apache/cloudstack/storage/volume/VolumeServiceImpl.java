@@ -2491,7 +2491,7 @@ public class VolumeServiceImpl implements VolumeService {
         try {
             volume.processEvent(Event.ResizeRequested);
         } catch (Exception e) {
-            s_logger.debug("Failed to change state to resize", e);
+            s_logger.debug("Failed to change volume state to resize", e);
             result.setResult(e.toString());
             future.complete(result);
             return future;
@@ -2503,10 +2503,8 @@ public class VolumeServiceImpl implements VolumeService {
         try {
             volume.getDataStore().getDriver().resize(volume, caller);
         } catch (Exception e) {
-            s_logger.debug("Failed to change state to resize", e);
-
+            s_logger.debug("Failed to resize volume", e);
             result.setResult(e.toString());
-
             future.complete(result);
         }
 
