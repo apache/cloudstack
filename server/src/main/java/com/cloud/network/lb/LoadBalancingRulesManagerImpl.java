@@ -2257,6 +2257,17 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         }
 
         validateInputsForExternalNetworkProvider(lb, algorithm, lbProtocol);
+
+        List<String> cidrList = cmd.getCidrList();
+
+        if (cidrList != null) {
+            String cidrListStr = StringUtils.join(cidrList, ",");
+            if (!cidrListStr.isEmpty() && !NetUtils.isValidCidrList(cidrListStr)) {
+                throw new InvalidParameterValueException("Invalid CIDR list: " + cidrListStr);
+            }
+            lb.setCidrList(cidrListStr);
+        }
+
         // Validate rule in LB provider
         LoadBalancingRule rule = getLoadBalancerRuleToApply(lb);
         if (!validateLbRule(rule)) {
@@ -2266,10 +2277,12 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         LoadBalancerVO tmplbVo = _lbDao.findById(lbRuleId);
         boolean success = _lbDao.update(lbRuleId, lb);
 
-        // If algorithm or lb protocol is changed, have to reapply the lb config
-        boolean needToReApplyRule = (algorithm != null && !algorithm.equals(tmplbVo.getAlgorithm()))
-                || (lbProtocol != null && !lbProtocol.equals(tmplbVo.getLbProtocol()));
-        if (needToReApplyRule) {
+        // Check if algorithm, lb protocol, or cidrlist has changed, and reapply the lb config if needed
+        boolean algorithmChanged = !Objects.equals(algorithm, tmplbVo.getAlgorithm());
+        boolean protocolChanged = !Objects.equals(lbProtocol, tmplbVo.getLbProtocol());
+        boolean cidrListChanged = !Objects.equals(tmplbVo.getCidrList(), lb.getCidrList());
+
+        if (algorithmChanged || protocolChanged || cidrListChanged) {
             try {
                 lb.setState(FirewallRule.State.Add);
                 _lbDao.persist(lb);
@@ -2296,6 +2309,8 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                     if (lbBackup.getLbProtocol() != null) {
                         lb.setLbProtocol(lbBackup.getLbProtocol());
                     }
+
+                    lb.setCidrList(lbBackup.getCidrList());
                     lb.setState(lbBackup.getState());
                     _lbDao.update(lb.getId(), lb);
                     _lbDao.persist(lb);
