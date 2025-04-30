@@ -17,19 +17,20 @@
 package org.apache.cloudstack.storage.allocator;
 
 
+import com.cloud.capacity.Capacity;
+import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineProfile;
-
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -41,10 +42,15 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -57,6 +63,10 @@ public class AbstractStoragePoolAllocatorTest {
 
     @Mock
     Account account;
+
+    @Mock
+    CapacityDao capacityDao;
+
     private List<StoragePool> pools;
 
     @Mock
@@ -135,6 +145,28 @@ public class AbstractStoragePoolAllocatorTest {
             firstchoice.add(pools.get(0).getId());
         }
         Assert.assertTrue(firstchoice.size() > 2);
+    }
+
+    @Test
+    public void reorderStoragePoolsBasedOnAlgorithmFirstFitLeastConsumed() throws Exception {
+        overrideDefaultConfigValue(VolumeOrchestrationService.VolumeAllocationAlgorithm, "firstfitleastconsumed");
+        when(plan.getDataCenterId()).thenReturn(1L);
+        when(plan.getClusterId()).thenReturn(1L);
+        StoragePool pool1 = mock(StoragePool.class);
+        StoragePool pool2 = mock(StoragePool.class);
+        when(pool1.getId()).thenReturn(1L);
+        when(pool2.getId()).thenReturn(2L);
+        List<StoragePool> pools = Arrays.asList(pool1, pool2);
+        List<Long> poolIds = Arrays.asList(2L, 1L);
+        Map<Long, Double> hostCapacityMap = new HashMap<>();
+        hostCapacityMap.put(1L, 8.0);
+        hostCapacityMap.put(2L, 8.5);
+        Pair<List<Long>, Map<Long, Double>> poolsOrderedByCapacity = new Pair<>(poolIds, hostCapacityMap);
+
+        allocator.capacityDao = capacityDao;
+        Mockito.when(capacityDao.orderHostsByFreeCapacity(1L, 1L, Capacity.CAPACITY_TYPE_LOCAL_STORAGE)).thenReturn(poolsOrderedByCapacity);
+        List<StoragePool> result = allocator.reorderPoolsByCapacity(plan, pools);
+        assertEquals(Arrays.asList(pool2, pool1), result);
     }
 
     private void overrideDefaultConfigValue(final ConfigKey configKey, final String value) throws IllegalAccessException, NoSuchFieldException {

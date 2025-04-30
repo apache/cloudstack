@@ -49,7 +49,7 @@ public class ZoneWideStoragePoolAllocator extends AbstractStoragePoolAllocator {
     @Inject
     private DataStoreManager dataStoreMgr;
     @Inject
-    private CapacityDao capacityDao;
+    protected CapacityDao capacityDao;
 
     @Override
     protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo, boolean bypassStorageTypeCheck, String keyword) {

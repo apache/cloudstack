@@ -77,7 +77,7 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
     @Inject protected PrimaryDataStoreDao storagePoolDao;
     @Inject protected VolumeDao volumeDao;
     @Inject protected ConfigurationDao configDao;
-    @Inject private CapacityDao capacityDao;
+    @Inject protected CapacityDao capacityDao;
     @Inject private ClusterDao clusterDao;
     @Inject private StorageManager storageMgr;
     @Inject private StorageUtil storageUtil;
