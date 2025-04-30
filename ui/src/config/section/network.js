@@ -1009,10 +1009,9 @@ export default {
     },
     {
       name: 'acllist',
-      title: 'label.network.acl.lists',
+      title: 'label.network.acls',
       icon: 'bars-outlined',
       docHelp: 'adminguide/networking_and_traffic.html#configuring-network-access-control-list',
-      hidden: true,
       permission: ['listNetworkACLLists'],
       columns: ['name', 'description', 'id'],
       details: ['name', 'description', 'id'],
@@ -1020,15 +1019,15 @@ export default {
         name: 'details',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
       }, {
-        name: 'acl.list.rules',
-        component: shallowRef(defineAsyncComponent(() => import('@/views/network/AclListRulesTab.vue'))),
+        name: 'acl.rules',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/network/AclRulesTab.vue'))),
         show: () => true
       }],
       actions: [
         {
           api: 'createNetworkACLList',
           icon: 'plus-outlined',
-          label: 'label.add.acl.list',
+          label: 'label.add.acl',
           docHelp: 'adminguide/networking_and_traffic.html#creating-acl-lists',
           listView: true,
           args: ['name', 'description', 'vpcid']
@@ -1036,15 +1035,15 @@ export default {
         {
           api: 'updateNetworkACLList',
           icon: 'edit-outlined',
-          label: 'label.edit.acl.list',
+          label: 'label.edit.acl',
           dataView: true,
           args: ['name', 'description']
         },
         {
           api: 'deleteNetworkACLList',
           icon: 'delete-outlined',
-          label: 'label.delete.acl.list',
-          message: 'message.confirm.delete.acl.list',
+          label: 'label.delete.acl',
+          message: 'message.confirm.delete.acl',
           dataView: true
         }
       ]
