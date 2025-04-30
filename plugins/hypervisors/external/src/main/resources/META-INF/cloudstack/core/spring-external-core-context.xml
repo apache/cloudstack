@@ -26,23 +26,6 @@
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
-    <bean id="SimpleExternalProvisioner" class="com.cloud.hypervisor.external.provisioner.simpleprovisioner.SimpleExternalProvisioner">
-        <property name="name" value="simpleExternalProvisioner" />
-    </bean>
-
-    <bean id="ExternalAgentManager" class="com.cloud.agent.manager.ExternalAgentManagerImpl" >
-        <property name="externalProvisioners" value="#{externalProvisionersRegistry.registered}" />
-    </bean>
-
-    <bean id="externalProvisionersRegistry"
-          class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
-        <property name="orderConfigKey" value="external.provisioners.order" />
-        <property name="orderConfigDefault" value="simpleExternalProvisioner" />
-    </bean>
-
-    <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
-        <property name="registry" ref="externalProvisionersRegistry" />
-        <property name="typeClass"
-                  value="com.cloud.hypervisor.ExternalProvisioner" />
-    </bean>
+    <bean id="ExternalProvisioner" class="com.cloud.hypervisor.external.provisioner.simpleprovisioner.SimpleExternalProvisioner"/>
+    <bean id="ExternalAgentManager" class="com.cloud.agent.manager.ExternalAgentManagerImpl" />
 </beans>

@@ -42,7 +42,8 @@ import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
@@ -58,8 +59,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.guru.ExternalHypervisorGuru;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -70,14 +69,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class SimpleExternalProvisioner extends AdapterBase implements ExternalProvisioner, Configurable {
+public class SimpleExternalProvisioner extends ManagerBase implements ExternalProvisioner, PluggableService {
 
-    public static final ConfigKey<String> SampleExternalConfig = new ConfigKey<>(String.class, "sample.external.provisioning.config", "Advanced", "",
-            "Sample external provisioning config, any value that has to be sent", true, ConfigKey.Scope.Cluster, null);
-
-    String ExternalProvisioningConfig = "external.provisioning.config";
-
-    public static final String EXTENSION_SCRIPT_PATH = "/usr/share/cloudstack-management/extensions/%d/%d/provisioner.sh";
+    public static final String EXTENSION_SCRIPT_PATH = "/usr/share/cloudstack-management/extensions/%s/provisioner.sh";
     public static final String SYMLINK_PATH = "/etc/cloudstack/management/extensions/%d/provisioner.sh";
     public static final String BASE_EXTERNAL_PROVISIONER_SCRIPT = "scripts/vm/hypervisor/external/simpleExternalProvisioner/provisioner.sh";
 
@@ -91,7 +85,6 @@ public class SimpleExternalProvisioner extends AdapterBase implements ExternalPr
 
     @Inject
     VMInstanceDao _vmDao;
-
 
     @Inject
     private HypervisorGuruManager _hvGuruMgr;
@@ -116,10 +109,6 @@ public class SimpleExternalProvisioner extends AdapterBase implements ExternalPr
             } else {
                 modifiedDetails.put(key, entry.getValue());
             }
-        }
-
-        if (modifiedDetails.get(ExternalProvisioningConfig) == null) {
-            modifiedDetails.put(ExternalProvisioningConfig, SampleExternalConfig.valueIn(clusterId));
         }
 
         if (virtualMachineTO != null) {
@@ -269,8 +258,19 @@ public class SimpleExternalProvisioner extends AdapterBase implements ExternalPr
     }
 
     @Override
-    public void prepareScripts(Long extensionId, Long extensionResourceId) {
-        String destinationPath = String.format(EXTENSION_SCRIPT_PATH, extensionId, extensionResourceId);
+    public void loadScripts(String extensionName) {
+        String destinationPath = String.format(EXTENSION_SCRIPT_PATH, extensionName);
+        filledExtensionPath = destinationPath;
+    }
+
+    @Override
+    public String getScriptPath() {
+        return EXTENSION_SCRIPT_PATH;
+    }
+
+    @Override
+    public void prepareScripts(String extensionName) {
+        String destinationPath = String.format(EXTENSION_SCRIPT_PATH, extensionName);
         File destinationFile = new File(destinationPath);
         filledExtensionPath = destinationPath;
         if (destinationFile.exists()) {
@@ -491,12 +491,7 @@ public class SimpleExternalProvisioner extends AdapterBase implements ExternalPr
     }
 
     @Override
-    public String getConfigComponentName() {
-        return SimpleExternalProvisioner.class.getSimpleName();
-    }
-
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {SampleExternalConfig};
+    public List<Class<?>> getCommands() {
+        return new ArrayList<>();
     }
 }

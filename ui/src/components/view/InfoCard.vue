@@ -669,6 +669,14 @@
             <span v-else>{{ resource.userdataname || resource.userdataid }}</span>
           </div>
         </div>
+        <div class="resource-detail-item" v-if="resource.extensionname">
+          <div class="resource-detail-item__label">{{ $t('label.extension') }}</div>
+          <div class="resource-detail-item__details">
+            <solution-outlined />
+            <router-link v-if="$router.resolve('/xaas/' + resource.extensionid).matched[0].redirect !== '/exception/404'" :to="{ path: '/xaas/' + resource.extensionid }">{{ resource.extensionname || resource.extensionid }}</router-link>
+            <span v-else>{{ resource.extensionname || resource.extensionid }}</span>
+          </div>
+        </div>
         <div class="resource-detail-item" v-if="resource.owner">
           <div class="resource-detail-item__label">{{ $t('label.owners') }}</div>
           <div class="resource-detail-item__details">

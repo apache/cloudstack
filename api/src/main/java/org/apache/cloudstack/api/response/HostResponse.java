@@ -90,11 +90,6 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "the host hypervisor")
     private String hypervisor;
-
-    @SerializedName(ApiConstants.EXTERNAL_PROVISIONER)
-    @Param(description = "the provisioner name for the hypervisor type external", since = "4.21.0")
-    private String externalProvisioner;
-
     @SerializedName("cpusockets")
     @Param(description = "the number of CPU sockets on the host")
     private Integer cpuSockets;
@@ -369,14 +364,6 @@ public class HostResponse extends BaseResponseWithAnnotations {
 
     public void setHypervisor(String hypervisor) {
         this.hypervisor = hypervisor;
-    }
-
-    public void setExternalProvisioner(String provisioner) {
-        this.externalProvisioner = provisioner;
-    }
-
-    public String getExternalProvisioner() {
-        return externalProvisioner;
     }
 
     public void setCpuSockets(Integer cpuSockets) {

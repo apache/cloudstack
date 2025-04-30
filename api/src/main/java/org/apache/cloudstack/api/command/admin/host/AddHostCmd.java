@@ -78,35 +78,12 @@ public class AddHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "list of tags to be added to the host")
     private List<String> hostTags;
 
-    @Parameter(name = ApiConstants.EXTERNAL_PROVISIONER, type = CommandType.STRING, description = "Name of the provisioner for the external host, this is mandatory input in case of hypervisor type external", since = "4.21.0")
-    private String provisioner;
-
     @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue", since = "4.21.0")
     protected Map externalDetails;
-
-    private Long extensionId;
-    private Long extensionResourceId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public AddHostCmd() {
-
-    }
-
-    public AddHostCmd(Long zoneId, Long podId, Long clusterId, String hypervisor, String username, String password, String url, Map externalDetails, Long extensionid, Long extensionResourceId) {
-        this.zoneId = zoneId;
-        this.podId = podId;
-        this.clusterId = clusterId;
-        this.hypervisor = hypervisor;
-        this.username = username;
-        this.password = password;
-        this.url = url;
-        this.externalDetails = externalDetails;
-        this.extensionId = extensionid;
-        this.extensionResourceId = extensionResourceId;
-    }
 
     public Long getClusterId() {
         return clusterId;
@@ -140,24 +117,12 @@ public class AddHostCmd extends BaseCmd {
         return hypervisor;
     }
 
-    public String getExternalProvisioner() {
-        return provisioner;
-    }
-
     public List<String> getHostTags() {
         return hostTags;
     }
 
     public String getAllocationState() {
         return allocationState;
-    }
-
-    public Long getExtensionId() {
-        return extensionId;
-    }
-
-    public Long getExtensionResourceId() {
-        return extensionResourceId;
     }
 
     public Map<String, String> getExternalDetails() {

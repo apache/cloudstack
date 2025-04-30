@@ -57,9 +57,6 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, description = "the hypervisor for which to restrict the search")
     private String hypervisor;
 
-    @Parameter(name = ApiConstants.EXTERNAL_PROVISIONER, type = CommandType.STRING, description = "Name of the provisioner for the external host, this is mandatory input in case of hypervisor type external", since = "4.21.0")
-    private String provisioner;
-
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = TemplateResponse.class, description = "the template ID")
     private Long id;
 
@@ -139,10 +136,6 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
 
     public String getHypervisor() {
         return hypervisor;
-    }
-
-    public String getExternalProvisioner() {
-        return provisioner;
     }
 
     public Long getId() {

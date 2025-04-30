@@ -50,11 +50,10 @@ import com.cloud.agent.manager.ExternalAgentManagerImpl;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.ExternalProvisioner;
+import com.cloud.hypervisor.external.provisioner.simpleprovisioner.SimpleExternalProvisioner;
 import com.cloud.network.Networks;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.ComponentContext;
-import com.cloud.vm.dao.UserVmDao;
-import org.apache.cloudstack.api.ApiConstants;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -67,17 +66,16 @@ public class ExternalResourceBase implements ServerResource {
 
     @Inject
     ExternalAgentManager _externalAgentMgr = null;
-
     @Inject
-    UserVmDao _uservmDao;
-
+    ExternalProvisioner externalProvisioner;
     protected String _url;
     protected String _dcId;
     protected String _pod;
     protected String _cluster;
     protected String _guid;
     private Host.Type _type;
-    private ExternalProvisioner externalProvisioner = null;
+
+    private String _extensionName;
 
     public ExternalResourceBase() {
         setType(Host.Type.Routing);
@@ -130,7 +128,6 @@ public class ExternalResourceBase implements ServerResource {
     @Override
     public PingCommand getCurrentStatus(long id) {
         final HashMap<String, HostVmStateReportEntry> vmStates = externalProvisioner.getHostVmStateReport(id);
-
         return new PingRoutingCommand(Host.Type.Routing, id, vmStates);
     }
 
@@ -139,7 +136,9 @@ public class ExternalResourceBase implements ServerResource {
         try {
             if (cmd instanceof CheckNetworkCommand) {
                 return new CheckNetworkAnswer((CheckNetworkCommand) cmd, true, "Network Setup check by names is done");
-            } else if (cmd instanceof ReadyCommand) {
+            }
+            externalProvisioner.loadScripts(_extensionName);
+            if (cmd instanceof ReadyCommand) {
                 return new ReadyAnswer((ReadyCommand) cmd);
             } else if (cmd instanceof StartCommand) {
                 return execute((StartCommand) cmd);
@@ -160,7 +159,7 @@ public class ExternalResourceBase implements ServerResource {
             } else if (cmd instanceof RunCustomActionCommand) {
                 return execute((RunCustomActionCommand) cmd);
             } else {
-                return null;
+                return execute( cmd);
             }
         } catch (IllegalArgumentException e) {
             return new Answer(cmd, false, e.getMessage());
@@ -177,6 +176,13 @@ public class ExternalResourceBase implements ServerResource {
 
     public RunCustomActionAnswer execute(RunCustomActionCommand cmd) {
         return externalProvisioner.runCustomAction(cmd);
+    }
+
+    public Answer execute(Command cmd) {
+        RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(cmd.toString(), null);
+        RunCustomActionAnswer customActionAnswer = externalProvisioner.runCustomAction(runCustomActionCommand);
+        Answer answer = new Answer(cmd, customActionAnswer.getResult(), customActionAnswer.getRunDetails().toString());
+        return answer;
     }
 
     public StopAnswer execute(StopCommand cmd) {
@@ -254,19 +260,16 @@ public class ExternalResourceBase implements ServerResource {
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+        externalProvisioner = ComponentContext.inject(SimpleExternalProvisioner.class);
         _externalAgentMgr = ComponentContext.inject(ExternalAgentManagerImpl.class);
         _externalAgentMgr.configure(name, params);
-
-        String provisionerName = (String) params.get(ApiConstants.EXTERNAL_PROVISIONER);
-        externalProvisioner = _externalAgentMgr.getExternalProvisioner(provisionerName);
 
         _dcId = (String) params.get("zone");
         _pod = (String) params.get("pod");
         _cluster = (String) params.get("cluster");
         _guid = (String) params.get("guid");
         _url = (String) params.get("guid");
-
-
+        _extensionName = (String) params.get("extensionName");
 
         return true;
     }

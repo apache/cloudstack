@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`extension` (
   `uuid` varchar(40) NOT NULL UNIQUE,
   `name` varchar(255) NOT NULL,
   `type` varchar(255) NOT NULL,
+  `script` varchar(2048) NOT NULL,
   `created` datetime NOT NULL,
   `removed` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
@@ -107,3 +108,30 @@ CREATE TABLE `cloud`.`extension_resource_map_details` (
   CONSTRAINT `fk_extension_resource_map_details__map_id` FOREIGN KEY (`extension_resource_map_id`)
     REFERENCES `extension_resource_map` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`extension_custom_action` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(255) NOT NULL UNIQUE,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(255) NOT NULL,
+  `extension_id` bigint(20) unsigned NOT NULL,
+  `roles_list` varchar(255) DEFAULT NULL,
+  `created` datetime NOT NULL,
+  `removed` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_extension_custom_action__extension_id` FOREIGN KEY (`extension_id`)
+    REFERENCES `cloud`.`extension`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`extension_custom_action_details` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `extension_custom_action_id` bigint(20) unsigned NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT 1,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_custom_action_details__action_id` FOREIGN KEY (`extension_custom_action_id`)
+    REFERENCES `cloud`.`extension_custom_action`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template', 'extension_id', 'bigint unsigned DEFAULT NULL COMMENT "id of the extension"');

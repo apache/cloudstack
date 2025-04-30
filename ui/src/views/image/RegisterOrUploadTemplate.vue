@@ -212,31 +212,26 @@
                 </a-select-option>
               </a-select>
             </a-form-item>
+            <a-form-item ref="extensionid" name="extensionid" v-if="hyperExternalShow">
+              <template #label>
+                <tooltip-label :title="$t('label.extension.id')" :tooltip="apiParams.extensionid.description"/>
+              </template>
+              <a-select
+                v-model:value="form.extensionid"
+                :placeholder="apiParams.extensionid.description"
+                showSearch
+                optionFilterProp="label"
+                :filterOption="(input, option) => {
+                  return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+                }" >
+                <a-select-option v-for="extension in extensionsList" :key="extension.id" :label="extension.name || extension.description">
+                  {{ extension.name || extension.description }}
+                </a-select-option>
+              </a-select>
+            </a-form-item>
           </a-col>
         </a-row>
         <div v-if="hyperExternalShow">
-          <a-row :gutter="12">
-            <a-col :md="24" :lg="12">
-              <a-form-item ref="externalprovisioner" name="externalprovisioner">
-                <template #label>
-                  <tooltip-label :title="$t('label.externalprovisioner')" :tooltip="apiParams.externalprovisioner.description"/>
-                </template>
-                <a-select
-                  v-model:value="form.externalprovisioner"
-                  :placeholder="apiParams.externalprovisioner.description"
-                  @change="val => { selectedExternalProvisioner = val }"
-                  showSearch
-                  optionFilterProp="label"
-                  :filterOption="(input, option) => {
-                    return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                  }" >
-                  <a-select-option v-for="opt in externalProvisioners" :key="opt.id" :label="opt.id">
-                    {{ opt.id }}
-                  </a-select-option>
-                </a-select>
-              </a-form-item>
-            </a-col>
-          </a-row>
           <a-form-item name="externalDetailsFlag" ref="externalDetailsFlag">
             <template #label>
               <tooltip-label :title="$t('label.external.details')" :tooltip="$t('label.external.details.tooltip')"/>
@@ -615,7 +610,6 @@ export default {
       hyperXenServerShow: false,
       hyperVMWShow: false,
       selectedFormat: '',
-      selectedExternalProvisioner: '',
       deployasis: false,
       zoneError: '',
       loading: false,
@@ -631,12 +625,12 @@ export default {
       account: null,
       customHypervisorName: 'Custom',
       architectureTypes: {},
-      externalProvisioners: [],
       externalDetailsFlag: false,
       showAddDetail: false,
       newKey: '',
       newValue: '',
-      externalDetails: []
+      externalDetails: [],
+      extensionsList: []
     }
   },
   beforeCreate () {
@@ -691,7 +685,6 @@ export default {
       this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
       this.fetchUserData()
       this.fetchUserdataPolicy()
-      this.fetchExternalHypervisorProvisionerNames()
       if ('listDomains' in this.$store.getters.apis) {
         this.fetchDomains()
       }
@@ -700,6 +693,7 @@ export default {
           this.fetchXenServerProvider()
         }
       }
+      this.fetchExtensionsList()
     },
     handleFormChange (e) {
       this.currentForm = e.target.value
@@ -768,27 +762,6 @@ export default {
         this.loading = false
       })
     },
-    fetchExternalHypervisorProvisionerNames () {
-      const params = {
-        name: 'external.provisioners'
-      }
-      this.loading = true
-      api('listConfigurations', params).then(json => {
-        if (json.listconfigurationsresponse.configuration !== null) {
-          const config = json.listconfigurationsresponse.configuration[0]
-          if (config && config.name === params.name) {
-            const result = config.value
-            var externalProvisionersTemp = []
-            result.split(',').map(function (item) {
-              externalProvisionersTemp.push({ id: item.trim() })
-            })
-            this.externalProvisioners = externalProvisionersTemp
-          }
-        }
-      }).finally(() => {
-        this.loading = false
-      })
-    },
     addExternalDetails () {
       this.showAddDetail = true
     },
@@ -816,6 +789,17 @@ export default {
       this.newValue = ''
       this.error = false
       this.showAddDetail = false
+    },
+    fetchExtensionsList () {
+      this.loading = true
+      api('listExtensions', {
+      }).then(response => {
+        this.extensionsList = response.listextensionsresponse.extensions || []
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
+      })
     },
     fetchZone () {
       const params = {}
@@ -1183,7 +1167,6 @@ export default {
       this.deployasis = false
       this.allowDirectDownload = false
       this.selectedFormat = null
-      this.selectedExternalProvisioner = null
       this.form.deployasis = false
       this.form.directdownload = false
       this.form.xenserverToolsVersion61plus = false

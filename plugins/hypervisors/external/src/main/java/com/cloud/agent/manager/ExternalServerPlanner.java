@@ -23,8 +23,10 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.VMTemplateDetailVO;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.template.VirtualMachineTemplate;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.collections.CollectionUtils;
@@ -66,11 +68,15 @@ public class ExternalServerPlanner extends AdapterBase implements DeploymentPlan
     protected ResourceManager _resourceMgr;
     @Inject
     VMTemplateDetailsDao _tmpDetailsDao;
+    @Inject
+    ClusterDetailsDao clusterDetailsDao;
 
     @Override
     public DeployDestination plan(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
         ServiceOffering offering = vmProfile.getServiceOffering();
+        VirtualMachineTemplate template = vmProfile.getTemplate();
+        Long extensionId = template.getExtensionId();
 
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
 
@@ -93,26 +99,27 @@ public class ExternalServerPlanner extends AdapterBase implements DeploymentPlan
             }
         }
 
-        VMTemplateDetailVO provisionerDetail = _tmpDetailsDao.findDetail(vmProfile.getTemplateId(), ApiConstants.EXTERNAL_PROVISIONER);
-        String provisioner = provisionerDetail.getValue();
-        List<ClusterVO> clusters = _clusterDao.listByDatacenterExternalHypervisorProvisioner(vm.getDataCenterId(), provisioner);
+        List<ClusterVO> clusters = _clusterDao.listClustersByDcId(vm.getDataCenterId());
         HostVO target = null;
         List<HostVO> hosts;
         for (ClusterVO cluster : clusters) {
-            hosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
-            if (hostTag != null) {
-                for (HostVO host : hosts) {
-                    _hostDao.loadHostTags(host);
-                    List<String> hostTags = host.getHostTags();
-                    if (hostTags.contains(hostTag)) {
-                        target = host;
-                        break;
+            ClusterDetailsVO clusterExtensionDetail = clusterDetailsDao.findDetail(cluster.getId(), ApiConstants.EXTENSION_ID);
+            if (clusterExtensionDetail != null && clusterExtensionDetail.getValue().equals(String.valueOf(extensionId))) {
+                hosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
+                if (hostTag != null) {
+                    for (HostVO host : hosts) {
+                        _hostDao.loadHostTags(host);
+                        List<String> hostTags = host.getHostTags();
+                        if (hostTags.contains(hostTag)) {
+                            target = host;
+                            break;
+                        }
                     }
-                }
-            } else {
-                if (CollectionUtils.isNotEmpty(hosts)) {
-                    Collections.shuffle(hosts);
-                    target = hosts.get(0);
+                } else {
+                    if (CollectionUtils.isNotEmpty(hosts)) {
+                        Collections.shuffle(hosts);
+                        target = hosts.get(0);
+                    }
                 }
             }
         }

@@ -17,19 +17,10 @@
 
 package com.cloud.agent.manager;
 
-import com.cloud.agent.api.RunCustomActionAnswer;
-import com.cloud.hypervisor.ExternalProvisioner;
-import com.cloud.hypervisor.external.provisioner.api.ExtensionResponse;
-import com.cloud.hypervisor.external.provisioner.api.ListExtensionsCmd;
-import com.cloud.hypervisor.external.provisioner.api.CreateExtensionCmd;
-import com.cloud.hypervisor.external.provisioner.api.RegisterExtensionCmd;
-import com.cloud.hypervisor.external.provisioner.api.RunCustomActionCmd;
-import com.cloud.hypervisor.external.provisioner.vo.Extension;
 import com.cloud.hypervisor.external.resource.ExternalResourceBase;
 import com.cloud.utils.component.Manager;
 
 import javax.naming.ConfigurationException;
-import java.util.List;
 import java.util.Map;
 
 public interface ExternalAgentManager extends Manager {
@@ -38,15 +29,4 @@ public interface ExternalAgentManager extends Manager {
 
     Map<ExternalResourceBase, Map<String, String>> createServerResources(Map<String, Object> params);
 
-    ExternalProvisioner getExternalProvisioner(String provisioner);
-
-    List<ExternalProvisioner> listExternalProvisioners();
-
-    RunCustomActionAnswer runCustomAction(RunCustomActionCmd cmd);
-
-    Extension createExtension(CreateExtensionCmd cmd);
-
-   List<ExtensionResponse> listExtensions(ListExtensionsCmd cmd);
-
-   ExtensionResponse registerExtensionWithResource(RegisterExtensionCmd cmd);
 }

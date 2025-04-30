@@ -209,11 +209,16 @@ public class ApiConstants {
     public static final String EXTERNAL_UUID = "externaluuid";
     public static final String EXTERNAL_PROVISIONER = "externalprovisioner";
     public static final String EXTERNAL_DETAILS = "externaldetails";
+    public static final String CUSTOM_ACTION_PARAMETERS = "parameters";
     public static final String EXTENSION = "extension";
     public static final String EXTENSIONS = "extensions";
     public static final String EXTENSION_ID = "extensionid";
+    public static final String EXTENSION_NAME = "extensionname";
     public static final String EXTENSION_RESOURCE_ID = "extensionresourceid";
     public static final String EXTENSION_RESOURCE_MAP = "extensionresourcemap";
+
+    public static final String EXTENSION_CUSTOM_ACTION = "extensioncustomaction";
+    public static final String EXTENSION_CUSTOM_ACTION_ID = "customactionid";
     public static final String SCRIPT = "script";
     public static final String FENCE = "fence";
     public static final String FETCH_LATEST = "fetchlatest";
@@ -666,6 +671,7 @@ public class ApiConstants {
     public static final String PROJECT_ROLE_NAME = "projectrolename";
     public static final String ROLE_TYPE = "roletype";
     public static final String ROLE_NAME = "rolename";
+    public static final String ROLES_LIST = "roleslist";
     public static final String PERMISSION = "permission";
     public static final String RULE = "rule";
     public static final String RULES = "rules";

@@ -30,7 +30,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.ExternalProvisioner;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.TemplateProfile;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -43,7 +42,6 @@ import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
@@ -82,12 +80,6 @@ public class ExternalTemplateAdapter extends TemplateAdapterBase implements Temp
         Storage.TemplateType templateType = templateMgr.validateTemplateType(cmd, _accountMgr.isAdmin(caller.getAccountId()),
                 CollectionUtils.isEmpty(cmd.getZoneIds()));
 
-        String provisioner = cmd.getExternalProvisioner();
-        ExternalProvisioner externalProvisioner = _externalAgentMgr.getExternalProvisioner(provisioner);
-        if (externalProvisioner == null) {
-            throw new CloudRuntimeException(String.format("Unable to find the provisioner with the name %s", provisioner));
-        }
-
         List<Long> zoneId = cmd.getZoneIds();
         // ignore passed zoneId if we are using region wide image store
         List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
@@ -110,12 +102,11 @@ public class ExternalTemplateAdapter extends TemplateAdapterBase implements Temp
         } else {
             details = externalDetails;
         }
-        details.put(ApiConstants.EXTERNAL_PROVISIONER, cmd.getExternalProvisioner());
 
         return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(), cmd.getArch(), cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(),
                 cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId, hypervisorType, cmd.getChecksum(), true,
                 cmd.getTemplateTag(), owner, details, cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), templateType,
-                cmd.isDirectDownload(), cmd.isDeployAsIs());
+                cmd.isDirectDownload(), cmd.isDeployAsIs(), cmd.getExtensionId());
     }
 
     @Override

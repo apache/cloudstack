@@ -309,7 +309,7 @@ export default {
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
           'type', 'scope', 'managementserverid', 'serviceofferingid',
           'diskofferingid', 'networkid', 'usagetype', 'restartrequired',
-          'displaynetwork', 'guestiptype', 'usersource', 'arch'].includes(item)
+          'displaynetwork', 'guestiptype', 'usersource', 'arch', 'extensionid'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -470,6 +470,7 @@ export default {
       let networkIndex = -1
       let usageTypeIndex = -1
       let volumeIndex = -1
+      let extensionIndex = -1
 
       if (arrayField.includes('type')) {
         if (this.$route.path === '/alert') {
@@ -487,6 +488,12 @@ export default {
         zoneIndex = this.fields.findIndex(item => item.name === 'zoneid')
         this.fields[zoneIndex].loading = true
         promises.push(await this.fetchZones(searchKeyword))
+      }
+
+      if (arrayField.includes('extensionid')) {
+        extensionIndex = this.fields.findIndex(item => item.name === 'extensionid')
+        this.fields[extensionIndex].loading = true
+        promises.push(await this.fetchExtensions(searchKeyword))
       }
 
       if (arrayField.includes('domainid')) {
@@ -586,6 +593,12 @@ export default {
             this.fields[zoneIndex].opts = this.sortArray(zones[0].data)
           }
         }
+        if (extensionIndex > -1) {
+          const extensions = response.filter(item => item.type === 'extensionid')
+          if (extensions && extensions.length > 0) {
+            this.fields[extensionIndex].opts = this.sortArray(extensions[0].data)
+          }
+        }
         if (domainIndex > -1) {
           const domain = response.filter(item => item.type === 'domainid')
           if (domain && domain.length > 0) {
@@ -676,6 +689,9 @@ export default {
         if (zoneIndex > -1) {
           this.fields[zoneIndex].loading = false
         }
+        if (extensionIndex > -1) {
+          this.fields[extensionIndex].loading = false
+        }
         if (domainIndex > -1) {
           this.fields[domainIndex].loading = false
         }
@@ -759,6 +775,19 @@ export default {
           resolve({
             type: 'zoneid',
             data: zones
+          })
+        }).catch(error => {
+          reject(error.response.headers['x-description'])
+        })
+      })
+    },
+    fetchExtensions (searchKeyword) {
+      return new Promise((resolve, reject) => {
+        api('listExtensions', { showicon: true, keyword: searchKeyword }).then(json => {
+          const extensions = json.listextensionsresponse.extensions
+          resolve({
+            type: 'extensionid',
+            data: extensions
           })
         }).catch(error => {
           reject(error.response.headers['x-description'])

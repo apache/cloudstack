@@ -23,8 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Command;
@@ -34,10 +32,8 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 
 @Component
-public class HypervisorGuruManagerImpl extends ManagerBase implements HypervisorGuruManager, Configurable {
+public class HypervisorGuruManagerImpl extends ManagerBase implements HypervisorGuruManager {
 
-    public static final ConfigKey<String> ExternalProvisioners = new ConfigKey<String>("Advanced", String.class, "external.provisioners", "simpleExternalProvisioner",
-            "List of external hypervisor provisioners", false);
     @Inject
     HostDao _hostDao;
 
@@ -97,15 +93,5 @@ public class HypervisorGuruManagerImpl extends ManagerBase implements Hypervisor
     @Inject
     public void setHvGuruList(List<HypervisorGuru> hvGuruList) {
         this._hvGuruList = hvGuruList;
-    }
-
-    @Override
-    public String getConfigComponentName() {
-        return HypervisorGuruManagerImpl.class.getSimpleName();
-    }
-
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ExternalProvisioners};
     }
 }

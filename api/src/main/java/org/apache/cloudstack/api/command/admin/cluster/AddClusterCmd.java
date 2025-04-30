@@ -18,9 +18,12 @@
 package org.apache.cloudstack.api.command.admin.cluster;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.cloud.cpu.CPU;
+import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 
 import org.apache.cloudstack.api.APICommand;
@@ -30,6 +33,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -42,7 +46,6 @@ import com.cloud.user.Account;
 @APICommand(name = "addCluster", description = "Adds a new cluster", responseObject = ClusterResponse.class,
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class AddClusterCmd extends BaseCmd {
-
 
     @Parameter(name = ApiConstants.CLUSTER_NAME, type = CommandType.STRING, required = true, description = "the cluster name")
     private String clusterName;
@@ -67,9 +70,6 @@ public class AddClusterCmd extends BaseCmd {
                required = true,
                description = "hypervisor type of the cluster: XenServer,KVM,VMware,Hyperv,BareMetal,Simulator,Ovm3,External")
     private String hypervisor;
-
-    @Parameter(name = ApiConstants.EXTERNAL_PROVISIONER, type = CommandType.STRING, description = "Name of the provisioner for the external host, this is mandatory input in case of hypervisor type external", since = "4.21.0")
-    private String provisioner;
 
     @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING,
             description = "the CPU arch of the cluster. Valid options are: x86_64, aarch64",
@@ -122,17 +122,11 @@ public class AddClusterCmd extends BaseCmd {
     @Parameter(name = ApiConstants.OVM3_VIP, type = CommandType.STRING, required = false,  description = "Ovm3 vip to use for pool (and cluster)")
     private String ovm3vip;
 
-    public AddClusterCmd() {
-    }
+    @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID, entityType = ExtensionResponse.class, description = "UUID of the extension")
+    private Long extensionId;
 
-    public AddClusterCmd(String name, Long zoneId, Long podId, String clusterType, String hypervisor, String externalProvisioner) {
-        this.clusterName = name;
-        this.zoneId = zoneId;
-        this.podId = podId;
-        this.clusterType = clusterType;
-        this.hypervisor = hypervisor;
-        this.provisioner = externalProvisioner;
-    }
+    @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue", since = "4.21.0")
+    protected Map externalDetails;
 
     public String getOvm3Pool() {
          return ovm3pool;
@@ -200,8 +194,8 @@ public class AddClusterCmd extends BaseCmd {
         return hypervisor;
     }
 
-    public String getExternalProvisioner() {
-        return provisioner;
+    public Long getExtensionId() {
+        return extensionId;
     }
 
     public String getClusterType() {
@@ -232,6 +226,16 @@ public class AddClusterCmd extends BaseCmd {
 
     public CPU.CPUArch getArch() {
         return CPU.CPUArch.fromType(arch);
+    }
+
+    public Map<String, String> getExternalDetails() {
+        Map<String, String> customparameterMap = convertDetailsToMap(externalDetails);
+        Map<String, String> details = new HashMap<>();
+        for (String key : customparameterMap.keySet()) {
+            String value = customparameterMap.get(key);
+            details.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key, value);
+        }
+        return details;
     }
 
     @Override

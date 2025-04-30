@@ -29,11 +29,11 @@ import com.cloud.agent.api.StartAnswer;
 import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
-import com.cloud.utils.component.Adapter;
+import com.cloud.utils.component.Manager;
 
 import java.util.HashMap;
 
-public interface ExternalProvisioner extends Adapter {
+public interface ExternalProvisioner extends Manager {
     /**
      * Returns the unique name of the provider
      * @return returns provider name
@@ -62,5 +62,9 @@ public interface ExternalProvisioner extends Adapter {
 
     RunCustomActionAnswer runCustomAction(RunCustomActionCommand cmd);
 
-    void prepareScripts(Long extensionId, Long extensionResourceId);
+    void prepareScripts(String extensionName);
+
+    void loadScripts(String extensionName);
+
+    String getScriptPath();
 }

@@ -37,7 +37,6 @@ import java.util.stream.Stream;
 import javax.inject.Inject;
 
 import com.cloud.cpu.CPU;
-import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -1313,6 +1312,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long userdataId = cmd.getUserdataId();
         Map<String, String> tags = cmd.getTags();
         final CPU.CPUArch arch = cmd.getArch();
+        final Long extensionId = cmd.getExtensionId();
 
         boolean isAdmin = false;
         boolean isRootAdmin = false;
@@ -1540,12 +1540,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         Boolean isVnf = cmd.getVnf();
-        boolean templateJoinNeeded = isVnf != null || arch != null;
+        boolean templateJoinNeeded = isVnf != null || arch != null || extensionId != null;
         if (templateJoinNeeded) {
             SearchBuilder<VMTemplateVO> templateSearch = _templateDao.createSearchBuilder();
             templateSearch.and("templateArch", templateSearch.entity().getArch(), Op.EQ);
             templateSearch.and("templateTypeEQ", templateSearch.entity().getTemplateType(), Op.EQ);
             templateSearch.and("templateTypeNEQ", templateSearch.entity().getTemplateType(), Op.NEQ);
+            templateSearch.and("templateExtensionId", templateSearch.entity().getExtensionId(), Op.EQ);
 
             userVmSearchBuilder.join("vmTemplate", templateSearch, templateSearch.entity().getId(), userVmSearchBuilder.entity().getTemplateId(), JoinBuilder.JoinType.INNER);
         }
@@ -1674,6 +1675,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         if (arch != null) {
             userVmSearchCriteria.setJoinParameters("vmTemplate", "templateArch", arch);
+        }
+        if (extensionId != null) {
+            userVmSearchCriteria.setJoinParameters("vmTemplate", "templateExtensionId", extensionId);
         }
 
         if (isRootAdmin) {
@@ -4599,7 +4603,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 null, cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), cmd.getStoragePoolId(),
                 cmd.getImageStoreId(), hypervisorType, showDomr, cmd.listInReadyState(), permittedAccounts, caller,
                 listProjectResourcesCriteria, tags, showRemovedTmpl, cmd.getIds(), parentTemplateId, cmd.getShowUnique(),
-                templateType, isVnf, cmd.getArch(), cmd.getExternalProvisioner());
+                templateType, isVnf, cmd.getArch());
     }
 
     private Pair<List<TemplateJoinVO>, Integer> searchForTemplatesInternal(Long templateId, String name, String keyword,
@@ -4608,7 +4612,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             boolean showDomr, boolean onlyReady, List<Account> permittedAccounts, Account caller,
             ListProjectResourcesCriteria listProjectResourcesCriteria, Map<String, String> tags,
             boolean showRemovedTmpl, List<Long> ids, Long parentTemplateId, Boolean showUnique, String templateType,
-            Boolean isVnf, CPU.CPUArch arch, String externalProvisioner) {
+            Boolean isVnf, CPU.CPUArch arch) {
 
         // check if zone is configured, if not, just return empty list
         List<HypervisorType> hypers = null;
@@ -4638,13 +4642,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sb.join("storagePool", storagePoolSb, storagePoolSb.entity().getTemplateId(), sb.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
-        if (StringUtils.isNotEmpty(externalProvisioner)) {
-            SearchBuilder<VMTemplateDetailVO> templateDetailSB = templateDetailsDao.createSearchBuilder();
-            templateDetailSB.and("name", templateDetailSB.entity().getName(), SearchCriteria.Op.EQ);
-            templateDetailSB.and("value", templateDetailSB.entity().getValue(), SearchCriteria.Op.EQ);
-            sb.join("templateExternalDetail", templateDetailSB, templateDetailSB.entity().getResourceId(), sb.entity().getId(), JoinBuilder.JoinType.INNER);
-        }
-
         SearchCriteria<TemplateJoinVO> sc = sb.create();
 
         if (imageStoreId != null) {
@@ -4657,11 +4654,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (storagePoolId != null) {
             sc.setJoinParameters("storagePool", "pool_id", storagePoolId);
-        }
-
-        if (StringUtils.isNotEmpty(externalProvisioner)) {
-            sc.setJoinParameters("templateExternalDetail", "name", ApiConstants.EXTERNAL_PROVISIONER);
-            sc.setJoinParameters("templateExternalDetail", "value", externalProvisioner);
         }
 
             // verify templateId parameter and specially handle it
@@ -5049,7 +5041,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return searchForTemplatesInternal(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(),
                 cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), cmd.getStoragePoolId(), cmd.getImageStoreId(),
                 hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria,
-                tags, showRemovedISO, null, null, cmd.getShowUnique(), null, null, cmd.getArch(), null);
+                tags, showRemovedISO, null, null, cmd.getShowUnique(), null, null, cmd.getArch());
     }
 
     @Override

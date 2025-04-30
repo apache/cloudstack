@@ -77,25 +77,6 @@
         </a-select>
       </div>
 
-      <div class="form__item" v-if="hypervisor === 'External'">
-        <div class="form__label">{{ $t('label.externalprovisioner') }}</div>
-        <a-select
-          v-model:value="externalprovisioner"
-          @change="resetAllFields"
-          showSearch
-          optionFilterProp="value"
-          :filterOption="(input, option) => {
-            return option.value.toLowerCase().indexOf(input) >= 0
-          }" >
-          <a-select-option
-            v-for="pv in externalProvisioners"
-            :value="pv.id"
-            :key="pv.id">
-            {{ pv.id }}
-          </a-select-option>
-        </a-select>
-      </div>
-
       <div class="form__item">
         <div class="form__label">{{ $t('label.podname') }}</div>
         <a-select
@@ -119,6 +100,25 @@
         <div class="form__label"><span class="required">* </span>{{ $t('label.clusternamelabel') }}</div>
         <span class="required required-label" ref="requiredCluster">{{ $t('label.required') }}</span>
         <a-input :placeholder="placeholder.clustername" v-model:value="clustername"></a-input>
+      </div>
+
+      <div class="form__item" v-if="hypervisor === 'External'">
+        <div class="form__label">{{ $t('label.extension.id') }}</div>
+        <a-select
+          v-model:value="extensionid"
+          showSearch
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }" >
+          <a-select-option
+            v-for="extension in extensionsList"
+            :value="extension.id"
+            :key="extension.id"
+            :label="extension.name">
+            {{ extension.name }}
+          </a-select-option>
+        </a-select>
       </div>
 
       <template v-if="hypervisor === 'VMware'">
@@ -212,7 +212,7 @@ export default {
       ovm3vip: null,
       zonesList: [],
       hypervisorsList: [],
-      externalHypervisorProvisionersList: [],
+      extensionsList: [],
       podsList: [],
       showDedicated: false,
       dedicatedDomainId: null,
@@ -223,8 +223,7 @@ export default {
       selectedArchitecture: null,
       placeholder: {
         clustername: null
-      },
-      externalProvisioners: []
+      }
     }
   },
   created () {
@@ -234,9 +233,9 @@ export default {
     fetchData () {
       this.fetchZones()
       this.fetchHypervisors()
+      this.fetchExtensionsList()
       this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
       this.selectedArchitecture = this.architectureTypes?.opts?.[0]?.id || null
-      this.fetchExternalHypervisorProvisioners()
       this.params = this.$store.getters.apis.addCluster.params
       Object.keys(this.placeholder).forEach(item => { this.returnPlaceholder(item) })
     },
@@ -263,26 +262,6 @@ export default {
         this.loading = false
       })
     },
-    fetchExternalHypervisorProvisioners () {
-      const params = {
-        name: 'external.provisioners'
-      }
-      api('listConfigurations', params).then(json => {
-        if (json.listconfigurationsresponse.configuration !== null) {
-          const config = json.listconfigurationsresponse.configuration[0]
-          if (config && config.name === params.name) {
-            const result = config.value
-            var externalProvisionersTemp = []
-            result.split(',').map(function (item) {
-              externalProvisionersTemp.push({ id: item.trim() })
-            })
-            this.externalProvisioners = externalProvisionersTemp
-          }
-        }
-      }).finally(() => {
-        this.loading = false
-      })
-    },
     fetchPods () {
       this.loading = true
       api('listPods', {
@@ -290,6 +269,17 @@ export default {
       }).then(response => {
         this.podsList = response.listpodsresponse.pod || []
         this.podId = this.podsList[0].id || null
+      }).catch(error => {
+        this.$notifyError(error)
+      }).finally(() => {
+        this.loading = false
+      })
+    },
+    fetchExtensionsList () {
+      this.loading = true
+      api('listExtensions', {
+      }).then(response => {
+        this.extensionsList = response.listextensionsresponse.extensions || []
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
@@ -385,7 +375,7 @@ export default {
         data.password = this.password
       }
       if (this.hypervisor === 'External') {
-        data.externalprovisioner = this.externalprovisioner
+        data.extensionid = this.extensionid
       }
       api('addCluster', {}, 'POST', data).then(response => {
         const cluster = response.addclusterresponse.cluster[0] || {}

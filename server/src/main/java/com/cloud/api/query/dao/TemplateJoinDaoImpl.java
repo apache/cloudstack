@@ -37,7 +37,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VnfTemplateNicVO;
 import com.cloud.storage.VnfTemplateDetailVO;
-import com.cloud.storage.VMTemplateDetailVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VnfTemplateDetailsDao;
 import com.cloud.storage.dao.VnfTemplateNicDao;
@@ -259,12 +258,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         }
 
         templateResponse.setHypervisor(template.getHypervisorType().getHypervisorDisplayName());
-        if (template.getFormat() == Storage.ImageFormat.EXTERNAL) {
-            VMTemplateDetailVO details = _templateDetailsDao.findDetail(template.getId(), ApiConstants.EXTERNAL_PROVISIONER);
-            templateResponse.setExternalProvisioner(details.getValue());
-        } else {
-            templateResponse.setFormat(template.getFormat());
-        }
+        templateResponse.setFormat(template.getFormat());
 
         templateResponse.setOsTypeId(template.getGuestOSUuid());
         templateResponse.setOsTypeName(template.getGuestOSName());
@@ -335,6 +329,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         templateResponse.setRequiresHvm(template.isRequiresHvm());
         if (template.getArch() != null) {
             templateResponse.setArch(template.getArch().getType());
+        }
+        if (template.getExtensionId() != null) {
+            templateResponse.setExtensionId(template.getExtensionUuid());
+            templateResponse.setExtensionName(template.getExtensionName());
         }
 
         //set template children disks
@@ -410,10 +408,6 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         response.setOsTypeName(result.getGuestOSName());
         response.setBootable(result.isBootable());
         response.setHypervisor(result.getHypervisorType().getHypervisorDisplayName());
-        if (result.getFormat() == Storage.ImageFormat.EXTERNAL) {
-            VMTemplateDetailVO details = _templateDetailsDao.findDetail(result.getId(), ApiConstants.EXTERNAL_PROVISIONER);
-            response.setExternalProvisioner(details.getValue());
-        }
         response.setDynamicallyScalable(result.isDynamicallyScalable());
 
         // populate owner.

@@ -25,7 +25,6 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.manager.ExternalAgentManager;
-import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
@@ -34,14 +33,16 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.ExternalProvisioner;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.hypervisor.external.provisioner.simpleprovisioner.SimpleExternalProvisioner;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
 import com.cloud.hypervisor.external.resource.ExternalResourceBase;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDao;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -57,7 +58,16 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
     private AgentManager _agentMgr;
 
     @Inject
+    private ExtensionDao externalOrchestratorDao;
+
+    @Inject
+    ExtensionResourceMapDao extensionResourceMapDao;
+
+    @Inject
     ExternalAgentManager _externalAgentMgr = null;
+
+    @Inject
+    ExternalProvisioner externalProvisioner;
 
     @Override
     public boolean processAnswers(long agentId, long seq, Answer[] answers) {
@@ -167,7 +177,9 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
             params.put("cluster", cluster);
             params.put("guid", uri.toString());
 
-            params.put(ApiConstants.EXTERNAL_PROVISIONER, SimpleExternalProvisioner.class.getSimpleName().toLowerCase());
+            ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(clusterId, "cluster");
+            ExtensionVO extensionVO = externalOrchestratorDao.findById(Long.valueOf(extensionResourceMapVO.getExtensionId()));
+            params.put("extensionName", extensionVO.getName());
 
             resources = createAgentResources(params);
             return resources;
@@ -180,10 +192,9 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
     @Override
     protected HashMap<String, Object> buildConfigParams(HostVO host) {
         HashMap<String, Object> params = super.buildConfigParams(host);
-        if (host.getClusterId() != null) {
-            ClusterDetailsVO externalProvisioner = _clusterDetailsDao.findDetail(host.getClusterId(), ApiConstants.EXTERNAL_PROVISIONER);
-            params.put(ApiConstants.EXTERNAL_PROVISIONER, externalProvisioner.getValue());
-        }
+        ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(Long.parseLong((String) params.get("cluster")), "cluster");
+        ExtensionVO extensionVO = externalOrchestratorDao.findById(Long.valueOf(extensionResourceMapVO.getExtensionId()));
+        params.put("extensionName", extensionVO.getName());
 
         return params;
     }
@@ -233,10 +244,10 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
             return null;
         }
 
-        ExternalProvisioner externalProvisioner = _externalAgentMgr.getExternalProvisioner(SimpleExternalProvisioner.class.getSimpleName());
-        if (details.get(ApiConstants.EXTENSION_ID) != null && details.get(ApiConstants.EXTENSION_RESOURCE_ID) != null) {
-            externalProvisioner.prepareScripts(Long.valueOf(details.get(ApiConstants.EXTENSION_ID)), Long.valueOf(details.get(ApiConstants.EXTENSION_RESOURCE_ID)));
-        }
+        final ClusterVO cluster = _clusterDao.findById(host.getClusterId());
+        ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(cluster.getId(), "cluster");
+        ExtensionVO extensionVO = externalOrchestratorDao.findById(Long.valueOf(extensionResourceMapVO.getExtensionId()));
+        externalProvisioner.loadScripts(extensionVO.getName());
 
         return _resourceMgr.fillRoutingHostVO(host, ssCmd, Hypervisor.HypervisorType.External, details, hostTags);
     }

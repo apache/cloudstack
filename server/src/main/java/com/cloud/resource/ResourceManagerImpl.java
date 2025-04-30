@@ -42,7 +42,6 @@ import com.cloud.cpu.CPU;
 import com.cloud.exception.StorageConflictException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.HostTagVO;
-import com.cloud.hypervisor.HypervisorGuruManagerImpl;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -66,6 +65,9 @@ import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDao;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -303,6 +305,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private AnnotationService annotationService;
     @Inject
     private VolumeDao volumeDao;
+    @Inject
+    private ExtensionResourceMapDao extensionResourceMapDao;
+    @Inject
+    private ExtensionsManager extensionsManager;
 
     private final long _nodeId = ManagementServerNode.getManagementServerId();
 
@@ -469,14 +475,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new InvalidParameterValueException("Unable to resolve " + cmd.getHypervisor() + " to a supported ");
         }
 
-        if (Hypervisor.HypervisorType.External.equals(hypervisorType)) {
-            validateExternalHypervisorParams(cmd.getExternalProvisioner());
-        }
-
-        if (StringUtils.isNotEmpty(cmd.getExternalProvisioner()) && !hypervisorType.equals(HypervisorType.External)) {
-            throw new InvalidParameterValueException("externalprovisioner parameter is allowed only for hypervisor type External");
-        }
-
         if (zone.isSecurityGroupEnabled() && zone.getNetworkType().equals(NetworkType.Advanced)) {
             if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.XenServer
                     && hypervisorType != HypervisorType.LXC && hypervisorType != HypervisorType.Simulator) {
@@ -544,12 +542,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 details.put("ovm3pool", allParams.get("ovm3pool"));
                 details.put("ovm3cluster", allParams.get("ovm3cluster"));
             }
-            if (hypervisorType == HypervisorType.External) {
-                details.put(ApiConstants.EXTERNAL_PROVISIONER, cmd.getExternalProvisioner());
-            }
+
             details.put(VmDetailConstants.CPU_OVER_COMMIT_RATIO, CapacityManager.CpuOverprovisioningFactor.value().toString());
             details.put(VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, CapacityManager.MemOverprovisioningFactor.value().toString());
             _clusterDetailsDao.persist(cluster.getId(), details);
+            if (HypervisorType.External.equals(cluster.getHypervisorType())) {
+                extensionsManager.registerExtensionWithCluster(cluster.getUuid(), cmd.getExtensionId(), "cluster", cmd.getExternalDetails());
+            }
             return result;
         }
 
@@ -607,20 +606,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
     }
 
-    private void validateExternalHypervisorParams(String provisioner) {
-        if (provisioner == null) {
-            throw new InvalidParameterValueException("For hypervisor type external, provisioner input is required");
-        }
-        List<String> externalProvisionersListFromConfig = Arrays.stream(HypervisorGuruManagerImpl.ExternalProvisioners.value().split(","))
-                .map(String::trim)
-                .map(String::toLowerCase)
-                .collect(Collectors.toList());
-
-        if (!externalProvisionersListFromConfig.contains(provisioner.toLowerCase())) {
-            throw new InvalidParameterValueException(String.format("Provisioner name %s is not valid", provisioner));
-        }
-    }
-
     @Override
     public Discoverer getMatchingDiscover(final Hypervisor.HypervisorType hypervisorType) {
         for (final Discoverer discoverer : _discoverers) {
@@ -665,34 +650,23 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         throw ex;
                     }
                 }
-                String externalProvisioner = cmd.getExternalProvisioner();
-                if (cluster.getHypervisorType().equals(HypervisorType.External) && StringUtils.isNotEmpty(externalProvisioner)) {
-                    validateExternalHypervisorParams(externalProvisioner);
-                    ClusterDetailsVO provisioner = _clusterDetailsDao.findDetail(clusterId, ApiConstants.EXTERNAL_PROVISIONER);
-                    if (!provisioner.getValue().equals(externalProvisioner)) {
-                        final CloudRuntimeException ex =
-                                new CloudRuntimeException("Provisioner type of the host and cluster did not match");
-                        ex.addProxyObject(cluster.getUuid(), "clusterId");
-                        throw ex;
-                    }
-                }
             }
         }
 
         String hypervisorType = cmd.getHypervisor().equalsIgnoreCase(HypervisorGuru.HypervisorCustomDisplayName.value()) ?
                 "Custom" : cmd.getHypervisor();
-        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, hypervisorType, hostTags, cmd.getFullUrlParams(), false, cmd.getExternalDetails(), cmd.getExtensionId(), cmd.getExtensionResourceId());
+        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, hypervisorType, hostTags, cmd.getFullUrlParams(), false, cmd.getExternalDetails());
     }
 
     @Override
     public List<? extends Host> discoverHosts(final AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         final Long dcId = cmd.getZoneId();
         final String url = cmd.getUrl();
-        return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null, false, null, null, null);
+        return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null, false, null);
     }
 
     private List<HostVO> discoverHostsFull(final Long dcId, final Long podId, Long clusterId, final String clusterName, String url, String username, String password,
-                                           final String hypervisorType, final List<String> hostTags, final Map<String, String> params, final boolean deferAgentCreation, Map<String, String> cmdDetails, Long extensionid, Long extensionResouceId) throws IllegalArgumentException, DiscoveryException,
+                                           final String hypervisorType, final List<String> hostTags, final Map<String, String> params, final boolean deferAgentCreation, Map<String, String> cmdDetails) throws IllegalArgumentException, DiscoveryException,
             InvalidParameterValueException {
         URI uri;
 
@@ -839,17 +813,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         boolean isHypervisorTypeSupported = false;
         for (final Discoverer discoverer : _discoverers) {
             if (params != null) {
-                ClusterVO clusterVO = _clusterDao.findById(clusterId);
-                if (HypervisorType.External.equals(clusterVO.getHypervisorType())) {
-                    params.put(ApiConstants.EXTENSION_ID, String.valueOf(extensionid));
-                    params.put(ApiConstants.EXTENSION_RESOURCE_ID, String.valueOf(extensionResouceId));
-                    if (params.get(ApiConstants.EXTERNAL_PROVISIONER) != null) {
-                        params.put(ApiConstants.EXTERNAL_PROVISIONER, params.get(ApiConstants.EXTERNAL_PROVISIONER));
-                    } else {
-                        ClusterDetailsVO provisioner = _clusterDetailsDao.findDetail(clusterId, ApiConstants.EXTERNAL_PROVISIONER);
-                        params.put(ApiConstants.EXTERNAL_PROVISIONER, provisioner.getValue());
-                    }
-                }
                 discoverer.putParam(params);
             }
 
@@ -914,13 +877,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     }
 
                     if (cmdDetails != null) {
+                        if (HypervisorType.External.toString().equalsIgnoreCase(hypervisorType)) {
+                            List<ClusterDetailsVO> clusterDetails = _clusterDetailsDao.listDetails(clusterId);
+                            if (clusterDetails != null) {
+                                for (ClusterDetailsVO detail : clusterDetails) {
+                                    details.put(detail.getName(), detail.getValue());
+                                }
+                            }
+                        }
                         details.putAll(cmdDetails);
-                    }
-                    ClusterVO clusterVO = _clusterDao.findById(clusterId);
-                    if (HypervisorType.External.equals(clusterVO.getHypervisorType())) {
-                        details.put(ApiConstants.EXTENSION_ID, String.valueOf(extensionid));
-                        details.put(ApiConstants.EXTENSION_RESOURCE_ID, String.valueOf(extensionResouceId));
-                        details.put(ApiConstants.EXTERNAL_PROVISIONER, "SimpleExternalProvisioner");
                     }
 
                     if (deferAgentCreation) {
@@ -1152,6 +1117,13 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     if (!storagePools.isEmpty()) {
                         logger.debug("{} still has storage pools, can't remove", cluster);
                         throw new CloudRuntimeException(String.format("Cluster: %s cannot be removed. Cluster still has storage pools", cluster));
+                    }
+
+                    if (HypervisorType.External.toString().equalsIgnoreCase(cluster.getHypervisorType().toString())) {
+                        ExtensionResourceMapVO registeredExtension = extensionResourceMapDao.findByResourceIdAndType(cluster.getId(), "cluster");
+                        if (registeredExtension != null) {
+                            extensionsManager.unregisterExtensionWithCluster(cluster.getId(), registeredExtension.getExtensionId());
+                        }
                     }
 
                     if (_clusterDao.remove(cmd.getId())) {

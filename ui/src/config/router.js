@@ -38,6 +38,7 @@ import infra from '@/config/section/infra'
 import zone from '@/config/section/zone'
 import offering from '@/config/section/offering'
 import config from '@/config/section/config'
+import extension from '@/config/section/extension'
 import tools from '@/config/section/tools'
 import quota from '@/config/section/plugin/quota'
 import cloudian from '@/config/section/plugin/cloudian'
@@ -222,6 +223,7 @@ export function asyncRouterMap () {
       generateRouterMap(zone),
       generateRouterMap(offering),
       generateRouterMap(config),
+      generateRouterMap(extension),
       generateRouterMap(tools),
       generateRouterMap(quota),
       generateRouterMap(cloudian),

@@ -1950,7 +1950,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         privateTemplate = new VMTemplateVO(nextTemplateId, name, ImageFormat.RAW, isPublic, featured, isExtractable,
                 TemplateType.USER, null, requiresHvmValue, bitsValue, templateOwner.getId(), null, description,
-                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), sshKeyEnabledValue, isDynamicScalingEnabled, false, false, arch);
+                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), sshKeyEnabledValue, isDynamicScalingEnabled, false, false, arch, null);
 
         if (sourceTemplateId != null) {
             if (logger.isDebugEnabled()) {
@@ -2336,14 +2336,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     void validateDetails(VMTemplateVO template, Map<String, String> details) {
         if (MapUtils.isEmpty(details)) {
             return;
-        }
-
-        if (HypervisorType.External.equals(template.getHypervisorType())) {
-            _tmpltDao.loadDetails(template);
-            Map<String, String> existingDetails = template.getDetails();
-            if (!details.get(ApiConstants.EXTERNAL_PROVISIONER.toString()).equals(existingDetails.get(ApiConstants.EXTERNAL_PROVISIONER.toString()))) {
-                throw new InvalidParameterValueException("Provisioner name cannot be changed for the hypervisor type External");
-            }
         }
 
         String bootMode = details.get(ApiConstants.BootType.UEFI.toString());
