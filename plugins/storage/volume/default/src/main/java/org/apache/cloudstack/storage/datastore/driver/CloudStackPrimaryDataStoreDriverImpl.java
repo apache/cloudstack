@@ -28,7 +28,6 @@ import javax.inject.Inject;
 
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.storage.VolumeVO;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
@@ -430,13 +429,17 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         boolean encryptionRequired = anyVolumeRequiresEncryption(vol);
         long [] endpointsToRunResize = resizeParameter.hosts;
 
+        CreateCmdResult result = new CreateCmdResult(null, null);
+
         // if hosts are provided, they are where the VM last ran. We can use that.
         if (endpointsToRunResize == null || endpointsToRunResize.length == 0) {
             EndPoint ep = epSelector.select(data, encryptionRequired);
             if (ep == null) {
                 String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
                 s_logger.error(errMsg);
-                throw new CloudRuntimeException(errMsg);
+                result.setResult(errMsg);
+                callback.complete(result);
+                return;
             }
             endpointsToRunResize = new long[] {ep.getId()};
         }
@@ -445,7 +448,6 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
         if (pool.getParent() != 0) {
             resizeCmd.setContextParam(DiskTO.PROTOCOL_TYPE, Storage.StoragePoolType.DatastoreCluster.toString());
         }
-        CreateCmdResult result = new CreateCmdResult(null, null);
         try {
             ResizeVolumeAnswer answer = (ResizeVolumeAnswer) storageMgr.sendToPool(pool, endpointsToRunResize, resizeCmd);
             if (answer != null && answer.getResult()) {
@@ -462,7 +464,6 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 s_logger.debug("return a null answer, mark it as failed for unknown reason");
                 result.setResult("return a null answer, mark it as failed for unknown reason");
             }
-
         } catch (Exception e) {
             s_logger.debug("sending resize command failed", e);
             result.setResult(e.toString());
