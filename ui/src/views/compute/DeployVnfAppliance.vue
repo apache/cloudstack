@@ -1266,13 +1266,10 @@ export default {
     templateConfigurationExists () {
       return this.vm.templateid && this.templateConfigurations && this.templateConfigurations.length > 0
     },
-    templateId () {
+    queryTemplateId () {
       return this.$route.query.templateid || null
     },
-    isoId () {
-      return this.$route.query.isoid || null
-    },
-    networkId () {
+    queryNetworkId () {
       return this.$route.query.networkid || null
     },
     imageTypeList () {
@@ -1640,7 +1637,7 @@ export default {
             return ['community']
           }
         }
-        return ['all']
+        return this.isNormalAndDomainUser ? ['executable'] : ['all']
       }
       return [
         'featured',
@@ -1688,19 +1685,14 @@ export default {
         let zones = []
         let apiName = ''
         const params = {}
-        if (this.templateId) {
+        if (this.queryTemplateId) {
           apiName = 'listVnfTemplates'
           params.listall = true
           params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
-          params.id = this.templateId
-        } else if (this.isoId) {
+          params.id = this.queryTemplateId
+        } else if (this.queryNetworkId) {
           params.listall = true
-          params.isofilter = this.isNormalAndDomainUser ? 'executable' : 'all'
-          params.id = this.isoId
-          apiName = 'listIsos'
-        } else if (this.networkId) {
-          params.listall = true
-          params.id = this.networkId
+          params.id = this.queryNetworkId
           apiName = 'listNetworks'
         }
         if (!apiName) return resolve(zones)
@@ -2529,7 +2521,7 @@ export default {
       args.templatefilter = templateFilter
       args.details = 'all'
       args.showicon = 'true'
-      args.id = this.templateId
+      args.id = this.queryTemplateId
 
       delete args.category
       delete args.public
@@ -2580,8 +2572,8 @@ export default {
     async fetchZoneOptions () {
       let guestOsFetch = null
       for (const [name, param] of Object.entries(this.params)) {
-        if (this.networkId && name === 'networks') {
-          param.options = { id: this.networkId }
+        if (this.queryNetworkId && name === 'networks') {
+          param.options = { id: this.queryNetworkId }
         }
         const shouldLoad = !('isLoad' in param) || param.isLoad
         if (!shouldLoad) continue

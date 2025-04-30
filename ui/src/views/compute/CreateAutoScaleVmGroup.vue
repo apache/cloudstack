@@ -1382,7 +1382,7 @@ export default {
           options: {
             zoneid: _.get(this.zone, 'id'),
             networkid: this.defaultNetworkId,
-            id: this.lbRuleId,
+            id: this.queryLbRuleId,
             projectid: store.getters.project ? store.getters.project.id : null,
             domainid: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.domainid,
             account: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.account,
@@ -1417,13 +1417,13 @@ export default {
     templateConfigurationExists () {
       return this.vm.templateid && this.templateConfigurations && this.templateConfigurations.length > 0
     },
-    templateId () {
+    queryTemplateId () {
       return this.$route.query.templateid || null
     },
-    networkId () {
+    queryNetworkId () {
       return this.$route.query.networkid || null
     },
-    lbRuleId () {
+    queryLbRuleId () {
       return this.$route.query.lbruleid || null
     },
     imageTypeTabList () {
@@ -1800,7 +1800,7 @@ export default {
             return ['community']
           }
         }
-        return ['all']
+        return this.isNormalAndDomainUser ? ['executable'] : ['all']
       }
       return [
         'featured',
@@ -1848,18 +1848,18 @@ export default {
         let zones = []
         let apiName = ''
         const params = {}
-        if (this.templateId) {
+        if (this.queryTemplateId) {
           apiName = 'listTemplates'
           params.listall = true
           params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
-          params.id = this.templateId
-        } else if (this.networkId) {
+          params.id = this.queryTemplateId
+        } else if (this.queryNetworkId) {
           params.listall = true
-          params.id = this.networkId
+          params.id = this.queryNetworkId
           apiName = 'listNetworks'
-        } else if (this.lbRuleId) {
+        } else if (this.queryLbRuleId) {
           params.listall = true
-          params.id = this.lbRuleId
+          params.id = this.queryLbRuleId
           apiName = 'listLoadBalancerRules'
         }
         if (!apiName) return resolve(zones)
@@ -3010,15 +3010,15 @@ export default {
     async fetchZoneOptions () {
       let guestOsFetch = null
       for (const [name, param] of Object.entries(this.params)) {
-        if (this.networkId && name === 'networks') {
-          param.options = { id: this.networkId }
+        if (this.queryNetworkId && name === 'networks') {
+          param.options = { id: this.queryNetworkId }
         }
         if (name === 'loadbalancers') {
-          if (!this.lbRuleId && !this.defaultNetworkId) {
+          if (!this.queryLbRuleId && !this.defaultNetworkId) {
             continue
           }
-          if (this.lbRuleId) {
-            param.options = { id: this.lbRuleId }
+          if (this.queryLbRuleId) {
+            param.options = { id: this.queryLbRuleId }
           }
         }
         const shouldLoad = !('isLoad' in param) || param.isLoad
