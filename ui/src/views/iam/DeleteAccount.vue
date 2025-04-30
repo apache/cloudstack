@@ -56,6 +56,7 @@
 <script>
 import { ref, reactive } from 'vue'
 import { api } from '@/api'
+
 export default {
   name: 'DeleteAccount',
   props: {
@@ -66,7 +67,8 @@ export default {
   },
   data () {
     return {
-      error: ''
+      error: '',
+      isDeleting: false
     }
   },
   created () {
@@ -85,6 +87,7 @@ export default {
     },
     handleSubmit (e) {
       e.preventDefault()
+      if (this.isDeleting) return // Prevent double submission
       this.formRef.value.validate().then(async () => {
         if (this.form.name !== this.resource.name) {
           this.error = `${this.$t('message.error.account.delete.name.mismatch')}`
@@ -93,22 +96,54 @@ export default {
         if (this.hasActiveResources) {
           return
         }
-        api('deleteAccount', {
-          id: this.resource.id
-        }).then(response => {
-          this.$pollJob({
-            jobId: response.deleteaccountresponse.jobid,
-            title: this.$t('label.action.delete.account'),
-            description: this.resource.id,
-            successMessage: `${this.$t('message.delete.account.success')} - ${this.resource.name}`,
-            errorMessage: `${this.$t('message.delete.account.failed')} - ${this.resource.name}`,
-            loadingMessage: `${this.$t('message.delete.account.processing')} - ${this.resource.name}`,
-            catchMessage: this.$t('error.fetching.async.job.result')
+        this.isDeleting = true
+        // Store the account ID and name before we close the modal
+        const accountId = this.resource.id
+        const accountName = this.resource.name
+        // Close the modal first
+        this.closeModal()
+        // Immediately navigate to the accounts page to avoid "unable to find account" errors
+        this.$router.push({ path: '/account' })
+          .then(() => {
+            // After successful navigation, start the deletion job
+            api('deleteAccount', {
+              id: accountId
+            }).then(response => {
+              this.$pollJob({
+                jobId: response.deleteaccountresponse.jobid,
+                title: this.$t('label.action.delete.account'),
+                description: accountId,
+                successMessage: `${this.$t('message.delete.account.success')} - ${accountName}`,
+                errorMessage: `${this.$t('message.delete.account.failed')} - ${accountName}`,
+                loadingMessage: `${this.$t('message.delete.account.processing')} - ${accountName}`,
+                catchMessage: this.$t('error.fetching.async.job.result')
+              })
+            }).catch(error => {
+              this.$notifyError(error)
+              this.isDeleting = false
+            })
           })
-          this.closeModal()
-        }).catch(error => {
-          this.$notifyError(error)
-        })
+          .catch(err => {
+            console.error('Navigation failed:', err)
+            this.isDeleting = false
+            // If navigation fails, still try to delete the account
+            // but don't navigate afterwards
+            api('deleteAccount', {
+              id: accountId
+            }).then(response => {
+              this.$pollJob({
+                jobId: response.deleteaccountresponse.jobid,
+                title: this.$t('label.action.delete.account'),
+                description: accountId,
+                successMessage: `${this.$t('message.delete.account.success')} - ${accountName}`,
+                errorMessage: `${this.$t('message.delete.account.failed')} - ${accountName}`,
+                loadingMessage: `${this.$t('message.delete.account.processing')} - ${accountName}`,
+                catchMessage: this.$t('error.fetching.async.job.result')
+              })
+            }).catch(error => {
+              this.$notifyError(error)
+            })
+          })
       }).catch((error) => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })

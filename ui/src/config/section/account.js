@@ -225,7 +225,7 @@ export default {
       message: 'message.delete.account',
       dataView: true,
       disabled: (record, store) => {
-        return (record.id !== 'undefined' && store.userInfo.accountid === record.id)
+        return store.userInfo.accountid === record?.id
       },
       popup: true,
       component: shallowRef(defineAsyncComponent(() => import('@/views/iam/DeleteAccountWrapper.vue')))
