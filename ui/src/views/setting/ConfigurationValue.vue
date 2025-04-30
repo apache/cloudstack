@@ -278,8 +278,7 @@ export default {
 
       // The updateConfiguration API expects a blank string to clean up the configuration value
       if (
-        (['CSV', 'Order', 'WhitespaceSeparatedListWithOptions'].includes(configrecord.type) && Object.keys(newValue).length === 0) ||
-        (configrecord.type === 'String' && newValue.length === 0)
+        (['CSV', 'Order', 'WhitespaceSeparatedListWithOptions', 'String'].includes(configrecord.type) && newValue.length === 0)
       ) {
         newValue = ' '
       }
