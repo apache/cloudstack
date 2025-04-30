@@ -1659,7 +1659,7 @@ export default {
             return ['community']
           }
         }
-        return ['all']
+        return this.isNormalAndDomainUser ? ['executable'] : ['all']
       }
       return [
         'featured',

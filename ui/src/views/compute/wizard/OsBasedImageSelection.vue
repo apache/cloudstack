@@ -79,7 +79,7 @@
         <os-based-image-radio-group
           :imagesList="imagesList"
           :categoryIcon="selectedCategoryIcon"
-          :itemCount="imageItems[filterType] ? imageItems[filterType].count || 0 : 0"
+          :itemCount="imagesCount"
           :input-decorator="localSelectedImageType"
           :selected="selectedImageId"
           :preFillContent="preFillContent"
@@ -214,7 +214,7 @@ export default {
   },
   data () {
     return {
-      filterType: 'all',
+      filterType: this.defaultImageFilter,
       selectedImageId: '',
       imageSearchFilters: {},
       showRootDiskSizeChanger: false,
@@ -244,12 +244,18 @@ export default {
     }
   },
   computed: {
+    defaultImageFilter () {
+      return ['DomainAdmin', 'User'].includes(this.$store.getters.userInfo.roletype) ? 'executable' : 'all'
+    },
     imagesList () {
       if (!this.localSelectedImageType || !this.imageItems || !this.imageItems[this.filterType]) {
         return []
       }
       const imageTypeKey = this.localSelectedImageType.slice(0, -2)
       return this.imageItems[this.filterType][imageTypeKey] || []
+    },
+    imagesCount () {
+      return this.imageItems[this.filterType] ? this.imageItems[this.filterType].count || 0 : 0
     },
     selectedCategory () {
       if (this.localSelectedGuestOsCategoryId && this.guestOsCategories) {
@@ -286,7 +292,7 @@ export default {
       this.emitSearchFilter()
     },
     updateImageFilterType () {
-      this.filterType = 'all'
+      this.filterType = this.defaultImageFilter
       if (this.localSelectedGuestOsCategoryId === '0') {
         this.filterType = 'self'
       } else {
