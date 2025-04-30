@@ -43,7 +43,7 @@ import com.cloud.network.NetworkModel;
 import com.cloud.user.UserData;
 
 @APICommand(name = "registerUserData",
-        description = "Register a new userdata.",
+        description = "Register a new user data.",
         since = "4.18",
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false,
@@ -56,33 +56,33 @@ public class RegisterUserDataCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the userdata")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the user data")
     private String name;
 
     //Owner information
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the userdata. Must be used with domainId.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account for the user data. Must be used with domainId.")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
             type = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "an optional domainId for the userdata. If the account parameter is used, domainId must also be used.")
+            description = "an optional domainId for the user data. If the account parameter is used, domainId must also be used.")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the userdata")
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the user data")
     private Long projectId;
 
     @Parameter(name = ApiConstants.USER_DATA,
             type = CommandType.STRING,
             required = true,
-            description = "Base64 encoded userdata content. " +
+            description = "Base64 encoded user data content. " +
                     "Using HTTP GET (via querystring), you can send up to 4KB of data after base64 encoding. " +
-                    "Using HTTP POST (via POST body), you can send up to 1MB of data after base64 encoding. " +
-                    "You also need to change vm.userdata.max.length value",
+                    "Using HTTP POST (via POST body), you can send up to 32KB of data after base64 encoding, " +
+                    "which can be increased upto 1MB using the vm.userdata.max.length setting",
             length = 1048576)
     private String userData;
 
-    @Parameter(name = ApiConstants.PARAMS, type = CommandType.STRING, description = "comma separated list of variables declared in userdata content")
+    @Parameter(name = ApiConstants.PARAMS, type = CommandType.STRING, description = "comma separated list of variables declared in the user data content")
     private String params;
 
 
