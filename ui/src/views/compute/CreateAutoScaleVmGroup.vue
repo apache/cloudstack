@@ -1399,7 +1399,9 @@ export default {
           options: {
             zoneid: _.get(this.zone, 'id'),
             isfeatured: true,
-            isiso: _.get(this.form, 'imagetype') === 'isoid'
+            isiso: _.get(this.form, 'imagetype') === 'isoid',
+            arch: this.selectedArchitecture,
+            isvnf: false
           },
           field: 'guestoscategoryid'
         }

@@ -522,7 +522,8 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
-    public List<Long> listTemplateIsoByArchAndZone(Long dataCenterId, CPU.CPUArch arch, Boolean isIso) {
+    public List<Long> listTemplateIsoByArchVnfAndZone(Long dataCenterId, CPU.CPUArch arch, Boolean isIso,
+                  Boolean isVnf) {
         GenericSearchBuilder<VMTemplateVO, Long> sb = createSearchBuilder(Long.class);
         sb.select(null, Func.DISTINCT, sb.entity().getGuestOSId());
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.IN);
@@ -535,12 +536,19 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             SearchBuilder<VMTemplateZoneVO> templateZoneSearch = _templateZoneDao.createSearchBuilder();
             templateZoneSearch.and("removed", templateZoneSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
             templateZoneSearch.and("zoneId", templateZoneSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
-            sb.join("templateZoneSearch", templateZoneSearch, templateZoneSearch.entity().getTemplateId(), sb.entity().getId(), JoinBuilder.JoinType.INNER);
+            sb.join("templateZoneSearch", templateZoneSearch, templateZoneSearch.entity().getTemplateId(),
+                    sb.entity().getId(), JoinBuilder.JoinType.INNER);
             templateZoneSearch.done();
         }
         sb.done();
         SearchCriteria<Long> sc = sb.create();
-        List<TemplateType> types = Arrays.asList(TemplateType.USER, TemplateType.BUILTIN, TemplateType.PERHOST);
+        List<TemplateType> types = new ArrayList<>(Arrays.asList(TemplateType.USER, TemplateType.BUILTIN,
+                TemplateType.PERHOST));
+        if (isVnf == null) {
+            types.add(TemplateType.VNF);
+        } else if (isVnf) {
+            types = Collections.singletonList(TemplateType.VNF);
+        }
         sc.setParameters("type", types.toArray());
         sc.setParameters("state", VirtualMachineTemplate.State.Active);
         if (dataCenterId != null) {

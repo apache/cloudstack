@@ -48,6 +48,16 @@ public class ListGuestOsCategoriesCmdTest {
     }
 
     @Test
+    public void testIsVnf() {
+        ListGuestOsCategoriesCmd cmd = new ListGuestOsCategoriesCmd();
+        Assert.assertNull(cmd.isVnf());
+        ReflectionTestUtils.setField(cmd, "vnf", false);
+        Assert.assertFalse(cmd.isVnf());
+        ReflectionTestUtils.setField(cmd, "vnf", true);
+        Assert.assertTrue(cmd.isVnf());
+    }
+
+    @Test
     public void testGetZoneId() {
         ListGuestOsCategoriesCmd cmd = new ListGuestOsCategoriesCmd();
         Assert.assertNull(cmd.getZoneId());

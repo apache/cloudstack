@@ -217,7 +217,7 @@ public class VMTemplateDaoImplTest {
         when(searchBuilder.create()).thenReturn(searchCriteria);
         mockTemplateZoneJoin();
         doReturn(new ArrayList<>()).when(templateDao).customSearch(searchCriteria, null);
-        List<Long> result = templateDao.listTemplateIsoByArchAndZone(dataCenterId, arch, isIso);
+        List<Long> result = templateDao.listTemplateIsoByArchVnfAndZone(dataCenterId, arch, isIso, false);
         assertNotNull(result);
         verify(searchBuilder, times(1)).select(null, SearchCriteria.Func.DISTINCT, templateVO.getGuestOSId());
         verify(searchBuilder, times(1)).and(eq("state"), any(), eq(SearchCriteria.Op.IN));
@@ -240,7 +240,7 @@ public class VMTemplateDaoImplTest {
         when(templateDao.createSearchBuilder(Long.class)).thenReturn(searchBuilder);
         when(searchBuilder.create()).thenReturn(searchCriteria);
         doReturn(new ArrayList<>()).when(templateDao).customSearch(searchCriteria, null);
-        List<Long> result = templateDao.listTemplateIsoByArchAndZone(dataCenterId, arch, isIso);
+        List<Long> result = templateDao.listTemplateIsoByArchVnfAndZone(dataCenterId, arch, isIso, false);
         assertNotNull(result);
         verify(searchBuilder, times(1)).select(null, SearchCriteria.Func.DISTINCT, templateVO.getGuestOSId());
         verify(searchBuilder, times(1)).and(eq("state"), any(), eq(SearchCriteria.Op.IN));
@@ -264,7 +264,7 @@ public class VMTemplateDaoImplTest {
         when(searchBuilder.create()).thenReturn(searchCriteria);
         mockTemplateZoneJoin();
         doReturn(new ArrayList<>()).when(templateDao).customSearch(searchCriteria, null);
-        List<Long> result = templateDao.listTemplateIsoByArchAndZone(dataCenterId, arch, isIso);
+        List<Long> result = templateDao.listTemplateIsoByArchVnfAndZone(dataCenterId, arch, isIso, false);
         assertNotNull(result);
         verify(searchBuilder, times(1)).select(null, SearchCriteria.Func.DISTINCT, templateVO.getGuestOSId());
         verify(searchBuilder, times(1)).and(eq("state"), any(), eq(SearchCriteria.Op.IN));
@@ -288,7 +288,7 @@ public class VMTemplateDaoImplTest {
         when(searchBuilder.create()).thenReturn(searchCriteria);
         mockTemplateZoneJoin();
         doReturn(new ArrayList<>()).when(templateDao).customSearch(searchCriteria, null);
-        List<Long> result = templateDao.listTemplateIsoByArchAndZone(dataCenterId, arch, isIso);
+        List<Long> result = templateDao.listTemplateIsoByArchVnfAndZone(dataCenterId, arch, isIso, false);
         assertNotNull(result);
         verify(searchBuilder, times(1)).select(null, SearchCriteria.Func.DISTINCT, templateVO.getGuestOSId());
         verify(searchBuilder, times(1)).and(eq("state"), any(), eq(SearchCriteria.Op.IN));

@@ -2735,16 +2735,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final String name = cmd.getName();
         final String keyword = cmd.getKeyword();
         final Boolean featured = cmd.isFeatured();
+        final Boolean isIso = cmd.isIso();
+        final Boolean isVnf = cmd.isVnf();
         final Long zoneId = cmd.getZoneId();
         final CPU.CPUArch arch = cmd.getArch();
-        final Boolean isIso = cmd.isIso();
 
         final SearchBuilder<GuestOSCategoryVO> sb = _guestOSCategoryDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getId(), SearchCriteria.Op.LIKE);
         sb.and("keyword", sb.entity().getId(), SearchCriteria.Op.LIKE);
         sb.and("featured", sb.entity().isFeatured(), SearchCriteria.Op.EQ);
-        if (ObjectUtils.anyNotNull(zoneId, arch, isIso)) {
+        if (ObjectUtils.anyNotNull(zoneId, arch, isIso, isVnf)) {
             final SearchBuilder<GuestOSVO> guestOsSearch = _guestOSDao.createSearchBuilder();
             guestOsSearch.and("ids", guestOsSearch.entity().getId(), SearchCriteria.Op.IN);
             sb.join("guestOsSearch", guestOsSearch, guestOsSearch.entity().getCategoryId(), sb.entity().getId(),
@@ -2766,8 +2767,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (featured != null) {
             sc.setParameters("featured", featured);
         }
-        if (ObjectUtils.anyNotNull(zoneId, arch, isIso)) {
-            List<Long> guestOsIds = templateDao.listTemplateIsoByArchAndZone(zoneId, arch, isIso);
+        if (ObjectUtils.anyNotNull(zoneId, arch, isIso, isVnf)) {
+            List<Long> guestOsIds = templateDao.listTemplateIsoByArchVnfAndZone(zoneId, arch, isIso, isVnf);
             if (CollectionUtils.isEmpty(guestOsIds)) {
                 return new Pair<>(Collections.emptyList(), 0);
             }

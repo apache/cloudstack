@@ -1259,7 +1259,8 @@ export default {
             zoneid: _.get(this.zone, 'id'),
             isfeatured: true,
             isiso: _.get(this, 'imageType') === 'isoid',
-            arch: this.selectedArchitecture
+            arch: this.selectedArchitecture,
+            isvnf: false
           },
           field: 'guestoscategoryid'
         }

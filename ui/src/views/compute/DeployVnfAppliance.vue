@@ -1192,7 +1192,9 @@ export default {
           options: {
             zoneid: _.get(this.zone, 'id'),
             isfeatured: true,
-            isiso: _.get(this.form, 'imagetype') === 'isoid'
+            isiso: _.get(this.form, 'imagetype') === 'isoid',
+            arch: this.selectedArchitecture,
+            isvnf: true
           },
           field: 'guestoscategoryid'
         }
@@ -1702,7 +1704,7 @@ export default {
           }
           return resolve(zones)
         } else if (this.queryTemplateId) {
-          apiName = 'listTemplates'
+          apiName = 'listVnfTemplates'
           params.listall = true
           params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
           params.id = this.queryTemplateId
@@ -2550,7 +2552,7 @@ export default {
       delete args.featured
 
       return new Promise((resolve, reject) => {
-        api('listTemplates', args).then((response) => {
+        api('listVnfTemplates', args).then((response) => {
           resolve(response)
         }).catch((reason) => {
           // ToDo: Handle errors

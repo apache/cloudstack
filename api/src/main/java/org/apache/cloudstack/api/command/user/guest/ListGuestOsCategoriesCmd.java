@@ -55,9 +55,14 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.IS_ISO,
             type = CommandType.BOOLEAN,
-            description = "List OS categories types for which an ISO is available",
+            description = "List OS categories for which an ISO is available",
             since = "4.20.1")
     private Boolean iso;
+
+    @Parameter(name = ApiConstants.IS_VNF, type = CommandType.BOOLEAN,
+            description = "List OS categories for which a VNF template is available",
+            since = "4.21.0")
+    private Boolean vnf;
 
     @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.UUID,
@@ -90,6 +95,10 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
 
     public Boolean isIso() {
         return iso;
+    }
+
+    public Boolean isVnf() {
+        return vnf;
     }
 
     public Long getZoneId() {
