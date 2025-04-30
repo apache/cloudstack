@@ -214,7 +214,7 @@ export default {
   },
   data () {
     return {
-      filterType: this.defaultImageFilter,
+      filterType: 'executable',
       selectedImageId: '',
       imageSearchFilters: {},
       showRootDiskSizeChanger: false,
@@ -224,6 +224,9 @@ export default {
       localRootDiskOverrideChecked: this.rootDiskOverrideChecked,
       localSelectedIsoHypervisor: this.selectedIsoHypervisor
     }
+  },
+  mounted () {
+    this.filterType = this.defaultImageFilter
   },
   watch: {
     selectedImageType (newValue) {

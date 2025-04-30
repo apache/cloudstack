@@ -59,22 +59,24 @@
               icon="rocket-outlined"
               @onClick="onAddInstance(record)"/>
           </span>
-          <span style="margin-right: 5px">
-            <tooltip-button
-              :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
-              :title="$t('label.action.copy.template')"
-              icon="copy-outlined"
-              :loading="copyLoading"
-              @onClick="showCopyTemplate(record)" />
-          </span>
-          <span style="margin-right: 5px">
-            <tooltip-button
-              :disabled="!('deleteTemplate' in $store.getters.apis)"
-              :title="$t('label.action.delete.template')"
-              type="primary"
-              :danger="true"
-              icon="delete-outlined"
-              @onClick="onShowDeleteModal(record)"/>
+          <span v-if="isActionsOnTemplatePermitted">
+            <span style="margin-right: 5px">
+              <tooltip-button
+                :disabled="!('copyTemplate' in $store.getters.apis && record.isready)"
+                :title="$t('label.action.copy.template')"
+                icon="copy-outlined"
+                :loading="copyLoading"
+                @onClick="showCopyTemplate(record)" />
+            </span>
+            <span style="margin-right: 5px">
+              <tooltip-button
+                :disabled="!('deleteTemplate' in $store.getters.apis)"
+                :title="$t('label.action.delete.template')"
+                type="primary"
+                :danger="true"
+                icon="delete-outlined"
+                @onClick="onShowDeleteModal(record)"/>
+            </span>
           </span>
         </template>
       </template>
@@ -334,6 +336,12 @@ export default {
         key: 'isready',
         title: this.$t('label.isready'),
         dataIndex: 'isready'
+      },
+      {
+        key: 'actions',
+        title: '',
+        dataIndex: 'actions',
+        width: 130
       }
     ]
     this.imageStoreInnerColumns = [
@@ -364,14 +372,6 @@ export default {
         dataIndex: 'downloadState'
       }
     ]
-    if (this.isActionPermitted()) {
-      this.columns.push({
-        key: 'actions',
-        title: '',
-        dataIndex: 'actions',
-        width: 130
-      })
-    }
 
     const userInfo = this.$store.getters.userInfo
     if (!['Admin'].includes(userInfo.roletype) &&
@@ -386,6 +386,15 @@ export default {
       if (!newData && !this.showGroupActionModal) {
         this.fetchData()
       }
+    }
+  },
+  computed: {
+    isActionsOnTemplatePermitted () {
+      return (['Admin'].includes(this.$store.getters.userInfo.roletype) || // If admin or owner or belongs to current project
+        (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
+        (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.projectid && this.$store.getters.project && this.$store.getters.project.id && this.resource.projectid === this.$store.getters.project.id)) &&
+        (this.resource.isready || !this.resource.status || this.resource.status.indexOf('Downloaded') === -1) && // Template is ready or downloaded
+        this.resource.templatetype !== 'SYSTEM'
     }
   },
   methods: {
@@ -435,13 +444,6 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
-    },
-    isActionPermitted () {
-      return (['Admin'].includes(this.$store.getters.userInfo.roletype) || // If admin or owner or belongs to current project
-        (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
-        (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.projectid && this.$store.getters.project && this.$store.getters.project.id && this.resource.projectid === this.$store.getters.project.id)) &&
-        (this.resource.isready || !this.resource.status || this.resource.status.indexOf('Downloaded') === -1) && // Template is ready or downloaded
-        this.resource.templatetype !== 'SYSTEM'
     },
     setSelection (selection) {
       this.selectedRowKeys = selection

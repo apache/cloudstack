@@ -72,6 +72,8 @@
                     <os-based-image-selection
                       v-if="isModernImageSelection"
                       :imageTypeSelectionAllowed="false"
+                      :imagePreSelected="!!this.queryTemplateId"
+                      :guestOsCategoriesSelectionDisallowed="!this.queryGuestOsCategoryId && !!this.queryTemplateId"
                       :guestOsCategories="options.guestOsCategories"
                       :guestOsCategoriesLoading="loading.guestOsCategories"
                       :selectedGuestOsCategoryId="form.guestoscategoryid"
@@ -88,7 +90,7 @@
                       @update-disk-size="updateFieldValue" />
                     <a-card
                       v-else
-                      :tabList="imageTypeTabList"
+                      :tabList="imageTypeList"
                       :activeTabKey="imageType">
                       <div>
                         {{ $t('message.template.desc') }}
@@ -1417,16 +1419,25 @@ export default {
     templateConfigurationExists () {
       return this.vm.templateid && this.templateConfigurations && this.templateConfigurations.length > 0
     },
+    queryZoneId () {
+      return this.$route.query.zoneid || null
+    },
+    queryArchId () {
+      return this.$route.query.arch || null
+    },
     queryTemplateId () {
       return this.$route.query.templateid || null
     },
     queryNetworkId () {
       return this.$route.query.networkid || null
     },
+    queryGuestOsCategoryId () {
+      return this.$route.query.oscategoryid || null
+    },
     queryLbRuleId () {
       return this.$route.query.lbruleid || null
     },
-    imageTypeTabList () {
+    imageTypeList () {
       return [{
         key: 'templateid',
         tab: this.$t('label.templates')
@@ -1848,11 +1859,18 @@ export default {
         let zones = []
         let apiName = ''
         const params = {}
-        if (this.queryTemplateId) {
+        if (this.queryZoneId) {
+          zones.push(this.queryZoneId)
+          if (this.queryTemplateId) {
+            this.dataPreFill.templateid = this.queryTemplateId
+          }
+          return resolve(zones)
+        } else if (this.queryTemplateId) {
           apiName = 'listTemplates'
           params.listall = true
           params.templatefilter = this.isNormalAndDomainUser ? 'executable' : 'all'
           params.id = this.queryTemplateId
+          this.dataPreFill.templateid = this.queryTemplateId
         } else if (this.queryNetworkId) {
           params.listall = true
           params.id = this.queryNetworkId
@@ -1884,6 +1902,9 @@ export default {
     },
     async fetchData () {
       this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
+      if (this.queryArchId) {
+        this.architectureTypes.opts = this.architectureTypes.opts.filter(o => o.id === this.queryArchId)
+      }
       const zones = await this.fetchZoneByQuery()
       if (zones && zones.length === 1) {
         this.selectedZone = zones[0]
@@ -2033,21 +2054,15 @@ export default {
         this.form.templateid = value
         this.resetFromTemplateConfiguration()
         let template = ''
-        for (const key in this.options.templates) {
-          var t = _.find(_.get(this.options.templates[key], 'template', []), (option) => option.id === value)
-          if (t) {
-            this.template = t
-            this.templateConfigurations = []
-            this.selectedTemplateConfiguration = {}
-            this.templateNics = []
-            this.templateLicenses = []
-            this.templateProperties = {}
-            this.updateTemplateParameters()
-            template = t
+        for (const entry of Object.values(this.options.templates)) {
+          template = entry?.template.find(option => option.id === value) || null
+          if (template) {
+            this.template = template
             break
           }
         }
         if (template) {
+          this.resetTemplateAssociatedResources()
           var size = template.size / (1024 * 1024 * 1024) || 0 // bytes to GB
           this.dataPreFill.minrootdisksize = Math.ceil(size)
           this.updateTemplateLinkedUserData(this.template.userdataid)
@@ -2437,29 +2452,37 @@ export default {
     },
     fetchGuestOsCategories (skipFetchImages) {
       const key = 'guestOsCategories'
-      const param = this.params[key]
-      return this.fetchOptions(param, key, ['zones'])
+      const params = this.params[key]
+      if (this.queryGuestOsCategoryId) {
+        params.options.id = this.queryGuestOsCategoryId
+      } else if (this.queryTemplateId) {
+        this.fetchAllTemplates()
+        return Promise.resolve()
+      }
+      return this.fetchOptions(params, key, ['zones'])
         .then((res) => {
           if (!this.options.guestOsCategories) {
             this.options.guestOsCategories = []
           }
-          if (this.showUserCategoryForModernImageSelection) {
-            const userCategory = {
-              id: '0',
-              name: this.$t('label.user')
-            }
-            if (this.$store.getters.avatar) {
-              userCategory.icon = {
-                base64image: this.$store.getters.avatar
+          if (!this.queryGuestOsCategoryId) {
+            if (this.showUserCategoryForModernImageSelection) {
+              const userCategory = {
+                id: '0',
+                name: this.$t('label.user')
               }
+              if (this.$store.getters.avatar) {
+                userCategory.icon = {
+                  base64image: this.$store.getters.avatar
+                }
+              }
+              this.options.guestOsCategories.push(userCategory)
             }
-            this.options.guestOsCategories.push(userCategory)
-          }
-          if (this.showAllCategoryForModernImageSelection) {
-            this.options.guestOsCategories.push({
-              id: '-1',
-              name: this.$t('label.all')
-            })
+            if (this.showAllCategoryForModernImageSelection) {
+              this.options.guestOsCategories.push({
+                id: '-1',
+                name: this.$t('label.all')
+              })
+            }
           }
           this.form.guestoscategoryid = this.options.guestOsCategories[0].id
           if (skipFetchImages) {
@@ -2960,6 +2983,8 @@ export default {
       args.templatefilter = templateFilter
       args.details = 'all'
       args.showicon = 'true'
+      args.id = this.queryTemplateId
+      args.isvnf = false
 
       delete args.category
       delete args.public
@@ -3007,6 +3032,13 @@ export default {
       })
       this.options.templates = templates
     },
+    resetTemplateAssociatedResources () {
+      this.templateConfigurations = []
+      this.selectedTemplateConfiguration = {}
+      this.templateNics = []
+      this.templateLicenses = []
+      this.templateProperties = {}
+    },
     async fetchZoneOptions () {
       let guestOsFetch = null
       for (const [name, param] of Object.entries(this.params)) {
@@ -3038,7 +3070,9 @@ export default {
       this.formModel = toRaw(this.form)
     },
     onSelectZoneId (value) {
-      this.dataPreFill = {}
+      if (this.dataPreFill.zoneid !== value) {
+        this.dataPreFill = {}
+      }
       this.zoneId = value
       this.zone = _.find(this.options.zones, (option) => option.id === value)
       this.zoneSelected = true

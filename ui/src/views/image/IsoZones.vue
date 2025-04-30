@@ -59,30 +59,32 @@
               icon="rocket-outlined"
               @onClick="onAddInstance(record)"/>
           </span>
-          <span style="margin-right: 5px">
-            <tooltip-button
-              :tooltip="$t('label.action.copy.iso')"
-              :disabled="!('copyIso' in $store.getters.apis && record.isready)"
-              icon="copy-outlined"
-              :loading="copyLoading"
-              @click="showCopyIso(record)" />
-          </span>
-          <span style="margin-right: 5px">
-            <a-popconfirm
-              v-if="'deleteIso' in $store.getters.apis"
-              placement="topRight"
-              :title="$t('message.action.delete.iso')"
-              :ok-text="$t('label.yes')"
-              :cancel-text="$t('label.no')"
-              :loading="deleteLoading"
-              @confirm="deleteIso(record)"
-            >
+          <span v-if="isActionsOnIsoPermitted">
+            <span style="margin-right: 5px">
               <tooltip-button
-                :tooltip="$t('label.action.delete.iso')"
-                type="primary"
-                :danger="true"
-                icon="delete-outlined" />
-            </a-popconfirm>
+                :tooltip="$t('label.action.copy.iso')"
+                :disabled="!('copyIso' in $store.getters.apis && record.isready)"
+                icon="copy-outlined"
+                :loading="copyLoading"
+                @click="showCopyIso(record)" />
+            </span>
+            <span style="margin-right: 5px">
+              <a-popconfirm
+                v-if="'deleteIso' in $store.getters.apis"
+                placement="topRight"
+                :title="$t('message.action.delete.iso')"
+                :ok-text="$t('label.yes')"
+                :cancel-text="$t('label.no')"
+                :loading="deleteLoading"
+                @confirm="deleteIso(record)"
+              >
+                <tooltip-button
+                  :tooltip="$t('label.action.delete.iso')"
+                  type="primary"
+                  :danger="true"
+                  icon="delete-outlined" />
+              </a-popconfirm>
+            </span>
           </span>
         </template>
       </template>
@@ -285,6 +287,13 @@ export default {
         key: 'isready',
         title: this.$t('label.isready'),
         dataIndex: 'isready'
+      },
+      {
+        key: 'actions',
+        title: '',
+        dataIndex: 'actions',
+        fixed: 'right',
+        width: 130
       }
     ]
     this.storagePoolInnerColumns = [
@@ -315,15 +324,6 @@ export default {
         dataIndex: 'downloadState'
       }
     ]
-    if (this.isActionPermitted()) {
-      this.columns.push({
-        key: 'actions',
-        title: '',
-        dataIndex: 'actions',
-        fixed: 'right',
-        width: 130
-      })
-    }
 
     const userInfo = this.$store.getters.userInfo
     if (!['Admin'].includes(userInfo.roletype) &&
@@ -337,6 +337,15 @@ export default {
       if (!newData) {
         this.fetchData()
       }
+    }
+  },
+  computed: {
+    isActionsOnIsoPermitted () {
+      return (['Admin'].includes(this.$store.getters.userInfo.roletype) || // If admin or owner or belongs to current project
+        (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
+        (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.projectid && this.$store.getters.project && this.$store.getters.project.id && this.resource.projectid === this.$store.getters.project.id)) &&
+        (this.resource.isready || !this.resource.status || this.resource.status.indexOf('Downloaded') === -1) && // Iso is ready or downloaded
+        this.resource.account !== 'system'
     }
   },
   methods: {
@@ -386,13 +395,6 @@ export default {
       this.page = currentPage
       this.pageSize = pageSize
       this.fetchData()
-    },
-    isActionPermitted () {
-      return (['Admin'].includes(this.$store.getters.userInfo.roletype) || // If admin or owner or belongs to current project
-        (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.account === this.$store.getters.userInfo.account) ||
-        (this.resource.domainid === this.$store.getters.userInfo.domainid && this.resource.projectid && this.$store.getters.project && this.$store.getters.project.id && this.resource.projectid === this.$store.getters.project.id)) &&
-        (this.resource.isready || !this.resource.status || this.resource.status.indexOf('Downloaded') === -1) && // Iso is ready or downloaded
-        this.resource.account !== 'system'
     },
     setSelection (selection) {
       this.selectedRowKeys = selection

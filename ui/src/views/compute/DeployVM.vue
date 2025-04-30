@@ -151,7 +151,7 @@
                       @change-iso-hypervisor="value => hypervisor = value" />
                     <a-card
                       v-else
-                      :tabList="imageTabList"
+                      :tabList="imageTypeList"
                       :activeTabKey="imageType"
                       @tabChange="key => changeImageType(key)">
                       <div v-if="imageType === 'templateid'">
@@ -1353,30 +1353,26 @@ export default {
     queryGuestOsCategoryId () {
       return this.$route.query.oscategoryid || null
     },
-    imageTabList () {
-      let imageTabList = []
+    imageTypeList () {
       if (this.queryTemplateId) {
-        imageTabList = [{
+        return [{
           key: 'templateid',
           tab: this.$t('label.templates')
         }]
       } else if (this.queryIsoId) {
-        imageTabList = [{
-          key: 'isoid',
-          tab: this.$t('label.isos')
-        }]
-      } else {
-        imageTabList = [{
-          key: 'templateid',
-          tab: this.$t('label.templates')
-        },
-        {
+        return [{
           key: 'isoid',
           tab: this.$t('label.isos')
         }]
       }
-
-      return imageTabList
+      return [{
+        key: 'templateid',
+        tab: this.$t('label.templates')
+      },
+      {
+        key: 'isoid',
+        tab: this.$t('label.isos')
+      }]
     },
     userdataTabList () {
       let tabList = []
