@@ -14,7 +14,7 @@
 "label.account.specific": "Sz\u00e1mla-specifikus",
 "label.accounts": "Sz\u00e1ml\u00e1k",
 "label.accounttype": "Sz\u00e1mla t\u00edpus",
-"label.acl.export": "Export ACLs",
+"label.acl.export": "Export ACL rules",
 "label.acl.id": "ACL ID",
 "label.acl.rules": "ACL Rules",
 "label.acl.reason.description": "Enter the reason behind an ACL rule.",

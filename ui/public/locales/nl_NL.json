@@ -14,7 +14,7 @@
 "label.account.specific": "Account-specifiek",
 "label.accounts": "Accounts",
 "label.accounttype": "Account type",
-"label.acl.export": "Export ACLs",
+"label.acl.export": "Export ACL rules",
 "label.acl.id": "ACL ID",
 "label.acl.rules": "ACL lijst regels",
 "label.acl.reason.description": "Enter the reason behind an ACL rule.",

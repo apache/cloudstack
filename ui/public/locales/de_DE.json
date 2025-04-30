@@ -26,7 +26,7 @@
 "label.account.specific": "Besonderheiten des Benutzerkontos",
 "label.accounts": "Benutzerkonten",
 "label.accounttype": "Benutzerkontotyp",
-"label.acl.export": "Export ACLs",
+"label.acl.export": "Export ACL rules",
 "label.acl.id": "ACL-Kennung",
 "label.acl.rules": "ACL-Listenregeln",
 "label.acl.reason.description": "Enter the reason behind an ACL rule.",

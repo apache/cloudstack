@@ -14,7 +14,7 @@
 "label.account.specific": "\u0421\u043f\u0435\u0446\u0438\u0444\u0438\u043a\u0430 \u0430\u043a\u043a\u0430\u0443\u043d\u043d\u0442\u0430",
 "label.accounts": "\u0423\u0447\u0451\u0442\u043d\u044b\u0435 \u0437\u0430\u043f\u0438\u0441\u0438",
 "label.accounttype": "Account Type",
-"label.acl.export": "Export ACLs",
+"label.acl.export": "Export ACL rules",
 "label.acl.id": "ACL ID",
 "label.acl.rules": "ACL Rules",
 "label.acl.reason.description": "Enter the reason behind an ACL rule.",
