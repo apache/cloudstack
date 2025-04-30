@@ -261,7 +261,13 @@ export default {
           label: 'label.edit',
           dataView: true,
           popup: true,
-          args: ['osdisplayname', 'oscategoryid']
+          groupAction: true,
+          args: (record, store, isGroupAction) => {
+            if (isGroupAction) {
+              return ['oscategoryid']
+            }
+            return ['osdisplayname', 'oscategoryid']
+          }
         },
         {
           api: 'addGuestOsMapping',
