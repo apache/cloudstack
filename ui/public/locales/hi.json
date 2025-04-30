@@ -6,7 +6,7 @@
 "label.accounts": "लेखा",
 "label.accounttype": "खाता प्रकार",
 "label.aclid": "ACL",
-"label.aclname": "ACL नाम",
+"label.acl.rule.name": "ACL नाम",
 "label.actions": "क्रियाएँ",
 "label.add": "जोड़ें",
 "label.adding": "जोड़ना",
