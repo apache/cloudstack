@@ -38,6 +38,8 @@ public interface ClusterDao extends GenericDao<ClusterVO, Long> {
 
     List<ClusterVO> listByDcHyType(long dcId, String hyType);
 
+    List<ClusterVO> listByDatacenterExternalHypervisorProvisioner(long dcId, String provisioner);
+
     Map<Long, List<Long>> getPodClusterIdMap(List<Long> clusterIds);
 
     List<Long> listDisabledClusters(long zoneId, Long podId);

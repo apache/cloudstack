@@ -135,6 +135,7 @@
 
     <bean id="configurationManagerImpl" class="com.cloud.configuration.ConfigurationManagerImpl" >
         <property name="secChecker" value="#{securityCheckersRegistry.registered}" />
+        <property name="externalProvisioners" value="#{externalProvisionersRegistry.registered}" />
     </bean>
 
     <bean id="externalDeviceUsageManagerImpl" class="com.cloud.network.ExternalDeviceUsageManagerImpl" />
@@ -382,4 +383,8 @@
     <bean id="sharedFSServiceImpl" class="org.apache.cloudstack.storage.sharedfs.SharedFSServiceImpl">
         <property name="sharedFSProviders" value="#{sharedFSProvidersRegistry.registered}" />
     </bean>
+    <bean id="ExternalOrchestratorDaoImpl" class="com.cloud.hypervisor.external.provisioner.dao.ExternalOrchestratorDaoImpl" />
+    <bean id="ExternalOrchestratorDetailDaoImpl" class="com.cloud.hypervisor.external.provisioner.dao.ExternalOrchestratorDetailDaoImpl" />
+    <bean id="ExtensionResourceMapDaoImpl" class="com.cloud.hypervisor.external.provisioner.dao.ExtensionResourceMapDaoImpl" />
+    <bean id="ExtensionResourceMapDetailsDaoImpl" class="com.cloud.hypervisor.external.provisioner.dao.ExtensionResourceMapDetailsDaoImpl" />
 </beans>

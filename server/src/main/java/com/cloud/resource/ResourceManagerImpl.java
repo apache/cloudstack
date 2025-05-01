@@ -37,6 +37,16 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.alert.AlertManager;
+import com.cloud.cpu.CPU;
+import com.cloud.exception.StorageConflictException;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.HostTagVO;
+import com.cloud.hypervisor.HypervisorGuruManagerImpl;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.hypervisor.HypervisorGuru;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -60,6 +70,7 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.springframework.stereotype.Component;
 
@@ -82,7 +93,6 @@ import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.transport.Request;
-import com.cloud.alert.AlertManager;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityState;
@@ -90,7 +100,6 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
-import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
@@ -123,8 +132,6 @@ import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.exception.StorageConflictException;
-import com.cloud.exception.StorageUnavailableException;
 import com.cloud.gpu.GPU;
 import com.cloud.gpu.HostGpuGroupsVO;
 import com.cloud.gpu.VGPUTypesVO;
@@ -137,7 +144,6 @@ import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
-import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
@@ -146,7 +152,6 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.kvm.discoverer.KvmDummyResourceBase;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
@@ -164,12 +169,9 @@ import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.StorageService;
 import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.StringUtils;
@@ -467,6 +469,14 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             throw new InvalidParameterValueException("Unable to resolve " + cmd.getHypervisor() + " to a supported ");
         }
 
+        if (Hypervisor.HypervisorType.External.equals(hypervisorType)) {
+            validateExternalHypervisorParams(cmd.getExternalProvisioner());
+        }
+
+        if (StringUtils.isNotEmpty(cmd.getExternalProvisioner()) && !hypervisorType.equals(HypervisorType.External)) {
+            throw new InvalidParameterValueException("externalprovisioner parameter is allowed only for hypervisor type External");
+        }
+
         if (zone.isSecurityGroupEnabled() && zone.getNetworkType().equals(NetworkType.Advanced)) {
             if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.XenServer
                     && hypervisorType != HypervisorType.LXC && hypervisorType != HypervisorType.Simulator) {
@@ -534,6 +544,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 details.put("ovm3pool", allParams.get("ovm3pool"));
                 details.put("ovm3cluster", allParams.get("ovm3cluster"));
             }
+            if (hypervisorType == HypervisorType.External) {
+                details.put(ApiConstants.EXTERNAL_PROVISIONER, cmd.getExternalProvisioner());
+            }
             details.put(VmDetailConstants.CPU_OVER_COMMIT_RATIO, CapacityManager.CpuOverprovisioningFactor.value().toString());
             details.put(VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, CapacityManager.MemOverprovisioningFactor.value().toString());
             _clusterDetailsDao.persist(cluster.getId(), details);
@@ -594,6 +607,20 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
     }
 
+    private void validateExternalHypervisorParams(String provisioner) {
+        if (provisioner == null) {
+            throw new InvalidParameterValueException("For hypervisor type external, provisioner input is required");
+        }
+        List<String> externalProvisionersListFromConfig = Arrays.stream(HypervisorGuruManagerImpl.ExternalProvisioners.value().split(","))
+                .map(String::trim)
+                .map(String::toLowerCase)
+                .collect(Collectors.toList());
+
+        if (!externalProvisionersListFromConfig.contains(provisioner.toLowerCase())) {
+            throw new InvalidParameterValueException(String.format("Provisioner name %s is not valid", provisioner));
+        }
+    }
+
     @Override
     public Discoverer getMatchingDiscover(final Hypervisor.HypervisorType hypervisorType) {
         for (final Discoverer discoverer : _discoverers) {
@@ -638,23 +665,34 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                         throw ex;
                     }
                 }
+                String externalProvisioner = cmd.getExternalProvisioner();
+                if (cluster.getHypervisorType().equals(HypervisorType.External) && StringUtils.isNotEmpty(externalProvisioner)) {
+                    validateExternalHypervisorParams(externalProvisioner);
+                    ClusterDetailsVO provisioner = _clusterDetailsDao.findDetail(clusterId, ApiConstants.EXTERNAL_PROVISIONER);
+                    if (!provisioner.getValue().equals(externalProvisioner)) {
+                        final CloudRuntimeException ex =
+                                new CloudRuntimeException("Provisioner type of the host and cluster did not match");
+                        ex.addProxyObject(cluster.getUuid(), "clusterId");
+                        throw ex;
+                    }
+                }
             }
         }
 
         String hypervisorType = cmd.getHypervisor().equalsIgnoreCase(HypervisorGuru.HypervisorCustomDisplayName.value()) ?
                 "Custom" : cmd.getHypervisor();
-        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, hypervisorType, hostTags, cmd.getFullUrlParams(), false);
+        return discoverHostsFull(dcId, podId, clusterId, clusterName, url, username, password, hypervisorType, hostTags, cmd.getFullUrlParams(), false, cmd.getExternalDetails(), cmd.getExtensionId(), cmd.getExtensionResourceId());
     }
 
     @Override
     public List<? extends Host> discoverHosts(final AddSecondaryStorageCmd cmd) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         final Long dcId = cmd.getZoneId();
         final String url = cmd.getUrl();
-        return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null, false);
+        return discoverHostsFull(dcId, null, null, null, url, null, null, "SecondaryStorage", null, null, false, null, null, null);
     }
 
     private List<HostVO> discoverHostsFull(final Long dcId, final Long podId, Long clusterId, final String clusterName, String url, String username, String password,
-            final String hypervisorType, final List<String> hostTags, final Map<String, String> params, final boolean deferAgentCreation) throws IllegalArgumentException, DiscoveryException,
+                                           final String hypervisorType, final List<String> hostTags, final Map<String, String> params, final boolean deferAgentCreation, Map<String, String> cmdDetails, Long extensionid, Long extensionResouceId) throws IllegalArgumentException, DiscoveryException,
             InvalidParameterValueException {
         URI uri;
 
@@ -801,6 +839,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         boolean isHypervisorTypeSupported = false;
         for (final Discoverer discoverer : _discoverers) {
             if (params != null) {
+                ClusterVO clusterVO = _clusterDao.findById(clusterId);
+                if (HypervisorType.External.equals(clusterVO.getHypervisorType())) {
+                    params.put(ApiConstants.EXTENSION_ID, String.valueOf(extensionid));
+                    params.put(ApiConstants.EXTENSION_RESOURCE_ID, String.valueOf(extensionResouceId));
+                    if (params.get(ApiConstants.EXTERNAL_PROVISIONER) != null) {
+                        params.put(ApiConstants.EXTERNAL_PROVISIONER, params.get(ApiConstants.EXTERNAL_PROVISIONER));
+                    } else {
+                        ClusterDetailsVO provisioner = _clusterDetailsDao.findDetail(clusterId, ApiConstants.EXTERNAL_PROVISIONER);
+                        params.put(ApiConstants.EXTERNAL_PROVISIONER, provisioner.getValue());
+                    }
+                }
                 discoverer.putParam(params);
             }
 
@@ -859,10 +908,25 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     }
 
                     HostVO host;
+                    Map<String, String> details = entry.getValue();
+                    if (details == null) {
+                        details = new HashMap<>();
+                    }
+
+                    if (cmdDetails != null) {
+                        details.putAll(cmdDetails);
+                    }
+                    ClusterVO clusterVO = _clusterDao.findById(clusterId);
+                    if (HypervisorType.External.equals(clusterVO.getHypervisorType())) {
+                        details.put(ApiConstants.EXTENSION_ID, String.valueOf(extensionid));
+                        details.put(ApiConstants.EXTENSION_RESOURCE_ID, String.valueOf(extensionResouceId));
+                        details.put(ApiConstants.EXTERNAL_PROVISIONER, "SimpleExternalProvisioner");
+                    }
+
                     if (deferAgentCreation) {
-                        host = (HostVO)createHostAndAgentDeferred(resource, entry.getValue(), true, hostTags, false);
+                        host = (HostVO)createHostAndAgentDeferred(resource, details, true, hostTags, false);
                     } else {
-                        host = (HostVO)createHostAndAgent(resource, entry.getValue(), true, hostTags, false);
+                        host = (HostVO)createHostAndAgent(resource, details, true, hostTags, false);
                     }
                     if (host != null) {
                         hosts.add(host);
@@ -1931,11 +1995,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Override
     public Host updateHost(final UpdateHostCmd cmd) throws NoTransitionException {
         return updateHost(cmd.getId(), cmd.getName(), cmd.getOsCategoryId(),
-                cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), cmd.getIsTagARule(), cmd.getAnnotation(), false);
+                cmd.getAllocationState(), cmd.getUrl(), cmd.getHostTags(), cmd.getIsTagARule(), cmd.getAnnotation(), false, cmd.getExternalDetails());
     }
 
     private Host updateHost(Long hostId, String name, Long guestOSCategoryId, String allocationState,
-                            String url, List<String> hostTags, Boolean isTagARule, String annotation, boolean isUpdateFromHostHealthCheck) throws NoTransitionException {
+                            String url, List<String> hostTags, Boolean isTagARule, String annotation, boolean isUpdateFromHostHealthCheck, Map<String, String> externalDetails) throws NoTransitionException {
         // Verify that the host exists
         final HostVO host = _hostDao.findById(hostId);
         if (host == null) {
@@ -1959,6 +2023,10 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             updateHostTags(host, hostId, hostTags, isTagARule);
         }
 
+        if (MapUtils.isNotEmpty(externalDetails)) {
+            updateExternalHypervisorDetails(hostId, externalDetails);
+        }
+
         if (url != null) {
             _storageMgr.updateSecondaryStorage(hostId, url);
         }
@@ -1974,6 +2042,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 isUpdateFromHostHealthCheck, isUpdateHostAllocation, annotation);
 
         return updatedHost;
+    }
+
+    private void updateExternalHypervisorDetails(long hostId, Map<String, String> externalDetails) {
+        HostVO host = _hostDao.findById(hostId);
+        _hostDao.loadDetails(host);
+        for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
+            host.getDetails().put(entry.getKey(), entry.getValue());
+        }
+
+        _hostDao.saveDetails(host);
     }
 
     private void sendAlertAndAnnotationForAutoEnableDisableKVMHostFeature(HostVO host, String allocationState,
@@ -2015,7 +2093,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public Host autoUpdateHostAllocationState(Long hostId, ResourceState.Event resourceEvent) throws NoTransitionException {
-        return updateHost(hostId, null, null, resourceEvent.toString(), null, null, null, null, true);
+        return updateHost(hostId, null, null, resourceEvent.toString(), null, null, null, null, true, null);
     }
 
     @Override
@@ -2066,7 +2144,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         for (final ClusterVO cluster : clustersForZone) {
             final HypervisorType hType = cluster.getHypervisorType();
-            if (!forVirtualRouter || (hType != HypervisorType.BareMetal && hType != HypervisorType.Ovm)) {
+            if (!forVirtualRouter || (hType != HypervisorType.BareMetal && hType != HypervisorType.External && hType != HypervisorType.Ovm)) {
                 hypervisorTypes.add(hType);
             }
         }
