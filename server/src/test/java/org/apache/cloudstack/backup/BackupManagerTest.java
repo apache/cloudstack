@@ -31,6 +31,10 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
+import com.cloud.network.Network;
+import com.cloud.network.NetworkService;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.service.ServiceOfferingVO;
@@ -168,6 +172,12 @@ public class BackupManagerTest {
 
     @Mock
     HostDao hostDao;
+
+    @Mock
+    private NetworkDao networkDao;
+
+    @Mock
+    private NetworkService networkService;
 
     private AccountVO account;
     private UserVO user;
@@ -1234,5 +1244,86 @@ public class BackupManagerTest {
         Assert.assertEquals("This VM [uuid: uuid1, name: i-2-1-VM] has a "
                         + "Backup Offering [id: 3, external id: backup-external-id] with 1 backups. Please, remove the backup offering "
                         + "before proceeding to VM exclusion!", exception.getMessage());
+    }
+
+    @Test
+    public void testGetIpToNetworkMapFromBackup() {
+        Long networkId1 = 1L;
+        Long networkId2 = 2L;
+        String networkUuid1 = "network-uuid-1";
+        String networkUuid2 = "network-uuid-2";
+        String ip1 = "10.1.1.1";
+        String ip2 = "10.1.1.2";
+        String ipv61 = "2001:db8::1";
+        String ipv62 = "2001:db8::2";
+        String mac1 = "00:11:22:33:44:55";
+        String mac2 = "00:11:22:33:44:56";
+
+        // Test case 1: Missing network information
+        Backup backup1 = mock(Backup.class);
+        when(backup1.getDetail(ApiConstants.NETWORK_IDS)).thenReturn(null);
+        List<Long> networkIds1 = new ArrayList<>();
+        try {
+            backupManager.getIpToNetworkMapFromBackup(backup1, true, networkIds1);
+            fail("Expected CloudRuntimeException for missing network information");
+        } catch (CloudRuntimeException e) {
+            assertEquals("Backup doesn't contain network information. Please specify atleast one valid network while creating instance", e.getMessage());
+        }
+
+        // Test case 2: IP preservation enabled with IP information
+        Backup backup2 = mock(Backup.class);
+        when(backup2.getDetail(ApiConstants.NETWORK_IDS)).thenReturn(networkUuid1 + "," + networkUuid2);
+        when(backup2.getDetail(ApiConstants.IP_ADDRESSES)).thenReturn(ip1 + "," + ip2);
+        when(backup2.getDetail(ApiConstants.IP6_ADDRESSES)).thenReturn(ipv61 + "," + ipv62);
+        when(backup2.getDetail(ApiConstants.MAC_ADDRESSES)).thenReturn(mac1 + "," + mac2);
+
+        NetworkVO network1 = mock(NetworkVO.class);
+        NetworkVO network2 = mock(NetworkVO.class);
+        when(networkDao.findByUuid(networkUuid1)).thenReturn(network1);
+        when(networkDao.findByUuid(networkUuid2)).thenReturn(network2);
+        when(network1.getId()).thenReturn(networkId1);
+        when(network2.getId()).thenReturn(networkId2);
+
+        Network.IpAddresses ipAddresses1 = mock(Network.IpAddresses.class);
+        Network.IpAddresses ipAddresses2 = mock(Network.IpAddresses.class);
+        when(networkService.getIpAddressesFromIps(ip1, ipv61, mac1)).thenReturn(ipAddresses1);
+        when(networkService.getIpAddressesFromIps(ip2, ipv62, mac2)).thenReturn(ipAddresses2);
+
+        List<Long> networkIds2 = new ArrayList<>();
+        Map<Long, Network.IpAddresses> result2 = backupManager.getIpToNetworkMapFromBackup(backup2, true, networkIds2);
+
+        assertEquals(2, result2.size());
+        assertEquals(ipAddresses1, result2.get(networkId1));
+        assertEquals(ipAddresses2, result2.get(networkId2));
+        assertEquals(2, networkIds2.size());
+        assertTrue(networkIds2.contains(networkId1));
+        assertTrue(networkIds2.contains(networkId2));
+
+        // Test case 3: IP preservation enabled but missing IP information
+        Backup backup3 = mock(Backup.class);
+        when(backup3.getDetail(ApiConstants.NETWORK_IDS)).thenReturn(networkUuid1);
+        when(backup3.getDetail(ApiConstants.IP_ADDRESSES)).thenReturn(null);
+        when(backup3.getDetail(ApiConstants.IP6_ADDRESSES)).thenReturn(null);
+        when(backup3.getDetail(ApiConstants.MAC_ADDRESSES)).thenReturn(null);
+
+        List<Long> networkIds3 = new ArrayList<>();
+        Map<Long, Network.IpAddresses> result3 = backupManager.getIpToNetworkMapFromBackup(backup3, true, networkIds3);
+
+        assertEquals(1, result3.size());
+        assertNull(result3.get(networkId1));
+        assertEquals(1, networkIds3.size());
+        assertTrue(networkIds3.contains(networkId1));
+
+        // Test case 4: IP preservation disabled
+        Backup backup4 = mock(Backup.class);
+        when(backup4.getDetail(ApiConstants.NETWORK_IDS)).thenReturn(networkUuid1);
+
+        List<Long> networkIds4 = new ArrayList<>();
+        Map<Long, Network.IpAddresses> result4 = backupManager.getIpToNetworkMapFromBackup(backup4, false, networkIds4);
+
+        assertEquals(1, result4.size());
+        assertNull(result4.get(networkId1));
+        assertEquals(1, networkIds4.size());
+        assertTrue(networkIds4.contains(networkId1));
     }
 }
