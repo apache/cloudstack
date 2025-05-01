@@ -46,6 +46,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
@@ -103,6 +104,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.as.AutoScaleManager;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.UserDataServiceProvider;
@@ -144,6 +146,7 @@ import com.cloud.user.dao.UserDataDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionProxyObject;
 import com.cloud.vm.dao.NicDao;
@@ -390,6 +393,12 @@ public class UserVmManagerImplTest {
 
     @Mock
     private VMInstanceVO vmInstanceMock;
+
+    @Mock
+    private AutoScaleManager autoScaleManager;
+
+    @Mock
+    private UUIDManager uuidMgr;
 
     private static final long vmId = 1l;
     private static final long zoneId = 2L;
@@ -3485,15 +3494,16 @@ public class UserVmManagerImplTest {
         Long userId = 6L;
         boolean expunge = true;
 
+        ReflectionTestUtils.setField(userVmManagerImpl, "_uuidMgr", uuidMgr);
         CallContext callContext = mock(CallContext.class);
         Account callingAccount = mock(Account.class);
         when(callingAccount.getId()).thenReturn(accountId);
         when(callContext.getCallingAccount()).thenReturn(callingAccount);
-        when(callContext.getCallingUserId()).thenReturn(userId);
         when(accountManager.isAdmin(callingAccount.getId())).thenReturn(true);
         doNothing().when(accountManager).checkApiAccess(callingAccount, BaseCmd.getCommandNameByClass(ExpungeVMCmd.class));
         try (MockedStatic<CallContext> mockedCallContext = Mockito.mockStatic(CallContext.class)) {
             mockedCallContext.when(CallContext::current).thenReturn(callContext);
+            mockedCallContext.when(() -> CallContext.register(callContext, ApiCommandResourceType.Volume)).thenReturn(callContext);
 
             DestroyVMCmd cmd = mock(DestroyVMCmd.class);
             when(cmd.getId()).thenReturn(vmId);
@@ -3504,31 +3514,20 @@ public class UserVmManagerImplTest {
             UserVmVO vm = mock(UserVmVO.class);
             when(vm.getId()).thenReturn(vmId);
             when(vm.getState()).thenReturn(VirtualMachine.State.Running);
-            when(vm.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
-            when(vm.getServiceOfferingId()).thenReturn(serviceOfferingId);
-            when(vm.getTemplateId()).thenReturn(templateId);
-            when(vm.getAccountId()).thenReturn(accountId);
             when(vm.getUuid()).thenReturn("vm-uuid");
             when(vm.getUserVmType()).thenReturn("User");
             when(userVmDao.findById(vmId)).thenReturn(vm);
 
-            when(accountDao.findById(accountId)).thenReturn(account);
-
-            ServiceOfferingVO offering = mock(ServiceOfferingVO.class);
-            when(offering.getCpu()).thenReturn(2);
-            when(offering.getRamSize()).thenReturn(2048);
-            when(_serviceOfferingDao.findByIdIncludingRemoved(serviceOfferingId)).thenReturn(offering);
-
-            VMTemplateVO template = mock(VMTemplateVO.class);
-            when(templateDao.findByIdIncludingRemoved(templateId)).thenReturn(template);
-
             VolumeVO vol = Mockito.mock(VolumeVO.class);
             when(vol.getInstanceId()).thenReturn(vmId);
+            when(vol.getId()).thenReturn(volumeId);
             when(vol.getVolumeType()).thenReturn(Volume.Type.DATADISK);
             when(volumeDaoMock.findById(volumeId)).thenReturn(vol);
 
             List<VolumeVO> dataVolumes = new ArrayList<>();
             when(volumeDaoMock.findByInstanceAndType(vmId, Volume.Type.DATADISK)).thenReturn(dataVolumes);
+
+            when(volumeApiService.destroyVolume(volumeId, CallContext.current().getCallingAccount(), expunge, false)).thenReturn(vol);
 
             doReturn(vm).when(userVmManagerImpl).stopVirtualMachine(anyLong(), anyBoolean());
             doReturn(vm).when(userVmManagerImpl).destroyVm(vmId, expunge);
