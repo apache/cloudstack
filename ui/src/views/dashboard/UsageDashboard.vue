@@ -463,9 +463,13 @@ export default {
     },
     listProject () {
       this.loading = true
-      api('listProjects', { id: store.getters.project.id }).then(json => {
+      const params = {
+        id: store.getters.project.id,
+        listall: true
+      }
+      api('listProjects', params).then(json => {
         this.loading = false
-        if (json && json.listprojectsresponse && json.listprojectsresponse.project) {
+        if (json?.listprojectsresponse?.project) {
           this.project = json.listprojectsresponse.project[0]
         }
       })

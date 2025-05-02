@@ -14,20 +14,35 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.hypervisor.vmware.util;
 
-import com.cloud.exception.CloudException;
+package org.apache.cloudstack.command;
 
-public class VmwareClientException extends CloudException {
-    public VmwareClientException(String message, Throwable cause) {
-        super(message, cause);
+import com.cloud.agent.api.to.DataTO;
+
+public class ReconcileMigrateVolumeCommand extends ReconcileCommand {
+
+    DataTO srcData;
+    DataTO destData;
+    String vmName;
+
+    public ReconcileMigrateVolumeCommand(DataTO srcData, DataTO destData) {
+        this.srcData = srcData;
+        this.destData = destData;
     }
 
-    public VmwareClientException(String msg) {
-        super(msg);
+    public DataTO getSrcData() {
+        return srcData;
     }
-    // TODO embed vmware classes in this one for use downstream
-    public VmwareClientException(String msg, Exception embedded) {
-        super(msg, embedded);
+
+    public DataTO getDestData() {
+        return destData;
+    }
+
+    public String getVmName() {
+        return vmName;
+    }
+
+    public void setVmName(String vmName) {
+        this.vmName = vmName;
     }
 }

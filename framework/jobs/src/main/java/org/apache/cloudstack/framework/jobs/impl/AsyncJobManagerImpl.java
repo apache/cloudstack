@@ -37,6 +37,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.command.ReconcileCommandService;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -71,6 +72,7 @@ import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
@@ -167,6 +169,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private NetworkDao networkDao;
     @Inject
     private NetworkOrchestrationService networkOrchestrationService;
+    @Inject
+    private ReconcileCommandService reconcileCommandService;
 
     private volatile long _executionRunNumber = 1;
 
@@ -1197,6 +1201,23 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return true;
         }
         if (vol.getState().isTransitional()) {
+            if (Volume.State.Migrating.equals(vol.getState())) {
+                if (ReconcileCommandService.ReconcileCommandsEnabled.value()) {
+                    if (reconcileCommandService.isReconcileResourceNeeded(volumeId, ApiCommandResourceType.Volume)) {
+                        logger.debug(String.format("Skipping cleaning up Migrating volume: %s, it will be reconciled", vol));
+                        return true;
+                    }
+                    if (vol.getInstanceId() != null && reconcileCommandService.isReconcileResourceNeeded(vol.getInstanceId(), ApiCommandResourceType.VirtualMachine)) {
+                        logger.debug(String.format("Skipping cleaning up Migrating volume: %s, the vm %s will be reconciled", vol, _vmInstanceDao.findById(vol.getInstanceId())));
+                        return true;
+                    }
+                }
+                VolumeVO destVolume = _volsDao.findByLastIdAndState(vol.getId(), Volume.State.Migrating, Volume.State.Creating);
+                if (destVolume != null) {
+                    logger.debug(String.format("Found destination volume of Migrating volume %s: %s", vol, destVolume));
+                    cleanupVolume(destVolume.getId());
+                }
+            }
             logger.debug("Cleaning up volume with Id: " + volumeId);
             boolean status = vol.stateTransit(Volume.Event.OperationFailed);
             cleanupFailedVolumesCreatedFromSnapshots(volumeId);
@@ -1213,6 +1234,18 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             return true;
         }
         if (vmInstanceVO.getState().isTransitional()) {
+            if (VirtualMachine.State.Migrating.equals(vmInstanceVO.getState())) {
+                if (ReconcileCommandService.ReconcileCommandsEnabled.value()
+                        && reconcileCommandService.isReconcileResourceNeeded(vmId, ApiCommandResourceType.VirtualMachine)) {
+                    logger.debug(String.format("Skipping cleaning up Instance %s, it will be reconciled", vmInstanceVO));
+                    return true;
+                }
+                logger.debug("Cleaning up volumes with instance Id: " + vmId);
+                List<VolumeVO> volumes = _volsDao.findByInstance(vmInstanceVO.getId());
+                for (VolumeVO volume : volumes) {
+                    cleanupVolume(volume.getId());
+                }
+            }
             logger.debug("Cleaning up Instance with Id: " + vmId);
             return virtualMachineManager.stateTransitTo(vmInstanceVO, VirtualMachine.Event.OperationFailed, vmInstanceVO.getHostId());
         }

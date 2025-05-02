@@ -43,6 +43,7 @@ import java.util.stream.Collectors;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.Command;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.direct.download.DirectDownloadHelper;
@@ -341,8 +342,8 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
-    private String derivePath(PrimaryDataStoreTO primaryStore, DataTO destData, Map<String, String> details) {
-        String path;
+    public static String derivePath(PrimaryDataStoreTO primaryStore, DataTO destData, Map<String, String> details) {
+        String path = null;
         if (primaryStore.getPoolType() == StoragePoolType.FiberChannel) {
             path = destData.getPath();
         } else {
@@ -527,6 +528,11 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             final String volumeName = UUID.randomUUID().toString();
 
+            // Update path in the command for reconciliation
+            if (destData.getPath() == null) {
+                ((VolumeObjectTO) destData).setPath(volumeName);
+            }
+
             final int index = srcVolumePath.lastIndexOf(File.separator);
             final String volumeDir = srcVolumePath.substring(0, index);
             String srcVolumeName = srcVolumePath.substring(index + 1);
@@ -543,7 +549,9 @@ public class KVMStorageProcessor implements StorageProcessor {
             volume.setDispName(srcVol.getName());
             volume.setVmName(srcVol.getVmName());
 
+            resource.createOrUpdateLogFileForCommand(cmd, Command.State.PROCESSING_IN_BACKEND);
             final KVMPhysicalDisk newDisk = storagePoolMgr.copyPhysicalDisk(volume, path != null ? path : volumeName, primaryPool, cmd.getWaitInMillSeconds());
+            resource.createOrUpdateLogFileForCommand(cmd, Command.State.COMPLETED);
 
             storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), path);
 
@@ -667,9 +675,7 @@ public class KVMStorageProcessor implements StorageProcessor {
             } else {
                 logger.debug("Converting RBD disk " + disk.getPath() + " into template " + templateName);
 
-                final QemuImgFile srcFile =
-                        new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primary.getSourceHost(), primary.getSourcePort(), primary.getAuthUserName(),
-                                primary.getAuthSecret(), disk.getPath()));
+                final QemuImgFile srcFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primary, disk.getPath()));
                 srcFile.setFormat(PhysicalDiskFormat.RAW);
 
                 final QemuImgFile destFile = new QemuImgFile(tmpltPath + "/" + templateName + ".qcow2");
@@ -1022,9 +1028,7 @@ public class KVMStorageProcessor implements StorageProcessor {
                     logger.debug("Attempting to create " + snapDir.getAbsolutePath() + " recursively for snapshot storage");
                     FileUtils.forceMkdir(snapDir);
 
-                    final QemuImgFile srcFile =
-                            new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primaryPool.getSourceHost(), primaryPool.getSourcePort(), primaryPool.getAuthUserName(),
-                                    primaryPool.getAuthSecret(), rbdSnapshot));
+                    final QemuImgFile srcFile = new QemuImgFile(KVMPhysicalDisk.RBDStringBuilder(primaryPool, rbdSnapshot));
                     srcFile.setFormat(snapshotDisk.getFormat());
 
                     final QemuImgFile destFile = new QemuImgFile(snapshotFile);
@@ -2560,22 +2564,30 @@ public class KVMStorageProcessor implements StorageProcessor {
             } else {
                 final String volumeName = UUID.randomUUID().toString();
                 destVolumeName = volumeName + "." + destFormat.getFileExtension();
+
+                // Update path in the command for reconciliation
+                if (destData.getPath() == null) {
+                    ((VolumeObjectTO) destData).setPath(destVolumeName);
+                }
             }
 
             destPool = storagePoolMgr.getStoragePool(destPrimaryStore.getPoolType(), destPrimaryStore.getUuid());
             try {
                 Volume.Type volumeType = srcVol.getVolumeType();
 
+                resource.createOrUpdateLogFileForCommand(cmd, Command.State.PROCESSING_IN_BACKEND);
                 if (srcVol.getPassphrase() != null && (Volume.Type.ROOT.equals(volumeType) || Volume.Type.DATADISK.equals(volumeType))) {
                     volume.setQemuEncryptFormat(QemuObject.EncryptFormat.LUKS);
                     storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds(), srcVol.getPassphrase(), destVol.getPassphrase(), srcVol.getProvisioningType());
                 } else {
                     storagePoolMgr.copyPhysicalDisk(volume, destVolumeName, destPool, cmd.getWaitInMillSeconds());
                 }
+                resource.createOrUpdateLogFileForCommand(cmd, Command.State.COMPLETED);
             } catch (Exception e) { // Any exceptions while copying the disk, should send failed answer with the error message
                 String errMsg = String.format("Failed to copy volume [uuid: %s, name: %s] to dest storage [id: %s, name: %s], due to %s",
                         srcVol.getUuid(), srcVol.getName(), destPrimaryStore.getUuid(), destPrimaryStore.getName(), e.toString());
                 logger.debug(errMsg, e);
+                resource.createOrUpdateLogFileForCommand(cmd, Command.State.FAILED);
                 throw new CloudRuntimeException(errMsg);
             } finally {
                 if (srcPrimaryStore.isManaged()) {

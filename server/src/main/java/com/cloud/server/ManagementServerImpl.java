@@ -44,7 +44,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.cpu.CPU;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
@@ -674,6 +673,7 @@ import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.consoleproxy.ConsoleProxyManagementState;
 import com.cloud.consoleproxy.ConsoleProxyManager;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.AccountVlanMapVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
@@ -1274,6 +1274,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Object clusterType = cmd.getClusterType();
         final Object allocationState = cmd.getAllocationState();
         final String keyword = cmd.getKeyword();
+        final CPU.CPUArch arch = cmd.getArch();
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
 
         final Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -1286,6 +1287,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
         sb.and("clusterType", sb.entity().getClusterType(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
+        sb.and("arch", sb.entity().getArch(), SearchCriteria.Op.EQ);
 
         final SearchCriteria<ClusterVO> sc = sb.create();
         if (id != null) {
@@ -1323,6 +1325,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             ssc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             ssc.addOr("hypervisorType", SearchCriteria.Op.LIKE, "%" + keyword + "%");
             sc.addAnd("name", SearchCriteria.Op.SC, ssc);
+        }
+
+        if (arch != null) {
+            sc.setParameters("arch", arch);
         }
 
         final Pair<List<ClusterVO>, Integer> result = _clusterDao.searchAndCount(sc, searchFilter);
@@ -4182,6 +4188,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long podId = cmd.getPodId();
         final Long hostId = cmd.getHostId();
         final Long storageId = cmd.getStorageId();
+        final CPU.CPUArch arch = cmd.getArch();
 
         final Filter searchFilter = new Filter(VMInstanceVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         final SearchBuilder<VMInstanceVO> sb = _vmInstanceDao.createSearchBuilder();
@@ -4206,6 +4213,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 volumeSearch.and("poolId", volumeSearch.entity().getPoolId(), SearchCriteria.Op.EQ);
                 sb.join("volumeSearch", volumeSearch, sb.entity().getId(), volumeSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
             }
+        }
+
+        boolean templateJoinNeeded = arch != null;
+        if (templateJoinNeeded) {
+            SearchBuilder<VMTemplateVO> templateSearch = templateDao.createSearchBuilder();
+            templateSearch.and("templateArch", templateSearch.entity().getArch(), SearchCriteria.Op.EQ);
+            sb.join("vmTemplate", templateSearch, templateSearch.entity().getId(), sb.entity().getTemplateId(), JoinBuilder.JoinType.INNER);
         }
 
         final SearchCriteria<VMInstanceVO> sc = sb.create();
@@ -4253,6 +4267,10 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             } else {
                 sc.setJoinParameters("volumeSearch", "poolId", storageId);
             }
+        }
+
+        if (arch != null) {
+            sc.setJoinParameters("vmTemplate", "templateArch", arch);
         }
 
         final Pair<List<VMInstanceVO>, Integer> result = _vmInstanceDao.searchAndCount(sc, searchFilter);

@@ -25,7 +25,12 @@ import org.apache.logging.log4j.LogManager;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Map;
 
 public class HttpUtils {
@@ -151,4 +156,50 @@ public class HttpUtils {
         }
     }
 
+    public static boolean downloadFileWithProgress(final String fileURL, final String savePath, final Logger logger) {
+        HttpURLConnection httpConn = null;
+        try {
+            URL url = new URL(fileURL);
+            httpConn = (HttpURLConnection) url.openConnection();
+            int responseCode = httpConn.getResponseCode();
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                int contentLength = httpConn.getContentLength();
+                if (contentLength < 0) {
+                    logger.warn("Content length not provided for {}, progress updates may not be accurate",
+                            fileURL);
+                }
+                try (InputStream inputStream = httpConn.getInputStream();
+                     FileOutputStream outputStream = new FileOutputStream(savePath)) {
+                    byte[] buffer = new byte[4096];
+                    int bytesRead;
+                    int downloaded = 0;
+                    int lastReportedPercent = 0;
+                    while ((bytesRead = inputStream.read(buffer)) != -1) {
+                        outputStream.write(buffer, 0, bytesRead);
+                        downloaded += bytesRead;
+                        if (contentLength > 0) {
+                            int percentDownloaded = (int) ((downloaded / (double) contentLength) * 100);
+                            // Update every 5 percent or on completion
+                            if (percentDownloaded - lastReportedPercent >= 5 || percentDownloaded == 100) {
+                                logger.debug("Downloaded {}% from {}", percentDownloaded, fileURL);
+                                lastReportedPercent = percentDownloaded;
+                            }
+                        }
+                    }
+                }
+                logger.info("File {} downloaded successfully using {}.", fileURL, savePath);
+            } else {
+                logger.error("No file to download {}. Server replied with code: {}", fileURL, responseCode);
+                return false;
+            }
+        } catch (IOException ex) {
+            logger.error("Failed to download {} due to: {}", fileURL, ex.getMessage(), ex);
+            return false;
+        } finally {
+            if (httpConn != null) {
+                httpConn.disconnect();
+            }
+        }
+        return true;
+    }
 }

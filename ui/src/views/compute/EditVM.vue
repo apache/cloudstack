@@ -185,7 +185,6 @@ export default {
         isdynamicallyscalable: this.resource.isdynamicallyscalable,
         deleteprotection: this.resource.deleteprotection,
         group: this.resource.group,
-        securitygroupids: this.resource.securitygroup.map(x => x.id),
         userdata: '',
         haenable: this.resource.haenable
       })
@@ -206,7 +205,7 @@ export default {
         zoneid: this.resource.zoneid
       }).then(response => {
         const zone = response?.listzonesresponse?.zone || []
-        this.securityGroupsEnabled = zone?.[0]?.securitygroupsenabled
+        this.securityGroupsEnabled = zone?.[0]?.securitygroupsenabled || this.$store.getters.showSecurityGroups
       })
     },
     fetchSecurityGroups () {

@@ -203,8 +203,8 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     private static Map<Service, Map<Capability, String>> setCapabilities() {
         Map<Service, Map<Capability, String>> capabilities = new HashMap<>();
         capabilities.put(Service.UserData, null);
-        capabilities.put(Service.Dhcp, new HashMap<>());
-        capabilities.put(Service.Dns, new HashMap<>());
+        capabilities.put(Service.Dhcp, Map.of(Network.Capability.DhcpAccrossMultipleSubnets, "true"));
+        capabilities.put(Service.Dns, Map.of(Capability.AllowDnsSuffixModification, "true"));
         return capabilities;
     }
 
@@ -841,7 +841,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     public boolean configDhcpSupportForSubnet(Network network, NicProfile nic, VirtualMachineProfile vm,
             DeployDestination dest,
             ReservationContext context) throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        return false;
+        return true;
     }
 
     @Override
