@@ -19,7 +19,6 @@ package com.cloud.ha.dao;
 import java.util.Date;
 import java.util.List;
 
-
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -266,9 +265,11 @@ public class HighAvailabilityDaoImpl extends GenericDaoBase<HaWorkVO, Long> impl
         SearchBuilder<HaWorkVO> sb = createSearchBuilder();
         sb.and("hostId", sb.entity().getHostId(), Op.EQ);
         sb.and("type", sb.entity().getWorkType(), Op.EQ);
+        sb.and("step", sb.entity().getStep(), Op.NIN);
         SearchCriteria<HaWorkVO> sc = sb.create();
         sc.setParameters("hostId", hostId);
         sc.setParameters("type", WorkType.HA);
+        sc.setParameters("step", Step.Done, Step.Cancelled, Step.Error);
         return listBy(sc);
     }
 }
