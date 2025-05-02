@@ -40,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.command.ReconcileCommandService;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -103,6 +104,9 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
     protected Dispatcher _dispatcher;
 
     private StatusAdministrator statusAdministrator;
+
+    @Inject
+    protected ReconcileCommandService reconcileCommandService;
 
     //
     // pay attention to _mshostId and _msid
@@ -1013,6 +1017,8 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     logger.warn("Management node " + host.getId() + " is detected inactive by timestamp and did not send node status to all other nodes");
                     host.setState(ManagementServerHost.State.Down);
                     _mshostDao.update(host.getId(), host);
+
+                    reconcileCommandService.updateReconcileCommandToInterruptedByManagementServerId(host.getMsid());
                 }
             }
         } else {

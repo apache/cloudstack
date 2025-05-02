@@ -35,6 +35,7 @@ import com.cloud.agent.transport.Request;
 import com.cloud.agent.transport.Response;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.host.Status;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ServerResource;
 import org.apache.logging.log4j.ThreadContext;
 
@@ -51,8 +52,8 @@ public class DirectAgentAttache extends AgentAttache {
     AtomicInteger _outstandingTaskCount;
     AtomicInteger _outstandingCronTaskCount;
 
-    public DirectAgentAttache(AgentManagerImpl agentMgr, long id, String uuid,String name, ServerResource resource, boolean maintenance) {
-        super(agentMgr, id, uuid, name, maintenance);
+    public DirectAgentAttache(AgentManagerImpl agentMgr, long id, String uuid, String name, final Hypervisor.HypervisorType hypervisorType, ServerResource resource, boolean maintenance) {
+        super(agentMgr, id, uuid, name, hypervisorType, maintenance);
         _resource = resource;
         _outstandingTaskCount = new AtomicInteger(0);
         _outstandingCronTaskCount = new AtomicInteger(0);
