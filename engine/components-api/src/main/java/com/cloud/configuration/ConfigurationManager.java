@@ -92,37 +92,12 @@ public interface ConfigurationManager {
 
     /**
      * Updates a configuration entry with a new value
-<<<<<<< HEAD
-     * @param userId
-     * @param name
-     * @param category
-     * @param value
-     * @param scope
-     * @param id
-=======
-     *
->>>>>>> 674429f8ba7 (config cleanup)
      */
     String updateConfiguration(long userId, String name, String category, String value, ConfigKey.Scope scope, Long id);
 
     /**
      * Creates a new pod
-     *
-<<<<<<< HEAD
-     * @param userId
-     * @param podName
-     * @param zone
-     * @param gateway
-     * @param cidr
-     * @param startIp
-     * @param endIp
-     * @param allocationState
      * @param skipGatewayOverlapCheck (true if it is ok to not validate that gateway IP address overlap with Start/End IP of the POD)
-     * @param storageAccessGroups
-=======
-     * @param skipGatewayOverlapCheck
-     *            (true if it is ok to not validate that gateway IP address overlap with Start/End IP of the POD)
->>>>>>> 674429f8ba7 (config cleanup)
      * @return Pod
      */
     HostPodVO createPod(long userId, String podName, DataCenter zone, String gateway, String cidr, String startIp, String endIp, String allocationState,
@@ -130,21 +105,25 @@ public interface ConfigurationManager {
 
     /**
      * Creates a new zone
-     *
+     * @param userId
+     * @param zoneName
+     * @param dns1
+     * @param dns2
+     * @param internalDns1
+     * @param internalDns2
+     * @param guestCidr
+     * @param domain
+     * @param domainId
+     * @param zoneType
+     * @param allocationState
      * @param networkDomain
      * @param isSecurityGroupEnabled
-<<<<<<< HEAD
+     * @param isLocalStorageEnabled
      * @param ip6Dns1
      * @param ip6Dns2
+     * @param isEdge
      * @param storageAccessGroups
      * @return
-     * @throws
-     * @throws
-=======
-     *            TODO
-     * @param ip6Dns1 TODO
-     * @param ip6Dns2 TODO
->>>>>>> 2240215e42e (config cleanup)
      */
     DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain,
         Long domainId, NetworkType zoneType, String allocationState, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1,
@@ -154,13 +133,7 @@ public interface ConfigurationManager {
      * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated
      * IP addresses.
      *
-<<<<<<< HEAD
-     * @param userId
-     * @param vlanDbId
-     * @param caller
-=======
      * @param caller TODO
->>>>>>> 2240215e42e (config cleanup)
      * @return success/failure
      */
     VlanVO deleteVlanAndPublicIpRange(long userId, long vlanDbId, Account caller);
@@ -202,7 +175,7 @@ public interface ConfigurationManager {
      * @param internetProtocol
      * @param routingMode
      * @param specifyAsNumber
-     * @return network offering object
+     * @return the network offering
      */
     NetworkOfferingVO createNetworkOffering(String name, String displayText, TrafficType trafficType, String tags, boolean specifyVlan, Availability availability,
                                             Integer networkRate, Map<Service, Set<Provider>> serviceProviderMap, boolean isDefault, Network.GuestType type, boolean systemOnly, Long serviceOfferingId,
