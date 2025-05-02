@@ -20,6 +20,7 @@ import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisNatCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
+import org.apache.cloudstack.service.NetrisServiceImpl;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -94,5 +95,15 @@ public class NetrisResourceObjectUtilsTest {
         String snatRuleName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.SNAT, String.valueOf(vpcId));
         String expectedName = String.format("D%s-A%s-Z%s-V%s-SNAT", domainId, accountId, zoneId, vpcId);
         Assert.assertEquals(expectedName, snatRuleName);
+    }
+
+    @Test
+    public void testStaticNatName() {
+        long vmId = 1234L;
+        CreateOrUpdateNetrisNatCommand cmd = new CreateOrUpdateNetrisNatCommand(zoneId, accountId, domainId, vpcName, vpcId, null, null, true, vpcCidr);
+        String[] suffixes = NetrisServiceImpl.getStaticNatResourceSuffixes(vpcId, null, true, vmId);
+        String staticNatRuleName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.STATICNAT, suffixes);
+        String expectedName = String.format("D%s-A%s-Z%s-V%s-VM%s-STATICNAT", domainId, accountId, zoneId, vpcId, vmId);
+        Assert.assertEquals(expectedName, staticNatRuleName);
     }
 }

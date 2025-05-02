@@ -332,7 +332,7 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
     }
 
     @Override
-    public boolean createStaticNatRule(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String vpcCidr, String staticNatIp, String vmIp) {
+    public boolean createStaticNatRule(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String vpcCidr, String staticNatIp, String vmIp, long vmId) {
         String vpcName = null;
         String networkName = null;
         Long vpcId = null;
@@ -348,15 +348,15 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         cmd.setNatRuleType("STATICNAT");
         cmd.setNatIp(staticNatIp);
         cmd.setVmIp(vmIp);
-        String suffix = getResourceSuffix(vpcId, networkId, isForVpc);
-        String dnatRuleName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.STATICNAT, suffix);
+        String[] suffixes = getStaticNatResourceSuffixes(vpcId, networkId, isForVpc, vmId);
+        String dnatRuleName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.STATICNAT, suffixes);
         cmd.setNatRuleName(dnatRuleName);
         NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
         return answer.getResult();
     }
 
     @Override
-    public boolean deleteStaticNatRule(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String staticNatIp) {
+    public boolean deleteStaticNatRule(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String staticNatIp, long vmId) {
         String vpcName = null;
         String networkName = null;
         Long vpcId = null;
@@ -369,8 +369,8 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
             networkId = networkResourceId;
         }
         DeleteNetrisNatRuleCommand cmd = new DeleteNetrisNatRuleCommand(zoneId, accountId, domainId, vpcName, vpcId, networkName, networkId, isForVpc);
-        String suffix = getResourceSuffix(vpcId, networkId, isForVpc);
-        String dnatRuleName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.STATICNAT, suffix);
+        String suffixes[] = getStaticNatResourceSuffixes(vpcId, networkId, isForVpc, vmId);
+        String dnatRuleName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.STATICNAT, suffixes);
         cmd.setNatRuleName(dnatRuleName);
         cmd.setNatRuleType("STATICNAT");
         cmd.setNatIp(staticNatIp);
@@ -510,13 +510,10 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         return answer.getResult();
     }
 
-    private String getResourceSuffix(Long vpcId, Long networkId, boolean isForVpc) {
-        String suffix;
-        if (isForVpc) {
-            suffix = String.valueOf(vpcId); // D1-A1-Z1-V25-STATICNAT or D1-A1-Z1-V25-SNAT
-        } else {
-            suffix = String.valueOf(networkId); // D1-A1-Z1-N25-STATICNAT or D1-A1-Z1-N25-SNAT
-        }
-        return suffix;
+    public static String[] getStaticNatResourceSuffixes(Long vpcId, Long networkId, boolean isForVpc, long vmId) {
+        String[] suffixes = new String[2];
+        suffixes[0] = isForVpc ? String.valueOf(vpcId) : String.valueOf(networkId);
+        suffixes[1] = String.valueOf(vmId);
+        return suffixes;
     }
 }

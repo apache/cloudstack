@@ -46,9 +46,9 @@ public interface NetrisService {
 
     boolean updateVpcSourceNatIp(Vpc vpc, IpAddress address);
 
-    boolean createStaticNatRule(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String vpcCidr, String staticNatIp, String vmIp);
+    boolean createStaticNatRule(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String vpcCidr, String staticNatIp, String vmIp, long vmId);
 
-    boolean deleteStaticNatRule(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String staticNatIp);
+    boolean deleteStaticNatRule(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String staticNatIp, long vmId);
 
     boolean addFirewallRules(Network network, List<NetrisNetworkRule> firewallRules);
     boolean deleteFirewallRules(Network network, List<NetrisNetworkRule> firewallRules);

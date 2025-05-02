@@ -677,6 +677,7 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
             if (vm == null || networkModel.getNicInNetworkIncludingRemoved(vm.getId(), config.getId()) == null) {
                 continue;
             }
+            long vmId = vm.getId();
             Pair<VpcVO, NetworkVO> vpcOrNetwork = getVpcOrNetwork(config.getVpcId(), config.getId());
             VpcVO vpc = vpcOrNetwork.first();
             NetworkVO network = vpcOrNetwork.second();
@@ -686,10 +687,10 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
             if (!staticNat.isForRevoke()) {
                 return netrisService.createStaticNatRule(config.getDataCenterId(), config.getAccountId(), config.getDomainId(),
                        networkResourceName, networkResourceId, isVpcResource, vpc.getCidr(),
-                        ipAddressVO.getAddress().addr(), staticNat.getDestIpAddress());
+                        ipAddressVO.getAddress().addr(), staticNat.getDestIpAddress(), vmId);
             } else {
                 return netrisService.deleteStaticNatRule(config.getDataCenterId(), config.getAccountId(), config.getDomainId(),
-                        networkResourceName, networkResourceId, isVpcResource, ipAddressVO.getAddress().addr());
+                        networkResourceName, networkResourceId, isVpcResource, ipAddressVO.getAddress().addr(), vmId);
             }
         }
         return false;
