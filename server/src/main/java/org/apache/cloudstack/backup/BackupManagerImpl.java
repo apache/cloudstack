@@ -1326,9 +1326,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (result) {
             resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup);
             resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
-            return backupDao.remove(backup.getId());
+            if (backupDao.remove(backup.getId())) {
+                checkAndGenerateUsageForLastBackupDeletedAfterOfferingRemove(vm, backup);
+                return true;
+            } else {
+                return false;
+            }
         }
-        checkAndGenerateUsageForLastBackupDeletedAfterOfferingRemove(vm, backup);
         throw new CloudRuntimeException("Failed to delete the backup");
     }
 
@@ -1391,7 +1395,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     private void checkAndGenerateUsageForLastBackupDeletedAfterOfferingRemove(VirtualMachine vm, Backup backup) {
-        if (vm.getBackupOfferingId() != backup.getBackupOfferingId()) {
+        if (vm != null && vm.getBackupOfferingId() != backup.getBackupOfferingId()) {
             List<Backup> backups = backupDao.listByVmIdAndOffering(vm.getDataCenterId(), vm.getId(), backup.getBackupOfferingId());
             if (backups.size() == 0) {
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_DELETE_LAST_POST_OFFERING_REMOVE, vm.getAccountId(),
@@ -1826,8 +1830,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                 Backup backup = backupDao.findById(backupIdToRemove);
                 resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup);
                 resourceLimitMgr.decrementResourceCount(backup.getAccountId(), Resource.ResourceType.backup_storage, backup.getSize());
-                backupDao.remove(backupIdToRemove);
-                checkAndGenerateUsageForLastBackupDeletedAfterOfferingRemove(vm, backup);
+                boolean result = backupDao.remove(backupIdToRemove);
+                if (result) {
+                    checkAndGenerateUsageForLastBackupDeletedAfterOfferingRemove(vm, backup);
+                } else {
+                    logger.error("Failed to remove backup db wentry ith ID: {} during sync backups", backupIdToRemove);
+                }
             }
         }
 

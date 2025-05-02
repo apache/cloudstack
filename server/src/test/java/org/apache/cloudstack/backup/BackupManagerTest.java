@@ -1326,4 +1326,56 @@ public class BackupManagerTest {
         assertEquals(1, networkIds4.size());
         assertTrue(networkIds4.contains(networkId1));
     }
+
+    @Test
+    public void testDeleteBackupVmNotFound() {
+        Long backupId = 1L;
+        Long vmId = 2L;
+        Long zoneId = 3L;
+        Long accountId = 4L;
+        Long backupOfferingId = 5L;
+        String vmHostName = "vm1";
+        String vmUuid = "uuid1";
+        String resourceName = "Backup-" + vmHostName + "-" + vmUuid;
+
+        BackupVO backup = mock(BackupVO.class);
+        when(backup.getId()).thenReturn(backupId);
+        when(backup.getVmId()).thenReturn(vmId);
+        when(backup.getZoneId()).thenReturn(zoneId);
+        when(backup.getAccountId()).thenReturn(accountId);
+        when(backup.getBackupOfferingId()).thenReturn(backupOfferingId);
+        when(backup.getSize()).thenReturn(100L);
+
+        overrideBackupFrameworkConfigValue();
+
+        VMInstanceVO vm = mock(VMInstanceVO.class);
+        when(vm.getId()).thenReturn(vmId);
+        when(vm.getAccountId()).thenReturn(accountId);
+        when(vm.getBackupOfferingId()).thenReturn(10L);
+        when(vm.getDataCenterId()).thenReturn(zoneId);
+        when(vm.getHostName()).thenReturn(vmHostName);
+        when(vm.getUuid()).thenReturn(vmUuid);
+        when(backupDao.findByIdIncludingRemoved(backupId)).thenReturn(backup);
+        when(vmInstanceDao.findByIdIncludingRemoved(vmId)).thenReturn(vm);
+        when(backupDao.listByVmIdAndOffering(zoneId, vmId, backupOfferingId)).thenReturn(new ArrayList<>());
+
+        BackupOfferingVO offering = mock(BackupOfferingVO.class);
+        when(backupOfferingDao.findByIdIncludingRemoved(backupOfferingId)).thenReturn(offering);
+
+        when(backupProvider.deleteBackup(backup, false)).thenReturn(true);
+
+        when(backupDao.remove(backupId)).thenReturn(true);
+
+        try (MockedStatic<UsageEventUtils> usageEventUtilsMocked = Mockito.mockStatic(UsageEventUtils.class)) {
+            boolean result = backupManager.deleteBackup(backupId, false);
+
+            assertTrue(result);
+            verify(backupProvider).deleteBackup(backup, false);
+            verify(resourceLimitMgr).decrementResourceCount(accountId, Resource.ResourceType.backup);
+            verify(resourceLimitMgr).decrementResourceCount(accountId, Resource.ResourceType.backup_storage, backup.getSize());
+            verify(backupDao).remove(backupId);
+            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_DELETE_LAST_POST_OFFERING_REMOVE, accountId, zoneId, vmId, resourceName,
+                    backupOfferingId, null, null, Backup.class.getSimpleName(), vmUuid));
+        }
+    }
 }
