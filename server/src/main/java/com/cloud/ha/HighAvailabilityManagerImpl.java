@@ -224,6 +224,18 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     long _timeBetweenCleanups;
     String _haTag = null;
 
+    private boolean vmHasPendingHAJob(final List<HaWorkVO> pendingHaWorks, final VMInstanceVO vm) {
+        Optional<HaWorkVO> item = pendingHaWorks.stream()
+                .filter(h -> h.getInstanceId() == vm.getId())
+                .reduce((first, second) -> second);
+        if (item.isPresent() && (item.get().getTimesTried() < _maxRetries ||
+                !item.get().canScheduleNew(_timeBetweenFailures))) {
+            s_logger.debug(String.format("Skipping HA on %s as there is already a running HA job for it", vm));
+            return true;
+        }
+        return false;
+    }
+
     protected HighAvailabilityManagerImpl() {
     }
 
@@ -278,12 +290,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             sb.append("  Starting HA on the following VMs:");
             // collect list of vm names for the alert email
             for (VMInstanceVO vm : vms) {
-                Optional<HaWorkVO> item = pendingHaWorks.stream()
-                        .filter(h -> h.getInstanceId() == vm.getId())
-                        .reduce((first, second) -> second);
-                if (item.isPresent() && (item.get().getTimesTried() < _maxRetries ||
-                        !item.get().canScheduleNew(_timeBetweenFailures))) {
-                    s_logger.debug(String.format("Skipping HA on %s as there is already a running HA job for it", vm));
+                if (vmHasPendingHAJob(pendingHaWorks, vm)) {
                     skippedHAVms++;
                     continue;
                 }
