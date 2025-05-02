@@ -264,7 +264,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     protected AgentAttache createAttache(final HostVO host) {
         logger.debug("create forwarding ClusteredAgentAttache for {}", host);
         long id = host.getId();
-        final AgentAttache attache = new ClusteredAgentAttache(this, id, host.getUuid(), host.getName());
+        final AgentAttache attache = new ClusteredAgentAttache(this, id, host.getUuid(), host.getName(), host.getHypervisorType());
         AgentAttache old;
         synchronized (_agents) {
             old = _agents.get(host.getId());
@@ -280,7 +280,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     @Override
     protected AgentAttache createAttacheForConnect(final HostVO host, final Link link) {
         logger.debug("create ClusteredAgentAttache for {}",  host);
-        final AgentAttache attache = new ClusteredAgentAttache(this, host.getId(), host.getUuid(), host.getName(), link, host.isInMaintenanceStates());
+        final AgentAttache attache = new ClusteredAgentAttache(this, host.getId(), host.getUuid(), host.getName(), host.getHypervisorType(), link, host.isInMaintenanceStates());
         link.attach(attache);
         AgentAttache old;
         synchronized (_agents) {
@@ -296,7 +296,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     @Override
     protected AgentAttache createAttacheForDirectConnect(final Host host, final ServerResource resource) {
         logger.debug("Create ClusteredDirectAgentAttache for {}.", host);
-        final DirectAgentAttache attache = new ClusteredDirectAgentAttache(this, host.getId(), host.getUuid(), host.getName(), _nodeId, resource, host.isInMaintenanceStates());
+        final DirectAgentAttache attache = new ClusteredDirectAgentAttache(this, host.getId(), host.getUuid(), host.getName(), host.getHypervisorType(), _nodeId, resource, host.isInMaintenanceStates());
         AgentAttache old;
         synchronized (_agents) {
             old = _agents.get(host.getId());

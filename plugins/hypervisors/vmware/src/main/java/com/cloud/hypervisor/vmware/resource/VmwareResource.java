@@ -1961,7 +1961,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             // Check if license supports the feature
             VmwareHelper.isFeatureLicensed(hyperHost, FeatureKeyConstants.HOTPLUG);
             VmwareHelper.setVmScaleUpConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), getReservedCpuMHZ(vmSpec), (int) requestedMaxMemoryInMb, ramMb,
-                    vmSpec.getLimitCpuUse());
+                    vmSpec.isLimitCpuUse());
 
             if (!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Unable to execute ScaleVmCommand");
@@ -2188,7 +2188,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
                             }
                             tearDownVm(vmMo);
                         } else if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(), getReservedCpuMHZ(vmSpec),
-                                vmSpec.getLimitCpuUse(), (int) (vmSpec.getMaxRam() / ResourceType.bytesToMiB), getReservedMemoryMb(vmSpec), guestOsId, rootDiskDataStoreDetails.first(), false,
+                                vmSpec.isLimitCpuUse(), (int) (vmSpec.getMaxRam() / ResourceType.bytesToMiB), getReservedMemoryMb(vmSpec), guestOsId, rootDiskDataStoreDetails.first(), false,
                                 controllerInfo, systemVm)) {
                             throw new Exception("Failed to create VM. vmName: " + vmInternalCSName);
                         }
@@ -2232,7 +2232,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[totalChangeDevices];
             DiskTO[] sortedDisks = sortVolumesByDeviceId(disks);
             VmwareHelper.setBasicVmConfig(vmConfigSpec, vmSpec.getCpus(), vmSpec.getMaxSpeed(), getReservedCpuMHZ(vmSpec), (int) (vmSpec.getMaxRam() / (1024 * 1024)),
-                    getReservedMemoryMb(vmSpec), guestOsId, vmSpec.getLimitCpuUse(), deployAsIs);
+                    getReservedMemoryMb(vmSpec), guestOsId, vmSpec.isLimitCpuUse(), deployAsIs);
 
             // Check for multi-cores per socket settings
             int numCoresPerSocket = 1;
