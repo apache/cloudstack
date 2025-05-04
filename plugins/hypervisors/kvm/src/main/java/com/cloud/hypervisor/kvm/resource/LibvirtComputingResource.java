@@ -4846,6 +4846,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     private boolean canBridgeFirewall(final String prvNic) {
+        if (getAllowNestedVMAccess())
+            return true; // If nested VM is allowed, then we skip call to security group and allow bypassing firewall
         final Script cmd = new Script(securityGroupPath, timeout, LOGGER);
         cmd.add("can_bridge_firewall");
         cmd.add("--privnic", prvNic);

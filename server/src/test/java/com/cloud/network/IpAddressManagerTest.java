@@ -491,4 +491,14 @@ public class IpAddressManagerTest {
 
         Assert.assertTrue(result);
     }
+
+    @Test
+    public void testCanBridgeFirewallWithNestedVMAccessEnabled() {
+        // Force config to return true for AllowNestedVMAccess
+        Mockito.doReturn(true).when(ipAddressManager).getAllowNestedVMAccessConfig();
+
+        boolean result = ipAddressManager.canBridgeFirewall("eth0");
+
+        Assert.assertTrue("Should return true when AllowNestedVMAccess is enabled", result);
+    }
 }

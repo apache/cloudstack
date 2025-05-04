@@ -329,6 +329,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     public static final ConfigKey<Integer> PUBLIC_IP_ADDRESS_QUARANTINE_DURATION = new ConfigKey<>("Network", Integer.class, "public.ip.address.quarantine.duration",
             "0", "The duration (in minutes) for the public IP address to be quarantined when it is disassociated.", true, ConfigKey.Scope.Domain);
+    
+    public static final ConfigKey<Boolean> AllowNestedVMAccess = new ConfigKey<>("Advanced", Boolean.class, "allow.nested.vm.access",
+            "false", "Allows nested VM access by bypassing security group restrictions. Use with caution.", true, ConfigKey.Scope.Global);
 
     private Random rand = new Random(System.currentTimeMillis());
 
@@ -2451,6 +2454,10 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     public static ConfigKey<Boolean> getSystemvmpublicipreservationmodestrictness() {
         return SystemVmPublicIpReservationModeStrictness;
+    }
+
+    public static ConfigKey<Boolean> getAllowNestedVMAccess() {
+        return AllowNestedVMAccess;
     }
 
     @Override
