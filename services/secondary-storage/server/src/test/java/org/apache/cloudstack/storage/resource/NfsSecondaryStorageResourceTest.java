@@ -47,6 +47,8 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import com.cloud.agent.api.to.DataStoreTO;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import com.cloud.agent.api.to.S3TO;
 
 @RunWith(MockitoJUnitRunner.class)
 public class NfsSecondaryStorageResourceTest {
@@ -241,4 +243,18 @@ public class NfsSecondaryStorageResourceTest {
 
         Assert.assertEquals(NetUtils.HTTP_PROTO, result);
     }
+
+    @Test
+    public void testExecuteRequestRedactsS3Credentials() {
+        S3TO mockS3 = Mockito.mock(S3TO.class);
+        DownloadCommand mockCmd = Mockito.mock(DownloadCommand.class);
+
+        Mockito.when(mockCmd.getDataStore()).thenReturn(mockS3);
+
+        resource.executeRequest(mockCmd);
+
+        Mockito.verify(mockS3).setAccessKey("***REDACTED***");
+        Mockito.verify(mockS3).setSecretKey("***REDACTED***");
+    }
+
 }
