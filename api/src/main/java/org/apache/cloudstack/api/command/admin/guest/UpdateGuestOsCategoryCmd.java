@@ -45,7 +45,7 @@ public class UpdateGuestOsCategoryCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestOSCategoryResponse.class,
-            required = true, description = "ID of the OS Category")
+            required = true, description = "ID of the OS category")
     private Long id;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name for the OS category")
@@ -96,7 +96,7 @@ public class UpdateGuestOsCategoryCmd extends BaseCmd {
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update guest OS type");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update OS category");
         }
     }
 }

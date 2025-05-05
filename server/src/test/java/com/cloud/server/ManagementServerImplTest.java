@@ -149,10 +149,10 @@ public class ManagementServerImplTest {
     HostDetailsDao hostDetailsDao;
 
     @Mock
-    GuestOSCategoryDao guestOSCategoryDao;
+    GuestOSCategoryDao _guestOSCategoryDao;
 
     @Mock
-    GuestOSDao guestOSDao;
+    GuestOSDao _guestOSDao;
 
     private AutoCloseable closeable;
 
@@ -707,12 +707,12 @@ public class ManagementServerImplTest {
         boolean featured = true;
         Mockito.when(addCmd.getName()).thenReturn(name);
         Mockito.when(addCmd.isFeatured()).thenReturn(featured);
-        Mockito.doAnswer((Answer<GuestOSCategoryVO>) invocation -> (GuestOSCategoryVO)invocation.getArguments()[0]).when(guestOSCategoryDao).persist(Mockito.any(GuestOSCategoryVO.class));
+        Mockito.doAnswer((Answer<GuestOSCategoryVO>) invocation -> (GuestOSCategoryVO)invocation.getArguments()[0]).when(_guestOSCategoryDao).persist(Mockito.any(GuestOSCategoryVO.class));
         GuestOsCategory result = spy.addGuestOsCategory(addCmd);
         Assert.assertNotNull(result);
         Assert.assertEquals(name, result.getName());
         Assert.assertEquals(featured, result.isFeatured());
-        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).persist(any(GuestOSCategoryVO.class));
+        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).persist(any(GuestOSCategoryVO.class));
     }
 
     @Test
@@ -727,14 +727,14 @@ public class ManagementServerImplTest {
         Mockito.when(updateCmd.getName()).thenReturn(name);
         Mockito.when(updateCmd.isFeatured()).thenReturn(featured);
         Mockito.when(updateCmd.getSortKey()).thenReturn(sortKey);
-        Mockito.when(guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
-        Mockito.when(guestOSCategoryDao.update(Mockito.eq(id), any(GuestOSCategoryVO.class))).thenReturn(true);
+        Mockito.when(_guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
+        Mockito.when(_guestOSCategoryDao.update(Mockito.eq(id), any(GuestOSCategoryVO.class))).thenReturn(true);
         GuestOsCategory result = spy.updateGuestOsCategory(updateCmd);
         Assert.assertNotNull(result);
         Assert.assertEquals(name, result.getName());
         Assert.assertEquals(featured, result.isFeatured());
-        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).findById(id);
-        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).update(Mockito.eq(id), any(GuestOSCategoryVO.class));
+        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).findById(id);
+        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).update(Mockito.eq(id), any(GuestOSCategoryVO.class));
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -742,7 +742,7 @@ public class ManagementServerImplTest {
         UpdateGuestOsCategoryCmd updateCmd = Mockito.mock(UpdateGuestOsCategoryCmd.class);
         long id = 1L;
         when(updateCmd.getId()).thenReturn(id);
-        when(guestOSCategoryDao.findById(id)).thenReturn(null);
+        when(_guestOSCategoryDao.findById(id)).thenReturn(null);
         spy.updateGuestOsCategory(updateCmd);
     }
 
@@ -755,13 +755,13 @@ public class ManagementServerImplTest {
         when(updateCmd.getName()).thenReturn(null);
         when(updateCmd.isFeatured()).thenReturn(null);
         when(updateCmd.getSortKey()).thenReturn(null);
-        when(guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
+        when(_guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
         GuestOsCategory result = spy.updateGuestOsCategory(updateCmd);
         Assert.assertNotNull(result);
         Assert.assertNull( result.getName());
         Assert.assertFalse(result.isFeatured());
-        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).findById(id);
-        Mockito.verify(guestOSCategoryDao, Mockito.never()).update(Mockito.eq(id), any(GuestOSCategoryVO.class));
+        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).findById(id);
+        Mockito.verify(_guestOSCategoryDao, Mockito.never()).update(Mockito.eq(id), any(GuestOSCategoryVO.class));
     }
 
     @Test
@@ -776,14 +776,14 @@ public class ManagementServerImplTest {
         Mockito.when(updateCmd.getName()).thenReturn(name);
         Mockito.when(updateCmd.isFeatured()).thenReturn(null);
         Mockito.when(updateCmd.getSortKey()).thenReturn(null);
-        Mockito.when(guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
-        Mockito.when(guestOSCategoryDao.update(Mockito.eq(id), any(GuestOSCategoryVO.class))).thenReturn(true);
+        Mockito.when(_guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
+        Mockito.when(_guestOSCategoryDao.update(Mockito.eq(id), any(GuestOSCategoryVO.class))).thenReturn(true);
         GuestOsCategory result = spy.updateGuestOsCategory(updateCmd);
         Assert.assertNotNull(result);
         Assert.assertEquals(name, result.getName());
         Assert.assertFalse(result.isFeatured());
-        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).findById(id);
-        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).update(Mockito.eq(id), any(GuestOSCategoryVO.class));
+        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).findById(id);
+        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).update(Mockito.eq(id), any(GuestOSCategoryVO.class));
     }
 
     @Test
@@ -792,14 +792,14 @@ public class ManagementServerImplTest {
         GuestOSCategoryVO guestOSCategory = Mockito.mock(GuestOSCategoryVO.class);
         long id = 1L;
         Mockito.when(deleteCmd.getId()).thenReturn(id);
-        Mockito.when(guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
-        Mockito.when(guestOSDao.listIdsByCategoryId(id)).thenReturn(Arrays.asList());
-        Mockito.when(guestOSCategoryDao.remove(id)).thenReturn(true);
+        Mockito.when(_guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
+        Mockito.when(_guestOSDao.listIdsByCategoryId(id)).thenReturn(Arrays.asList());
+        Mockito.when(_guestOSCategoryDao.remove(id)).thenReturn(true);
         boolean result = spy.deleteGuestOsCategory(deleteCmd);
         Assert.assertTrue(result);
-        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).findById(id);
-        Mockito.verify(guestOSDao, Mockito.times(1)).listIdsByCategoryId(id);
-        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).remove(id);
+        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).findById(id);
+        Mockito.verify(_guestOSDao, Mockito.times(1)).listIdsByCategoryId(id);
+        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).remove(id);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -807,7 +807,7 @@ public class ManagementServerImplTest {
         DeleteGuestOsCategoryCmd deleteCmd = Mockito.mock(DeleteGuestOsCategoryCmd.class);
         long id = 1L;
         Mockito.when(deleteCmd.getId()).thenReturn(id);
-        Mockito.when(guestOSCategoryDao.findById(id)).thenReturn(null);
+        Mockito.when(_guestOSCategoryDao.findById(id)).thenReturn(null);
         spy.deleteGuestOsCategory(deleteCmd);
     }
 
@@ -817,8 +817,8 @@ public class ManagementServerImplTest {
         GuestOSCategoryVO guestOSCategory = Mockito.mock(GuestOSCategoryVO.class);
         long id = 1L;
         Mockito.when(deleteCmd.getId()).thenReturn(id);
-        Mockito.when(guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
-        Mockito.when(guestOSDao.listIdsByCategoryId(id)).thenReturn(Arrays.asList(1L));
+        Mockito.when(_guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
+        Mockito.when(_guestOSDao.listIdsByCategoryId(id)).thenReturn(Arrays.asList(1L));
         spy.deleteGuestOsCategory(deleteCmd);
     }
 
@@ -826,7 +826,7 @@ public class ManagementServerImplTest {
         GuestOSVO vo = mock(GuestOSVO.class);
         SearchBuilder<GuestOSVO> sb = mock(SearchBuilder.class);
         when(sb.entity()).thenReturn(vo);
-        when(guestOSDao.createSearchBuilder()).thenReturn(sb);
+        when(_guestOSDao.createSearchBuilder()).thenReturn(sb);
     }
 
     @Test
@@ -853,19 +853,19 @@ public class ManagementServerImplTest {
         SearchBuilder<GuestOSCategoryVO> searchBuilder = Mockito.mock(SearchBuilder.class);
         Mockito.when(searchBuilder.entity()).thenReturn(guestOSCategory);
         SearchCriteria<GuestOSCategoryVO> searchCriteria = Mockito.mock(SearchCriteria.class);
-        Mockito.when(guestOSCategoryDao.createSearchBuilder()).thenReturn(searchBuilder);
+        Mockito.when(_guestOSCategoryDao.createSearchBuilder()).thenReturn(searchBuilder);
         Mockito.when(searchBuilder.create()).thenReturn(searchCriteria);
         Mockito.when(templateDao.listTemplateIsoByArchVnfAndZone(zoneId, arch, isIso, isVnf)).thenReturn(Arrays.asList(1L, 2L));
         Pair<List<GuestOSCategoryVO>, Integer> mockResult = new Pair<>(Arrays.asList(guestOSCategory), 1);
         mockGuestOsJoin();
-        Mockito.when(guestOSCategoryDao.searchAndCount(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(mockResult);
+        Mockito.when(_guestOSCategoryDao.searchAndCount(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(mockResult);
         Pair<List<? extends GuestOsCategory>, Integer> result = spy.listGuestOSCategoriesByCriteria(listCmd);
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.second().intValue());
         Assert.assertEquals(1, result.first().size());
-        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).createSearchBuilder();
+        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).createSearchBuilder();
         Mockito.verify(templateDao, Mockito.times(1)).listTemplateIsoByArchVnfAndZone(zoneId, arch, isIso, isVnf);
-        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
+        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
     }
 
     @Test
@@ -891,19 +891,19 @@ public class ManagementServerImplTest {
         SearchBuilder<GuestOSCategoryVO> searchBuilder = Mockito.mock(SearchBuilder.class);
         Mockito.when(searchBuilder.entity()).thenReturn(guestOSCategory);
         SearchCriteria<GuestOSCategoryVO> searchCriteria = Mockito.mock(SearchCriteria.class);
-        Mockito.when(guestOSCategoryDao.createSearchBuilder()).thenReturn(searchBuilder);
+        Mockito.when(_guestOSCategoryDao.createSearchBuilder()).thenReturn(searchBuilder);
         Mockito.when(searchBuilder.create()).thenReturn(searchCriteria);
         Mockito.when(templateDao.listTemplateIsoByArchVnfAndZone(zoneId, arch, isIso, isVnf)).thenReturn(Arrays.asList(1L, 2L));
         Pair<List<GuestOSCategoryVO>, Integer> mockResult = new Pair<>(Arrays.asList(), 0);
-        Mockito.when(guestOSCategoryDao.searchAndCount(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(mockResult);
+        Mockito.when(_guestOSCategoryDao.searchAndCount(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(mockResult);
         mockGuestOsJoin();
         Pair<List<? extends GuestOsCategory>, Integer> result = spy.listGuestOSCategoriesByCriteria(listCmd);
         Assert.assertNotNull(result);
         Assert.assertEquals(0, result.second().intValue());
         Assert.assertEquals(0, result.first().size());
-        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).createSearchBuilder();
+        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).createSearchBuilder();
         Mockito.verify(templateDao, Mockito.times(1)).listTemplateIsoByArchVnfAndZone(zoneId, arch, isIso, isVnf);
-        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
+        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
     }
 
     @Test
@@ -929,19 +929,19 @@ public class ManagementServerImplTest {
         SearchBuilder<GuestOSCategoryVO> searchBuilder = Mockito.mock(SearchBuilder.class);
         Mockito.when(searchBuilder.entity()).thenReturn(guestOSCategory);
         SearchCriteria<GuestOSCategoryVO> searchCriteria = Mockito.mock(SearchCriteria.class);
-        Mockito.when(guestOSCategoryDao.createSearchBuilder()).thenReturn(searchBuilder);
+        Mockito.when(_guestOSCategoryDao.createSearchBuilder()).thenReturn(searchBuilder);
         Mockito.when(searchBuilder.create()).thenReturn(searchCriteria);
         Mockito.when(templateDao.listTemplateIsoByArchVnfAndZone(zoneId, arch, isIso, isVnf)).thenReturn(Arrays.asList(1L, 2L));
         Pair<List<GuestOSCategoryVO>, Integer> mockResult = new Pair<>(Arrays.asList(), 0);
-        when(guestOSCategoryDao.searchAndCount(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(mockResult);
+        when(_guestOSCategoryDao.searchAndCount(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(mockResult);
         mockGuestOsJoin();
         Pair<List<? extends GuestOsCategory>, Integer> result = spy.listGuestOSCategoriesByCriteria(listCmd);
         Assert.assertNotNull(result);
         Assert.assertEquals(0, result.second().intValue());
         Assert.assertEquals(0, result.first().size());
-        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).createSearchBuilder();
+        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).createSearchBuilder();
         Mockito.verify(templateDao, Mockito.times(1)).listTemplateIsoByArchVnfAndZone(zoneId, arch, isIso, isVnf);
-        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
+        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
     }
 
     @Test
@@ -956,17 +956,17 @@ public class ManagementServerImplTest {
         SearchBuilder<GuestOSCategoryVO> searchBuilder = Mockito.mock(SearchBuilder.class);
         Mockito.when(searchBuilder.entity()).thenReturn(guestOSCategory);
         SearchCriteria<GuestOSCategoryVO> searchCriteria = Mockito.mock(SearchCriteria.class);
-        Mockito.when(guestOSCategoryDao.createSearchBuilder()).thenReturn(searchBuilder);
+        Mockito.when(_guestOSCategoryDao.createSearchBuilder()).thenReturn(searchBuilder);
         Mockito.when(searchBuilder.create()).thenReturn(searchCriteria);
         Pair<List<GuestOSCategoryVO>, Integer> mockResult = new Pair<>(Arrays.asList(guestOSCategory), 1);
-        Mockito.when(guestOSCategoryDao.searchAndCount(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(mockResult);
+        Mockito.when(_guestOSCategoryDao.searchAndCount(Mockito.eq(searchCriteria), Mockito.any())).thenReturn(mockResult);
         mockGuestOsJoin();
         Pair<List<? extends GuestOsCategory>, Integer> result = spy.listGuestOSCategoriesByCriteria(listCmd);
         Assert.assertNotNull(result);
         Assert.assertEquals(1, result.second().intValue());
         Assert.assertEquals(1, result.first().size());
-        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).createSearchBuilder();
+        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).createSearchBuilder();
         Mockito.verify(searchCriteria, Mockito.times(1)).setParameters("id", id);
-        Mockito.verify(guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
+        Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
     }
 }

@@ -2742,8 +2742,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         final SearchBuilder<GuestOSCategoryVO> sb = _guestOSCategoryDao.createSearchBuilder();
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
-        sb.and("name", sb.entity().getId(), SearchCriteria.Op.LIKE);
-        sb.and("keyword", sb.entity().getId(), SearchCriteria.Op.LIKE);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
         sb.and("featured", sb.entity().isFeatured(), SearchCriteria.Op.EQ);
         if (ObjectUtils.anyNotNull(zoneId, arch, isIso, isVnf)) {
             final SearchBuilder<GuestOSVO> guestOsSearch = _guestOSDao.createSearchBuilder();

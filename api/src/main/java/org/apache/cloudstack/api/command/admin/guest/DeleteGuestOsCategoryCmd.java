@@ -45,7 +45,7 @@ public class DeleteGuestOsCategoryCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GuestOSCategoryResponse.class,
-            required = true, description = "ID of the guest OS")
+            required = true, description = "ID of the OS category")
     private Long id;
 
     /////////////////////////////////////////////////////
@@ -67,7 +67,7 @@ public class DeleteGuestOsCategoryCmd extends BaseCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove guest OS");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove OS category");
         }
     }
 

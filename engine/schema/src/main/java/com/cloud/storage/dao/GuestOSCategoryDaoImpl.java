@@ -27,7 +27,6 @@ import com.cloud.utils.db.GenericDaoBase;
 public class GuestOSCategoryDaoImpl extends GenericDaoBase<GuestOSCategoryVO, Long> implements GuestOSCategoryDao {
 
     protected GuestOSCategoryDaoImpl() {
-        this._count = "select count(distinct id) from guest_os_category WHERE ";
     }
 
     @Override
