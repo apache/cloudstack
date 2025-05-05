@@ -1187,7 +1187,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private boolean isBackupEvent(String eventType) {
         return eventType != null && (
                 eventType.equals(EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN) ||
-                eventType.equals(EventTypes.EVENT_VM_BACKUP_DELETE_LAST_POST_OFFERING_REMOVE) ||
+                eventType.equals(EventTypes.EVENT_VM_BACKUP_OFFERING_BACKUPS_DELETED) ||
                 eventType.equals(EventTypes.EVENT_VM_BACKUP_USAGE_METRIC));
     }
 
@@ -2142,7 +2142,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (EventTypes.EVENT_VM_BACKUP_OFFERING_ASSIGN.equals(event.getType())) {
             final UsageBackupVO backupVO = new UsageBackupVO(zoneId, accountId, domainId, vmId, backupOfferingId, created);
             usageBackupDao.persist(backupVO);
-        } else if (EventTypes.EVENT_VM_BACKUP_DELETE_LAST_POST_OFFERING_REMOVE.equals(event.getType())) {
+        } else if (EventTypes.EVENT_VM_BACKUP_OFFERING_BACKUPS_DELETED.equals(event.getType())) {
             usageBackupDao.removeUsage(accountId, vmId, backupOfferingId, event.getCreateDate());
         } else if (EventTypes.EVENT_VM_BACKUP_USAGE_METRIC.equals(event.getType())) {
             usageBackupDao.updateMetrics(vmId, backupOfferingId, event.getSize(), event.getVirtualSize());

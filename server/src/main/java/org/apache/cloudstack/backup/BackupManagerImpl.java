@@ -1395,10 +1395,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     private void checkAndGenerateUsageForLastBackupDeletedAfterOfferingRemove(VirtualMachine vm, Backup backup) {
-        if (vm != null && vm.getBackupOfferingId() != backup.getBackupOfferingId()) {
+        if (vm != null &&
+                (vm.getBackupOfferingId() == null || vm.getBackupOfferingId() != backup.getBackupOfferingId())) {
             List<Backup> backups = backupDao.listByVmIdAndOffering(vm.getDataCenterId(), vm.getId(), backup.getBackupOfferingId());
             if (backups.size() == 0) {
-                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_DELETE_LAST_POST_OFFERING_REMOVE, vm.getAccountId(),
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_BACKUPS_DELETED, vm.getAccountId(),
                         vm.getDataCenterId(), vm.getId(), "Backup-" + vm.getHostName() + "-" + vm.getUuid(),
                         backup.getBackupOfferingId(), null, null, Backup.class.getSimpleName(), vm.getUuid());
             }
