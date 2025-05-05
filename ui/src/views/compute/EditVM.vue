@@ -222,7 +222,6 @@ export default {
         isdynamicallyscalable: this.resource.isdynamicallyscalable,
         deleteprotection: this.resource.deleteprotection,
         group: this.resource.group,
-        securitygroupids: this.resource.securitygroup.map(x => x.id),
         userdata: '',
         haenable: this.resource.haenable,
         leaseduration: this.resource.leaseduration,
