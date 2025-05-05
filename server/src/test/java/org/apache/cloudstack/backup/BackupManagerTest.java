@@ -1374,7 +1374,7 @@ public class BackupManagerTest {
             verify(resourceLimitMgr).decrementResourceCount(accountId, Resource.ResourceType.backup);
             verify(resourceLimitMgr).decrementResourceCount(accountId, Resource.ResourceType.backup_storage, backup.getSize());
             verify(backupDao).remove(backupId);
-            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_DELETE_LAST_POST_OFFERING_REMOVE, accountId, zoneId, vmId, resourceName,
+            usageEventUtilsMocked.verify(() -> UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_OFFERING_BACKUPS_DELETED, accountId, zoneId, vmId, resourceName,
                     backupOfferingId, null, null, Backup.class.getSimpleName(), vmUuid));
         }
     }
