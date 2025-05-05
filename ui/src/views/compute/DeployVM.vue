@@ -2272,7 +2272,7 @@ export default {
               action: {
                 isFetchData: false
               },
-              contextId: response.deployvirtualmachineresponse.contextid
+              logIds: response.deployvirtualmachineresponse.logids
             })
           }
           // Sending a refresh in case it hasn't picked up the new VM

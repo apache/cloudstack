@@ -722,7 +722,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         return response;
     }
 
-    private String getCurrentContextId() {
+    private String getCurrentLogContextId() {
         return UuidUtils.first(LogContext.current().getLogContextId());
     }
 
@@ -732,7 +732,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         final AsyncJob job = entityMgr.findByIdIncludingRemoved(AsyncJob.class, jobId);
         response.setJobId(job.getUuid());
         response.setResponseName(cmd.getCommandName());
-        response.setContextId(getCurrentContextId());
+        response.addLogIds(UuidUtils.first(job.getUuid()), getCurrentLogContextId());
         return ApiResponseSerializer.toSerializedString(response, cmd.getResponseType());
     }
 
@@ -742,7 +742,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         response.setJobId(job.getUuid());
         response.setId(objectUuid);
         response.setResponseName(cmd.getCommandName());
-        response.setContextId(getCurrentContextId());
+        response.addLogIds(UuidUtils.first(job.getUuid()), getCurrentLogContextId());
         return ApiResponseSerializer.toSerializedString(response, cmd.getResponseType());
     }
 
@@ -861,7 +861,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
             SerializationContext.current().setUuidTranslation(true);
             ResponseObject responseObject = (ResponseObject)cmdObj.getResponseObject();
-            responseObject.setContextId(getCurrentContextId());
+            responseObject.addLogIds(getCurrentLogContextId());
             return ApiResponseSerializer.toSerializedStringWithSecureLogs(responseObject, cmdObj.getResponseType(), log);
         }
     }
@@ -897,7 +897,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     final AsyncJob job = objectJobMap.get(response.getObjectId());
                     response.setJobId(job.getUuid());
                     response.setJobStatus(job.getStatus().ordinal());
-                    response.setContextId(getCurrentContextId());
+                    response.addLogIds(getCurrentLogContextId());
                 }
             }
         }
