@@ -77,12 +77,14 @@ public interface ConfigurationManager {
 
     /**
      * Updates a configuration entry with a new value
-     *
      * @param userId
      * @param name
+     * @param category
      * @param value
+     * @param scope
+     * @param id
      */
-    String updateConfiguration(long userId, String name, String category, String value, String scope, Long id);
+    String updateConfiguration(long userId, String name, String category, String value, ConfigKey.Scope scope, Long id);
 
 //    /**
 //     * Creates a new service offering
