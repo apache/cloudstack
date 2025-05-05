@@ -379,16 +379,15 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
     protected void wakeupWorkers() {
         logger.debug("Wakeup workers HA");
         for (WorkerThread worker : _workers) {
-            worker.wakup();
+            worker.wakeup();
         }
     }
 
     @Override
-    public boolean scheduleMigration(final VMInstanceVO vm, ReasonType reasonType) {
+    public boolean scheduleMigration(final VMInstanceVO vm, HighAvailabilityManager.ReasonType reasonType) {
         if (vm.getHostId() == null) {
             return false;
         }
-
         if (!VmHaEnabled.valueIn(vm.getDataCenterId())) {
             String message = String.format("Unable to schedule migration for the VM %s on host %s, VM high availability manager is disabled.", vm, _hostDao.findById(vm.getHostId()));
             if (logger.isDebugEnabled()) {
@@ -398,6 +397,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             return false;
         }
 
+        Long hostId = VirtualMachine.State.Migrating.equals(vm.getState()) ? vm.getLastHostId() : vm.getHostId();
         final HaWorkVO work = new HaWorkVO(vm.getId(), vm.getType(), WorkType.Migration, Step.Scheduled, vm.getHostId(), vm.getState(), 0, vm.getUpdated(), reasonType);
         _haDao.persist(work);
         logger.info("Scheduled migration work of VM {} from host {} with HAWork {}", vm, _hostDao.findById(vm.getHostId()), work);
@@ -587,6 +587,10 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         if (vm.getState() != work.getPreviousState() || vm.getUpdated() != work.getUpdateTime()) {
             logger.info("VM " + vm + " has been changed.  Current State = " + vm.getState() + " Previous State = " + work.getPreviousState() + " last updated = " +
                 vm.getUpdated() + " previous updated = " + work.getUpdateTime());
+            return null;
+        }
+        if (vm.getHostId() != null && !vm.getHostId().equals(work.getHostId())) {
+            logger.info("VM " + vm + " has been changed.  Current host id = " + vm.getHostId() + " Previous host id = " + work.getHostId());
             return null;
         }
 
@@ -813,6 +817,18 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             return null;
         }
         logger.info("Migration attempt: for VM {}from host {}. Starting attempt: {}/{} times.", vm, srcHost, 1 + work.getTimesTried(), _maxRetries);
+
+        if (VirtualMachine.State.Stopped.equals(vm.getState())) {
+            logger.info(String.format("vm %s is Stopped, skipping migrate.", vm));
+            return null;
+        }
+        if (VirtualMachine.State.Running.equals(vm.getState()) && srcHostId != vm.getHostId()) {
+            logger.info(String.format("VM %s is running on a different host %s, skipping migration", vm, vm.getHostId()));
+            return null;
+        }
+        logger.info("Migration attempt: for VM " + vm.getUuid() + "from host id " + srcHostId +
+                ". Starting attempt: " + (1 + work.getTimesTried()) + "/" + _maxRetries + " times.");
+
         try {
             work.setStep(Step.Migrating);
             _haDao.update(work.getId(), work);
@@ -1148,6 +1164,15 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
         @Override
         public void run() {
             logger.info("Starting work");
+            try {
+                synchronized (this) {
+                    wait(_timeToSleep);
+                }
+            } catch (final InterruptedException e) {
+                logger.info("Interrupted");
+            }
+            logger.info("Starting work");
+
             while (!_stopped) {
                 _managedContext.runWithContext(new Runnable() {
                     @Override
@@ -1188,7 +1213,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements Configur
             }
         }
 
-        public synchronized void wakup() {
+        public synchronized void wakeup() {
             notifyAll();
         }
     }

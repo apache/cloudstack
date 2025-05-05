@@ -14,16 +14,20 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.admin.zone;
 
-public interface ListVmwareDcItems {
-    String getVcenter();
+package org.apache.cloudstack.command;
 
-    String getDatacenterName();
+import com.cloud.agent.api.Command;
 
-    String getUsername();
+public class ReconcileCommand extends Command {
 
-    String getPassword();
+    @Override
+    public boolean executeInSequence() {
+        return false;
+    }
 
-    Long getExistingVcenterId();
+    @Override
+    public int getWait() {
+        return 30;  // timeout is 30 seconds
+    }
 }

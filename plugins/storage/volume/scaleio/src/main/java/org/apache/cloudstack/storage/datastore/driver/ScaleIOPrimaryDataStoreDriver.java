@@ -62,6 +62,7 @@ import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Logger;
@@ -79,6 +80,7 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -893,9 +895,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             boolean migrateStatus = answer.getResult();
 
             if (migrateStatus) {
-                updateVolumeAfterCopyVolume(srcData, destData);
-                updateSnapshotsAfterCopyVolume(srcData, destData);
-                deleteSourceVolumeAfterSuccessfulBlockCopy(srcData, host);
+                updateAfterSuccessfulVolumeMigration(srcData, destData, host);
                 logger.debug("Successfully migrated migrate PowerFlex volume {} to storage pool {}", srcData,  destStore);
                 answer = new Answer(null, true, null);
             } else {
@@ -906,6 +906,17 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         } catch (Exception e) {
             logger.error("Failed to migrate PowerFlex volume: {} due to: {}", srcData, e.getMessage());
             answer = new Answer(null, false, e.getMessage());
+            if (e.getMessage().contains(OperationTimedoutException.class.getName())) {
+                logger.error(String.format("The PowerFlex volume %s might have been migrated because the exception is %s, checking the volume on destination pool", srcData, OperationTimedoutException.class.getName()));
+                Boolean volumeOnDestination = getVolumeStateOnPool(destStore, destVolumePath);
+                if (volumeOnDestination) {
+                    logger.error(String.format("The PowerFlex volume %s has been migrated to destination pool %s", srcData, destStore.getName()));
+                    updateAfterSuccessfulVolumeMigration(srcData, destData, host);
+                    answer = new Answer(null, true, null);
+                } else {
+                    logger.error(String.format("The PowerFlex volume %s has not been migrated completely to destination pool %s", srcData, destStore.getName()));
+                }
+            }
         }
 
         if (destVolumePath != null && !answer.getResult()) {
@@ -913,6 +924,40 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
 
         return answer;
+    }
+
+    private void updateAfterSuccessfulVolumeMigration(DataObject srcData, DataObject destData, Host host) {
+        try {
+            updateVolumeAfterCopyVolume(srcData, destData);
+            updateSnapshotsAfterCopyVolume(srcData, destData);
+            deleteSourceVolumeAfterSuccessfulBlockCopy(srcData, host);
+        } catch (Exception ex) {
+            logger.error(String.format("Error while update PowerFlex volume: %s after successfully migration due to: %s", srcData, ex.getMessage()));
+        }
+    }
+
+    public Boolean getVolumeStateOnPool(DataStore srcStore, String srcVolumePath) {
+        try {
+            // check the state of volume on pool via ScaleIO gateway
+            final ScaleIOGatewayClient client = getScaleIOClient(srcStore);
+            final String sourceScaleIOVolumeId = ScaleIOUtil.getVolumePath(srcVolumePath);
+            final org.apache.cloudstack.storage.datastore.api.Volume sourceScaleIOVolume = client.getVolume(sourceScaleIOVolumeId);
+            logger.debug(String.format("The PowerFlex volume %s on pool %s is: %s", srcVolumePath, srcStore.getName(),
+                    ReflectionToStringBuilderUtils.reflectOnlySelectedFields(sourceScaleIOVolume, "id", "name", "vtreeId", "sizeInGB", "volumeSizeInGb")));
+            if (sourceScaleIOVolume == null || StringUtils.isEmpty(sourceScaleIOVolume.getVtreeId())) {
+                return false;
+            }
+            Pair<Long, Long> volumeStats = getVolumeStats(storagePoolDao.findById(srcStore.getId()), srcVolumePath);
+            if (volumeStats == null) {
+                logger.debug(String.format("Unable to find volume stats for %s on pool %s", srcVolumePath, srcStore.getName()));
+                return false;
+            }
+            logger.debug(String.format("Found volume stats for %s: provisionedSizeInBytes = %s, allocatedSizeInBytes = %s on pool %s", srcVolumePath, volumeStats.first(), volumeStats.second(), srcStore.getName()));
+            return volumeStats.first().equals(volumeStats.second());
+        } catch (Exception ex) {
+            logger.error(String.format("Failed to check if PowerFlex volume %s exists on source pool %s", srcVolumePath, srcStore.getName()));
+        }
+        return null;
     }
 
     protected void updateVolumeAfterCopyVolume(DataObject srcData, DataObject destData) {

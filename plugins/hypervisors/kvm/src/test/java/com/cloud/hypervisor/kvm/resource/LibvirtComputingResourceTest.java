@@ -1760,6 +1760,8 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testCheckVirtualMachineCommand() {
         final Connect conn = Mockito.mock(Connect.class);
+        final Domain vm = Mockito.mock(Domain.class);
+        final DomainInfo domainInfo = Mockito.mock(DomainInfo.class);
         final LibvirtUtilitiesHelper libvirtUtilitiesHelper = Mockito.mock(LibvirtUtilitiesHelper.class);
 
         final String vmName = "Test";
@@ -1768,6 +1770,8 @@ public class LibvirtComputingResourceTest {
         when(libvirtComputingResourceMock.getLibvirtUtilitiesHelper()).thenReturn(libvirtUtilitiesHelper);
         try {
             when(libvirtUtilitiesHelper.getConnectionByVmName(vmName)).thenReturn(conn);
+            when(conn.domainLookupByName(vmName)).thenReturn(vm);
+            when(vm.getInfo()).thenReturn(domainInfo);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         }
@@ -5521,7 +5525,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testSetQuotaAndPeriod() {
         double pct = 0.33d;
-        Mockito.when(vmTO.getLimitCpuUse()).thenReturn(true);
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(true);
         Mockito.when(vmTO.getCpuQuotaPercentage()).thenReturn(pct);
         CpuTuneDef cpuTuneDef = new CpuTuneDef();
         final LibvirtComputingResource lcr = new LibvirtComputingResource();
@@ -5532,7 +5536,7 @@ public class LibvirtComputingResourceTest {
 
     @Test
     public void testSetQuotaAndPeriodNoCpuLimitUse() {
-        Mockito.when(vmTO.getLimitCpuUse()).thenReturn(false);
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(false);
         CpuTuneDef cpuTuneDef = new CpuTuneDef();
         final LibvirtComputingResource lcr = new LibvirtComputingResource();
         lcr.setQuotaAndPeriod(vmTO, cpuTuneDef);
@@ -5543,7 +5547,7 @@ public class LibvirtComputingResourceTest {
     @Test
     public void testSetQuotaAndPeriodMinQuota() {
         double pct = 0.01d;
-        Mockito.when(vmTO.getLimitCpuUse()).thenReturn(true);
+        Mockito.when(vmTO.isLimitCpuUse()).thenReturn(true);
         Mockito.when(vmTO.getCpuQuotaPercentage()).thenReturn(pct);
         CpuTuneDef cpuTuneDef = new CpuTuneDef();
         final LibvirtComputingResource lcr = new LibvirtComputingResource();
@@ -6540,5 +6544,29 @@ public class LibvirtComputingResourceTest {
         Mockito.when(virtualMachineTO.getDetails()).thenReturn(details);
         DiskDef.DiskBus diskBus = libvirtComputingResourceSpy.getDiskModelFromVMDetail(virtualMachineTO);
         assertEquals(DiskDef.DiskBus.VIRTIOBLK, diskBus);
+    }
+
+    @Test
+    public void testCreateTpmDef() {
+        VirtualMachineTO virtualMachineTO = Mockito.mock(VirtualMachineTO.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.VIRTUAL_TPM_MODEL, "tpm-tis");
+        details.put(VmDetailConstants.VIRTUAL_TPM_VERSION, "2.0");
+        Mockito.when(virtualMachineTO.getDetails()).thenReturn(details);
+        LibvirtVMDef.TpmDef tpmDef = libvirtComputingResourceSpy.createTpmDef(virtualMachineTO);
+        assertEquals(LibvirtVMDef.TpmDef.TpmModel.TIS, tpmDef.getModel());
+        assertEquals(LibvirtVMDef.TpmDef.TpmVersion.V2_0, tpmDef.getVersion());
+    }
+
+    @Test
+    public void testCreateTpmDefWithInvalidVersion() {
+        VirtualMachineTO virtualMachineTO = Mockito.mock(VirtualMachineTO.class);
+        Map<String, String> details = new HashMap<>();
+        details.put(VmDetailConstants.VIRTUAL_TPM_MODEL, "tpm-crb");
+        details.put(VmDetailConstants.VIRTUAL_TPM_VERSION, "3.0");
+        Mockito.when(virtualMachineTO.getDetails()).thenReturn(details);
+        LibvirtVMDef.TpmDef tpmDef = libvirtComputingResourceSpy.createTpmDef(virtualMachineTO);
+        assertEquals(LibvirtVMDef.TpmDef.TpmModel.CRB, tpmDef.getModel());
+        assertEquals(LibvirtVMDef.TpmDef.TpmVersion.V2_0, tpmDef.getVersion());
     }
 }

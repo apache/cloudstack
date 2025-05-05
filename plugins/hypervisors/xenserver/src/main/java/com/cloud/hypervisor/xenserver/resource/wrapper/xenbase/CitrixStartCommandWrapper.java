@@ -73,7 +73,7 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 for (final VM v : vms) {
                     final VM.Record vRec = v.getRecord(conn);
                     if (vRec.powerState == VmPowerState.HALTED) {
-                        v.destroy(conn);
+                        citrixResourceBase.destroyVm(v, conn, true);
                     } else if (vRec.powerState == VmPowerState.RUNNING) {
                         final String host = vRec.residentOn.getUuid(conn);
                         final String msg = "VM " + vmName + " is runing on host " + host;

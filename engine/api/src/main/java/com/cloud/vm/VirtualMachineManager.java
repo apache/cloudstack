@@ -309,4 +309,8 @@ public interface VirtualMachineManager extends Manager {
 
     Map<Long, Boolean> getDiskOfferingSuitabilityForVm(long vmId, List<Long> diskOfferingIds);
 
+    void checkDeploymentPlan(VirtualMachine virtualMachine, VirtualMachineTemplate template,
+                ServiceOffering serviceOffering, Account systemAccount, DeploymentPlan plan)
+            throws InsufficientServerCapacityException;
+
 }
