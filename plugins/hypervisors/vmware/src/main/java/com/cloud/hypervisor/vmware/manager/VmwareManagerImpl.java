@@ -47,8 +47,6 @@ import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcHostsCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcItems;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcVmsCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
 import org.apache.cloudstack.api.command.admin.zone.ListVsphereStoragePoliciesCmd;
@@ -1117,7 +1115,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         cmdList.add(ListVsphereStoragePoliciesCmd.class);
         cmdList.add(ListVsphereStoragePolicyCompatiblePoolsCmd.class);
         cmdList.add(ListVmwareDcVmsCmd.class);
-        cmdList.add(ListVmwareDcHostsCmd.class);
         return cmdList;
     }
 
@@ -1605,7 +1602,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         }
     }
 
-    private VcenterData getVcenterData(ListVmwareDcItems cmd) {
+    private VcenterData getVcenterData(ListVmwareDcVmsCmd cmd) {
         String vcenter = cmd.getVcenter();
         String datacenterName = cmd.getDatacenterName();
         String username = cmd.getUsername();
@@ -1652,14 +1649,14 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         String datacenterName = vmwareDC.datacenterName;
         String keyword = cmd.getKeyword();
         String esxiHostName = cmd.getHostName();
+        String virtualMachineName = cmd.getVirtualMachineName();
 
         try {
             VmwareContext context = getVmwareContext(vcenter, username, password);
             DatacenterMO dcMo = getDatacenterMO(context, vcenter, datacenterName);
 
-            List<VirtualMachineMO> vms;
-            if (StringUtils.isNotBlank(esxiHostName)) {
-                // List VMs in a specific ESXi Host
+            List<UnmanagedInstanceTO> instances;
+            if (StringUtils.isNotBlank(esxiHostName) && StringUtils.isNotBlank(virtualMachineName)) {
                 ManagedObjectReference hostMor = dcMo.findHost(esxiHostName);
                 if (hostMor == null) {
                     String errorMsg = String.format("Cannot find a host with name %s on vcenter %s", esxiHostName, vcenter);
@@ -1667,15 +1664,13 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                     throw new CloudRuntimeException(errorMsg);
                 }
                 HostMO hostMO = new HostMO(context, hostMor);
-                vms = hostMO.listAllVmsInHost();
+                VirtualMachineMO vmMo = hostMO.findVmOnHyperHost(virtualMachineName);
+                instances = Collections.singletonList(VmwareHelper.getUnmanagedInstance(hostMO, vmMo));
+                // instances = hostMO.listAllVmsInHost(keyword);
             } else {
-                // Long lasting method, not recommended - retrieves all the VMs in a datacenter
-                vms = dcMo.getAllVmsOnDatacenter();
+                instances = dcMo.getAllVmsOnDatacenter(keyword);
             }
-
-            List<UnmanagedInstanceTO> instances = VmwareHelper.getUnmanagedInstancesList(vms);
-            return StringUtils.isBlank(keyword) ? instances :
-                    instances.stream().filter(x -> x.getName().toLowerCase().contains(keyword.toLowerCase())).collect(Collectors.toList());
+            return instances;
         } catch (Exception e) {
             String errorMsg = String.format("Error retrieving VMs from the VMware VC %s datacenter %s: %s",
                     vcenter, datacenterName, e.getMessage());
@@ -1693,25 +1688,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             throw new InvalidParameterValueException(msg);
         }
         return dcMo;
-    }
-
-    @Override
-    public List<HostMO> listHostsInDatacenter(ListVmwareDcHostsCmd cmd) {
-        VcenterData vmwareDC = getVcenterData(cmd);
-        String vcenter = vmwareDC.vcenter;
-        String username = vmwareDC.username;
-        String password = vmwareDC.password;
-        String datacenterName = vmwareDC.datacenterName;
-        try {
-            VmwareContext context = getVmwareContext(vcenter, username, password);
-            DatacenterMO dcMo = getDatacenterMO(context, vcenter, datacenterName);
-            return dcMo.getAllHostsOnDatacenter();
-        } catch (Exception e) {
-            String errorMsg = String.format("Error retrieving stopped VMs from the VMware VC %s datacenter %s: %s",
-                    vcenter, datacenterName, e.getMessage());
-            s_logger.error(errorMsg, e);
-            throw new CloudRuntimeException(errorMsg);
-        }
     }
 
     @Override

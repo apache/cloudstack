@@ -795,34 +795,6 @@ public class VmwareHelper {
         return host;
     }
 
-    public static List<UnmanagedInstanceTO> getUnmanagedInstancesList(List<VirtualMachineMO> vmMos) {
-        List<UnmanagedInstanceTO> vms = new ArrayList<>();
-        int incorrectVmsCount = 0;
-        for (VirtualMachineMO vmMo : vmMos) {
-
-            String vmName = "";
-            try {
-                vmName = vmMo.getName();
-            } catch (Exception e) {
-                incorrectVmsCount++;
-                continue;
-            }
-
-            try {
-                HostMO hostMO = vmMo.getRunningHost();
-                vms.add(VmwareHelper.getUnmanagedInstance(hostMO, vmMo));
-            } catch (Exception e) {
-                s_logger.debug(String.format("Error getting unmanaged instance %s, excluding it", vmName), e);
-            }
-        }
-        if (incorrectVmsCount > 0) {
-            s_logger.warn(String.format("Retrieving %s unmanaged VMs from the list of %s VMs on vCenter," +
-                    "information from %s VMs could not be properly obtained and were excluded from the returned list",
-                    vms.size(), vmMos.size(), incorrectVmsCount));
-        }
-        return vms;
-    }
-
     public static UnmanagedInstanceTO getUnmanagedInstance(VmwareHypervisorHost hyperHost, VirtualMachineMO vmMo) {
         UnmanagedInstanceTO instance = null;
         try {

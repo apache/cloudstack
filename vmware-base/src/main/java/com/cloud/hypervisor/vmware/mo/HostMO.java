@@ -582,27 +582,6 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         }
     }
 
-    public List<VirtualMachineMO> listAllVmsInHost() throws Exception {
-        List<VirtualMachineMO> vms = new ArrayList<>();
-        ObjectContent[] ocs = getVmPropertiesOnHyperHost(new String[] {"name"});
-        if (ocs != null) {
-            for (ObjectContent oc : ocs) {
-                ManagedObjectReference mor = oc.getObj();
-                if (mor != null) {
-                    VirtualMachineMO vmMo = new VirtualMachineMO(_context, mor);
-                    try {
-                        if (!vmMo.isTemplate()) {
-                            vms.add(vmMo);
-                        }
-                    } catch (Exception e) {
-                        s_logger.debug(String.format("Unexpected error checking instance %s, excluding it: %s", vmMo.getVmName(), e.getMessage()), e);
-                    }
-                }
-            }
-        }
-        return vms;
-    }
-
     private void loadVmCache() throws Exception {
         if (s_logger.isDebugEnabled())
             s_logger.debug("load VM cache on host");

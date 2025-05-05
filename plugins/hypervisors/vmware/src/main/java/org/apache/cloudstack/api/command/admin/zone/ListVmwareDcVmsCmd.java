@@ -45,7 +45,7 @@ import java.util.List;
 @APICommand(name = "listVmwareDcVms", responseObject = UnmanagedInstanceResponse.class,
         description = "Lists the VMs in a VMware Datacenter",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListVmwareDcVmsCmd extends BaseListCmd implements ListVmwareDcItems {
+public class ListVmwareDcVmsCmd extends BaseListCmd {
 
     @Inject
     public VmwareDatacenterService _vmwareDatacenterService;
@@ -64,14 +64,17 @@ public class ListVmwareDcVmsCmd extends BaseListCmd implements ListVmwareDcItems
     @Parameter(name = ApiConstants.DATACENTER_NAME, type = CommandType.STRING, description = "Name of VMware datacenter.")
     private String datacenterName;
 
-    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, description = "Get only the VMs from the specified host.")
-    private String hostName;
-
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "The Username required to connect to resource.")
     private String username;
 
     @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "The password for specified username.")
     private String password;
+
+    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, description = "Name of the host on vCenter. Must be set along with the virtualmachinename parameter")
+    private String hostName;
+
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_NAME, type = CommandType.STRING, description = "Name of the VM on vCenter. Must be set along with the hostname parameter")
+    private String virtualMachineName;
 
     public String getVcenter() {
         return vcenter;
@@ -95,6 +98,10 @@ public class ListVmwareDcVmsCmd extends BaseListCmd implements ListVmwareDcItems
 
     public Long getExistingVcenterId() {
         return existingVcenterId;
+    }
+
+    public String getVirtualMachineName() {
+        return virtualMachineName;
     }
 
     @Override
@@ -131,6 +138,11 @@ public class ListVmwareDcVmsCmd extends BaseListCmd implements ListVmwareDcItems
         if (existingVcenterId == null && StringUtils.isAnyBlank(vcenter, datacenterName, username, password)) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Please set all the information for a vCenter IP/Name, datacenter, username and password");
+        }
+        if ((StringUtils.isNotBlank(virtualMachineName) && StringUtils.isBlank(hostName)) ||
+                (StringUtils.isBlank(virtualMachineName) && StringUtils.isNotBlank(hostName))) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Please set the hostname parameter along with the virtualmachinename parameter");
         }
     }
 
