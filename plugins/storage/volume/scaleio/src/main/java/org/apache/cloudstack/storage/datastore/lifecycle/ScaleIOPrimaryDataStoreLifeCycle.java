@@ -18,35 +18,6 @@
  */
 package org.apache.cloudstack.storage.datastore.lifecycle;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
-import com.cloud.utils.StringUtils;
-import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
-import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.storage.datastore.api.StoragePoolStatistics;
-import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
-import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientConnectionPool;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
-import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
-import org.apache.commons.collections.CollectionUtils;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.capacity.CapacityManager;
@@ -63,9 +34,41 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolAutomation;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.template.TemplateManager;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
+import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreParameters;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.storage.datastore.api.StoragePoolStatistics;
+import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
+import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClientConnectionPool;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.manager.ScaleIOSDCManager;
+import org.apache.cloudstack.storage.datastore.manager.ScaleIOSDCManagerImpl;
+import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
+import org.apache.cloudstack.storage.volume.datastore.PrimaryDataStoreHelper;
+import org.apache.commons.collections.CollectionUtils;
+
+import javax.inject.Inject;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCycleImpl implements PrimaryDataStoreLifeCycle {
     @Inject
@@ -94,8 +97,10 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
     private TemplateManager templateMgr;
     @Inject
     private AgentManager agentMgr;
+    private ScaleIOSDCManager sdcManager;
 
     public ScaleIOPrimaryDataStoreLifeCycle() {
+        sdcManager = new ScaleIOSDCManagerImpl();
     }
 
     private org.apache.cloudstack.storage.datastore.api.StoragePool findStoragePool(String url, String username, String password, String storagePoolName) {
@@ -112,6 +117,8 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
 
                     String systemId = client.getSystemId(pool.getProtectionDomainId());
                     pool.setSystemId(systemId);
+                    List<String> mdmAddresses = client.getMdmAddresses();
+                    pool.setMdmAddresses(mdmAddresses);
                     return pool;
                 }
             }
@@ -239,6 +246,7 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
         details.put(ScaleIOGatewayClient.GATEWAY_API_PASSWORD, DBEncryptionUtil.encrypt(gatewayPassword));
         details.put(ScaleIOGatewayClient.STORAGE_POOL_NAME, storagePoolName);
         details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, scaleIOPool.getSystemId());
+        details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, org.apache.commons.lang3.StringUtils.join(scaleIOPool.getMdmAddresses(), ","));
         parameters.setDetails(details);
 
         return dataStoreHelper.createPrimaryDataStore(parameters);
@@ -288,15 +296,43 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
 
     @Override
     public boolean maintain(DataStore store) {
-        storagePoolAutomation.maintain(store);
+        Map<String,String> details = new HashMap<>();
+        StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+        if (systemIdDetail != null) {
+            details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemIdDetail.getValue());
+            StoragePoolDetailVO mdmsDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_MDMS);
+            if (mdmsDetail != null) {
+                details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdmsDetail.getValue());
+                details.put(ScaleIOSDCManager.ConnectOnDemand.key(), "false");
+            }
+        }
+
+        storagePoolAutomation.maintain(store, details);
         dataStoreHelper.maintain(store);
         return true;
     }
 
     @Override
     public boolean cancelMaintain(DataStore store) {
+        Map<String,String> details = new HashMap<>();
+        StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+        if (systemIdDetail != null) {
+            details.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemIdDetail.getValue());
+            sdcManager = ComponentContext.inject(sdcManager);
+            if (sdcManager.areSDCConnectionsWithinLimit(store.getId())) {
+                StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(store.getId());
+                if (storagePoolVO != null) {
+                    details.put(ScaleIOSDCManager.ConnectOnDemand.key(), String.valueOf(ScaleIOSDCManager.ConnectOnDemand.valueIn(storagePoolVO.getDataCenterId())));
+                    StoragePoolDetailVO mdmsDetail = storagePoolDetailsDao.findDetail(store.getId(), ScaleIOGatewayClient.STORAGE_POOL_MDMS);
+                    if (mdmsDetail != null) {
+                        details.put(ScaleIOGatewayClient.STORAGE_POOL_MDMS, mdmsDetail.getValue());
+                    }
+                }
+            }
+        }
+
         dataStoreHelper.cancelMaintain(store);
-        storagePoolAutomation.cancelMaintain(store);
+        storagePoolAutomation.cancelMaintain(store, details);
         return true;
     }
 
@@ -314,7 +350,12 @@ public class ScaleIOPrimaryDataStoreLifeCycle extends BasePrimaryDataStoreLifeCy
     public boolean deleteDataStore(DataStore dataStore) {
         if (cleanupDatastore(dataStore)) {
             ScaleIOGatewayClientConnectionPool.getInstance().removeClient(dataStore);
-            return dataStoreHelper.deletePrimaryDataStore(dataStore);
+
+            boolean isDeleted = dataStoreHelper.deletePrimaryDataStore(dataStore);
+            if (isDeleted) {
+                primaryDataStoreDao.removeDetails(dataStore.getId());
+            }
+            return isDeleted;
         }
         return false;
     }

@@ -2924,6 +2924,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
+    public boolean canDisconnectHostFromStoragePool(Host host, StoragePool pool) {
+        if (pool == null || !pool.isManaged()) {
+            return true;
+        }
+
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+        return storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver)storeDriver).canDisconnectHostFromStoragePool(host, pool);
+    }
+
+    @Override
     @DB
     public Host getHost(long hostId) {
         return _hostDao.findById(hostId);

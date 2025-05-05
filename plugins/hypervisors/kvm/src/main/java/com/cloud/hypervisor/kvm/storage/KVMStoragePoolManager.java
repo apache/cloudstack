@@ -408,12 +408,26 @@ public class KVMStoragePoolManager {
 
     public boolean deleteStoragePool(StoragePoolType type, String uuid) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
-        _haMonitor.removeStoragePool(uuid);
-        adaptor.deleteStoragePool(uuid);
+        if (type == StoragePoolType.NetworkFilesystem) {
+            _haMonitor.removeStoragePool(uuid);
+        }
+        boolean deleteStatus = adaptor.deleteStoragePool(uuid);;
         synchronized (_storagePools) {
             _storagePools.remove(uuid);
         }
-        return true;
+        return deleteStatus;
+    }
+
+    public boolean deleteStoragePool(StoragePoolType type, String uuid, Map<String, String> details) {
+        StorageAdaptor adaptor = getStorageAdaptor(type);
+        if (type == StoragePoolType.NetworkFilesystem) {
+            _haMonitor.removeStoragePool(uuid);
+        }
+        boolean deleteStatus = adaptor.deleteStoragePool(uuid, details);
+        synchronized (_storagePools) {
+            _storagePools.remove(uuid);
+        }
+        return deleteStatus;
     }
 
     public KVMPhysicalDisk createDiskFromTemplate(KVMPhysicalDisk template, String name, Storage.ProvisioningType provisioningType,
@@ -477,11 +491,11 @@ public class KVMStoragePoolManager {
 
     public Ternary<Boolean, Map<String, String>, String> prepareStorageClient(StoragePoolType type, String uuid, Map<String, String> details) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
-        return adaptor.prepareStorageClient(type, uuid, details);
+        return adaptor.prepareStorageClient(uuid, details);
     }
 
-    public Pair<Boolean, String> unprepareStorageClient(StoragePoolType type, String uuid) {
+    public Pair<Boolean, String> unprepareStorageClient(StoragePoolType type, String uuid, Map<String, String> details) {
         StorageAdaptor adaptor = getStorageAdaptor(type);
-        return adaptor.unprepareStorageClient(type, uuid);
+        return adaptor.unprepareStorageClient(uuid, details);
     }
 }
