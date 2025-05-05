@@ -18,19 +18,20 @@
 
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (cleanup_resources)
-from marvin.lib.base import (Account, ServiceOffering, DiskOffering, VirtualMachine, BackupOffering, Configurations, Backup, Volume)
+from marvin.lib.base import (Account, ServiceOffering, DiskOffering, VirtualMachine, BackupOffering,
+                             BackupRepository, Backup, Configurations, Volume, StoragePool)
 from marvin.lib.common import (get_domain, get_zone, get_template)
 from nose.plugins.attrib import attr
 from marvin.codes import FAILED
 import time
 
-class TestDummyBackupAndRecovery(cloudstackTestCase):
+class TestNASBackupAndRecovery(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
         # Setup
 
-        cls.testClient = super(TestDummyBackupAndRecovery, cls).getClsTestClient()
+        cls.testClient = super(TestNASBackupAndRecovery, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
         cls.services = cls.testClient.getParsedTestDataConfig()
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -44,7 +45,14 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
         cls.services["small"]["template"] = cls.template.id
         cls._cleanup = []
 
-        # Check backup configuration values, set them to enable the dummy provider
+        if cls.hypervisor.lower() != 'kvm':
+            cls.skipTest(cls, reason="Test can be run only on KVM hypervisor")
+
+        cls.storage_pool = StoragePool.list(cls.api_client)[0]
+        if cls.storage_pool.type.lower() != 'networkfilesystem':
+            cls.skipTest(cls, reason="Test can be run only if the primary storage is of type NFS")
+
+        # Check backup configuration values, set them to enable the nas provider
         backup_enabled_cfg = Configurations.list(cls.api_client, name='backup.framework.enabled')
         backup_provider_cfg = Configurations.list(cls.api_client, name='backup.framework.provider.plugin')
         cls.backup_enabled = backup_enabled_cfg[0].value
@@ -52,27 +60,30 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
 
         if cls.backup_enabled == "false":
             cls.skipTest(cls, reason="Test can be run only if the config backup.framework.enabled is true")
-        if cls.backup_provider != "dummy":
-            Configurations.update(cls.api_client, 'backup.framework.provider.plugin', value='dummy')
-
-        if cls.hypervisor.lower() != 'simulator':
-            return
+        if cls.backup_provider != "nas":
+            Configurations.update(cls.api_client, 'backup.framework.provider.plugin', value='nas')
 
         cls.account = Account.create(cls.api_client, cls.services["account"], domainid=cls.domain.id)
+
+        cls._cleanup = [cls.account]
+
+        # Create NAS backup repository and offering. Use the same directory as the storage pool
+        cls.backup_repository = BackupRepository.add(cls.api_client, zoneid=cls.zone.id, name="Nas",
+                                                     address=cls.storage_pool.ipaddress + ":" + cls.storage_pool.path,
+                                                     provider="nas", type="nfs",)
+        cls._cleanup.append(cls.backup_repository)
+        cls.provider_offerings = BackupOffering.listExternal(cls.api_client, cls.zone.id)
+        cls.backup_offering = BackupOffering.importExisting(cls.api_client, cls.zone.id, cls.provider_offerings[0].externalid,
+                                                            cls.provider_offerings[0].name, cls.provider_offerings[0].description)
+        cls._cleanup.append(cls.backup_offering)
+
         cls.offering = ServiceOffering.create(cls.api_client,cls.services["service_offerings"]["small"])
         cls.diskoffering = DiskOffering.create(cls.api_client, cls.services["disk_offering"])
+        cls._cleanup.extend([cls.offering, cls.diskoffering, cls.account])
         cls.vm = VirtualMachine.create(cls.api_client, cls.services["small"], accountid=cls.account.name,
                                        domainid=cls.account.domainid, serviceofferingid=cls.offering.id,
                                        diskofferingid=cls.diskoffering.id, mode=cls.services["mode"])
-        cls._cleanup = [cls.offering, cls.diskoffering, cls.account]
 
-        # Import a dummy backup offering to use on tests
-
-        cls.provider_offerings = BackupOffering.listExternal(cls.api_client, cls.zone.id)
-        cls.debug("Importing backup offering %s - %s" % (cls.provider_offerings[0].externalid, cls.provider_offerings[0].name))
-        cls.backup_offering = BackupOffering.importExisting(cls.api_client, cls.zone.id, cls.provider_offerings[0].externalid,
-                                                   cls.provider_offerings[0].name, cls.provider_offerings[0].description)
-        cls._cleanup.append(cls.backup_offering)
 
     @classmethod
     def tearDownClass(cls):
@@ -80,8 +91,7 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
             # Cleanup resources used
             cleanup_resources(cls.api_client, cls._cleanup)
 
-            # Restore original backup framework values values
-            if cls.backup_provider != "dummy":
+            if cls.backup_provider != "nas":
                 Configurations.update(cls.api_client, 'backup.framework.provider.plugin', value=cls.backup_provider)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -89,7 +99,7 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        if self.hypervisor.lower() != 'simulator':
+        if self.hypervisor.lower() != 'kvm':
             raise self.skipTest("Skipping test cases which must only run for Simulator")
         self.cleanup = []
 
@@ -99,36 +109,7 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
 
-    @attr(tags=["advanced", "backup"], required_hardware="false")
-    def test_import_backup_offering(self):
-        """
-        Import provider backup offering from Dummy Backup and Recovery Provider
-        """
-
-        # Import backup offering
-        provider_offering = self.provider_offerings[1]
-        self.debug("Importing backup offering %s - %s" % (provider_offering.externalid, provider_offering.name))
-        offering = BackupOffering.importExisting(self.apiclient, self.zone.id, provider_offering.externalid,
-                                             provider_offering.name, provider_offering.description)
-
-        # Verify offering is listed
-        imported_offering = BackupOffering.listByZone(self.apiclient, self.zone.id)
-        self.assertIsInstance(imported_offering, list, "List Backup Offerings should return a valid response")
-        self.assertNotEqual(len(imported_offering), 0, "Check if the list API returns a non-empty response")
-        matching_offerings = [x for x in imported_offering if x.id == offering.id]
-        self.assertNotEqual(len(matching_offerings), 0, "Check if there is a matching offering")
-
-        # Delete backup offering
-        self.debug("Deleting backup offering %s" % offering.id)
-        offering.delete(self.apiclient)
-
-        #  Verify offering is not listed
-        imported_offering = BackupOffering.listByZone(self.apiclient, self.zone.id)
-        self.assertIsInstance(imported_offering, list, "List Backup Offerings should return a valid response")
-        matching_offerings = [x for x in imported_offering if x.id == offering.id]
-        self.assertEqual(len(matching_offerings), 0, "Check there is not a matching offering")
-
-    @attr(tags=["advanced", "backup"], required_hardware="false")
+    @attr(tags=["advanced", "backup"], required_hardware="true")
     def test_vm_backup_lifecycle(self):
         """
         Test VM backup lifecycle
@@ -157,20 +138,27 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
         # Remove VM from offering
         self.backup_offering.removeOffering(self.apiclient, self.vm.id)
 
-    @attr(tags=["advanced", "backup"], required_hardware="false")
+    @attr(tags=["advanced", "backup"], required_hardware="true")
     def test_vm_backup_create_vm_from_backup(self):
         """
         Test creating a new VM from a backup
         """
         self.backup_offering.assignOffering(self.apiclient, self.vm.id)
 
+        # Create a file and take backup
+        try:
+            ssh_client_vm = self.vm.get_ssh_client(reconnect=True)
+            ssh_client_vm.execute("touch test_backup_and_recovery.txt")
+        except Exception as err:
+            self.fail("SSH failed for Virtual machine: %s due to %s" % (self.vm.ipaddress, err))
+
+        time.sleep(5)
+
         Backup.create(self.apiclient, self.vm.id, "backup1")
         Backup.create(self.apiclient, self.vm.id, "backup2")
 
         # Verify backup is created for the VM
         backups = Backup.list(self.apiclient, self.vm.id)
-        #self.cleanup.extend(backups)
-        #self.cleanup.append(backups[0])
         self.assertEqual(len(backups), 2, "There should exist two backups for the VM")
 
         # Remove VM from offering
@@ -216,6 +204,15 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
         )
         self.assertTrue(isinstance(volumes, list), "List volumes should return a valid list")
         self.assertEqual(2, len(volumes), "The new VM should have 2 volumes (ROOT + DATADISK)")
+
+        # Verify that the file is present in the Instance created from backup
+        try:
+            ssh_client_new_vm = new_vm.get_ssh_client(reconnect=True)
+            result = ssh_client_new_vm.execute("ls test_backup_and_recovery.txt")
+            self.assertEqual(result[0], "test_backup_and_recovery.txt",
+                             "Instance created from Backup should have the same file as the backup.")
+        except Exception as err:
+            self.fail("SSH failed for Virtual machine: %s due to %s" % (self.vm.ipaddress, err))
 
         # Delete backups
         Backup.delete(self.apiclient, backups[0].id)

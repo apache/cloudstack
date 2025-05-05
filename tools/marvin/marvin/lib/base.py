@@ -517,6 +517,43 @@ class VirtualMachine:
         virtual_machine.public_ip = nat_rule.ipaddress
 
     @classmethod
+    def program_ssh_access(
+            cls, apiclient, services, mode, networkids, virtual_machine, allow_egress=False, vpcid=None):
+        """
+        Program SSH access to the VM
+        """
+        # program ssh access over NAT via PF
+        retries = 5
+        interval = 30
+        while retries > 0:
+            try:
+                if mode.lower() == 'advanced':
+                    cls.access_ssh_over_nat(
+                        apiclient,
+                        services,
+                        virtual_machine,
+                        allow_egress=allow_egress,
+                        networkid=networkids[0] if networkids else None,
+                        vpcid=vpcid)
+                elif mode.lower() == 'basic':
+                    if virtual_machine.publicip is not None:
+                        # EIP/ELB (netscaler) enabled zone
+                        vm_ssh_ip = virtual_machine.publicip
+                    else:
+                        # regular basic zone with security group
+                        vm_ssh_ip = virtual_machine.nic[0].ipaddress
+                    virtual_machine.ssh_ip = vm_ssh_ip
+                    virtual_machine.public_ip = vm_ssh_ip
+                break
+            except Exception as e:
+                if retries >= 0:
+                    retries = retries - 1
+                    time.sleep(interval)
+                    continue
+                raise Exception(
+                    "The following exception appeared while programming ssh access - %s" % e)
+
+    @classmethod
     def create(cls, apiclient, services, templateid=None, accountid=None,
                domainid=None, zoneid=None, networkids=None,
                serviceofferingid=None, securitygroupids=None,
@@ -702,36 +739,7 @@ class VirtualMachine:
             virtual_machine.public_ip = virtual_machine.nic[0].ipaddress
             return VirtualMachine(virtual_machine.__dict__, services)
 
-        # program ssh access over NAT via PF
-        retries = 5
-        interval = 30
-        while retries > 0:
-            time.sleep(interval)
-            try:
-                if mode.lower() == 'advanced':
-                    cls.access_ssh_over_nat(
-                        apiclient,
-                        services,
-                        virtual_machine,
-                        allow_egress=allow_egress,
-                        networkid=cmd.networkids[0] if cmd.networkids else None,
-                        vpcid=vpcid)
-                elif mode.lower() == 'basic':
-                    if virtual_machine.publicip is not None:
-                        # EIP/ELB (netscaler) enabled zone
-                        vm_ssh_ip = virtual_machine.publicip
-                    else:
-                        # regular basic zone with security group
-                        vm_ssh_ip = virtual_machine.nic[0].ipaddress
-                    virtual_machine.ssh_ip = vm_ssh_ip
-                    virtual_machine.public_ip = vm_ssh_ip
-                break
-            except Exception as e:
-                if retries >= 0:
-                    retries = retries - 1
-                    continue
-                raise Exception(
-                    "The following exception appeared while programming ssh access - %s" % e)
+        cls.program_ssh_access(apiclient, services, mode, cmd.networkids, virtual_machine, allow_egress, vpcid)
 
         return VirtualMachine(virtual_machine.__dict__, services)
 
@@ -6113,11 +6121,13 @@ class Backup:
         self.__dict__.update(items)
 
     @classmethod
-    def create(self, apiclient, vmid):
+    def create(cls, apiclient, vmid, name=None):
         """Create VM backup"""
 
         cmd = createBackup.createBackupCmd()
         cmd.virtualmachineid = vmid
+        if name:
+            cmd.name = name
         return Backup(apiclient.createBackup(cmd).__dict__)
 
     @classmethod
@@ -6131,11 +6141,12 @@ class Backup:
         return (apiclient.deleteBackup(cmd))
 
     @classmethod
-    def list(self, apiclient, vmid):
+    def list(self, apiclient, vmid=None):
         """List VM backups"""
 
         cmd = listBackups.listBackupsCmd()
-        cmd.virtualmachineid = vmid
+        if vmid:
+            cmd.virtualmachineid = vmid
         cmd.listall = True
         return (apiclient.listBackups(cmd))
 
@@ -6157,6 +6168,21 @@ class Backup:
         cmd.virtualmachineid = virtualmachineid
         return (apiclient.restoreVolumeFromBackupAndAttachToVM(cmd))
 
+    @classmethod
+    def createVMFromBackup(cls, apiclient, services, mode, backupid, accountname, domainid, zoneid, vmname=None):
+        """Create new VM from backup
+        """
+        cmd = createVMFromBackup.createVMFromBackupCmd()
+        cmd.backupid = backupid
+        cmd.account = accountname
+        cmd.domainid = domainid
+        cmd.zoneid = zoneid
+        if vmname:
+            cmd.name = vmname
+        response = apiclient.createVMFromBackup(cmd)
+        virtual_machine = VirtualMachine(response.__dict__, [])
+        VirtualMachine.program_ssh_access(apiclient, services, mode, cmd.networkids, virtual_machine)
+        return virtual_machine
 
 class BackupSchedule:
 
@@ -6198,6 +6224,37 @@ class BackupSchedule:
         [setattr(cmd, k, v) for k, v in list(kwargs.items())]
         return (apiclient.updateBackupSchedule(cmd))
 
+
+class BackupRepository:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def add(cls, apiclient, zoneid, name, address, provider, type):
+        """Add backup repository"""
+
+        cmd = addBackupRepository.addBackupRepositoryCmd()
+        cmd.zoneid = zoneid
+        cmd.name = name
+        cmd.address = address
+        cmd.provider = provider
+        cmd.type = type
+        response = apiclient.addBackupRepository(cmd)
+        return BackupRepository(response.__dict__)
+
+    def delete(self, apiclient):
+        """Delete backup repository"""
+
+        cmd = deleteBackupRepository.deleteBackupRepositoryCmd()
+        cmd.id = self.id
+        return (apiclient.deleteBackupRepository(cmd))
+
+    def list(self, apiclient):
+        """List backup repository"""
+
+        cmd = listBackupRepositories.listBackupRepositoriesCmd()
+        return (apiclient.listBackupRepository(cmd))
 
 class ProjectRole:
 
