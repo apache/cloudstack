@@ -67,7 +67,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.host.dao.HostDetailsDao;
 
@@ -93,7 +93,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     @Inject
     protected UserVmDao vmDao;
     @Inject
-    protected UserVmDetailsDao vmDetailsDao;
+    protected VMInstanceDetailsDao vmDetailsDao;
     @Inject
     protected VMInstanceDao vmInstanceDao;
     @Inject

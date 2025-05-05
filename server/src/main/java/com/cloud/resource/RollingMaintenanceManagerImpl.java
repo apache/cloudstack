@@ -69,12 +69,12 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class RollingMaintenanceManagerImpl extends ManagerBase implements RollingMaintenanceManager {
@@ -90,7 +90,7 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
     @Inject
     private VMInstanceDao vmInstanceDao;
     @Inject
-    protected UserVmDetailsDao userVmDetailsDao;
+    protected VMInstanceDetailsDao vmInstanceDetailsDao;
     @Inject
     private ServiceOfferingDao serviceOfferingDao;
     @Inject
@@ -689,12 +689,12 @@ public class RollingMaintenanceManagerImpl extends ManagerBase implements Rollin
             return new Ternary<>(cpu, speed, ramSize);
         }
 
-        List<UserVmDetailVO> vmDetails = userVmDetailsDao.listDetails(runningVM.getId());
+        List<VMInstanceDetailVO> vmDetails = vmInstanceDetailsDao.listDetails(runningVM.getId());
         if (CollectionUtils.isEmpty(vmDetails)) {
             return new Ternary<>(cpu, speed, ramSize);
         }
 
-        for (UserVmDetailVO vmDetail : vmDetails) {
+        for (VMInstanceDetailVO vmDetail : vmDetails) {
             if (StringUtils.isBlank(vmDetail.getName()) || StringUtils.isBlank(vmDetail.getValue())) {
                 continue;
             }

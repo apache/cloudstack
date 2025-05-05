@@ -42,10 +42,11 @@ import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
+
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -133,7 +134,7 @@ public class ManagementServerImplTest {
     ManagementServerImpl spy = new ManagementServerImpl();
 
     @Mock
-    UserVmDetailsDao userVmDetailsDao;
+    VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Mock
     HostDetailsDao hostDetailsDao;
@@ -158,7 +159,7 @@ public class ManagementServerImplTest {
         spy.templateDao = _templateDao;
         spy._userVmDao = _userVmDao;
         spy.annotationDao = annotationDao;
-        spy._UserVmDetailsDao = userVmDetailsDao;
+        spy._vmInstanceDetailsDao = vmInstanceDetailsDao;
         spy._detailsDao = hostDetailsDao;
         spy.userDataManager = userDataManager;
         spy._configDao = configDao;
@@ -574,10 +575,10 @@ public class ManagementServerImplTest {
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         Mockito.when(vm.getId()).thenReturn(1L);
         if (uefiValue == null) {
-            Mockito.when(userVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString())).thenReturn(null);
+            Mockito.when(vmInstanceDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString())).thenReturn(null);
         } else {
-            UserVmDetailVO detail = new UserVmDetailVO(vm.getId(), ApiConstants.BootType.UEFI.toString(), uefiValue, true);
-            Mockito.when(userVmDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString())).thenReturn(detail);
+            VMInstanceDetailVO detail = new VMInstanceDetailVO(vm.getId(), ApiConstants.BootType.UEFI.toString(), uefiValue, true);
+            Mockito.when(vmInstanceDetailsDao.findDetail(vm.getId(), ApiConstants.BootType.UEFI.toString())).thenReturn(detail);
             Mockito.when(hostDetailsDao.findByName(Host.HOST_UEFI_ENABLE)).thenReturn(new ArrayList<>(List.of(new DetailVO(1l, Host.HOST_UEFI_ENABLE, "true"), new DetailVO(2l, Host.HOST_UEFI_ENABLE, "false"))));
         }
         return vm;

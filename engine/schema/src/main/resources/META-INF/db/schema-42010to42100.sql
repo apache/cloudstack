@@ -60,3 +60,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`reconcile_commands` (
     INDEX `i_reconcile_command__host_id`(`host_id`),
     CONSTRAINT `fk_reconcile_command__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Rename user_vm_details to vm_instance_details
+ALTER TABLE `cloud`.`user_vm_details` RENAME TO `cloud`.`vm_instance_details`;
+ALTER TABLE `cloud`.`vm_instance_details` DROP FOREIGN KEY `fk_user_vm_details__vm_id`;
+ALTER TABLE `cloud`.`vm_instance_details` ADD CONSTRAINT `fk_vm_instance_details__vm_id` FOREIGN KEY (vm_id) REFERENCES vm_instance(id) ON DELETE CASCADE;

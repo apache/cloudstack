@@ -84,14 +84,14 @@ import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
-import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.VMInstanceDetailVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 public class ConfigDriveNetworkElement extends AdapterBase implements NetworkElement,
         UserDataServiceProvider, DhcpServiceProvider, DnsServiceProvider,
@@ -104,7 +104,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     @Inject
     UserVmDao _userVmDao;
     @Inject
-    UserVmDetailsDao _userVmDetailsDao;
+    VMInstanceDetailsDao _vmInstanceDetailsDao;
     @Inject
     ConfigurationManager _configMgr;
     @Inject
@@ -224,7 +224,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     }
 
     private String getSshKey(VirtualMachineProfile profile) {
-        final UserVmDetailVO vmDetailSshKey = _userVmDetailsDao.findDetail(profile.getId(), VmDetailConstants.SSH_PUBLIC_KEY);
+        final VMInstanceDetailVO vmDetailSshKey = _vmInstanceDetailsDao.findDetail(profile.getId(), VmDetailConstants.SSH_PUBLIC_KEY);
         return (vmDetailSshKey!=null ? vmDetailSshKey.getValue() : null);
     }
 
@@ -299,7 +299,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         final String password_encrypted = DBEncryptionUtil.encrypt(password);
         final UserVmVO userVmVO = _userVmDao.findById(vm.getId());
 
-        _userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.PASSWORD,  password_encrypted, false);
+        _vmInstanceDetailsDao.addDetail(vm.getId(), VmDetailConstants.PASSWORD,  password_encrypted, false);
 
         userVmVO.setUpdateParameters(true);
         _userVmDao.update(userVmVO.getId(), userVmVO);
@@ -530,7 +530,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     }
 
     private Location getConfigDriveLocation(long vmId) {
-        final UserVmDetailVO vmDetailConfigDriveLocation = _userVmDetailsDao.findDetail(vmId, VmDetailConstants.CONFIG_DRIVE_LOCATION);
+        final VMInstanceDetailVO vmDetailConfigDriveLocation = _vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.CONFIG_DRIVE_LOCATION);
         if (vmDetailConfigDriveLocation != null) {
             if (Location.HOST.toString().equalsIgnoreCase(vmDetailConfigDriveLocation.getValue())) {
                 return Location.HOST;
@@ -544,7 +544,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     }
 
     private boolean isConfigDriveIsoOnHostCache(long vmId) {
-        final UserVmDetailVO vmDetailConfigDriveLocation = _userVmDetailsDao.findDetail(vmId, VmDetailConstants.CONFIG_DRIVE_LOCATION);
+        final VMInstanceDetailVO vmDetailConfigDriveLocation = _vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.CONFIG_DRIVE_LOCATION);
         if (vmDetailConfigDriveLocation != null && Location.HOST.toString().equalsIgnoreCase(vmDetailConfigDriveLocation.getValue())) {
             return true;
         }
@@ -552,7 +552,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     }
 
     private boolean isLastConfigDriveIsoOnHostCache(long vmId) {
-        final UserVmDetailVO vmDetailLastConfigDriveLocation = _userVmDetailsDao.findDetail(vmId, VmDetailConstants.LAST_CONFIG_DRIVE_LOCATION);
+        final VMInstanceDetailVO vmDetailLastConfigDriveLocation = _vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.LAST_CONFIG_DRIVE_LOCATION);
         if (vmDetailLastConfigDriveLocation == null) {
             return isConfigDriveIsoOnHostCache(vmId);
         }
@@ -681,15 +681,15 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     }
 
     private void updateConfigDriveLocationInVMDetails(long vmId, NetworkElement.Location configDriveLocation) {
-        final UserVmDetailVO vmDetailConfigDriveLocation = _userVmDetailsDao.findDetail(vmId, VmDetailConstants.CONFIG_DRIVE_LOCATION);
+        final VMInstanceDetailVO vmDetailConfigDriveLocation = _vmInstanceDetailsDao.findDetail(vmId, VmDetailConstants.CONFIG_DRIVE_LOCATION);
         if (vmDetailConfigDriveLocation != null) {
             if (!configDriveLocation.toString().equalsIgnoreCase(vmDetailConfigDriveLocation.getValue())) {
-                _userVmDetailsDao.addDetail(vmId, VmDetailConstants.LAST_CONFIG_DRIVE_LOCATION, vmDetailConfigDriveLocation.getValue(), false);
+                _vmInstanceDetailsDao.addDetail(vmId, VmDetailConstants.LAST_CONFIG_DRIVE_LOCATION, vmDetailConfigDriveLocation.getValue(), false);
             } else {
-                _userVmDetailsDao.removeDetail(vmId, VmDetailConstants.LAST_CONFIG_DRIVE_LOCATION);
+                _vmInstanceDetailsDao.removeDetail(vmId, VmDetailConstants.LAST_CONFIG_DRIVE_LOCATION);
             }
         }
-        _userVmDetailsDao.addDetail(vmId, VmDetailConstants.CONFIG_DRIVE_LOCATION, configDriveLocation.toString(), false);
+        _vmInstanceDetailsDao.addDetail(vmId, VmDetailConstants.CONFIG_DRIVE_LOCATION, configDriveLocation.toString(), false);
     }
 
     private Map<String, String> getVMCustomUserdataParamMap(long vmId) {
