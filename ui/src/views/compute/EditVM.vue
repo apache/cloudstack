@@ -135,7 +135,7 @@
           </a-form-item>
         </a-col>
         <a-col :md="12" :lg="12">
-          <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction" v-if="form.leaseduration > 0">
+          <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction">
             <template #label>
               <tooltip-label :title="$t('label.leaseexpiryaction')"  />
             </template>
@@ -398,13 +398,12 @@ export default {
         if (values.userdata && values.userdata.length > 0) {
           params.userdata = this.$toBase64AndURIEncoded(values.userdata)
         }
-        if (values.leaseduration && values.leaseduration !== undefined) {
+        if (values.leaseduration !== undefined && (values.leaseduration === -1 || values.leaseduration > 0)) {
           params.leaseduration = values.leaseduration
+          if (values.leaseexpiryaction !== undefined) {
+            params.leaseexpiryaction = values.leaseexpiryaction
+          }
         }
-        if (values.leaseexpiryaction && values.leaseexpiryaction !== undefined) {
-          params.leaseexpiryaction = values.leaseexpiryaction
-        }
-
         this.loading = true
 
         api('updateVirtualMachine', {}, 'POST', params).then(json => {

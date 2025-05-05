@@ -191,6 +191,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
     class VMLeaseExpiryEventSchedulerTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
+            logger.debug("VMLeaseExpiryEventSchedulerTask is being called");
             // as feature is disabled, no action is required
             if (!InstanceLeaseEnabled.value()) {
                 return;

@@ -144,7 +144,14 @@
           <div>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>
-      <a-list-item v-else-if="['startdate', 'enddate', 'leaseexpirydate'].includes(item)">
+      <a-list-item v-else-if="['startdate', 'enddate'].includes(item)">
+        <div>
+          <strong>{{ $t('label.' + item.replace('date', '.date.and.time'))}}</strong>
+          <br/>
+          <div>{{ $toLocaleDate(dataResource[item]) }}</div>
+        </div>
+      </a-list-item>
+      <a-list-item v-else-if="item === 'leaseexpirydate' && dataResource[item]">
         <div>
           <strong>{{ $t('label.' + item.replace('date', '.date.and.time'))}}</strong>
           <br/>

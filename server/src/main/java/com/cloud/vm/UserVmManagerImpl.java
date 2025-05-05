@@ -2925,7 +2925,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        if (VMLeaseManager.InstanceLeaseEnabled.value()) {
+        if (VMLeaseManager.InstanceLeaseEnabled.value() && cmd.getLeaseDuration() != null) {
             applyLeaseOnUpdateInstance(vmInstance, cmd.getLeaseDuration(), cmd.getLeaseExpiryAction());
         }
 
@@ -6292,22 +6292,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     protected void validateLeaseProperties(Integer leaseDuration, String leaseExpiryAction) {
         if (ObjectUtils.allNull(leaseDuration, leaseExpiryAction) // both are null
-                || (leaseDuration != null && leaseDuration < 1)) { // special condition to disable lease for instance
+                || (leaseDuration != null && leaseDuration == -1)) { // special condition to disable lease for instance
             return;
         }
 
-        boolean bothValuesSet = true;
-        if (leaseDuration != null) {
-            if (StringUtils.isEmpty(leaseExpiryAction)) {
-                bothValuesSet = false;
-            }
-        } else {
-            bothValuesSet = false;
+        // any one of them have value
+        // validate leaseduration
+        if (leaseDuration == null || leaseDuration < 1) {
+            throw new InvalidParameterValueException("Invalid leaseduration: must be a natural number (>=1) or -1");
         }
 
-        if (!bothValuesSet) {
+        if (StringUtils.isEmpty(leaseExpiryAction)) {
             throw new InvalidParameterValueException("Provide values for both: leaseduration and leaseexpiryaction");
         }
+
         try {
             VMLeaseManager.ExpiryAction.valueOf(leaseExpiryAction);
         } catch (IllegalArgumentException e) {
@@ -6340,18 +6338,30 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected void applyLeaseOnUpdateInstance(UserVm instance, Integer leaseDuration, String leaseExpiryAction) {
         validateLeaseProperties(leaseDuration, leaseExpiryAction);
         String instanceUuid = instance.getUuid();
-        // vm must have associated lease during deployment
-        UserVmDetailVO vmDetail = userVmDetailsDao.findDetail(instance.getId(), VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
-        if (vmDetail == null || StringUtils.isEmpty(vmDetail.getValue())) {
-            logger.debug("Lease won't be applied on instance with id: {}, it doesn't have " +
-                    "leased associated during deployment", instanceUuid);
-            return;
+
+        // vm must have active lease associated during deployment
+        Map<String, String> vmDetails = userVmDetailsDao.listDetailsKeyPairs(instance.getId(),
+                List.of(VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE, VmDetailConstants.INSTANCE_LEASE_EXECUTION));
+        String leaseExecution = vmDetails.get(VmDetailConstants.INSTANCE_LEASE_EXECUTION);
+        String leaseExpiryDate = vmDetails.get(VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
+
+        if (StringUtils.isEmpty(leaseExpiryDate)) {
+            String errorMsg = "Lease can't be applied on instance with id: " + instanceUuid + ", it doesn't have lease associated during deployment";
+            logger.debug(errorMsg);
+            throw new CloudRuntimeException(errorMsg);
         }
+
+        if (!VMLeaseManager.LeaseActionExecution.PENDING.name().equals(leaseExecution)) {
+            String errorMsg = "Lease can't be applied on instance with id: " + instanceUuid + ", it doesn't have active lease";
+            logger.debug(errorMsg);
+            throw new CloudRuntimeException(errorMsg);
+        }
+
         // proceed if lease is yet to expire
         long leaseExpiryTimeDiff;
         try {
              leaseExpiryTimeDiff = DateUtil.getTimeDifference(
-                     DateUtil.parseDateString(TimeZone.getTimeZone("UTC"), vmDetail.getValue()), new Date());
+                     DateUtil.parseDateString(TimeZone.getTimeZone("UTC"), leaseExpiryDate), new Date());
         } catch (Exception ex) {
             logger.error("Error occurred computing time difference for instance lease expiry, " +
                             "will skip applying lease for vm with id: {}", instanceUuid, ex);
@@ -6359,7 +6369,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         if (leaseExpiryTimeDiff < 0) {
             logger.debug("Lease has expired for instance with id: {}, can't modify lease information", instanceUuid);
-            return;
+            throw new CloudRuntimeException("Lease is not allowed to be redefined on expired leased instance");
         }
 
         if (leaseDuration < 1) {
