@@ -1387,7 +1387,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 cpuWeight = _maxWeight;
             }
 
-            if (vmSpec.getLimitCpuUse()) {
+            if (vmSpec.isLimitCpuUse()) {
                 // CPU cap is per VM, so need to assign cap based on the number
                 // of vcpus
                 utilization = (int)(vmSpec.getMaxSpeed() * 0.99 * vmSpec.getCpus() / _host.getSpeed() * 100);
@@ -4709,7 +4709,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 cpuWeight = _maxWeight;
             }
 
-            if (vmSpec.getLimitCpuUse()) {
+            if (vmSpec.isLimitCpuUse()) {
                 long utilization; // max CPU cap, default is unlimited
                 utilization = (int)(vmSpec.getMaxSpeed() * 0.99 * vmSpec.getCpus() / _host.getSpeed() * 100);
                 // vm.addToVCPUsParamsLive(conn, "cap",

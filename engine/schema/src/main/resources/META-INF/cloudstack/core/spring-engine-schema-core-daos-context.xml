@@ -300,4 +300,5 @@
   <bean id="BgpPeerNetworkMapDaoImpl" class="org.apache.cloudstack.network.dao.BgpPeerNetworkMapDaoImpl" />
   <bean id="SharedFSDaoImpl" class="org.apache.cloudstack.storage.sharedfs.dao.SharedFSDaoImpl" />
   <bean id="SharedFSJoinDaoImpl" class="org.apache.cloudstack.storage.sharedfs.query.dao.SharedFSJoinDaoImpl" />
+  <bean id="ReconcileCommandDaoImpl" class="org.apache.cloudstack.command.dao.ReconcileCommandDaoImpl" />
 </beans>
