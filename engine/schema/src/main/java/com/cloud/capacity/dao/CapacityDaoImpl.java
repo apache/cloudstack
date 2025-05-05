@@ -1028,10 +1028,11 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
     }
 
     @Override
-    public List<Long> orderHostsByFreeCapacity(Long zoneId, Long clusterId, short capacityTypeForOrdering){
+    public Pair<List<Long>, Map<Long, Double>> orderHostsByFreeCapacity(Long zoneId, Long clusterId, short capacityTypeForOrdering){
          TransactionLegacy txn = TransactionLegacy.currentTxn();
          PreparedStatement pstmt = null;
-         List<Long> result = new ArrayList<Long>();
+         List<Long> result = new ArrayList<>();
+         Map<Long, Double> hostCapacityMap = new HashMap<>();
          StringBuilder sql = new StringBuilder(ORDER_HOSTS_BY_FREE_CAPACITY_PART1);
          if (zoneId != null) {
              sql.append(" AND data_center_id = ?");
@@ -1054,9 +1055,11 @@ public class CapacityDaoImpl extends GenericDaoBase<CapacityVO, Long> implements
 
              ResultSet rs = pstmt.executeQuery();
              while (rs.next()) {
-                 result.add(rs.getLong(1));
+                 Long hostId = rs.getLong(1);
+                 result.add(hostId);
+                 hostCapacityMap.put(hostId, rs.getDouble(2));
              }
-             return result;
+             return new Pair<>(result, hostCapacityMap);
          } catch (SQLException e) {
              throw new CloudRuntimeException("DB Exception on: " + sql, e);
          } catch (Throwable e) {
