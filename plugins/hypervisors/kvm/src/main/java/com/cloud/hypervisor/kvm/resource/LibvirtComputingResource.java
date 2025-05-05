@@ -51,7 +51,18 @@ import java.util.stream.Stream;
 
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.command.CommandInfo;
@@ -78,6 +89,7 @@ import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.BooleanUtils;
@@ -262,8 +274,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     /**
      * Machine type.
      */
-    private static final String PC = isHostS390x() ? S390X_VIRTIO_DEVICE : "pc";
-    private static final String VIRT = isHostS390x() ? S390X_VIRTIO_DEVICE : "virt";
+    public static final String PC = isHostS390x() ? S390X_VIRTIO_DEVICE : "pc";
+    public static final String VIRT = isHostS390x() ? S390X_VIRTIO_DEVICE : "virt";
 
     /**
      * Possible devices to add to VM.
@@ -352,6 +364,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String COMMANDS_LOG_PATH = "/usr/share/cloudstack-agent/tmp/commands";
 
+    public static final String CHECKPOINT_CREATE_COMMAND = "virsh checkpoint-create --domain %s --xmlfile %s --redefine";
+
+    public static final String CHECKPOINT_DELETE_COMMAND = "virsh checkpoint-delete --domain %s --checkpointname %s  --metadata";
+
     private String modifyVlanPath;
     private String versionStringPath;
     private String patchScriptPath;
@@ -413,6 +429,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private final static long HYPERVISOR_LIBVIRT_VERSION_SUPPORTS_IO_URING = 6003000;
     private final static long HYPERVISOR_QEMU_VERSION_SUPPORTS_IO_URING = 5000000;
     private final static long HYPERVISOR_QEMU_VERSION_IDE_DISCARD_FIXED = 7000000;
+
+    private static final int MINIMUM_LIBVIRT_VERSION_FOR_INCREMENTAL_SNAPSHOT = 7006000;
+
+    private static final int MINIMUM_QEMU_VERSION_FOR_INCREMENTAL_SNAPSHOT = 6001000;
 
     protected HypervisorType hypervisorType;
     protected String hypervisorURI;
@@ -539,11 +559,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public static final String CGROUP_V2 = "cgroup2fs";
 
-    protected long getHypervisorLibvirtVersion() {
+    public long getHypervisorLibvirtVersion() {
         return hypervisorLibvirtVersion;
     }
 
-    protected long getHypervisorQemuVersion() {
+    public long getHypervisorQemuVersion() {
         return hypervisorQemuVersion;
     }
 
@@ -1930,6 +1950,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public String startVM(final Connect conn, final String vmName, final String domainXML) throws LibvirtException, InternalErrorException {
+        return startVM(conn, vmName, domainXML, 0);
+    }
+
+    public String startVM(final Connect conn, final String vmName, final String domainXML, int flags) throws LibvirtException, InternalErrorException {
         try {
             /*
                 We create a transient domain here. When this method gets
@@ -1957,7 +1981,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 }
             }
 
-            conn.domainCreateXML(domainXML, 0);
+            conn.domainCreateXML(domainXML, flags);
         } catch (final LibvirtException e) {
             throw e;
         }
@@ -3006,7 +3030,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return uefiProperties.getProperty(propertie) != null;
     }
 
-    private boolean isGuestAarch64() {
+    public boolean isGuestAarch64() {
         return AARCH64.equals(guestCpuArch);
     }
 
@@ -4845,6 +4869,112 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return freeMemory;
     }
 
+    public void removeCheckpointsOnVm(String vmName, String volumeUuid, List<String> checkpointPaths) {
+        logger.debug("Removing checkpoints with paths [{}] of volume [{}] on VM [{}].", checkpointPaths, volumeUuid, vmName);
+        String checkpointName;
+        for (String checkpointPath : checkpointPaths) {
+            checkpointName = checkpointPath.substring(checkpointPath.lastIndexOf("/") + 1);
+            Script.runSimpleBashScript(String.format(CHECKPOINT_DELETE_COMMAND, vmName, checkpointName));
+        }
+        logger.debug("Removed all checkpoints of volume [{}] on VM [{}].", volumeUuid, vmName);
+    }
+
+    public boolean recreateCheckpointsOnVm(List<VolumeObjectTO> volumes, String vmName, Connect conn) {
+        logger.debug("Trying to recreate checkpoints on VM [{}] with volumes [{}].", vmName, volumes);
+        try {
+            validateLibvirtAndQemuVersionForIncrementalSnapshots();
+        } catch (CloudRuntimeException e) {
+            logger.warn("Will not recreate the checkpoints on VM as {}", e.getMessage(), e);
+            return false;
+        }
+        List<DiskDef> diskDefs = getDisks(conn, vmName);
+        Map<VolumeObjectTO, DiskDef> mapDiskToDiskDef = mapVolumeToDiskDef(volumes, diskDefs);
+
+        for (VolumeObjectTO volume : volumes) {
+            if (CollectionUtils.isEmpty(volume.getCheckpointPaths())) {
+                continue;
+            }
+            Set<KVMStoragePool> storagePoolSet = connectToAllVolumeSnapshotSecondaryStorages(volume);
+            recreateCheckpointsOfDisk(vmName, volume, mapDiskToDiskDef);
+            disconnectAllVolumeSnapshotSecondaryStorages(storagePoolSet);
+        }
+        logger.debug("Successfully recreated all checkpoints on VM [{}].", vmName);
+        return true;
+    }
+
+    public Set<KVMStoragePool> connectToAllVolumeSnapshotSecondaryStorages(VolumeObjectTO volumeObjectTO) {
+        return volumeObjectTO.getCheckpointImageStoreUrls().stream().map(uri -> getStoragePoolMgr().getStoragePoolByURI(uri)).collect(Collectors.toSet());
+    }
+
+    public void disconnectAllVolumeSnapshotSecondaryStorages(Set<KVMStoragePool> kvmStoragePools) {
+        kvmStoragePools.forEach(storage -> getStoragePoolMgr().deleteStoragePool(storage.getType(), storage.getUuid()));
+    }
+
+
+    protected void recreateCheckpointsOfDisk(String vmName, VolumeObjectTO volume, Map<VolumeObjectTO, DiskDef> mapDiskToDiskDef) {
+        for (String path : volume.getCheckpointPaths()) {
+            DiskDef diskDef = mapDiskToDiskDef.get(volume);
+            if (diskDef != null) {
+                try {
+                    updateDiskLabelOnXml(path, diskDef.getDiskLabel());
+                } catch (ParserConfigurationException | IOException | SAXException | TransformerException | XPathExpressionException e) {
+                    logger.error("Exception while parsing checkpoint XML with path [{}].", path, e);
+                    throw new CloudRuntimeException(e);
+                }
+            } else {
+                logger.debug("Could not map [{}] to any disk definition. Will try to recreate snapshot without updating disk label.", volume);
+            }
+
+            logger.trace("Recreating checkpoint with path [{}] on VM [{}].", path, vmName);
+            Script.runSimpleBashScript(String.format(CHECKPOINT_CREATE_COMMAND, vmName, path));
+        }
+    }
+
+    /**
+     * Changes the value of the disk label of the checkpoint XML found in {@code path} to {@code label}. This method assumes that the checkpoint only contains one disk.
+     * @param path the path to the checkpoint XML to be updated
+     * @param label the new label to be used for the disk
+     * */
+    private void updateDiskLabelOnXml(String path, String label) throws ParserConfigurationException, IOException, SAXException, XPathExpressionException, TransformerException {
+        logger.trace("Updating checkpoint with path [{}] to use disk label [{}].", path, label);
+
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(new File(path));
+
+        XPath xPath = XPathFactory.newInstance().newXPath();
+        Node diskNode = (Node) xPath.compile("/domaincheckpoint/disks/disk").evaluate(doc, XPathConstants.NODE);
+        diskNode.getAttributes().getNamedItem("name").setNodeValue(label);
+
+        Transformer tf = TransformerFactory.newInstance().newTransformer();
+        tf.setOutputProperty(OutputKeys.INDENT, "yes");
+        tf.setOutputProperty(OutputKeys.METHOD, "xml");
+        tf.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "4");
+
+        DOMSource domSource = new DOMSource(doc);
+        StreamResult sr = new StreamResult(new File(path));
+        tf.transform(domSource, sr);
+    }
+
+    protected Map<VolumeObjectTO, DiskDef> mapVolumeToDiskDef(List<VolumeObjectTO> volumeTos, List<DiskDef> diskDefs) {
+        HashMap<VolumeObjectTO, DiskDef> diskToDiskDefHashMap = new HashMap<>();
+        for (VolumeObjectTO volumeTo : volumeTos) {
+            for (DiskDef diskDef : diskDefs) {
+                if (StringUtils.contains(diskDef.getDiskPath(), volumeTo.getPath())) {
+                    diskToDiskDefHashMap.put(volumeTo, diskDef);
+                }
+            }
+        }
+        return diskToDiskDefHashMap;
+    }
+
+    public void validateLibvirtAndQemuVersionForIncrementalSnapshots() {
+        if (getHypervisorLibvirtVersion() < MINIMUM_LIBVIRT_VERSION_FOR_INCREMENTAL_SNAPSHOT || getHypervisorQemuVersion() < MINIMUM_QEMU_VERSION_FOR_INCREMENTAL_SNAPSHOT) {
+            throw new CloudRuntimeException(String.format("Hypervisor version is insufficient, should have at least libvirt [%s] and qemu [%s] but we have [%s] and [%s].",
+                    MINIMUM_LIBVIRT_VERSION_FOR_INCREMENTAL_SNAPSHOT, MINIMUM_QEMU_VERSION_FOR_INCREMENTAL_SNAPSHOT, getHypervisorLibvirtVersion(), getHypervisorQemuVersion()));
+        }
+    }
+
     private boolean canBridgeFirewall(final String prvNic) {
         final Script cmd = new Script(securityGroupPath, timeout, LOGGER);
         cmd.add("can_bridge_firewall");
@@ -5810,4 +5940,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
     }
+
+    public String getHypervisorPath() {
+        return hypervisorPath;
+    }
+    public String getGuestCpuArch() {
+        return guestCpuArch;
+    }
+
 }
