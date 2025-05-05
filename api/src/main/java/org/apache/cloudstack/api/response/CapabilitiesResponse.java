@@ -136,6 +136,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "the min Ram size for the service offering used by the shared filesystem instance", since = "4.20.0")
     private Integer sharedFsVmMinRamSize;
 
+    @SerializedName(ApiConstants.LOGS_WEB_SERVER_ENABLED)
+    @Param(description = "true if Logs Web Server plugin is enabled, false otherwise", since = "4.21.0")
+    private boolean logsWebServerEnabled;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -246,5 +250,9 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setSharedFsVmMinRamSize(Integer sharedFsVmMinRamSize) {
         this.sharedFsVmMinRamSize = sharedFsVmMinRamSize;
+    }
+
+    public void setLogsWebServerEnabled(boolean logsWebServerEnabled) {
+        this.logsWebServerEnabled = logsWebServerEnabled;
     }
 }

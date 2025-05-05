@@ -716,14 +716,9 @@ public class ManagementServerImplTest {
     @Test
     public void testSearchForConfigurations() {
         Long poolId = 1L;
-        ListCfgsByCmd cmd = Mockito.mock(ListCfgsByCmd.class);
-        Mockito.when(cmd.getConfigName()).thenReturn("pool.storage.capacity.disablethreshold");
-        Mockito.when(cmd.getStoragepoolId()).thenReturn(poolId);
-        Mockito.when(cmd.getZoneId()).thenReturn(null);
-        Mockito.when(cmd.getClusterId()).thenReturn(null);
-        Mockito.when(cmd.getAccountId()).thenReturn(null);
-        Mockito.when(cmd.getDomainId()).thenReturn(null);
-        Mockito.when(cmd.getImageStoreId()).thenReturn(null);
+        ListCfgsByCmd cmd = new ListCfgsByCmd();
+        ReflectionTestUtils.setField(cmd, "storagePoolId", poolId);
+        ReflectionTestUtils.setField(cmd, "configName", "pool.storage.capacity.disablethreshold");
 
         SearchCriteria<ConfigurationVO> sc = Mockito.mock(SearchCriteria.class);
         Mockito.when(configDao.createSearchCriteria()).thenReturn(sc);

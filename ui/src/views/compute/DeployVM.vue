@@ -2271,7 +2271,8 @@ export default {
               catchMessage: this.$t('error.fetching.async.job.result'),
               action: {
                 isFetchData: false
-              }
+              },
+              contextId: response.deployvirtualmachineresponse.contextid
             })
           }
           // Sending a refresh in case it hasn't picked up the new VM

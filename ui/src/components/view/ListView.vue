@@ -128,6 +128,15 @@
           @exec-action="$parent.execAction"/>
         <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
       </template>
+      <template v-if="column.key === 'filters'">
+        <QuickView
+          style="margin-left: 5px"
+          :actions="actions"
+          :resource="record"
+          :enabled="quickViewEnabled() && actions.length > 0 && columns && columns[0].dataIndex === 'filters' "
+          @exec-action="$parent.execAction"/>
+        <router-link :to="{ path: $route.path + '/' + record.id }">{{ record.filters.join(', ') }}</router-link>
+      </template>
       <template v-if="column.key === 'username'">
         <span v-if="$showIcon() && !['vm', 'vnfapp'].includes($route.path.split('/')[1])" style="margin-right: 5px">
           <resource-icon v-if="$showIcon() && record.icon && record.icon.base64image" :image="record.icon.base64image" size="2x"/>
