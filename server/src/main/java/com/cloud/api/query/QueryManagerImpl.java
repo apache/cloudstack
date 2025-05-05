@@ -4627,7 +4627,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (osCategoryId != null) {
             List<Long> guestOsIds = guestOSDao.listIdsByCategoryId(osCategoryId);
-            sc.setParameters("guestOsIdIN", guestOsIds.toArray());
+            if (CollectionUtils.isNotEmpty(guestOsIds)) {
+                sc.setParameters("guestOsIdIN", guestOsIds.toArray());
+            }
         }
 
         // verify templateId parameter and specially handle it

@@ -2531,7 +2531,7 @@ export default {
     },
     fetchTemplates (templateFilter, params) {
       const args = Object.assign({}, params)
-      if (this.isModernImageSelection && this.form.guestoscategoryid) {
+      if (this.isModernImageSelection && typeof this.form.guestoscategoryid === 'string' && this.form.guestoscategoryid.trim() !== '') {
         args.oscategoryid = this.form.guestoscategoryid
       }
       if (args.keyword || args.category !== templateFilter) {
