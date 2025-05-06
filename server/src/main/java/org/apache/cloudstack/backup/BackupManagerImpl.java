@@ -756,6 +756,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final Long id = cmd.getId();
         final Long vmId = cmd.getVmId();
         final Long zoneId = cmd.getZoneId();
+        final Long backupOfferingId = cmd.getBackupOfferingId();
         final Account caller = CallContext.current().getCallingAccount();
         final String keyword = cmd.getKeyword();
         List<Long> permittedAccounts = new ArrayList<Long>();
@@ -782,6 +783,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         sb.and("vmId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
+        sb.and("backupOfferingId", sb.entity().getBackupOfferingId(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
             SearchBuilder<VMInstanceVO> vmSearch = vmInstanceDao.createSearchBuilder();
@@ -803,6 +805,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
+        }
+
+        if (backupOfferingId != null) {
+            sc.setParameters("backupOfferingId", backupOfferingId);
         }
 
         if (keyword != null) {

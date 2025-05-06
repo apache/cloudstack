@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.BackupOfferingResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
@@ -75,6 +76,13 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
             description = "list backups by zone id")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.BACKUP_OFFERING_ID,
+            type = CommandType.UUID,
+            entityType = BackupOfferingResponse.class,
+            since = "4.21.0",
+            description = "list backups by backup offering")
+    private Long backupOfferingId;
+
     @Parameter(name = ApiConstants.LIST_VM_DETAILS,
             type = CommandType.BOOLEAN,
             since = "4.21.0",
@@ -91,6 +99,10 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
 
     public Long getVmId() {
         return vmId;
+    }
+
+    public Long getBackupOfferingId() {
+        return backupOfferingId;
     }
 
     public Long getZoneId() {
