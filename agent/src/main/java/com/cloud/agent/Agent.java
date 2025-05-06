@@ -800,6 +800,9 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
                         }
                         commandsInProgress.incrementAndGet();
                         try {
+                            if (cmd.isReconcile()) {
+                                cmd.setRequestSequence(request.getSequence());
+                            }
                             answer = serverResource.executeRequest(cmd);
                         } finally {
                             commandsInProgress.decrementAndGet();
@@ -1021,6 +1024,8 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
         if ((answer.isSendStartup()) && reconnectAllowed) {
             logger.info("Management server requested startup command to reinitialize the agent");
             sendStartup(link);
+        } else {
+            serverResource.processPingAnswer((PingAnswer) answer);
         }
         shell.setAvoidHosts(answer.getAvoidMsList());
     }
@@ -1087,6 +1092,9 @@ public class Agent implements HandlerFactory, IAgentControl, AgentStatusUpdater 
             Answer answer = null;
             commandsInProgress.incrementAndGet();
             try {
+                if (command.isReconcile()) {
+                    command.setRequestSequence(req.getSequence());
+                }
                 answer = serverResource.executeRequest(command);
             } finally {
                 commandsInProgress.decrementAndGet();
