@@ -83,7 +83,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
     private boolean followRedirects = false;
     private boolean isChunkedTransfer;
 
-    protected List<String> CUSTOM_HEADERS_FOR_CHUNKED_TRANSFER_SIZE = Arrays.asList(
+    protected static final List<String> CUSTOM_HEADERS_FOR_CHUNKED_TRANSFER_SIZE = Arrays.asList(
             "x-goog-stored-content-length",
             "x-goog-meta-size",
             "x-amz-meta-size",
