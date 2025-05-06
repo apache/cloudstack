@@ -1666,7 +1666,6 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                 HostMO hostMO = new HostMO(context, hostMor);
                 VirtualMachineMO vmMo = hostMO.findVmOnHyperHost(virtualMachineName);
                 instances = Collections.singletonList(VmwareHelper.getUnmanagedInstance(hostMO, vmMo));
-                // instances = hostMO.listAllVmsInHost(keyword);
             } else {
                 instances = dcMo.getAllVmsOnDatacenter(keyword);
             }
