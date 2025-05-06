@@ -2936,7 +2936,7 @@ export default {
   .vm-info-card {
     .ant-card-body {
       min-height: 250px;
-      height: calc(100vh - 229px);
+      height: calc(100vh - 258px);
       overflow-y: auto;
       scroll-behavior: smooth;
     }
