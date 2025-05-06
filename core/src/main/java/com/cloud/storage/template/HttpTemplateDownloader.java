@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 
@@ -80,6 +81,17 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
     private ResourceType resourceType = ResourceType.TEMPLATE;
     private final HttpMethodRetryHandler myretryhandler;
     private boolean followRedirects = false;
+    private boolean isChunkedTransfer;
+
+    protected List<String> CUSTOM_HEADERS_FOR_CHUNKED_TRANSFER_SIZE = Arrays.asList(
+            "x-goog-stored-content-length",
+            "x-goog-meta-size",
+            "x-amz-meta-size",
+            "x-amz-meta-content-length",
+            "x-object-meta-size",
+            "x-original-content-length",
+            "x-oss-meta-content-length",
+            "x-file-size");
 
     public HttpTemplateDownloader(StorageLayer storageLayer, String downloadUrl, String toDir, DownloadCompleteCallback callback, long maxTemplateSizeInBytes,
             String user, String password, Proxy proxy, ResourceType resourceType) {
@@ -208,10 +220,10 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
 
                 logger.info("Starting download from " + downloadUrl + " to " + toFile + " remoteSize=" + toHumanReadableSize(remoteSize) + " , max size=" + toHumanReadableSize(maxTemplateSizeInBytes));
 
-                if (copyBytes(file, in, out)) return 0;
+                boolean eof = copyBytes(file, in, out);
 
                 Date finish = new Date();
-                checkDowloadCompletion();
+                checkDownloadCompletion(eof);
                 downloadTime += finish.getTime() - start.getTime();
             } finally { /* in.close() and out.close() */ }
             return totalBytes;
@@ -256,7 +268,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
             }
         }
         out.getFD().sync();
-        return false;
+        return !Status.ABORTED.equals(status) && done;
     }
 
     private long writeBlock(int bytes, RandomAccessFile out, byte[] block, long offset) throws IOException {
@@ -267,11 +279,13 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         return offset;
     }
 
-    private void checkDowloadCompletion() {
+    private void checkDownloadCompletion(boolean eof) {
         String downloaded = "(incomplete download)";
-        if (totalBytes >= remoteSize) {
+        if (eof && ((totalBytes >= remoteSize) || (isChunkedTransfer && remoteSize == maxTemplateSizeInBytes))) {
             status = Status.DOWNLOAD_FINISHED;
-            downloaded = "(download complete remote=" + toHumanReadableSize(remoteSize) + " bytes)";
+            downloaded = "(download complete remote=" +
+                    (remoteSize == maxTemplateSizeInBytes ? toHumanReadableSize(remoteSize) : "unknown") +
+                    " bytes)";
         }
         errorString = "Downloaded " + toHumanReadableSize(totalBytes) + " bytes " + downloaded;
     }
@@ -293,18 +307,40 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
         }
     }
 
+    protected long getRemoteSizeForChunkedTransfer() {
+        for (String headerKey : CUSTOM_HEADERS_FOR_CHUNKED_TRANSFER_SIZE) {
+            Header header = request.getResponseHeader(headerKey);
+            if (header == null) {
+                continue;
+            }
+            try {
+                return Long.parseLong(header.getValue());
+            } catch (NumberFormatException ignored) {}
+        }
+        Header contentRangeHeader = request.getResponseHeader("Content-Range");
+        if (contentRangeHeader != null) {
+            String contentRange = contentRangeHeader.getValue();
+            if (contentRange != null && contentRange.contains("/")) {
+                String totalSize = contentRange.substring(contentRange.indexOf('/') + 1).trim();
+                return Long.parseLong(totalSize);
+            }
+        }
+        return 0;
+    }
+
     private boolean tryAndGetRemoteSize() {
         Header contentLengthHeader = request.getResponseHeader("content-length");
-        boolean chunked = false;
+        isChunkedTransfer = false;
         long reportedRemoteSize = 0;
         if (contentLengthHeader == null) {
             Header chunkedHeader = request.getResponseHeader("Transfer-Encoding");
-            if (chunkedHeader == null || !"chunked".equalsIgnoreCase(chunkedHeader.getValue())) {
+            if (chunkedHeader != null && "chunked".equalsIgnoreCase(chunkedHeader.getValue())) {
+                isChunkedTransfer = true;
+                reportedRemoteSize = getRemoteSizeForChunkedTransfer();
+            } else {
                 status = Status.UNRECOVERABLE_ERROR;
                 errorString = " Failed to receive length of download ";
                 return false;
-            } else if ("chunked".equalsIgnoreCase(chunkedHeader.getValue())) {
-                chunked = true;
             }
         } else {
             reportedRemoteSize = Long.parseLong(contentLengthHeader.getValue());
