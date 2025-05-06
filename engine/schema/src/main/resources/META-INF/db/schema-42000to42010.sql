@@ -75,3 +75,6 @@ CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Read-Only Admin - Default', 'va
 
 CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Support Admin - Default', 'setupUserTwoFactorAuthentication', 'ALLOW');
 CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Support Admin - Default', 'validateUserTwoFactorAuthenticationCode', 'ALLOW');
+
+-- Add compound index on template_zone_ref to improve the templates_view listing
+CREATE INDEX `i_template_zone_ref__template_id_removed` USING BTREE ON `cloud`.`template_zone_ref` (`template_id`, `removed`);
