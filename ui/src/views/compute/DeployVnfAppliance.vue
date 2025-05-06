@@ -2534,7 +2534,7 @@ export default {
       if (this.isModernImageSelection && typeof this.form.guestoscategoryid === 'string' && this.form.guestoscategoryid.trim() !== '') {
         args.oscategoryid = this.form.guestoscategoryid
       }
-      if (args.keyword || args.category !== templateFilter) {
+      if (args.keyword || (args.category && args.category !== templateFilter)) {
         args.page = 1
         args.pageSize = args.pageSize || 10
       }
