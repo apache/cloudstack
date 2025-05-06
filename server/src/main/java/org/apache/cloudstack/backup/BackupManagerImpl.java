@@ -311,6 +311,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Could not find a backup offering with id: " + offeringId);
         }
 
+        if (backupDao.listByOfferingId(offering.getId()).size() > 0) {
+            throw new CloudRuntimeException("Backup Offering cannot be removed as it has backups associated with it.");
+        }
+
         if (vmInstanceDao.listByZoneAndBackupOffering(offering.getZoneId(), offering.getId()).size() > 0) {
             throw new CloudRuntimeException("Backup offering is assigned to VMs, remove the assignment(s) in order to remove the offering.");
         }
