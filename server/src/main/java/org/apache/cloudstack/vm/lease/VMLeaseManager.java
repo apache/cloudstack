@@ -25,6 +25,8 @@ import java.util.List;
 
 public interface VMLeaseManager extends Manager {
 
+    int MAX_LEASE_DURATION_DAYS = 365_00; // 100 years
+
     enum ExpiryAction {
         STOP,
         DESTROY

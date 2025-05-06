@@ -6298,8 +6298,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // any one of them have value
         // validate leaseduration
-        if (leaseDuration == null || leaseDuration < 1) {
-            throw new InvalidParameterValueException("Invalid leaseduration: must be a natural number (>=1) or -1");
+        if (leaseDuration == null || leaseDuration < 1 || leaseDuration > VMLeaseManager.MAX_LEASE_DURATION_DAYS) {
+            throw new InvalidParameterValueException("Invalid leaseduration: must be a natural number (>=1) or -1, max supported value is 36500");
         }
 
         if (StringUtils.isEmpty(leaseExpiryAction)) {

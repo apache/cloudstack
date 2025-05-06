@@ -3504,8 +3504,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Provide values for both: leaseduration and leaseexpiryaction");
         }
 
-        if (leaseDuration < 1L) {
-            throw new InvalidParameterValueException("Invalid value provided for leaseDuration, accepts only positive number");
+        if (leaseDuration < 1L || leaseDuration > VMLeaseManager.MAX_LEASE_DURATION_DAYS) {
+            throw new InvalidParameterValueException("Invalid leaseduration: must be a natural number (>=1), max supported value is 36500");
         }
 
         if (StringUtils.isNotEmpty(cmdExpiryAction)) {
