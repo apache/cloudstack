@@ -197,6 +197,9 @@ export default {
     this.fetchData()
   },
   computed: {
+    isNormalAndDomainUser () {
+      return ['DomainAdmin', 'User'].includes(this.$store.getters.userInfo.roletype)
+    },
     isModernImageSelection () {
       return this.$config.imageSelectionInterface === undefined || this.$config.imageSelectionInterface === 'modern'
     },
@@ -231,7 +234,7 @@ export default {
             return ['community']
           }
         }
-        return ['all']
+        return this.isNormalAndDomainUser ? ['executable'] : ['all']
       }
       return [
         'featured',
@@ -354,7 +357,7 @@ export default {
     },
     fetchTemplates (templateFilter, params) {
       const args = Object.assign({}, params)
-      if (this.isModernImageSelection && typeof this.form.guestoscategoryid === 'string' && this.form.guestoscategoryid.trim() !== '') {
+      if (this.isModernImageSelection && typeof this.selectedGuestOsCategoryId === 'string' && this.selectedGuestOsCategoryId.trim() !== '') {
         args.oscategoryid = this.selectedGuestOsCategoryId
       }
       if (args.keyword || (args.category && args.category !== templateFilter)) {
