@@ -64,17 +64,17 @@ export default {
   },
   data () {
     return {
-      plugin: null,
+      provider: null,
       loading: false
     }
   },
   created () {
     this.initForm()
-    this.getBackupProviderPlugin()
+    this.getBackupProvider()
   },
   computed: {
     canSetNameAndDescription () {
-      return ['nas', 'dummy'].includes(this.plugin)
+      return ['nas', 'dummy'].includes(this.provider)
     }
   },
   methods: {
@@ -82,10 +82,11 @@ export default {
       this.formRef = ref()
       this.form = ({})
     },
-    getBackupProviderPlugin () {
+    getBackupProvider () {
       this.loading = true
-      api('listConfigurations', { name: 'backup.framework.provider.plugin' }).then(json => {
-        this.plugin = json.listconfigurationsresponse.configuration[0].value
+      api('listBackupOfferings', { id: this.resource.backupofferingid }).then(json => {
+        this.provider = json.listbackupofferingsresponse.backupoffering[0].provider
+        console.log('this.provider', this.provider)
       }).finally(() => {
         this.loading = false
       })

@@ -41,6 +41,10 @@ public class BackupOfferingResponse extends BaseResponse {
     @Param(description = "description for the backup offering")
     private String description;
 
+    @SerializedName(ApiConstants.PROVIDER)
+    @Param(description = "provider name", since = "4.21.0")
+    private String provider;
+
     @SerializedName(ApiConstants.EXTERNAL_ID)
     @Param(description = "external ID on the provider side")
     private String externalId;
@@ -67,6 +71,10 @@ public class BackupOfferingResponse extends BaseResponse {
 
     public void setExternalId(String externalId) {
         this.externalId = externalId;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
     }
 
     public void setName(String name) {
