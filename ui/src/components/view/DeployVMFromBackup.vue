@@ -45,7 +45,10 @@
                   </div>
                 </template>
               </a-step>
-              <a-step :title="$t('label.select.deployment.infrastructure')" status="process">
+              <a-step
+                v-if="!isNormalAndDomainUser"
+                :title="$t('label.select.deployment.infrastructure')"
+                status="process">
                 <template #description>
                   <div style="margin-top: 15px">
                     <a-form-item
