@@ -703,7 +703,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @DB
     public String updateConfiguration(final long userId, final String name, final String category, String value, final String scope, final Long resourceId) {
-        if (getConfigurationTypeWrapperClass(name) == Boolean.class) {
+        if (Boolean.class == getConfigurationTypeWrapperClass(name)) {
             value = value.toLowerCase();
         }
 
