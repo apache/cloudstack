@@ -41,11 +41,11 @@
     <template #bodyCell="{ column, text, record }">
       <template v-if="['name', 'provider'].includes(column.key) ">
         <span v-if="['vm', 'vnfapp'].includes($route.path.split('/')[1])" style="margin-right: 5px">
-          <span v-if="record.vmtype === 'sharedfsvm'">
-            <file-text-outlined style="font-size: 16px;" />
-          </span>
-          <span v-else-if="record.icon && record.icon.base64image">
+          <span v-if="record.icon && record.icon.base64image">
             <resource-icon :image="record.icon.base64image" size="2x"/>
+          </span>
+          <span v-else-if="record.vmtype === 'sharedfsvm'">
+            <file-text-outlined style="font-size: 24px;" />
           </span>
           <os-logo v-else :osId="record.ostypeid" :osName="record.osdisplayname" size="xl" />
         </span>
