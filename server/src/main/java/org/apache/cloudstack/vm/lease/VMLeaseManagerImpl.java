@@ -51,8 +51,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -226,7 +228,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
     protected void reallyRun() {
         // fetch user_instances having leaseDuration configured and has expired
         List<UserVmJoinVO> leaseExpiredInstances = userVmJoinDao.listEligibleInstancesWithExpiredLease();
-        List<Long> actionableInstanceIds = new ArrayList<>();
+        Set<Long> actionableInstanceIds = new HashSet<>();
         for (UserVmJoinVO userVmVO : leaseExpiredInstances) {
             // skip instance with delete protection for DESTROY action
             if (ExpiryAction.DESTROY.name().equals(userVmVO.getLeaseExpiryAction())
@@ -242,6 +244,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         }
 
         List<Long> submittedJobIds = new ArrayList<>();
+        List<Long> successfulInstanceIds = new ArrayList<>();
         List<Long> failedToSubmitInstanceIds = new ArrayList<>();
         for (Long instanceId : actionableInstanceIds) {
             UserVmJoinVO instance = userVmJoinDao.findById(instanceId);
@@ -258,12 +261,13 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             Long jobId = executeExpiryAction(instance, expiryAction, eventId);
             if (jobId != null) {
                 submittedJobIds.add(jobId);
+                successfulInstanceIds.add(instanceId);
                 userVmDetailsDao.addDetail(instanceId, VmDetailConstants.INSTANCE_LEASE_EXECUTION, LeaseActionExecution.DONE.name(), false);
             } else {
                 failedToSubmitInstanceIds.add(instanceId);
             }
         }
-        logger.debug("Successfully submitted lease expiry jobs with ids: {}", submittedJobIds);
+        logger.debug("Successfully submitted lease expiry jobs with ids: {} and instance ids: {}", submittedJobIds, successfulInstanceIds);
         if (!failedToSubmitInstanceIds.isEmpty()) {
             logger.debug("Lease scheduler failed to submit jobs for instance ids: {}", failedToSubmitInstanceIds);
         }
