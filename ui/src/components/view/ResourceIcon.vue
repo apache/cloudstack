@@ -54,6 +54,8 @@ export default {
           return 24
         case '1x':
           return 16
+        case 'os':
+          return 28
         default:
           return 16
       }

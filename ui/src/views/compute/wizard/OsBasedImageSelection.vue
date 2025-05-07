@@ -46,8 +46,8 @@
         <template #radio-option="{ item }">
           <div class="radio-option">
             <div class="radio-opion__icon">
-              <resource-icon v-if="item.icon && item.icon.base64image" :image="item.icon.base64image" size="2x" />
-              <font-awesome-icon v-else-if="item.id === '0'" :icon="['fas', 'user']" size="2x" :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#666' }]" />
+              <resource-icon v-if="item.icon && item.icon.base64image" :image="item.icon.base64image" size="os" style="margin-bottom: 2px; margin-left: 1px" />
+              <font-awesome-icon v-else-if="['-1', '0'].includes(item.id)" :icon="['fas', item.id === '0' ? 'user' : 'images']" size="2x" :style="categoryFontAwesomeIconStyle" />
               <os-logo v-else size="2x" :os-name="item.name" />
             </div>
             <a-tooltip placement="top" :title="item.name">
@@ -268,13 +268,21 @@ export default {
       }
       return null
     },
+    categoryFontAwesomeIconStyle () {
+      return [this.$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#666' }]
+    },
     selectedCategoryIcon () {
-      return this.selectedCategory?.icon?.base64image || ''
+      const id = this.selectedCategory?.id
+      if (!id || ['-1', '0'].includes(id)) {
+        return ''
+      }
+      return this.selectedCategory.icon?.base64image || ''
     },
     searchFiltersDisabled () {
       return this.selectedCategory?.disableimagefilters
     }
   },
+  emits: ['change-image-type', 'change-guest-os-category', 'update-image', 'handle-image-search-filter', 'change-root-disk-override-checked', 'update-disk-size', 'change-iso-hypervisor'],
   methods: {
     emitChangeImageType () {
       this.$emit('change-image-type', this.localSelectedImageType)
