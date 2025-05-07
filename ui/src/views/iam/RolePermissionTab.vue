@@ -18,9 +18,15 @@
 <template>
   <loading-outlined v-if="loadingTable" class="main-loading-spinner" />
   <div v-else>
+    <div style="width: 100%; display: flex; margin-bottom: 20px">
+      <a-button type="dashed" @click="exportRolePermissions" style="width: 100%">
+        <template #icon><download-outlined /></template>
+        {{ $t('label.export.rules') }}
+      </a-button>
+    </div>
     <a-input-search
       v-model:value="searchRule"
-      placeholder="Search Rule"
+      :placeholder="$t('label.rolepermissiontab.searchbar')"
       background-color="gray"
       style="width: 100%; margin-bottom: 10px; display: inline-block"
       enter-button
@@ -29,6 +35,7 @@
     <div v-if="updateTable" class="loading-overlay">
       <loading-outlined />
     </div>
+
     <div
       class="rules-list ant-list ant-list-bordered"
       :class="{'rules-list--overflow-hidden' : updateTable}" >
@@ -103,12 +110,6 @@
           </div>
         </template>
       </draggable>
-    </div>
-    <div style="width: 100%; display: flex; margin-top: 20px">
-      <a-button type="dashed" @click="exportRolePermissions" style="width: 100%">
-        <template #icon><download-outlined /></template>
-        {{ $t('label.export.rules') }}
-      </a-button>
     </div>
   </div>
 </template>
