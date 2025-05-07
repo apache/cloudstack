@@ -50,7 +50,9 @@
               <font-awesome-icon v-else-if="item.id === '0'" :icon="['fas', 'user']" size="2x" :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#666' }]" />
               <os-logo v-else size="2x" :os-name="item.name" />
             </div>
-            <span>{{ item.name }}</span>
+            <a-tooltip placement="top" :title="item.name">
+              <div class="ellipsis">{{ item.name }}</div>
+            </a-tooltip>
           </div>
         </template>
         <template #select-option="{ item }">
@@ -353,6 +355,14 @@ export default {
     align-items: center;
     text-align: center;
     padding-top: 8px;
+  }
+
+  .ellipsis {
+    max-width: 80px;
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .radio-opion__icon {
