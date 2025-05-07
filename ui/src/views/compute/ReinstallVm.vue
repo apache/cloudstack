@@ -357,7 +357,7 @@ export default {
     },
     fetchTemplates (templateFilter, params) {
       const args = Object.assign({}, params)
-      if (this.isModernImageSelection && typeof this.selectedGuestOsCategoryId === 'string' && this.selectedGuestOsCategoryId.trim() !== '') {
+      if (this.isModernImageSelection && this.selectedGuestOsCategoryId && !['-1', '0'].includes(this.selectedGuestOsCategoryId)) {
         args.oscategoryid = this.selectedGuestOsCategoryId
       }
       if (args.keyword || (args.category && args.category !== templateFilter)) {
