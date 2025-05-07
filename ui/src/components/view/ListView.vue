@@ -41,7 +41,10 @@
     <template #bodyCell="{ column, text, record }">
       <template v-if="['name', 'provider'].includes(column.key) ">
         <span v-if="['vm', 'vnfapp'].includes($route.path.split('/')[1])" style="margin-right: 5px">
-          <span v-if="record.icon && record.icon.base64image">
+          <span v-if="record.vmtype === 'sharedfsvm'">
+            <file-text-outlined style="font-size: 16px;" />
+          </span>
+          <span v-else-if="record.icon && record.icon.base64image">
             <resource-icon :image="record.icon.base64image" size="2x"/>
           </span>
           <os-logo v-else :osId="record.ostypeid" :osName="record.osdisplayname" size="xl" />
@@ -591,6 +594,7 @@ import { createPathBasedOnVmType } from '@/utils/plugins'
 import { validateLinks } from '@/utils/links'
 import cronstrue from 'cronstrue/i18n'
 import moment from 'moment-timezone'
+import { FileTextOutlined } from '@ant-design/icons-vue'
 
 export default {
   name: 'ListView',
@@ -601,7 +605,8 @@ export default {
     CopyLabel,
     TooltipButton,
     ResourceIcon,
-    ResourceLabel
+    ResourceLabel,
+    FileTextOutlined
   },
   props: {
     columns: {
