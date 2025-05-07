@@ -199,6 +199,16 @@ export default {
         name: 'guestos',
         title: 'label.guest.os',
         param: 'oscategoryid'
+      },
+      {
+        name: 'template',
+        title: 'label.templates',
+        param: 'oscategoryid'
+      },
+      {
+        name: 'iso',
+        title: 'label.isos',
+        param: 'oscategoryid'
       }],
       actions: [
         {
