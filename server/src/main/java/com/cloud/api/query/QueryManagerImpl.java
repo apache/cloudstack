@@ -4629,6 +4629,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             List<Long> guestOsIds = guestOSDao.listIdsByCategoryId(osCategoryId);
             if (CollectionUtils.isNotEmpty(guestOsIds)) {
                 sc.setParameters("guestOsIdIN", guestOsIds.toArray());
+            } else {
+                return new Pair<>(new ArrayList<>(), 0);
             }
         }
 
@@ -5017,7 +5019,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return searchForTemplatesInternal(cmd.getId(), cmd.getIsoName(), cmd.getKeyword(), isoFilter, true, cmd.isBootable(),
                 cmd.getPageSizeVal(), cmd.getStartIndex(), cmd.getZoneId(), cmd.getStoragePoolId(), cmd.getImageStoreId(),
                 hypervisorType, true, cmd.listInReadyState(), permittedAccounts, caller, listProjectResourcesCriteria,
-                tags, showRemovedISO, null, null, cmd.getShowUnique(), null, null, cmd.getArch(), null);
+                tags, showRemovedISO, null, null, cmd.getShowUnique(), null, null,
+                cmd.getArch(), cmd.getOsCategoryId());
     }
 
     @Override

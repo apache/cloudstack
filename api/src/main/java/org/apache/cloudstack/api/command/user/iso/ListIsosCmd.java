@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.user.iso;
 import com.cloud.cpu.CPU;
 import com.cloud.server.ResourceIcon;
 import com.cloud.server.ResourceTag;
+
+import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
 
 import org.apache.cloudstack.api.APICommand;
@@ -94,6 +96,11 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
             description = "the CPU arch of the ISO. Valid options are: x86_64, aarch64",
             since = "4.20")
     private String arch;
+
+    @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType= GuestOSCategoryResponse.class,
+            description = "the ID of the OS category for the ISO",
+            since = "4.20.1")
+    private Long osCategoryId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -171,6 +178,10 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
             return null;
         }
         return CPU.CPUArch.fromType(arch);
+    }
+
+    public Long getOsCategoryId() {
+        return osCategoryId;
     }
 
     /////////////////////////////////////////////////////
