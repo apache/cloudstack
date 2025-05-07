@@ -51,6 +51,9 @@
             <a-tooltip :title="$t('label.passwordenabled')" v-if="item.passwordenabled">
               <lock-outlined style="margin-left: 10px;"/>
             </a-tooltip>
+            <a-tooltip :title="$t('label.userdata')" v-if="item.userdataid">
+              <solution-outlined style="margin-left: 10px;"/>
+            </a-tooltip>
             <a-tag v-if="item.isfeatured" style="margin-left: 10px;">
               {{ $t('label.isfeatured') }}
             </a-tag>
