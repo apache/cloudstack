@@ -30,11 +30,11 @@
                 <edit-outlined class="upload-icon"/>
               </div>
               <slot name="avatar">
-                <span v-if="resource.vmtype === 'sharedfsvm'">
-                  <file-text-outlined style="font-size: 36px;" />
-                </span>
-                <span v-else-if="(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon) && !['router', 'systemvm', 'volume'].includes($route.path.split('/')[1])">
+                <span v-if="(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon) && !['router', 'systemvm', 'volume'].includes($route.path.split('/')[1])">
                   <resource-icon :image="getImage(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon)" size="4x" style="margin-right: 5px"/>
+                </span>
+                <span v-else-if="resource.vmtype === 'sharedfsvm'">
+                  <file-text-outlined style="font-size: 36px;" />
                 </span>
                 <span v-else>
                   <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="3x" @update-osname="setResourceOsType"/>
