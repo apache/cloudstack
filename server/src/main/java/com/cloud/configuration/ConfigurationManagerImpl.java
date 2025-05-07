@@ -16,132 +16,6 @@
 // under the License.
 package com.cloud.configuration;
 
-import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
-import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
-import static com.cloud.offering.NetworkOffering.RoutingMode.Static;
-import static org.apache.cloudstack.framework.config.ConfigKey.CATEGORY_SYSTEM;
-
-import java.io.UnsupportedEncodingException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.sql.Date;
-import java.sql.PreparedStatement;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
-import java.util.Vector;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.affinity.AffinityGroup;
-import org.apache.cloudstack.affinity.AffinityGroupService;
-import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
-import org.apache.cloudstack.agent.lb.IndirectAgentLB;
-import org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl;
-import org.apache.cloudstack.annotation.AnnotationService;
-import org.apache.cloudstack.annotation.dao.AnnotationDao;
-import org.apache.cloudstack.api.ApiCommandResourceType;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
-import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
-import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
-import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
-import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6PrefixCmd;
-import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
-import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
-import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
-import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.IsAccountAllowedToCreateOfferingsWithTagsCmd;
-import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
-import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
-import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
-import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
-import org.apache.cloudstack.api.command.admin.region.CreatePortableIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.region.DeletePortableIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.region.ListPortableIpRangesCmd;
-import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.vlan.UpdateVlanIpRangeCmd;
-import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
-import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
-import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
-import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
-import org.apache.cloudstack.cluster.ClusterDrsService;
-import org.apache.cloudstack.config.ApiServiceConfiguration;
-import org.apache.cloudstack.config.Configuration;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.framework.config.ConfigDepot;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
-import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
-import org.apache.cloudstack.framework.config.impl.ConfigurationGroupVO;
-import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
-import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.network.RoutedIpv4Manager;
-import org.apache.cloudstack.query.QueryService;
-import org.apache.cloudstack.region.PortableIp;
-import org.apache.cloudstack.region.PortableIpDao;
-import org.apache.cloudstack.region.PortableIpRange;
-import org.apache.cloudstack.region.PortableIpRangeDao;
-import org.apache.cloudstack.region.PortableIpRangeVO;
-import org.apache.cloudstack.region.PortableIpVO;
-import org.apache.cloudstack.region.Region;
-import org.apache.cloudstack.region.RegionVO;
-import org.apache.cloudstack.region.dao.RegionDao;
-import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
-import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailVO;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.userdata.UserDataManager;
-import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
-import org.apache.cloudstack.vm.UnmanagedVMsManager;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
-import org.apache.commons.lang3.EnumUtils;
-import org.apache.commons.lang3.ObjectUtils;
-import org.apache.commons.lang3.StringUtils;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -312,6 +186,131 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Sets;
 import com.googlecode.ipv6.IPv6Address;
 import com.googlecode.ipv6.IPv6Network;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.agent.lb.IndirectAgentLB;
+import org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl;
+import org.apache.cloudstack.annotation.AnnotationService;
+import org.apache.cloudstack.annotation.dao.AnnotationDao;
+import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.command.admin.config.ResetCfgCmd;
+import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateGuestNetworkIpv6PrefixCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteGuestNetworkIpv6PrefixCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.ListGuestNetworkIpv6PrefixesCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdatePodManagementNetworkIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.IsAccountAllowedToCreateOfferingsWithTagsCmd;
+import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
+import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
+import org.apache.cloudstack.api.command.admin.region.CreatePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.DeletePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.ListPortableIpRangesCmd;
+import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.UpdateVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
+import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
+import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.cluster.ClusterDrsService;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
+import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationGroupDao;
+import org.apache.cloudstack.framework.config.dao.ConfigurationSubGroupDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationGroupVO;
+import org.apache.cloudstack.framework.config.impl.ConfigurationSubGroupVO;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.network.RoutedIpv4Manager;
+import org.apache.cloudstack.query.QueryService;
+import org.apache.cloudstack.region.PortableIp;
+import org.apache.cloudstack.region.PortableIpDao;
+import org.apache.cloudstack.region.PortableIpRange;
+import org.apache.cloudstack.region.PortableIpRangeDao;
+import org.apache.cloudstack.region.PortableIpRangeVO;
+import org.apache.cloudstack.region.PortableIpVO;
+import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.region.RegionVO;
+import org.apache.cloudstack.region.dao.RegionDao;
+import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailVO;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.userdata.UserDataManager;
+import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.io.UnsupportedEncodingException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.Vector;
+import java.util.stream.Collectors;
+
+import static com.cloud.configuration.Config.SecStorageAllowedInternalDownloadSites;
+import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
+import static com.cloud.offering.NetworkOffering.RoutingMode.Static;
+import static org.apache.cloudstack.framework.config.ConfigKey.CATEGORY_SYSTEM;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final String PERACCOUNT = "peraccount";
@@ -473,6 +472,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     Ipv6Service ipv6Service;
     @Inject
     NsxProviderDao nsxProviderDao;
+    @Inject
+    VMLeaseManager vmLeaseManager;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -578,6 +579,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         configValuesForValidation.add(UserDataManager.VM_USERDATA_MAX_LENGTH_STRING);
         configValuesForValidation.add(UnmanagedVMsManager.RemoteKvmInstanceDisksCopyTimeout.key());
         configValuesForValidation.add(UnmanagedVMsManager.ConvertVmwareInstanceToKvmTimeout.key());
+        configValuesForValidation.add(VMLeaseManager.InstanceLeaseSchedulerInterval.key());
+        configValuesForValidation.add(VMLeaseManager.InstanceLeaseExpiryEventSchedulerInterval.key());
+        configValuesForValidation.add(VMLeaseManager.InstanceLeaseExpiryEventDaysBefore.key());
     }
 
     protected void weightBasedParametersForValidation() {
@@ -626,6 +630,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     params.put(Config.RouterAggregationCommandEachTimeout.toString(), _configDao.getValue(Config.RouterAggregationCommandEachTimeout.toString()));
                     params.put(Config.MigrateWait.toString(), _configDao.getValue(Config.MigrateWait.toString()));
                     _agentManager.propagateChangeToAgents(params);
+                } else if (VMLeaseManager.InstanceLeaseEnabled.key().equals(globalSettingUpdated)) {
+                    vmLeaseManager.onLeaseFeatureToggle();
                 }
             }
         });
@@ -3319,6 +3325,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        // validate lease properties and set leaseExpiryAction
+        Integer leaseDuration = cmd.getLeaseDuration();
+        String leaseExpiryAction = validateAndGetLeaseExpiryAction(leaseDuration, cmd.getLeaseExpiryAction());
+
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainIds(), cmd.getZoneIds(), cmd.getHostTag(),
                 cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, cmd.getRootDiskSize(), isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
@@ -3327,20 +3337,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 cmd.getIopsReadRate(), cmd.getIopsReadRateMax(), cmd.getIopsReadRateMaxLength(),
                 cmd.getIopsWriteRate(), cmd.getIopsWriteRateMax(), cmd.getIopsWriteRateMaxLength(),
                 cmd.getHypervisorSnapshotReserve(), cmd.getCacheMode(), storagePolicyId, cmd.getDynamicScalingEnabled(), diskOfferingId,
-                cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), cmd.isPurgeResources());
+                cmd.getDiskOfferingStrictness(), cmd.isCustomized(), cmd.getEncryptRoot(), cmd.isPurgeResources(), leaseDuration, leaseExpiryAction);
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
-            final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final String provisioningType, final boolean localStorageRequired,
-            final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm, String tags, final List<Long> domainIds, List<Long> zoneIds, final String hostTag,
-            final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, Long rootDiskSizeInGiB, final Boolean isCustomizedIops, Long minIops, Long maxIops,
-            Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
-            Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
-            Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
-            Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
-            final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID,
-            final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness,
-            final boolean isCustomized, final boolean encryptRoot, final boolean purgeResources) {
+                                                      final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final String provisioningType, final boolean localStorageRequired,
+                                                      final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm, String tags, final List<Long> domainIds, List<Long> zoneIds, final String hostTag,
+                                                      final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, Long rootDiskSizeInGiB, final Boolean isCustomizedIops, Long minIops, Long maxIops,
+                                                      Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
+                                                      Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
+                                                      Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
+                                                      Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
+                                                      final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID,
+                                                      final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness,
+                                                      final boolean isCustomized, final boolean encryptRoot, final boolean purgeResources, Integer leaseDuration, String leaseExpiryAction) {
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
@@ -3447,6 +3457,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if ((serviceOffering = _serviceOfferingDao.persist(serviceOffering)) != null) {
+            //persist lease properties if leaseExpiryAction is valid
+            if (StringUtils.isNotEmpty(leaseExpiryAction)) {
+                detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.INSTANCE_LEASE_DURATION, String.valueOf(leaseDuration), false));
+                detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, leaseExpiryAction, false));
+            }
+
             for (Long domainId : filteredDomainIds) {
                 detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
             }
@@ -3468,6 +3484,39 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         } else {
             return null;
         }
+    }
+
+    /**
+     * This method will return valid and non-empty expiryAction  when
+     * "instance.lease.enabled" feature is enabled at global level
+     * leaseDuration is positive > 0 and has valid leaseExpiryAction provided
+     * @param leaseDuration
+     * @param cmdExpiryAction
+     * @return leaseExpiryAction
+     */
+    public static String validateAndGetLeaseExpiryAction(Integer leaseDuration, String cmdExpiryAction) {
+        if (!VMLeaseManager.InstanceLeaseEnabled.value() || ObjectUtils.allNull(leaseDuration, cmdExpiryAction)) { // both are null
+            return null;
+        }
+
+        // one of them is non-null
+        if (leaseDuration == null || StringUtils.isEmpty(cmdExpiryAction)) {
+            throw new InvalidParameterValueException("Provide values for both: leaseduration and leaseexpiryaction");
+        }
+
+        if (leaseDuration < 1L || leaseDuration > VMLeaseManager.MAX_LEASE_DURATION_DAYS) {
+            throw new InvalidParameterValueException("Invalid leaseduration: must be a natural number (>=1), max supported value is 36500");
+        }
+
+        if (StringUtils.isNotEmpty(cmdExpiryAction)) {
+            try {
+                VMLeaseManager.ExpiryAction.valueOf(cmdExpiryAction);
+            } catch (IllegalArgumentException e) {
+                throw new InvalidParameterValueException("Invalid value configured for leaseexpiryaction, valid values are: " +
+                        com.cloud.utils.EnumUtils.listValues(VMLeaseManager.ExpiryAction.values()));
+            }
+        }
+        return cmdExpiryAction.toUpperCase();
     }
 
     @Override
