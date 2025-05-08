@@ -245,6 +245,7 @@ export default {
       permission: ['listOsTypes', 'listOsCategories'],
       columns: ['name', 'oscategoryname', 'isuserdefined'],
       details: ['name', 'oscategoryname', 'isuserdefined'],
+      searchFilters: ['oscategoryid'],
       related: [{
         name: 'guestoshypervisormapping',
         title: 'label.guest.os.hypervisor.mappings',
@@ -272,6 +273,7 @@ export default {
           dataView: true,
           popup: true,
           groupAction: true,
+          groupMap: (selection, values) => { return selection.map(x => { return { id: x, oscategoryid: values.oscategoryid } }) },
           args: (record, store, isGroupAction) => {
             if (isGroupAction) {
               return ['oscategoryid']
