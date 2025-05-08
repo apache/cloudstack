@@ -1243,7 +1243,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-:deep(.ant-card-body) {  padding: 0;
+:deep(.ant-card-body) {
+  padding: 0;
 }
 
 .card-body {
