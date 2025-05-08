@@ -152,6 +152,14 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     }
 
     @Override
+    public List<NicVO> listNonDeallocatedByNetworkId(long networkId) {
+        SearchCriteria<NicVO> sc = NonReleasedSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("state", Nic.State.Deallocating);
+        return listBy(sc);
+    }
+
+    @Override
     public NicVO findByNtwkIdAndInstanceId(long networkId, long instanceId) {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
         sc.setParameters("network", networkId);
