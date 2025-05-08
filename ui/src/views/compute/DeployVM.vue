@@ -128,8 +128,8 @@
                     <os-based-image-selection
                       v-if="isModernImageSelection"
                       :selectedImageType="imageType"
-                      :imagePreSelected="this.queryTemplateId || this.queryIsoId"
-                      :guestOsCategoriesSelectionDisallowed="!this.queryGuestOsCategoryId && (this.queryTemplateId || this.queryIsoId)"
+                      :imagePreSelected="!!this.queryTemplateId || !!this.queryIsoId"
+                      :guestOsCategoriesSelectionDisallowed="guestOsCategoriesSelectionDisallowed"
                       :guestOsCategories="options.guestOsCategories"
                       :guestOsCategoriesLoading="loading.guestOsCategories"
                       :selectedGuestOsCategoryId="form.guestoscategoryid"
@@ -1429,6 +1429,9 @@ export default {
     },
     showAllCategoryForModernImageSelection () {
       return this.$config.showAllCategoryForModernImageSelection
+    },
+    guestOsCategoriesSelectionDisallowed () {
+      return (!this.queryGuestOsCategoryId || this.options.guestOsCategories.length === 0) && (!!this.queryTemplateId || !!this.queryIsoId)
     }
   },
   watch: {
@@ -2059,7 +2062,9 @@ export default {
               })
             }
           }
-          this.form.guestoscategoryid = this.options.guestOsCategories[0].id
+          if (this.options.guestOsCategories.length > 0) {
+            this.form.guestoscategoryid = this.options.guestOsCategories[0].id
+          }
           if (skipFetchImages) {
             return
           }

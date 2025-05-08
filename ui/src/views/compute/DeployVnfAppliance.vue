@@ -73,7 +73,7 @@
                       v-if="isModernImageSelection"
                       :imageTypeSelectionAllowed="false"
                       :imagePreSelected="!!this.queryTemplateId"
-                      :guestOsCategoriesSelectionDisallowed="!this.queryGuestOsCategoryId && !!this.queryTemplateId"
+                      :guestOsCategoriesSelectionDisallowed="guestOsCategoriesSelectionDisallowed"
                       :guestOsCategories="options.guestOsCategories"
                       :guestOsCategoriesLoading="loading.guestOsCategories"
                       :selectedGuestOsCategoryId="form.guestoscategoryid"
@@ -1351,6 +1351,9 @@ export default {
     },
     showAllCategoryForModernImageSelection () {
       return this.$config.showAllCategoryForModernImageSelection
+    },
+    guestOsCategoriesSelectionDisallowed () {
+      return (!this.queryGuestOsCategoryId || this.options.guestOsCategories.length === 0) && (!!this.queryTemplateId || !!this.queryIsoId)
     }
   },
   watch: {
@@ -2029,7 +2032,9 @@ export default {
               })
             }
           }
-          this.form.guestoscategoryid = this.options.guestOsCategories[0].id
+          if (this.options.guestOsCategories.length > 0) {
+            this.form.guestoscategoryid = this.options.guestOsCategories[0].id
+          }
           if (skipFetchImages) {
             return
           }
