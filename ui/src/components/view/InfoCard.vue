@@ -764,7 +764,9 @@
             </a-button>
           </router-link>
         </div>
-        <image-deploy-instance-button :resource="resource" />
+        <image-deploy-instance-button
+          v-if="'deployVirtualMachine' in $store.getters.apis && ['template', 'iso'].includes($route.meta.name)"
+          :resource="resource" />
       </div>
 
       <div class="account-center-tags" v-if="showKeys || resource.apikeyaccess">

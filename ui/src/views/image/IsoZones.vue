@@ -52,9 +52,9 @@
           <span v-if="record.created">{{ $toLocaleDate(record.created) }}</span>
         </template>
         <template v-if="column.key === 'actions'">
-          <span style="margin-right: 5px">
+          <span style="margin-right: 5px" v-if="'deployVirtualMachine' in $store.getters.apis">
             <tooltip-button
-              :disabled="!('deployVirtualMachine' in $store.getters.apis) || !record.isready"
+              :disabled="!record.isready"
               :title="$t('label.vm.add')"
               icon="rocket-outlined"
               @onClick="onAddInstance(record)"/>
