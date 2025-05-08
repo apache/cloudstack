@@ -1401,7 +1401,8 @@ export default {
             isfeatured: true,
             isiso: _.get(this.form, 'imagetype') === 'isoid',
             arch: this.selectedArchitecture,
-            isvnf: false
+            isvnf: false,
+            showicon: true
           },
           field: 'guestoscategoryid'
         }

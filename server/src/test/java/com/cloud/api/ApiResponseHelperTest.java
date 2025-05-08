@@ -543,4 +543,16 @@ public class ApiResponseHelperTest {
             Assert.assertEquals("oscategory", response.getObjectName());
         }
     }
+
+    @Test
+    public void testCreateGuestOSCategoryResponse_WithShowIconFalse() {
+        GuestOsCategory guestOsCategory = Mockito.mock(GuestOsCategory.class);
+        Mockito.when(guestOsCategory.getUuid()).thenReturn(UUID.randomUUID().toString());
+        try (MockedStatic<ApiDBUtils> mockedStatic = Mockito.mockStatic(ApiDBUtils.class)) {
+            GuestOSCategoryResponse response = apiResponseHelper.createGuestOSCategoryResponse(guestOsCategory, false);
+            Assert.assertNotNull(response);
+            mockedStatic.verify(() -> ApiDBUtils.getResourceIconByResourceUUID(Mockito.any(), Mockito.any()),
+                    Mockito.never());
+        }
+    }
 }

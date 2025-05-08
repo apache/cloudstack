@@ -74,4 +74,14 @@ public class ListGuestOsCategoriesCmdTest {
         ReflectionTestUtils.setField(cmd, "arch", arch.getType());
         Assert.assertEquals(arch, cmd.getArch());
     }
+
+    @Test
+    public void testIsShowIcon() {
+        ListGuestOsCategoriesCmd cmd = new ListGuestOsCategoriesCmd();
+        Assert.assertFalse(cmd.isShowIcon());
+        ReflectionTestUtils.setField(cmd, "showIcon", false);
+        Assert.assertFalse(cmd.isShowIcon());
+        ReflectionTestUtils.setField(cmd, "showIcon", true);
+        Assert.assertTrue(cmd.isShowIcon());
+    }
 }

@@ -1260,7 +1260,8 @@ export default {
             isfeatured: true,
             isiso: _.get(this, 'imageType') === 'isoid',
             arch: this.selectedArchitecture,
-            isvnf: false
+            isvnf: false,
+            showicon: true
           },
           field: 'guestoscategoryid'
         }

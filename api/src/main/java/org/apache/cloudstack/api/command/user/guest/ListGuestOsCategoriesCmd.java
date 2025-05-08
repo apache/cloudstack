@@ -77,6 +77,12 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
             since = "4.20.1")
     private String arch;
 
+    @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON,
+            type = CommandType.BOOLEAN,
+            description = "flag to display the resource image for the OS category",
+            since = "4.20.1")
+    private Boolean showIcon;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -109,6 +115,10 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
         return arch == null ? null : CPU.CPUArch.fromType(arch);
     }
 
+    public boolean isShowIcon() {
+        return Boolean.TRUE.equals(showIcon);
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -116,10 +126,11 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
     @Override
     public void execute() {
         Pair<List<? extends GuestOsCategory>, Integer> result = _mgr.listGuestOSCategoriesByCriteria(this);
-        ListResponse<GuestOSCategoryResponse> response = new ListResponse<GuestOSCategoryResponse>();
-        List<GuestOSCategoryResponse> osCatResponses = new ArrayList<GuestOSCategoryResponse>();
+        ListResponse<GuestOSCategoryResponse> response = new ListResponse<>();
+        List<GuestOSCategoryResponse> osCatResponses = new ArrayList<>();
         for (GuestOsCategory osCategory : result.first()) {
-            GuestOSCategoryResponse categoryResponse = _responseGenerator.createGuestOSCategoryResponse(osCategory);
+            GuestOSCategoryResponse categoryResponse = _responseGenerator.createGuestOSCategoryResponse(osCategory,
+                    isShowIcon());
             osCatResponses.add(categoryResponse);
         }
 

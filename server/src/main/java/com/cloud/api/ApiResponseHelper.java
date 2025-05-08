@@ -3882,15 +3882,22 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public GuestOSCategoryResponse createGuestOSCategoryResponse(GuestOsCategory guestOsCategory) {
+        return createGuestOSCategoryResponse(guestOsCategory, true);
+    }
+
+    @Override
+    public GuestOSCategoryResponse createGuestOSCategoryResponse(GuestOsCategory guestOsCategory, boolean showIcon) {
         GuestOSCategoryResponse categoryResponse = new GuestOSCategoryResponse();
         categoryResponse.setId(guestOsCategory.getUuid());
         categoryResponse.setName(guestOsCategory.getName());
         categoryResponse.setFeatured(guestOsCategory.isFeatured());
-        ResourceIconVO resourceIcon = ApiDBUtils.getResourceIconByResourceUUID(guestOsCategory.getUuid(),
-                ResourceObjectType.GuestOsCategory);
-        if (resourceIcon != null) {
-            ResourceIconResponse iconResponse = ApiDBUtils.newResourceIconResponse(resourceIcon);
-            categoryResponse.setResourceIconResponse(iconResponse);
+        if (showIcon) {
+            ResourceIconVO resourceIcon = ApiDBUtils.getResourceIconByResourceUUID(guestOsCategory.getUuid(),
+                    ResourceObjectType.GuestOsCategory);
+            if (resourceIcon != null) {
+                ResourceIconResponse iconResponse = ApiDBUtils.newResourceIconResponse(resourceIcon);
+                categoryResponse.setResourceIconResponse(iconResponse);
+            }
         }
         categoryResponse.setObjectName("oscategory");
         return categoryResponse;

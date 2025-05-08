@@ -485,6 +485,8 @@ public interface ResponseGenerator {
 
     GuestOSCategoryResponse createGuestOSCategoryResponse(GuestOsCategory guestOsCategory);
 
+    GuestOSCategoryResponse createGuestOSCategoryResponse(GuestOsCategory guestOsCategory, boolean showIcon);
+
     GuestOSResponse createGuestOSResponse(GuestOS os);
 
     GuestOsMappingResponse createGuestOSMappingResponse(GuestOSHypervisor osHypervisor);

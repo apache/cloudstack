@@ -304,8 +304,9 @@ export default {
       const params = {
         zoneid: this.resource.zoneid,
         arch: this.resource.arch,
-        isIso: false,
-        featured: true
+        isiso: false,
+        featured: true,
+        showicon: true
       }
       api('listOsCategories', params).then((response) => {
         this.options.guestOsCategories = response?.listoscategoriesresponse?.oscategory || []

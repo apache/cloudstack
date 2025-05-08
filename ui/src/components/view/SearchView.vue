@@ -1021,7 +1021,7 @@ export default {
     },
     fetchOsCategories (searchKeyword) {
       return new Promise((resolve, reject) => {
-        api('listOsCategories', { keyword: searchKeyword }).then(json => {
+        api('listOsCategories', { showicon: true, keyword: searchKeyword }).then(json => {
           const osCategories = json.listoscategoriesresponse.oscategory
           resolve({
             type: 'oscategoryid',
