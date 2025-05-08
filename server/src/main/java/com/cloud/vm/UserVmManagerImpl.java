@@ -54,6 +54,7 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.utils.db.TransactionLegacy;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -7594,6 +7595,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         try {
             updateVmNetwork(cmd, caller, vm, newAccount, template);
         } catch (InsufficientCapacityException | ResourceAllocationException e) {
+            List<NetworkVO> networkVOS = _networkDao.listByAccountIdNetworkName(newAccountId, newAccount.getAccountName() + "-network");
+            if (networkVOS.size() == 1) {
+                _networkDao.remove(networkVOS.get(0).getId());
+            }
+            _accountMgr.getActiveAccountByName(newAccount.getAccountName() + "-network", newAccount.getDomainId());
             throw new CloudRuntimeException(String.format("Unable to update networks when assigning VM [%s] due to [%s].", vm, e.getMessage()), e);
         }
 
@@ -7961,7 +7967,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         NetworkVO defaultNetwork;
         List<? extends Network> virtualNetworks = _networkModel.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
         if (virtualNetworks.isEmpty()) {
-            defaultNetwork = createApplicableNetworkToCreateVm(caller, newAccount, zone, firstRequiredOffering);
+            try (TransactionLegacy txn = TransactionLegacy.open("CreateNetworkTxn")) {
+                defaultNetwork = createApplicableNetworkToCreateVm(caller, newAccount, zone, firstRequiredOffering);
+                txn.commit();
+            }
         } else if (virtualNetworks.size() > 1) {
             throw new InvalidParameterValueException(String.format("More than one default isolated network has been found for account [%s]; please specify networkIDs.",
                     newAccount));
