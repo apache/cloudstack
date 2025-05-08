@@ -3090,15 +3090,18 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             if (dc.getNetworkType() == NetworkType.Basic) {
                 throw new InvalidParameterValueException("Guest VM CIDR can't be specified for zone with " + NetworkType.Basic + " networking");
             }
-            if (network.getGuestType() != GuestType.Isolated) {
-                throw new InvalidParameterValueException("Can only allow IP Reservation in networks with guest type " + GuestType.Isolated);
+            if (network.getGuestType() != GuestType.Isolated && network.getGuestType() != GuestType.Shared) {
+                throw new InvalidParameterValueException("Can only allow IP Reservation in networks with guest types: " + GuestType.Isolated + " or " + GuestType.Shared);
             }
             if (networkOfferingChanged) {
                 throw new InvalidParameterValueException("Cannot specify this network offering change and guestVmCidr at same time. Specify only one.");
             }
-            if (network.getState() != Network.State.Implemented && network.getState() != Network.State.Allocated) {
-                throw new InvalidParameterValueException(String.format("The network must be in %s or %s state. IP Reservation cannot be applied in %s state",
-                        Network.State.Implemented, Network.State.Allocated, network.getState()));
+            if (network.getGuestType() != GuestType.Isolated && network.getGuestType() != GuestType.Shared) {
+                throw new InvalidParameterValueException("Can only allow IP Reservation in networks with guest types: " + GuestType.Isolated + " or " + GuestType.Shared);
+            }
+            if (network.getState() != Network.State.Implemented && network.getState() != Network.State.Allocated && network.getState() != Network.State.Setup) {
+                throw new InvalidParameterValueException(String.format("The network must be in %s, $s or %s state. IP Reservation cannot be applied in %s state",
+                        Network.State.Implemented, Network.State.Allocated, Network.State.Setup, network.getState()));
             }
             if (!NetUtils.isValidIp4Cidr(guestVmCidr)) {
                 throw new InvalidParameterValueException("Invalid format of Guest VM CIDR.");
@@ -3111,19 +3114,17 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             // But in case networkCidr is a non null value (IP reservation already exists), it implies network cidr is networkCidr
             if (networkCidr != null) {
                 if (!NetUtils.isNetworkAWithinNetworkB(guestVmCidr, networkCidr)) {
-                    throw new InvalidParameterValueException("Invalid value of Guest VM CIDR. For IP Reservation, Guest VM CIDR  should be a subset of network CIDR : " + networkCidr);
+                    throw new InvalidParameterValueException("Invalid value of Guest VM CIDR. For IP Reservation, Guest VM CIDR should be a subset of network CIDR: " + networkCidr);
                 }
             } else {
                 if (!NetUtils.isNetworkAWithinNetworkB(guestVmCidr, network.getCidr())) {
-                    throw new InvalidParameterValueException("Invalid value of Guest VM CIDR. For IP Reservation, Guest VM CIDR  should be a subset of network CIDR :  " + network.getCidr());
+                    throw new InvalidParameterValueException("Invalid value of Guest VM CIDR. For IP Reservation, Guest VM CIDR should be a subset of network CIDR: " + network.getCidr());
                 }
             }
 
             // This check makes sure there are no active IPs existing outside the guestVmCidr in the network
             String[] guestVmCidrPair = guestVmCidr.split("\\/");
             Long size = Long.valueOf(guestVmCidrPair[1]);
-            List<NicVO> nicsPresent = _nicDao.listByNetworkId(networkId);
-
             String cidrIpRange[] = NetUtils.getIpRangeFromCidr(guestVmCidrPair[0], size);
             s_logger.info("The start IP of the specified guest vm cidr is: " + cidrIpRange[0] + " and end IP is: " + cidrIpRange[1]);
             long startIp = NetUtils.ip2Long(cidrIpRange[0]);
@@ -3131,14 +3132,39 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
             long range = endIp - startIp + 1;
             s_logger.info("The specified guest vm cidr has " + range + " IPs");
 
-            for (NicVO nic : nicsPresent) {
+            List<NicVO> nonDellocatedNicsPresent = _nicDao.listNonDeallocatedByNetworkId(networkId);
+            if (network.getGuestType() == GuestType.Shared) {
+                if (CollectionUtils.isNotEmpty(nonDellocatedNicsPresent)) {
+                    throw new InvalidParameterValueException("IPs are in use, cannot apply reservation");
+                }
+                List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+                if (CollectionUtils.isNotEmpty(vlans)) {
+                    for (VlanVO vlan : vlans) {
+                        if (vlan == null) {
+                            continue;
+                        }
+                        String vlanIpRange = vlan.getIpRange();
+                        if (vlanIpRange == null) {
+                            continue;
+                        }
+                        String[] vlanRange = vlanIpRange.split("-");
+                        String vlanStartIP = vlanRange[0];
+                        String vlanEndIP = vlanRange[1];
+                        if (!NetUtils.isIpWithInCidrRange(vlanStartIP, guestVmCidr) || !NetUtils.isIpWithInCidrRange(vlanEndIP, guestVmCidr)) {
+                            throw new InvalidParameterValueException(String.format("CIDR doesn't include the IP range %s, cannot apply reservation", vlanIpRange));
+                        }
+                    }
+                }
+            }
+
+            for (NicVO nic : nonDellocatedNicsPresent) {
                 if (nic.getIPv4Address() == null) {
                     continue;
                 }
                 long nicIp = NetUtils.ip2Long(nic.getIPv4Address());
                 //check if nic IP is outside the guest vm cidr
                 if ((nicIp < startIp || nicIp > endIp) && nic.getState() != Nic.State.Deallocating) {
-                    throw new InvalidParameterValueException("Active IPs like " + nic.getIPv4Address() + " exist outside the Guest VM CIDR. Cannot apply reservation ");
+                    throw new InvalidParameterValueException("Active IPs like " + nic.getIPv4Address() + " exist outside the Guest VM CIDR. Cannot apply reservation");
                 }
             }
 
@@ -3171,6 +3197,24 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
                 s_logger.warn("Guest VM CIDR and Network CIDR both are same, reservation will reset.");
                 network.setNetworkCidr(null);
             }
+
+            // Remove any placeholder nic before updating the cidr
+            final List<NicVO> placeholderNics = _nicDao.listPlaceholderNicsByNetworkId(network.getId());
+            if (CollectionUtils.isNotEmpty(placeholderNics)) {
+                for (NicVO nic : placeholderNics) {
+                    if (nic.getIPv4Address() != null) {
+                        s_logger.debug("Releasing ip " + nic.getIPv4Address() + " of placeholder nic " + nic);
+                        IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), nic.getIPv4Address());
+                        if (ip != null) {
+                            _ipAddrMgr.markIpAsUnavailable(ip.getId());
+                            _ipAddressDao.unassignIpAddress(ip.getId());
+                        }
+                    }
+                    s_logger.debug("Removing placeholder nic " + nic);
+                    _nicDao.remove(nic.getId());
+                }
+            }
+
             // Finally update "cidr" with the guestVmCidr
             // which becomes the effective address space for CloudStack guest VMs
             network.setCidr(guestVmCidr);
