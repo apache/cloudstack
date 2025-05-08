@@ -81,18 +81,31 @@ CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (3, 'Oracle Linux 8', 'XenServer', '8.3
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (4, 'Red Hat Enterprise Linux 8.0', 'XenServer', '8.3.0', 'Red Hat Enterprise Linux 8');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (4, 'Red Hat Enterprise Linux 9.0', 'XenServer', '8.3.0', 'Red Hat Enterprise Linux 9');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (10, 'Ubuntu 22.04 LTS', 'XenServer', '8.3.0', 'Ubuntu Jammy Jellyfish 22.04');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (5, 'SUSE Linux Enterprise Server 12 SP5 (64-bit)', 'XenServer', '8.3.0', 'SUSE Linux Enterprise Server 12 SP5 (64-bit');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (4, 'NeoKylin Linux Server 7', 'XenServer', '8.3.0', 'NeoKylin Linux Server 7');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'CentOS Stream 9', 'XenServer', '8.3.0', 'CentOS Stream 9');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (4, 'Scientific Linux 7', 'XenServer', '8.3.0', 'Scientific Linux 7');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Generic Linux UEFI', 'XenServer', '8.3.0', 'Generic Linux UEFI');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'Generic Linux BIOS', 'XenServer', '8.3.0', 'Generic Linux BIOS');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (2, 'Gooroom Platform 2.0', 'XenServer', '8.3.0', 'Gooroom Platform 2.0');
 
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '8.4.0', guest_os_name, guest_os_id, utc_timestamp(), 0 FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='8.3.0';
 
 -- Add new guest os mappings for XS 8.4 and KVM
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows Server 2025', 'XenServer', '8.4.0', 'Windows Server 2025');
-CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (10, 'Ubuntu 24.04 LTS', 'XenServer', '8.4.0', 'Ubuntu Noble Numbat 24.04 (preview)');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (10, 'Ubuntu 24.04 LTS', 'XenServer', '8.4.0', 'Ubuntu Noble Numbat 24.04');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (2, 'Debian GNU/Linux 10 (64-bit)', 'KVM', 'default', 'Debian GNU/Linux 10 (64-bit)');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (2, 'Debian GNU/Linux 11 (64-bit)', 'KVM', 'default', 'Debian GNU/Linux 11 (64-bit)');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (2, 'Debian GNU/Linux 12 (64-bit)', 'KVM', 'default', 'Debian GNU/Linux 12 (64-bit)');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows 11 (64-bit)', 'KVM', 'default', 'Windows 11');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (6, 'Windows Server 2025', 'KVM', 'default', 'Windows Server 2025');
 CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (10, 'Ubuntu 24.04 LTS', 'KVM', 'default', 'Ubuntu 24.04 LTS');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'CentOS Stream 10 (preview)', 'XenServer', '8.4.0', 'CentOS Stream 10 (preview)');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (1, 'CentOS Stream 9', 'XenServer', '8.4.0', 'CentOS Stream 9');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (4, 'Scientific Linux 7', 'XenServer', '8.4.0', 'Scientific Linux 7');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (4, 'NeoKylin Linux Server 7', 'XenServer', '8.4.0', 'NeoKylin Linux Server 7');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (5, 'SUSE Linux Enterprise Server 12 SP5 (64-bit)', 'XenServer', '8.4.0', 'SUSE Linux Enterprise Server 12 SP5 (64-bit');
+CALL ADD_GUEST_OS_AND_HYPERVISOR_MAPPING (2, 'Gooroom Platform 2.0', 'XenServer', '8.4.0', 'Gooroom Platform 2.0');
 
 -- Grant access to 2FA APIs for the "Read-Only User - Default" role
 
