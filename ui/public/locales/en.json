@@ -1947,6 +1947,7 @@
 "label.rolename": "Role",
 "label.roles": "Roles",
 "label.roletype": "Role Type",
+"label.rolepermissiontab.searchbar": "Search Rule",
 "label.root.certificate": "Root certificate",
 "label.root.disk.size": "Root disk size (GB)",
 "label.rootdisk": "ROOT disk",
