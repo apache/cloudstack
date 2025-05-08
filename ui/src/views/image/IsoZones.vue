@@ -38,8 +38,8 @@
       :rowExpandable="(record) => record.downloaddetails.length > 0">
       <template #bodyCell="{ column, record }">
         <template v-if="column.key === 'zonename'">
-          <span v-if="fetchZoneIcon(record.zoneid)">
-            <resource-icon :image="zoneIcon" size="1x" style="margin-right: 5px"/>
+          <span v-if="record.zoneicon && record.zoneicon.base64image">
+            <resource-icon :image="record.zoneicon.base64image" size="2x" style="margin-right: 5px"/>
           </span>
           <global-outlined v-else style="margin-right: 5px" />
           <span> {{ record.zonename }} </span>
@@ -171,7 +171,7 @@
               }"
               :loading="zoneLoading"
               v-focus="true">
-              <a-select-option v-for="zone in zones" :key="zone.id" :label="zone.name">
+              <a-select-option v-for="zone in copyZones" :key="zone.id" :label="zone.name">
                 <div>
                   <span v-if="zone.icon && zone.icon.base64image">
                     <resource-icon :image="zone.icon.base64image" size="1x" style="margin-right: 5px"/>
@@ -246,6 +246,7 @@ export default {
       showCopyActionForm: false,
       currentRecord: {},
       zones: [],
+      copyZones: [],
       zoneLoading: false,
       copyLoading: false,
       deleteLoading: false,
@@ -348,6 +349,7 @@ export default {
         this.resource.account !== 'system'
     }
   },
+  emits: ['update-zones'],
   methods: {
     initForm () {
       this.formRef = ref()
@@ -374,17 +376,10 @@ export default {
         this.$notifyError(error)
       }).finally(() => {
         this.fetchLoading = false
+        this.updateImageZones()
       })
       this.fetchZoneData()
       this.fetchOsCategoryId()
-    },
-    fetchZoneIcon (zoneid) {
-      const zoneItem = this.zones.filter(zone => zone.id === zoneid)
-      if (zoneItem?.[0]?.icon?.base64image) {
-        this.zoneIcon = zoneItem[0].icon.base64image
-        return true
-      }
-      return false
     },
     handleChangePage (page, pageSize) {
       this.page = page
@@ -511,10 +506,29 @@ export default {
       this.zoneLoading = true
       api('listZones', { showicon: true }).then(json => {
         const zones = json.listzonesresponse.zone || []
-        this.zones = [...zones.filter((zone) => this.currentRecord.zoneid !== zone.id)]
+        this.zones = zones
+        this.copyZones = [...zones.filter((zone) => this.currentRecord.zoneid !== zone.id)]
       }).finally(() => {
         this.zoneLoading = false
+        this.updateImageZones()
       })
+    },
+    updateImageZones () {
+      if (!Array.isArray(this.dataSource) || !Array.isArray(this.zones) ||
+        this.dataSource.length === 0 || this.zones.length === 0) {
+        return
+      }
+      const imageZones = []
+      this.dataSource.forEach(item => {
+        const zone = this.zones.find(zone => item.zoneid === zone.id)
+        if (zone && zone.icon) {
+          item.zoneicon = zone.icon
+        }
+        imageZones.push(zone)
+      })
+      if (imageZones.length !== 0) {
+        this.$emit('update-zones', imageZones)
+      }
     },
     fetchOsCategoryId () {
       const needed = this.$route.meta.name === 'iso' &&

@@ -764,6 +764,7 @@
             </a-button>
           </router-link>
         </div>
+        <image-deploy-instance-button :resource="resource" />
       </div>
 
       <div class="account-center-tags" v-if="showKeys || resource.apikeyaccess">
@@ -870,6 +871,7 @@ import UploadResourceIcon from '@/components/view/UploadResourceIcon'
 import eventBus from '@/config/eventBus'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
+import ImageDeployInstanceButton from '@/components/view/ImageDeployInstanceButton.vue'
 
 export default {
   name: 'InfoCard',
@@ -881,7 +883,8 @@ export default {
     TooltipButton,
     UploadResourceIcon,
     ResourceIcon,
-    ResourceLabel
+    ResourceLabel,
+    ImageDeployInstanceButton
   },
   props: {
     resource: {
@@ -993,6 +996,9 @@ export default {
     },
     routeFromResourceType () {
       return this.$getRouteFromResourceType(this.resource.resourcetype)
+    },
+    isModernImageSelection () {
+      return this.$config.imageSelectionInterface === undefined || this.$config.imageSelectionInterface === 'modern'
     }
   },
   methods: {
