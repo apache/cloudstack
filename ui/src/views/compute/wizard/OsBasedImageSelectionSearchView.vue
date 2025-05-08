@@ -17,84 +17,46 @@
 
 <template>
   <span class="filter-group">
-    <a-input-search
-      v-if="filtersDisabled"
-      class="input-search"
-      :placeholder="$t('label.search')"
-      v-model:value="searchQuery"
-      allowClear
-      @search="handleImageSearch" />
-    <a-input-search
-      v-else
-      class="input-search"
-      :placeholder="$t('label.search')"
-      v-model:value="searchQuery"
-      allowClear
-      @search="handleImageSearch">
-      <template #addonBefore>
-        <a-popover
-          placement="bottomRight"
-          trigger="click"
-          v-model:visible="visibleFilter">
-          <template #content v-if="visibleFilter">
-            <a-form
-              style="min-width: 170px"
-              :ref="formRef"
-              :model="form"
-              :rules="rules"
-              layout="vertical"
-              @finish="handleSubmit"
-              v-ctrl-enter="handleSubmit">
-              <a-form-item ref="public" name="public" :key="0" :label="$t('label.ispublic')">
-                <a-checkbox v-model:checked="form.public">
-                  {{ $t('label.show.public.only') }}
-                </a-checkbox>
-              </a-form-item>
-              <a-form-item ref="featured" name="featured" :key="0" :label="$t('label.isfeatured')">
-                <a-checkbox v-model:checked="form.featured">
-                  {{ $t('label.show.featured.only') }}
-                </a-checkbox>
-              </a-form-item>
-              <div class="filter-group-button">
-                <a-button
-                  class="filter-group-button-clear"
-                  type="default"
-                  size="small"
-                  @click="onClear">
-                  <template #icon><stop-outlined /></template>
-                  {{ $t('label.reset') }}
-                </a-button>
-                <a-button
-                  class="filter-group-button-search"
-                  type="primary"
-                  size="small"
-                  ref="submit"
-                  html-type="submit">
-                  <template #icon><search-outlined /></template>
-                  {{ $t('label.search') }}
-                </a-button>
-              </div>
-            </a-form>
-          </template>
-          <a-button
-            class="filter-button"
-            size="small">
-            <filter-two-tone v-if="isFiltered" />
-            <filter-outlined v-else />
-          </a-button>
-        </a-popover>
-      </template>
-    </a-input-search>
+    <a-row type="flex">
+      <a-col flex="200px" v-if="!filtersDisabled">
+        <a-select
+          mode="multiple"
+          class="filter-select"
+          :placeholder="$t('label.filterby')"
+          v-model:value="filterValues"
+          @change="handleFilterChange"
+          showSearch
+          allowClear
+          :showArrow="true"
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }">
+          <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
+          <a-select-option
+            v-for="filter in filters"
+            :key="filter"
+            :label="$t('label.' + filter)">
+            {{ $t('label.' + filter) }}
+          </a-select-option>
+        </a-select>
+      </a-col>
+      <a-col flex="auto">
+        <a-input-search
+          class="filter-search"
+          :placeholder="$t('label.search')"
+          v-model:value="searchedText"
+          allowClear
+          @search="handleTextSearch" />
+      </a-col>
+    </a-row>
   </span>
 </template>
 
 <script>
-import { ref, reactive, toRaw } from 'vue'
 
 export default {
   name: 'OsBasedImageSelectionSearchView',
-  components: {
-  },
   props: {
     filtersDisabled: {
       type: Boolean,
@@ -103,20 +65,20 @@ export default {
   },
   data () {
     return {
-      visibleFilter: false,
-      searchQuery: null,
-      isFiltered: false,
+      filters: [
+        'public',
+        'featured'
+      ],
+      filterValues: undefined,
+      searchedText: null,
       paramsFilter: {}
     }
   },
   created () {
-    this.formRef = ref()
-    this.form = reactive({})
-    this.rules = reactive({})
   },
   methods: {
-    handleImageSearch (value) {
-      this.searchQuery = value
+    handleTextSearch (value) {
+      this.searchedText = value
       if (value) {
         this.paramsFilter.keyword = value
       } else {
@@ -129,31 +91,15 @@ export default {
       }
       this.$emit('search', params)
     },
-    handleSubmit () {
+    handleFilterChange () {
       this.paramsFilter = {}
-      this.formRef.value.validate().then(() => {
-        const values = toRaw(this.form)
-        this.isFiltered = true
-        for (const key in values) {
-          const input = values[key]
-          if (input === '' || input === null || input === undefined) {
-            continue
-          }
-          this.paramsFilter[key] = input
-        }
-        if (this.searchQuery) {
-          this.paramsFilter.keyword = this.searchQuery
-        }
-        this.$emit('search', this.paramsFilter)
-      })
-    },
-    onClear () {
-      this.formRef.value.resetFields()
-      this.form = reactive({})
-      this.isFiltered = false
-      this.paramsFilter = {}
-      if (this.searchQuery) {
-        this.paramsFilter.keyword = this.searchQuery
+      if (Array.isArray(this.filterValues)) {
+        this.filterValues.forEach(e => {
+          this.paramsFilter[e] = true
+        })
+      }
+      if (this.searchedText) {
+        this.paramsFilter.keyword = this.searchedText
       }
       this.$emit('search', this.paramsFilter)
     }
@@ -162,42 +108,12 @@ export default {
 </script>
 
 <style lang="less" scoped>
-
-.filter-group {
-  :deep(.ant-input-group-addon) {
-    padding: 0 5px;
-  }
-
-  &-button {
-    background: inherit;
-    border: 0;
-    padding: 0;
-  }
-
-  &-button {
-    position: relative;
-    display: block;
-    min-height: 25px;
-
-    &-clear {
-      position: absolute;
-      left: 0;
-    }
-
-    &-search {
-      position: absolute;
-      right: 0;
-    }
-  }
+.filter-group .ant-select,
+.filter-group .ant-input-search {
+  margin-right: 12px;
 }
 
-.filter-button {
-  background: inherit;
-  border: 0;
-  padding: 0;
-  position: relative;
-  display: block;
-  min-height: 25px;
-  width: 20px;
+.filter-select {
+  width: 200px;
 }
 </style>
