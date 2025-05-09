@@ -18,6 +18,7 @@
 <template>
   <div class="button-container">
     <a-button
+      v-if="cancekButtonAllowed"
       @click="handleCancelBtn"
       :disabled="loading"
       class="equal-size-button">
@@ -70,6 +71,10 @@ export default {
     deployButtonMenuOptions: {
       type: Array,
       default: null
+    },
+    cancekButtonAllowed: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['handle-cancel', 'handle-deploy', 'handle-deploy-menu'],
