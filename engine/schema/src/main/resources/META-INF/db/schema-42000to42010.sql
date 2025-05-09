@@ -76,6 +76,9 @@ CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Read-Only Admin - Default', 'va
 CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Support Admin - Default', 'setupUserTwoFactorAuthentication', 'ALLOW');
 CALL `cloud`.`IDEMPOTENT_UPDATE_API_PERMISSION`('Support Admin - Default', 'validateUserTwoFactorAuthenticationCode', 'ALLOW');
 
+-- Re-apply VPC: update default network offering for vpc tier to conserve_mode=1 (#8309)
+UPDATE `cloud`.`network_offerings` SET conserve_mode=1 WHERE name='DefaultIsolatedNetworkOfferingForVpcNetworks';
+
 -- Add featured column for guest_os_category
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.guest_os_category', 'featured', 'tinyint(1) NOT NULL DEFAULT 0 COMMENT "whether the category is featured or not" AFTER `uuid`');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.guest_os_category', 'sort_key', 'int NOT NULL DEFAULT 0 COMMENT "sort key used for customising sort method" AFTER `featured`');
