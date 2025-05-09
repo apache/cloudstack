@@ -48,7 +48,7 @@ public class CitrixCleanupVMCommandWrapper extends CommandWrapper<CleanupVMComma
             final Connection conn = citrixResourceBase.getConnection();
             final Set<VM> vms = VM.getByNameLabel(conn, vmName);
             if (vms.isEmpty()) {
-                return new Answer(command, false, "VM does not exist");
+                return new Answer(command, true, "VM does not exist");
             }
             // destroy vm which is in HALTED state on this host
             final Iterator<VM> iter = vms.iterator();
