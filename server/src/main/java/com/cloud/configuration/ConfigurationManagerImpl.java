@@ -4407,14 +4407,35 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String endIP = cmd.getEndIp();
         final String newVlanGateway = cmd.getGateway();
         final String newVlanNetmask = cmd.getNetmask();
+        Long networkId = cmd.getNetworkID();
+        Long physicalNetworkId = cmd.getPhysicalNetworkId();
+
+        // Verify that network exists
+        Network network = null;
+        if (networkId != null) {
+            network = _networkDao.findById(networkId);
+            if (network == null) {
+                throw new InvalidParameterValueException("Unable to find network by id " + networkId);
+            } else {
+                zoneId = network.getDataCenterId();
+                physicalNetworkId = network.getPhysicalNetworkId();
+            }
+        }
+
         String vlanId = cmd.getVlan();
+        if (StringUtils.isBlank(vlanId)) {
+            vlanId = Vlan.UNTAGGED;
+            if (network != null & network.getTrafficType() == TrafficType.Guest) {
+                boolean connectivityWithoutVlan = isConnectivityWithoutVlan(network);
+                vlanId = getNetworkVlanId(network, connectivityWithoutVlan);
+            }
+        }
+
         // TODO decide if we should be forgiving or demand a valid and complete URI
         if (!(vlanId == null || "".equals(vlanId) || vlanId.startsWith(BroadcastDomainType.Vlan.scheme()))) {
             vlanId = BroadcastDomainType.Vlan.toUri(vlanId).toString();
         }
         final Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
-        Long networkId = cmd.getNetworkID();
-        Long physicalNetworkId = cmd.getPhysicalNetworkId();
         final String accountName = cmd.getAccountName();
         final Long projectId = cmd.getProjectId();
         final Long domainId = cmd.getDomainId();
@@ -4484,18 +4505,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             domain = _domainDao.findById(domainId);
             if (domain == null) {
                 throw new InvalidParameterValueException("Please specify a valid domain id");
-            }
-        }
-
-        // Verify that network exists
-        Network network = null;
-        if (networkId != null) {
-            network = _networkDao.findById(networkId);
-            if (network == null) {
-                throw new InvalidParameterValueException("Unable to find network by id " + networkId);
-            } else {
-                zoneId = network.getDataCenterId();
-                physicalNetworkId = network.getPhysicalNetworkId();
             }
         }
 
@@ -4847,28 +4856,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // same as network's vlan
         // 2) if vlan is missing, default it to the guest network's vlan
         if (network.getTrafficType() == TrafficType.Guest) {
-            String networkVlanId = null;
-            boolean connectivityWithoutVlan = false;
-            if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Connectivity)) {
-                Map<Capability, String> connectivityCapabilities = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.Connectivity);
-                connectivityWithoutVlan = MapUtils.isNotEmpty(connectivityCapabilities) && connectivityCapabilities.containsKey(Capability.NoVlan);
-            }
-
-            final URI uri = network.getBroadcastUri();
-            if (connectivityWithoutVlan) {
-                networkVlanId = network.getBroadcastDomainType().toUri(network.getUuid()).toString();
-            } else if (uri != null) {
-                // Do not search for the VLAN tag when the network doesn't support VLAN
-               if (uri.toString().startsWith("vlan")) {
-                    final String[] vlan = uri.toString().split("vlan:\\/\\/");
-                    networkVlanId = vlan[1];
-                    // For pvlan
-                    if (network.getBroadcastDomainType() != BroadcastDomainType.Vlan) {
-                        networkVlanId = networkVlanId.split("-")[0];
-                    }
-               }
-            }
-
+            boolean connectivityWithoutVlan = isConnectivityWithoutVlan(network);
+            String networkVlanId = getNetworkVlanId(network, connectivityWithoutVlan);
             if (vlanId != null && !connectivityWithoutVlan) {
                 // if vlan is specified, throw an error if it's not equal to
                 // network's vlanId
@@ -4998,6 +4987,36 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 ipv4, zone, vlanType, ipv6Range, ipRange, forSystemVms);
 
         return vlan;
+    }
+
+    private boolean isConnectivityWithoutVlan(Network network) {
+        boolean connectivityWithoutVlan = false;
+        if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Connectivity)) {
+            Map<Capability, String> connectivityCapabilities = _networkModel.getNetworkServiceCapabilities(network.getId(), Service.Connectivity);
+            connectivityWithoutVlan = MapUtils.isNotEmpty(connectivityCapabilities) && connectivityCapabilities.containsKey(Capability.NoVlan);
+        }
+        return connectivityWithoutVlan;
+    }
+
+    private String getNetworkVlanId(Network network, boolean connectivityWithoutVlan) {
+        String networkVlanId = null;
+        if (connectivityWithoutVlan) {
+            return network.getBroadcastDomainType().toUri(network.getUuid()).toString();
+        }
+
+        final URI uri = network.getBroadcastUri();
+        if (uri != null) {
+            // Do not search for the VLAN tag when the network doesn't support VLAN
+            if (uri.toString().startsWith("vlan")) {
+                final String[] vlan = uri.toString().split("vlan:\\/\\/");
+                networkVlanId = vlan[1];
+                // For pvlan
+                if (network.getBroadcastDomainType() != BroadcastDomainType.Vlan) {
+                    networkVlanId = networkVlanId.split("-")[0];
+                }
+            }
+        }
+        return networkVlanId;
     }
 
     private void checkZoneVlanIpOverlap(DataCenterVO zone, Network network, String newCidr, String vlanId, String vlanGateway, String vlanNetmask, String startIP, String endIP) {
