@@ -1925,6 +1925,7 @@
 "label.sharedrouteripv6": "IPv6 address for the VR in this shared Network.",
 "label.sharewith": "Share with",
 "label.showing": "Showing",
+"label.showing.results.for": "Showing results for \"%x\"",
 "label.shrinkok": "Shrink OK",
 "label.shutdown": "Shutdown",
 "label.shutdown.provider": "Shutdown provider",
