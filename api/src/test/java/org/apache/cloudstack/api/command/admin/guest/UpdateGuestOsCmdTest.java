@@ -14,19 +14,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.storage;
+package org.apache.cloudstack.api.command.admin.guest;
 
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
 
-public interface GuestOsCategory extends Identity, InternalIdentity {
-    // Used by OS preference, 'None' for no OS preference
-    public static final String CATEGORY_NONE = "None";
+@RunWith(MockitoJUnitRunner.class)
+public class UpdateGuestOsCmdTest {
 
-    String getName();
 
-    void setName(String name);
-
-    boolean isFeatured();
-
+    @Test
+    public void testGetZoneId() {
+        UpdateGuestOsCmd cmd = new UpdateGuestOsCmd();
+        Assert.assertNull(cmd.getOsCategoryId());
+        Long osCategoryId = 100L;
+        ReflectionTestUtils.setField(cmd, "osCategoryId", osCategoryId);
+        Assert.assertEquals(osCategoryId, cmd.getOsCategoryId());
+    }
 }

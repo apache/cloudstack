@@ -39,6 +39,12 @@ public class GuestOSCategoryVO implements GuestOsCategory {
     @Column(name = "uuid")
     String uuid = UUID.randomUUID().toString();
 
+    @Column(name = "featured")
+    boolean featured;
+
+    @Column(name = "sort_key")
+    private int sortKey;
+
     @Override
     public long getId() {
         return id;
@@ -61,5 +67,22 @@ public class GuestOSCategoryVO implements GuestOsCategory {
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    @Override
+    public boolean isFeatured() {
+        return featured;
+    }
+
+    public void setFeatured(Boolean featured) {
+        this.featured = featured;
+    }
+
+    public void setSortKey(int key) {
+        sortKey = key;
+    }
+
+    public int getSortKey() {
+        return sortKey;
     }
 }
