@@ -24,9 +24,9 @@ export default {
   icon: 'cluster-outlined',
   docHelp: 'conceptsandterminology/concepts.html#about-clusters',
   permission: ['listClustersMetrics'],
-  searchFilters: ['name', 'zoneid', 'podid', 'hypervisor'],
+  searchFilters: ['name', 'zoneid', 'podid', 'arch', 'hypervisor'],
   columns: () => {
-    const fields = ['name', 'allocationstate', 'clustertype', 'hypervisortype']
+    const fields = ['name', 'allocationstate', 'clustertype', 'arch', 'hypervisortype']
     const metricsFields = ['state', 'hosts', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'drsimbalance']
     if (store.getters.metrics) {
       fields.push(...metricsFields)

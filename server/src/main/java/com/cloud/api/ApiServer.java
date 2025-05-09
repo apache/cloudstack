@@ -1186,7 +1186,14 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             domainId = userDomain.getId();
         }
 
-        UserAccount userAcct = accountMgr.authenticateUser(username, password, domainId, loginIpAddress, requestParameters);
+        Long userId = (Long)session.getAttribute("nextUserId");
+        UserAccount userAcct = null;
+        if (userId != null) {
+            userAcct = accountMgr.getUserAccountById(userId);
+        } else {
+            userAcct = accountMgr.authenticateUser(username, password, domainId, loginIpAddress, requestParameters);
+        }
+
         if (userAcct != null) {
             final String timezone = userAcct.getTimezone();
             float offsetInHrs = 0f;
