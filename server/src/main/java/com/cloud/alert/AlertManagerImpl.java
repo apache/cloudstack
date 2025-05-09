@@ -19,6 +19,7 @@ package com.cloud.alert;
 import java.io.UnsupportedEncodingException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -82,8 +83,21 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
+import org.jetbrains.annotations.Nullable;
 
 public class AlertManagerImpl extends ManagerBase implements AlertManager, Configurable {
+    public static final List<AlertType> ALERTS = Arrays.asList(AlertType.ALERT_TYPE_HOST
+            , AlertType.ALERT_TYPE_USERVM
+            , AlertType.ALERT_TYPE_DOMAIN_ROUTER
+            , AlertType.ALERT_TYPE_CONSOLE_PROXY
+            , AlertType.ALERT_TYPE_SSVM
+            , AlertType.ALERT_TYPE_STORAGE_MISC
+            , AlertType.ALERT_TYPE_MANAGEMENT_NODE
+            , AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED
+            , AlertType.ALERT_TYPE_UPLOAD_FAILED
+            , AlertType.ALERT_TYPE_OOBM_AUTH_ERROR
+            , AlertType.ALERT_TYPE_HA_ACTION
+            , AlertType.ALERT_TYPE_CA_CERT);
     protected Logger logger = Logger.getLogger(AlertManagerImpl.class.getName());
 
     private static final long INITIAL_CAPACITY_CHECK_DELAY = 30L * 1000L; // Thirty seconds expressed in milliseconds.
@@ -723,15 +737,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
     public void sendAlert(AlertType alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content)
             throws MessagingException, UnsupportedEncodingException {
         logger.warn(String.format("alertType=[%s] dataCenterId=[%s] podId=[%s] clusterId=[%s] message=[%s].", alertType, dataCenterId, podId, clusterId, subject));
-        AlertVO alert = null;
-        if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) && (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM)
-                && (alertType != AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER) && (alertType != AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY)
-                && (alertType != AlertManager.AlertType.ALERT_TYPE_SSVM) && (alertType != AlertManager.AlertType.ALERT_TYPE_STORAGE_MISC)
-                && (alertType != AlertManager.AlertType.ALERT_TYPE_MANAGEMENT_NODE) && (alertType != AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED)
-                && (alertType != AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED) && (alertType != AlertManager.AlertType.ALERT_TYPE_OOBM_AUTH_ERROR)
-                && (alertType != AlertManager.AlertType.ALERT_TYPE_HA_ACTION) && (alertType != AlertManager.AlertType.ALERT_TYPE_CA_CERT)) {
-            alert = _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId, clusterId);
-        }
+        AlertVO alert = getAlertForTrivialAlertType(alertType, dataCenterId, podId, clusterId);
 
         if (alert == null) {
             AlertVO newAlert = new AlertVO();
@@ -771,6 +777,15 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
         sendMessage(mailProps);
 
+    }
+
+    @Nullable
+    private AlertVO getAlertForTrivialAlertType(AlertType alertType, long dataCenterId, Long podId, Long clusterId) {
+        AlertVO alert = null;
+        if (!ALERTS.contains(alertType)) {
+            alert = _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId, clusterId);
+        }
+        return alert;
     }
 
     protected void sendMessage(SMTPMailProperties mailProps) {
