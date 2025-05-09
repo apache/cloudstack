@@ -53,6 +53,9 @@ public interface VmDetailConstants {
     String NIC_MULTIQUEUE_NUMBER = "nic.multiqueue.number";
     String NIC_PACKED_VIRTQUEUES_ENABLED = "nic.packed.virtqueues.enabled";
 
+    // KVM specific, disk controllers
+    String KVM_WIN_SKIP_FORCE_DISK_CONTROLLER = "win.skip.force.disk.controller";
+
     // Mac OSX guest specific (internal)
     String SMC_PRESENT = "smc.present";
     String FIRMWARE = "firmware";
