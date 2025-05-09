@@ -29,7 +29,7 @@
       <v-nodes :vnodes="menu" />
       <div v-if="searchQuery">
         <a-divider style="margin: 4px 0" />
-        <div style="margin: 4px 10px; display: flex; justify-content: space-between; align-items: center;">
+        <div class="search-footer">
           <span>{{ 'Showing results for "' + searchQuery + '"' }}</span>
           <close-outlined
             @mousedown="e => e.preventDefault()"
@@ -150,3 +150,12 @@ export default {
   }
 }
 </script>
+
+<style lang="less" scoped>
+  .search-footer {
+    margin: 4px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+</style>
