@@ -412,19 +412,31 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             if (err == null && needResize) {
                 err = notifyQemuForTheNewSize(data, err, vol, payload);
             }
-
             if (err != null) {
                 // try restoring volume to its initial size
                 SpApiResponse response = StorPoolUtil.volumeUpdate(name, oldSize, true, oldMaxIops, conn);
                 if (response.getError() != null) {
                     logger.debug(String.format("Could not resize StorPool volume %s back to its original size. Error: %s", name, response.getError()));
                 }
+            } else {
+                updateVolumeWithTheNewSize(vol, payload);
             }
         } catch (Exception e) {
             logger.debug("sending resize command failed", e);
             err = e.toString();
         }
         return err;
+    }
+
+    private void updateVolumeWithTheNewSize(VolumeObject vol, ResizeVolumePayload payload) {
+        vol.setSize(payload.newSize);
+        vol.update();
+        if (payload.newMaxIops != null) {
+            VolumeVO volume = volumeDao.findById(vol.getId());
+            volume.setMaxIops(payload.newMaxIops);
+            volumeDao.update(volume.getId(), volume);
+        }
+        updateStoragePool(vol.getPoolId(), payload.newSize - vol.getSize());
     }
 
     private String notifyQemuForTheNewSize(DataObject data, String err, VolumeObject vol, ResizeVolumePayload payload)
@@ -455,35 +467,32 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         }
         SpApiResponse resp = new SpApiResponse();
         if (tier != null || template != null) {
-            Map<String, String> tags = StorPoolHelper.addStorPoolTags(null, null, null, null, tier);
-            StorPoolVolumeDef spVolume = new StorPoolVolumeDef(name, payload.newSize, tags, null, null, template, null, null,
-                    payload.shrinkOk);
-            resp = StorPoolUtil.volumeUpdate(spVolume, conn);
+            resp = updateVolumeByStorPoolQoS(payload, conn, name, tier, template);
         } else {
-            long maxIops = payload.newMaxIops == null ? Long.valueOf(0) : payload.newMaxIops;
-
-            StorPoolVolumeDef spVolume = new StorPoolVolumeDef(name, payload.newSize, null, null, maxIops, null, null, null,
-                    payload.shrinkOk);
-            StorPoolUtil.spLog(
-                    "StorpoolPrimaryDataStoreDriverImpl.resize: name=%s, uuid=%s, oldSize=%d, newSize=%s, shrinkOk=%s, maxIops=%s",
-                    name, vol.getUuid(), vol.getSize(), payload.newSize, payload.shrinkOk, maxIops);
-
-            resp = StorPoolUtil.volumeUpdate(spVolume, conn);
+            resp = updateVolumeByOffering(vol, payload, conn, name);
         }
         if (resp.getError() != null) {
             err = String.format("Could not resize StorPool volume %s. Error: %s", name, resp.getError());
-        } else {
-            vol.setSize(payload.newSize);
-            vol.update();
-            if (payload.newMaxIops != null) {
-                VolumeVO volume = volumeDao.findById(vol.getId());
-                volume.setMaxIops(payload.newMaxIops);
-                volumeDao.update(volume.getId(), volume);
-            }
-
-            updateStoragePool(vol.getPoolId(), payload.newSize - vol.getSize());
         }
         return err;
+    }
+
+    private static SpApiResponse updateVolumeByStorPoolQoS(ResizeVolumePayload payload, SpConnectionDesc conn, String name, String tier, String template) {
+        Map<String, String> tags = StorPoolHelper.addStorPoolTags(null, null, null, null, tier);
+        StorPoolVolumeDef spVolume = new StorPoolVolumeDef(name, payload.newSize, tags, null, null, template, null, null,
+                payload.shrinkOk);
+        return StorPoolUtil.volumeUpdate(spVolume, conn);
+    }
+
+    private static SpApiResponse updateVolumeByOffering(VolumeObject vol, ResizeVolumePayload payload, SpConnectionDesc conn, String name) {
+        long maxIops = payload.newMaxIops == null ? Long.valueOf(0) : payload.newMaxIops;
+
+        StorPoolVolumeDef spVolume = new StorPoolVolumeDef(name, payload.newSize, null, null, maxIops, null, null, null,
+                payload.shrinkOk);
+        StorPoolUtil.spLog(
+                "StorpoolPrimaryDataStoreDriverImpl.resize: name=%s, uuid=%s, oldSize=%d, newSize=%s, shrinkOk=%s, maxIops=%s",
+                name, vol.getUuid(), vol.getSize(), payload.newSize, payload.shrinkOk, maxIops);
+        return StorPoolUtil.volumeUpdate(spVolume, conn);
     }
 
     @Override
