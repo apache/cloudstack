@@ -25,6 +25,18 @@
     @popupScroll="onScroll"
     @change="onChange"
   >
+    <template #dropdownRender="{ menuNode: menu }">
+      <v-nodes :vnodes="menu" />
+      <div v-if="searchQuery">
+        <a-divider style="margin: 4px 0" />
+        <div style="margin: 4px 10px; display: flex; justify-content: space-between; align-items: center;">
+          <span>{{ 'Showing results for "' + searchQuery + '"' }}</span>
+          <close-outlined
+            @mousedown="e => e.preventDefault()"
+            @click="onSearch()" />
+        </div>
+      </div>
+    </template>
     <a-select-option v-for="option in options" :key="option.id" :value="option.id">
       <span>
         <resource-icon v-if="option.icon && option.icon.base64image" :option="option.icon.base64image" size="1x" style="margin-right: 5px"/>
@@ -42,7 +54,10 @@ import ResourceIcon from '@/components/view/ResourceIcon'
 export default {
   name: 'InfiniteScrollSelect',
   components: {
-    ResourceIcon
+    ResourceIcon,
+    VNodes: (_, { attrs }) => {
+      return attrs.vnodes
+    }
   },
   props: {
     api: {
@@ -75,6 +90,9 @@ export default {
   },
   created () {
     this.addDefaultOptionIfNeeded(true)
+  },
+  mounted () {
+    this.fetchItems()
   },
   emits: ['change-option'],
   methods: {
@@ -129,9 +147,6 @@ export default {
         this.$emit('change-option', match)
       }
     }
-  },
-  mounted () {
-    this.fetchItems()
   }
 }
 </script>
