@@ -1313,9 +1313,9 @@ export default {
         } else {
           params.existingvcenterid = this.selectedVmwareVcenter.existingvcenterid
         }
+        params.instancename = vmname
+        params.host = hostname
       }
-      params.virtualmachinename = vmname
-      params.hostname = hostname
       api('listVmwareDcVms', params).then(json => {
         const response = json.listvmwaredcvmsresponse
         this.selectedUnmanagedInstance = response.unmanagedinstance[0]
