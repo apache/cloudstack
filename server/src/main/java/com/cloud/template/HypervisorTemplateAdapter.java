@@ -28,9 +28,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.domain.Domain;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
 import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -79,6 +76,7 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
+import com.cloud.domain.Domain;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
@@ -110,6 +108,8 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     protected final static Logger s_logger = Logger.getLogger(HypervisorTemplateAdapter.class);
@@ -596,7 +596,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         List<DataStore> imageStores = templateMgr.getImageStoreByTemplate(template.getId(),
                                             zoneId);
 
-        if (imageStores == null || imageStores.size() == 0) {
+        if (CollectionUtils.isEmpty(imageStores)) {
             // already destroyed on image stores
             success = true;
             s_logger.info("Unable to find image store still having template: " + template.getName() + ", so just mark the template removed");
@@ -631,7 +631,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
                 boolean dataDiskDeletetionResult = true;
                 List<VMTemplateVO> dataDiskTemplates = templateDao.listByParentTemplatetId(template.getId());
-                if (dataDiskTemplates != null && dataDiskTemplates.size() > 0) {
+                if (CollectionUtils.isEmpty(dataDiskTemplates)) {
                     s_logger.info("Template: " + template.getId() + " has Datadisk template(s) associated with it. Delete Datadisk templates before deleting the template");
                     for (VMTemplateVO dataDiskTemplate : dataDiskTemplates) {
                         s_logger.info("Delete Datadisk template: " + dataDiskTemplate.getId() + " from image store: " + imageStore.getName());
@@ -653,7 +653,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                             }
                             // Mark datadisk template as Inactive
                             List<DataStore> iStores = templateMgr.getImageStoreByTemplate(dataDiskTemplate.getId(), null);
-                            if (iStores == null || iStores.size() == 0) {
+                            if (CollectionUtils.isEmpty(iStores)) {
                                 dataDiskTemplate.setState(VirtualMachineTemplate.State.Inactive);
                                 _tmpltDao.update(dataDiskTemplate.getId(), dataDiskTemplate);
                             }
@@ -730,6 +730,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     _resourceLimitMgr.recalculateResourceCount(template.getAccountId(), account.getDomainId(), ResourceType.secondary_storage.getOrdinal());
 
             }
+
+            templateMgr.evictTemplateFromStoragePools(template.getId());
 
             // remove its related ACL permission
             Pair<Class<?>, Long> templateClassForId = new Pair<>(VirtualMachineTemplate.class, template.getId());

@@ -105,6 +105,8 @@ public interface TemplateManager {
      */
     void evictTemplateFromStoragePool(VMTemplateStoragePoolVO templatePoolVO);
 
+    void evictTemplateFromStoragePools(long templateId);
+
     boolean templateIsDeleteable(long templateId);
 
     Pair<String, String> getAbsoluteIsoPath(long templateId, long dataCenterId);

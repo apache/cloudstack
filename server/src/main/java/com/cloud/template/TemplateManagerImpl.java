@@ -1103,6 +1103,14 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     @Override
+    public void evictTemplateFromStoragePools(long templateId) {
+        List<VMTemplateStoragePoolVO> templatePoolList = _tmpltPoolDao.listByTemplateId(templateId);
+        for (VMTemplateStoragePoolVO templatePool : templatePoolList) {
+            evictTemplateFromStoragePool(templatePool);
+        }
+    }
+
+    @Override
     public boolean start() {
         return true;
     }
