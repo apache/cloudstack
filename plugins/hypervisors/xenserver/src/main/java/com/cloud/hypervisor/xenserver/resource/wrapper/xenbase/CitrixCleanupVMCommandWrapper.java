@@ -38,7 +38,7 @@ public class CitrixCleanupVMCommandWrapper extends CommandWrapper<CleanupVMComma
 
     @Override
     public Answer execute(final CleanupVMCommand command, final CitrixResourceBase citrixResourceBase) {
-        if (!citrixResourceBase.isDestroyHaltedVms()) {
+        if (citrixResourceBase.isDestroyHaltedVms()) {
             s_logger.debug(String.format("Cleanup VM is not needed for host with version %s",
                     citrixResourceBase.getHost().getProductVersion()));
             return new Answer(command);
