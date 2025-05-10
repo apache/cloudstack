@@ -919,7 +919,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      */
     private boolean setOrResetVMPassword(UserVmVO vm, VMTemplateVO template, String password)
             throws ResourceUnavailableException, InsufficientCapacityException {
-        if (template.isEnablePassword()) {
+        if (!template.isEnablePassword()) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Reset password called for a vm that is not using a password enabled template");
             }
@@ -963,6 +963,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (!result) {
             throw new CloudRuntimeException("Unable to set password for the VM");
         }
+        userVm.setPassword(password);
     }
 
     private boolean resetVMPasswordInternal(Long vmId, String password) throws ResourceUnavailableException, InsufficientCapacityException {
