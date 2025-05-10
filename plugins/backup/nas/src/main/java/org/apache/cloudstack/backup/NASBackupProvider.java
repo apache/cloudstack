@@ -26,6 +26,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
@@ -280,6 +281,7 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
         restoredVolume.setPoolId(dataStore.getPoolId());
         restoredVolume.setPath(restoredVolume.getUuid());
         restoredVolume.setState(Volume.State.Copying);
+        restoredVolume.setFormat(Storage.ImageFormat.QCOW2);
         restoredVolume.setSize(backedUpVolumeSize);
         restoredVolume.setDiskOfferingId(volume.getDiskOfferingId());
 
