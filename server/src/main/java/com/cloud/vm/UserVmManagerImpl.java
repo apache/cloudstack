@@ -129,8 +129,8 @@ import org.apache.cloudstack.storage.template.VnfTemplateManager;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.bytescale.ByteScaleUtils;
 import org.apache.cloudstack.utils.security.ParserUtils;
-import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 import org.apache.cloudstack.vm.UnmanagedVMsManager;
+import org.apache.cloudstack.vm.schedule.VMScheduleManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -874,67 +874,104 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return userVm;
     }
 
-    private boolean resetVMPasswordInternal(Long vmId, String password) throws ResourceUnavailableException, InsufficientCapacityException {
-        Long userId = CallContext.current().getCallingUserId();
-        VMInstanceVO vmInstance = _vmDao.findById(vmId);
-
-        if (password == null || password.equals("")) {
+    private boolean updateVMPasswordInNetworkElement(VirtualMachine vm, VMTemplateVO template, String password) throws ResourceUnavailableException {
+        Nic defaultNic = _networkModel.getDefaultNic(vm.getId());
+        if (defaultNic == null) {
+            s_logger.error(String.format("Unable to update password for %s in network element as the instance doesn't have default nic",
+                    vm));
             return false;
         }
+        Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
+        if (State.Stopped.equals(vm.getState()) && !Network.State.Implemented.equals(defaultNetwork.getState())) {
+            s_logger.debug("%s is not ready, skipping updating VM password");
+            return true;
+        }
+        NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null,
+                null, _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork),
+                _networkModel.getNetworkTag(template.getHypervisorType(), defaultNetwork));
+        VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vm);
+        vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
 
-        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vmInstance.getTemplateId());
+        UserDataServiceProvider element = _networkMgr.getPasswordResetProvider(defaultNetwork);
+        if (element == null) {
+            throw new CloudRuntimeException(String.format("Can't find network element for %s provider needed for password update", Service.UserData.getName()));
+        }
+        return element.savePassword(defaultNetwork, defaultNicProfile, vmProfile);
+    }
+
+    /**
+     * Sets or resets the password for a virtual machine (VM) based on the template's password configuration.
+     *
+     * <p>
+     * If the template does not have password support enabled, the operation is aborted. If the VM is running,
+     * the method ensures that the password is updated in the network element and then reboots the VM to
+     * redownload and apply the new password. If the VM is stopped, it avoids rebooting. The new password
+     * is also securely encrypted and stored.
+     * </p>
+     *
+     * @param vm       the virtual machine whose password is to be set or reset
+     * @param template the VM template associated with the virtual machine
+     * @param password the new password to be set for the virtual machine
+     * @return {@code true} if the password was successfully set and the VM rebooted if necessary;
+     *         {@code false} if the operation failed or the template does not support password reset
+     * @throws ResourceUnavailableException   if a required network resource is unavailable
+     * @throws InsufficientCapacityException if there is insufficient capacity to perform the operation
+     */
+    private boolean setOrResetVMPassword(UserVmVO vm, VMTemplateVO template, String password)
+            throws ResourceUnavailableException, InsufficientCapacityException {
         if (template.isEnablePassword()) {
-            Nic defaultNic = _networkModel.getDefaultNic(vmId);
-            if (defaultNic == null) {
-                s_logger.error("Unable to reset password for vm " + vmInstance + " as the instance doesn't have default nic");
-                return false;
-            }
-
-            Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
-            NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null, null, _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork),
-                    _networkModel.getNetworkTag(template.getHypervisorType(), defaultNetwork));
-            VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vmInstance);
-            vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
-
-            UserDataServiceProvider element = _networkMgr.getPasswordResetProvider(defaultNetwork);
-            if (element == null) {
-                throw new CloudRuntimeException("Can't find network element for " + Service.UserData.getName() + " provider needed for password reset");
-            }
-
-            boolean result = element.savePassword(defaultNetwork, defaultNicProfile, vmProfile);
-
-            // Need to reboot the virtual machine so that the password gets
-            // redownloaded from the DomR, and reset on the VM
-            if (!result) {
-                s_logger.debug("Failed to reset password for the virtual machine; no need to reboot the vm");
-                return false;
-            } else {
-                final UserVmVO userVm = _vmDao.findById(vmId);
-                _vmDao.loadDetails(userVm);
-                // update the password in vm_details table too
-                // Check if an SSH key pair was selected for the instance and if so
-                // use it to encrypt & save the vm password
-                encryptAndStorePassword(userVm, password);
-
-                if (vmInstance.getState() == State.Stopped) {
-                    s_logger.debug("Vm " + vmInstance + " is stopped, not rebooting it as a part of password reset");
-                    return true;
-                }
-
-                if (rebootVirtualMachine(userId, vmId, false, false) == null) {
-                    s_logger.warn("Failed to reboot the vm " + vmInstance);
-                    return false;
-                } else {
-                    s_logger.debug("Vm " + vmInstance + " is rebooted successfully as a part of password reset");
-                    return true;
-                }
-            }
-        } else {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Reset password called for a vm that is not using a password enabled template");
             }
             return false;
         }
+        boolean result = updateVMPasswordInNetworkElement(vm, template, password);
+        if (!result) {
+            s_logger.debug("Failed to update password for the virtual machine in the network element");
+            return false;
+        } else {
+            _vmDao.loadDetails(vm);
+            encryptAndStorePassword(vm, password);
+            if (vm.getState() == State.Stopped) {
+                s_logger.debug(vm + " is stopped, not rebooting it as a part of password reset");
+                return true;
+            }
+            long userId = CallContext.current().getCallingUserId();
+            if (rebootVirtualMachine(userId, vm.getId(), false, false) == null) {
+                s_logger.warn("Failed to reboot the vm " + vm);
+                return false;
+            } else {
+                s_logger.debug(vm + " is rebooted successfully as a part of password reset");
+                return true;
+            }
+        }
+    }
+
+    private void setStoppedVMPasswordDuringFinalizingCreate(UserVmVO userVm) {
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
+        if (template == null || !template.isEnablePassword()) {
+            return;
+        }
+        s_logger.debug(String.format("Generating a random password for %s", userVm));
+        String password = _mgr.generateRandomPassword();
+        boolean result = false;
+        try {
+            result = setOrResetVMPassword(userVm, template, password);
+        } catch (ResourceUnavailableException | InsufficientCapacityException | CloudRuntimeException e) {
+            s_logger.error(String.format("Setting password during VM creation failed due to: %s", e.getMessage()), e);
+        }
+        if (!result) {
+            throw new CloudRuntimeException("Unable to set password for the VM");
+        }
+    }
+
+    private boolean resetVMPasswordInternal(Long vmId, String password) throws ResourceUnavailableException, InsufficientCapacityException {
+        UserVmVO vmInstance = _vmDao.findById(vmId);
+        if (StringUtils.isEmpty(password)) {
+            return false;
+        }
+        VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vmInstance.getTemplateId());
+        return setOrResetVMPassword(vmInstance, template, password);
     }
 
     @Override
@@ -3810,14 +3847,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             s_logger.warn("UserVm " + vmId + " does not exist in DB");
         } else {
             s_logger.info("Loaded UserVm " + vmId + " (" + userVm.getUuid() + ") from DB");
-            VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
-            if (template != null && template.isEnablePassword()) {
-                s_logger.debug(String.format("Generating a random password for %s", userVm));
-                String password = _mgr.generateRandomPassword();
-                _vmDao.loadDetails(userVm);
-                userVm.setPassword(password);
-                encryptAndStorePassword(userVm, password);
-            }
+            setStoppedVMPasswordDuringFinalizingCreate(userVm);
         }
         return userVm;
     }
