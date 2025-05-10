@@ -25,6 +25,7 @@
       resourceType="project"
       :defaultOption="defaultOption"
       defaultIcon="project-outlined"
+      :pageSize="100"
       @change-option="changeProject" />
   </span>
 </template>

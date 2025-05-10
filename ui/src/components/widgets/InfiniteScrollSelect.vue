@@ -75,33 +75,47 @@ export default {
     defaultIcon: {
       type: String,
       default: 'cloud-outlined'
+    },
+    pageSize: {
+      type: Number,
+      default: null
     }
   },
   data () {
     return {
       options: [],
       page: 1,
-      pageSize: 50,
       totalCount: null,
       loading: false,
       searchQuery: '',
-      scrollHandlerAttached: false
+      scrollHandlerAttached: false,
+      preselectedOptionId: null,
+      successiveFetches: 0
     }
   },
   created () {
     this.addDefaultOptionIfNeeded(true)
   },
   mounted () {
+    this.preselectedOptionId = this.$attrs.value
     this.fetchItems()
+  },
+  computed: {
+    maxSuccessiveFetches () {
+      return 10
+    },
+    computedPageSize () {
+      return this.pageSize || this.$store.getters.defaultListViewPageSize
+    }
   },
   emits: ['change-option'],
   methods: {
     async fetchItems () {
-      if (this.loading) return
+      if (this.successiveFetches === 0 && this.loading) return
       this.loading = true
       const params = {
         page: this.page,
-        pagesize: this.pageSize,
+        pagesize: this.computedPageSize,
         keyword: this.searchQuery,
         listall: true
       }
@@ -113,10 +127,25 @@ export default {
         const newOpts = response[this.resourceType] || []
         this.options = this.options.concat(newOpts)
         this.page++
+
+        if (this.preselectedOptionId && this.successiveFetches < this.maxSuccessiveFetches) {
+          const match = this.options.find(entry => entry.id === this.preselectedOptionId)
+          if (!match) {
+            this.successiveFetches++
+            this.fetchItems()
+          } else {
+            this.preselectedOptionId = null
+            this.successiveFetches = 0
+          }
+        } else {
+          this.successiveFetches = 0
+        }
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
-        this.loading = false
+        if (this.successiveFetches === 0) {
+          this.loading = false
+        }
       })
     },
     addDefaultOptionIfNeeded () {
@@ -142,6 +171,7 @@ export default {
       }
     },
     onChange (id) {
+      this.preselectedOptionId = null
       const match = this.options.find(entry => entry.id === id)
       if (match) {
         this.$emit('change-option', match)
