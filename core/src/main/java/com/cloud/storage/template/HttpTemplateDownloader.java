@@ -92,6 +92,7 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
             "x-original-content-length",
             "x-oss-meta-content-length",
             "x-file-size");
+    private static final long MIN_FORMAT_VERIFICATION_SIZE = 1024 * 1024;
 
     public HttpTemplateDownloader(StorageLayer storageLayer, String downloadUrl, String toDir, DownloadCompleteCallback callback, long maxTemplateSizeInBytes,
             String user, String password, Proxy proxy, ResourceType resourceType) {
@@ -217,11 +218,9 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                  RandomAccessFile out = new RandomAccessFile(file, "rw");
             ) {
                 out.seek(localFileSize);
-
-                logger.info("Starting download from " + downloadUrl + " to " + toFile + " remoteSize=" + toHumanReadableSize(remoteSize) + " , max size=" + toHumanReadableSize(maxTemplateSizeInBytes));
-
+                logger.info("Starting download from {} to {} remoteSize={} , max size={}",downloadUrl, toFile,
+                        toHumanReadableSize(remoteSize), toHumanReadableSize(maxTemplateSizeInBytes));
                 boolean eof = copyBytes(file, in, out);
-
                 Date finish = new Date();
                 checkDownloadCompletion(eof);
                 downloadTime += finish.getTime() - start.getTime();
@@ -249,27 +248,31 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
     }
 
     private boolean copyBytes(File file, InputStream in, RandomAccessFile out) throws IOException {
-        int bytes;
-        byte[] block = new byte[CHUNK_SIZE];
+        byte[] buffer = new byte[CHUNK_SIZE];
         long offset = 0;
-        boolean done = false;
         VerifyFormat verifyFormat = new VerifyFormat(file);
         status = Status.IN_PROGRESS;
-        while (!done && status != Status.ABORTED && offset <= remoteSize) {
-            if ((bytes = in.read(block, 0, CHUNK_SIZE)) > -1) {
-                offset = writeBlock(bytes, out, block, offset);
-                if (!ResourceType.SNAPSHOT.equals(resourceType) &&
-                        !verifyFormat.isVerifiedFormat() &&
-                        (offset >= 1048576 || offset >= remoteSize)) { //let's check format after we get 1MB or full file
-                    verifyFormat.invoke();
-                }
-            } else {
-                done = true;
+        while (status != Status.ABORTED) {
+            int bytesRead = in.read(buffer, 0, CHUNK_SIZE);
+            if (bytesRead == -1) {
+                logger.debug("Reached EOF on input stream");
+                break;
+            }
+            offset = writeBlock(bytesRead, out, buffer, offset);
+            if (!ResourceType.SNAPSHOT.equals(resourceType)
+                    && !verifyFormat.isVerifiedFormat()
+                    && (offset >= MIN_FORMAT_VERIFICATION_SIZE || offset >= remoteSize)) {
+                verifyFormat.invoke();
+            }
+            if (offset >= remoteSize) {
+                logger.debug("Reached expected remote size limit: {} bytes", remoteSize);
+                break;
             }
         }
         out.getFD().sync();
-        return !Status.ABORTED.equals(status) && done;
+        return !Status.ABORTED.equals(status);
     }
+
 
     private long writeBlock(int bytes, RandomAccessFile out, byte[] block, long offset) throws IOException {
         out.write(block, 0, bytes);
@@ -337,6 +340,8 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
             if (chunkedHeader != null && "chunked".equalsIgnoreCase(chunkedHeader.getValue())) {
                 isChunkedTransfer = true;
                 reportedRemoteSize = getRemoteSizeForChunkedTransfer();
+                logger.debug("{} is using chunked transfer encoding, possible remote size: {}", downloadUrl,
+                        reportedRemoteSize);
             } else {
                 status = Status.UNRECOVERABLE_ERROR;
                 errorString = " Failed to receive length of download ";
@@ -352,9 +357,11 @@ public class HttpTemplateDownloader extends ManagedContextRunnable implements Te
                 return false;
             }
         }
-
         if (remoteSize == 0) {
             remoteSize = reportedRemoteSize;
+            if (remoteSize != 0) {
+                logger.debug("Remote size for {} found to be {}", downloadUrl, toHumanReadableSize(remoteSize));
+            }
         }
         return true;
     }
