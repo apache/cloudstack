@@ -247,7 +247,6 @@ public abstract class NioConnection implements Callable<Boolean> {
         return true;
     }
 
-
     protected void accept(final SelectionKey key) throws IOException {
         final ServerSocketChannel serverSocketChannel = (ServerSocketChannel)key.channel();
         final SocketChannel socketChannel = serverSocketChannel.accept();

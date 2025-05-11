@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.inject.Inject;
 
@@ -243,7 +244,11 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         List<VMTemplateVO> systemvmTmplts = _tmpltDao.listAllSystemVMTemplates();
         for (VMTemplateVO template : systemvmTmplts) {
-            if (template.getName().equalsIgnoreCase(name) || template.getDisplayText().equalsIgnoreCase(displayText)) {
+            if ((template.getName().equalsIgnoreCase(name) ||
+                    template.getDisplayText().equalsIgnoreCase(displayText)) &&
+                    Objects.equals(template.getArch(), arch)) {
+                logger.error("{} for same arch {} is having same name or description", template,
+                        template.getArch());
                 throw new IllegalArgumentException("Cannot use reserved names for templates");
             }
         }

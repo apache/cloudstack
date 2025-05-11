@@ -42,6 +42,7 @@ import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.cluster.agentlb.HostTransferMapVO;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.configuration.ManagementServiceConfiguration;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
@@ -1795,17 +1796,52 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<HypervisorType> listDistinctHypervisorTypes(final Long zoneId) {
-        GenericSearchBuilder<HostVO, HypervisorType> sb = createSearchBuilder(HypervisorType.class);
+        GenericSearchBuilder<HostVO, String> sb = createSearchBuilder(String.class);
         sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.select(null, Func.DISTINCT, sb.entity().getHypervisorType());
         sb.done();
-        SearchCriteria<HypervisorType> sc = sb.create();
+        SearchCriteria<String> sc = sb.create();
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
         }
         sc.setParameters("type", Type.Routing);
-        return customSearch(sc, null);
+        List<String> hypervisorString = customSearch(sc, null);
+        return hypervisorString.stream().map(HypervisorType::getType).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorArchTypes(final Long zoneId) {
+        SearchBuilder<HostVO> sb = createSearchBuilder();
+        sb.select(null, Func.DISTINCT_PAIR, sb.entity().getHypervisorType(), sb.entity().getArch());
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<HostVO> sc = sb.create();
+        sc.setParameters("type", Type.Routing);
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        final List<HostVO> hosts = search(sc, null);
+        return hosts.stream()
+                .map(h -> new Pair<>(h.getHypervisorType(), h.getArch()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CPU.CPUArch> listDistinctArchTypes(final Long clusterId) {
+        GenericSearchBuilder<HostVO, String> sb = createSearchBuilder(String.class);
+        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+        sb.select(null, Func.DISTINCT, sb.entity().getArch());
+        sb.done();
+        SearchCriteria<String> sc = sb.create();
+        if (clusterId != null) {
+            sc.setParameters("clusterId", clusterId);
+        }
+        sc.setParameters("type", Type.Routing);
+        List<String> archStrings = customSearch(sc, null);
+        return archStrings.stream().map(CPU.CPUArch::fromType).collect(Collectors.toList());
     }
 
     @Override
