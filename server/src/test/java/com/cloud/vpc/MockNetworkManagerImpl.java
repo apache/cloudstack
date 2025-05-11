@@ -1090,4 +1090,9 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     public void removePublicIpAddressFromQuarantine(RemoveQuarantinedIpCmd cmd) {
 
     }
+
+    @Override
+    public boolean isNetworkImplemented(Network network) {
+        return false;
+    }
 }
