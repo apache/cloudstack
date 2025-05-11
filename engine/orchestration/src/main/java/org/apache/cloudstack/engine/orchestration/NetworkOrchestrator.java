@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.engine.orchestration;
 
+import static com.cloud.configuration.ConfigurationManager.MESSAGE_DELETE_VLAN_IP_RANGE_EVENT;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -241,8 +243,8 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
@@ -254,8 +256,6 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.googlecode.ipv6.IPv6Address;
-
-import static com.cloud.configuration.ConfigurationManager.MESSAGE_DELETE_VLAN_IP_RANGE_EVENT;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
@@ -1339,20 +1339,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return to;
     }
 
-    boolean isNetworkImplemented(final NetworkVO network) {
-        final Network.State state = network.getState();
-        final NetworkOfferingVO offeringVO = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        if (state == Network.State.Implemented) {
-            return true;
-        } else if (state == Network.State.Setup) {
-            final DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
-            if ((!isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) && !offeringVO.isPersistent()) || zone.getNetworkType() == NetworkType.Basic) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     Pair<NetworkGuru, NetworkVO> implementNetwork(final long networkId, final DeployDestination dest, final ReservationContext context, final boolean isRouter) throws ConcurrentOperationException,
             ResourceUnavailableException, InsufficientCapacityException {
         Pair<NetworkGuru, NetworkVO> implemented = null;
@@ -1448,6 +1434,20 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         } else {
             return criteriaMet && (network.getGuestType() == GuestType.L2 || network.getGuestType() == GuestType.Isolated);
         }
+    }
+
+    @Override
+    public boolean isNetworkImplemented(final Network network) {
+        final Network.State state = network.getState();
+        final NetworkOfferingVO offeringVO = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        if (state == Network.State.Implemented) {
+            return true;
+        } else if (state == Network.State.Setup) {
+            final DataCenterVO zone = _dcDao.findById(network.getDataCenterId());
+            return (!isSharedNetworkOfferingWithServices(network.getNetworkOfferingId()) && !offeringVO.isPersistent())
+                    || zone.getNetworkType() == NetworkType.Basic;
+        }
+        return false;
     }
 
     @Override

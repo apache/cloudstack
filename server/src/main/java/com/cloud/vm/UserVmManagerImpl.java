@@ -882,8 +882,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return false;
         }
         Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
-        if (State.Stopped.equals(vm.getState()) && !Network.State.Implemented.equals(defaultNetwork.getState())) {
-            s_logger.debug("%s is not ready, skipping updating VM password");
+        if (State.Stopped.equals(vm.getState()) &&
+                Arrays.asList(GuestType.Shared, GuestType.Isolated).contains(defaultNetwork.getGuestType()) &&
+                !_networkMgr.isNetworkImplemented(defaultNetwork)) {
+            s_logger.debug(String.format("%s is not ready, skipping updating VM password", defaultNetwork));
             return true;
         }
         NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null,
