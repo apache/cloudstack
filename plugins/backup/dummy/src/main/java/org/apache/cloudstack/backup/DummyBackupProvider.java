@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.backup;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -132,11 +133,10 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
         backup.setName(backupManager.getBackupNameFromVM(vm));
-        backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+        List<Volume> volumes = new ArrayList<>(volumeDao.findByInstance(vm.getId()));
+        backup.setBackedUpVolumes(backupManager.createVolumeInfoFromVolumes(volumes));
         Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
         backup.setDetails(details);
-        Map<String, String> diskOfferingDetails = backupManager.getDiskOfferingDetailsForBackup(vm.getId());
-        backup.addDetails(diskOfferingDetails);
 
         backup = backupDao.persist(backup);
         return new Pair<>(true, backup);

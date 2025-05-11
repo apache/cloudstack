@@ -521,11 +521,10 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         LOG.info("EMC Networker finished backup job for vm {} with saveset Time: {}", vm, saveTime);
         BackupVO backup = getClient(vm.getDataCenterId()).registerBackupForVm(vm, backupJobStart, saveTime);
         if (backup != null) {
-            backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+            List<Volume> volumes = new ArrayList<>(volumeDao.findByInstance(vm.getId()));
+            backup.setBackedUpVolumes(backupManager.createVolumeInfoFromVolumes(volumes));
             Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
             backup.setDetails(details);
-            details = backupManager.getDiskOfferingDetailsForBackup(vm.getId());
-            backup.addDetails(details);
             backupDao.persist(backup);
             return new Pair<>(true, backup);
         } else {

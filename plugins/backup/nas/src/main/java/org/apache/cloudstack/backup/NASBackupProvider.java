@@ -174,9 +174,8 @@ public class NASBackupProvider extends AdapterBase implements BackupProvider, Co
             backupVO.setDate(new Date());
             backupVO.setSize(answer.getSize());
             backupVO.setStatus(Backup.Status.BackedUp);
-            backupVO.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
-            Map<String, String> details = backupManager.getDiskOfferingDetailsForBackup(vm.getId());
-            backupVO.addDetails(details);
+            List<Volume> volumes = new ArrayList<>(volumeDao.findByInstance(vm.getId()));
+            backupVO.setBackedUpVolumes(backupManager.createVolumeInfoFromVolumes(volumes));
             if (backupDao.update(backupVO.getId(), backupVO)) {
                 return new Pair<>(true, backupVO);
             } else {

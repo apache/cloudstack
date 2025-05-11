@@ -797,30 +797,6 @@ public class BackupManagerTest {
     }
 
     @Test
-    public void testGetDiskOfferingDetailsForBackup() {
-        Long vmId = 1L;
-        VolumeVO volume = new VolumeVO(Volume.Type.DATADISK, null, 0, 0, 0, 0, null, 1024L, 100L, 1000L, null);
-        volume.setDiskOfferingId(1L);
-        volume.setSize(1024L);
-        volume.setDeviceId(0L);
-        volume.setMinIops(100L);
-        volume.setMaxIops(200L);
-        when(volumeDao.findByInstance(vmId)).thenReturn(Collections.singletonList(volume));
-
-        DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
-        when(diskOffering.getUuid()).thenReturn("disk-offering-uuid");
-        when(diskOfferingDao.findById(1L)).thenReturn(diskOffering);
-
-        Map<String, String> details = backupManager.getDiskOfferingDetailsForBackup(vmId);
-
-        assertEquals("disk-offering-uuid", details.get(ApiConstants.DISK_OFFERING_IDS));
-        assertEquals("1024", details.get(ApiConstants.DISK_SIZES));
-        assertEquals("100", details.get(ApiConstants.MIN_IOPS));
-        assertEquals("200", details.get(ApiConstants.MAX_IOPS));
-        assertEquals("0", details.get(ApiConstants.DEVICE_IDS));
-    }
-
-    @Test
     public void getDataDiskOfferingListFromBackup() {
         Long size1 = 5L * 1024 * 1024 * 1024;
         Long size2 = 10L * 1024 * 1024 * 1024;
@@ -836,12 +812,10 @@ public class BackupManagerTest {
         DiskOfferingVO diskOffering1 = mock(DiskOfferingVO.class);
         when(diskOffering1.getUuid()).thenReturn("disk-offering-uuid-1");
         when(diskOffering1.getState()).thenReturn(DiskOffering.State.Active);
-        when(diskOffering1.isCustomizedIops()).thenReturn(true);
 
         DiskOfferingVO diskOffering2 = mock(DiskOfferingVO.class);
         when(diskOffering2.getUuid()).thenReturn("disk-offering-uuid-2");
         when(diskOffering2.getState()).thenReturn(DiskOffering.State.Active);
-        when(diskOffering2.isCustomizedIops()).thenReturn(true);
 
         when(diskOfferingDao.findByUuid("disk-offering-uuid-1")).thenReturn(diskOffering1);
         when(diskOfferingDao.findByUuid("disk-offering-uuid-2")).thenReturn(diskOffering2);
@@ -874,7 +848,6 @@ public class BackupManagerTest {
 
         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
         when(diskOffering.getUuid()).thenReturn("disk-offering-uuid-1");
-        when(diskOffering.isCustomizedIops()).thenReturn(true);
         when(diskOffering.getState()).thenReturn(DiskOffering.State.Active);
 
         when(diskOfferingDao.findByUuid("disk-offering-uuid-1")).thenReturn(diskOffering);
@@ -901,7 +874,6 @@ public class BackupManagerTest {
         when(backup.getDetail(ApiConstants.MAX_IOPS)).thenReturn("null");
 
         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
-        when(diskOffering.isCustomizedIops()).thenReturn(true);
         when(diskOffering.getState()).thenReturn(DiskOffering.State.Active);
 
         when(diskOfferingDao.findByUuid("disk-offering-uuid-1")).thenReturn(diskOffering);
@@ -976,7 +948,7 @@ public class BackupManagerTest {
         volumes.add(volume2);
 
         String expectedJson = "[{\"uuid\":\"uuid1\",\"type\":\"ROOT\",\"size\":1024,\"path\":\"path1\"},{\"uuid\":\"uuid2\",\"type\":\"DATADISK\",\"size\":2048,\"path\":\"path2\"}]";
-        String actualJson = BackupManagerImpl.createVolumeInfoFromVolumes(volumes);
+        String actualJson = backupManager.createVolumeInfoFromVolumes(new ArrayList<>(volumes));
 
         assertEquals(expectedJson, actualJson);
     }

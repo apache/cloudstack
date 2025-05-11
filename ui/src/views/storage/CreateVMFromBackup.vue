@@ -129,19 +129,15 @@ export default {
       this.dataPreFill.networkids = (this.vmdetails.networkids || '').split(',')
       this.dataPreFill.ipAddresses = (this.vmdetails.ipaddresses || '').split(',')
       this.dataPreFill.macAddresses = (this.vmdetails.macaddresses || '').split(',')
-      this.diskofferingids = (this.vmdetails.diskofferingids || '').split(',')
-      this.miniops = (this.vmdetails.miniops || '').split(',').map(item => item === 'null' ? '' : item)
-      this.maxiops = (this.vmdetails.maxiops || '').split(',').map(item => item === 'null' ? '' : item)
-      this.deviceid = (this.vmdetails.deviceids || '').split(',').map(item => item === 'null' ? '' : item)
       const volumes = JSON.parse(this.resource.volumes)
       const disksdetails = volumes.map((volume, index) => ({
         name: volume.path,
         type: volume.type,
         size: volume.size / (1024 * 1024 * 1024),
-        diskofferingid: this.diskofferingids[index],
-        miniops: this.miniops[index],
-        maxiops: this.maxiops[index],
-        deviceid: this.deviceid[index]
+        diskofferingid: volume.diskOfferingId,
+        miniops: volume.minIops,
+        maxiops: volume.maxIops,
+        deviceid: volume.deviceId
       })).filter(volume => volume.type !== 'ROOT')
       this.dataPreFill.datadisksdetails = disksdetails.map((disk, index) => ({
         id: index,
@@ -150,7 +146,7 @@ export default {
       const rootdisksdetails = volumes.map((volume, index) => ({
         size: volume.size / (1024 * 1024 * 1024),
         type: volume.type,
-        diskofferingid: this.diskofferingids[index]
+        diskofferingid: volume.diskOfferingId
       })).filter(volume => volume.type === 'ROOT')
       if (this.dataPreFill.isIso) {
         this.dataPreFill.diskofferingid = rootdisksdetails[0].diskofferingid

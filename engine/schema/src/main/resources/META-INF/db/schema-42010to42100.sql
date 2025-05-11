@@ -91,3 +91,51 @@ CREATE TABLE IF NOT EXISTS `cloud`.`reconcile_commands` (
     INDEX `i_reconcile_command__host_id`(`host_id`),
     CONSTRAINT `fk_reconcile_command__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+UPDATE `cloud`.`backups` b 
+INNER JOIN `cloud`.`vm_instance` vm ON b.vm_id = vm.id 
+SET b.backed_volumes = (
+    SELECT CONCAT("[", 
+        GROUP_CONCAT(
+            CONCAT(
+                "{\"uuid\":\"", v.uuid, "\",",
+                "\"type\":\"", v.volume_type, "\",",
+                "\"size\":", v.`size`, ",",
+                "\"path\":\"", v.path, "\",",
+                "\"deviceId\":", IFNULL(v.device_id, 'null'), ",",
+                "\"diskOfferingId\":\"", IFNULL(doff.uuid, 'null'), "\",",
+                "\"minIops\":", IFNULL(v.min_iops, 'null'), ",",
+                "\"maxIops\":", IFNULL(v.max_iops, 'null'),
+                "}"
+            ) 
+            SEPARATOR ","
+        ), 
+    "]") 
+    FROM `cloud`.`volumes` v 
+    LEFT JOIN `cloud`.`disk_offering` doff ON v.disk_offering_id = doff.id 
+    WHERE v.instance_id = vm.id
+);
+
+UPDATE `cloud`.`vm_instance` vm 
+SET vm.backup_volumes = (
+    SELECT CONCAT("[", 
+        GROUP_CONCAT(
+            CONCAT(
+                "{\"uuid\":\"", v.uuid, "\",",
+                "\"type\":\"", v.volume_type, "\",",
+                "\"size\":", v.`size`, ",",
+                "\"path\":\"", v.path, "\",",
+                "\"deviceId\":", IFNULL(v.device_id, 'null'), ",",
+                "\"diskOfferingId\":\"", IFNULL(doff.uuid, 'null'), "\",",
+                "\"minIops\":", IFNULL(v.min_iops, 'null'), ",",
+                "\"maxIops\":", IFNULL(v.max_iops, 'null'),
+                "}"
+            ) 
+            SEPARATOR ","
+        ), 
+    "]") 
+    FROM `cloud`.`volumes` v 
+    LEFT JOIN `cloud`.`disk_offering` doff ON v.disk_offering_id = doff.id 
+    WHERE v.instance_id = vm.id
+) 
+WHERE vm.backup_offering_id IS NOT NULL;

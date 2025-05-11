@@ -20,9 +20,7 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import org.apache.cloudstack.backup.dao.BackupDao;
@@ -208,10 +206,6 @@ public class NASBackupProviderTest {
         Mockito.when(answer.getSize()).thenReturn(100L);
         Mockito.when(agentManager.send(anyLong(), Mockito.any(TakeBackupCommand.class))).thenReturn(answer);
 
-        Map<String, String> details = new HashMap<>();
-        details.put("key1", "value1");
-        Mockito.when(backupManager.getDiskOfferingDetailsForBackup(vmId)).thenReturn(details);
-
         Mockito.when(backupDao.persist(Mockito.any(BackupVO.class))).thenAnswer(invocation -> invocation.getArgument(0));
         Mockito.when(backupDao.update(Mockito.anyLong(), Mockito.any(BackupVO.class))).thenReturn(true);
 
@@ -222,7 +216,6 @@ public class NASBackupProviderTest {
         BackupVO backup = (BackupVO) result.second();
         Assert.assertEquals(Optional.ofNullable(100L), Optional.ofNullable(backup.getSize()));
         Assert.assertEquals(Backup.Status.BackedUp, backup.getStatus());
-        Assert.assertEquals("value1", backup.getDetail("key1"));
         Assert.assertEquals("FULL", backup.getType());
         Assert.assertEquals(Optional.of(300L), Optional.of(backup.getProtectedSize()));
         Assert.assertEquals(Optional.of(backupOfferingId), Optional.of(backup.getBackupOfferingId()));

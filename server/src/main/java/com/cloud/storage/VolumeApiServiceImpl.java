@@ -1924,8 +1924,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 } else if (jobResult instanceof ResourceAllocationException) {
                     throw (ResourceAllocationException)jobResult;
                 } else if (jobResult instanceof Throwable) {
-                    Throwable throwable = (Throwable) jobResult;
-                    throw new RuntimeException(String.format("Unexpected exception: %s", throwable.getMessage()), throwable);
+                    throw new RuntimeException("Unexpected exception", (Throwable) jobResult);
                 }
             }
 
@@ -2834,7 +2833,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         try {
             List<Backup.VolumeInfo> list = new ArrayList<>();
             for (VolumeVO vol : vmVolumes) {
-                list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize()));
+                DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
+                String diskOfferingUuid = diskOffering != null ? diskOffering.getUuid() : null;
+                list.add(new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize(),
+                    vol.getDeviceId(), diskOfferingUuid, vol.getMinIops(), vol.getMaxIops()));
             }
             return GsonHelper.getGson().toJson(list.toArray(), Backup.VolumeInfo[].class);
         } catch (Exception e) {

@@ -147,12 +147,20 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
         private Volume.Type type;
         private Long size;
         private String path;
+        private Long deviceId;
+        private String diskOfferingId;
+        private Long minIops;
+        private Long maxIops;
 
-        public VolumeInfo(String uuid, String path, Volume.Type type, Long size) {
+        public VolumeInfo(String uuid, String path, Volume.Type type, Long size, Long deviceId, String diskOfferingId, Long minIops, Long maxIops) {
             this.uuid = uuid;
             this.type = type;
             this.size = size;
             this.path = path;
+            this.deviceId = deviceId;
+            this.diskOfferingId = diskOfferingId;
+            this.minIops = minIops;
+            this.maxIops = maxIops;
         }
 
         public String getUuid() {
@@ -175,9 +183,25 @@ public interface Backup extends ControlledEntity, InternalIdentity, Identity {
             return size;
         }
 
+        public Long getDeviceId() {
+            return deviceId;
+        }
+
+        public String getDiskOfferingId() {
+            return diskOfferingId;
+        }
+
+        public Long getMinIops() {
+            return minIops;
+        }
+
+        public Long getMaxIops() {
+            return maxIops;
+        }
+
         @Override
         public String toString() {
-            return StringUtils.join(":", uuid, path, type, size);
+            return StringUtils.join(":", uuid, path, type, size, deviceId, diskOfferingId, minIops, maxIops);
         }
     }
 

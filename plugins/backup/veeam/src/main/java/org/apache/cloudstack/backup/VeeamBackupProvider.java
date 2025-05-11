@@ -42,6 +42,7 @@ import com.cloud.dc.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMap;
 import com.cloud.dc.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
+import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
@@ -320,11 +321,10 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         backup.setDomainId(vm.getDomainId());
         backup.setZoneId(vm.getDataCenterId());
         backup.setName(backupManager.getBackupNameFromVM(vm));
-        backup.setBackedUpVolumes(BackupManagerImpl.createVolumeInfoFromVolumes(volumeDao.findByInstance(vm.getId())));
+        List<Volume> volumes = new ArrayList<>(volumeDao.findByInstance(vm.getId()));
+        backup.setBackedUpVolumes(backupManager.createVolumeInfoFromVolumes(volumes));
         Map<String, String> details = backupManager.getVmDetailsForBackup(vm);
         backup.setDetails(details);
-        details = backupManager.getDiskOfferingDetailsForBackup(vm.getId());
-        backup.addDetails(details);
         backupDao.persist(backup);
         return backup;
     }

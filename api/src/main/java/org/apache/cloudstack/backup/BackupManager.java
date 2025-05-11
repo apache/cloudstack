@@ -35,6 +35,7 @@ import org.apache.cloudstack.framework.config.Configurable;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
 import com.cloud.offering.DiskOfferingInfo;
+import com.cloud.storage.Volume;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
@@ -263,7 +264,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     Map<String, String> getVmDetailsForBackup(VirtualMachine vm);
 
-    Map<String, String> getDiskOfferingDetailsForBackup(Long vmId);
+    String createVolumeInfoFromVolumes(List<Volume> vmVolumes);
 
     String getBackupNameFromVM(VirtualMachine vm);
 
