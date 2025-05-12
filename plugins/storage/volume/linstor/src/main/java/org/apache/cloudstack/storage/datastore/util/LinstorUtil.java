@@ -195,6 +195,30 @@ public class LinstorUtil {
         }
     }
 
+    public static Pair<Long, Long> getStorageStats(String linstorUrl, String rscGroupName) {
+        DevelopersApi linstorApi = getLinstorAPI(linstorUrl);
+        try {
+            List<StoragePool> storagePools = LinstorUtil.getRscGroupStoragePools(linstorApi, rscGroupName);
+
+            long capacity = storagePools.stream()
+                    .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
+                    .mapToLong(sp -> sp.getTotalCapacity() != null ? sp.getTotalCapacity() : 0L)
+                    .sum() * 1024;  // linstor uses kiB
+
+            long used = storagePools.stream()
+                    .filter(sp -> sp.getProviderKind() != ProviderKind.DISKLESS)
+                    .mapToLong(sp -> sp.getTotalCapacity() != null && sp.getFreeCapacity() != null ?
+                            sp.getTotalCapacity() - sp.getFreeCapacity() : 0L)
+                    .sum() * 1024; // linstor uses Kib
+            s_logger.debug(
+                    String.format("Linstor(%s;%s): storageStats -> %d/%d", linstorUrl, rscGroupName, capacity, used));
+            return new Pair<>(capacity, used);
+        } catch (ApiException apiEx) {
+            s_logger.error(apiEx.getMessage());
+            throw new CloudRuntimeException(apiEx.getBestMessage(), apiEx);
+        }
+    }
+
     /**
      * Check if any resource of the given name is InUse on any host.
      *
@@ -401,5 +425,9 @@ public class LinstorUtil {
                 .findFirst();
 
         return rd.orElseGet(() -> rdsStartingWith.get(0));
+    }
+
+    public static boolean isRscDiskless(ResourceWithVolumes rsc) {
+        return rsc.getFlags() != null && rsc.getFlags().contains(ApiConsts.FLAG_DISKLESS);
     }
 }
