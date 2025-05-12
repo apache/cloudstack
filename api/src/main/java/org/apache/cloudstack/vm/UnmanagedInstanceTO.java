@@ -61,6 +61,8 @@ public class UnmanagedInstanceTO {
 
     private String vncPassword;
 
+    private Boolean secureBootEnabled;
+
     public String getName() {
         return name;
     }
@@ -187,6 +189,14 @@ public class UnmanagedInstanceTO {
 
     public void setVncPassword(String vncPassword) {
         this.vncPassword = vncPassword;
+    }
+
+    public Boolean getSecureBootEnabled() {
+        return secureBootEnabled;
+    }
+
+    public void setSecureBootEnabled(Boolean secureBootEnabled) {
+        this.secureBootEnabled = secureBootEnabled;
     }
 
     public static class Disk {

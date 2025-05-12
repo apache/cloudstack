@@ -5145,6 +5145,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setMemory(instance.getMemory());
         response.setOperatingSystemId(instance.getOperatingSystemId());
         response.setOperatingSystem(instance.getOperatingSystem());
+        response.setSecureBootEnabled(instance.getSecureBootEnabled());
         response.setObjectName("unmanagedinstance");
 
         if (instance.getDisks() != null) {

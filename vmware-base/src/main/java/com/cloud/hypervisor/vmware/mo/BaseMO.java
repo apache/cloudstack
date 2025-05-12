@@ -19,6 +19,7 @@ package com.cloud.hypervisor.vmware.mo;
 import com.cloud.utils.Pair;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.ObjectContent;
+import com.vmware.vim25.VirtualMachineBootOptions;
 import com.vmware.vim25.VirtualMachinePowerState;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.lang3.StringUtils;
@@ -43,7 +44,7 @@ public class BaseMO {
     protected ManagedObjectReference _mor;
 
     protected static String[] propertyPathsForUnmanagedVmsThinListing = new String[] {"name", "config.template",
-            "runtime.powerState", "config.guestId", "config.guestFullName", "runtime.host"};
+            "runtime.powerState", "config.guestId", "config.guestFullName", "runtime.host", "config.bootOptions"};
 
     private String _name;
 
@@ -219,6 +220,9 @@ public class BaseMO {
                 vm.setOperatingSystem((String) objProp.getVal());
             } else if (objProp.getName().equals("config.guestId")) {
                 vm.setOperatingSystemId((String) objProp.getVal());
+            } else if (objProp.getName().equals("config.bootOptions")) {
+                VirtualMachineBootOptions bootOptions = (VirtualMachineBootOptions) objProp.getVal();
+                vm.setSecureBootEnabled(bootOptions.isEfiSecureBootEnabled());
             } else if (objProp.getName().equals("runtime.host")) {
                 ManagedObjectReference hostMor = (ManagedObjectReference) objProp.getVal();
                 setUnmanagedInstanceTOHostAndCluster(vm, hostMor, hostClusterNamesMap);
