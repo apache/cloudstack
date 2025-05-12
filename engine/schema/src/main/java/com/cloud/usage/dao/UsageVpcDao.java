@@ -24,6 +24,10 @@ import java.util.List;
 
 public interface UsageVpcDao extends GenericDao<UsageVpcVO, Long> {
     void update(UsageVpcVO usage);
+
     void remove(long vpcId, Date removed);
+
     List<UsageVpcVO> getUsageRecords(Long accountId, Date startDate, Date endDate);
+
+    List<UsageVpcVO> listAll(long vpcId);
 }
