@@ -300,7 +300,7 @@ public class HypervisorHostHelper {
         String networkName = sb.toString();
         if (networkName.length() > 80) {
             // the maximum limit for a vSwitch name is 80 chars, applies to both standard and distributed virtual switches.
-            s_logger.warn(String.format("The network name: %s for the vSwitch %s of type %s, exceeds 80 chars", networkName, vSwitchName, vSwitchType));
+            LOGGER.warn(String.format("The network name: %s for the vSwitch %s of type %s, exceeds 80 chars", networkName, vSwitchName, vSwitchType));
         }
         return networkName;
     }

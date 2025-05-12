@@ -20,8 +20,6 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CleanupVMCommand;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase;
@@ -34,12 +32,10 @@ import com.xensource.xenapi.VM;
 @ResourceWrapper(handles =  CleanupVMCommand.class)
 public class CitrixCleanupVMCommandWrapper extends CommandWrapper<CleanupVMCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixCleanupVMCommandWrapper.class);
-
     @Override
     public Answer execute(final CleanupVMCommand command, final CitrixResourceBase citrixResourceBase) {
         if (citrixResourceBase.isDestroyHaltedVms()) {
-            s_logger.debug(String.format("Cleanup VM is not needed for host with version %s",
+            logger.debug(String.format("Cleanup VM is not needed for host with version %s",
                     citrixResourceBase.getHost().getProductVersion()));
             return new Answer(command);
         }
@@ -57,7 +53,7 @@ public class CitrixCleanupVMCommandWrapper extends CommandWrapper<CleanupVMComma
                 final VM.Record vmr = vm.getRecord(conn);
                 if (!Types.VmPowerState.HALTED.equals(vmr.powerState)) {
                     final String msg = String.format("VM %s is not in %s state", vmName, Types.VmPowerState.HALTED);
-                    s_logger.error(msg);
+                    logger.error(msg);
                     return new Answer(command, false, msg);
                 }
                 if (citrixResourceBase.isRefNull(vmr.residentOn)) {
@@ -74,7 +70,7 @@ public class CitrixCleanupVMCommandWrapper extends CommandWrapper<CleanupVMComma
 
         } catch (final Exception e) {
             final String msg = String.format("Clean up VM %s fail due to %s", vmName, e);
-            s_logger.error(msg, e);
+            logger.error(msg, e);
             return new Answer(command, false, e.getMessage());
         }
         return new Answer(command);

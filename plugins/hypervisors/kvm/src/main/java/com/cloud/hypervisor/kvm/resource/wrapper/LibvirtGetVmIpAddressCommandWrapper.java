@@ -136,7 +136,7 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
                 ipv6 = ipPart;
             }
         }
-        s_logger.debug(String.format("Found ipv4: %s and ipv6: %s with mac address %s", ipv4, ipv6, macAddress));
+        logger.debug(String.format("Found ipv4: %s and ipv6: %s with mac address %s", ipv4, ipv6, macAddress));
         return new Pair<>(ipv4, ipv6);
     }
 
