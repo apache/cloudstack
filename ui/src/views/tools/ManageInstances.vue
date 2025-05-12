@@ -1198,7 +1198,6 @@ export default {
         } else {
           params.existingvcenterid = this.selectedVmwareVcenter.existingvcenterid
         }
-        params.host = this.selectedVmwareVcenter.host
       }
 
       api(apiName, params).then(json => {
