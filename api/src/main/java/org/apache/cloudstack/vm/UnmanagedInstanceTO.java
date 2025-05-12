@@ -61,7 +61,8 @@ public class UnmanagedInstanceTO {
 
     private String vncPassword;
 
-    private Boolean secureBootEnabled;
+    private String bootType;
+    private String bootMode;
 
     public String getName() {
         return name;
@@ -191,12 +192,20 @@ public class UnmanagedInstanceTO {
         this.vncPassword = vncPassword;
     }
 
-    public Boolean getSecureBootEnabled() {
-        return secureBootEnabled;
+    public String getBootType() {
+        return bootType;
     }
 
-    public void setSecureBootEnabled(Boolean secureBootEnabled) {
-        this.secureBootEnabled = secureBootEnabled;
+    public void setBootType(String bootType) {
+        this.bootType = bootType;
+    }
+
+    public String getBootMode() {
+        return bootMode;
+    }
+
+    public void setBootMode(String bootMode) {
+        this.bootMode = bootMode;
     }
 
     public static class Disk {

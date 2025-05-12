@@ -44,7 +44,8 @@ public class BaseMO {
     protected ManagedObjectReference _mor;
 
     protected static String[] propertyPathsForUnmanagedVmsThinListing = new String[] {"name", "config.template",
-            "runtime.powerState", "config.guestId", "config.guestFullName", "runtime.host", "config.bootOptions"};
+            "runtime.powerState", "config.guestId", "config.guestFullName", "runtime.host",
+            "config.bootOptions", "config.firmware"};
 
     private String _name;
 
@@ -222,7 +223,14 @@ public class BaseMO {
                 vm.setOperatingSystemId((String) objProp.getVal());
             } else if (objProp.getName().equals("config.bootOptions")) {
                 VirtualMachineBootOptions bootOptions = (VirtualMachineBootOptions) objProp.getVal();
-                vm.setSecureBootEnabled(bootOptions.isEfiSecureBootEnabled());
+                String bootMode = "LEGACY";
+                if (bootOptions != null && bootOptions.isEfiSecureBootEnabled()) {
+                    bootMode = "SECURE";
+                }
+                vm.setBootMode(bootMode);
+            } else if (objProp.getName().equals("config.firmware")) {
+                String firmware = (String) objProp.getVal();
+                vm.setBootType(firmware.equalsIgnoreCase("efi") ? "UEFI" : "BIOS");
             } else if (objProp.getName().equals("runtime.host")) {
                 ManagedObjectReference hostMor = (ManagedObjectReference) objProp.getVal();
                 setUnmanagedInstanceTOHostAndCluster(vm, hostMor, hostClusterNamesMap);
