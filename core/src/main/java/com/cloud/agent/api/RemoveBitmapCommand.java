@@ -16,21 +16,31 @@
 // specific language governing permissions and limitations
 // under the License.
 //
+package com.cloud.agent.api;
 
-package com.cloud.storage.template;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 
-public final class TemplateConstants {
-    public static final String DEFAULT_TMPLT_ROOT_DIR = "template";
-    public static final String DEFAULT_SNAPSHOT_ROOT_DIR = "snapshots";
-    public static final String DEFAULT_VOLUME_ROOT_DIR = "volumes";
-    public static final String DEFAULT_TMPLT_FIRST_LEVEL_DIR = "tmpl/";
-    public static final String DEFAULT_CHECKPOINT_ROOT_DIR = "checkpoints";
-    public static final String DEFAULT_SYSTEM_VM_TEMPLATE_PATH = "template/tmpl/1/";
+public class RemoveBitmapCommand extends Command {
 
-    public static final int DEFAULT_TMPLT_COPY_PORT = 80;
-    public static final String DEFAULT_TMPLT_COPY_INTF = "eth2";
-    public static final String TMPLT_COPY_INTF_PRIVATE = "eth1";
+    private SnapshotObjectTO snapshotObjectTO;
 
-    public static final String DEFAULT_HTTP_AUTH_USER = "cloud";
+    private boolean isVmRunning;
 
+    public RemoveBitmapCommand(SnapshotObjectTO snapshotObjectTO, boolean isVmRunning) {
+        this.snapshotObjectTO = snapshotObjectTO;
+        this.isVmRunning = isVmRunning;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
+
+    public SnapshotObjectTO getSnapshotObjectTO() {
+        return snapshotObjectTO;
+    }
+
+    public boolean isVmRunning() {
+        return isVmRunning;
+    }
 }

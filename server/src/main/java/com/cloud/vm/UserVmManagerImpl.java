@@ -6652,6 +6652,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long destPoolPodId = ScopeType.CLUSTER.equals(destinationPoolVo.getScope()) || ScopeType.HOST.equals(destinationPoolVo.getScope()) ?
                 destinationPoolVo.getPodId() : null;
         for (VolumeVO volume : volumes) {
+            snapshotHelper.checkKvmVolumeSnapshotsOnlyInPrimaryStorage(volume, vm.getHypervisorType());
             if (!VirtualMachine.Type.User.equals(vm.getType())) {
                 // Migrate within same pod as source storage and same cluster for all disks only. Hypervisor check already done
                 StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
@@ -6673,7 +6674,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Map<Long, Long> volumeToPoolIds = new HashMap<>();
         Long poolClusterId = null;
         for (Map.Entry<String, String> entry : volumeToPool.entrySet()) {
-            Volume volume = _volsDao.findByUuid(entry.getKey());
+            VolumeVO volume = _volsDao.findByUuid(entry.getKey());
+            snapshotHelper.checkKvmVolumeSnapshotsOnlyInPrimaryStorage(volume, vm.getHypervisorType());
             StoragePoolVO pool = _storagePoolDao.findPoolByUUID(entry.getValue());
             if (poolClusterId != null &&
                     (ScopeType.CLUSTER.equals(pool.getScope()) || ScopeType.HOST.equals(pool.getScope())) &&

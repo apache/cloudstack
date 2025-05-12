@@ -16,14 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.cloudstack.engine.subsystem.api.storage;
 
-public enum StorageAction {
-    TAKESNAPSHOT,
-    BACKUPSNAPSHOT,
-    DELETESNAPSHOT,
-    CONVERTSNAPSHOT,
-    REMOVEBITMAP,
-    MIGRATEVOLUME,
-    DELETEVOLUME
+package com.cloud.agent.api;
+
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+
+public class ConvertSnapshotCommand extends Command {
+
+    public static final String TEMP_SNAPSHOT_NAME = "_temp";
+
+    SnapshotObjectTO snapshotObjectTO;
+
+    public SnapshotObjectTO getSnapshotObjectTO() {
+        return snapshotObjectTO;
+    }
+
+    public ConvertSnapshotCommand(SnapshotObjectTO snapshotObjectTO) {
+        this.snapshotObjectTO = snapshotObjectTO;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 }

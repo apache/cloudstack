@@ -17,20 +17,33 @@
 // under the License.
 //
 
-package com.cloud.storage.template;
+package com.cloud.agent.api;
 
-public final class TemplateConstants {
-    public static final String DEFAULT_TMPLT_ROOT_DIR = "template";
-    public static final String DEFAULT_SNAPSHOT_ROOT_DIR = "snapshots";
-    public static final String DEFAULT_VOLUME_ROOT_DIR = "volumes";
-    public static final String DEFAULT_TMPLT_FIRST_LEVEL_DIR = "tmpl/";
-    public static final String DEFAULT_CHECKPOINT_ROOT_DIR = "checkpoints";
-    public static final String DEFAULT_SYSTEM_VM_TEMPLATE_PATH = "template/tmpl/1/";
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
-    public static final int DEFAULT_TMPLT_COPY_PORT = 80;
-    public static final String DEFAULT_TMPLT_COPY_INTF = "eth2";
-    public static final String TMPLT_COPY_INTF_PRIVATE = "eth1";
+import java.util.List;
 
-    public static final String DEFAULT_HTTP_AUTH_USER = "cloud";
+public class RecreateCheckpointsCommand extends Command {
 
+    private List<VolumeObjectTO> volumes;
+
+    private String vmName;
+
+    public RecreateCheckpointsCommand(List<VolumeObjectTO> volumes, String vmName) {
+        this.volumes = volumes;
+        this.vmName = vmName;
+    }
+
+    public List<VolumeObjectTO> getDisks() {
+        return volumes;
+    }
+
+    public String getVmName() {
+        return vmName;
+    }
+
+    @Override
+    public boolean executeInSequence() {
+        return true;
+    }
 }
