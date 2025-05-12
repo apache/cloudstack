@@ -439,7 +439,7 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
             EndPoint ep = epSelector.select(data, encryptionRequired);
             if (ep == null) {
                 String errMsg = String.format(NO_REMOTE_ENDPOINT_WITH_ENCRYPTION, encryptionRequired);
-                s_logger.error(errMsg);
+                logger.error(errMsg);
                 result.setResult(errMsg);
                 callback.complete(result);
                 return;
