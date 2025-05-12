@@ -38,8 +38,6 @@ WHERE rp.rule = 'quotaStatement'
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'last_mgmt_server_id', 'bigint unsigned DEFAULT NULL COMMENT "last management server this host is connected to" AFTER `mgmt_server_id`');
 
-<<<<<<< HEAD
-
 -----------------------------------------------------------
 -- CKS Enhancements:
 -----------------------------------------------------------
