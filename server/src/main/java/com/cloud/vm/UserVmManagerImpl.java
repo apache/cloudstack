@@ -44,6 +44,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -3984,7 +3985,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return defaultNetwork;
     }
 
-    protected NetworkVO createDefaultNetworkForAccount(DataCenter zone, Account owner, List<NetworkOfferingVO> requiredOfferings)
+    private NetworkVO createDefaultNetworkForAccount(DataCenter zone, Account owner, List<NetworkOfferingVO> requiredOfferings)
             throws InsufficientCapacityException, ResourceAllocationException {
         NetworkVO defaultNetwork = null;
         long physicalNetworkId = _networkModel.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
@@ -7591,7 +7592,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         updateVmOwner(newAccount, vm, domainId, newAccountId);
 
         updateVolumesOwner(volumes, oldAccount, newAccount, newAccountId);
-        MutableBoolean isNetworkAutoCreated = new MutableBoolean(false);
+        AtomicBoolean isNetworkAutoCreated = new AtomicBoolean(false);
         try {
             updateVmNetwork(cmd, caller, vm, newAccount, template, isNetworkAutoCreated);
         } catch (InsufficientCapacityException | ResourceAllocationException e) {
@@ -7662,7 +7663,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws InsufficientCapacityException
      * @throws ResourceAllocationException
      */
-    protected void updateVmNetwork(AssignVMCmd cmd, Account caller, UserVmVO vm, Account newAccount, VirtualMachineTemplate template, MutableBoolean isNetworkAutoCreated)
+    protected void updateVmNetwork(AssignVMCmd cmd, Account caller, UserVmVO vm, Account newAccount, VirtualMachineTemplate template, AtomicBoolean isNetworkAutoCreated)
             throws InsufficientCapacityException, ResourceAllocationException {
 
         logger.trace("Updating network for VM [{}].", vm);
@@ -7791,7 +7792,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws InvalidParameterValueException
      */
     protected void updateAdvancedTypeNetworkForVm(AssignVMCmd cmd, Account caller, UserVmVO vm, Account newAccount, VirtualMachineTemplate template,
-                                                  VirtualMachineProfileImpl vmOldProfile, DataCenterVO zone, List<Long> networkIdList, List<Long> securityGroupIdList, MutableBoolean isNetworkAutoCreated)
+                                                  VirtualMachineProfileImpl vmOldProfile, DataCenterVO zone, List<Long> networkIdList, List<Long> securityGroupIdList, AtomicBoolean isNetworkAutoCreated)
             throws InsufficientCapacityException, ResourceAllocationException, InvalidParameterValueException {
 
         LinkedHashSet<NetworkVO> applicableNetworks = new LinkedHashSet<>();
@@ -7947,7 +7948,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws ResourceAllocationException
      */
     protected void selectApplicableNetworkToCreateVm(Account caller, Account newAccount, DataCenterVO zone,
-                                                        Set<NetworkVO> applicableNetworks, MutableBoolean isNetworkAutoCreated)
+                                                        Set<NetworkVO> applicableNetworks, AtomicBoolean isNetworkAutoCreated)
             throws InsufficientCapacityException, ResourceAllocationException {
 
         logger.trace("Selecting the applicable network to create the VM.");
@@ -9167,12 +9168,4 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             vm.setVncPassword(customParameters.get(VmDetailConstants.KVM_VNC_PASSWORD));
         }
     }
-
-    public static class MutableBoolean {
-        private boolean value;
-        public MutableBoolean(boolean val) { this.value = val; }
-        public void set(boolean val) { this.value = val; }
-        public boolean get() { return this.value; }
-    }
-
 }

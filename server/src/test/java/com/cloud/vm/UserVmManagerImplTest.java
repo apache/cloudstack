@@ -36,12 +36,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.network.Networks;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
@@ -142,6 +140,8 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.UsageEventUtils;
@@ -1975,7 +1975,7 @@ public class UserVmManagerImplTest {
         Mockito.doNothing().when(userVmManagerImpl).updateBasicTypeNetworkForVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
                 Mockito.any(), Mockito.any());
 
-        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
+        AtomicBoolean isNetworkCreated = Mockito.mock(AtomicBoolean.class);
         userVmManagerImpl.updateVmNetwork(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, isNetworkCreated);
 
         Mockito.verify(userVmManagerImpl).updateBasicTypeNetworkForVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
@@ -1989,7 +1989,7 @@ public class UserVmManagerImplTest {
         Mockito.doNothing().when(userVmManagerImpl).updateAdvancedTypeNetworkForVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
                 Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
-        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
+        AtomicBoolean isNetworkCreated = Mockito.mock(AtomicBoolean.class);
 
         userVmManagerImpl.updateVmNetwork(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, isNetworkCreated);
 
@@ -2083,7 +2083,7 @@ public class UserVmManagerImplTest {
                 NetworkOffering.Availability.Required);
         HashSet<NetworkVO> applicableNetworks = new HashSet<NetworkVO>();
         LinkedList<NetworkOfferingVO> requiredOfferings = new LinkedList<NetworkOfferingVO>();
-        UserVmManagerImpl.MutableBoolean isNetworkCreated = new UserVmManagerImpl.MutableBoolean(false);
+        AtomicBoolean isNetworkCreated = Mockito.mock(AtomicBoolean.class);
 
         Mockito.doReturn(requiredOfferings).when(networkOfferingDaoMock).listByAvailability(NetworkOffering.Availability.Required, false);
 
@@ -2106,7 +2106,7 @@ public class UserVmManagerImplTest {
 
         Mockito.doReturn(1l).when(networkOfferingVoMock).getId();
 
-        UserVmManagerImpl.MutableBoolean isNetworkCreated = new UserVmManagerImpl.MutableBoolean(false);
+        AtomicBoolean isNetworkCreated = Mockito.mock(AtomicBoolean.class);
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
             userVmManagerImpl.selectApplicableNetworkToCreateVm(callerAccount, accountMock, _dcMock, applicableNetworks, isNetworkCreated);
         });
@@ -2129,7 +2129,7 @@ public class UserVmManagerImplTest {
 
         Mockito.doReturn(networkMock).when(userVmManagerImpl).createApplicableNetworkToCreateVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
-        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
+        AtomicBoolean isNetworkCreated = Mockito.mock(AtomicBoolean.class);
         userVmManagerImpl.selectApplicableNetworkToCreateVm(callerAccount, accountMock, _dcMock, applicableNetworks, isNetworkCreated);
 
         Mockito.verify(userVmManagerImpl).createApplicableNetworkToCreateVm(callerAccount, accountMock, _dcMock, networkOfferingVoMock);
@@ -2150,7 +2150,7 @@ public class UserVmManagerImplTest {
         virtualNetworks.add(networkMock);
         virtualNetworks.add(networkMock);
 
-        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
+        AtomicBoolean isNetworkCreated = Mockito.mock(AtomicBoolean.class);
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
             userVmManagerImpl.selectApplicableNetworkToCreateVm(callerAccount, accountMock, _dcMock, applicableNetworks, isNetworkCreated);
         });
@@ -2172,7 +2172,7 @@ public class UserVmManagerImplTest {
         Mockito.doReturn(1).when(networkVoListMock).size();
         Mockito.doReturn(networkMock).when(networkVoListMock).get(0);
 
-        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
+        AtomicBoolean isNetworkCreated = Mockito.mock(AtomicBoolean.class);
         userVmManagerImpl.selectApplicableNetworkToCreateVm(callerAccount, accountMock, _dcMock, applicableNetworks, isNetworkCreated);
 
         Mockito.verify(_networkDao).findById(Mockito.anyLong());
@@ -2734,7 +2734,7 @@ public class UserVmManagerImplTest {
 
         Mockito.doReturn(true).when(networkModel).checkSecurityGroupSupportForNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
-        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
+        AtomicBoolean isNetworkCreated = Mockito.mock(AtomicBoolean.class);
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
             userVmManagerImpl.updateAdvancedTypeNetworkForVm(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock,
                     _dcMock, networkIdList, securityGroupIdList, isNetworkCreated);
@@ -2757,7 +2757,7 @@ public class UserVmManagerImplTest {
 
         Mockito.doReturn(true).when(networkModel).checkSecurityGroupSupportForNetwork(accountMock, _dcMock, networkIdList, securityGroupIdList);
 
-        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
+        AtomicBoolean isNetworkCreated = Mockito.mock(AtomicBoolean.class);
         userVmManagerImpl.updateAdvancedTypeNetworkForVm(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock, _dcMock,
                 networkIdList, securityGroupIdList, isNetworkCreated);
 
@@ -2776,7 +2776,7 @@ public class UserVmManagerImplTest {
 
         Mockito.doReturn(false).when(networkModel).checkSecurityGroupSupportForNetwork(accountMock, _dcMock, networkIdList, securityGroupIdList);
 
-        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
+        AtomicBoolean isNetworkCreated = Mockito.mock(AtomicBoolean.class);
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
             userVmManagerImpl.updateAdvancedTypeNetworkForVm(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock,
                     _dcMock, networkIdList, securityGroupIdList, isNetworkCreated);
@@ -2798,7 +2798,7 @@ public class UserVmManagerImplTest {
         Mockito.doReturn(false).when(networkModel).checkSecurityGroupSupportForNetwork(accountMock, _dcMock, networkIdList, securityGroupIdList);
         Mockito.doReturn(true).when(securityGroupIdList).isEmpty();
 
-        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
+        AtomicBoolean isNetworkCreated = Mockito.mock(AtomicBoolean.class);
         userVmManagerImpl.updateAdvancedTypeNetworkForVm(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock, _dcMock,
                 networkIdList, securityGroupIdList, isNetworkCreated);
 
@@ -2822,7 +2822,7 @@ public class UserVmManagerImplTest {
         Mockito.doReturn(networkMock).when(_networkDao).findById(Mockito.anyLong());
         Mockito.doReturn(true).when(userVmManagerImpl).canAccountUseNetwork(accountMock, networkMock);
 
-        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
+        AtomicBoolean isNetworkCreated = Mockito.mock(AtomicBoolean.class);
         userVmManagerImpl.updateAdvancedTypeNetworkForVm(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock, _dcMock,
                 networkIdList, securityGroupIdList, isNetworkCreated);
 
