@@ -61,6 +61,12 @@ CREATE TABLE IF NOT EXISTS `cloud`.`reconcile_commands` (
     CONSTRAINT `fk_reconcile_command__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--- KVM Incremental Snapshots
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'kvm_checkpoint_path', 'varchar(255)');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'end_of_chain', 'int(1) unsigned');
+
+-- Fix ManagementServer scope for ConfigKey
 CREATE TABLE IF NOT EXISTS `management_server_details` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `management_server_id` bigint unsigned NOT NULL COMMENT 'management server the detail is related to',
@@ -72,6 +78,7 @@ CREATE TABLE IF NOT EXISTS `management_server_details` (
   KEY `i_management_server_details__name__value` (`name`(128),`value`(128))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- Feature: Logs in UI
 CREATE TABLE IF NOT EXISTS `cloud`.`logs_web_session` (
     `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT PRIMARY KEY,
     `uuid` varchar(40) NOT NULL COMMENT 'UUID generated for the session',
