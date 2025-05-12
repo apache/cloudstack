@@ -180,46 +180,10 @@ public class BaseMO {
         if (ocs != null) {
             for (ObjectContent oc : ocs) {
                 List<DynamicProperty> objProps = oc.getPropSet();
-                UnmanagedInstanceTO vm = new UnmanagedInstanceTO();
                 if (objProps != null) {
-                    boolean isTemplate = false;
-                    boolean excludeByKeyword = false;
-                    String vmName;
-                    for (DynamicProperty objProp : objProps) {
-                        if (objProp.getName().equals("name")) {
-                            vmName = (String) objProp.getVal();
-                            if (StringUtils.isNotBlank(keyword) && !vmName.contains(keyword)) {
-                                excludeByKeyword = true;
-                            }
-                            vm.setName(vmName);
-                        } else if (objProp.getName().equals("config.template")) {
-                            isTemplate = (Boolean) objProp.getVal();
-                        } else if (objProp.getName().equals("runtime.powerState")) {
-                            VirtualMachinePowerState powerState = (VirtualMachinePowerState) objProp.getVal();
-                            vm.setPowerState(convertPowerState(powerState));
-                        } else if (objProp.getName().equals("config.guestFullName")) {
-                            vm.setOperatingSystem((String) objProp.getVal());
-                        } else if (objProp.getName().equals("config.guestId")) {
-                            vm.setOperatingSystemId((String) objProp.getVal());
-                        } else if (objProp.getName().equals("runtime.host")) {
-                            ManagedObjectReference hostMor = (ManagedObjectReference) objProp.getVal();
-                            if (hostMor != null && StringUtils.isNotBlank(hostMor.getValue())) {
-                                String hostMorValue = hostMor.getValue();
-                                Pair<String, String> hostClusterPair;
-                                if (hostClusterNamesMap.containsKey(hostMorValue)) {
-                                     hostClusterPair = hostClusterNamesMap.get(hostMorValue);
-                                } else {
-                                    HostMO hostMO = new HostMO(_context, hostMor);
-                                    ClusterMO clusterMO = new ClusterMO(_context, hostMO.getHyperHostCluster());
-                                    hostClusterPair = new Pair<>(hostMO.getHostName(), clusterMO.getName());
-                                    hostClusterNamesMap.put(hostMorValue, hostClusterPair);
-                                }
-                                vm.setHostName(hostClusterPair.first());
-                                vm.setClusterName(hostClusterPair.second());
-                            }
-                        }
-                    }
-                    if (!isTemplate && !excludeByKeyword) {
+                    UnmanagedInstanceTO vm = createUnmanagedInstanceTOFromThinListingDynamicProperties(
+                            objProps, keyword, hostClusterNamesMap);
+                    if (vm != null) {
                         vms.add(vm);
                     }
                 }
@@ -230,4 +194,58 @@ public class BaseMO {
         }
         return vms;
     }
+
+    private UnmanagedInstanceTO createUnmanagedInstanceTOFromThinListingDynamicProperties(List<DynamicProperty> objProps,
+                                                                                            String keyword,
+                                                                                            Map<String, Pair<String, String>> hostClusterNamesMap) throws Exception {
+        UnmanagedInstanceTO vm = new UnmanagedInstanceTO();
+        String vmName;
+        boolean isTemplate = false;
+        boolean excludeByKeyword = false;
+
+        for (DynamicProperty objProp : objProps) {
+            if (objProp.getName().equals("name")) {
+                vmName = (String) objProp.getVal();
+                if (StringUtils.isNotBlank(keyword) && !vmName.contains(keyword)) {
+                    excludeByKeyword = true;
+                }
+                vm.setName(vmName);
+            } else if (objProp.getName().equals("config.template")) {
+                isTemplate = (Boolean) objProp.getVal();
+            } else if (objProp.getName().equals("runtime.powerState")) {
+                VirtualMachinePowerState powerState = (VirtualMachinePowerState) objProp.getVal();
+                vm.setPowerState(convertPowerState(powerState));
+            } else if (objProp.getName().equals("config.guestFullName")) {
+                vm.setOperatingSystem((String) objProp.getVal());
+            } else if (objProp.getName().equals("config.guestId")) {
+                vm.setOperatingSystemId((String) objProp.getVal());
+            } else if (objProp.getName().equals("runtime.host")) {
+                ManagedObjectReference hostMor = (ManagedObjectReference) objProp.getVal();
+                setUnmanagedInstanceTOHostAndCluster(vm, hostMor, hostClusterNamesMap);
+            }
+        }
+        if (isTemplate || excludeByKeyword) {
+            return null;
+        }
+        return vm;
+    }
+
+    private void setUnmanagedInstanceTOHostAndCluster(UnmanagedInstanceTO vm, ManagedObjectReference hostMor,
+                                                      Map<String, Pair<String, String>> hostClusterNamesMap) throws Exception {
+        if (hostMor != null && StringUtils.isNotBlank(hostMor.getValue())) {
+            String hostMorValue = hostMor.getValue();
+            Pair<String, String> hostClusterPair;
+            if (hostClusterNamesMap.containsKey(hostMorValue)) {
+                hostClusterPair = hostClusterNamesMap.get(hostMorValue);
+            } else {
+                HostMO hostMO = new HostMO(_context, hostMor);
+                ClusterMO clusterMO = new ClusterMO(_context, hostMO.getHyperHostCluster());
+                hostClusterPair = new Pair<>(hostMO.getHostName(), clusterMO.getName());
+                hostClusterNamesMap.put(hostMorValue, hostClusterPair);
+            }
+            vm.setHostName(hostClusterPair.first());
+            vm.setClusterName(hostClusterPair.second());
+        }
+    }
+
 }
