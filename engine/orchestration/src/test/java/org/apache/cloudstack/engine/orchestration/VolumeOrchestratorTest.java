@@ -18,13 +18,17 @@ package org.apache.cloudstack.engine.orchestration;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Set;
 
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.offering.DiskOffering;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
@@ -32,6 +36,10 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.commons.lang3.ObjectUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -65,6 +73,13 @@ public class VolumeOrchestratorTest {
     protected VolumeDataFactory volumeDataFactory;
     @Mock
     protected VolumeDao volumeDao;
+
+    @Mock
+    private SnapshotDataStoreDao snapshotDataStoreDaoMock;
+
+    @Mock
+    private ImageStoreDao imageStoreDaoMock;
+
 
     @Spy
     @InjectMocks
@@ -208,4 +223,47 @@ public class VolumeOrchestratorTest {
         Mockito.verify(volume, Mockito.times(1)).setChainInfo(chainInfo);
         Mockito.verify(volume, Mockito.times(1)).setState(Volume.State.Ready);
     }
+
+    @Test
+    public void getVolumeCheckpointPathsAndImageStoreUrlsTestReturnEmptyListsIfNotKVM() {
+        Pair<List<String>, Set<String>> result = volumeOrchestrator.getVolumeCheckpointPathsAndImageStoreUrls(0, Hypervisor.HypervisorType.VMware);
+
+        Assert.assertTrue(result.first().isEmpty());
+        Assert.assertTrue(result.second().isEmpty());
+    }
+
+    @Test
+    public void getVolumeCheckpointPathsAndImageStoreUrlsTestReturnCheckpointIfKVM() {
+        SnapshotDataStoreVO snapshotDataStoreVO = new SnapshotDataStoreVO();
+        snapshotDataStoreVO.setKvmCheckpointPath("Test");
+        snapshotDataStoreVO.setRole(DataStoreRole.Primary);
+
+        Mockito.doReturn(List.of(snapshotDataStoreVO)).when(snapshotDataStoreDaoMock).listReadyByVolumeIdAndCheckpointPathNotNull(Mockito.anyLong());
+
+        Pair<List<String>, Set<String>> result = volumeOrchestrator.getVolumeCheckpointPathsAndImageStoreUrls(0, Hypervisor.HypervisorType.KVM);
+
+        Assert.assertEquals("Test", result.first().get(0));
+        Assert.assertTrue(result.second().isEmpty());
+    }
+
+    @Test
+    public void getVolumeCheckpointPathsAndImageStoreUrlsTestReturnCheckpointIfKVMAndImageStore() {
+        SnapshotDataStoreVO snapshotDataStoreVO = new SnapshotDataStoreVO();
+        snapshotDataStoreVO.setKvmCheckpointPath("Test");
+        snapshotDataStoreVO.setRole(DataStoreRole.Image);
+        snapshotDataStoreVO.setDataStoreId(13);
+
+        Mockito.doReturn(List.of(snapshotDataStoreVO)).when(snapshotDataStoreDaoMock).listReadyByVolumeIdAndCheckpointPathNotNull(Mockito.anyLong());
+
+        ImageStoreVO imageStoreVO = new ImageStoreVO();
+        imageStoreVO.setUrl("URL");
+        Mockito.doReturn(imageStoreVO).when(imageStoreDaoMock).findById(Mockito.anyLong());
+
+        Pair<List<String>, Set<String>> result = volumeOrchestrator.getVolumeCheckpointPathsAndImageStoreUrls(0, Hypervisor.HypervisorType.KVM);
+
+        Assert.assertEquals("Test", result.first().get(0));
+        Assert.assertTrue(result.second().contains("URL"));
+        Assert.assertEquals(1, result.second().size());
+    }
+
 }

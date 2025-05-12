@@ -35,6 +35,8 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
+import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -77,6 +79,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.lang3.ObjectUtils;
 
 @DB
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
@@ -1853,4 +1856,24 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("id", ids.toArray());
         return search(sc, null);
     }
+
+
+    @Override
+    public Long findClusterIdByVolumeInfo(VolumeInfo volumeInfo) {
+        VirtualMachine virtualMachine = volumeInfo.getAttachedVM();
+        if (virtualMachine == null) {
+            return null;
+        }
+
+        Long hostId = ObjectUtils.defaultIfNull(virtualMachine.getHostId(), virtualMachine.getLastHostId());
+        Host host = findById(hostId);
+
+        if (host == null) {
+            logger.warn(String.format("VM [%s] has null host on DB, either this VM was never started, or there is some inconsistency on the DB.", virtualMachine.getUuid()));
+            return null;
+        }
+
+        return host.getClusterId();
+    }
+
 }
