@@ -3984,7 +3984,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return defaultNetwork;
     }
 
-    private NetworkVO createDefaultNetworkForAccount(DataCenter zone, Account owner, List<NetworkOfferingVO> requiredOfferings)
+    protected NetworkVO createDefaultNetworkForAccount(DataCenter zone, Account owner, List<NetworkOfferingVO> requiredOfferings)
             throws InsufficientCapacityException, ResourceAllocationException {
         NetworkVO defaultNetwork = null;
         long physicalNetworkId = _networkModel.findPhysicalNetworkId(zone.getId(), requiredOfferings.get(0).getTags(), requiredOfferings.get(0).getTrafficType());
@@ -7591,12 +7591,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         updateVmOwner(newAccount, vm, domainId, newAccountId);
 
         updateVolumesOwner(volumes, oldAccount, newAccount, newAccountId);
-        MutableBoolean isNetworkCreated = new MutableBoolean(false);
+        MutableBoolean isNetworkAutoCreated = new MutableBoolean(false);
         try {
-            updateVmNetwork(cmd, caller, vm, newAccount, template, isNetworkCreated);
+            updateVmNetwork(cmd, caller, vm, newAccount, template, isNetworkAutoCreated);
         } catch (InsufficientCapacityException | ResourceAllocationException e) {
             List<NetworkVO> networkVOS = _networkDao.listByAccountIdNetworkName(newAccountId, newAccount.getAccountName() + "-network");
-            if (networkVOS.size() == 1 && isNetworkCreated.get()) {
+            if (networkVOS.size() == 1 && isNetworkAutoCreated.get()) {
                 _networkDao.remove(networkVOS.get(0).getId());
             }
             throw new CloudRuntimeException(String.format("Unable to update networks when assigning VM [%s] due to [%s].", vm, e.getMessage()), e);
@@ -7662,7 +7662,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws InsufficientCapacityException
      * @throws ResourceAllocationException
      */
-    protected void updateVmNetwork(AssignVMCmd cmd, Account caller, UserVmVO vm, Account newAccount, VirtualMachineTemplate template, MutableBoolean isNetworkCreated)
+    protected void updateVmNetwork(AssignVMCmd cmd, Account caller, UserVmVO vm, Account newAccount, VirtualMachineTemplate template, MutableBoolean isNetworkAutoCreated)
             throws InsufficientCapacityException, ResourceAllocationException {
 
         logger.trace("Updating network for VM [{}].", vm);
@@ -7680,7 +7680,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return;
         }
 
-        updateAdvancedTypeNetworkForVm(cmd, caller, vm, newAccount, template, vmOldProfile, zone, networkIdList, securityGroupIdList, isNetworkCreated);
+        updateAdvancedTypeNetworkForVm(cmd, caller, vm, newAccount, template, vmOldProfile, zone, networkIdList, securityGroupIdList, isNetworkAutoCreated);
     }
 
     /**
@@ -7791,7 +7791,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws InvalidParameterValueException
      */
     protected void updateAdvancedTypeNetworkForVm(AssignVMCmd cmd, Account caller, UserVmVO vm, Account newAccount, VirtualMachineTemplate template,
-                                                  VirtualMachineProfileImpl vmOldProfile, DataCenterVO zone, List<Long> networkIdList, List<Long> securityGroupIdList, MutableBoolean isNetworkCreated)
+                                                  VirtualMachineProfileImpl vmOldProfile, DataCenterVO zone, List<Long> networkIdList, List<Long> securityGroupIdList, MutableBoolean isNetworkAutoCreated)
             throws InsufficientCapacityException, ResourceAllocationException, InvalidParameterValueException {
 
         LinkedHashSet<NetworkVO> applicableNetworks = new LinkedHashSet<>();
@@ -7824,7 +7824,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         addNetworksToNetworkIdList(vm, newAccount, vmOldProfile, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
 
         if (applicableNetworks.isEmpty()) {
-            selectApplicableNetworkToCreateVm(caller, newAccount, zone, applicableNetworks, isNetworkCreated);
+            selectApplicableNetworkToCreateVm(caller, newAccount, zone, applicableNetworks, isNetworkAutoCreated);
         }
 
         addNicsToApplicableNetworksAndReturnDefaultNetwork(applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics, networks);
@@ -7947,7 +7947,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws ResourceAllocationException
      */
     protected void selectApplicableNetworkToCreateVm(Account caller, Account newAccount, DataCenterVO zone,
-                                                        Set<NetworkVO> applicableNetworks, MutableBoolean isNetworkCreated)
+                                                        Set<NetworkVO> applicableNetworks, MutableBoolean isNetworkAutoCreated)
             throws InsufficientCapacityException, ResourceAllocationException {
 
         logger.trace("Selecting the applicable network to create the VM.");
@@ -7969,7 +7969,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (virtualNetworks.isEmpty()) {
             try (TransactionLegacy txn = TransactionLegacy.open("CreateNetworkTxn")) {
                 defaultNetwork = createApplicableNetworkToCreateVm(caller, newAccount, zone, firstRequiredOffering);
-                isNetworkCreated.set(true);
+                isNetworkAutoCreated.set(true);
                 txn.commit();
             }
         } else if (virtualNetworks.size() > 1) {

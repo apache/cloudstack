@@ -36,10 +36,12 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.network.Networks;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
@@ -609,7 +611,7 @@ public class UserVmManagerImplTest {
 
         Mockito.doNothing().when(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.doNothing().when(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
-        Mockito.doNothing().when(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
         Mockito.doNothing().when(userVmManagerImpl).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
     }
@@ -1973,7 +1975,8 @@ public class UserVmManagerImplTest {
         Mockito.doNothing().when(userVmManagerImpl).updateBasicTypeNetworkForVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
                 Mockito.any(), Mockito.any());
 
-        userVmManagerImpl.updateVmNetwork(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock);
+        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
+        userVmManagerImpl.updateVmNetwork(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, isNetworkCreated);
 
         Mockito.verify(userVmManagerImpl).updateBasicTypeNetworkForVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
                 Mockito.any(), Mockito.any());
@@ -1984,12 +1987,14 @@ public class UserVmManagerImplTest {
         Mockito.doReturn(_dcMock).when(_dcDao).findById(Mockito.anyLong());
         Mockito.doReturn(DataCenter.NetworkType.Advanced).when(_dcMock).getNetworkType();
         Mockito.doNothing().when(userVmManagerImpl).updateAdvancedTypeNetworkForVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-                Mockito.any(), Mockito.any(), Mockito.any());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
-        userVmManagerImpl.updateVmNetwork(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock);
+        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
+
+        userVmManagerImpl.updateVmNetwork(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, isNetworkCreated);
 
         Mockito.verify(userVmManagerImpl).updateAdvancedTypeNetworkForVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-                Mockito.any(), Mockito.any(), Mockito.any());
+                Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     @Test
@@ -2078,11 +2083,12 @@ public class UserVmManagerImplTest {
                 NetworkOffering.Availability.Required);
         HashSet<NetworkVO> applicableNetworks = new HashSet<NetworkVO>();
         LinkedList<NetworkOfferingVO> requiredOfferings = new LinkedList<NetworkOfferingVO>();
+        UserVmManagerImpl.MutableBoolean isNetworkCreated = new UserVmManagerImpl.MutableBoolean(false);
 
         Mockito.doReturn(requiredOfferings).when(networkOfferingDaoMock).listByAvailability(NetworkOffering.Availability.Required, false);
 
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
-            userVmManagerImpl.selectApplicableNetworkToCreateVm(callerAccount, accountMock, _dcMock, applicableNetworks);
+            userVmManagerImpl.selectApplicableNetworkToCreateVm(callerAccount, accountMock, _dcMock, applicableNetworks, isNetworkCreated);
         });
 
         Assert.assertEquals(expectedMessage, assertThrows.getMessage());
@@ -2100,8 +2106,9 @@ public class UserVmManagerImplTest {
 
         Mockito.doReturn(1l).when(networkOfferingVoMock).getId();
 
+        UserVmManagerImpl.MutableBoolean isNetworkCreated = new UserVmManagerImpl.MutableBoolean(false);
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
-            userVmManagerImpl.selectApplicableNetworkToCreateVm(callerAccount, accountMock, _dcMock, applicableNetworks);
+            userVmManagerImpl.selectApplicableNetworkToCreateVm(callerAccount, accountMock, _dcMock, applicableNetworks, isNetworkCreated);
         });
 
         Assert.assertEquals(expectedMessage, assertThrows.getMessage());
@@ -2122,7 +2129,8 @@ public class UserVmManagerImplTest {
 
         Mockito.doReturn(networkMock).when(userVmManagerImpl).createApplicableNetworkToCreateVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
-        userVmManagerImpl.selectApplicableNetworkToCreateVm(callerAccount, accountMock, _dcMock, applicableNetworks);
+        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
+        userVmManagerImpl.selectApplicableNetworkToCreateVm(callerAccount, accountMock, _dcMock, applicableNetworks, isNetworkCreated);
 
         Mockito.verify(userVmManagerImpl).createApplicableNetworkToCreateVm(callerAccount, accountMock, _dcMock, networkOfferingVoMock);
     }
@@ -2142,8 +2150,9 @@ public class UserVmManagerImplTest {
         virtualNetworks.add(networkMock);
         virtualNetworks.add(networkMock);
 
+        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
-            userVmManagerImpl.selectApplicableNetworkToCreateVm(callerAccount, accountMock, _dcMock, applicableNetworks);
+            userVmManagerImpl.selectApplicableNetworkToCreateVm(callerAccount, accountMock, _dcMock, applicableNetworks, isNetworkCreated);
         });
 
         Assert.assertEquals(expectedMessage, assertThrows.getMessage());
@@ -2163,7 +2172,8 @@ public class UserVmManagerImplTest {
         Mockito.doReturn(1).when(networkVoListMock).size();
         Mockito.doReturn(networkMock).when(networkVoListMock).get(0);
 
-        userVmManagerImpl.selectApplicableNetworkToCreateVm(callerAccount, accountMock, _dcMock, applicableNetworks);
+        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
+        userVmManagerImpl.selectApplicableNetworkToCreateVm(callerAccount, accountMock, _dcMock, applicableNetworks, isNetworkCreated);
 
         Mockito.verify(_networkDao).findById(Mockito.anyLong());
     }
@@ -2724,9 +2734,10 @@ public class UserVmManagerImplTest {
 
         Mockito.doReturn(true).when(networkModel).checkSecurityGroupSupportForNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
+        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
             userVmManagerImpl.updateAdvancedTypeNetworkForVm(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock,
-                    _dcMock, networkIdList, securityGroupIdList);
+                    _dcMock, networkIdList, securityGroupIdList, isNetworkCreated);
         });
 
         Mockito.verify(securityGroupManagerMock).removeInstanceFromGroups(Mockito.any());
@@ -2746,8 +2757,9 @@ public class UserVmManagerImplTest {
 
         Mockito.doReturn(true).when(networkModel).checkSecurityGroupSupportForNetwork(accountMock, _dcMock, networkIdList, securityGroupIdList);
 
+        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
         userVmManagerImpl.updateAdvancedTypeNetworkForVm(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock, _dcMock,
-                networkIdList, securityGroupIdList);
+                networkIdList, securityGroupIdList, isNetworkCreated);
 
         Mockito.verify(securityGroupManagerMock).removeInstanceFromGroups(Mockito.any());
         Mockito.verify(userVmManagerImpl).allocateNetworksForVm(Mockito.any(), Mockito.any());
@@ -2764,9 +2776,10 @@ public class UserVmManagerImplTest {
 
         Mockito.doReturn(false).when(networkModel).checkSecurityGroupSupportForNetwork(accountMock, _dcMock, networkIdList, securityGroupIdList);
 
+        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
         InvalidParameterValueException assertThrows = Assert.assertThrows(expectedInvalidParameterValueException, () -> {
             userVmManagerImpl.updateAdvancedTypeNetworkForVm(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock,
-                    _dcMock, networkIdList, securityGroupIdList);
+                    _dcMock, networkIdList, securityGroupIdList, isNetworkCreated);
         });
 
         Assert.assertEquals(expectedMessage, assertThrows.getMessage());
@@ -2780,16 +2793,17 @@ public class UserVmManagerImplTest {
         LinkedList<Long> networkIdList = new LinkedList<Long>();
 
         Mockito.doReturn(networkMock).when(userVmManagerImpl).addNicsToApplicableNetworksAndReturnDefaultNetwork(Mockito.any(), Mockito.anyMap(), Mockito.anyMap(), Mockito.any());
-        Mockito.doNothing().when(userVmManagerImpl).selectApplicableNetworkToCreateVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(userVmManagerImpl).selectApplicableNetworkToCreateVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
         Mockito.doReturn(false).when(networkModel).checkSecurityGroupSupportForNetwork(accountMock, _dcMock, networkIdList, securityGroupIdList);
         Mockito.doReturn(true).when(securityGroupIdList).isEmpty();
 
+        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
         userVmManagerImpl.updateAdvancedTypeNetworkForVm(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock, _dcMock,
-                networkIdList, securityGroupIdList);
+                networkIdList, securityGroupIdList, isNetworkCreated);
 
         Mockito.verify(userVmManagerImpl).addNetworksToNetworkIdList(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyMap(), Mockito.anyMap());
-        Mockito.verify(userVmManagerImpl).selectApplicableNetworkToCreateVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(userVmManagerImpl).selectApplicableNetworkToCreateVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(userVmManagerImpl).addNicsToApplicableNetworksAndReturnDefaultNetwork(Mockito.any(), Mockito.anyMap(), Mockito.anyMap(), Mockito.any());
         Mockito.verify(userVmManagerImpl).allocateNetworksForVm(Mockito.any(), Mockito.any());
     }
@@ -2808,11 +2822,12 @@ public class UserVmManagerImplTest {
         Mockito.doReturn(networkMock).when(_networkDao).findById(Mockito.anyLong());
         Mockito.doReturn(true).when(userVmManagerImpl).canAccountUseNetwork(accountMock, networkMock);
 
+        UserVmManagerImpl.MutableBoolean isNetworkCreated = Mockito.mock(UserVmManagerImpl.MutableBoolean.class);
         userVmManagerImpl.updateAdvancedTypeNetworkForVm(assignVmCmdMock, callerAccount, userVmVoMock, accountMock, virtualMachineTemplateMock, virtualMachineProfileMock, _dcMock,
-                networkIdList, securityGroupIdList);
+                networkIdList, securityGroupIdList, isNetworkCreated);
 
         Mockito.verify(userVmManagerImpl).addNetworksToNetworkIdList(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyMap(), Mockito.anyMap());
-        Mockito.verify(userVmManagerImpl, Mockito.never()).selectApplicableNetworkToCreateVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(userVmManagerImpl, Mockito.never()).selectApplicableNetworkToCreateVm(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
         Mockito.verify(userVmManagerImpl).addNicsToApplicableNetworksAndReturnDefaultNetwork(Mockito.any(), Mockito.anyMap(), Mockito.anyMap(), Mockito.any());
         Mockito.verify(userVmManagerImpl).allocateNetworksForVm(Mockito.any(), Mockito.any());
     }
@@ -3045,7 +3060,7 @@ public class UserVmManagerImplTest {
             configureDoNothingForMethodsThatWeDoNotWantToTest();
 
             Mockito.doThrow(InsufficientAddressCapacityException.class).when(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-                    Mockito.any());
+                    Mockito.any(), Mockito.any());
 
             Assert.assertThrows(CloudRuntimeException.class, () -> userVmManagerImpl.executeStepsToChangeOwnershipOfVm(assignVmCmdMock, callerAccount, accountMock, accountMock,
                     userVmVoMock, serviceOfferingVoMock, volumes, virtualMachineTemplateMock, 1l));
@@ -3068,7 +3083,7 @@ public class UserVmManagerImplTest {
             configureDoNothingForMethodsThatWeDoNotWantToTest();
 
             Mockito.doThrow(ResourceAllocationException.class).when(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(),
-                    Mockito.any());
+                    Mockito.any(), Mockito.any());
 
             Assert.assertThrows(CloudRuntimeException.class, () -> userVmManagerImpl.executeStepsToChangeOwnershipOfVm(assignVmCmdMock, callerAccount, accountMock, accountMock,
                     userVmVoMock, serviceOfferingVoMock, volumes, virtualMachineTemplateMock, 1l));
@@ -3098,7 +3113,7 @@ public class UserVmManagerImplTest {
             Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
             Mockito.verify(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong());
-            Mockito.verify(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.verify(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
         }
     }
@@ -3121,7 +3136,7 @@ public class UserVmManagerImplTest {
             Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
             Mockito.verify(userVmManagerImpl).updateVolumesOwner(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.anyLong());
-            Mockito.verify(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+            Mockito.verify(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl, Mockito.never()).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
         }
     }
