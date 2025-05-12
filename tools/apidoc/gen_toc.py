@@ -259,10 +259,12 @@ known_categories = {
     'releaseASNumber': 'AS Number',
     'createExtension' : 'Extension',
     'registerExtension' : 'Extension',
+    'deleteExtension' : 'Extension',
     'listExtensions' : 'Extension',
-    'registerCustomAction' : 'Extension',
     'runCustomAction' : 'Extension',
     'deleteCustomAction' : 'Extension',
+    'addCustomAction' : 'Extension',
+    'listCustomAction' : 'Extension'
 }
 
 
