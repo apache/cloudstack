@@ -631,7 +631,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
                 boolean dataDiskDeletetionResult = true;
                 List<VMTemplateVO> dataDiskTemplates = templateDao.listByParentTemplatetId(template.getId());
-                if (CollectionUtils.isEmpty(dataDiskTemplates)) {
+                if (CollectionUtils.isNotEmpty(dataDiskTemplates)) {
                     s_logger.info("Template: " + template.getId() + " has Datadisk template(s) associated with it. Delete Datadisk templates before deleting the template");
                     for (VMTemplateVO dataDiskTemplate : dataDiskTemplates) {
                         s_logger.info("Delete Datadisk template: " + dataDiskTemplate.getId() + " from image store: " + imageStore.getName());
