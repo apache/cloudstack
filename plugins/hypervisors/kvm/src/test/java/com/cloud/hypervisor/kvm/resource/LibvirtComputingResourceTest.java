@@ -267,9 +267,6 @@ public class LibvirtComputingResourceTest {
     DomainBlockStats domainBlockStatsMock;
 
     @Mock
-    VolumeObjectTO volumeObjectToMock;
-
-    @Mock
     SnapshotObjectTO snapshotObjectToMock;
 
     @Mock
