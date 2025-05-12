@@ -7592,9 +7592,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         removeInstanceFromInstanceGroup(vm.getId());
 
         Long newAccountId = newAccount.getAccountId();
-        updateVmOwner(newAccount, vm, domainId, newAccountId);
-
-        updateVolumesOwner(volumes, oldAccount, newAccount, newAccountId);
         AtomicBoolean isNetworkAutoCreated = new AtomicBoolean(false);
         try {
             updateVmNetwork(cmd, caller, vm, newAccount, template, isNetworkAutoCreated);
@@ -7605,6 +7602,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             throw new CloudRuntimeException(String.format("Unable to update networks when assigning VM [%s] due to [%s].", vm, e.getMessage()), e);
         }
+
+        updateVmOwner(newAccount, vm, domainId, newAccountId);
+
+        updateVolumesOwner(volumes, oldAccount, newAccount, newAccountId);
 
         logger.trace(String.format("Incrementing new account [%s] resource count.", newAccount));
         if (!isResourceCountRunningVmsOnlyEnabled()) {
