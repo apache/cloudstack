@@ -35,6 +35,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.CleanupVMCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -235,5 +236,13 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {MaxNumberOfVCPUSPerVM};
+    }
+
+    @Override
+    public List<Command> finalizeExpunge(VirtualMachine vm) {
+        List<Command> commands = new ArrayList<>();
+        final CleanupVMCommand cleanupVMCommand = new CleanupVMCommand(vm.getInstanceName(), true);
+        commands.add(cleanupVMCommand);
+        return commands;
     }
 }
