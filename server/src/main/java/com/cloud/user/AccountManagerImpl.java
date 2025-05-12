@@ -20,6 +20,7 @@ import java.net.InetAddress;
 import java.net.URLEncoder;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -383,6 +384,22 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             "user.allow.multiple.accounts",
             "false",
             "Determines if the same username can be added to more than one account in the same domain (SAML-only).",
+            true,
+            ConfigKey.Scope.Domain);
+
+    public static ConfigKey<String> listOfRoleTypesAllowedForOperationsOfSameRoleType = new ConfigKey<>("Hidden",
+            String.class,
+            "role.types.allowed.for.operations.on.accounts.of.same.role.type",
+            "Admin, ResourceAdmin, DomainAdmin",
+            "Comma separated list of role types that are allowed to do operations on accounts or users of the same role type within a domain.",
+            true,
+            ConfigKey.Scope.Domain);
+
+    public static ConfigKey<Boolean> allowOperationsOnUsersInSameAccount = new ConfigKey<>("Hidden",
+            Boolean.class,
+            "allow.operations.on.users.in.same.account",
+            "true",
+            "Allow operations on users among them in the same account",
             true,
             ConfigKey.Scope.Domain);
 
@@ -1369,7 +1386,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     /**
      * if there is any permission under the requested role that is not permitted for the caller, refuse
      */
-    private void checkRoleEscalation(Account caller, Account requested) {
+    protected void checkRoleEscalation(Account caller, Account requested) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("Checking if user of account %s [%s] with role-id [%d] can create an account of type %s [%s] with role-id [%d]",
                     caller.getAccountName(),
@@ -1471,7 +1488,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             // users can't exist in same account
             assertUserNotAlreadyInAccount(duplicatedUser, account);
         }
-
+        verifyCallerPrivilegeForUserOrAccountOperations(account);
         UserVO user = null;
         user = createUser(account.getId(), userName, password, firstName, lastName, email, timeZone, userUUID, source);
         return user;
@@ -1488,10 +1505,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @ActionEvent(eventType = EventTypes.EVENT_USER_UPDATE, eventDescription = "Updating User")
     public UserAccount updateUser(UpdateUserCmd updateUserCmd) {
         UserVO user = retrieveAndValidateUser(updateUserCmd);
+        Account account = retrieveAndValidateAccount(user);
+        User caller = CallContext.current().getCallingUser();
+        checkAccess(caller, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(user);
+
         s_logger.debug("Updating user with Id: " + user.getUuid());
 
         validateAndUpdateApiAndSecretKeyIfNeeded(updateUserCmd, user);
-        Account account = retrieveAndValidateAccount(user);
 
         validateAndUpdateFirstNameIfNeeded(updateUserCmd, user);
         validateAndUpdateLastNameIfNeeded(updateUserCmd, user);
@@ -1512,6 +1533,85 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         _userDao.update(user.getId(), user);
         return _userAccountDao.findById(user.getId());
+    }
+
+    @Override
+    public void verifyCallerPrivilegeForUserOrAccountOperations(Account userAccount) {
+        s_logger.debug(String.format("Verifying whether the caller has the correct privileges based on the user's role type and API permissions: %s", userAccount));
+
+        checkCallerRoleTypeAllowedForUserOrAccountOperations(userAccount, null);
+        checkCallerApiPermissionsForUserOrAccountOperations(userAccount);
+    }
+
+    protected void verifyCallerPrivilegeForUserOrAccountOperations(User user) {
+        s_logger.debug(String.format("Verifying whether the caller has the correct privileges based on the user's role type and API permissions: %s", user));
+
+        Account userAccount = getAccount(user.getAccountId());
+        checkCallerRoleTypeAllowedForUserOrAccountOperations(userAccount, user);
+        checkCallerApiPermissionsForUserOrAccountOperations(userAccount);
+    }
+
+    protected void checkCallerRoleTypeAllowedForUserOrAccountOperations(Account userAccount, User user) {
+        Account callingAccount = getCurrentCallingAccount();
+        RoleType callerRoleType = getRoleType(callingAccount);
+        RoleType userAccountRoleType = getRoleType(userAccount);
+
+        if (RoleType.Unknown == callerRoleType || RoleType.Unknown == userAccountRoleType) {
+            String errMsg = String.format("The role type of account [%s, %s] or [%s, %s] is unknown",
+                    callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid());
+            throw new PermissionDeniedException(errMsg);
+        }
+
+        boolean isCallerSystemOrDefaultAdmin = callingAccount.getId() == Account.ACCOUNT_ID_SYSTEM || callingAccount.getId() == Account.ACCOUNT_ID_ADMIN;
+        if (isCallerSystemOrDefaultAdmin) {
+            s_logger.trace(String.format("Admin account [%s, %s] performing this operation for user account [%s, %s] ", callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid()));
+        } else if (callerRoleType.getId() < userAccountRoleType.getId()) {
+            s_logger.trace(String.format("The calling account [%s] has a higher role type than the user account [%s]",
+                    callingAccount, userAccount));
+        } else if (callerRoleType.getId() == userAccountRoleType.getId()) {
+            if (callingAccount.getId() != userAccount.getId()) {
+                String allowedRoleTypes = listOfRoleTypesAllowedForOperationsOfSameRoleType.valueInDomain(callingAccount.getDomainId());
+                boolean updateAllowed = allowedRoleTypes != null &&
+                        Arrays.stream(allowedRoleTypes.split(","))
+                                .map(String::trim)
+                                .anyMatch(role -> role.equals(callerRoleType.toString()));
+                if (BooleanUtils.isFalse(updateAllowed)) {
+                    String errMsg = String.format("The calling account [%s, %s] is not allowed to perform this operation on users from other accounts " +
+                            "of the same role type within the domain", callingAccount.getName(), callingAccount.getUuid());
+                    s_logger.error(errMsg);
+                    throw new PermissionDeniedException(errMsg);
+                }
+            } else if ((callingAccount.getId() == userAccount.getId()) && user != null) {
+                Boolean allowOperationOnUsersinSameAccount = allowOperationsOnUsersInSameAccount.valueInDomain(callingAccount.getDomainId());
+                User callingUser = CallContext.current().getCallingUser();
+                if (callingUser.getId() != user.getId() && BooleanUtils.isFalse(allowOperationOnUsersinSameAccount)) {
+                    String errMsg = "The user operations are not allowed by the users in the same account";
+                    s_logger.error(errMsg);
+                    throw new PermissionDeniedException(errMsg);
+                }
+            }
+        } else {
+            String errMsg = String.format("The calling account [%s, %s] has a lower role type than the user account [%s, %s]",
+                    callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid());
+            throw new PermissionDeniedException(errMsg);
+        }
+    }
+
+    protected void checkCallerApiPermissionsForUserOrAccountOperations(Account userAccount) {
+        Account callingAccount = getCurrentCallingAccount();
+        boolean isCallerRootAdmin = callingAccount.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(callingAccount.getId());
+
+        if (isCallerRootAdmin) {
+            s_logger.trace(String.format("Admin account [%s, %s] performing this operation for user account [%s, %s] ", callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid()));
+        } else if (isRootAdmin(userAccount.getAccountId())) {
+            String errMsg = String.format("Account [%s, %s] cannot perform this operation for user account [%s, %s] ", callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid());
+            s_logger.error(errMsg);
+            throw new PermissionDeniedException(errMsg);
+        } else {
+            s_logger.debug(String.format("Checking calling account [%s, %s] permission to perform this operation for user account [%s, %s] ",  callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid()));
+            checkRoleEscalation(callingAccount, userAccount);
+            s_logger.debug(String.format("Calling account [%s, %s] is allowed to perform this operation for user account [%s, %s] ",  callingAccount.getName(), callingAccount.getUuid(), userAccount.getName(), userAccount.getUuid()));
+        }
     }
 
     /**
@@ -1760,6 +1860,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         checkAccess(caller, AccessType.OperateEntry, true, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(user);
 
         boolean success = doSetUserStatus(userId, State.DISABLED);
         if (success) {
@@ -1801,6 +1902,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         checkAccess(caller, AccessType.OperateEntry, true, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(user);
 
         boolean success = Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
@@ -1853,6 +1955,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         checkAccess(caller, AccessType.OperateEntry, true, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(user);
 
         // make sure the account is enabled too
         // if the user is either locked already or disabled already, don't change state...only lock currently enabled
@@ -1909,6 +2012,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         checkIfAccountManagesProjects(accountId);
+        verifyCallerPrivilegeForUserOrAccountOperations(account);
 
         CallContext.current().putContextParameter(Account.class, account.getUuid());
 
@@ -1971,6 +2075,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // Check if user performing the action is allowed to modify this account
         Account caller = getCurrentCallingAccount();
         checkAccess(caller, AccessType.OperateEntry, true, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(account);
 
         boolean success = enableAccount(account.getId());
         if (success) {
@@ -2004,6 +2109,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         checkAccess(caller, AccessType.OperateEntry, true, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(account);
 
         if (lockAccount(account.getId())) {
             CallContext.current().putContextParameter(Account.class, account.getUuid());
@@ -2034,6 +2140,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         checkAccess(caller, AccessType.OperateEntry, true, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(account);
 
         if (disableAccount(account.getId())) {
             CallContext.current().putContextParameter(Account.class, account.getUuid());
@@ -2079,6 +2186,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         // Check if user performing the action is allowed to modify this account
         Account caller = getCurrentCallingAccount();
         checkAccess(caller, _domainMgr.getDomain(account.getDomainId()));
+        verifyCallerPrivilegeForUserOrAccountOperations(account);
 
         if(newAccountName != null) {
 
@@ -2160,6 +2268,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // don't allow to delete the user from the account of type Project
         checkAccountAndAccess(user, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(user);
+
         return Transaction.execute((TransactionCallback<Boolean>) status -> deleteAndCleanupUser(user));
     }
 
@@ -2178,6 +2288,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         UserVO user = getValidUserVO(id);
         Account oldAccount = _accountDao.findById(user.getAccountId());
         checkAccountAndAccess(user, oldAccount);
+        verifyCallerPrivilegeForUserOrAccountOperations(user);
         long domainId = oldAccount.getDomainId();
 
         long newAccountId = getNewAccountId(domainId, cmd.getAccountName(), cmd.getAccountId());
@@ -2513,6 +2624,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (dc.isEmpty()) {
                 throw new InvalidParameterValueException("The account cannot be created as domain " + domain.getName() + " is not associated with any private Zone");
             }
+        }
+
+        if (!Account.Type.PROJECT.equals(accountType)) {
+            AccountVO newAccount = new AccountVO(accountName, domainId, networkDomain, accountType, roleId, uuid);
+            verifyCallerPrivilegeForUserOrAccountOperations(newAccount);
         }
 
         // Create the account
@@ -2863,8 +2979,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
         final ControlledEntity account = getAccount(getUserAccountById(userId).getAccountId()); //Extracting the Account from the userID of the requested user.
         User caller = CallContext.current().getCallingUser();
-        preventRootDomainAdminAccessToRootAdminKeys(caller, account);
         checkAccess(caller, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(user);
 
         Map<String, String> keys = new HashMap<String, String>();
         keys.put("apikey", user.getApiKey());
@@ -2920,8 +3036,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         Account account = _accountDao.findById(user.getAccountId());
-        preventRootDomainAdminAccessToRootAdminKeys(user, account);
         checkAccess(caller, null, true, account);
+        verifyCallerPrivilegeForUserOrAccountOperations(user);
 
         // don't allow updating system user
         if (user.getId() == User.UID_SYSTEM) {
@@ -3377,7 +3493,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {UseSecretKeyInResponse, enableUserTwoFactorAuthentication,
                 userTwoFactorAuthenticationDefaultProvider, mandateUserTwoFactorAuthentication, userTwoFactorAuthenticationIssuer,
-                userAllowMultipleAccounts};
+                userAllowMultipleAccounts, listOfRoleTypesAllowedForOperationsOfSameRoleType, allowOperationsOnUsersInSameAccount};
     }
 
     public List<UserTwoFactorAuthenticator> getUserTwoFactorAuthenticationProviders() {

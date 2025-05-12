@@ -47,11 +47,13 @@ import javax.naming.ConfigurationException;
 
 
 import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.user.AccountManagerImpl;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.host.HostTagVO;
 import com.cloud.storage.StoragePoolTagVO;
 import com.cloud.storage.VolumeApiServiceImpl;
 import com.googlecode.ipv6.IPv6Address;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -470,6 +472,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private long _defaultPageSize = Long.parseLong(Config.DefaultPageSize.getDefaultValue());
     private static final String DOMAIN_NAME_PATTERN = "^((?!-)[A-Za-z0-9-]{1,63}(?<!-)\\.)+[A-Za-z]{1,63}$";
     private Set<String> configValuesForValidation = new HashSet<String>();
+    private Set<String> configKeysAllowedOnlyForDefaultAdmin = new HashSet<String>();
     private Set<String> weightBasedParametersForValidation = new HashSet<String>();
     private Set<String> overprovisioningFactorsForValidation = new HashSet<String>();
 
@@ -533,6 +536,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         populateConfigValuesForValidationSet();
         weightBasedParametersForValidation();
         overProvisioningFactorsForValidation();
+        populateConfigKeysAllowedOnlyForDefaultAdmin();
         initMessageBusListener();
         return true;
     }
@@ -594,6 +598,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         overprovisioningFactorsForValidation.add(CapacityManager.MemOverprovisioningFactor.key());
         overprovisioningFactorsForValidation.add(CapacityManager.CpuOverprovisioningFactor.key());
         overprovisioningFactorsForValidation.add(CapacityManager.StorageOverprovisioningFactor.key());
+    }
+
+    protected void populateConfigKeysAllowedOnlyForDefaultAdmin() {
+        configKeysAllowedOnlyForDefaultAdmin.add(AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key());
+        configKeysAllowedOnlyForDefaultAdmin.add(AccountManagerImpl.allowOperationsOnUsersInSameAccount.key());
     }
 
     private void initMessageBusListener() {
@@ -1183,6 +1192,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             s_logger.error("Missing configuration variable " + name + " in configuration table");
             return "Invalid configuration variable.";
         }
+        validateConfigurationAllowedOnlyForDefaultAdmin(name, value);
 
         final String configScope = cfg.getScope();
         if (scope != null) {
@@ -1345,6 +1355,33 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return validateIfIntValueIsInRange(name, value, range[0]);
         }
         return String.format("Invalid value for configuration [%s].", name);
+    }
+
+    protected void validateConfigurationAllowedOnlyForDefaultAdmin(String configName, String value) {
+        if (configKeysAllowedOnlyForDefaultAdmin.contains(configName)) {
+            final Long userId = CallContext.current().getCallingUserId();
+            if (userId != User.UID_ADMIN) {
+                throw new CloudRuntimeException("Only default admin is allowed to change this setting");
+            }
+
+            if (AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key().equals(configName)) {
+                if (value != null && !value.isBlank()) {
+                    List<String> validRoleTypes = Arrays.stream(RoleType.values())
+                            .map(Enum::name)
+                            .collect(Collectors.toList());
+
+                    boolean allValid = Arrays.stream(value.split(","))
+                            .map(String::trim)
+                            .allMatch(validRoleTypes::contains);
+
+                    if (!allValid) {
+                        throw new CloudRuntimeException("Invalid role types provided in value");
+                    }
+                } else {
+                    throw new CloudRuntimeException("Value for role types must not be empty");
+                }
+            }
+        }
     }
 
     /**
