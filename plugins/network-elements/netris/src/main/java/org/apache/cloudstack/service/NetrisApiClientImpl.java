@@ -1076,32 +1076,30 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         }
     }
 
-    private void deleteVpcIpamAllocationInternal(VPCListing vpcResource, String vpcCidr) {
-        logger.debug("Deleting Netris VPC IPAM Allocation {} for VPC {}", vpcCidr, vpcResource.getName());
+    private void deleteVpcIpamAllocationInternal(VPCListing vpcResource, String allocationName) {
+        logger.debug("Deleting Netris VPC IPAM Allocation {} for VPC {}", allocationName, vpcResource.getName());
         try {
             VpcApi vpcApi = apiClient.getApiStubForMethod(VpcApi.class);
             VPCResponseResourceOK vpcResourcesResponse = vpcApi.apiV2VpcVpcIdResourcesGet(vpcResource.getId());
-            VPCResourceIpam vpcAllocationResource = getVpcAllocationResource(vpcResourcesResponse);
+            VPCResourceIpam vpcAllocationResource = getVpcAllocationResource(vpcResourcesResponse, allocationName);
             if (Objects.isNull(vpcAllocationResource)) {
-                logger.info("No VPC IPAM Allocation found for VPC {}", vpcCidr);
+                logger.info("No VPC IPAM Allocation found for VPC {}", allocationName);
                 return;
             }
             IpamApi ipamApi = apiClient.getApiStubForMethod(IpamApi.class);
             logger.debug("Removing the IPAM allocation {} with ID {}", vpcAllocationResource.getName(), vpcAllocationResource.getId());
             ipamApi.apiV2IpamTypeIdDelete("allocation", vpcAllocationResource.getId());
         } catch (ApiException e) {
-            logAndThrowException(String.format("Error removing IPAM Allocation %s for VPC %s", vpcCidr, vpcResource.getName()), e);
+            logAndThrowException(String.format("Error removing IPAM Allocation %s for VPC %s", allocationName, vpcResource.getName()), e);
         }
     }
 
-    private VPCResourceIpam getVpcAllocationResource(VPCResponseResourceOK vpcResourcesResponse) {
+    private VPCResourceIpam getVpcAllocationResource(VPCResponseResourceOK vpcResourcesResponse, String allocationName) {
         VPCResource resource = vpcResourcesResponse.getData().get(0);
         List<VPCResourceIpam> vpcAllocations = resource.getAllocation();
         if (CollectionUtils.isNotEmpty(vpcAllocations)) {
-            if (vpcAllocations.size() > 1) {
-                logger.warn("Unexpected VPC allocations size {}, one expected", vpcAllocations.size());
-            }
-            return vpcAllocations.get(0);
+            vpcAllocations = vpcAllocations.stream().filter(x -> x.getName().equalsIgnoreCase(allocationName)).collect(Collectors.toList());
+            return CollectionUtils.isNotEmpty(vpcAllocations) ? vpcAllocations.get(0) : null;
         }
         return null;
     }
@@ -1145,8 +1143,8 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             deleteNatRule(snatRuleName, existingNatRule.getId(), vpcResource.getName());
         }
 
-        String vpcCidr = cmd.getCidr();
-        deleteVpcIpamAllocationInternal(vpcResource, vpcCidr);
+        String vpcAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, cmd.getCidr());
+        deleteVpcIpamAllocationInternal(vpcResource, vpcAllocationName);
         VPCResponseObjectOK response = deleteVpcInternal(vpcResource);
         return response != null && response.isIsSuccess();
     }
@@ -1366,8 +1364,10 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             logger.debug("Successfully deleted vNet {}", vNetName);
             deleteSubnetInternal(vpcFilter, netrisVnetName, netrisSubnetName);
             if (Objects.nonNull(vnetV6Cidr)) {
+                String netrisV6IpamAllocationName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_ALLOCATION, vnetV6Cidr);
                 String netrisV6SubnetName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.IPAM_SUBNET, String.valueOf(cmd.getVpcId()), vnetV6Cidr);
                 deleteSubnetInternal(vpcFilter, netrisVnetName, netrisV6SubnetName);
+                deleteVpcIpamAllocationInternal(associatedVpc, netrisV6IpamAllocationName);
             }
 
         } catch (Exception e) {
