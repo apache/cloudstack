@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import com.cloud.network.vpc.StaticRoute;
 import io.netris.ApiException;
 import io.netris.model.GetSiteBody;
 import io.netris.model.VPCListing;
@@ -32,6 +33,7 @@ import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.ListNetrisStaticRoutesCommand;
 import org.apache.cloudstack.agent.api.ReleaseNatIpCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
 import org.apache.cloudstack.agent.api.UpdateNetrisVnetCommand;
@@ -91,6 +93,7 @@ public interface NetrisApiClient {
     boolean deleteAclRule(DeleteNetrisACLCommand cmd, boolean forLb);
     boolean addOrUpdateStaticRoute(AddOrUpdateNetrisStaticRouteCommand cmd);
     boolean deleteStaticRoute(DeleteNetrisStaticRouteCommand cmd);
+    List<StaticRoute> listStaticRoutes(ListNetrisStaticRoutesCommand cmd);
     boolean releaseNatIp(ReleaseNatIpCommand cmd);
     boolean createOrUpdateLbRule(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd);
     boolean deleteLbRule(DeleteNetrisLoadBalancerRuleCommand cmd);

@@ -34,6 +34,7 @@ import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.netris.NetrisService;
+import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.dao.VpcDao;
 import io.netris.model.NatPostBody;
@@ -54,6 +55,8 @@ import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.ListNetrisStaticRoutesAnswer;
+import org.apache.cloudstack.agent.api.ListNetrisStaticRoutesCommand;
 import org.apache.cloudstack.agent.api.NetrisAnswer;
 import org.apache.cloudstack.agent.api.NetrisCommand;
 import org.apache.cloudstack.agent.api.ReleaseNatIpCommand;
@@ -472,6 +475,16 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         DeleteNetrisStaticRouteCommand cmd = new DeleteNetrisStaticRouteCommand(zoneId, accountId, domainId, networkResourceName, networkResourceId, isForVpc, prefix, nextHop, routeId);
         NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
         return answer.getResult();
+    }
+
+    @Override
+    public List<StaticRoute> listStaticRoutes(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String prefix, String nextHop, Long routeId) {
+        ListNetrisStaticRoutesCommand cmd = new ListNetrisStaticRoutesCommand(zoneId, accountId, domainId, networkResourceName, networkResourceId, isForVpc, prefix, nextHop, routeId);
+        NetrisAnswer answer = sendNetrisCommand(cmd, zoneId);
+        if (answer instanceof ListNetrisStaticRoutesAnswer) {
+            return ((ListNetrisStaticRoutesAnswer) answer).getStaticRoutes();
+        }
+        return List.of();
     }
 
     @Override

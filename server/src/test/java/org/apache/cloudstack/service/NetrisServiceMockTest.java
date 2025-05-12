@@ -21,6 +21,7 @@ import com.cloud.network.Network;
 import com.cloud.network.SDNProviderNetworkRule;
 import com.cloud.network.netris.NetrisNetworkRule;
 import com.cloud.network.netris.NetrisService;
+import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
 
 import java.util.List;
@@ -89,6 +90,11 @@ public class NetrisServiceMockTest implements NetrisService {
     @Override
     public boolean deleteStaticNatRule(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String staticNatIp, long vmId) {
         return true;
+    }
+
+    @Override
+    public List<StaticRoute> listStaticRoutes(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String prefix, String nextHop, Long routeId) {
+        return List.of();
     }
 
     @Override

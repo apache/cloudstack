@@ -19,6 +19,7 @@ package com.cloud.network.netris;
 import com.cloud.network.IpAddress;
 import com.cloud.network.Network;
 import com.cloud.network.SDNProviderNetworkRule;
+import com.cloud.network.vpc.StaticRoute;
 import com.cloud.network.vpc.Vpc;
 
 import java.util.List;
@@ -56,6 +57,8 @@ public interface NetrisService {
     boolean addOrUpdateStaticRoute(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String prefix, String nextHop, Long routeId, boolean updateRoute);
 
     boolean deleteStaticRoute(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String prefix, String nextHop, Long routeId);
+
+    List<StaticRoute> listStaticRoutes(long zoneId, long accountId, long domainId, String networkResourceName, Long networkResourceId, boolean isForVpc, String prefix, String nextHop, Long routeId);
 
     boolean releaseNatIp(long zoneId, String publicIp);
 

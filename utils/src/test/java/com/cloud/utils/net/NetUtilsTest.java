@@ -309,6 +309,14 @@ public class NetUtilsTest {
     }
 
     @Test
+    public void testGetCleanIp4CidrList() {
+        final String cidrList = " 10.0.151.5/20, 10.0.144.10/21 ";
+        final String cleanCidrList = "10.0.144.0/20,10.0.144.0/21";
+
+        assertEquals(cleanCidrList, NetUtils.getCleanIp4CidrList(cidrList));
+    }
+
+    @Test
     public void testIsValidCidrList() throws Exception {
         final String cidrFirst = "10.0.144.0/20,1.2.3.4/32,5.6.7.8/24";
         final String cidrSecond = "10.0.151.0/20,129.0.0.0/4";

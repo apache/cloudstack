@@ -16,8 +16,12 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import com.cloud.domain.Domain;
 import com.cloud.network.netris.NetrisLbBackend;
 import com.cloud.network.netris.NetrisNetworkRule;
+import com.cloud.network.vpc.StaticRoute;
+import com.cloud.network.vpc.StaticRouteVO;
+import com.cloud.user.Account;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -122,6 +126,7 @@ import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.ListNetrisStaticRoutesCommand;
 import org.apache.cloudstack.agent.api.NetrisCommand;
 import org.apache.cloudstack.agent.api.ReleaseNatIpCommand;
 import org.apache.cloudstack.agent.api.SetupNetrisPublicRangeCommand;
@@ -714,6 +719,32 @@ public class NetrisApiClientImpl implements NetrisApiClient {
     }
 
     @Override
+    public List<StaticRoute> listStaticRoutes(ListNetrisStaticRoutesCommand cmd) {
+        Long vpcId = cmd.getId();
+        String vpcName = cmd.getName();
+        String prefix = cmd.getPrefix();
+        String nextHop = cmd.getNextHop();
+        String vpcSuffix = getNetrisVpcNameSuffix(vpcId, vpcName, null, null, true);
+        String netrisVpcName = NetrisResourceObjectUtils.retrieveNetrisResourceObjectName(cmd, NetrisResourceObjectUtils.NetrisObjectType.VPC, vpcSuffix);
+        VPCListing vpcResource = getVpcByNameAndTenant(netrisVpcName);
+        if (vpcResource == null) {
+            logger.error("Could not find the Netris VPC resource with name {} and tenant ID {}", netrisVpcName, tenantId);
+            return new ArrayList<>();
+        }
+
+        List<RoutesGetBody> staticRoutes = listStaticRoutes(vpcResource.getId(), prefix, nextHop);
+        if (CollectionUtils.isEmpty(staticRoutes)) {
+            return new ArrayList<>();
+        }
+        List<StaticRoute> result = new ArrayList<>();
+        for (RoutesGetBody staticRoute : staticRoutes) {
+            // All static routes belong the SYSTEM account, which does not matter
+            result.add(new StaticRouteVO(null, staticRoute.getName(), vpcId, Account.ACCOUNT_ID_SYSTEM, Domain.ROOT_DOMAIN, staticRoute.getNextHop()));
+        }
+        return result;
+    }
+
+    @Override
     public boolean releaseNatIp(ReleaseNatIpCommand cmd) {
         String natIp = cmd.getNatIp() + "/32";
         try {
@@ -1004,7 +1035,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         return new Pair<>(true, Collections.emptyList());
     }
 
-    private Pair<Boolean, RoutesGetBody> staticRouteExists(Integer netrisVpcId, String prefix, String nextHop, String description) {
+    private List<RoutesGetBody> listStaticRoutes(Integer netrisVpcId, String prefix, String nextHop) {
         try {
             FilterByVpc vpcFilter = new FilterByVpc();
             vpcFilter.add(netrisVpcId);
@@ -1014,18 +1045,25 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             RoutesResponseGetOk routesResponseGetOk = routesApi.apiRoutesGet(sitesFilter, vpcFilter);
             if (Objects.isNull(routesResponseGetOk) || Boolean.FALSE.equals(routesResponseGetOk.isIsSuccess())) {
                 logger.warn("Failed to retrieve static routes");
-                return new Pair<>(false, null);
+                return null;
             }
             List<RoutesGetBody> routesList = routesResponseGetOk.getData();
-            List<RoutesGetBody> filteredList = routesList.stream()
-                    .filter(x -> x.getName().equals(prefix) &&
+            return routesList.stream()
+                    .filter(x -> (Objects.isNull(prefix) || x.getName().equals(prefix)) &&
                             (Objects.isNull(nextHop) || x.getNextHop().equals(nextHop)))
                     .collect(Collectors.toList());
-            return new Pair<>(!filteredList.isEmpty(), filteredList.isEmpty() ? null : filteredList.get(0));
         } catch (ApiException e) {
-            logAndThrowException("Error checking Netris static routes", e);
+            logAndThrowException("Error listing Netris static routes", e);
         }
-        return new Pair<>(false, null);
+        return null;
+    }
+
+    private Pair<Boolean, RoutesGetBody> staticRouteExists(Integer netrisVpcId, String prefix, String nextHop, String description) {
+        List<RoutesGetBody> staticRoutes = listStaticRoutes(netrisVpcId, prefix, nextHop);
+        if (staticRoutes == null) {
+            return new Pair<>(false, null);
+        }
+        return new Pair<>(!staticRoutes.isEmpty(), staticRoutes.isEmpty() ? null : staticRoutes.get(0));
     }
 
     public void deleteNatRule(String natRuleName, Integer snatRuleId, String netrisVpcName) {

@@ -26,6 +26,7 @@ import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.Host;
+import com.cloud.network.vpc.StaticRoute;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisACLCommand;
@@ -40,6 +41,8 @@ import org.apache.cloudstack.agent.api.DeleteNetrisNatRuleCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.DeleteNetrisVpcCommand;
+import org.apache.cloudstack.agent.api.ListNetrisStaticRoutesAnswer;
+import org.apache.cloudstack.agent.api.ListNetrisStaticRoutesCommand;
 import org.apache.cloudstack.agent.api.NetrisAnswer;
 import org.apache.cloudstack.StartupNetrisCommand;
 import org.apache.cloudstack.agent.api.ReleaseNatIpCommand;
@@ -53,6 +56,7 @@ import org.apache.logging.log4j.Logger;
 
 import javax.naming.ConfigurationException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class NetrisResource implements ServerResource {
@@ -120,6 +124,8 @@ public class NetrisResource implements ServerResource {
             return executeRequest((CreateOrUpdateNetrisACLCommand) cmd);
         } else if (cmd instanceof DeleteNetrisACLCommand) {
             return executeRequest((DeleteNetrisACLCommand) cmd);
+        } else if (cmd instanceof ListNetrisStaticRoutesCommand) {
+            return executeRequest((ListNetrisStaticRoutesCommand) cmd);
         } else if (cmd instanceof DeleteNetrisStaticRouteCommand) {
             return executeRequest((DeleteNetrisStaticRouteCommand) cmd);
         } else if (cmd instanceof AddOrUpdateNetrisStaticRouteCommand) {
@@ -368,6 +374,11 @@ public class NetrisResource implements ServerResource {
             return new NetrisAnswer(cmd, false, String.format("Failed to delete Netris ACLs: %s", String.join("'", cmd.getAclRuleNames())));
         }
         return new NetrisAnswer(cmd, true, "OK");
+    }
+
+    private Answer executeRequest(ListNetrisStaticRoutesCommand cmd) {
+        List<StaticRoute> staticRoutes = netrisApiClient.listStaticRoutes(cmd);
+        return new ListNetrisStaticRoutesAnswer(cmd, staticRoutes);
     }
 
     private Answer executeRequest(AddOrUpdateNetrisStaticRouteCommand cmd) {

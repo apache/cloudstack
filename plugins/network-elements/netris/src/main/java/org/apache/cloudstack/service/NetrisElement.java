@@ -445,6 +445,8 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
 
     @Override
     public boolean applyStaticRoutes(Vpc vpc, List<StaticRouteProfile> routes) throws ResourceUnavailableException {
+        List<StaticRoute> existingStaticRoutes = netrisService.listStaticRoutes(vpc.getZoneId(), vpc.getAccountId(), vpc.getDomainId(), vpc.getName(), vpc.getId(), true, null, null, null);
+        List<String> staticRouteCidrs = new ArrayList<>();
         for(StaticRouteProfile staticRoute : routes) {
             if (StaticRoute.State.Add == staticRoute.getState()) {
                 netrisService.addOrUpdateStaticRoute(vpc.getZoneId(), vpc.getAccountId(), vpc.getDomainId(), vpc.getName(), vpc.getId(), true, staticRoute.getCidr(), staticRoute.getGateway(), staticRoute.getId(), false);
@@ -452,6 +454,13 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
                 netrisService.deleteStaticRoute(vpc.getZoneId(), vpc.getAccountId(), vpc.getDomainId(), vpc.getName(), vpc.getId(), true, staticRoute.getCidr(), staticRoute.getGateway(), staticRoute.getId());
             } else if (StaticRoute.State.Update == staticRoute.getState()) {
                 netrisService.addOrUpdateStaticRoute(vpc.getZoneId(), vpc.getAccountId(), vpc.getDomainId(), vpc.getName(), vpc.getId(), true, staticRoute.getCidr(), staticRoute.getGateway(), staticRoute.getId(), true);
+            }
+            staticRouteCidrs.add(staticRoute.getCidr());
+        }
+        for (StaticRoute staticRoute : existingStaticRoutes) {
+            if (!staticRouteCidrs.contains(staticRoute.getCidr())) {
+                logger.info("Revoking static route with cidr {} which are not used by VPC {}", staticRoute.getCidr(), vpc);
+                netrisService.deleteStaticRoute(vpc.getZoneId(), vpc.getAccountId(), vpc.getDomainId(), vpc.getName(), vpc.getId(), true, staticRoute.getCidr(), null, staticRoute.getId());
             }
         }
         return true;

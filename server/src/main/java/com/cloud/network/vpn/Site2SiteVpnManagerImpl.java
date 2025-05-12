@@ -225,6 +225,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         if (!NetUtils.isValidCidrList(peerCidrList)) {
             throw new InvalidParameterValueException("The customer gateway peer cidr list " + peerCidrList + " contains an invalid cidr!");
         }
+        peerCidrList = NetUtils.getCleanIp4CidrList(peerCidrList);
         String ipsecPsk = cmd.getIpsecPsk();
         String ikePolicy = cmd.getIkePolicy();
         String espPolicy = cmd.getEspPolicy();
@@ -344,12 +345,6 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
 
         _vpnConnectionDao.persist(conn);
 
-        try {
-            vpcManager.applyStaticRouteForVpcVpnIfNeeded(vpc.getId(), false);
-        } catch (ResourceUnavailableException | CloudRuntimeException e) {
-            logger.error("Unable to apply static routes for vpc " + vpc.getId() + " due to " + e.getMessage());
-        }
-
         return conn;
     }
 
@@ -406,6 +401,13 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
 
             conn.setState(State.Pending);
             _vpnConnectionDao.persist(conn);
+
+            final Site2SiteVpnGateway vpnGateway = _vpnGatewayDao.findById(conn.getVpnGatewayId());
+            try {
+                vpcManager.applyStaticRouteForVpcVpnIfNeeded(vpnGateway.getVpcId(), false);
+            } catch (ResourceUnavailableException | CloudRuntimeException e) {
+                logger.error("Unable to apply static routes for vpc " + vpnGateway.getVpcId() + "as part of start of VPN connection, due to " + e.getMessage());
+            }
 
             boolean result = true;
             for (Site2SiteVpnServiceProvider element : _s2sProviders) {
@@ -509,6 +511,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         if (!NetUtils.isValidCidrList(guestCidrList)) {
             throw new InvalidParameterValueException("The customer gateway peer cidr list " + guestCidrList + " contains an invalid cidr!");
         }
+        guestCidrList = NetUtils.getCleanIp4CidrList(guestCidrList);
         String ipsecPsk = cmd.getIpsecPsk();
         String ikePolicy = cmd.getIkePolicy();
         String espPolicy = cmd.getEspPolicy();
@@ -633,7 +636,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         try {
             vpcManager.applyStaticRouteForVpcVpnIfNeeded(vpnGateway.getVpcId(), false);
         } catch (ResourceUnavailableException | CloudRuntimeException e) {
-            logger.error("Unable to apply static routes for vpc " + vpnGateway.getVpcId() + " due to " + e.getMessage());
+            logger.error("Unable to apply static routes for vpc " + vpnGateway.getVpcId() + "as part of deletion of VPN connection, due to " + e.getMessage());
         }
 
         _vpnConnectionDao.remove(id);
