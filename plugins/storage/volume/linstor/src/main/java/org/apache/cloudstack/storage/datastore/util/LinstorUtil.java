@@ -303,7 +303,7 @@ public class LinstorUtil {
     public static List<ResourceDefinition> getRDListStartingWith(DevelopersApi api, String startWith)
             throws ApiException
     {
-        List<ResourceDefinition> rscDfns = api.resourceDefinitionList(null, null, null, null);
+        List<ResourceDefinition> rscDfns = api.resourceDefinitionList(null, false, null, null, null);
 
         return rscDfns.stream()
                 .filter(rscDfn -> rscDfn.getName().toLowerCase().startsWith(startWith.toLowerCase()))
@@ -386,7 +386,7 @@ public class LinstorUtil {
      */
     public static ResourceDefinition findResourceDefinition(DevelopersApi api, String rscName, String rscGrpName)
             throws ApiException {
-        List<ResourceDefinition> rscDfns = api.resourceDefinitionList(null, null, null, null);
+        List<ResourceDefinition> rscDfns = api.resourceDefinitionList(null, false, null, null, null);
 
         List<ResourceDefinition> rdsStartingWith = rscDfns.stream()
                 .filter(rscDfn -> rscDfn.getName().toLowerCase().startsWith(rscName.toLowerCase()))

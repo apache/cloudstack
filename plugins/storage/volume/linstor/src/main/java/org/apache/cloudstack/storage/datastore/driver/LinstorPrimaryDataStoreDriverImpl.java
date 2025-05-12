@@ -616,7 +616,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
      */
     private void updateRscGrpIfNecessary(DevelopersApi api, String rscName, String tgtRscGrp) throws ApiException {
         List<ResourceDefinition> rscDfns = api.resourceDefinitionList(
-                Collections.singletonList(rscName), null, null, null);
+                Collections.singletonList(rscName), false, null, null, null);
         if (rscDfns != null && !rscDfns.isEmpty()) {
             ResourceDefinition rscDfn = rscDfns.get(0);
 
@@ -646,7 +646,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     private void deleteTemplateForProps(
             DevelopersApi api, String rscName) throws ApiException {
         List<ResourceDefinition> rdList = api.resourceDefinitionList(
-                Collections.singletonList(rscName), null, null, null);
+                Collections.singletonList(rscName), false, null, null, null);
 
         if (CollectionUtils.isNotEmpty(rdList)) {
             ResourceDefinitionModify rdm = new ResourceDefinitionModify();
