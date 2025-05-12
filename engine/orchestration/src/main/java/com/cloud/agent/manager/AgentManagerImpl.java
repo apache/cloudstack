@@ -247,6 +247,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected final ConfigKey<Boolean> CheckTxnBeforeSending = new ConfigKey<>("Developer", Boolean.class, "check.txn.before.sending.agent.commands", "false",
             "This parameter allows developers to enable a check to see if a transaction wraps commands that are sent to the resource.  This is not to be enabled on production systems.", true);
 
+    public static final List<Host.Type> HOST_DOWN_ALERT_UNSUPPORTED_HOST_TYPES = Arrays.asList(
+            Host.Type.SecondaryStorage,
+            Host.Type.ConsoleProxy
+    );
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
 
@@ -1093,9 +1098,11 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 if (determinedState == Status.Down) {
                     final String message = String.format("Host %s is down. Starting HA on the VMs", host);
                     logger.error(message);
-                    if (host.getType() != Host.Type.SecondaryStorage && host.getType() != Host.Type.ConsoleProxy) {
-                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(),
-                                host.getPodId(), String.format("Host down, %s", host), message);
+                    if (Status.Down.equals(host.getStatus())) {
+                        logger.debug(String.format("Skipping sending alert for %s as it already in %s state",
+                                host, host.getStatus()));
+                    } else if (!HOST_DOWN_ALERT_UNSUPPORTED_HOST_TYPES.contains(host.getType())) {
+                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host down, " + host.getId(), message);
                     }
                     event = Status.Event.HostDown;
                 } else if (determinedState == Status.Up) {
