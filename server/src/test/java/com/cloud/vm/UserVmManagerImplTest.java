@@ -16,6 +16,53 @@
 // under the License.
 package com.cloud.vm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
+import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.template.VnfTemplateManager;
+import org.apache.cloudstack.userdata.UserDataManager;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Resource;
@@ -37,9 +84,11 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.server.ManagementService;
@@ -72,6 +121,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserDataDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.dao.NicDao;
@@ -79,52 +129,6 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-
-import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
-import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
-import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.template.VnfTemplateManager;
-import org.apache.cloudstack.userdata.UserDataManager;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserVmManagerImplTest {
@@ -1338,5 +1342,198 @@ public class UserVmManagerImplTest {
         when(vmSnapshotDaoMock.findByVm(vmId)).thenReturn(vmSnapshots);
 
         userVmManagerImpl.restoreVirtualMachine(accountMock, vmId, newTemplateId, null, false, null);
+    }
+
+    @Test
+    public void testUpdateVMPasswordInNetworkElement_noDefaultNic() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Mockito.when(networkModel.getDefaultNic(Mockito.anyLong())).thenReturn(null);
+        boolean result = false;
+        try {
+            result = userVmManagerImpl.updateVMPasswordInNetworkElement(vm, Mockito.mock(VMTemplateVO.class), "pass");
+        } catch (ResourceUnavailableException e) {
+            Assert.fail(e.getMessage());
+        }
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testUpdateVMPasswordInNetworkElement_shouldThrowException() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Nic defaultNic = Mockito.mock(Nic.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        NetworkVO defaultNetwork = Mockito.mock(NetworkVO.class);
+        Mockito.when(networkModel.getDefaultNic(vm.getId())).thenReturn(defaultNic);
+        Mockito.when(defaultNic.getNetworkId()).thenReturn(1L);
+        Mockito.when(_networkDao.findById(1L)).thenReturn(defaultNetwork);
+        Mockito.when(template.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
+        Mockito.when(networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork)).thenReturn(false);
+        Mockito.when(networkModel.getNetworkTag(Mockito.any(), Mockito.any())).thenReturn("tag");
+        Mockito.when(_networkMgr.getPasswordResetProvider(defaultNetwork)).thenReturn(null);
+        Assert.assertThrows(CloudRuntimeException.class, () ->
+                userVmManagerImpl.updateVMPasswordInNetworkElement(vm, template, "pass")
+        );
+    }
+
+    @Test
+    public void testUpdateVMPasswordInNetworkElement_shouldStorePasswordAndReturnTrue() throws Exception {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Nic defaultNic = Mockito.mock(Nic.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        NetworkVO defaultNetwork = Mockito.mock(NetworkVO.class);
+        Mockito.when(networkModel.getDefaultNic(vm.getId())).thenReturn(defaultNic);
+        Mockito.when(defaultNic.getNetworkId()).thenReturn(1L);
+        Mockito.when(_networkDao.findById(1L)).thenReturn(defaultNetwork);
+        Mockito.when(template.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
+        Mockito.when(networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork)).thenReturn(false);
+        Mockito.when(networkModel.getNetworkTag(Mockito.any(), Mockito.any())).thenReturn("tag");
+        UserDataServiceProvider element = Mockito.mock(UserDataServiceProvider.class);
+        Mockito.when(_networkMgr.getPasswordResetProvider(defaultNetwork)).thenReturn(element);
+        Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
+        Mockito.when(defaultNetwork.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        Mockito.when(_networkMgr.isNetworkImplemented(defaultNetwork)).thenReturn(false);
+        boolean result = userVmManagerImpl.updateVMPasswordInNetworkElement(vm, template, "secret");
+        Mockito.verify(userVmManagerImpl, Mockito.times(1)).storePasswordInVmDetails(vm, "secret");
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void testUpdateVMPasswordInNetworkElement_shouldReturnTrue() throws Exception {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Nic defaultNic = Mockito.mock(Nic.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        NetworkVO defaultNetwork = Mockito.mock(NetworkVO.class);
+        Mockito.when(networkModel.getDefaultNic(vm.getId())).thenReturn(defaultNic);
+        Mockito.when(defaultNic.getNetworkId()).thenReturn(1L);
+        Mockito.when(_networkDao.findById(1L)).thenReturn(defaultNetwork);
+        Mockito.when(template.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
+        Mockito.when(networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork)).thenReturn(false);
+        Mockito.when(networkModel.getNetworkTag(Mockito.any(), Mockito.any())).thenReturn("tag");
+        UserDataServiceProvider element = Mockito.mock(UserDataServiceProvider.class);
+        Mockito.when(_networkMgr.getPasswordResetProvider(defaultNetwork)).thenReturn(element);
+        Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Stopped);
+        Mockito.when(defaultNetwork.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        Mockito.when(_networkMgr.isNetworkImplemented(defaultNetwork)).thenReturn(true);
+        Mockito.when(element.savePassword(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(true);
+        boolean result = userVmManagerImpl.updateVMPasswordInNetworkElement(vm, template, "secret");
+        Assert.assertTrue(result);
+    }
+
+    public void runTestUpdateVMPasswordInNetworkElementResult(boolean result) throws Exception {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        Nic defaultNic = Mockito.mock(Nic.class);
+        Mockito.when(vm.getId()).thenReturn(1L);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        NetworkVO defaultNetwork = Mockito.mock(NetworkVO.class);
+        Mockito.when(networkModel.getDefaultNic(vm.getId())).thenReturn(defaultNic);
+        Mockito.when(defaultNic.getNetworkId()).thenReturn(1L);
+        Mockito.when(_networkDao.findById(1L)).thenReturn(defaultNetwork);
+        Mockito.when(template.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.XenServer);
+        Mockito.when(networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork)).thenReturn(false);
+        Mockito.when(networkModel.getNetworkTag(Mockito.any(), Mockito.any())).thenReturn("tag");
+        UserDataServiceProvider element = Mockito.mock(UserDataServiceProvider.class);
+        Mockito.when(_networkMgr.getPasswordResetProvider(defaultNetwork)).thenReturn(element);
+        Mockito.when(vm.getState()).thenReturn(VirtualMachine.State.Running);
+        Mockito.when(element.savePassword(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(result);
+        Assert.assertEquals(result, userVmManagerImpl.updateVMPasswordInNetworkElement(vm, template, "secret"));
+    }
+
+    @Test
+    public void testUpdateVMPasswordInNetworkElement_runningVmShouldReturnFalse() throws Exception {
+        runTestUpdateVMPasswordInNetworkElementResult(false);
+    }
+
+    @Test
+    public void testUpdateVMPasswordInNetworkElement_runningVmShouldReturnTrue() throws Exception {
+        runTestUpdateVMPasswordInNetworkElementResult(true);
+    }
+
+    @Test
+    public void testStorePasswordInVmDetails() {
+        String vmPassword = "test-password";
+        long vmId = 42L;
+        String encrypted = "encrypted-password";
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getId()).thenReturn(vmId);
+        try(MockedStatic<DBEncryptionUtil> mocked = Mockito.mockStatic(DBEncryptionUtil.class)) {
+            mocked.when(() -> DBEncryptionUtil.encrypt(vmPassword)).thenReturn(encrypted);
+            userVmManagerImpl.storePasswordInVmDetails(vm, vmPassword);
+            Mockito.verify(userVmDetailsDao).addDetail(vmId, VmDetailConstants.PASSWORD, encrypted, false);
+            Mockito.verify(vm).setUpdateParameters(true);
+            Mockito.verify(userVmDao).update(vmId, vm);
+        }
+    }
+
+    @Test
+    public void testSetStoppedVMPasswordDuringFinalizingCreate_templateNull() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getTemplateId()).thenReturn(123L);
+        Mockito.when(templateDao.findByIdIncludingRemoved(123L)).thenReturn(null);
+        userVmManagerImpl.setStoppedVMPasswordDuringFinalizingCreate(vm);
+        Mockito.verifyNoInteractions(managementServiceMock);
+    }
+
+    @Test
+    public void testSetStoppedVMPasswordDuringFinalizingCreate_templateNotPasswordEnabled() {
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getTemplateId()).thenReturn(123L);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(templateDao.findByIdIncludingRemoved(123L)).thenReturn(template);
+        Mockito.when(template.isEnablePassword()).thenReturn(false);
+        userVmManagerImpl.setStoppedVMPasswordDuringFinalizingCreate(vm);
+        Mockito.verifyNoInteractions(managementServiceMock);
+    }
+
+    @Test
+    public void testSetPasswordSuccess_shouldSetPassword() throws Exception {
+        String randomPassword = "random123";
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getTemplateId()).thenReturn(123L);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(templateDao.findByIdIncludingRemoved(123L)).thenReturn(template);
+        Mockito.when(template.isEnablePassword()).thenReturn(true);
+        Mockito.when(managementServiceMock.generateRandomPassword()).thenReturn(randomPassword);
+        Mockito.doReturn(true).when(userVmManagerImpl).setOrResetVMPassword(vm, template, randomPassword);
+        userVmManagerImpl.setStoppedVMPasswordDuringFinalizingCreate(vm);
+        Mockito.verify(vm).setPassword(randomPassword);
+    }
+
+    @Test
+    public void testSetPasswordFails_shouldThrowException() throws Exception {
+        String randomPassword = "random123";
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getTemplateId()).thenReturn(123L);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(templateDao.findByIdIncludingRemoved(123L)).thenReturn(template);
+        Mockito.when(template.isEnablePassword()).thenReturn(true);
+        Mockito.when(managementServiceMock.generateRandomPassword()).thenReturn(randomPassword);
+        Mockito.doReturn(false).when(userVmManagerImpl).setOrResetVMPassword(vm, template, randomPassword);
+        Assert.assertThrows(CloudRuntimeException.class, () ->
+                userVmManagerImpl.setStoppedVMPasswordDuringFinalizingCreate(vm)
+        );
+    }
+
+    @Test
+    public void testSetPasswordThrowsException_shouldThrowRuntime() throws Exception {
+        String randomPassword = "random123";
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
+        Mockito.when(vm.getTemplateId()).thenReturn(123L);
+        VMTemplateVO template = Mockito.mock(VMTemplateVO.class);
+        Mockito.when(templateDao.findByIdIncludingRemoved(123L)).thenReturn(template);
+        Mockito.when(template.isEnablePassword()).thenReturn(true);
+        Mockito.when(managementServiceMock.generateRandomPassword()).thenReturn(randomPassword);
+        Mockito.doThrow(new ResourceUnavailableException("unavailable", Network.class, 1L))
+                .when(userVmManagerImpl).setOrResetVMPassword(vm, template, randomPassword);
+        Assert.assertThrows(CloudRuntimeException.class, () ->
+                userVmManagerImpl.setStoppedVMPasswordDuringFinalizingCreate(vm)
+        );
     }
 }

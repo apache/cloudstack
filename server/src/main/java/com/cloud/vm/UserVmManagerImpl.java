@@ -874,7 +874,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return userVm;
     }
 
-    private boolean updateVMPasswordInNetworkElement(VirtualMachine vm, VMTemplateVO template, String password) throws ResourceUnavailableException {
+    protected boolean updateVMPasswordInNetworkElement(UserVmVO vm, VMTemplateVO template, String password) throws ResourceUnavailableException {
         Nic defaultNic = _networkModel.getDefaultNic(vm.getId());
         if (defaultNic == null) {
             s_logger.error(String.format("Unable to update password for %s in network element as the instance doesn't have default nic",
@@ -882,12 +882,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return false;
         }
         Network defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
-        if (State.Stopped.equals(vm.getState()) &&
-                Arrays.asList(GuestType.Shared, GuestType.Isolated).contains(defaultNetwork.getGuestType()) &&
-                !_networkMgr.isNetworkImplemented(defaultNetwork)) {
-            s_logger.debug(String.format("%s is not ready, skipping updating VM password", defaultNetwork));
-            return true;
-        }
         NicProfile defaultNicProfile = new NicProfile(defaultNic, defaultNetwork, null, null,
                 null, _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork),
                 _networkModel.getNetworkTag(template.getHypervisorType(), defaultNetwork));
@@ -897,6 +891,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         UserDataServiceProvider element = _networkMgr.getPasswordResetProvider(defaultNetwork);
         if (element == null) {
             throw new CloudRuntimeException(String.format("Can't find network element for %s provider needed for password update", Service.UserData.getName()));
+        }
+        if (State.Stopped.equals(vm.getState()) &&
+                Arrays.asList(GuestType.Shared, GuestType.Isolated).contains(defaultNetwork.getGuestType()) &&
+                !_networkMgr.isNetworkImplemented(defaultNetwork)) {
+            s_logger.debug(String.format("%s is not ready therefore storing in VM details for now", defaultNetwork));
+            storePasswordInVmDetails(vm, password);
+            return true;
         }
         return element.savePassword(defaultNetwork, defaultNicProfile, vmProfile);
     }
@@ -919,7 +920,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws ResourceUnavailableException   if a required network resource is unavailable
      * @throws InsufficientCapacityException if there is insufficient capacity to perform the operation
      */
-    private boolean setOrResetVMPassword(UserVmVO vm, VMTemplateVO template, String password)
+    protected boolean setOrResetVMPassword(UserVmVO vm, VMTemplateVO template, String password)
             throws ResourceUnavailableException, InsufficientCapacityException {
         if (!template.isEnablePassword()) {
             if (s_logger.isDebugEnabled()) {
@@ -949,7 +950,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    private void setStoppedVMPasswordDuringFinalizingCreate(UserVmVO userVm) {
+    protected void setStoppedVMPasswordDuringFinalizingCreate(UserVmVO userVm) {
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
         if (template == null || !template.isEnablePassword()) {
             return;
@@ -8619,5 +8620,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 && StringUtils.isNotEmpty(customParameters.get(VmDetailConstants.KVM_VNC_PASSWORD))) {
             vm.setVncPassword(customParameters.get(VmDetailConstants.KVM_VNC_PASSWORD));
         }
+    }
+
+    protected void storePasswordInVmDetails(UserVmVO userVmVO, String password) {
+        final String password_encrypted = DBEncryptionUtil.encrypt(password);
+        userVmDetailsDao.addDetail(userVmVO.getId(), VmDetailConstants.PASSWORD,  password_encrypted, false);
+        userVmVO.setUpdateParameters(true);
+        _vmDao.update(userVmVO.getId(), userVmVO);
+    }
+
+    @Override
+    public void storePasswordInVmDetails(long vmId, String password) {
+        storePasswordInVmDetails(_vmDao.findById(vmId), password);
     }
 }

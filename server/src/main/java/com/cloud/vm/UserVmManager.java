@@ -131,4 +131,6 @@ public interface UserVmManager extends UserVmService {
 
     Boolean getDestroyRootVolumeOnVmDestruction(Long domainId);
 
+    void storePasswordInVmDetails(long vmId, String password);
+
 }

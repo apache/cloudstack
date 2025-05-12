@@ -74,7 +74,6 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.AdapterBase;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
@@ -83,6 +82,7 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
@@ -137,6 +137,8 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     ImageStoreDao imgstore;
     @Inject
     private HypervisorGuruManager _hvGuruMgr;
+    @Inject
+    UserVmManager userVmManager;
 
     private final static Integer CONFIGDRIVEDISKSEQ = 4;
 
@@ -291,13 +293,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
      */
     private void storePasswordInVmDetails(VirtualMachineProfile vm) {
         final String password = (String) vm.getParameter(VirtualMachineProfile.Param.VmPassword);
-        final String password_encrypted = DBEncryptionUtil.encrypt(password);
-        final UserVmVO userVmVO = _userVmDao.findById(vm.getId());
-
-        _userVmDetailsDao.addDetail(vm.getId(), VmDetailConstants.PASSWORD,  password_encrypted, false);
-
-        userVmVO.setUpdateParameters(true);
-        _userVmDao.update(userVmVO.getId(), userVmVO);
+        userVmManager.storePasswordInVmDetails(vm.getId(), password);
     }
 
     @Override
