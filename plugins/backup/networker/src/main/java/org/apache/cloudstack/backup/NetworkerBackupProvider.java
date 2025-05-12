@@ -21,7 +21,9 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.utils.script.Script;
 import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
@@ -35,7 +37,6 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SshHelper;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -125,6 +126,9 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
 
     @Inject
     BackupManager backupManager;
+
+    @Inject
+    private DiskOfferingDao diskOfferingDao;
 
     private static String getUrlDomain(String url) throws URISyntaxException {
         URI uri;
@@ -381,10 +385,10 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
+    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, Backup.VolumeInfo backupVolumeInfo, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
         String networkerServer;
-        VolumeVO volume = volumeDao.findByUuid(volumeUuid);
-        VMInstanceVO backupSourceVm = vmInstanceDao.findById(backup.getVmId());
+        VolumeVO volume = volumeDao.findByUuid(backupVolumeInfo.getUuid());
+        final DiskOffering diskOffering = diskOfferingDao.findByUuid(backupVolumeInfo.getDiskOfferingId());
         StoragePoolHostVO dataStore = storagePoolHostDao.findByUuid(dataStoreUuid);
         HostVO hostVO = hostDao.findByIp(hostIp);
 
@@ -394,9 +398,8 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         final String SSID = networkerBackup.getShortId();
         final String clusterName = networkerBackup.getClientHostname();
         final String destinationNetworkerClient = hostVO.getName().split("\\.")[0];
-        Long restoredVolumeDiskSize = 0L;
 
-        LOG.debug("Restoring volume {} with uuid {} from backup {} on the Networker Backup Provider", volume, volumeUuid, backup);
+        LOG.debug("Restoring volume {} with uuid {} from backup {} on the Networker Backup Provider", volume, backupVolumeInfo, backup);
 
         if ( SSID.isEmpty() ) {
             LOG.debug("There was an error retrieving the SSID for backup with id " + externalBackupId + " from EMC NEtworker");
@@ -411,18 +414,13 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
             throw new CloudRuntimeException(String.format("Failed to convert API to HOST : %s", e));
         }
 
-        // Find volume size  from backup vols
-        for ( Backup.VolumeInfo VMVolToRestore : backupSourceVm.getBackupVolumeList()) {
-            if (VMVolToRestore.getUuid().equals(volumeUuid))
-                restoredVolumeDiskSize = (VMVolToRestore.getSize());
-        }
-
         VolumeVO restoredVolume = new VolumeVO(Volume.Type.DATADISK, null, backup.getZoneId(),
                 backup.getDomainId(), backup.getAccountId(), 0, null,
                 backup.getSize(), null, null, null);
 
-        restoredVolume.setName("RV-"+volume.getName());
-        restoredVolume.setProvisioningType(volume.getProvisioningType());
+        String volumeName = volume != null ? volume.getName() : backupVolumeInfo.getUuid();
+        restoredVolume.setName("RV-" + volumeName);
+        restoredVolume.setProvisioningType(diskOffering.getProvisioningType());
         restoredVolume.setUpdated(new Date());
         restoredVolume.setUuid(UUID.randomUUID().toString());
         restoredVolume.setRemoved(null);
@@ -430,8 +428,8 @@ public class NetworkerBackupProvider extends AdapterBase implements BackupProvid
         restoredVolume.setPoolId(volume.getPoolId());
         restoredVolume.setPath(restoredVolume.getUuid());
         restoredVolume.setState(Volume.State.Copying);
-        restoredVolume.setSize(restoredVolumeDiskSize);
-        restoredVolume.setDiskOfferingId(volume.getDiskOfferingId());
+        restoredVolume.setSize(backupVolumeInfo.getSize());
+        restoredVolume.setDiskOfferingId(diskOffering.getId());
 
         try {
             volumeDao.persist(restoredVolume);

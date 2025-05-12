@@ -361,11 +361,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         List<Backup.VolumeInfo> list = new ArrayList<>();
         for (Volume vol : vmVolumes) {
             DiskOfferingVO diskOffering = diskOfferingDao.findById(vol.getDiskOfferingId());
-            String diskOfferingUuid = diskOffering != null ? diskOffering.getUuid() : null;
-            Long minIops = (vol.getMinIops() != null && vol.getMaxIops() != null && vol.getMinIops() == 0 && vol.getMaxIops() == 0) ? null : vol.getMinIops();
-            Long maxIops = (vol.getMinIops() != null && vol.getMaxIops() != null && vol.getMinIops() == 0 && vol.getMaxIops() == 0) ? null : vol.getMaxIops();
             Backup.VolumeInfo volumeInfo = new Backup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize(),
-                vol.getDeviceId(), diskOfferingUuid, minIops, maxIops);
+                vol.getDeviceId(), diskOffering.getUuid(), vol.getMinIops(), vol.getMaxIops());
             list.add(volumeInfo);
         }
         return new Gson().toJson(list.toArray(), Backup.VolumeInfo[].class);
@@ -1245,11 +1242,22 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Cross zone backup restoration of volume is not allowed");
         }
 
-        final VMInstanceVO vmFromBackup = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
-        if (vmFromBackup == null) {
-            throw new CloudRuntimeException("VM reference for the provided VM backup not found");
+        List<Backup.VolumeInfo> volumeInfoList = backup.getBackedUpVolumes();
+        if (volumeInfoList == null) {
+            final VMInstanceVO vmFromBackup = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
+            if (vmFromBackup == null) {
+                throw new CloudRuntimeException("VM reference for the provided VM backup not found");
+            } else if (vmFromBackup == null || vmFromBackup.getBackupVolumeList() == null) {
+                throw new CloudRuntimeException("Volumes metadata not found in the backup");
+            }
+            volumeInfoList = vm.getBackupVolumeList();
         }
-        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vmFromBackup);
+        Backup.VolumeInfo backupVolumeInfo = getVolumeInfo(volumeInfoList, backedUpVolumeUuid);
+        if (backupVolumeInfo == null) {
+            throw new CloudRuntimeException("Failed to find volume with Id " + backedUpVolumeUuid + " in the backed-up volumes metadata");
+        }
+
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
         final BackupOffering offering = backupOfferingDao.findByIdIncludingRemoved(backup.getBackupOfferingId());
         if (offering == null) {
             throw new CloudRuntimeException("Failed to find VM backup offering");
@@ -1275,36 +1283,36 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         String[] hostPossibleValues = {host.getPrivateIpAddress(), host.getName()};
         String[] datastoresPossibleValues = {datastore.getUuid(), datastore.getName()};
 
-        Pair<Boolean, String> result = restoreBackedUpVolume(backedUpVolumeUuid, backup, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
+        Pair<Boolean, String> result = restoreBackedUpVolume(backupVolumeInfo, backup, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
 
         if (BooleanUtils.isFalse(result.first())) {
             throw new CloudRuntimeException(String.format("Error restoring volume [%s] of VM [%s] to host [%s] using backup provider [%s] due to: [%s].",
                     backedUpVolumeUuid, vm.getUuid(), host.getUuid(), backupProvider.getName(), result.second()));
         }
-        if (!attachVolumeToVM(vm.getDataCenterId(), result.second(), vmFromBackup.getBackupVolumeList(),
+        if (!attachVolumeToVM(vm.getDataCenterId(), result.second(), backupVolumeInfo,
                             backedUpVolumeUuid, vm, datastore.getUuid(), backup)) {
-            throw new CloudRuntimeException(String.format("Error attaching volume [%s] to VM [%s]." + backedUpVolumeUuid, vm.getUuid()));
+            throw new CloudRuntimeException(String.format("Error attaching volume [%s] to VM [%s].", backedUpVolumeUuid, vm.getUuid()));
         }
         return true;
     }
 
-    protected Pair<Boolean, String> restoreBackedUpVolume(final String backedUpVolumeUuid, final BackupVO backup, BackupProvider backupProvider, String[] hostPossibleValues,
-            String[] datastoresPossibleValues, VMInstanceVO vm) {
+    protected Pair<Boolean, String> restoreBackedUpVolume(final Backup.VolumeInfo backupVolumeInfo, final BackupVO backup,
+            BackupProvider backupProvider, String[] hostPossibleValues, String[] datastoresPossibleValues, VMInstanceVO vm) {
         Pair<Boolean, String> result = new  Pair<>(false, "");
         for (String hostData : hostPossibleValues) {
             for (String datastoreData : datastoresPossibleValues) {
                 logger.debug(String.format("Trying to restore volume [UUID: %s], using host [%s] and datastore [%s].",
-                        backedUpVolumeUuid, hostData, datastoreData));
+                        backupVolumeInfo.getUuid(), hostData, datastoreData));
 
                 try {
-                    result = backupProvider.restoreBackedUpVolume(backup, backedUpVolumeUuid, hostData, datastoreData, new Pair<>(vm.getName(), vm.getState()));
+                    result = backupProvider.restoreBackedUpVolume(backup, backupVolumeInfo, hostData, datastoreData, new Pair<>(vm.getName(), vm.getState()));
 
                     if (BooleanUtils.isTrue(result.first())) {
                         return result;
                     }
                 } catch (Exception e) {
                     logger.debug(String.format("Failed to restore volume [UUID: %s], using host [%s] and datastore [%s] due to: [%s].",
-                            backedUpVolumeUuid, hostData, datastoreData, e.getMessage()), e);
+                            backupVolumeInfo.getUuid(), hostData, datastoreData, e.getMessage()), e);
                 }
             }
         }
@@ -1387,19 +1395,15 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     /**
      * Attach volume to VM
      */
-    private boolean attachVolumeToVM(Long zoneId, String restoredVolumeLocation, List<Backup.VolumeInfo> backedUpVolumes,
+    private boolean attachVolumeToVM(Long zoneId, String restoredVolumeLocation, Backup.VolumeInfo backupVolumeInfo,
                                      String volumeUuid, VMInstanceVO vm, String datastoreUuid, Backup backup) throws Exception {
         HypervisorGuru guru = hypervisorGuruManager.getGuru(vm.getHypervisorType());
-        Backup.VolumeInfo volumeInfo = getVolumeInfo(backedUpVolumes, volumeUuid);
-        if (volumeInfo == null) {
-            throw new CloudRuntimeException("Failed to find volume in the backedup volumes of ID " + volumeUuid);
-        }
-        volumeInfo.setType(Volume.Type.DATADISK);
+        backupVolumeInfo.setType(Volume.Type.DATADISK);
 
         logger.debug("Attaching the restored volume to VM {}", vm);
         StoragePoolVO pool = primaryDataStoreDao.findByUuid(datastoreUuid);
         try {
-            return guru.attachRestoredVolumeToVirtualMachine(zoneId, restoredVolumeLocation, volumeInfo, vm, pool.getId(), backup);
+            return guru.attachRestoredVolumeToVirtualMachine(zoneId, restoredVolumeLocation, backupVolumeInfo, vm, pool.getId(), backup);
         } catch (Exception e) {
             throw new CloudRuntimeException("Error attach restored volume to VM " + vm.getUuid() + " due to: " + e.getMessage());
         }

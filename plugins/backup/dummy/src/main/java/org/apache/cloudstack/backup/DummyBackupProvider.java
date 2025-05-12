@@ -21,10 +21,16 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.offering.DiskOffering;
+import com.cloud.storage.StoragePoolHostVO;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VolumeDao;
 
 import org.apache.cloudstack.backup.dao.BackupDao;
@@ -42,6 +48,10 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     private VolumeDao volumeDao;
     @Inject
     private BackupManager backupManager;
+    @Inject
+    private StoragePoolHostDao storagePoolHostDao;
+    @Inject
+    private DiskOfferingDao diskOfferingDao;
 
     @Override
     public String getName() {
@@ -81,9 +91,36 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, String volumeUuid, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
-        logger.debug("Restoring volume {} from backup {} on the Dummy Backup Provider", volumeUuid, backup);
-        throw new CloudRuntimeException("Dummy plugin does not support this feature");
+    public Pair<Boolean, String> restoreBackedUpVolume(Backup backup, Backup.VolumeInfo backupVolumeInfo, String hostIp, String dataStoreUuid, Pair<String, VirtualMachine.State> vmNameAndState) {
+        final VolumeVO volume = volumeDao.findByUuid(backupVolumeInfo.getUuid());
+        final StoragePoolHostVO dataStore = storagePoolHostDao.findByUuid(dataStoreUuid);
+        final DiskOffering diskOffering = diskOfferingDao.findByUuid(backupVolumeInfo.getDiskOfferingId());
+
+        logger.debug("Restoring volume {} from backup {} on the Dummy Backup Provider", backupVolumeInfo, backup);
+
+        VolumeVO restoredVolume = new VolumeVO(Volume.Type.DATADISK, null, backup.getZoneId(),
+                backup.getDomainId(), backup.getAccountId(), 0, null,
+                backup.getSize(), null, null, null);
+        String volumeUUID = UUID.randomUUID().toString();
+        String volumeName = volume != null ? volume.getName() : backupVolumeInfo.getUuid();
+        restoredVolume.setName("RestoredVol-" + volumeName);
+        restoredVolume.setProvisioningType(diskOffering.getProvisioningType());
+        restoredVolume.setUpdated(new Date());
+        restoredVolume.setUuid(volumeUUID);
+        restoredVolume.setRemoved(null);
+        restoredVolume.setDisplayVolume(true);
+        restoredVolume.setPoolId(dataStore.getPoolId());
+        restoredVolume.setPath(restoredVolume.getUuid());
+        restoredVolume.setState(Volume.State.Copying);
+        restoredVolume.setSize(backupVolumeInfo.getSize());
+        restoredVolume.setDiskOfferingId(diskOffering.getId());
+
+        try {
+            volumeDao.persist(restoredVolume);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Unable to create restored volume due to: " + e);
+        }
+        return new Pair<>(true, volumeUUID);
     }
 
     public void syncBackupMetrics(Long zoneId) {

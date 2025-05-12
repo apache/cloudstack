@@ -105,10 +105,12 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.atLeastOnce;
 
 @RunWith(MockitoJUnitRunner.class)
 public class BackupManagerTest {
@@ -305,17 +307,22 @@ public class BackupManagerTest {
         VirtualMachine.State vmState = VirtualMachine.State.Running;
         Mockito.when(vm.getName()).thenReturn(vmName);
         Mockito.when(vm.getState()).thenReturn(vmState);
-        Pair<String, VirtualMachine.State> vmNameAndState = new Pair<>("i-2-3-VM", VirtualMachine.State.Running);
+        Pair<String, VirtualMachine.State> vmNameAndState = new Pair<>(vmName, vmState);
 
-        Mockito.when(backupProvider.restoreBackedUpVolume(Mockito.any(), Mockito.eq(volumeUuid),
-                Mockito.eq("127.0.0.1"), Mockito.eq("e9804933-8609-4de3-bccc-6278072a496c"), Mockito.eq(vmNameAndState))).thenReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success"));
-        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeUuid, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
+        Backup.VolumeInfo volumeInfo = mock(Backup.VolumeInfo.class);
+        when(volumeInfo.getUuid()).thenReturn(volumeUuid);
+
+        doReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success"))
+            .when(backupProvider).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
+                any(String.class), any(String.class), any(Pair.class));
+
+        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeInfo, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
 
         assertEquals(Boolean.TRUE, restoreBackedUpVolume.first());
         assertEquals("Success", restoreBackedUpVolume.second());
 
-        verify(backupProvider, times(1)).restoreBackedUpVolume(Mockito.any(), Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyString(), any(Pair.class));
+        verify(backupProvider, atLeastOnce()).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
+            any(String.class), any(String.class), any(Pair.class));
     }
 
     @Test
@@ -327,16 +334,22 @@ public class BackupManagerTest {
         VirtualMachine.State vmState = VirtualMachine.State.Running;
         Mockito.when(vm.getName()).thenReturn(vmName);
         Mockito.when(vm.getState()).thenReturn(vmState);
-        Pair<String, VirtualMachine.State> vmNameAndState = new Pair<>("i-2-3-VM", VirtualMachine.State.Running);
-        Mockito.when(backupProvider.restoreBackedUpVolume(Mockito.any(), Mockito.eq(volumeUuid),
-                Mockito.eq("127.0.0.1"), Mockito.eq("datastore-name"), Mockito.eq(vmNameAndState))).thenReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success2"));
-        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeUuid, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
+        Pair<String, VirtualMachine.State> vmNameAndState = new Pair<>(vmName, vmState);
+
+        Backup.VolumeInfo volumeInfo = mock(Backup.VolumeInfo.class);
+        when(volumeInfo.getUuid()).thenReturn(volumeUuid);
+
+        doReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success2"))
+            .when(backupProvider).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
+                any(String.class), any(String.class), any(Pair.class));
+
+        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeInfo, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
 
         assertEquals(Boolean.TRUE, restoreBackedUpVolume.first());
         assertEquals("Success2", restoreBackedUpVolume.second());
 
-        verify(backupProvider, times(2)).restoreBackedUpVolume(Mockito.any(), Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyString(), any(Pair.class));
+        verify(backupProvider, atLeastOnce()).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
+            any(String.class), any(String.class), any(Pair.class));
     }
 
     @Test
@@ -348,17 +361,22 @@ public class BackupManagerTest {
         VirtualMachine.State vmState = VirtualMachine.State.Running;
         Mockito.when(vm.getName()).thenReturn(vmName);
         Mockito.when(vm.getState()).thenReturn(vmState);
-        Pair<String, VirtualMachine.State> vmNameAndState = new Pair<>("i-2-3-VM", VirtualMachine.State.Running);
+        Pair<String, VirtualMachine.State> vmNameAndState = new Pair<>(vmName, vmState);
 
-        Mockito.when(backupProvider.restoreBackedUpVolume(Mockito.any(), Mockito.eq(volumeUuid),
-                Mockito.eq("hostname"), Mockito.eq("e9804933-8609-4de3-bccc-6278072a496c"), Mockito.eq(vmNameAndState))).thenReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success3"));
-        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeUuid, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
+        Backup.VolumeInfo volumeInfo = mock(Backup.VolumeInfo.class);
+        when(volumeInfo.getUuid()).thenReturn(volumeUuid);
+
+        doReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success3"))
+            .when(backupProvider).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
+                any(String.class), any(String.class), any(Pair.class));
+
+        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeInfo, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
 
         assertEquals(Boolean.TRUE, restoreBackedUpVolume.first());
         assertEquals("Success3", restoreBackedUpVolume.second());
 
-        verify(backupProvider, times(3)).restoreBackedUpVolume(Mockito.any(), Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyString(), any(Pair.class));
+        verify(backupProvider, atLeastOnce()).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
+            any(String.class), any(String.class), any(Pair.class));
     }
 
     @Test
@@ -370,17 +388,22 @@ public class BackupManagerTest {
         VirtualMachine.State vmState = VirtualMachine.State.Running;
         Mockito.when(vm.getName()).thenReturn(vmName);
         Mockito.when(vm.getState()).thenReturn(vmState);
-        Pair<String, VirtualMachine.State> vmNameAndState = new Pair<>("i-2-3-VM", VirtualMachine.State.Running);
+        Pair<String, VirtualMachine.State> vmNameAndState = new Pair<>(vmName, vmState);
 
-        Mockito.when(backupProvider.restoreBackedUpVolume(Mockito.any(), Mockito.eq(volumeUuid),
-                Mockito.eq("hostname"), Mockito.eq("datastore-name"), Mockito.eq(vmNameAndState))).thenReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success4"));
-        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeUuid, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
+        Backup.VolumeInfo volumeInfo = mock(Backup.VolumeInfo.class);
+        when(volumeInfo.getUuid()).thenReturn(volumeUuid);
+
+        doReturn(new Pair<Boolean, String>(Boolean.TRUE, "Success4"))
+            .when(backupProvider).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
+                any(String.class), any(String.class), any(Pair.class));
+
+        Pair<Boolean, String> restoreBackedUpVolume = backupManager.restoreBackedUpVolume(volumeInfo, backupVO, backupProvider, hostPossibleValues, datastoresPossibleValues, vm);
 
         assertEquals(Boolean.TRUE, restoreBackedUpVolume.first());
         assertEquals("Success4", restoreBackedUpVolume.second());
 
-        verify(backupProvider, times(4)).restoreBackedUpVolume(Mockito.any(), Mockito.anyString(),
-                Mockito.anyString(), Mockito.anyString(), any(Pair.class));
+        verify(backupProvider, atLeastOnce()).restoreBackedUpVolume(any(Backup.class), any(Backup.VolumeInfo.class),
+            any(String.class), any(String.class), any(Pair.class));
     }
 
     @Test
@@ -932,22 +955,29 @@ public class BackupManagerTest {
 
     @Test
     public void testCreateVolumeInfoFromVolumes() {
+        Long diskOfferingId = 5L;
+        DiskOfferingVO diskOffering = Mockito.mock(DiskOfferingVO.class);
+        Mockito.when(diskOffering.getUuid()).thenReturn("disk-offering-uuid");
+        Mockito.when(diskOfferingDao.findById(diskOfferingId)).thenReturn(diskOffering);
+
         List<VolumeVO> volumes = new ArrayList<>();
         VolumeVO volume1 = new VolumeVO(Volume.Type.ROOT, "vol1", 1L, 2L, 3L,
-                4L, null, 1024L, 0L, 0L, null);
+                diskOfferingId, null, 1024L, null, null, null);
         volume1.setUuid("uuid1");
         volume1.setPath("path1");
+        volume1.setDeviceId(0L);
         volume1.setVolumeType(Volume.Type.ROOT);
         volumes.add(volume1);
 
         VolumeVO volume2 = new VolumeVO(Volume.Type.ROOT, "vol2", 1L, 2L, 3L,
-                4L, null, 2048L, 0L, 0L, null);
+                diskOfferingId, null, 2048L, 1000L, 2000L, null);
         volume2.setUuid("uuid2");
         volume2.setPath("path2");
+        volume1.setDeviceId(1L);
         volume2.setVolumeType(Volume.Type.DATADISK);
         volumes.add(volume2);
 
-        String expectedJson = "[{\"uuid\":\"uuid1\",\"type\":\"ROOT\",\"size\":1024,\"path\":\"path1\"},{\"uuid\":\"uuid2\",\"type\":\"DATADISK\",\"size\":2048,\"path\":\"path2\"}]";
+        String expectedJson = "[{\"uuid\":\"uuid1\",\"type\":\"ROOT\",\"size\":1024,\"path\":\"path1\",\"deviceId\":1,\"diskOfferingId\":\"disk-offering-uuid\"},{\"uuid\":\"uuid2\",\"type\":\"DATADISK\",\"size\":2048,\"path\":\"path2\",\"diskOfferingId\":\"disk-offering-uuid\",\"minIops\":1000,\"maxIops\":2000}]";
         String actualJson = backupManager.createVolumeInfoFromVolumes(new ArrayList<>(volumes));
 
         assertEquals(expectedJson, actualJson);
