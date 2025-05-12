@@ -19,7 +19,6 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
@@ -39,12 +38,9 @@ import java.util.concurrent.TimeoutException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 
+import com.cloud.hypervisor.kvm.resource.LibvirtXMLParser;
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -457,7 +453,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         logger.info(String.format("VM [%s] will have CPU shares altered from [%s] to [%s] as part of migration because the cgroups version differs between hosts.",
                 migrateCommand.getVmName(), currentShares, newVmCpuShares));
         sharesNode.setTextContent(String.valueOf(newVmCpuShares));
-        return getXml(document);
+        return LibvirtXMLParser.getXml(document);
     }
 
     /**
@@ -527,7 +523,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
         }
 
-        return getXml(doc);
+        return LibvirtXMLParser.getXml(doc);
     }
 
     /**
@@ -702,7 +698,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
         }
 
-        return getXml(doc);
+        return LibvirtXMLParser.getXml(doc);
     }
 
     private  String getOldVolumePath(List<DiskDef> disks, String vmName) {
@@ -795,7 +791,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                                     newChildSourceNode.setAttribute("file", newIsoVolumePath);
                                     diskNode.appendChild(newChildSourceNode);
                                     logger.debug(String.format("Replaced ISO path [%s] with [%s] in VM [%s] XML configuration.", oldIsoVolumePath, newIsoVolumePath, vmName));
-                                    return getXml(doc);
+                                    return LibvirtXMLParser.getXml(doc);
                                 }
                             }
                         }
@@ -804,7 +800,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
         }
 
-        return getXml(doc);
+        return LibvirtXMLParser.getXml(doc);
     }
 
     private String getPathFromSourceText(Set<String> paths, String sourceText) {
@@ -859,20 +855,6 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         return null;
     }
 
-    private String getXml(Document doc) throws TransformerException {
-        TransformerFactory transformerFactory = ParserUtils.getSaferTransformerFactory();
-        Transformer transformer = transformerFactory.newTransformer();
-
-        DOMSource source = new DOMSource(doc);
-
-        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        StreamResult result = new StreamResult(byteArrayOutputStream);
-
-        transformer.transform(source, result);
-
-        return byteArrayOutputStream.toString();
-    }
-
     private String replaceDiskSourceFile(String xmlDesc, String isoPath, String vmName) throws IOException, SAXException, ParserConfigurationException, TransformerException {
         InputStream in = IOUtils.toInputStream(xmlDesc);
 
@@ -895,7 +877,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 }
             }
         }
-        return getXml(doc);
+        return LibvirtXMLParser.getXml(doc);
     }
 
     private boolean findDiskNode(Document doc, NodeList devicesChildNodes, String vmName, String isoPath) {

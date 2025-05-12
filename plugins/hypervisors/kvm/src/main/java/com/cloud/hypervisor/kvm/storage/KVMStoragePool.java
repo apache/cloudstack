@@ -101,6 +101,10 @@ public interface KVMStoragePool {
 
     public Map<String, String> getDetails();
 
+    default String getLocalPathFor(String relativePath) {
+        return String.format("%s%s%s", getLocalPath(), File.separator, relativePath);
+    }
+
     public boolean isPoolSupportHA();
 
     public String getHearthBeatPath();
