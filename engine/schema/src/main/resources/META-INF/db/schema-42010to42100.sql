@@ -57,6 +57,11 @@ CREATE TABLE IF NOT EXISTS `cloud`.`reconcile_commands` (
     CONSTRAINT `fk_reconcile_command__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+--- KVM Incremental Snapshots
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'kvm_checkpoint_path', 'varchar(255)');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'end_of_chain', 'int(1) unsigned');
+
 -- Add column max_backup to backup_schedule table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'max_backups', 'int(8) default NULL COMMENT "maximum number of backups to maintain"');
 
@@ -109,7 +114,7 @@ SET b.backed_volumes = (
 -- Add diskOfferingId, deviceId, minIops and maxIops to backup_volumes in vm_instance table
 UPDATE `cloud`.`vm_instance` vm
 SET vm.backup_volumes = (
-    SELECT CONCAT("[", 
+    SELECT CONCAT("[",
         GROUP_CONCAT(
             CONCAT(
                 "{\"uuid\":\"", v.uuid, "\",",
@@ -123,12 +128,12 @@ SET vm.backup_volumes = (
                 "}"
             )
             SEPARATOR ","
-        ), 
-    "]") 
-    FROM `cloud`.`volumes` v 
-    LEFT JOIN `cloud`.`disk_offering` doff ON v.disk_offering_id = doff.id 
+        ),
+    "]")
+    FROM `cloud`.`volumes` v
+    LEFT JOIN `cloud`.`disk_offering` doff ON v.disk_offering_id = doff.id
     WHERE v.instance_id = vm.id
-) 
+)
 WHERE vm.backup_offering_id IS NOT NULL;
 
 -- Add column allocated_size to object_store table. Rename column 'used_bytes' to 'used_size'

@@ -31,6 +31,7 @@ import com.cloud.resource.ResourceState;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 /**
  * Data Access Object for server
@@ -218,4 +219,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<CPU.CPUArch> listDistinctArchTypes(final Long clusterId);
 
     List<HostVO> listByIds(final List<Long> ids);
+
+    Long findClusterIdByVolumeInfo(VolumeInfo volumeInfo);
 }

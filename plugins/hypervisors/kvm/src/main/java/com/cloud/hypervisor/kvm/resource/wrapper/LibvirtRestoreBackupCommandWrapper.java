@@ -153,9 +153,13 @@ public class LibvirtRestoreBackupCommandWrapper extends CommandWrapper<RestoreBa
             mountDirectory = Files.createTempDirectory(mountDirectory).toString();
             String mount = String.format(MOUNT_COMMAND, backupRepoType, backupRepoAddress, mountDirectory);
             if ("cifs".equals(backupRepoType)) {
-                mountOptions += ",nobrl";
+                if (Objects.isNull(mountOptions) || mountOptions.trim().isEmpty()) {
+                    mountOptions = "nobrl";
+                } else {
+                    mountOptions += ",nobrl";
+                }
             }
-            if (!mountOptions.trim().isEmpty()) {
+            if (Objects.nonNull(mountOptions) && !mountOptions.trim().isEmpty()) {
                 mount += " -o " + mountOptions;
             }
             Script.runSimpleBashScript(mount);

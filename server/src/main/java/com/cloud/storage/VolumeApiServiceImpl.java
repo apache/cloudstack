@@ -105,6 +105,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
@@ -3145,6 +3146,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
+            ((VolumeObjectTO) volTO).setCheckpointPaths(_volumeMgr.getVolumeCheckpointPathsAndImageStoreUrls(volumeId, vm.getHypervisorType()).first());
             DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
             Map<String, String> details = new HashMap<String, String>();
             disk.setDetails(details);

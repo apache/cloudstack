@@ -16,16 +16,23 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 
 import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -63,6 +70,20 @@ public class LibvirtXMLParser extends DefaultHandler {
             logger.error(ie.getMessage());
         }
         return false;
+    }
+
+    public static String getXml(Document doc) throws TransformerException {
+        TransformerFactory transformerFactory = ParserUtils.getSaferTransformerFactory();
+        Transformer transformer = transformerFactory.newTransformer();
+
+        DOMSource source = new DOMSource(doc);
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        StreamResult result = new StreamResult(byteArrayOutputStream);
+
+        transformer.transform(source, result);
+
+        return byteArrayOutputStream.toString();
     }
 
     @Override
