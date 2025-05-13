@@ -66,6 +66,7 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -86,6 +87,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.reservation.dao.ReservationDao;
 import org.apache.cloudstack.resource.ResourceCleanupService;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.cache.SingleCache;
@@ -123,6 +125,7 @@ import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.RecreateCheckpointsCommand;
 import com.cloud.agent.api.ReplugNicAnswer;
 import com.cloud.agent.api.ReplugNicCommand;
 import com.cloud.agent.api.RestoreVMSnapshotAnswer;
@@ -244,6 +247,7 @@ import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.ResourceLimitService;
@@ -418,6 +422,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     VmWorkJobDao vmWorkJobDao;
 
     private SingleCache<List<Long>> vmIdsInProgressCache;
+
+    @Inject
+    private SnapshotDataStoreDao snapshotDataStoreDao;
+
+    @Inject
+    private SnapshotManager snapshotManager;
+
+    @Inject
+    private VolumeDataFactory volumeDataFactory;
+
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -3007,6 +3021,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _networkMgr.commitNicForMigration(vmSrc, profile);
                 volumeMgr.release(vm.getId(), srcHostId);
                 _networkMgr.setHypervisorHostname(profile, dest, true);
+                recreateCheckpointsKvmOnVmAfterMigration(vm, dstHostId);
 
                 updateVmPod(vm, dstHostId);
             }
@@ -3456,12 +3471,75 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _networkMgr.commitNicForMigration(vmSrc, profile);
                 volumeMgr.release(vm.getId(), srcHostId);
                 _networkMgr.setHypervisorHostname(profile, destination, true);
+                endSnapshotChainForVolumes(volumeToPoolMap, vm.getHypervisorType());
             }
 
             work.setStep(Step.Done);
             _workDao.update(work.getId(), work);
         }
     }
+
+    protected void endSnapshotChainForVolumes(Map<Volume, StoragePool> volumeToPoolMap, HypervisorType hypervisorType) {
+        Set<Volume> volumes = volumeToPoolMap.keySet();
+        volumes.forEach(volume -> {
+            Volume volumeOnDestination = _volsDao.findByPoolIdName(volumeToPoolMap.get(volume).getId(), volume.getName());
+            snapshotManager.endSnapshotChainForVolume(volumeOnDestination.getId(), hypervisorType);
+        });
+    }
+
+    protected void recreateCheckpointsKvmOnVmAfterMigration(VMInstanceVO vm, long hostId) {
+        if (!HypervisorType.KVM.equals(vm.getHypervisorType())) {
+            logger.debug("Will not recreate checkpoint on VM as it is not running on KVM, thus it is not needed.");
+            return;
+        }
+
+        List<VolumeObjectTO> volumes = getVmVolumesWithCheckpointsToRecreate(vm);
+
+        if (volumes.isEmpty()) {
+            logger.debug("Will not recreate checkpoints on VM as its volumes do not have any checkpoints associated with them.");
+            return;
+        }
+
+        RecreateCheckpointsCommand recreateCheckpointsCommand = new RecreateCheckpointsCommand(volumes, vm.getInstanceName());
+        Answer answer = null;
+        try {
+            logger.debug(String.format("Recreating the volume checkpoints with URLs [%s] of volumes [%s] on %s as part of the migration process.", volumes.stream().map(VolumeObjectTO::getCheckpointPaths).collect(Collectors.toList()), volumes, vm));
+            answer = _agentMgr.send(hostId, recreateCheckpointsCommand);
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            logger.error(String.format("Exception while sending command to host [%s] to recreate checkpoints with URLs [%s] of volumes [%s] on %s due to: [%s].", hostId, volumes.stream().map(VolumeObjectTO::getCheckpointPaths).collect(Collectors.toList()), volumes, vm, e.getMessage()), e);
+            throw new CloudRuntimeException(e);
+        } finally {
+            if (answer != null && answer.getResult()) {
+                logger.debug(String.format("Successfully recreated checkpoints on VM [%s].", vm));
+                return;
+            }
+
+            logger.debug(String.format("Migration on VM [%s] was successful; however, we weren't able to recreate the checkpoints on it. Marking the snapshot chain as ended." +
+                    " Next snapshot will create a new snapshot chain.", vm));
+
+            volumes.forEach(volumeObjectTO -> snapshotManager.endSnapshotChainForVolume(volumeObjectTO.getId(), HypervisorType.KVM));
+        }
+    }
+
+
+    protected List<VolumeObjectTO> getVmVolumesWithCheckpointsToRecreate(VMInstanceVO vm) {
+        List<VolumeVO> vmVolumes = _volsDao.findByInstance(vm.getId());
+        List<VolumeObjectTO> volumes = new ArrayList<>();
+
+        for (VolumeVO volume : vmVolumes) {
+            Pair<List<String>, Set<String>> volumeCheckpointPathsAndImageStoreUrls = volumeMgr.getVolumeCheckpointPathsAndImageStoreUrls(volume.getId(), HypervisorType.KVM);
+            if (volumeCheckpointPathsAndImageStoreUrls.first().isEmpty()) {
+                continue;
+            }
+            VolumeObjectTO volumeTo = new VolumeObjectTO();
+            volumeTo.setCheckpointPaths(volumeCheckpointPathsAndImageStoreUrls.first());
+            volumeTo.setCheckpointImageStoreUrls(volumeCheckpointPathsAndImageStoreUrls.second());
+            volumeTo.setPath(volume.getPath());
+            volumes.add(volumeTo);
+        }
+        return volumes;
+    }
+
 
     @Override
     public VirtualMachineTO toVmTO(final VirtualMachineProfile profile) {
