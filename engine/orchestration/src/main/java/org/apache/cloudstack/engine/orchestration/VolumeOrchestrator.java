@@ -43,6 +43,7 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.user.AccountManager;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
@@ -83,8 +84,10 @@ import org.apache.cloudstack.secret.PassphraseVO;
 import org.apache.cloudstack.secret.dao.PassphraseDao;
 import org.apache.cloudstack.snapshot.SnapshotHelper;
 import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
@@ -199,6 +202,8 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     protected VolumeDao _volsDao;
     @Inject
     protected PrimaryDataStoreDao _storagePoolDao = null;
+    @Inject
+    protected ImageStoreDao imageStoreDao;
     @Inject
     protected TemplateDataStoreDao _vmTemplateStoreDao = null;
     @Inject
@@ -578,6 +583,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         } catch (CloudRuntimeException e) {
             snapshotHelper.expungeTemporarySnapshot(kvmSnapshotOnlyInPrimaryStorage, snapInfo);
             throw e;
+        }
+
+        boolean kvmIncrementalSnapshot = SnapshotManager.kvmIncrementalSnapshot.valueIn(_hostDao.findClusterIdByVolumeInfo(snapInfo.getBaseVolume()));
+        if (kvmIncrementalSnapshot && DataStoreRole.Image.equals(dataStoreRole)) {
+            snapInfo = snapshotHelper.convertSnapshotIfNeeded(snapInfo);
         }
 
         // don't try to perform a sync if the DataStoreRole of the snapshot is equal to DataStoreRole.Primary
@@ -1980,8 +1990,27 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                     _vmCloneSettingDao.persist(vmCloneSettingVO);
                 }
             }
-
         }
+    }
+
+    @Override
+    public Pair<List<String>, Set<String>> getVolumeCheckpointPathsAndImageStoreUrls(long volumeId, HypervisorType hypervisorType) {
+        List<String> checkpointPaths = new ArrayList<>();
+        Set<Long> imageStoreIds = new HashSet<>();
+        Set<String> imageStoreUrls = new HashSet<>();
+        if (HypervisorType.KVM.equals(hypervisorType)) {
+            List<SnapshotDataStoreVO> snapshotDataStoreVos = _snapshotDataStoreDao.listReadyByVolumeIdAndCheckpointPathNotNull(volumeId);
+            snapshotDataStoreVos.forEach(snapshotDataStoreVO -> {
+                checkpointPaths.add(snapshotDataStoreVO.getKvmCheckpointPath());
+                if (DataStoreRole.Image.equals(snapshotDataStoreVO.getRole())) {
+                    imageStoreIds.add(snapshotDataStoreVO.getDataStoreId());
+                }
+            });
+            imageStoreUrls = imageStoreIds.stream().map(id -> imageStoreDao.findById(id).getUrl()).collect(Collectors.toSet());
+            logger.debug(String.format("Found [%s] snapshots [%s] that have checkpoints for volume with id [%s].", snapshotDataStoreVos.size(), snapshotDataStoreVos, volumeId));
+        }
+
+        return new Pair<>(checkpointPaths, imageStoreUrls);
     }
 
     private void handleCheckAndRepairVolume(Volume vol, Long hostId) {
