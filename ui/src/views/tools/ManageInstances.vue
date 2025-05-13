@@ -1314,7 +1314,7 @@ export default {
           params.existingvcenterid = this.selectedVmwareVcenter.existingvcenterid
         }
         params.instancename = vmname
-        params.host = hostname
+        params.hostname = hostname
       }
       api('listVmwareDcVms', params).then(json => {
         const response = json.listvmwaredcvmsresponse

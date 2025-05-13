@@ -1648,7 +1648,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         String password = vmwareDC.password;
         String datacenterName = vmwareDC.datacenterName;
         String keyword = cmd.getKeyword();
-        String esxiHostName = cmd.getHost();
+        String esxiHostName = cmd.getHostName();
         String virtualMachineName = cmd.getInstanceName();
 
         try {

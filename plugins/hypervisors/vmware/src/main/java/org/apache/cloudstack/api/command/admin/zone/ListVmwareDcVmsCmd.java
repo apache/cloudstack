@@ -70,10 +70,10 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "The password for specified username.")
     private String password;
 
-    @Parameter(name = ApiConstants.HOST, type = CommandType.STRING, description = "Name of the host on vCenter. Must be set along with the instancename parameter")
-    private String host;
+    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, description = "Name of the host on vCenter. Must be set along with the instancename parameter")
+    private String hostName;
 
-    @Parameter(name = ApiConstants.INSTANCE_NAME, type = CommandType.STRING, description = "Name of the VM on vCenter. Must be set along with the host parameter")
+    @Parameter(name = ApiConstants.INSTANCE_NAME, type = CommandType.STRING, description = "Name of the VM on vCenter. Must be set along with the hostname parameter")
     private String instanceName;
 
     public String getVcenter() {
@@ -92,8 +92,8 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
         return datacenterName;
     }
 
-    public String getHost() {
-        return host;
+    public String getHostName() {
+        return hostName;
     }
 
     public Long getExistingVcenterId() {
@@ -139,10 +139,10 @@ public class ListVmwareDcVmsCmd extends BaseListCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Please set all the information for a vCenter IP/Name, datacenter, username and password");
         }
-        if ((StringUtils.isNotBlank(instanceName) && StringUtils.isBlank(host)) ||
-                (StringUtils.isBlank(instanceName) && StringUtils.isNotBlank(host))) {
+        if ((StringUtils.isNotBlank(instanceName) && StringUtils.isBlank(hostName)) ||
+                (StringUtils.isBlank(instanceName) && StringUtils.isNotBlank(hostName))) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                    "Please set the hostname parameter along with the virtualmachinename parameter");
+                    "Please set the hostname parameter along with the instancename parameter");
         }
     }
 
