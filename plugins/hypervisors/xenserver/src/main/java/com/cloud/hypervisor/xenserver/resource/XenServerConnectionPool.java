@@ -21,6 +21,7 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.APIVersion;
 import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.ConnectionNew;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Pool;
 import com.xensource.xenapi.Session;
@@ -150,12 +151,12 @@ public class XenServerConnectionPool {
     }
 
     public Connection getConnect(String ip, String username, Queue<String> password) {
-        Connection conn = new Connection(getURL(ip), 10, _connWait);
+        Connection conn = new ConnectionNew(getURL(ip), 10, _connWait);
         try {
             loginWithPassword(conn, username, password, APIVersion.latest().toString());
         }  catch (Types.HostIsSlave e) {
             String maddress = e.masterIPAddress;
-            conn = new Connection(getURL(maddress), 10, _connWait);
+            conn = new ConnectionNew(getURL(maddress), 10, _connWait);
             try {
                 loginWithPassword(conn, username, password, APIVersion.latest().toString());
             }  catch (Exception e1) {
@@ -221,7 +222,7 @@ public class XenServerConnectionPool {
 
             if ( mConn == null ) {
                 try {
-                    Connection conn = new Connection(getURL(ipAddress), 5, _connWait);
+                    Connection conn = new ConnectionNew(getURL(ipAddress), 5, _connWait);
                     Session sess = loginWithPassword(conn, username, password, APIVersion.latest().toString());
                     Host host = sess.getThisHost(conn);
                     Boolean hostenabled = host.getEnabled(conn);
@@ -231,7 +232,6 @@ public class XenServerConnectionPool {
                         } catch (Exception e) {
                             LOGGER.debug("Caught exception during logout", e);
                         }
-                        conn.dispose();
                     }
                     if (!hostenabled) {
                         String msg = "Unable to create master connection, due to master Host " + ipAddress + " is not enabled";
@@ -412,7 +412,7 @@ public class XenServerConnectionPool {
         return s_instance;
     }
 
-    public class XenServerConnection extends Connection {
+    public class XenServerConnection extends ConnectionNew {
         long _interval;
         int _retries;
         String _ip;
