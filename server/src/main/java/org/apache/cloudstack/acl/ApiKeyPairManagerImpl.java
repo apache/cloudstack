@@ -20,13 +20,14 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.User;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.component.ManagerBase;
+
+import java.util.Map;
 import java.util.stream.Collectors;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPairService;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 import org.apache.cloudstack.acl.apikeypair.ApiKeyPairPermission;
 import org.apache.cloudstack.acl.dao.ApiKeyPairDao;
 import org.apache.cloudstack.acl.dao.ApiKeyPairPermissionsDao;
-import org.apache.cloudstack.acl.dao.RolePermissionsDao;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -44,15 +45,34 @@ public class ApiKeyPairManagerImpl extends ManagerBase implements ApiKeyPairServ
     @Inject
     private QueryService queryService;
     @Inject
-    private RolePermissionsDao rolePermissionsDao;
+    private RoleService roleService;
 
     @Override
     public List<ApiKeyPairPermission> findAllPermissionsByKeyPairId(Long apiKeyPairId, Long roleId) {
         List<ApiKeyPairPermissionVO> allPermissions = apiKeyPairPermissionsDao.findAllByKeyPairIdSorted(apiKeyPairId);
-        if (CollectionUtils.isNotEmpty(allPermissions)) {
-            return allPermissions.stream().map(p -> (ApiKeyPairPermission) p).collect(Collectors.toList());
+        List<RolePermissionEntity> rolePermissionEntity = roleService.findAllRolePermissionsEntityBy(roleId);
+
+        if (!CollectionUtils.isEmpty(allPermissions)) {
+            List<RolePermissionEntity> keyPairPermissionsEntity = allPermissions.stream()
+                    .map(p -> (RolePermissionEntity) p).collect(Collectors.toList());
+
+            Map<String, RolePermissionEntity.Permission> rolePermissionInfo = roleService.getRoleRulesAndPermissions(rolePermissionEntity);
+
+            if (roleService.roleHasPermission(rolePermissionInfo, keyPairPermissionsEntity)) {
+                return allPermissions.stream().map(p -> (ApiKeyPairPermission) p).collect(Collectors.toList());
+            }
+
+            Map<String, RolePermissionEntity.Permission> keyPairPermissionInfo = roleService.getRoleRulesAndPermissions(keyPairPermissionsEntity);
+            if (!roleService.roleHasPermission(keyPairPermissionInfo, rolePermissionEntity)) {
+                for (RolePermissionEntity rolePermission : keyPairPermissionsEntity) {
+                    if (rolePermission.getPermission() == RolePermissionEntity.Permission.DENY && !rolePermissionEntity.contains(rolePermission)) {
+                        rolePermissionEntity.add(0, rolePermission);
+                    }
+                }
+            }
         }
-        return rolePermissionsDao.findAllByRoleIdSorted(roleId).stream().map(p -> {
+
+        return rolePermissionEntity.stream().map(p -> {
             ApiKeyPairPermissionVO permission = new ApiKeyPairPermissionVO();
             permission.setRule(p.getRule().getRuleString());
             permission.setDescription(p.getDescription());
