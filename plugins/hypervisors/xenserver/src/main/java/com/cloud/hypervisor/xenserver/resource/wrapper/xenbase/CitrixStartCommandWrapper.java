@@ -96,7 +96,15 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 citrixResourceBase.createVGPU(conn, command, vm, gpuDevice);
             }
 
-            if (vmSpec.getType() != VirtualMachine.Type.User) {
+            Host.Record record = host.getRecord(conn);
+            String xenBrand = record.softwareVersion.get("product_brand");
+            String xenVersion = record.softwareVersion.get("product_version");
+            boolean requiresGuestTools = true;
+            if (xenBrand.equals("XenServer") && isVersionGreaterThanOrEqual(xenVersion, "8.2.0")) {
+                requiresGuestTools = false;
+            }
+
+            if (vmSpec.getType() != VirtualMachine.Type.User && requiresGuestTools) {
                 citrixResourceBase.createPatchVbd(conn, vmName, vm);
             }
 
@@ -262,5 +270,20 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 isoCount++;
             }
         }
+    }
+
+    public static boolean isVersionGreaterThanOrEqual(String v1, String v2) {
+        String[] parts1 = v1.split("\\.");
+        String[] parts2 = v2.split("\\.");
+
+        int length = Math.max(parts1.length, parts2.length);
+        for (int i = 0; i < length; i++) {
+            int num1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
+            int num2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+
+            if (num1 > num2) return true;
+            if (num1 < num2) return false;
+        }
+        return true; // versions are equal
     }
 }

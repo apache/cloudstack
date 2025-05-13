@@ -2921,6 +2921,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Account callerAccount = _accountMgr.getActiveAccountById(user.getAccountId());
         _accountMgr.checkAccess(callerAccount, AccessType.OperateEntry, true, network);
         if (!network.isRedundant() && makeRedundant) {
+            NetworkOffering networkOffering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
+            Map<Network.Capability, String> sourceNatCapabilities = getNetworkOfferingServiceCapabilities(networkOffering, Service.SourceNat);
+            String isRedundantRouterSupported = sourceNatCapabilities.get(Capability.RedundantRouter);
+            if (!Boolean.parseBoolean(isRedundantRouterSupported)) {
+                throw new InvalidParameterValueException(String.format("Redundant router is not supported by the network offering %s", networkOffering));
+            }
             network.setRedundant(true);
             if (!_networksDao.update(network.getId(), network)) {
                 throw new CloudRuntimeException("Failed to update network into a redundant one, please try again");
