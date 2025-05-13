@@ -16,14 +16,26 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package com.cloud.hypervisor.external.provisioner.simpleprovisioner;
+package org.apache.cloudstack.hypervisor.external.provisioner.simpleprovisioner;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.guru.ExternalHypervisorGuru;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.HostVmStateReportEntry;
-import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
-import com.cloud.agent.api.PrepareExternalProvisioningCommand;
 import com.cloud.agent.api.PostExternalProvisioningAnswer;
 import com.cloud.agent.api.PostExternalProvisioningCommand;
+import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
+import com.cloud.agent.api.PrepareExternalProvisioningCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RunCustomActionAnswer;
@@ -58,21 +70,10 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.guru.ExternalHypervisorGuru;
-import org.apache.commons.collections.CollectionUtils;
-
-import javax.inject.Inject;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class SimpleExternalProvisioner extends ManagerBase implements ExternalProvisioner, PluggableService {
 
     public static final String EXTENSION_SCRIPT_PATH = "/usr/share/cloudstack-management/extensions/%s/provisioner.sh";
-    public static final String SYMLINK_PATH = "/etc/cloudstack/management/extensions/%d/provisioner.sh";
     public static final String BASE_EXTERNAL_PROVISIONER_SCRIPT = "scripts/vm/hypervisor/external/simpleExternalProvisioner/provisioner.sh";
 
     String filledExtensionPath;
@@ -81,10 +82,10 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     UserVmDao _uservmDao;
 
     @Inject
-    HostDao _hostDao;
+    HostDao hostDao;
 
     @Inject
-    VMInstanceDao _vmDao;
+    VMInstanceDao vmInstanceDao;
 
     @Inject
     private HypervisorGuruManager _hvGuruMgr;
@@ -118,7 +119,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
             modifiedDetails.put(VmDetailConstants.CLOUDSTACK_VM_DETAILS, vmTO);
         }
 
-        logger.debug(String.format("Using these access details for VM instance operation: %s", accessDetails));
+        logger.debug("Using these access details for VM instance operation: {}", accessDetails);
 
         return modifiedDetails;
     }
@@ -127,8 +128,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     public PrepareExternalProvisioningAnswer prepareExternalProvisioning(PrepareExternalProvisioningCommand cmd) {
         VirtualMachineTO vmTO = cmd.getVirtualMachineTO();
         String vmUUID = vmTO.getUuid();
-        logger.debug(String.format("Executing PrepareExternalProvisioningCommand in the external provisioner " +
-                "for the VM %s as part of VM deployment", vmUUID));
+        logger.debug("Executing PrepareExternalProvisioningCommand in the external provisioner " +
+                "for the VM {} as part of VM deployment", vmUUID);
 
         String prepareExternalScript = Script.findScript("", filledExtensionPath);
         Long clusterId = cmd.getClusterId();
@@ -153,7 +154,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
             }
             return new PrepareExternalProvisioningAnswer(cmd, modifiedMap, null);
         } catch (CloudRuntimeException e) {
-            logger.debug(String.format("Failed to parse the output from preparing external provisioning operation as part of VM deployment with error %s", e.getMessage()));
+            logger.error("Failed to parse the output from preparing external provisioning operation as part of VM deployment with error {}", e.getMessage());
             return new PrepareExternalProvisioningAnswer(cmd, e.getMessage(), false);
         }
     }
@@ -162,7 +163,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     public StartAnswer startInstance(StartCommand cmd) {
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
         UserVmVO uservm = _uservmDao.findById(virtualMachineTO.getId());
-        HostVO host = _hostDao.findById(uservm.getHostId());
+        HostVO host = hostDao.findById(uservm.getHostId());
         Map<String, String> accessDetails = loadAccessDetails(virtualMachineTO.getDetails(), host.getClusterId(), virtualMachineTO);
         String vmUUID = virtualMachineTO.getUuid();
 
@@ -171,7 +172,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         String deployvm = accessDetails.get("deployvm");
         boolean isDeploy = (deployvm != null && Boolean.parseBoolean(deployvm));
         String operation = isDeploy ? "Deploying" : "Starting";
-        String prepareExternalScript = isDeploy ? Script.findScript("", filledExtensionPath) : Script.findScript("", filledExtensionPath);
+        String prepareExternalScript = Script.findScript("", filledExtensionPath);
 
         try {
             Pair<Boolean, String> result = executeStartCommandOnExternalSystem(isDeploy, prepareExternalScript, vmUUID, accessDetails, cmd.getWait());
@@ -212,12 +213,12 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     @Override
     public StopAnswer expungeInstance(StopCommand cmd) {
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
-        UserVmVO uservm = _uservmDao.findById(virtualMachineTO.getId());
-        String vmUUID = uservm.getUuid();
-        logger.debug(String.format("Executing stop command in the external system for the VM %s", vmUUID));
+        UserVmVO userVm = _uservmDao.findById(virtualMachineTO.getId());
+        String vmUUID = userVm.getUuid();
+        logger.debug("Executing stop command in the external system for the VM {}", vmUUID);
 
         String prepareExternalScript = Script.findScript("", filledExtensionPath);
-        HostVO host = _hostDao.findById(uservm.getLastHostId());
+        HostVO host = hostDao.findById(userVm.getLastHostId());
         Map<String, String> accessDetails = loadAccessDetails(cmd.getDetails(), host.getClusterId(), virtualMachineTO);
 
         Pair<Boolean, String> result = deleteInstanceOnExternalSystem(prepareExternalScript, vmUUID, accessDetails, cmd.getWait());
@@ -230,8 +231,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
 
     @Override
     public PostExternalProvisioningAnswer postsetupInstance(PostExternalProvisioningCommand cmd) {
-        PostExternalProvisioningAnswer answer = new PostExternalProvisioningAnswer(cmd, null, null);
-        return answer;
+        return new PostExternalProvisioningAnswer(cmd, null, null);
     }
 
     @Override
@@ -259,8 +259,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
 
     @Override
     public void loadScripts(String extensionName) {
-        String destinationPath = String.format(EXTENSION_SCRIPT_PATH, extensionName);
-        filledExtensionPath = destinationPath;
+        filledExtensionPath = String.format(EXTENSION_SCRIPT_PATH, extensionName);
     }
 
     @Override
@@ -274,7 +273,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         File destinationFile = new File(destinationPath);
         filledExtensionPath = destinationPath;
         if (destinationFile.exists()) {
-            logger.info("File already exists at " + destinationPath + ", skipping copy.");
+            logger.info("File already exists at {}, skipping copy.", destinationPath);
             return;
         }
 
@@ -283,7 +282,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         mkdirScript.add("-p", destinationDir);
         String result = mkdirScript.execute();
         if (result != null) {
-            logger.warn("Failed to create directory " + destinationDir + " due to " + result);
+            logger.warn("Failed to create directory {} due to {}", destinationDir, result);
             throw new CloudRuntimeException("Failed to create destination directory: " + result);
         }
 
@@ -292,37 +291,19 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         copyScript.add(prepareExternalScript, destinationPath);
         result = copyScript.execute();
         if (result != null) {
-            logger.warn("Failed to copy script to " + destinationPath + " due to " + result);
+            logger.warn("Failed to copy script to {} due to {}", destinationPath, result);
             throw new CloudRuntimeException("Script copy failed: " + result);
         }
-
-        /*String symlinkPath = String.format(SYMLINK_PATH, extensionId);
-        String symlinkDir = symlinkPath.substring(0, symlinkPath.lastIndexOf('/'));
-        Script mkdirSymlinkDir = new Script(true, "/bin/mkdir", 0, logger);
-        mkdirSymlinkDir.add("-p", symlinkDir);
-        result = mkdirSymlinkDir.execute();
-        if (result != null) {
-            logger.warn("Failed to create symlink directory " + symlinkDir + " due to " + result);
-            throw new CloudRuntimeException("Failed to create symlink directory: " + result);
-        }
-
-        Script symlinkScript = new Script(true, "/bin/ln", 0, logger);
-        symlinkScript.add("-sf", destinationPath, symlinkPath);
-        result = symlinkScript.execute();
-        if (result != null) {
-            logger.warn("Failed to create symlink at " + symlinkPath + " due to " + result);
-            throw new CloudRuntimeException("Failed to create symlink: " + result);
-        }*/
     }
 
     private RunCustomActionAnswer runCustomActionOnExternalSystem(RunCustomActionCommand cmd) {
-        logger.debug(String.format("Executing custom action '%s' in the external provisioner", cmd.getActionName()));
+        logger.debug("Executing custom action '{}' in the external provisioner", cmd.getActionName());
 
         String actionName = cmd.getActionName();
         Map<String, String> externalDetails = cmd.getExternalDetails();
         Long clusterId = cmd.getClusterId();
 
-        logger.debug(String.format("Executing custom action '%s' in the external system", actionName));
+        logger.debug("Executing custom action '{}' in the external system", actionName);
 
         String prepareExternalScript = Script.findScript("", filledExtensionPath);
         Map<String, String> accessDetails = loadAccessDetails(externalDetails, clusterId, null);
@@ -336,30 +317,30 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
                 String.format("Failed to execute custom action '%s' on external system", actionName));
     }
 
-    private VirtualMachine.PowerState getVMpowerState(UserVmVO uservm) {
+    private VirtualMachine.PowerState getVMpowerState(UserVmVO userVmVO) {
         HostVO host;
-        if (uservm.getHostId() != null) {
-            host = _hostDao.findById(uservm.getHostId());
-        } else if (uservm.getLastHostId() != null){
-            host = _hostDao.findById(uservm.getLastHostId());
+        if (userVmVO.getHostId() != null) {
+            host = hostDao.findById(userVmVO.getHostId());
+        } else if (userVmVO.getLastHostId() != null){
+            host = hostDao.findById(userVmVO.getLastHostId());
         } else {
             return VirtualMachine.PowerState.PowerUnknown;
         }
-        _hostDao.loadDetails(host);
-        _uservmDao.loadDetails(uservm);
+        hostDao.loadDetails(host);
+        _uservmDao.loadDetails(userVmVO);
         Map<String, String> hostDetails = host.getDetails();
-        Map<String, String> userVmDetails = uservm.getDetails();
+        Map<String, String> userVmDetails = userVmVO.getDetails();
         HashMap<String, String> accessDetails = new HashMap<>();
-        ExternalHypervisorGuru.loadExternalHostAccessDetails(hostDetails, accessDetails, host.getClusterId());
-        ExternalHypervisorGuru.loadExternalInstanceDetails(userVmDetails, accessDetails);
+        ExternalHypervisorGuru.loadExternalResourceAccessDetails(hostDetails, accessDetails);
+        ExternalHypervisorGuru.loadExternalResourceAccessDetails(userVmDetails, accessDetails);
         final HypervisorGuru hvGuru = _hvGuruMgr.getGuru(Hypervisor.HypervisorType.External);
-        VirtualMachineProfile profile = new VirtualMachineProfileImpl(uservm);
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(userVmVO);
         VirtualMachineTO virtualMachineTO = hvGuru.implement(profile);
 
         Map<String, String> modifiedDetails = loadAccessDetails(accessDetails, host.getClusterId(), virtualMachineTO);
 
-        String vmUUID = uservm.getUuid();
-        logger.debug(String.format("Trying to get VM power status from the external system for the VM %s", vmUUID));
+        String vmUUID = userVmVO.getUuid();
+        logger.debug("Trying to get VM power status from the external system for the VM {}", vmUUID);
 
         String prepareExternalScript = Script.findScript("", filledExtensionPath);
 
@@ -373,22 +354,22 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
                 return VirtualMachine.PowerState.PowerUnknown;
             }
         } else {
-            logger.debug(String.format("Exception occurred while trying to fetch the power status of the VM %d : %s", uservm.getId(), result.second()));
+            logger.debug("Exception occurred while trying to fetch the power status of the {} : {}", userVmVO, result.second());
             return VirtualMachine.PowerState.PowerUnknown;
         }
     }
 
     private StopAnswer stopInstanceOnExternalSystem(StopCommand cmd) {
-        logger.debug(String.format("Executing stop command on the external provisioner"));
-        VMInstanceVO uservm = _vmDao.findVMByInstanceName(cmd.getVmName());
+        logger.debug("Executing stop command on the external provisioner");
+        VMInstanceVO uservm = vmInstanceDao.findVMByInstanceName(cmd.getVmName());
         final HypervisorGuru hvGuru = _hvGuruMgr.getGuru(Hypervisor.HypervisorType.External);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(uservm);
         VirtualMachineTO virtualMachineTO = hvGuru.implement(profile);
         String vmUUID = profile.getUuid();
-        logger.debug(String.format("Executing stop command in the external system for the VM %s", vmUUID));
+        logger.debug("Executing stop command in the external system for the VM {}", vmUUID);
 
         String prepareExternalScript = Script.findScript("", filledExtensionPath);
-        HostVO host = _hostDao.findById(uservm.getLastHostId());
+        HostVO host = hostDao.findById(uservm.getLastHostId());
         Map<String, String> accessDetails = loadAccessDetails(cmd.getDetails(), host.getClusterId(), virtualMachineTO);
 
         Pair<Boolean, String> result = stopInstanceOnExternalSystem(prepareExternalScript, vmUUID, accessDetails, cmd.getWait());
@@ -400,14 +381,14 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     private RebootAnswer rebootInstanceOnExternalSystem(RebootCommand cmd) {
-        logger.debug(String.format("Executing reboot command using IPMI in the external provisioner"));
+        logger.debug("Executing reboot command using IPMI in the external provisioner");
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
         UserVmVO uservm = _uservmDao.findById(virtualMachineTO.getId());
         String vmUUID = uservm.getUuid();
-        logger.debug(String.format("Executing reboot command in the external system for the VM %s", vmUUID));
+        logger.debug("Executing reboot command in the external system for the VM {}", vmUUID);
 
         String prepareExternalScript = Script.findScript("", filledExtensionPath);
-        HostVO host = _hostDao.findById(uservm.getLastHostId());
+        HostVO host = hostDao.findById(uservm.getLastHostId());
         Map<String, String> accessDetails = loadAccessDetails(cmd.getDetails(), host.getClusterId(), virtualMachineTO);
 
         Pair<Boolean, String> result = rebootInstanceOnExternalSystem(prepareExternalScript, vmUUID, accessDetails, cmd.getWait());
@@ -466,7 +447,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
             String result = command.execute(parser);
 
             if (result != null) {
-                logger.debug(String.format("%s: External API execution failed with result %s", logPrefix, result));
+                logger.debug("{}: External API execution failed with result {}", logPrefix, result);
                 return new Pair<>(false, result);
             }
 
@@ -480,14 +461,12 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
 
     private String prepareParameters(Map<String, String> details) throws JsonProcessingException {
         ObjectMapper objectMapper = new ObjectMapper();
-        String parameters = objectMapper.writeValueAsString(details);
-        return parameters;
+        return objectMapper.writeValueAsString(details);
     }
 
     private String getVirtualMachineTOJsonString(VirtualMachineTO vmTO) {
         Gson s_gogger = GsonHelper.getGsonLogger();
-        String content = s_gogger.toJson(vmTO);
-        return content;
+        return s_gogger.toJson(vmTO);
     }
 
     @Override

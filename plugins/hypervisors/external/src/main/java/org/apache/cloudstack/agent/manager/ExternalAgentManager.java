@@ -15,9 +15,9 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package com.cloud.agent.manager;
+package org.apache.cloudstack.agent.manager;
 
-import com.cloud.hypervisor.external.resource.ExternalResourceBase;
+import org.apache.cloudstack.hypervisor.external.resource.ExternalResourceBase;
 import com.cloud.utils.component.Manager;
 
 import javax.naming.ConfigurationException;

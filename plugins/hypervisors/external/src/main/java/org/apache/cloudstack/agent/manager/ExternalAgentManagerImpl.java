@@ -17,42 +17,23 @@
 // under the License.
 //
 
-package com.cloud.agent.manager;
+package org.apache.cloudstack.agent.manager;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostDetailsDao;
-import com.cloud.hypervisor.external.resource.ExternalResourceBase;
-import com.cloud.resource.ResourceService;
-import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.component.PluggableService;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.hypervisor.external.resource.ExternalResourceBase;
+
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.component.PluggableService;
+
 public class ExternalAgentManagerImpl extends ManagerBase implements ExternalAgentManager, Configurable, PluggableService {
-
-    @Inject
-    AgentManager agentMgr;
-
-    @Inject
-    ClusterDao clusterDao;
-
-    @Inject
-    HostDao hostDao;
-
-    @Inject
-    HostDetailsDao hostDetailsDao;
-
-    @Inject
-    public ResourceService resourceService;
 
     public static final ConfigKey<Boolean> expectMacAddressFromExternalProvisioner = new ConfigKey<>(Boolean.class, "expect.macaddress.from.external.provisioner", "Advanced", "true",
             "Sample external provisioning config, any value that has to be sent", true, ConfigKey.Scope.Cluster, null);

@@ -94,4 +94,5 @@ public class HypervisorGuruManagerImpl extends ManagerBase implements Hypervisor
     public void setHvGuruList(List<HypervisorGuru> hvGuruList) {
         this._hvGuruList = hvGuruList;
     }
+
 }

@@ -27,7 +27,7 @@
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
 
-    <bean id="ExternalServerPlanner" class="com.cloud.agent.manager.ExternalServerPlanner">
+    <bean id="ExternalServerPlanner" class="org.apache.cloudstack.agent.manager.ExternalServerPlanner">
         <property name="name" value="ExternalServerPlanner" />
     </bean>
 

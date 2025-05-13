@@ -14,7 +14,19 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.hypervisor.external.resource;
+package org.apache.cloudstack.hypervisor.external.resource;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.agent.manager.ExternalAgentManager;
+import org.apache.cloudstack.agent.manager.ExternalAgentManagerImpl;
+import org.apache.cloudstack.hypervisor.external.provisioner.simpleprovisioner.SimpleExternalProvisioner;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -26,17 +38,17 @@ import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.MaintainCommand;
+import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingRoutingCommand;
-import com.cloud.agent.api.RebootAnswer;
-import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.PostExternalProvisioningAnswer;
+import com.cloud.agent.api.PostExternalProvisioningCommand;
 import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
 import com.cloud.agent.api.PrepareExternalProvisioningCommand;
-import com.cloud.agent.api.PostExternalProvisioningCommand;
-import com.cloud.agent.api.PostExternalProvisioningAnswer;
-import com.cloud.agent.api.PingCommand;
-import com.cloud.agent.api.PingTestCommand;
 import com.cloud.agent.api.ReadyAnswer;
 import com.cloud.agent.api.ReadyCommand;
+import com.cloud.agent.api.RebootAnswer;
+import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RunCustomActionAnswer;
 import com.cloud.agent.api.RunCustomActionCommand;
 import com.cloud.agent.api.StartAnswer;
@@ -45,22 +57,12 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
-import com.cloud.agent.manager.ExternalAgentManager;
-import com.cloud.agent.manager.ExternalAgentManagerImpl;
 import com.cloud.host.Host;
-import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.ExternalProvisioner;
-import com.cloud.hypervisor.external.provisioner.simpleprovisioner.SimpleExternalProvisioner;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.network.Networks;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.ComponentContext;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class ExternalResourceBase implements ServerResource {
 
@@ -146,8 +148,6 @@ public class ExternalResourceBase implements ServerResource {
                 return execute((StopCommand) cmd);
             } else if (cmd instanceof RebootCommand) {
                 return execute((RebootCommand) cmd);
-            } else if (cmd instanceof PingTestCommand) {
-                return new Answer(cmd);
             } else if (cmd instanceof PrepareExternalProvisioningCommand) {
                 return execute((PrepareExternalProvisioningCommand) cmd);
             } else if (cmd instanceof GetHostStatsCommand) {

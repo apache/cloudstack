@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.agent.manager;
+package org.apache.cloudstack.agent.manager;
 
 import java.util.Collections;
 import java.util.List;
@@ -23,14 +23,11 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.ClusterDetailsVO;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.template.VirtualMachineTemplate;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.commons.collections.CollectionUtils;
 
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
@@ -48,6 +45,7 @@ import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -55,19 +53,15 @@ import com.cloud.vm.VirtualMachineProfile;
 public class ExternalServerPlanner extends AdapterBase implements DeploymentPlanner {
 
     @Inject
-    protected DataCenterDao _dcDao;
+    protected DataCenterDao dcDao;
     @Inject
-    protected HostPodDao _podDao;
+    protected HostPodDao podDao;
     @Inject
-    protected ClusterDao _clusterDao;
+    protected ClusterDao clusterDao;
     @Inject
-    protected HostDao _hostDao;
+    protected HostDao hostDao;
     @Inject
-    protected ConfigurationDao _configDao;
-    @Inject
-    protected ResourceManager _resourceMgr;
-    @Inject
-    VMTemplateDetailsDao _tmpDetailsDao;
+    protected ResourceManager resourceMgr;
     @Inject
     ClusterDetailsDao clusterDetailsDao;
 
@@ -81,11 +75,11 @@ public class ExternalServerPlanner extends AdapterBase implements DeploymentPlan
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
 
         if (vm.getLastHostId() != null) {
-            HostVO h = _hostDao.findById(vm.getLastHostId());
-            DataCenter dc = _dcDao.findById(h.getDataCenterId());
-            Pod pod = _podDao.findById(h.getPodId());
-            Cluster c = _clusterDao.findById(h.getClusterId());
-            logger.debug(String.format("Start external VM instance %s on last used host %d", vm.getId(), h.getId()));
+            HostVO h = hostDao.findById(vm.getLastHostId());
+            DataCenter dc = dcDao.findById(h.getDataCenterId());
+            Pod pod = podDao.findById(h.getPodId());
+            Cluster c = clusterDao.findById(h.getClusterId());
+            logger.debug("Start external {} on last used {}", vm, h);
             return new DeployDestination(dc, pod, c, h);
         }
 
@@ -99,16 +93,16 @@ public class ExternalServerPlanner extends AdapterBase implements DeploymentPlan
             }
         }
 
-        List<ClusterVO> clusters = _clusterDao.listClustersByDcId(vm.getDataCenterId());
+        List<ClusterVO> clusters = clusterDao.listClustersByDcId(vm.getDataCenterId());
         HostVO target = null;
         List<HostVO> hosts;
         for (ClusterVO cluster : clusters) {
             ClusterDetailsVO clusterExtensionDetail = clusterDetailsDao.findDetail(cluster.getId(), ApiConstants.EXTENSION_ID);
             if (clusterExtensionDetail != null && clusterExtensionDetail.getValue().equals(String.valueOf(extensionId))) {
-                hosts = _resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
+                hosts = resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
                 if (hostTag != null) {
                     for (HostVO host : hosts) {
-                        _hostDao.loadHostTags(host);
+                        hostDao.loadHostTags(host);
                         List<String> hostTags = host.getHostTags();
                         if (hostTags.contains(hostTag)) {
                             target = host;
@@ -125,13 +119,13 @@ public class ExternalServerPlanner extends AdapterBase implements DeploymentPlan
         }
 
         if (target != null) {
-            DataCenter dc = _dcDao.findById(target.getDataCenterId());
-            Pod pod = _podDao.findById(target.getPodId());
-            Cluster cluster = _clusterDao.findById(target.getClusterId());
+            DataCenter dc = dcDao.findById(target.getDataCenterId());
+            Pod pod = podDao.findById(target.getPodId());
+            Cluster cluster = clusterDao.findById(target.getClusterId());
             return new DeployDestination(dc, pod, cluster, target);
         }
 
-        logger.warn(String.format("Cannot find suitable host for deploying external instance %s", vmProfile.getInstanceName()));
+        logger.warn("Cannot find suitable host for deploying external instance {}", vmProfile.getInstanceName());
         return null;
     }
 

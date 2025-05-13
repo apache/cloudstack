@@ -27,7 +27,7 @@
                       http://www.springframework.org/schema/context/spring-context.xsd"
 >
 
-    <bean id="ExternalServerDiscoverer" class="com.cloud.hypervisor.external.discoverer.ExternalServerDiscoverer">
+    <bean id="ExternalServerDiscoverer" class="org.apache.cloudstack.hypervisor.external.discoverer.ExternalServerDiscoverer">
         <property name="name" value="External Discover" />
     </bean>
 

@@ -22,8 +22,6 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -123,10 +121,6 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
     Ipv6AddressManager ipv6AddressManager;
     @Inject
     DomainRouterDao domainRouterDao;
-    @Inject
-    private AgentManager _agentMgr;
-    @Inject
-    private UserVmDetailsDao userVmDetailsDao;
 
     Random _rand = new Random(System.currentTimeMillis());
 

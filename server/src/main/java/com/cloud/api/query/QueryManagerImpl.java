@@ -36,8 +36,6 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import com.cloud.cpu.CPU;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -222,6 +220,7 @@ import com.cloud.cluster.ManagementServerHostPeerJoinVO;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.cluster.dao.ManagementServerHostPeerJoinDao;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DedicatedResourceVO;
@@ -307,6 +306,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.ResourceTagVO;
@@ -1540,7 +1540,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         Boolean isVnf = cmd.getVnf();
-        boolean templateJoinNeeded = isVnf != null || arch != null || extensionId != null;
+        boolean templateJoinNeeded = ObjectUtils.anyNotNull(isVnf, arch, extensionId);
         if (templateJoinNeeded) {
             SearchBuilder<VMTemplateVO> templateSearch = _templateDao.createSearchBuilder();
             templateSearch.and("templateArch", templateSearch.entity().getArch(), Op.EQ);

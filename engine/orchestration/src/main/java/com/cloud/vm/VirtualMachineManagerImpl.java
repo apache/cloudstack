@@ -331,7 +331,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     private HostDao _hostDao;
     @Inject
-    private HostDetailsDao _hostDetailsDao;
+    private HostDetailsDao hostDetailsDao;
     @Inject
     private AlertManager _alertMgr;
     @Inject
@@ -415,7 +415,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     private DomainDao domainDao;
     @Inject
-    public NetworkService _networkService;
+    public NetworkService networkService;
     @Inject
     ResourceCleanupService resourceCleanupService;
     @Inject
@@ -592,8 +592,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (template.getFormat() == ImageFormat.ISO) {
                 volumeMgr.allocateRawVolume(Type.ROOT, rootVolumeName, rootDiskOfferingInfo.getDiskOffering(), rootDiskOfferingInfo.getSize(),
                         rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), vm, template, owner, null);
-            } else if (template.getFormat() == ImageFormat.BAREMETAL || template.getFormat() == ImageFormat.EXTERNAL) {
-                logger.debug(String.format("%s has format [%s]. Skipping ROOT volume [%s] allocation.", template.toString(), template.getFormat(), rootVolumeName));
+            } else if (Arrays.asList(ImageFormat.BAREMETAL, ImageFormat.EXTERNAL).contains(template.getFormat())) {
+                logger.debug("{} has format [{}]. Skipping ROOT volume [{}] allocation.", template, template.getFormat(), rootVolumeName);
             } else {
                 volumeMgr.allocateTemplatedVolumes(Type.ROOT, rootVolumeName, rootDiskOfferingInfo.getDiskOffering(), rootDiskSizeFinal,
                         rootDiskOfferingInfo.getMinIops(), rootDiskOfferingInfo.getMaxIops(), template, vm, owner);
@@ -1332,15 +1332,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                         NicTO[] nics = vmTO.getNics();
                         for (NicTO nic : nics) {
-                            if (nic.isDefaultNic()) {
-                                Networks.BroadcastDomainType broadcastDomainType = Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri());
-                                NetworkVO networkVO = _networkDao.findById(nic.getNetworkId());
-                                if (Networks.BroadcastDomainType.NSX.equals(broadcastDomainType)) {
-                                    String segmentName = _networkService.getNsxSegmentId(networkVO.getDomainId(), networkVO.getAccountId(), networkVO.getDataCenterId(), networkVO.getVpcId(), networkVO.getId());
-                                    accessDetails.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + VmDetailConstants.CLOUDSTACK_VLAN, segmentName);
-                                } else {
-                                    accessDetails.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + VmDetailConstants.CLOUDSTACK_VLAN, Networks.BroadcastDomainType.getValue(nic.getBroadcastUri()));
-                                }
+                            if (!nic.isDefaultNic()) {
+                                continue;
+                            }
+                            Networks.BroadcastDomainType broadcastDomainType = Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri());
+                            NetworkVO networkVO = _networkDao.findById(nic.getNetworkId());
+                            if (Networks.BroadcastDomainType.NSX.equals(broadcastDomainType)) {
+                                String segmentName = networkService.getNsxSegmentId(networkVO.getDomainId(), networkVO.getAccountId(), networkVO.getDataCenterId(), networkVO.getVpcId(), networkVO.getId());
+                                accessDetails.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + VmDetailConstants.CLOUDSTACK_VLAN, segmentName);
+                            } else {
+                                accessDetails.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + VmDetailConstants.CLOUDSTACK_VLAN, Networks.BroadcastDomainType.getValue(nic.getBroadcastUri()));
                             }
                         }
                     }
@@ -1927,22 +1928,25 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         return volumesToDisconnect;
     }
 
+    protected void updateStopCommandForExternalHypervisorType(final VirtualMachine vm, final Long hostId,
+                  final StopCommand stopCommand) {
+        if (!HypervisorType.External.equals(vm.getHypervisorType()) || hostId == null) {
+            return;
+        }
+        HostVO host = _hostDao.findById(hostId);
+        HashMap<String, String> accessDetails = new HashMap<>();
+        loadExternalHostAccessDetails(host, accessDetails);
+        loadExternalInstanceDetails(vm.getId(), accessDetails);
+
+        stopCommand.setDetails(accessDetails);
+    }
+
     protected boolean sendStop(final VirtualMachineGuru guru, final VirtualMachineProfile profile, final boolean force, final boolean checkBeforeCleanup) {
         final VirtualMachine vm = profile.getVirtualMachine();
         Map<String, Boolean> vlanToPersistenceMap = getVlanToPersistenceMapForVM(vm.getId());
 
         StopCommand stpCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
-        if (HypervisorType.External.equals(vm.getHypervisorType())) {
-            Long hostID = profile.getHostId();
-            if (hostID != null) {
-                HostVO host = _hostDao.findById(hostID);
-                HashMap<String, String> accessDetails = new HashMap<>();
-                loadExternalHostAccessDetails(host, accessDetails);
-                loadExternalInstanceDetails(vm.getId(), accessDetails);
-
-                stpCmd.setDetails(accessDetails);
-            }
-        }
+        updateStopCommandForExternalHypervisorType(vm, profile.getHostId(), stpCmd);
         if (MapUtils.isNotEmpty(vlanToPersistenceMap)) {
             stpCmd.setVlanToPersistenceMap(vlanToPersistenceMap);
         }

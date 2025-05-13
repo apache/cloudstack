@@ -14,7 +14,23 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.hypervisor.external.discoverer;
+package org.apache.cloudstack.hypervisor.external.discoverer;
+
+import java.net.URI;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.agent.manager.ExternalAgentManager;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDao;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
+import org.apache.cloudstack.hypervisor.external.resource.ExternalResourceBase;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -24,7 +40,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.agent.manager.ExternalAgentManager;
 import com.cloud.dc.ClusterVO;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
@@ -35,27 +50,14 @@ import com.cloud.hypervisor.ExternalProvisioner;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.Discoverer;
 import com.cloud.resource.DiscovererBase;
-import com.cloud.hypervisor.external.resource.ExternalResourceBase;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
-import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDao;
-import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
-import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
-import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 public class ExternalServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
 
     @Inject
-    private AgentManager _agentMgr;
+    private AgentManager agentManager;
 
     @Inject
     private ExtensionDao externalOrchestratorDao;
@@ -64,7 +66,7 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
     ExtensionResourceMapDao extensionResourceMapDao;
 
     @Inject
-    ExternalAgentManager _externalAgentMgr = null;
+    ExternalAgentManager externalAgentManager = null;
 
     @Inject
     ExternalProvisioner externalProvisioner;
@@ -127,7 +129,7 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
-        _agentMgr.registerForHostEvents(this, true, false, true);
+        agentManager.registerForHostEvents(this, true, false, true);
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
@@ -140,15 +142,12 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
             String cluster = null;
             if (clusterId == null) {
                 String msg = "must specify cluster Id when adding host";
-                if (logger.isDebugEnabled()) {
-                    logger.debug(msg);
-                }
+                logger.debug(msg);
                 throw new RuntimeException(msg);
             } else {
                 ClusterVO clu = _clusterDao.findById(clusterId);
                 if (clu == null || (clu.getHypervisorType() != Hypervisor.HypervisorType.External)) {
-                    if (logger.isInfoEnabled())
-                        logger.info("invalid cluster id or cluster is not for Simulator hypervisors");
+                    logger.info("invalid cluster id or cluster is not for Simulator hypervisors");
                     return null;
                 }
                 cluster = Long.toString(clusterId);
@@ -161,9 +160,7 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
             String pod;
             if (podId == null) {
                 String msg = "must specify pod Id when adding host";
-                if (logger.isDebugEnabled()) {
-                    logger.debug(msg);
-                }
+                logger.debug(msg);
                 throw new RuntimeException(msg);
             } else {
                 pod = Long.toString(podId);
@@ -178,13 +175,13 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
             params.put("guid", uri.toString());
 
             ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(clusterId, "cluster");
-            ExtensionVO extensionVO = externalOrchestratorDao.findById(Long.valueOf(extensionResourceMapVO.getExtensionId()));
+            ExtensionVO extensionVO = externalOrchestratorDao.findById(extensionResourceMapVO.getExtensionId());
             params.put("extensionName", extensionVO.getName());
 
             resources = createAgentResources(params);
             return resources;
         } catch (Exception ex) {
-            logger.error("Exception when discovering external hosts: " + ex.getMessage());
+            logger.error("Exception when discovering external hosts: {}", ex.getMessage(), ex);
         }
         return null;
     }
@@ -202,16 +199,15 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
     private Map<ExternalResourceBase, Map<String, String>> createAgentResources(Map<String, Object> params) {
         try {
             logger.info("Creating External Server Resources");
-            return _externalAgentMgr.createServerResources(params);
+            return externalAgentManager.createServerResources(params);
         } catch (Exception ex) {
-            logger.warn("Caught exception at agent resource creation: " + ex.getMessage(), ex);
+            logger.warn("Caught exception at agent resource creation: {}", ex.getMessage(), ex);
         }
         return null;
     }
 
     @Override
-    public void postDiscovery(List<HostVO> hosts, long msId) throws DiscoveryException {
-
+    public void postDiscovery(List<HostVO> hosts, long msId) {
     }
 
     @Override
@@ -246,7 +242,7 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
 
         final ClusterVO cluster = _clusterDao.findById(host.getClusterId());
         ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(cluster.getId(), "cluster");
-        ExtensionVO extensionVO = externalOrchestratorDao.findById(Long.valueOf(extensionResourceMapVO.getExtensionId()));
+        ExtensionVO extensionVO = externalOrchestratorDao.findById(extensionResourceMapVO.getExtensionId());
         externalProvisioner.loadScripts(extensionVO.getName());
 
         return _resourceMgr.fillRoutingHostVO(host, ssCmd, Hypervisor.HypervisorType.External, details, hostTags);

@@ -254,8 +254,10 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                     hostResponse.setUefiCapability(new Boolean(false));
                 }
             }
-            if (details.contains(HostDetails.all) && (host.getHypervisorType() == Hypervisor.HypervisorType.KVM ||
-                    host.getHypervisorType() == Hypervisor.HypervisorType.Custom || host.getHypervisorType() == Hypervisor.HypervisorType.External)) {
+            if (details.contains(HostDetails.all) &&
+                    Arrays.asList(Hypervisor.HypervisorType.KVM,
+                            Hypervisor.HypervisorType.Custom,
+                            Hypervisor.HypervisorType.External).contains(host.getHypervisorType())) {
                 //only kvm has the requirement to return host details
                 try {
                     hostResponse.setDetails(hostDetails, host.getHypervisorType());

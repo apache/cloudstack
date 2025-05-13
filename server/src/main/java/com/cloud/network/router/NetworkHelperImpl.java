@@ -24,7 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
@@ -177,6 +176,9 @@ public class NetworkHelperImpl implements NetworkHelper {
     CapacityManager capacityMgr;
     @Inject
     VpcDao vpcDao;
+
+    protected static final List<HypervisorType> HYPERVISOR_TYPES_NOT_SUPPORTING_DOMAIN_ROUTER = Arrays.asList(
+            HypervisorType.Ovm, HypervisorType.BareMetal, HypervisorType.External);
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -661,8 +663,7 @@ public class NetworkHelperImpl implements NetworkHelper {
         }
         if (dest.getCluster() != null) {
             HypervisorType destClusterHypType = dest.getCluster().getHypervisorType();
-            Set<HypervisorType> hypervisorsTypesToCheck = Set.of(HypervisorType.Ovm, HypervisorType.BareMetal, HypervisorType.External);
-            if (hypervisorsTypesToCheck.contains(destClusterHypType)) {
+            if (HYPERVISOR_TYPES_NOT_SUPPORTING_DOMAIN_ROUTER.contains(destClusterHypType)) {
                 hypervisors.add(getClusterToStartDomainRouterOtherThanProvidedType(dest.getCluster().getPodId()));
             } else {
                 hypervisors.add(dest.getCluster().getHypervisorType());
@@ -691,7 +692,7 @@ public class NetworkHelperImpl implements NetworkHelper {
     protected HypervisorType getClusterToStartDomainRouterOtherThanProvidedType(final long podId) {
         final List<ClusterVO> clusters = _clusterDao.listByPodId(podId);
         for (final ClusterVO cv : clusters) {
-            if (cv.getHypervisorType() == HypervisorType.Ovm || cv.getHypervisorType() == HypervisorType.BareMetal || cv.getHypervisorType() == HypervisorType.External) {
+            if (HYPERVISOR_TYPES_NOT_SUPPORTING_DOMAIN_ROUTER.contains(cv.getHypervisorType())) {
                 continue;
             }
 

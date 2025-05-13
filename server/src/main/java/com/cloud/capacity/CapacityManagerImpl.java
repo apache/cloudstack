@@ -1141,6 +1141,7 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Override
     public Pair<Boolean, Boolean> checkIfHostHasCpuCapabilityAndCapacity(Host host, ServiceOffering offering, boolean considerReservedCapacity) {
         if (HypervisorType.External.equals(host.getHypervisorType())) {
+            logger.debug("Skipping capability and capacity check for the External {}", host);
             return new Pair<>(true, true);
         }
 

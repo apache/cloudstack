@@ -41,7 +41,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
 import com.cloud.agent.api.PrepareExternalProvisioningCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.manager.ExternalAgentManagerImpl;
+import org.apache.cloudstack.agent.manager.ExternalAgentManagerImpl;
 import com.cloud.dc.ASNumberVO;
 import com.cloud.bgp.BGPService;
 import com.cloud.dc.VlanDetailsVO;
@@ -296,7 +296,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Inject
     UserVmDao _userVmDao;
     @Inject
-    UserVmDetailsDao _userVmDetailsDao;
+    UserVmDetailsDao userVmDetailsDao;
     @Inject
     AlertManager _alertMgr;
     @Inject
@@ -372,7 +372,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Inject
     private BGPService bgpService;
     @Inject
-    private HypervisorGuruManager _hvGuruMgr;
+    private HypervisorGuruManager hvGuruMgr;
 
     @Override
     public List<NetworkGuru> getNetworkGurus() {
@@ -440,7 +440,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Inject
     HostDao _hostDao;
     @Inject
-    HostDetailsDao _hostDetailsDao;
+    HostDetailsDao hostDetailsDao;
     @Inject
     NetworkServiceMapDao _ntwkSrvcDao;
     @Inject
@@ -2235,63 +2235,64 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     private void prepareNicIfExternalProvisionerInvolved(VirtualMachineProfile vmProfile, DeployDestination dest, long nicId) {
-        if (Hypervisor.HypervisorType.External.equals(vmProfile.getHypervisorType())) {
-            if (_userVmDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.DEPLOY_VM) == null) {
-                return;
-            }
-            HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vmProfile.getHypervisorType());
-            VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
-            Map<String, String> accessDetails = vmTO.getDetails();
+        if (!Hypervisor.HypervisorType.External.equals(vmProfile.getHypervisorType())) {
+            return;
+        }
+        if (userVmDetailsDao.findDetail(vmProfile.getId(), VmDetailConstants.DEPLOY_VM) == null) {
+            return;
+        }
+        HypervisorGuru hvGuru = hvGuruMgr.getGuru(vmProfile.getHypervisorType());
+        VirtualMachineTO vmTO = hvGuru.implement(vmProfile);
+        Map<String, String> accessDetails = vmTO.getDetails();
 
-            HostVO host = _hostDao.findById(dest.getHost().getId());
-            loadExternalHostAccessDetails(host, accessDetails);
-            loadExternalInstanceDetails(vmProfile.getId(), accessDetails);
-            PrepareExternalProvisioningCommand command = new PrepareExternalProvisioningCommand(vmTO, host.getClusterId());
-            final PrepareExternalProvisioningAnswer prepareExternalProvisioningAnswer;
-            try {
-                Long hostID = dest.getHost().getId();
-                final Answer answer = _agentMgr.send(hostID, command);
+        HostVO host = _hostDao.findById(dest.getHost().getId());
+        loadExternalHostAccessDetails(host, accessDetails);
+        loadExternalInstanceDetails(vmProfile.getId(), accessDetails);
+        PrepareExternalProvisioningCommand command = new PrepareExternalProvisioningCommand(vmTO, host.getClusterId());
+        final PrepareExternalProvisioningAnswer prepareExternalProvisioningAnswer;
+        try {
+            Long hostID = dest.getHost().getId();
+            final Answer answer = _agentMgr.send(hostID, command);
 
-                if (!(answer instanceof PrepareExternalProvisioningAnswer)) {
-                    String errorMsg = String.format("Trying to prepare the instance on external hypervisor for the CloudStack instance %s failed: %s", vmProfile.getUuid(), answer.getDetails());
-                    logger.debug(errorMsg);
-                    throw new CloudRuntimeException(errorMsg);
-                }
-
-                prepareExternalProvisioningAnswer = (PrepareExternalProvisioningAnswer) answer;
-            } catch (AgentUnavailableException | OperationTimedoutException e) {
-                String errorMsg = String.format("Trying to prepare the instance on external hypervisor for the CloudStack instance %s failed: %s", vmProfile.getUuid(), e);
+            if (!(answer instanceof PrepareExternalProvisioningAnswer)) {
+                String errorMsg = String.format("Trying to prepare the instance on external hypervisor for the CloudStack instance %s failed: %s", vmProfile.getUuid(), answer.getDetails());
                 logger.debug(errorMsg);
                 throw new CloudRuntimeException(errorMsg);
             }
 
-            if (prepareExternalProvisioningAnswer == null || !prepareExternalProvisioningAnswer.getResult()) {
-                if (prepareExternalProvisioningAnswer != null && StringUtils.isNotBlank(prepareExternalProvisioningAnswer.getDetails())) {
-                    throw new CloudRuntimeException(String.format("Unable to prepare the instance on external system due to %s", prepareExternalProvisioningAnswer.getDetails()));
-                } else {
-                    throw new CloudRuntimeException("Unable to prepare the instance on external system, please check the access details");
-                }
-            }
+            prepareExternalProvisioningAnswer = (PrepareExternalProvisioningAnswer) answer;
+        } catch (AgentUnavailableException | OperationTimedoutException e) {
+            String errorMsg = String.format("Trying to prepare the instance on external hypervisor for the CloudStack instance %s failed: %s", vmProfile.getUuid(), e);
+            logger.debug(errorMsg);
+            throw new CloudRuntimeException(errorMsg);
+        }
 
-            Map<String, String> serverDetails = prepareExternalProvisioningAnswer.getServerDetails();
-            if (ExternalAgentManagerImpl.expectMacAddressFromExternalProvisioner.valueIn(host.getClusterId())) {
-                String macAddress = serverDetails.get(String.format("%s%s",VmDetailConstants.EXTERNAL_DETAIL_PREFIX, VmDetailConstants.MAC_ADDRESS));
-                if (StringUtils.isEmpty(macAddress)) {
-                    throw new CloudRuntimeException("Unable to fetch macaddress from the external provisioner while preparing the instance");
-                }
-                final NicVO nic = _nicDao.findById(nicId);
-                nic.setMacAddress(macAddress);
-                _nicDao.update(nicId, nic);
+        if (prepareExternalProvisioningAnswer == null || !prepareExternalProvisioningAnswer.getResult()) {
+            if (prepareExternalProvisioningAnswer != null && StringUtils.isNotBlank(prepareExternalProvisioningAnswer.getDetails())) {
+                throw new CloudRuntimeException(String.format("Unable to prepare the instance on external system due to %s", prepareExternalProvisioningAnswer.getDetails()));
+            } else {
+                throw new CloudRuntimeException("Unable to prepare the instance on external system, please check the access details");
             }
+        }
 
-            if (MapUtils.isNotEmpty(serverDetails)) {
-                UserVmVO userVm = _userVmDao.findById(vmProfile.getId());
-                _userVmDao.loadDetails(userVm);
-                Map<String, String> details = userVm.getDetails();
-                details.putAll(serverDetails);
-                userVm.setDetails(details);
-                _userVmDao.saveDetails(userVm);
+        Map<String, String> serverDetails = prepareExternalProvisioningAnswer.getServerDetails();
+        if (ExternalAgentManagerImpl.expectMacAddressFromExternalProvisioner.valueIn(host.getClusterId())) {
+            String macAddress = serverDetails.get(String.format("%s%s",VmDetailConstants.EXTERNAL_DETAIL_PREFIX, VmDetailConstants.MAC_ADDRESS));
+            if (StringUtils.isEmpty(macAddress)) {
+                throw new CloudRuntimeException("Unable to fetch macaddress from the external provisioner while preparing the instance");
             }
+            final NicVO nic = _nicDao.findById(nicId);
+            nic.setMacAddress(macAddress);
+            _nicDao.update(nicId, nic);
+        }
+
+        if (MapUtils.isNotEmpty(serverDetails)) {
+            UserVmVO userVm = _userVmDao.findById(vmProfile.getId());
+            _userVmDao.loadDetails(userVm);
+            Map<String, String> details = userVm.getDetails();
+            details.putAll(serverDetails);
+            userVm.setDetails(details);
+            _userVmDao.saveDetails(userVm);
         }
     }
 

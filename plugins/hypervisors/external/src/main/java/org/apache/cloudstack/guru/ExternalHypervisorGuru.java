@@ -16,12 +16,19 @@
 // under the License.
 package org.apache.cloudstack.guru;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.commons.collections.MapUtils;
+
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruBase;
@@ -32,24 +39,13 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDao;
-import org.apache.commons.collections.MapUtils;
-
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class ExternalHypervisorGuru extends HypervisorGuruBase implements HypervisorGuru {
 
     @Inject
     private VirtualMachineManager virtualMachineManager;
     @Inject
-    private UserVmDao _userVmDao;
-    @Inject
-    HostDao _hostDao;
-    @Inject
-    HostDetailsDao _hostDetailsDao;
+    private UserVmDao userVmDao;
 
     protected ExternalHypervisorGuru() {
         super();
@@ -100,15 +96,15 @@ public class ExternalHypervisorGuru extends HypervisorGuruBase implements Hyperv
         if (Hypervisor.HypervisorType.External.equals(vm.getHypervisorType())) {
             final Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
             if (hostId != null) {
-                HostVO host = _hostDao.findById(hostId);
+                HostVO host = hostDao.findById(hostId);
                 HashMap<String, String> accessDetails = new HashMap<>();
-                _hostDao.loadDetails(host);
+                hostDao.loadDetails(host);
                 Map<String, String> hostDetails = host.getDetails();
-                UserVmVO userVm = _userVmDao.findById(vm.getId());
-                _userVmDao.loadDetails(userVm);
+                UserVmVO userVm = userVmDao.findById(vm.getId());
+                userVmDao.loadDetails(userVm);
                 Map<String, String> userVmDetails = userVm.getDetails();
-                loadExternalHostAccessDetails(hostDetails, accessDetails, host.getClusterId());
-                loadExternalInstanceDetails(userVmDetails, accessDetails);
+                loadExternalResourceAccessDetails(hostDetails, accessDetails);
+                loadExternalResourceAccessDetails(userVmDetails, accessDetails);
 
                 stop.setDetails(accessDetails);
                 stop.setExpungeVM(true);
@@ -122,19 +118,9 @@ public class ExternalHypervisorGuru extends HypervisorGuruBase implements Hyperv
         return commands;
     }
 
-    public static void loadExternalHostAccessDetails(Map<String, String> hostDetails, Map<String, String> accessDetails, Long clusterId) {
-        Map<String, String> externalHostDetails = new HashMap<>();
-        for (Map.Entry<String, String> entry : hostDetails.entrySet()) {
-            if (entry.getKey().startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX)) {
-                externalHostDetails.put(entry.getKey(), entry.getValue());
-            }
-        }
-        accessDetails.putAll(externalHostDetails);
-    }
-
-    public static void loadExternalInstanceDetails(Map<String, String> userVmDetails, Map<String, String> accessDetails) {
+    public static void loadExternalResourceAccessDetails(Map<String, String> resourceDetails, Map<String, String> accessDetails) {
         Map<String, String> externalInstanceDetails = new HashMap<>();
-        for (Map.Entry<String, String> entry : userVmDetails.entrySet()) {
+        for (Map.Entry<String, String> entry : resourceDetails.entrySet()) {
             if (entry.getKey().startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX)) {
                 externalInstanceDetails.put(entry.getKey(), entry.getValue());
             }

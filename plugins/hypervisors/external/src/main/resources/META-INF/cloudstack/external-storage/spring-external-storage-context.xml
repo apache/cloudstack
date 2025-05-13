@@ -27,6 +27,6 @@
                       http://www.springframework.org/schema/context/spring-context.xsd"
 >
 
-    <bean id="ExternalTemplateAdapter" class="com.cloud.agent.manager.ExternalTemplateAdapter" />
+    <bean id="ExternalTemplateAdapter" class="org.apache.cloudstack.agent.manager.ExternalTemplateAdapter" />
 
 </beans>

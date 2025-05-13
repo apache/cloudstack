@@ -670,7 +670,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     protected void validateExternalHypervisorConfigValues(final String configName, final String value) {
         if (configName.equals("external.provisioners") && StringUtils.isNotEmpty(value)) {
             if (externalProvisioners != null) {
-                logger.info(String.format("Found these external provisioners from the available plugins %s", externalProvisioners));
+                logger.info("Found these external provisioners from the available plugins {}", externalProvisioners);
                 Set<String> externalProvisionersListFromConfig = Arrays.stream(value.split(","))
                         .map(String::trim)
                         .collect(Collectors.toSet());
@@ -678,7 +678,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         .map(ExternalProvisioner::getName)
                         .collect(Collectors.toSet());
                 if (externalProvisionersListFromPlugins.containsAll(externalProvisionersListFromConfig)) {
-                    logger.info(String.format("Found the suitable external provisioner names", value));
+                    logger.info("Found the suitable external provisioner names: {}", value);
                     return;
                 }
             }

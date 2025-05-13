@@ -26,7 +26,7 @@ import java.util.Map;
 public class RebootCommand extends Command {
     String vmName;
     VirtualMachineTO vm;
-    private Map<String, String> _details;
+    private Map<String, String> details;
     protected boolean executeInSequence = false;
 
     protected RebootCommand() {
@@ -50,11 +50,11 @@ public class RebootCommand extends Command {
     }
 
     public void setDetails(Map<String, String> details) {
-        _details = details;
+        this.details = details;
     }
 
     public Map<String, String> getDetails() {
-        return _details;
+        return details;
     }
 
     @Override

@@ -2112,7 +2112,6 @@
 "label.servicelist": "Services",
 "label.serviceofferingid": "Compute offering",
 "label.serviceofferingname": "Compute offering",
-"label.serviceofferingdetails": "Details",
 "label.sessions": "Active client sessions",
 "label.set.default.nic": "Set default NIC",
 "label.set.reservation": "Set reservation",
