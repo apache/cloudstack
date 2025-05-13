@@ -1901,4 +1901,11 @@ public class NetUtils {
         final long start = (ip & startNetMask);
         return String.format("%s/%s", long2Ip(start), size);
     }
+
+    public static String getIpv6Gateway(String ipv6Cidr) {
+        IPv6Network network = IPv6Network.fromString(ipv6Cidr);
+        IPv6Address netrisV6Gateway = network.getFirst().add(1);
+        String netmask = network.getNetmask().toString();
+        return netrisV6Gateway.toString() + "/" + netmask;
+    }
 }

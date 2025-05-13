@@ -1883,7 +1883,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         }
     }
 
-    VnetResAddBody createVnetInternal(VPCListing associatedVpc, String netrisVnetName, String netrisGateway, String netrisV6Gateway, Integer vxlanId, String netrisTag) {
+    VnetResAddBody createVnetInternal(VPCListing associatedVpc, String netrisVnetName, String netrisGateway, String netrisV6Cidr, Integer vxlanId, String netrisTag) {
         logger.debug("Creating Netris VPC vNet {} for CIDR {}", netrisVnetName, netrisGateway);
         try {
             VnetAddBody vnetBody = new VnetAddBody();
@@ -1901,9 +1901,9 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             List<VnetAddBodyGateways> gatewaysList = new ArrayList<>();
             gatewaysList.add(gatewayV4);
 
-            if (Objects.nonNull(netrisV6Gateway)) {
+            if (Objects.nonNull(netrisV6Cidr)) {
                 VnetAddBodyGateways gatewayV6 = new VnetAddBodyGateways();
-                gatewayV6.prefix(netrisV6Gateway);
+                gatewayV6.prefix(NetUtils.getIpv6Gateway(netrisV6Cidr));
                 gatewayV6.setDhcpEnabled(false);
                 gatewayV6.setDhcp(dhcp);
                 gatewaysList.add(gatewayV6);
@@ -1951,6 +1951,8 @@ public class NetrisApiClientImpl implements NetrisApiClient {
             return null;
         }
     }
+
+
 
     private String getNetrisVpcNameSuffix(Long vpcId, String vpcName, Long networkId, String networkName, boolean isVpc) {
         String suffix = null;
