@@ -120,7 +120,7 @@
 "label.add": "Add",
 "label.add.account": "Add Account",
 "label.add.acl.rule": "Add ACL rule",
-"label.add.acl": "Add ACL rule List",
+"label.add.acl": "Add ACL",
 "label.add.affinity.group": "Add new affinity group",
 "label.add.baremetal.dhcp.device": "Add Baremetal DHCP Device",
 "label.add.bigswitchbcf.device": "Add BigSwitch BCF Controller",
