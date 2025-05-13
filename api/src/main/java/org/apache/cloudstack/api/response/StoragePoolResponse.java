@@ -110,7 +110,7 @@ public class StoragePoolResponse extends BaseResponseWithAnnotations {
     private String tags;
 
     @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
-    @Param(description = "the storage access groups for the storage pool")
+    @Param(description = "the storage access groups for the storage pool", since = "4.21.0")
     private String storageAccessGroups;
 
     @SerializedName(ApiConstants.NFS_MOUNT_OPTIONS)

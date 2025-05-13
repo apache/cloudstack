@@ -303,19 +303,19 @@ public class HostResponse extends BaseResponseWithAnnotations {
     private String arch;
 
     @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
-    @Param(description = "comma-separated list of storage access groups for the host", since = "4.20.1")
+    @Param(description = "comma-separated list of storage access groups for the host", since = "4.21.0")
     private String storageAccessGroups;
 
-    @SerializedName("clusterstorageaccessgroups")
-    @Param(description = "comma-separated list of storage access groups on the cluster", since = "4.20.1")
+    @SerializedName(ApiConstants.CLUSTER_STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups on the cluster", since = "4.21.0")
     private String clusterStorageAccessGroups;
 
-    @SerializedName("podstorageaccessgroups")
-    @Param(description = "comma-separated list of storage access groups on the pod", since = "4.20.1")
+    @SerializedName(ApiConstants.POD_STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups on the pod", since = "4.21.0")
     private String podStorageAccessGroups;
 
-    @SerializedName("zonestorageaccessgroups")
-    @Param(description = "comma-separated list of storage access groups on the zone", since = "4.20.1")
+    @SerializedName(ApiConstants.ZONE_STORAGE_ACCESS_GROUPS)
+    @Param(description = "comma-separated list of storage access groups on the zone", since = "4.21.0")
     private String zoneStorageAccessGroups;
 
     @Override
