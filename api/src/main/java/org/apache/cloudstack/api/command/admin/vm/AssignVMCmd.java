@@ -120,16 +120,27 @@ public class AssignVMCmd extends BaseCmd  {
     @Override
     public void execute() {
         try {
-            UserVm userVm = _userVmService.moveVmToUser(this);
+            UserVm userVm = _userVmService.moveVMToUser(this);
+            if (userVm == null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm");
+            }
             UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", userVm).get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);
+        } catch (InvalidParameterValueException e){
+            e.printStackTrace();
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } catch (Exception e) {
-            ApiErrorCode errorCode = e instanceof InvalidParameterValueException ? ApiErrorCode.PARAM_ERROR : ApiErrorCode.INTERNAL_ERROR;
-            String msg = String.format("Failed to move VM [%s].", getVmId());
-            logger.error(msg, e);
-            throw new ServerApiException(errorCode, msg);
+            logger.error("Failed to move vm due to: " + e.getStackTrace());
+            if (e.getMessage() != null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm due to " + e.getMessage());
+            } else if (e.getCause() != null) {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm due to " + e.getCause());
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm");
+            }
         }
+
     }
 
     @Override
