@@ -190,7 +190,7 @@ class TestVMDeploymentPlannerStrictTags(cloudstackTestCase):
             self.cleanup.append(vm)
             self.fail("VM should not be deployed")
         except Exception as e:
-            self.assertTrue("No suitable host found for vm " in str(e))
+            self.assertTrue("No destination found for a deployment for VM instance" in str(e))
 
 
 class TestScaleVMStrictTags(cloudstackTestCase):
@@ -310,7 +310,7 @@ class TestScaleVMStrictTags(cloudstackTestCase):
             vm.start(self.apiclient)
             self.fail("VM should not be be able scale and start")
         except Exception as e:
-            self.assertTrue("No suitable host found for vm " in str(e))
+            self.assertTrue("Unable to orchestrate the start of VM instance" in str(e))
 
 
 class TestRestoreVMStrictTags(cloudstackTestCase):
@@ -423,7 +423,7 @@ class TestRestoreVMStrictTags(cloudstackTestCase):
             vm.restore(self.apiclient, templateid=self.template_t2.id, expunge=True)
             self.fail("VM should not be restored")
         except Exception as e:
-            self.assertTrue("No suitable host found for vm " in str(e))
+            self.assertTrue("Unable to start VM with specified id" in str(e))
 
 
 class TestMigrateVMStrictTags(cloudstackTestCase):

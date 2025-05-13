@@ -559,7 +559,7 @@
                   </span>
                   <div style="margin-top: 15px" v-if="showDetails">
                     <div
-                      v-if="vm.templateid && ['KVM', 'VMware', 'XenServer'].includes(hypervisor) && !template.deployasis">
+                      v-if="['KVM', 'VMware', 'XenServer'].includes(hypervisor) && ((vm.templateid && !template.deployasis) || vm.isoid)">
                       <a-form-item :label="$t('label.boottype')" name="boottype" ref="boottype">
                         <a-select
                           v-model:value="form.boottype"
@@ -2569,14 +2569,28 @@ export default {
       if (this.clusterId === null) {
         this.form.clusterid = undefined
       }
-
       this.fetchOptions(this.params.hosts, 'hosts')
+      if (this.clusterId && Array.isArray(this.options.clusters)) {
+        const cluster = this.options.clusters.find(c => c.id === this.clusterId)
+        this.handleArchResourceSelected(cluster.arch)
+      }
     },
     onSelectHostId (value) {
       this.hostId = value
       if (this.hostId === null) {
         this.form.hostid = undefined
       }
+      if (this.hostId && Array.isArray(this.options.hosts)) {
+        const host = this.options.hosts.find(h => h.id === this.hostId)
+        this.handleArchResourceSelected(host.arch)
+      }
+    },
+    handleArchResourceSelected (resourceArch) {
+      if (!resourceArch || !this.isZoneSelectedMultiArch || this.selectedArchitecture === resourceArch) {
+        return
+      }
+      this.selectedArchitecture = resourceArch
+      this.changeArchitecture(resourceArch, this.tabKey === 'templateid')
     },
     handleSearchFilter (name, options) {
       this.params[name].options = { ...this.params[name].options, ...options }

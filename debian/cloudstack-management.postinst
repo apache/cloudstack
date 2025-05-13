@@ -56,6 +56,8 @@ if [ "$1" = configure ]; then
     chmod 0640 ${CONFDIR}/${DBPROPS}
     chgrp cloud ${CONFDIR}/${DBPROPS}
     chown -R cloud:cloud /var/log/cloudstack/management
+    chown -R cloud:cloud /usr/share/cloudstack-management/templates
+    find /usr/share/cloudstack-management/templates -type d -exec chmod 0770 {} \;
 
     ln -sf ${CONFDIR}/log4j-cloud.xml ${CONFDIR}/log4j2.xml
 

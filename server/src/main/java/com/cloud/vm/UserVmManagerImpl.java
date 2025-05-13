@@ -28,7 +28,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -750,8 +749,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isWindows;
         Long hostId;
         String networkCidr;
+        String macAddress;
 
-        public VmIpAddrFetchThread(long vmId, String vmUuid, long nicId, String instanceName, boolean windows, Long hostId, String networkCidr) {
+        public VmIpAddrFetchThread(long vmId, long nicId, String instanceName, boolean windows, Long hostId, String networkCidr, String macAddress) {
             this.vmId = vmId;
             this.vmUuid = vmUuid;
             this.nicId = nicId;
@@ -759,11 +759,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             this.isWindows = windows;
             this.hostId = hostId;
             this.networkCidr = networkCidr;
+            this.macAddress = macAddress;
         }
 
         @Override
         protected void runInContext() {
-            GetVmIpAddressCommand cmd = new GetVmIpAddressCommand(vmName, networkCidr, isWindows);
+            GetVmIpAddressCommand cmd = new GetVmIpAddressCommand(vmName, networkCidr, isWindows, macAddress);
             boolean decrementCount = true;
 
             NicVO nic = _nicDao.findById(nicId);
@@ -2436,9 +2437,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private void loadVmDetailsInMapForExternalDhcpIp() {
 
         List<NetworkVO> networks = _networkDao.listByGuestType(Network.GuestType.Shared);
+        networks.addAll(_networkDao.listByGuestType(Network.GuestType.L2));
 
         for (NetworkVO network: networks) {
-            if(_networkModel.isSharedNetworkWithoutServices(network.getId())) {
+            if (GuestType.L2.equals(network.getGuestType()) || _networkModel.isSharedNetworkWithoutServices(network.getId())) {
                 List<NicVO> nics = _nicDao.listByNetworkId(network.getId());
 
                 for (NicVO nic : nics) {
@@ -2686,9 +2688,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(userVm);
                             VirtualMachine vm = vmProfile.getVirtualMachine();
                             boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
-
-                            _vmIpFetchThreadExecutor.execute(new VmIpAddrFetchThread(vmId, vmInstance.getUuid(), nicId, vmInstance.getInstanceName(),
-                                    isWindows, vm.getHostId(), network.getCidr()));
+                            _vmIpFetchThreadExecutor.execute(new VmIpAddrFetchThread(vmId, nicId, vmInstance.getInstanceName(),
+                                    isWindows, vm.getHostId(), network.getCidr(), nicVo.getMacAddress()));
 
                         }
                     } catch (Exception e) {
@@ -2840,6 +2841,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         final List<String> userDenyListedSettings = Stream.of(QueryService.UserVMDeniedDetails.value().split(","))
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
+        userDenyListedSettings.addAll(QueryService.RootAdminOnlyVmSettings);
         final List<String> userReadOnlySettings = Stream.of(QueryService.UserVMReadOnlyDetails.value().split(","))
                 .map(item -> (item).trim())
                 .collect(Collectors.toList());
@@ -3105,42 +3107,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-        boolean isVMware = (vm.getHypervisorType() == HypervisorType.VMware);
-
-        if (securityGroupIdList != null && isVMware) {
-            throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
-        } else {
-            // Get default guest network in Basic zone
-            Network defaultNetwork = null;
-            try {
-                DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
-                if (zone.getNetworkType() == NetworkType.Basic) {
-                    // Get default guest network in Basic zone
-                    defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
-                } else if (_networkModel.checkSecurityGroupSupportForNetwork(_accountMgr.getActiveAccountById(vm.getAccountId()), zone, Collections.emptyList(), securityGroupIdList)) {
-                    NicVO defaultNic = _nicDao.findDefaultNicForVM(vm.getId());
-                    if (defaultNic != null) {
-                        defaultNetwork = _networkDao.findById(defaultNic.getNetworkId());
-                    }
-                }
-            } catch (InvalidParameterValueException e) {
-                if(logger.isDebugEnabled()) {
-                    logger.debug(e.getMessage(),e);
-                }
-                defaultNetwork = _networkModel.getDefaultNetworkForVm(id);
-            }
-
-            if (securityGroupIdList != null && _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkModel.canAddDefaultSecurityGroup()) {
-                if (vm.getState() == State.Stopped) {
-                    // Remove instance from security groups
-                    _securityGroupMgr.removeInstanceFromGroups(vm);
-                    // Add instance in provided groups
-                    _securityGroupMgr.addInstanceToGroups(vm, securityGroupIdList);
-                } else {
-                    throw new InvalidParameterValueException("Virtual machine must be stopped prior to update security groups ");
-                }
-            }
-        }
         List<? extends Nic> nics = _nicDao.listByVmId(vm.getId());
         if (hostName != null) {
             // Check is hostName is RFC compliant
@@ -3173,6 +3139,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     .getUuid(), nic.getId(), extraDhcpOptionsMap);
         }
 
+        checkAndUpdateSecurityGroupForVM(securityGroupIdList, vm, networks);
+
         _vmDao.updateVM(id, displayName, ha, osTypeId, userData, userDataId,
                 userDataDetails, isDisplayVmEnabled, isDynamicallyScalable,
                 deleteProtection, customId, hostName, instanceName);
@@ -3186,6 +3154,48 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return _vmDao.findById(id);
+    }
+
+    private void checkAndUpdateSecurityGroupForVM(List<Long> securityGroupIdList, UserVmVO vm, List<NetworkVO> networks) {
+        boolean isVMware = (vm.getHypervisorType() == HypervisorType.VMware);
+
+        if (securityGroupIdList != null && isVMware) {
+            throw new InvalidParameterValueException("Security group feature is not supported for VMware hypervisor");
+        } else if (securityGroupIdList != null) {
+            DataCenterVO zone = _dcDao.findById(vm.getDataCenterId());
+            List<Long> networkIds = new ArrayList<>();
+            try {
+                if (zone.getNetworkType() == NetworkType.Basic) {
+                    // Get default guest network in Basic zone
+                    Network defaultNetwork = _networkModel.getExclusiveGuestNetwork(zone.getId());
+                    networkIds.add(defaultNetwork.getId());
+                } else {
+                    networkIds = networks.stream().map(Network::getId).collect(Collectors.toList());
+                }
+            } catch (InvalidParameterValueException e) {
+                if(logger.isDebugEnabled()) {
+                    logger.debug(e.getMessage(),e);
+                }
+            }
+
+            if (_networkModel.checkSecurityGroupSupportForNetwork(
+                            _accountMgr.getActiveAccountById(vm.getAccountId()),
+                            zone, networkIds, securityGroupIdList)
+            ) {
+                updateSecurityGroup(vm, securityGroupIdList);
+            }
+        }
+    }
+
+    private void updateSecurityGroup(UserVmVO vm, List<Long> securityGroupIdList) {
+        if (vm.getState() == State.Stopped) {
+            // Remove instance from security groups
+            _securityGroupMgr.removeInstanceFromGroups(vm);
+            // Add instance in provided groups
+            _securityGroupMgr.addInstanceToGroups(vm, securityGroupIdList);
+        } else {
+            throw new InvalidParameterValueException(String.format("VM %s must be stopped prior to update security groups", vm.getUuid()));
+        }
     }
 
     protected void updateUserData(UserVm vm) throws ResourceUnavailableException, InsufficientCapacityException {
@@ -3344,8 +3354,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             final List<NicVO> nics = _nicDao.listByVmId(vmId);
             for (NicVO nic : nics) {
                 Network network = _networkModel.getNetwork(nic.getNetworkId());
-                if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
-                    logger.debug("Adding vm {} nic {} into vmIdCountMap as part of vm reboot for vm ip fetch ", userVm, nic);
+                if (GuestType.L2.equals(network.getGuestType()) || _networkModel.isSharedNetworkWithoutServices(network.getId())) {
+                    logger.debug("Adding vm " +vmId +" nic id "+ nic.getId() +" into vmIdCountMap as part of vm " +
+                            "reboot for vm ip fetch ");
                     vmIdCountMap.put(nic.getId(), new VmAndCountDetails(nic.getInstanceId(), VmIpFetchTrialMax.value()));
                 }
             }
@@ -3695,7 +3706,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         boolean isVmWare = (template.getHypervisorType() == HypervisorType.VMware || (hypervisor != null && hypervisor == HypervisorType.VMware));
 
         if (securityGroupIdList != null && isVmWare) {
-            throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+            throw new InvalidParameterValueException("Security group feature is not supported for VMware hypervisor");
         } else if (!isVmWare && _networkModel.isSecurityGroupSupportedInNetwork(defaultNetwork) && _networkModel.canAddDefaultSecurityGroup()) {
             //add the default securityGroup only if no security group is specified
             if (securityGroupIdList == null || securityGroupIdList.isEmpty()) {
@@ -3755,7 +3766,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         } else if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
             if (isVmWare) {
-                throw new InvalidParameterValueException("Security group feature is not supported for vmWare hypervisor");
+                throw new InvalidParameterValueException("Security group feature is not supported for VMware hypervisor");
             }
             // Only one network can be specified, and it should be security group enabled
             if (networkIdList.size() > 1 && template.getHypervisorType() != HypervisorType.KVM && hypervisor != HypervisorType.KVM) {
@@ -5358,7 +5369,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 final List<NicVO> nics = _nicDao.listByVmId(vm.getId());
                 for (NicVO nic : nics) {
                     Network network = _networkModel.getNetwork(nic.getNetworkId());
-                    if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
+                    if (GuestType.L2.equals(network.getGuestType()) || _networkModel.isSharedNetworkWithoutServices(network.getId())) {
                         vmIdCountMap.put(nic.getId(), new VmAndCountDetails(nic.getInstanceId(), VmIpFetchTrialMax.value()));
                     }
                 }
