@@ -7581,20 +7581,33 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected void executeStepsToChangeOwnershipOfVm(AssignVMCmd cmd, Account caller, Account oldAccount, Account newAccount, UserVmVO vm, ServiceOfferingVO offering,
                                                      List<VolumeVO> volumes, VirtualMachineTemplate template, Long domainId) {
 
-        logger.trace("Generating destroy event for VM [{}].", vm);
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(),
-                vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
-
-        logger.trace("Decrementing old account [{}] resource count.", oldAccount);
-        resourceCountDecrement(oldAccount.getAccountId(), vm.isDisplayVm(), offering, template);
-
-        logger.trace("Removing VM [{}] from its instance group.", vm);
-        removeInstanceFromInstanceGroup(vm.getId());
-
         Long newAccountId = newAccount.getAccountId();
         AtomicBoolean isNetworkAutoCreated = new AtomicBoolean(false);
         try {
             updateVmNetwork(cmd, caller, vm, newAccount, template, isNetworkAutoCreated);
+
+            logger.trace("Generating destroy event for VM [{}].", vm);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(),
+                    vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
+
+            logger.trace("Decrementing old account [{}] resource count.", oldAccount);
+            resourceCountDecrement(oldAccount.getAccountId(), vm.isDisplayVm(), offering, template);
+
+            logger.trace("Removing VM [{}] from its instance group.", vm);
+            removeInstanceFromInstanceGroup(vm.getId());
+
+            updateVmOwner(newAccount, vm, domainId, newAccountId);
+
+            updateVolumesOwner(volumes, oldAccount, newAccount, newAccountId);
+
+            logger.trace(String.format("Incrementing new account [%s] resource count.", newAccount));
+            if (!isResourceCountRunningVmsOnlyEnabled()) {
+                resourceCountIncrement(newAccountId, vm.isDisplayVm(), offering, template);
+            }
+
+            logger.trace(String.format("Generating create event for VM [%s].", vm));
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(),
+                    vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
         } catch (InsufficientCapacityException | ResourceAllocationException e) {
             List<NetworkVO> networkVOS = _networkDao.listByAccountIdNetworkName(newAccountId, newAccount.getAccountName() + "-network");
             if (networkVOS.size() == 1 && isNetworkAutoCreated.get()) {
@@ -7602,19 +7615,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             throw new CloudRuntimeException(String.format("Unable to update networks when assigning VM [%s] due to [%s].", vm, e.getMessage()), e);
         }
-
-        updateVmOwner(newAccount, vm, domainId, newAccountId);
-
-        updateVolumesOwner(volumes, oldAccount, newAccount, newAccountId);
-
-        logger.trace(String.format("Incrementing new account [%s] resource count.", newAccount));
-        if (!isResourceCountRunningVmsOnlyEnabled()) {
-            resourceCountIncrement(newAccountId, vm.isDisplayVm(), offering, template);
-        }
-
-        logger.trace(String.format("Generating create event for VM [%s].", vm));
-        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(),
-                vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
     }
 
     protected void updateVmOwner(Account newAccount, UserVmVO vm, Long domainId, Long newAccountId) {
