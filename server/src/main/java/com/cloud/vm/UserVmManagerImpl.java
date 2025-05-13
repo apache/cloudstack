@@ -44,7 +44,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -55,7 +54,6 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.ParserConfigurationException;
 
-import com.cloud.utils.db.TransactionLegacy;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -7447,12 +7445,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         logger.trace("Verifying if the new account [{}] has access to the specified domain [{}].", newAccount, domain);
         _accountMgr.checkAccess(newAccount, domain);
 
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                executeStepsToChangeOwnershipOfVm(cmd, caller, oldAccount, newAccount, vm, offering, volumes, template, domainId);
-            }
-        });
+        executeStepsToChangeOwnershipOfVm(cmd, caller, oldAccount, newAccount, vm, offering, volumes, template, domainId);
 
         logger.info("VM [{}] now belongs to account [{}].", vm.getInstanceName(), newAccountName);
         return vm;
@@ -7581,40 +7574,35 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected void executeStepsToChangeOwnershipOfVm(AssignVMCmd cmd, Account caller, Account oldAccount, Account newAccount, UserVmVO vm, ServiceOfferingVO offering,
                                                      List<VolumeVO> volumes, VirtualMachineTemplate template, Long domainId) {
 
+        logger.trace("Generating destroy event for VM [{}].", vm);
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(),
+                vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
+
+        logger.trace("Decrementing old account [{}] resource count.", oldAccount);
+        resourceCountDecrement(oldAccount.getAccountId(), vm.isDisplayVm(), offering, template);
+
+        logger.trace("Removing VM [{}] from its instance group.", vm);
+        removeInstanceFromInstanceGroup(vm.getId());
+
         Long newAccountId = newAccount.getAccountId();
-        AtomicBoolean isNetworkAutoCreated = new AtomicBoolean(false);
+        updateVmOwner(newAccount, vm, domainId, newAccountId);
+
+        updateVolumesOwner(volumes, oldAccount, newAccount, newAccountId);
+
         try {
-            updateVmNetwork(cmd, caller, vm, newAccount, template, isNetworkAutoCreated);
-
-            logger.trace("Generating destroy event for VM [{}].", vm);
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_DESTROY, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(),
-                    vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
-
-            logger.trace("Decrementing old account [{}] resource count.", oldAccount);
-            resourceCountDecrement(oldAccount.getAccountId(), vm.isDisplayVm(), offering, template);
-
-            logger.trace("Removing VM [{}] from its instance group.", vm);
-            removeInstanceFromInstanceGroup(vm.getId());
-
-            updateVmOwner(newAccount, vm, domainId, newAccountId);
-
-            updateVolumesOwner(volumes, oldAccount, newAccount, newAccountId);
-
-            logger.trace(String.format("Incrementing new account [%s] resource count.", newAccount));
-            if (!isResourceCountRunningVmsOnlyEnabled()) {
-                resourceCountIncrement(newAccountId, vm.isDisplayVm(), offering, template);
-            }
-
-            logger.trace(String.format("Generating create event for VM [%s].", vm));
-            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(),
-                    vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
+            updateVmNetwork(cmd, caller, vm, newAccount, template);
         } catch (InsufficientCapacityException | ResourceAllocationException e) {
-            List<NetworkVO> networkVOS = _networkDao.listByAccountIdNetworkName(newAccountId, newAccount.getAccountName() + "-network");
-            if (networkVOS.size() == 1 && isNetworkAutoCreated.get()) {
-                _networkDao.remove(networkVOS.get(0).getId());
-            }
             throw new CloudRuntimeException(String.format("Unable to update networks when assigning VM [%s] due to [%s].", vm, e.getMessage()), e);
         }
+
+        logger.trace(String.format("Incrementing new account [%s] resource count.", newAccount));
+        if (!isResourceCountRunningVmsOnlyEnabled()) {
+            resourceCountIncrement(newAccountId, vm.isDisplayVm(), offering, template);
+        }
+
+        logger.trace(String.format("Generating create event for VM [%s].", vm));
+        UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_CREATE, vm.getAccountId(), vm.getDataCenterId(), vm.getId(), vm.getHostName(), vm.getServiceOfferingId(),
+                vm.getTemplateId(), vm.getHypervisorType().toString(), VirtualMachine.class.getName(), vm.getUuid(), vm.isDisplayVm());
     }
 
     protected void updateVmOwner(Account newAccount, UserVmVO vm, Long domainId, Long newAccountId) {
@@ -7667,7 +7655,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws InsufficientCapacityException
      * @throws ResourceAllocationException
      */
-    protected void updateVmNetwork(AssignVMCmd cmd, Account caller, UserVmVO vm, Account newAccount, VirtualMachineTemplate template, AtomicBoolean isNetworkAutoCreated)
+    protected void updateVmNetwork(AssignVMCmd cmd, Account caller, UserVmVO vm, Account newAccount, VirtualMachineTemplate template)
             throws InsufficientCapacityException, ResourceAllocationException {
 
         logger.trace("Updating network for VM [{}].", vm);
@@ -7685,7 +7673,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return;
         }
 
-        updateAdvancedTypeNetworkForVm(cmd, caller, vm, newAccount, template, vmOldProfile, zone, networkIdList, securityGroupIdList, isNetworkAutoCreated);
+        updateAdvancedTypeNetworkForVm(cmd, caller, vm, newAccount, template, vmOldProfile, zone, networkIdList, securityGroupIdList);
     }
 
     /**
@@ -7796,7 +7784,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws InvalidParameterValueException
      */
     protected void updateAdvancedTypeNetworkForVm(AssignVMCmd cmd, Account caller, UserVmVO vm, Account newAccount, VirtualMachineTemplate template,
-                                                  VirtualMachineProfileImpl vmOldProfile, DataCenterVO zone, List<Long> networkIdList, List<Long> securityGroupIdList, AtomicBoolean isNetworkAutoCreated)
+                                                  VirtualMachineProfileImpl vmOldProfile, DataCenterVO zone, List<Long> networkIdList, List<Long> securityGroupIdList)
             throws InsufficientCapacityException, ResourceAllocationException, InvalidParameterValueException {
 
         LinkedHashSet<NetworkVO> applicableNetworks = new LinkedHashSet<>();
@@ -7829,7 +7817,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         addNetworksToNetworkIdList(vm, newAccount, vmOldProfile, networkIdList, applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics);
 
         if (applicableNetworks.isEmpty()) {
-            selectApplicableNetworkToCreateVm(caller, newAccount, zone, applicableNetworks, isNetworkAutoCreated);
+            selectApplicableNetworkToCreateVm(caller, newAccount, zone, applicableNetworks);
         }
 
         addNicsToApplicableNetworksAndReturnDefaultNetwork(applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics, networks);
@@ -7952,7 +7940,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * @throws ResourceAllocationException
      */
     protected void selectApplicableNetworkToCreateVm(Account caller, Account newAccount, DataCenterVO zone,
-                                                        Set<NetworkVO> applicableNetworks, AtomicBoolean isNetworkAutoCreated)
+                                                        Set<NetworkVO> applicableNetworks)
             throws InsufficientCapacityException, ResourceAllocationException {
 
         logger.trace("Selecting the applicable network to create the VM.");
@@ -7972,11 +7960,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         NetworkVO defaultNetwork;
         List<? extends Network> virtualNetworks = _networkModel.listNetworksForAccount(newAccount.getId(), zone.getId(), Network.GuestType.Isolated);
         if (virtualNetworks.isEmpty()) {
-            try (TransactionLegacy txn = TransactionLegacy.open("CreateNetworkTxn")) {
-                defaultNetwork = createApplicableNetworkToCreateVm(caller, newAccount, zone, firstRequiredOffering);
-                isNetworkAutoCreated.set(true);
-                txn.commit();
-            }
+            defaultNetwork = createApplicableNetworkToCreateVm(caller, newAccount, zone, firstRequiredOffering);
         } else if (virtualNetworks.size() > 1) {
             throw new InvalidParameterValueException(String.format("More than one default isolated network has been found for account [%s]; please specify networkIDs.",
                     newAccount));
