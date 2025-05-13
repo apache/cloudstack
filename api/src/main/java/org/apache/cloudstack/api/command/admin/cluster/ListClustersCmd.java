@@ -74,7 +74,9 @@ public class ListClustersCmd extends BaseListCmd {
             since = "4.20.1")
     private String arch;
 
-    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUP, type = CommandType.STRING, description = "the name of the storage access group")
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUP, type = CommandType.STRING,
+            description = "the name of the storage access group",
+            since = "4.21.0")
     private String storageAccessGroup;
 
     /////////////////////////////////////////////////////

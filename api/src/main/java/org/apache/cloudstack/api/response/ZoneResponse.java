@@ -162,7 +162,7 @@ public class ZoneResponse extends BaseResponseWithAnnotations implements SetReso
     private boolean routedModeEnabled = false;
 
     @SerializedName(ApiConstants.STORAGE_ACCESS_GROUPS)
-    @Param(description = "comma-separated list of storage access groups for the zone", since = "4.20.1")
+    @Param(description = "comma-separated list of storage access groups for the zone", since = "4.21.0")
     private String storageAccessGroups;
 
 

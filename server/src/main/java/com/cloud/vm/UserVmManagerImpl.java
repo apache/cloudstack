@@ -6648,7 +6648,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         VMInstanceVO vm = preVmStorageMigrationCheck(vmId);
         Map<Long, Long> volumeToPoolIds = new HashMap<>();
         checkDestinationHypervisorType(destPool, vm);
-        checkIfDestinationPoolHasSameStoragePool(destPool, vm);
+        checkIfDestinationPoolHasSameStorageAccessGroups(destPool, vm);
         List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
         StoragePoolVO destinationPoolVo = _storagePoolDao.findById(destPool.getId());
         Long destPoolPodId = ScopeType.CLUSTER.equals(destinationPoolVo.getScope()) || ScopeType.HOST.equals(destinationPoolVo.getScope()) ?
@@ -6703,12 +6703,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return findMigratedVm(vm.getId(), vm.getType());
     }
 
-    private void checkIfDestinationPoolHasSameStoragePool(StoragePool destPool, VMInstanceVO vm) {
+    private void checkIfDestinationPoolHasSameStorageAccessGroups(StoragePool destPool, VMInstanceVO vm) {
         Long hostId = vm.getHostId();
         if (hostId != null) {
             Host host = _hostDao.findById(hostId);
             if (!storageManager.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, destPool)) {
-                throw new InvalidParameterValueException(String.format("Destination pool %s does not have matching storage tags as host %s", destPool.getName(), host.getName()));
+                throw new InvalidParameterValueException(String.format("Destination pool %s does not have matching storage access groups as host %s", destPool.getName(), host.getName()));
             }
         }
     }
@@ -7296,7 +7296,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 }
                 HostVO host = _hostDao.findById(vm.getHostId());
                 if (!storageManager.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, pool)) {
-                    throw new InvalidParameterValueException(String.format("Destination pool %s for the volume %s does not have matching storage tags as host %s", pool.getName(), volume.getName(), host.getName()));
+                    throw new InvalidParameterValueException(String.format("Destination pool %s for the volume %s does not have matching storage access groups as host %s", pool.getName(), volume.getName(), host.getName()));
                 }
 
                 HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());

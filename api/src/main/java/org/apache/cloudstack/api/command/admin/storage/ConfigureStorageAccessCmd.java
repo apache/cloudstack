@@ -60,7 +60,8 @@ public class ConfigureStorageAccessCmd extends BaseAsyncCmd {
     private Long storageId;
 
     @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUPS, type = CommandType.LIST, collectionType = CommandType.STRING,
-            description = "comma separated list of storage access groups for connecting the storage pools and the hosts")
+            description = "comma separated list of storage access groups for connecting the storage pools and the hosts",
+            since = "4.21.0")
     private List<String> storageAccessGroups;
 
 

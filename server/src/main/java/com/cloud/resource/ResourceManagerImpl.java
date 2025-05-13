@@ -2255,15 +2255,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (!hostsToConnect.isEmpty()) {
-            logger.debug(String.format("Hosts to connect to storage pool [%s]: %s", storagePool.getUuid(), hostsToConnect));
             for (HostVO host : hostsToConnect) {
+                logger.debug(String.format("Connecting host [%s] to storage pool [%s]: %s", host, storagePool.getUuid()));
                 connectHostToStoragePool(host, storagePool);
             }
         }
 
         if (!hostsToDisconnect.isEmpty()) {
-            logger.debug(String.format("Hosts to disconnect from storage pool [%s]: %s", storagePool.getUuid(), hostsToDisconnect));
             for (HostVO host : hostsToDisconnect) {
+                logger.debug(String.format("Disconnecting host [%s] from storage pool [%s]: %s", host, storagePool.getUuid()));
                 disconnectHostFromStoragePool(host, storagePool);
             }
         }

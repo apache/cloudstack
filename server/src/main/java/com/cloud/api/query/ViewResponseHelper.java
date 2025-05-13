@@ -617,7 +617,7 @@ public class ViewResponseHelper {
 
     public static List<ZoneResponse> createDataCenterResponse(ResponseView view, Boolean showCapacities, Boolean showResourceImage, DataCenterJoinVO... dcs) {
         List<ZoneResponse> respList = new ArrayList<ZoneResponse>();
-        for (DataCenterJoinVO vt : dcs){
+        for (DataCenterJoinVO vt : dcs) {
             respList.add(ApiDBUtils.newDataCenterResponse(view, vt, showCapacities, showResourceImage));
         }
         return respList;
@@ -625,7 +625,7 @@ public class ViewResponseHelper {
 
     public static List<ZoneResponse> createMinimalDataCenterResponse(ResponseView view, DataCenterJoinVO... dcs) {
         List<ZoneResponse> respList = new ArrayList<ZoneResponse>();
-        for (DataCenterJoinVO vt : dcs){
+        for (DataCenterJoinVO vt : dcs) {
             respList.add(ApiDBUtils.newMinimalDataCenterResponse(view, vt));
         }
         return respList;

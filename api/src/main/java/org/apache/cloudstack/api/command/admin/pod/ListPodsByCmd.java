@@ -55,7 +55,9 @@ public class ListPodsByCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.SHOW_CAPACITIES, type = CommandType.BOOLEAN, description = "flag to display the capacity of the pods")
     private Boolean showCapacities;
 
-    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUP, type = CommandType.STRING, description = "the name of the storage access group")
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUP, type = CommandType.STRING,
+            description = "the name of the storage access group",
+            since = "4.21.0")
     private String storageAccessGroup;
 
     /////////////////////////////////////////////////////
