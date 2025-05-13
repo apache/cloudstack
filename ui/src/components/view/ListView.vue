@@ -45,7 +45,7 @@
             <resource-icon :image="record.icon.base64image" size="2x"/>
           </span>
           <span v-else-if="record.vmtype === 'sharedfsvm'">
-            <file-text-outlined style="font-size: 24px;" />
+            <file-text-outlined style="font-size: 18px;" />
           </span>
           <os-logo v-else :osId="record.ostypeid" :osName="record.osdisplayname" size="xl" />
         </span>
