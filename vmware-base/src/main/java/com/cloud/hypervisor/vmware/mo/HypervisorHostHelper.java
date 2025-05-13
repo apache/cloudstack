@@ -274,16 +274,18 @@ public class HypervisorHostHelper {
         }
     }
 
-    public static String composeCloudNetworkName(String prefix, String vlanId, String svlanId, Integer networkRateMbps, String vSwitchName) {
+    public static String composeCloudNetworkName(String prefix, String vlanId, String svlanId, Integer networkRateMbps, String vSwitchName, VirtualSwitchType vSwitchType) {
         StringBuffer sb = new StringBuffer(prefix);
         if (vlanId == null || UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId)) {
             sb.append(".untagged");
         } else {
+            if (vSwitchType != VirtualSwitchType.StandardVirtualSwitch && StringUtils.containsAny(vlanId, ",-")) {
+                vlanId = com.cloud.utils.StringUtils.numbersToRange(vlanId);
+            }
             sb.append(".").append(vlanId);
             if (svlanId != null) {
                 sb.append(".").append("s" + svlanId);
             }
-
         }
 
         if (networkRateMbps != null && networkRateMbps.intValue() > 0)
@@ -293,7 +295,12 @@ public class HypervisorHostHelper {
         sb.append(".").append(VersioningContants.PORTGROUP_NAMING_VERSION);
         sb.append("-").append(vSwitchName);
 
-        return sb.toString();
+        String networkName = sb.toString();
+        if (networkName.length() > 80) {
+            // the maximum limit for a vSwitch name is 80 chars, applies to both standard and distributed virtual switches.
+            s_logger.warn(String.format("The network name: %s for the vSwitch %s of type %s, exceeds 80 chars", networkName, vSwitchName, vSwitchType));
+        }
+        return networkName;
     }
 
     public static Map<String, String> getValidatedVsmCredentials(VmwareContext context) throws Exception {
@@ -595,7 +602,7 @@ public class HypervisorHostHelper {
             if (vlanId != null) {
                 vlanId = vlanId.replace("vlan://", "");
             }
-            networkName = composeCloudNetworkName(namePrefix, vlanId, secondaryvlanId, networkRateMbps, physicalNetwork);
+            networkName = composeCloudNetworkName(namePrefix, vlanId, secondaryvlanId, networkRateMbps, physicalNetwork, vSwitchType);
 
             if (vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId) && !StringUtils.containsAny(vlanId, ",-")) {
                 createGCTag = true;
@@ -1167,8 +1174,9 @@ public class HypervisorHostHelper {
         if (vlanId == null && vlanRange != null && !vlanRange.isEmpty()) {
             s_logger.debug("Creating dvSwitch port vlan-trunk spec with range: " + vlanRange);
             VmwareDistributedVirtualSwitchTrunkVlanSpec trunkVlanSpec = new VmwareDistributedVirtualSwitchTrunkVlanSpec();
-            for (final String vlanRangePart : vlanRange.split(",")) {
-                if (vlanRangePart == null || vlanRange.isEmpty()) {
+            String vlanRangeUpdated = com.cloud.utils.StringUtils.numbersToRange(vlanRange);
+            for (final String vlanRangePart : vlanRangeUpdated.split(",")) {
+                if (vlanRangePart == null || vlanRangePart.isEmpty()) {
                     continue;
                 }
                 final NumericRange numericRange = new NumericRange();
@@ -1320,7 +1328,7 @@ public class HypervisorHostHelper {
             // No doubt about this, depending on vid=null to avoid lots of code below
             vid = null;
         } else {
-            networkName = composeCloudNetworkName(namePrefix, vlanId, null, networkRateMbps, vSwitchName);
+            networkName = composeCloudNetworkName(namePrefix, vlanId, null, networkRateMbps, vSwitchName, VirtualSwitchType.StandardVirtualSwitch);
 
             if (vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId)) {
                 createGCTag = true;
