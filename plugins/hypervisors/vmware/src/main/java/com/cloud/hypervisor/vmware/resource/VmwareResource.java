@@ -2593,7 +2593,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
             Map<String, Map<String, String>> iqnToData = new HashMap<>();
 
-            postDiskConfigBeforeStart(vmMo, vmSpec, sortedDisks, ideControllerKey, scsiControllerKey, iqnToData, hyperHost, context);
+            postDiskConfigBeforeStart(vmMo, vmSpec, sortedDisks, iqnToData, hyperHost, context);
 
             //
             // Power-on VM
@@ -3640,18 +3640,18 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     private VirtualMachineDiskInfo getMatchingExistingDisk(VirtualMachineDiskInfoBuilder diskInfoBuilder, DiskTO vol, VmwareHypervisorHost hyperHost, VmwareContext context)
             throws Exception {
-        if (diskInfoBuilder != null) {
-            VolumeObjectTO volume = (VolumeObjectTO) vol.getData();
-            String chainInfo = volume.getChainInfo();
-            Map<String, String> details = vol.getDetails();
-            boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
-            String iScsiName = details.get(DiskTO.IQN);
-            String datastoreUUID = volume.getDataStore().getUuid();
-
-            return getMatchingExistingDiskWithVolumeDetails(diskInfoBuilder, volume.getPath(), chainInfo, isManaged, iScsiName, datastoreUUID, hyperHost, context);
-        } else {
+        if (diskInfoBuilder == null) {
             return null;
         }
+
+        VolumeObjectTO volume = (VolumeObjectTO) vol.getData();
+        String chainInfo = volume.getChainInfo();
+        Map<String, String> details = vol.getDetails();
+        boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+        String iScsiName = details.get(DiskTO.IQN);
+        String datastoreUUID = volume.getDataStore().getUuid();
+
+        return getMatchingExistingDiskWithVolumeDetails(diskInfoBuilder, volume.getPath(), chainInfo, isManaged, iScsiName, datastoreUUID, hyperHost, context);
     }
 
     private String getDiskController(VirtualMachineMO vmMo, VirtualMachineDiskInfo matchingExistingDisk, DiskTO vol, Pair<String, String> controllerInfo, boolean deployAsIs) throws Exception {
@@ -3676,34 +3676,36 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return VmwareHelper.getControllerBasedOnDiskType(controllerInfo, vol);
     }
 
-    private void postDiskConfigBeforeStart(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, DiskTO[] sortedDisks, int ideControllerKey,
-                                           int scsiControllerKey, Map<String, Map<String, String>> iqnToData, VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception {
+    private void postDiskConfigBeforeStart(VirtualMachineMO vmMo, VirtualMachineTO vmSpec, DiskTO[] sortedDisks,
+                                           Map<String, Map<String, String>> iqnToData, VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception {
         VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
 
         for (DiskTO vol : sortedDisks) {
             if (vol.getType() == Volume.Type.ISO)
                 continue;
 
-            VolumeObjectTO volumeTO = (VolumeObjectTO) vol.getData();
-
             VirtualMachineDiskInfo diskInfo = getMatchingExistingDisk(diskInfoBuilder, vol, hyperHost, context);
-            assert (diskInfo != null);
+            if (diskInfo == null) {
+                continue;
+            }
 
             String[] diskChain = diskInfo.getDiskChain();
-            assert (diskChain.length > 0);
-
-            Map<String, String> details = vol.getDetails();
-            boolean managed = false;
-
-            if (details != null) {
-                managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+            if (diskChain.length <= 0) {
+                continue;
             }
 
             DatastoreFile file = new DatastoreFile(diskChain[0]);
 
+            boolean managed = false;
+            Map<String, String> details = vol.getDetails();
+            if (details != null) {
+                managed = Boolean.parseBoolean(details.get(DiskTO.MANAGED));
+            }
+
+            VolumeObjectTO volumeTO = (VolumeObjectTO) vol.getData();
+
             if (managed) {
                 DatastoreFile originalFile = new DatastoreFile(volumeTO.getPath());
-
                 if (!file.getFileBaseName().equalsIgnoreCase(originalFile.getFileBaseName())) {
                     if (logger.isInfoEnabled())
                         logger.info("Detected disk-chain top file change on volume: " + volumeTO.getId() + " " + volumeTO.getPath() + " -> " + diskChain[0]);
@@ -3716,7 +3718,6 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             }
 
             VolumeObjectTO volInSpec = getVolumeInSpec(vmSpec, volumeTO);
-
             if (volInSpec != null) {
                 if (managed) {
                     Map<String, String> data = new HashMap<>();
@@ -3881,20 +3882,20 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             if (diskInfo != null) {
                 logger.info("Found existing disk info from volume path: " + volume.getPath());
                 return dsMo;
-            } else {
-                String chainInfo = volume.getChainInfo();
-                if (chainInfo != null) {
-                    VirtualMachineDiskInfo infoInChain = _gson.fromJson(chainInfo, VirtualMachineDiskInfo.class);
-                    if (infoInChain != null) {
-                        String[] disks = infoInChain.getDiskChain();
-                        if (disks.length > 0) {
-                            for (String diskPath : disks) {
-                                DatastoreFile file = new DatastoreFile(diskPath);
-                                diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(file.getFileBaseName(), dsName);
-                                if (diskInfo != null) {
-                                    logger.info("Found existing disk from chain info: " + diskPath);
-                                    return dsMo;
-                                }
+            }
+
+            String chainInfo = volume.getChainInfo();
+            if (chainInfo != null) {
+                VirtualMachineDiskInfo infoInChain = _gson.fromJson(chainInfo, VirtualMachineDiskInfo.class);
+                if (infoInChain != null) {
+                    String[] disks = infoInChain.getDiskChain();
+                    if (disks.length > 0) {
+                        for (String diskPath : disks) {
+                            DatastoreFile file = new DatastoreFile(diskPath);
+                            diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(file.getFileBaseName(), dsName);
+                            if (diskInfo != null) {
+                                logger.info("Found existing disk from chain info: " + diskPath);
+                                return dsMo;
                             }
                         }
                     }
@@ -4757,7 +4758,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
             Map<Integer, Long> volumeDeviceKey = new HashMap<>();
             if (cmd instanceof MigrateVolumeCommand) { // Else device keys will be found in relocateVirtualMachine
                 MigrateVolumeCommand mcmd = (MigrateVolumeCommand) cmd;
-                addVolumeDiskmapping(vmMo, volumeDeviceKey, mcmd.getVolumePath(), mcmd.getVolumeId());
+                addVolumeDiskMapping(vmMo, volumeDeviceKey, mcmd.getVolumePath(), mcmd.getVolumeId());
                 if (logger.isTraceEnabled()) {
                     for (Integer diskId: volumeDeviceKey.keySet()) {
                         logger.trace(String.format("Disk to migrate has disk id %d and volumeId %d", diskId, volumeDeviceKey.get(diskId)));
@@ -4775,9 +4776,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
 
     Answer createAnswerForCmd(VirtualMachineMO vmMo, List<VolumeObjectTO> volumeObjectToList, Command cmd, Map<Integer, Long> volumeDeviceKey) throws Exception {
         List<VolumeObjectTO> volumeToList;
-        VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
         VirtualDisk[] disks = vmMo.getAllDiskDevice();
-        Answer answer;
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("creating answer for %s", cmd.getClass().getSimpleName()));
         }
@@ -4794,7 +4793,7 @@ public class VmwareResource extends ServerResourceBase implements StoragePoolRes
         return new Answer(cmd, false, null);
     }
 
-    private void addVolumeDiskmapping(VirtualMachineMO vmMo, Map<Integer, Long> volumeDeviceKey, String volumePath, long volumeId) throws Exception {
+    private void addVolumeDiskMapping(VirtualMachineMO vmMo, Map<Integer, Long> volumeDeviceKey, String volumePath, long volumeId) throws Exception {
         if (logger.isDebugEnabled()) {
             logger.debug(String.format("locating disk for volume (%d) using path %s", volumeId, volumePath));
         }
