@@ -1454,7 +1454,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         }
                     }
                 } catch (final Throwable th) {
-                    s_logger.warn("Caught: ", th);
+                    s_logger.error("Caught: ", th);
                     answer = new Answer(cmd, false, th.getMessage());
                 }
                 answers[i] = answer;
@@ -1471,7 +1471,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             try {
                 link.send(response.toBytes());
             } catch (final ClosedChannelException e) {
-                s_logger.warn("Unable to send response because connection is closed: " + response);
+                s_logger.error("Unable to send response because connection is closed: " + response);
             }
         }
 
