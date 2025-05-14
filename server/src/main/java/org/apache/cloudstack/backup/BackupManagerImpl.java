@@ -834,8 +834,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         validateBackupForZone(backup.getZoneId());
 
         final VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
-        if (vm == null) {
-            throw new CloudRuntimeException("VM ID " + backup.getVmId() + " couldn't be found on existing or removed VMs");
+        if (vm == null || VirtualMachine.State.Expunging.equals(vm.getState())) {
+            throw new CloudRuntimeException("The Instance from which the backup was taken could not be found.");
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
@@ -1266,7 +1266,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         BackupProvider backupProvider = getBackupProvider(offering.getProvider());
         VolumeVO backedUpVolume = volumeDao.findByUuid(backedUpVolumeUuid);
         Pair<HostVO, StoragePoolVO> restoreInfo;
-        if (!"nas".equals(offering.getProvider())) {
+        if (!"nas".equals(offering.getProvider()) || (backedUpVolume == null)) {
             restoreInfo = getRestoreVolumeHostAndDatastore(vm);
         } else {
             restoreInfo = getRestoreVolumeHostAndDatastoreForNas(vm, backedUpVolume);
