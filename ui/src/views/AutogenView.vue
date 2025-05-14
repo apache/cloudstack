@@ -914,7 +914,7 @@ export default {
       if (['listVirtualMachinesMetrics'].includes(this.apiName) && this.dataView) {
         delete params.details
         delete params.isvnf
-        params.details = 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp'
+        params.details = 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff'
       }
 
       this.loading = true
