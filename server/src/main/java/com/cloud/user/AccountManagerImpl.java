@@ -2877,7 +2877,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         for (UserAuthenticator authenticator : _userAuthenticators) {
             final String[] secretCodeArray = (String[])requestParameters.get(ApiConstants.SECRET_CODE);
             String secretCode = ((secretCodeArray == null) ? null : secretCodeArray[0]);
-            if (userSource != User.Source.UNKNOWN && secretCode == null) {
+            if (userSource != User.Source.UNKNOWN && userSource != User.Source.SAML2DISABLED && secretCode == null) {
                 if (!authenticator.getName().equalsIgnoreCase(userSource.name())) {
                     continue;
                 }
