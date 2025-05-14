@@ -37,7 +37,7 @@ import com.cloud.network.netris.NetrisService;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.dao.VpcDao;
 import io.netris.model.NatPostBody;
-import org.apache.cloudstack.agent.api.CreateNetrisACLCommand;
+import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisACLCommand;
 import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -414,7 +414,7 @@ public class NetrisServiceImpl implements NetrisService, Configurable {
         } else {
             srcPort = dstPort = baseNetworkRule.getPrivatePort();
         }
-        CreateNetrisACLCommand cmd = new CreateNetrisACLCommand(zoneId, accountId, domainId, networkName, networkId,
+        CreateOrUpdateNetrisACLCommand cmd = new CreateOrUpdateNetrisACLCommand(zoneId, accountId, domainId, networkName, networkId,
                 vpcName, vpcId, Objects.nonNull(vpcId), rule.getAclAction().name().toLowerCase(Locale.ROOT), getPrefix(sourcePrefix), getPrefix(destinationPrefix),
                 "null".equals(srcPort) ? 1 : Integer.parseInt(srcPort),
                 "null".equals(dstPort) ? 65535 : Integer.parseInt(dstPort), baseNetworkRule.getProtocol());

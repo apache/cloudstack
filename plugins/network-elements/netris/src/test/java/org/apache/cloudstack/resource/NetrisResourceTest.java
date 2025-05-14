@@ -19,7 +19,7 @@ package org.apache.cloudstack.resource;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import org.apache.cloudstack.agent.api.AddOrUpdateNetrisStaticRouteCommand;
-import org.apache.cloudstack.agent.api.CreateNetrisACLCommand;
+import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisACLCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisLoadBalancerRuleCommand;
@@ -69,7 +69,7 @@ public class NetrisResourceTest {
     @Mock
     private DeleteNetrisNatRuleCommand deleteNetrisNatRuleCommand;
     @Mock
-    private CreateNetrisACLCommand createNetrisACLCommand;
+    private CreateOrUpdateNetrisACLCommand createNetrisACLCommand;
     @Mock
     private DeleteNetrisACLCommand deleteNetrisACLCommand;
     @Mock
@@ -114,7 +114,7 @@ public class NetrisResourceTest {
         Mockito.verify(netrisApiClient, Mockito.times(2)).deleteVpc(deleteNetrisVpcCommand);
         Mockito.verify(netrisApiClient, Mockito.times(2)).setupZoneLevelPublicRange(setupNetrisPublicRangeCommand);
         Mockito.verify(netrisApiClient, Mockito.times(2)).deleteNatRule(deleteNetrisNatRuleCommand);
-        Mockito.verify(netrisApiClient, Mockito.times(2)).addAclRule(Mockito.eq(createNetrisACLCommand), Mockito.anyBoolean());
+        Mockito.verify(netrisApiClient, Mockito.times(2)).addOrUpdateAclRule(Mockito.eq(createNetrisACLCommand), Mockito.anyBoolean());
         Mockito.verify(netrisApiClient, Mockito.times(2)).deleteAclRule(Mockito.eq(deleteNetrisACLCommand), Mockito.anyBoolean());
         Mockito.verify(netrisApiClient, Mockito.times(2)).addOrUpdateStaticRoute(addOrUpdateNetrisStaticRouteCommand);
         Mockito.verify(netrisApiClient, Mockito.times(2)).deleteStaticRoute(deleteNetrisStaticRouteCommand);
@@ -130,7 +130,7 @@ public class NetrisResourceTest {
         Mockito.when(netrisApiClient.deleteVpc(deleteNetrisVpcCommand)).thenReturn(value);
         Mockito.when(netrisApiClient.setupZoneLevelPublicRange(setupNetrisPublicRangeCommand)).thenReturn(value);
         Mockito.when(netrisApiClient.deleteNatRule(deleteNetrisNatRuleCommand)).thenReturn(value);
-        Mockito.when(netrisApiClient.addAclRule(Mockito.eq(createNetrisACLCommand), Mockito.anyBoolean())).thenReturn(value);
+        Mockito.when(netrisApiClient.addOrUpdateAclRule(Mockito.eq(createNetrisACLCommand), Mockito.anyBoolean())).thenReturn(value);
         Mockito.when(netrisApiClient.deleteAclRule(Mockito.eq(deleteNetrisACLCommand), Mockito.anyBoolean())).thenReturn(value);
         Mockito.when(netrisApiClient.addOrUpdateStaticRoute(addOrUpdateNetrisStaticRouteCommand)).thenReturn(value);
         Mockito.when(netrisApiClient.deleteStaticRoute(deleteNetrisStaticRouteCommand)).thenReturn(value);

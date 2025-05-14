@@ -28,7 +28,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.agent.api.CreateNetrisACLCommand;
+import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisACLCommand;
 import org.apache.cloudstack.agent.api.AddOrUpdateNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVnetCommand;
 import org.apache.cloudstack.agent.api.CreateNetrisVpcCommand;
@@ -116,8 +116,8 @@ public class NetrisResource implements ServerResource {
             return executeRequest((DeleteNetrisNatRuleCommand) cmd);
         } else if (cmd instanceof CreateOrUpdateNetrisNatCommand) {
           return executeRequest((CreateOrUpdateNetrisNatCommand) cmd);
-        } else if (cmd instanceof CreateNetrisACLCommand) {
-            return executeRequest((CreateNetrisACLCommand) cmd);
+        } else if (cmd instanceof CreateOrUpdateNetrisACLCommand) {
+            return executeRequest((CreateOrUpdateNetrisACLCommand) cmd);
         } else if (cmd instanceof DeleteNetrisACLCommand) {
             return executeRequest((DeleteNetrisACLCommand) cmd);
         } else if (cmd instanceof DeleteNetrisStaticRouteCommand) {
@@ -354,8 +354,8 @@ public class NetrisResource implements ServerResource {
         return new NetrisAnswer(cmd, true, "OK");
     }
 
-    private Answer executeRequest(CreateNetrisACLCommand cmd) {
-        boolean result = netrisApiClient.addAclRule(cmd, false);
+    private Answer executeRequest(CreateOrUpdateNetrisACLCommand cmd) {
+        boolean result = netrisApiClient.addOrUpdateAclRule(cmd, false);
         if (!result) {
             return new NetrisAnswer(cmd, false, String.format("Creation of Netris ACL rule: %s failed", cmd.getNetrisAclName()));
         }

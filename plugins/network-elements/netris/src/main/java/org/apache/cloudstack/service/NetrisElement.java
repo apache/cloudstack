@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.service;
 
+import com.amazonaws.util.CollectionUtils;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -501,7 +502,7 @@ public class NetrisElement extends AdapterBase implements DhcpServiceProvider, D
     private NetrisNetworkRule getNetrisNetworkRuleForAcl(NetworkACLItem rule, String privatePort) {
         SDNProviderNetworkRule baseNetworkRule = new SDNProviderNetworkRule.Builder()
                 .setRuleId(rule.getId())
-                .setSourceCidrList(Objects.nonNull(rule.getSourceCidrList()) ? transformCidrListValues(rule.getSourceCidrList()) : List.of("ANY"))
+                .setSourceCidrList(!CollectionUtils.isNullOrEmpty(rule.getSourceCidrList())  ? transformCidrListValues(rule.getSourceCidrList()) : List.of("ANY"))
                 .setTrafficType(rule.getTrafficType().toString())
                 .setProtocol(rule.getProtocol().toUpperCase())
                 .setPublicPort(String.valueOf(rule.getSourcePortStart()))

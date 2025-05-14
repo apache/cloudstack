@@ -39,6 +39,7 @@ import io.netris.api.v2.VpcApi;
 import io.netris.model.AclAddItem;
 import io.netris.model.AclBodyVpc;
 import io.netris.model.AclDeleteItem;
+import io.netris.model.AclEditItem;
 import io.netris.model.AclGetBody;
 import io.netris.model.AclResponseGetOk;
 import io.netris.model.AllocationBody;
@@ -46,6 +47,7 @@ import io.netris.model.AllocationBodyVpc;
 import io.netris.model.FilterBySites;
 import io.netris.model.FilterByVpc;
 import io.netris.model.GetSiteBody;
+
 import io.netris.model.InlineResponse20015;
 import io.netris.model.InlineResponse20016;
 import io.netris.model.InlineResponse2003;
@@ -108,7 +110,7 @@ import io.netris.model.response.AuthResponse;
 import io.netris.model.response.L4LbEditResponse;
 import io.netris.model.response.TenantResponse;
 import io.netris.model.response.TenantsResponse;
-import org.apache.cloudstack.agent.api.CreateNetrisACLCommand;
+import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisACLCommand;
 import org.apache.cloudstack.agent.api.AddOrUpdateNetrisStaticRouteCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisLoadBalancerRuleCommand;
 import org.apache.cloudstack.agent.api.CreateOrUpdateNetrisNatCommand;
@@ -381,42 +383,10 @@ public class NetrisApiClientImpl implements NetrisApiClient {
     }
 
     @Override
-    public boolean addAclRule(CreateNetrisACLCommand cmd, boolean forLb) {
+    public boolean addOrUpdateAclRule(CreateOrUpdateNetrisACLCommand cmd, boolean forLb) {
         String aclName = cmd.getNetrisAclName();
         try {
             AclApi aclApi = apiClient.getApiStubForMethod(AclApi.class);
-            AclAddItem aclAddItem = new AclAddItem();
-            aclAddItem.setAction(cmd.getAction());
-            aclAddItem.setComment(String.format("ACL rule: %s. %s", cmd.getNetrisAclName(), cmd.getReason()));
-            aclAddItem.setName(aclName);
-            String protocol = cmd.getProtocol();
-            if ("TCP".equals(protocol)) {
-                aclAddItem.setEstablished(new BigDecimal(1));
-            } else {
-                aclAddItem.setReverse("yes");
-            }
-            if (!Arrays.asList(PROTOCOL_LIST).contains(protocol)) {
-                aclAddItem.setProto("ip");
-                aclAddItem.setSrcPortTo(cmd.getIcmpType());
-                // TODO: set proto number: where should the protocol number be set - API sets the protocol number to Src-from & to and Dest-from & to fields
-            } else if ("ICMP".equals(protocol)) {
-                aclAddItem.setProto("icmp");
-                if (cmd.getIcmpType() != -1) {
-                    aclAddItem.setIcmpType(cmd.getIcmpType());
-                }
-            } else {
-                aclAddItem.setProto(protocol.toLowerCase(Locale.ROOT));
-            }
-
-            aclAddItem.setDstPortFrom(cmd.getDestPortStart());
-            aclAddItem.setDstPortTo(cmd.getDestPortEnd());
-            aclAddItem.setDstPrefix(cmd.getDestPrefix());
-            aclAddItem.setSrcPrefix(cmd.getSourcePrefix());
-            aclAddItem.setSrcPortFrom(1);
-            aclAddItem.setSrcPortTo(65535);
-            if (NatPutBody.ProtocolEnum.ICMP.name().equalsIgnoreCase(protocol)) {
-                aclAddItem.setIcmpType(cmd.getIcmpType());
-            }
             VPCListing vpcResource;
             String netrisVpcName;
             if (forLb) {
@@ -431,18 +401,106 @@ public class NetrisApiClientImpl implements NetrisApiClient {
                 }
             }
             AclBodyVpc vpc = new AclBodyVpc().id(vpcResource.getId());
-            aclAddItem.setVpc(vpc);
             List<String> aclNames = List.of(aclName);
             Pair<Boolean, List<BigDecimal>> resultAndMatchingAclIds = getMatchingAclIds(aclNames, netrisVpcName);
-            if (!resultAndMatchingAclIds.second().isEmpty()) {
-                logger.debug("Netris ACL rule: {} already exists", aclName);
+            List<BigDecimal> aclIdList = resultAndMatchingAclIds.second();
+            if (!aclIdList.isEmpty()) {
+                logger.debug("Netris ACL rule: {} already exists, updating it...", aclName);
+                AclEditItem aclEditItem = getAclEditItem(cmd, aclName, aclIdList.get(0));
+                aclEditItem.setVpc(vpc);
+                try {
+                    aclApi.apiAclPut(aclEditItem);
+                } catch (ApiException e) {
+                    if (e.getResponseBody().contains("This kind of acl already exists")) {
+                        logger.info("Netris ACL rule: {} already exists and doesn't need to be updated", aclName);
+                        return true;
+                    }
+                    throw new CloudRuntimeException("Error updating Netris ACL rule", e);
+                }
                 return true;
             }
+            AclAddItem aclAddItem = getAclAddItem(cmd, aclName);
+            aclAddItem.setVpc(vpc);
             aclApi.apiAclPost(aclAddItem);
         } catch (ApiException e) {
             logAndThrowException(String.format("Failed to create Netris ACL: %s", cmd.getNetrisAclName()), e);
         }
         return true;
+    }
+
+    AclAddItem getAclAddItem(CreateOrUpdateNetrisACLCommand cmd, String aclName) throws ApiException {
+        AclAddItem aclAddItem = new AclAddItem();
+        aclAddItem.setAction(cmd.getAction());
+        aclAddItem.setComment(String.format("ACL rule: %s. %s", cmd.getNetrisAclName(), cmd.getReason()));
+        aclAddItem.setName(aclName);
+        String protocol = cmd.getProtocol();
+        if ("TCP".equals(protocol)) {
+            aclAddItem.setEstablished(new BigDecimal(1));
+        } else {
+            aclAddItem.setReverse("yes");
+        }
+        if (!Arrays.asList(PROTOCOL_LIST).contains(protocol)) {
+            aclAddItem.setProto("ip");
+            aclAddItem.setSrcPortTo(cmd.getIcmpType());
+            // TODO: set proto number: where should the protocol number be set - API sets the protocol number to Src-from & to and Dest-from & to fields
+        } else if ("ICMP".equals(protocol)) {
+            aclAddItem.setProto("icmp");
+            if (cmd.getIcmpType() != -1) {
+                aclAddItem.setIcmpType(cmd.getIcmpType());
+            }
+        } else {
+            aclAddItem.setProto(protocol.toLowerCase(Locale.ROOT));
+        }
+
+        aclAddItem.setDstPortFrom(cmd.getDestPortStart());
+        aclAddItem.setDstPortTo(cmd.getDestPortEnd());
+        aclAddItem.setDstPrefix(cmd.getDestPrefix());
+        aclAddItem.setSrcPrefix(cmd.getSourcePrefix());
+        aclAddItem.setSrcPortFrom(1);
+        aclAddItem.setSrcPortTo(65535);
+        if (NatPutBody.ProtocolEnum.ICMP.name().equalsIgnoreCase(protocol)) {
+            aclAddItem.setIcmpType(cmd.getIcmpType());
+        }
+
+        return aclAddItem;
+    }
+
+    AclEditItem getAclEditItem(CreateOrUpdateNetrisACLCommand cmd, String aclName, BigDecimal aclId) throws ApiException {
+        AclEditItem aclEditItem = new AclEditItem();
+        aclEditItem.setId(aclId);
+        aclEditItem.setAction(cmd.getAction());
+        aclEditItem.setComment(String.format("ACL rule: %s. %s", cmd.getNetrisAclName(), cmd.getReason()));
+        aclEditItem.setName(aclName);
+        String protocol = cmd.getProtocol();
+        if ("TCP".equals(protocol)) {
+            aclEditItem.setEstablished(new BigDecimal(1));
+        } else {
+            aclEditItem.setReverse("yes");
+        }
+        if (!Arrays.asList(PROTOCOL_LIST).contains(protocol)) {
+            aclEditItem.setProto("ip");
+            aclEditItem.setSrcPortTo(cmd.getIcmpType());
+            // TODO: set proto number: where should the protocol number be set - API sets the protocol number to Src-from & to and Dest-from & to fields
+        } else if ("ICMP".equals(protocol)) {
+            aclEditItem.setProto("icmp");
+            if (cmd.getIcmpType() != -1) {
+                aclEditItem.setIcmpType(cmd.getIcmpType());
+            }
+        } else {
+            aclEditItem.setProto(protocol.toLowerCase(Locale.ROOT));
+        }
+
+        aclEditItem.setDstPortFrom(cmd.getDestPortStart());
+        aclEditItem.setDstPortTo(cmd.getDestPortEnd());
+        aclEditItem.setDstPrefix(cmd.getDestPrefix());
+        aclEditItem.setSrcPrefix(cmd.getSourcePrefix());
+        aclEditItem.setSrcPortFrom(1);
+        aclEditItem.setSrcPortTo(65535);
+        if (NatPutBody.ProtocolEnum.ICMP.name().equalsIgnoreCase(protocol)) {
+            aclEditItem.setIcmpType(cmd.getIcmpType());
+        }
+
+        return aclEditItem;
     }
 
     @Override
@@ -737,12 +795,12 @@ public class NetrisApiClientImpl implements NetrisApiClient {
 
     private void applyAclRulesForLb(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd, String lbName) {
         // Add deny all rule first
-        addAclRule(createNetrisACLRuleCommand(cmd, lbName, "ANY",
+        addOrUpdateAclRule(createNetrisACLRuleCommand(cmd, lbName, "ANY",
                 NetrisNetworkRule.NetrisRuleAction.DENY.name().toLowerCase(Locale.ROOT), 0), true);
         AtomicInteger cidrIndex = new AtomicInteger(1);
         for (String cidr : cmd.getCidrList().split(" ")) {
             try {
-                addAclRule(createNetrisACLRuleCommand(cmd, lbName, cidr,
+                addOrUpdateAclRule(createNetrisACLRuleCommand(cmd, lbName, cidr,
                         NetrisNetworkRule.NetrisRuleAction.PERMIT.name().toLowerCase(Locale.ROOT),
                         cidrIndex.getAndIncrement()), true);
             } catch (Exception e) {
@@ -751,7 +809,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         }
     }
 
-    private CreateNetrisACLCommand createNetrisACLRuleCommand(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd, String netrisLbName, String cidr, String action, int index) {
+    private CreateOrUpdateNetrisACLCommand createNetrisACLRuleCommand(CreateOrUpdateNetrisLoadBalancerRuleCommand cmd, String netrisLbName, String cidr, String action, int index) {
         Long zoneId = cmd.getZoneId();
         Long accountId = cmd.getAccountId();
         Long domainId = cmd.getDomainId();
@@ -770,7 +828,7 @@ public class NetrisApiClientImpl implements NetrisApiClient {
         String destinationPrefix = cmd.getPublicIp() + "/32";
         String srcPort = cmd.getPublicPort();
         String dstPort = cmd.getPublicPort();
-        CreateNetrisACLCommand aclCommand = new CreateNetrisACLCommand(zoneId, accountId, domainId, networkName, networkId,
+        CreateOrUpdateNetrisACLCommand aclCommand = new CreateOrUpdateNetrisACLCommand(zoneId, accountId, domainId, networkName, networkId,
                 vpcName, vpcId, Objects.nonNull(vpcId), action, NetrisServiceImpl.getPrefix(cidr), NetrisServiceImpl.getPrefix(destinationPrefix),
                 Integer.parseInt(srcPort), Integer.parseInt(dstPort), cmd.getProtocol());
         String aclName;
