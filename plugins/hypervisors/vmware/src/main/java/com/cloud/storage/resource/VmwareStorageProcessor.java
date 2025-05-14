@@ -682,9 +682,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairManagedDatastorePath(dsMo, null,
                             managedStoragePoolRootVolumeName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, false);
 
-                    dsMo.moveDatastoreFile(vmwareLayoutFilePair[0], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[0], dcMo.getMor(), true);
+                    VmwareStorageLayoutHelper.moveDatastoreFile(dsMo, vmwareLayoutFilePair[0], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[0], dcMo.getMor(), true);
                     for (int i=1; i<vmwareLayoutFilePair.length; i++) {
-                        dsMo.moveDatastoreFile(vmwareLayoutFilePair[i], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[i], dcMo.getMor(), true);
+                        VmwareStorageLayoutHelper.moveDatastoreFile(dsMo, vmwareLayoutFilePair[i], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[i], dcMo.getMor(), true);
                     }
 
                     String folderToDelete = dsMo.getDatastorePath(managedStoragePoolRootVolumeName, true);
@@ -945,7 +945,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
             String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, !_fullCloneFlag);
 
             for (int i = 0; i < vmwareLayoutFilePair.length; i++) {
-                dsMo.moveDatastoreFile(vmwareLayoutFilePair[i], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[i], dcMo.getMor(), true);
+                VmwareStorageLayoutHelper.moveDatastoreFile(dsMo, vmwareLayoutFilePair[i], dcMo.getMor(), dsMo.getMor(), legacyCloudStackLayoutFilePair[i], dcMo.getMor(), true);
             }
 
             logger.info("detach disks from volume-wrapper VM and destroy {}", vmdkName);
