@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -161,28 +160,9 @@ public class DatacenterMO extends BaseMO {
         return null;
     }
 
-    public List<UnmanagedInstanceTO> getAllVmsOnDatacenter() throws Exception {
-        List<UnmanagedInstanceTO> vms = new ArrayList<>();
-        List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(new String[] {"name"});
-        if (ocs != null) {
-            for (ObjectContent oc : ocs) {
-                ManagedObjectReference vmMor = oc.getObj();
-                if (vmMor != null) {
-                    VirtualMachineMO vmMo = new VirtualMachineMO(_context, vmMor);
-                    try {
-                        if (!vmMo.isTemplate()) {
-                            HostMO hostMO = vmMo.getRunningHost();
-                            UnmanagedInstanceTO unmanagedInstance = VmwareHelper.getUnmanagedInstance(hostMO, vmMo);
-                            vms.add(unmanagedInstance);
-                        }
-                    } catch (Exception e) {
-                        s_logger.debug(String.format("Unexpected error checking unmanaged instance %s, excluding it: %s", vmMo.getVmName(), e.getMessage()), e);
-                    }
-                }
-            }
-        }
-
-        return vms;
+    public List<UnmanagedInstanceTO> getAllVmsOnDatacenter(String keyword) throws Exception {
+        List<ObjectContent> ocs = getVmPropertiesOnDatacenterVmFolder(propertyPathsForUnmanagedVmsThinListing);
+        return convertVmsObjectContentsToUnmanagedInstances(ocs, keyword);
     }
 
     public List<HostMO> getAllHostsOnDatacenter() throws Exception {

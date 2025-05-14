@@ -227,6 +227,8 @@ export default {
       } else {
         params.existingvcenterid = this.selectedExistingVcenterId
       }
+      params.page = 1
+      params.pagesize = 10
       api('listVmwareDcVms', params).then(json => {
         const obj = {
           params: params,
@@ -264,6 +266,11 @@ export default {
       }).finally(() => {
         this.loading = false
       })
+    },
+    onSelectExternalVmwareDatacenter (value) {
+      if (this.vcenterSelectedOption === 'new' && !(this.vcenter === '' || this.datacentername === '' || this.username === '' || this.password === '')) {
+        this.listVmwareDatacenterVms()
+      }
     },
     onSelectExistingVmwareDatacenter (value) {
       this.selectedExistingVcenterId = value

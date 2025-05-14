@@ -43,6 +43,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
 import org.apache.cloudstack.api.command.admin.zone.ImportVsphereStoragePoliciesCmd;
@@ -1587,14 +1588,26 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         return compatiblePools;
     }
 
-    @Override
-    public List<UnmanagedInstanceTO> listVMsInDatacenter(ListVmwareDcVmsCmd cmd) {
+    private static class VcenterData {
+        public final String vcenter;
+        public final String datacenterName;
+        public final String username;
+        public final String password;
+
+        public VcenterData(String vcenter, String datacenterName, String username, String password) {
+            this.vcenter = vcenter;
+            this.datacenterName = datacenterName;
+            this.username = username;
+            this.password = password;
+        }
+    }
+
+    private VcenterData getVcenterData(ListVmwareDcVmsCmd cmd) {
         String vcenter = cmd.getVcenter();
         String datacenterName = cmd.getDatacenterName();
         String username = cmd.getUsername();
         String password = cmd.getPassword();
         Long existingVcenterId = cmd.getExistingVcenterId();
-        String keyword = cmd.getKeyword();
 
         if ((existingVcenterId == null && StringUtils.isBlank(vcenter)) ||
                 (existingVcenterId != null && StringUtils.isNotBlank(vcenter))) {
@@ -1615,32 +1628,65 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             username = vmwareDc.getUser();
             password = vmwareDc.getPassword();
         }
+        VcenterData vmwaredc = new VcenterData(vcenter, datacenterName, username, password);
+        return vmwaredc;
+    }
+
+    private static VmwareContext getVmwareContext(String vcenter, String username, String password) throws Exception {
+        s_logger.debug(String.format("Connecting to the VMware vCenter %s", vcenter));
+        String serviceUrl = String.format("https://%s/sdk/vimService", vcenter);
+        VmwareClient vimClient = new VmwareClient(vcenter);
+        vimClient.connect(serviceUrl, username, password);
+        return new VmwareContext(vimClient, vcenter);
+    }
+
+    @Override
+    public List<UnmanagedInstanceTO> listVMsInDatacenter(ListVmwareDcVmsCmd cmd) {
+        VcenterData vmwareDC = getVcenterData(cmd);
+        String vcenter = vmwareDC.vcenter;
+        String username = vmwareDC.username;
+        String password = vmwareDC.password;
+        String datacenterName = vmwareDC.datacenterName;
+        String keyword = cmd.getKeyword();
+        String esxiHostName = cmd.getHostName();
+        String virtualMachineName = cmd.getInstanceName();
 
         try {
-            s_logger.debug(String.format("Connecting to the VMware datacenter %s at vCenter %s to retrieve VMs",
-                    datacenterName, vcenter));
-            String serviceUrl = String.format("https://%s/sdk/vimService", vcenter);
-            VmwareClient vimClient = new VmwareClient(vcenter);
-            vimClient.connect(serviceUrl, username, password);
-            VmwareContext context = new VmwareContext(vimClient, vcenter);
+            VmwareContext context = getVmwareContext(vcenter, username, password);
+            DatacenterMO dcMo = getDatacenterMO(context, vcenter, datacenterName);
 
-            DatacenterMO dcMo = new DatacenterMO(context, datacenterName);
-            ManagedObjectReference dcMor = dcMo.getMor();
-            if (dcMor == null) {
-                String msg = String.format("Unable to find VMware datacenter %s in vCenter %s",
-                        datacenterName, vcenter);
-                s_logger.error(msg);
-                throw new InvalidParameterValueException(msg);
+            List<UnmanagedInstanceTO> instances;
+            if (StringUtils.isNotBlank(esxiHostName) && StringUtils.isNotBlank(virtualMachineName)) {
+                ManagedObjectReference hostMor = dcMo.findHost(esxiHostName);
+                if (hostMor == null) {
+                    String errorMsg = String.format("Cannot find a host with name %s on vcenter %s", esxiHostName, vcenter);
+                    s_logger.error(errorMsg);
+                    throw new CloudRuntimeException(errorMsg);
+                }
+                HostMO hostMO = new HostMO(context, hostMor);
+                VirtualMachineMO vmMo = hostMO.findVmOnHyperHost(virtualMachineName);
+                instances = Collections.singletonList(VmwareHelper.getUnmanagedInstance(hostMO, vmMo));
+            } else {
+                instances = dcMo.getAllVmsOnDatacenter(keyword);
             }
-            List<UnmanagedInstanceTO> instances = dcMo.getAllVmsOnDatacenter();
-            return StringUtils.isBlank(keyword) ? instances :
-                    instances.stream().filter(x -> x.getName().toLowerCase().contains(keyword.toLowerCase())).collect(Collectors.toList());
+            return instances;
         } catch (Exception e) {
-            String errorMsg = String.format("Error retrieving stopped VMs from the VMware VC %s datacenter %s: %s",
+            String errorMsg = String.format("Error retrieving VMs from the VMware VC %s datacenter %s: %s",
                     vcenter, datacenterName, e.getMessage());
             s_logger.error(errorMsg, e);
             throw new CloudRuntimeException(errorMsg);
         }
+    }
+
+    private static DatacenterMO getDatacenterMO(VmwareContext context, String vcenter, String datacenterName) throws Exception {
+        DatacenterMO dcMo = new DatacenterMO(context, datacenterName);
+        ManagedObjectReference dcMor = dcMo.getMor();
+        if (dcMor == null) {
+            String msg = String.format("Unable to find VMware datacenter %s in vCenter %s", datacenterName, vcenter);
+            s_logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+        return dcMo;
     }
 
     @Override
