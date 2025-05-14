@@ -87,7 +87,9 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
 
     protected void updateTemplateDetailsInKubernetesSupportedVersionResponse(
             final KubernetesSupportedVersion kubernetesSupportedVersion, KubernetesSupportedVersionResponse response) {
+        Account caller = CallContext.current().getCallingAccount();
         TemplateJoinVO template = templateJoinDao.findById(kubernetesSupportedVersion.getIsoId());
+        boolean isAdmin = accountManager.isRootAdmin(caller.getId());
         if (template == null) {
             return;
         }
@@ -95,6 +97,9 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         response.setIsoName(template.getName());
         if (template.getState() != null) {
             response.setIsoState(template.getState().toString());
+        }
+        if (isAdmin) {
+            response.setIsoUrl(template.getUrl());
         }
         response.setIsoArch(template.getArch().getType());
         response.setDirectDownload(template.isDirectDownload());
@@ -120,17 +125,6 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
             KubernetesClusterService.MIN_KUBERNETES_VERSION_HA_SUPPORT)>=0);
         response.setSupportsAutoscaling(versionSupportsAutoscaling(kubernetesSupportedVersion));
         updateTemplateDetailsInKubernetesSupportedVersionResponse(kubernetesSupportedVersion, response);
-        TemplateJoinVO template = templateJoinDao.findById(kubernetesSupportedVersion.getIsoId());
-        Account caller = CallContext.current().getCallingAccount();
-        boolean isAdmin = accountManager.isRootAdmin(caller.getId());
-        if (template != null) {
-            response.setIsoId(template.getUuid());
-            response.setIsoName(template.getName());
-            response.setIsoState(template.getState().toString());
-            if (isAdmin) {
-                response.setIsoUrl(template.getUrl());
-            }
-        }
         response.setCreated(kubernetesSupportedVersion.getCreated());
         return response;
     }
