@@ -203,7 +203,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             try {
                 if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
                     try {
-                        List<UserVmJoinVO> leaseExpiringForInstances = userVmJoinDao.listLeaseInstancesExpiringInDays(InstanceLeaseExpiryEventDaysBefore.value().intValue());
+                        List<UserVmJoinVO> leaseExpiringForInstances = userVmJoinDao.listLeaseInstancesExpiringInDays(InstanceLeaseExpiryEventDaysBefore.value());
                         for (UserVmJoinVO instance : leaseExpiringForInstances) {
                             String leaseExpiryEventMsg =  String.format("Lease expiring for for instance: %s (id: %s) with action: %s",
                                     instance.getName(), instance.getUuid(), instance.getLeaseExpiryAction());
@@ -218,11 +218,6 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
                 scanLock.releaseRef();
             }
         }
-    }
-
-    @Override
-    public Map<String, Object> getConfigParams() {
-        return super.getConfigParams();
     }
 
     protected void reallyRun() {

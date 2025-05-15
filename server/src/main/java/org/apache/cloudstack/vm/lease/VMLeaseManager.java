@@ -19,6 +19,7 @@
 package org.apache.cloudstack.vm.lease;
 
 import com.cloud.utils.component.Manager;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import java.util.List;
@@ -29,7 +30,9 @@ public interface VMLeaseManager extends Manager {
 
     enum ExpiryAction {
         STOP,
-        DESTROY
+        DESTROY,
+        @VisibleForTesting
+        UNKNOWN
     }
 
     enum LeaseActionExecution {
@@ -45,15 +48,15 @@ public interface VMLeaseManager extends Manager {
             "Re-enabling feature will not cause lease expiry actions on grandfathered instances",
             true, List.of(ConfigKey.Scope.Global));
 
-    ConfigKey<Long> InstanceLeaseSchedulerInterval = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
+    ConfigKey<Integer> InstanceLeaseSchedulerInterval = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
             "instance.lease.scheduler.interval", "3600", "VM Lease Scheduler interval in seconds",
             false, List.of(ConfigKey.Scope.Global));
 
-    ConfigKey<Long> InstanceLeaseExpiryEventSchedulerInterval = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
+    ConfigKey<Integer> InstanceLeaseExpiryEventSchedulerInterval = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
             "instance.lease.eventscheduler.interval", "86400", "Lease expiry event Scheduler interval in seconds",
             false, List.of(ConfigKey.Scope.Global));
 
-    ConfigKey<Long> InstanceLeaseExpiryEventDaysBefore = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Long.class,
+    ConfigKey<Integer> InstanceLeaseExpiryEventDaysBefore = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,
             "instance.lease.expiryevent.daysbefore", "7", "Indicates how many days in advance, expiry events will be created before expiry.",
             true, List.of(ConfigKey.Scope.Global));
 

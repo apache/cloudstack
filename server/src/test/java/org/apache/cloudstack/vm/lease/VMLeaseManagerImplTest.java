@@ -27,9 +27,11 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -47,6 +49,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.context.ApplicationContext;
 
 import javax.naming.ConfigurationException;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -56,6 +59,7 @@ import java.util.UUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -246,6 +250,57 @@ public class VMLeaseManagerImplTest {
         assertNull(vmLeaseManager.getLeaseExpiryAction(vm));
     }
 
+    @Test
+    public void testGetComponentName() {
+        assertEquals(vmLeaseManager.getConfigComponentName(), "VMLeaseManager");
+    }
+
+    @Test
+    public void testConfigKeys() {
+        assertEquals(vmLeaseManager.getConfigKeys().length, 4);
+    }
+
+    @Test
+    public void testConfigure() throws Exception {
+        overrideDefaultConfigValue(VMLeaseManager.InstanceLeaseEnabled, "true");
+        vmLeaseManager.configure("VMLeaseManagerImpl", new HashMap<>());
+    }
+
+    @Test
+    public void testDefaultExpiryAction() {
+        UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, false);
+        assertNull(vmLeaseManager.executeExpiryAction(vm, VMLeaseManager.ExpiryAction.UNKNOWN, 123L));
+    }
+
+    @Test
+    public void testStopShouldShutdownExecutors() {
+        assertTrue(vmLeaseManager.stop());
+    }
+
+    @Test
+    public void testCancelLeaseOnExistingInstances() {
+        UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, true);
+        when(userVmJoinDao.listLeaseInstancesExpiringInDays(-1)).thenReturn(List.of(vm));
+        try (MockedStatic<ActionEventUtils> utilities = Mockito.mockStatic(ActionEventUtils.class)) {
+            utilities.when(() -> ActionEventUtils.onStartedActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
+                    Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyLong())).thenReturn(1L);
+            vmLeaseManager.cancelLeaseOnExistingInstances();
+            verify(userVmDetailsDao).addDetail(1L, VmDetailConstants.INSTANCE_LEASE_EXECUTION, VMLeaseManager.LeaseActionExecution.CANCELLED.name(), false);
+        }
+    }
+
+    @Test
+    public void testOnLeaseFeatureToggleEnabled() throws Exception {
+        overrideDefaultConfigValue(VMLeaseManager.InstanceLeaseEnabled, "true");
+        vmLeaseManager.onLeaseFeatureToggle();
+    }
+
+    @Test
+    public void testOnLeaseFeatureToggleDisabled() throws Exception {
+        overrideDefaultConfigValue(VMLeaseManager.InstanceLeaseEnabled, "false");
+        vmLeaseManager.onLeaseFeatureToggle();
+    }
+
     private UserVmJoinVO createMockVm(Long id, String uuid, String name, VirtualMachine.State state, boolean deleteProtection) {
         return createMockVm(id, uuid, name, state, deleteProtection, "STOP");
     }
@@ -259,5 +314,11 @@ public class VMLeaseManagerImplTest {
         when(vm.getAccountId()).thenReturn(1L);
         when(vm.getLeaseExpiryAction()).thenReturn(expiryAction);
         return vm;
+    }
+
+    private void overrideDefaultConfigValue(final ConfigKey configKey, final String value) throws IllegalAccessException, NoSuchFieldException {
+        final Field f = ConfigKey.class.getDeclaredField("_defaultValue");
+        f.setAccessible(true);
+        f.set(configKey, value);
     }
 }
