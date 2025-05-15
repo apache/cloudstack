@@ -18,13 +18,17 @@ package com.cloud.kubernetes.version;
 
 import java.util.UUID;
 
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import org.apache.cloudstack.api.response.KubernetesSupportedVersionResponse;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.context.CallContext;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -39,37 +43,55 @@ public class KubernetesVersionManagerImplTest {
     @Mock
     TemplateJoinDao templateJoinDao;
 
+    @Mock
+    AccountManager accountManager;
+
     @InjectMocks
     KubernetesVersionManagerImpl kubernetesVersionManager = new KubernetesVersionManagerImpl();
 
     @Test
     public void testUpdateTemplateDetailsInKubernetesSupportedVersionResponseNullTemplate() {
-        KubernetesSupportedVersion kubernetesSupportedVersion = Mockito.mock(KubernetesSupportedVersion.class);
-        Mockito.when(kubernetesSupportedVersion.getIsoId()).thenReturn(1L);
-        KubernetesSupportedVersionResponse response = new KubernetesSupportedVersionResponse();
-        kubernetesVersionManager.updateTemplateDetailsInKubernetesSupportedVersionResponse(kubernetesSupportedVersion,
-                response);
-        Assert.assertNull(ReflectionTestUtils.getField(response, "isoId"));
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Account accountMock = Mockito.mock(Account.class);
+            Mockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+            Mockito.when(accountMock.getId()).thenReturn(2L);
+
+            KubernetesSupportedVersion kubernetesSupportedVersion = Mockito.mock(KubernetesSupportedVersion.class);
+            Mockito.when(kubernetesSupportedVersion.getIsoId()).thenReturn(1L);
+            KubernetesSupportedVersionResponse response = new KubernetesSupportedVersionResponse();
+            kubernetesVersionManager.updateTemplateDetailsInKubernetesSupportedVersionResponse(kubernetesSupportedVersion,
+                    response);
+            Assert.assertNull(ReflectionTestUtils.getField(response, "isoId"));
+        }
     }
 
     @Test
     public void testUpdateTemplateDetailsInKubernetesSupportedVersionResponseValidTemplate() {
-        KubernetesSupportedVersion kubernetesSupportedVersion = Mockito.mock(KubernetesSupportedVersion.class);
-        Mockito.when(kubernetesSupportedVersion.getIsoId()).thenReturn(1L);
-        KubernetesSupportedVersionResponse response = new KubernetesSupportedVersionResponse();
-        TemplateJoinVO templateJoinVO = Mockito.mock(TemplateJoinVO.class);
-        Mockito.when(templateJoinVO.getArch()).thenReturn(CPU.CPUArch.getDefault());
-        String uuid = UUID.randomUUID().toString();
-        Mockito.when(templateJoinVO.getUuid()).thenReturn(uuid);
-        Mockito.when(templateJoinDao.findById(1L)).thenReturn(templateJoinVO);
-        kubernetesVersionManager.updateTemplateDetailsInKubernetesSupportedVersionResponse(kubernetesSupportedVersion,
-                response);
-        Assert.assertEquals(uuid, ReflectionTestUtils.getField(response, "isoId"));
-        Assert.assertNull(ReflectionTestUtils.getField(response, "isoState"));
-        ObjectInDataStoreStateMachine.State state = ObjectInDataStoreStateMachine.State.Ready;
-        Mockito.when(templateJoinVO.getState()).thenReturn(state);
-        kubernetesVersionManager.updateTemplateDetailsInKubernetesSupportedVersionResponse(kubernetesSupportedVersion,
-                response);
-        Assert.assertEquals(state.toString(), ReflectionTestUtils.getField(response, "isoState"));
+        try (MockedStatic<CallContext> callContextMocked = Mockito.mockStatic(CallContext.class)) {
+            CallContext callContextMock = Mockito.mock(CallContext.class);
+            callContextMocked.when(CallContext::current).thenReturn(callContextMock);
+            Account accountMock = Mockito.mock(Account.class);
+            Mockito.when(callContextMock.getCallingAccount()).thenReturn(accountMock);
+            Mockito.when(accountMock.getId()).thenReturn(2L);
+            KubernetesSupportedVersion kubernetesSupportedVersion = Mockito.mock(KubernetesSupportedVersion.class);
+            Mockito.when(kubernetesSupportedVersion.getIsoId()).thenReturn(1L);
+            KubernetesSupportedVersionResponse response = new KubernetesSupportedVersionResponse();
+            TemplateJoinVO templateJoinVO = Mockito.mock(TemplateJoinVO.class);
+            Mockito.when(templateJoinVO.getArch()).thenReturn(CPU.CPUArch.getDefault());
+            String uuid = UUID.randomUUID().toString();
+            Mockito.when(templateJoinVO.getUuid()).thenReturn(uuid);
+            Mockito.when(templateJoinDao.findById(1L)).thenReturn(templateJoinVO);
+            kubernetesVersionManager.updateTemplateDetailsInKubernetesSupportedVersionResponse(kubernetesSupportedVersion,
+                    response);
+            Assert.assertEquals(uuid, ReflectionTestUtils.getField(response, "isoId"));
+            Assert.assertNull(ReflectionTestUtils.getField(response, "isoState"));
+            ObjectInDataStoreStateMachine.State state = ObjectInDataStoreStateMachine.State.Ready;
+            Mockito.when(templateJoinVO.getState()).thenReturn(state);
+            kubernetesVersionManager.updateTemplateDetailsInKubernetesSupportedVersionResponse(kubernetesSupportedVersion,
+                    response);
+            Assert.assertEquals(state.toString(), ReflectionTestUtils.getField(response, "isoState"));
+        }
     }
 }
