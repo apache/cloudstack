@@ -314,6 +314,8 @@ public interface StorageManager extends StorageService {
 
     boolean canHostPrepareStoragePoolAccess(Host host, StoragePool pool);
 
+    boolean canDisconnectHostFromStoragePool(Host host, StoragePool pool);
+
     Host getHost(long hostId);
 
     Host updateSecondaryStorage(long secStorageId, String newUrl);
