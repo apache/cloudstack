@@ -63,6 +63,19 @@ export default {
       }
     }
   },
+  mounted () {
+    this.unwatchProject = this.$store.watch(
+      (state, getters) => getters.project?.id,
+      (newId) => {
+        this.selectedProjectId = newId
+      }
+    )
+  },
+  beforeUnmount () {
+    if (this.unwatchProject) {
+      this.unwatchProject()
+    }
+  },
   methods: {
     changeProject (project) {
       this.$store.dispatch('ProjectView', project.id)
