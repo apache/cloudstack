@@ -2004,7 +2004,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
                     }
                     Map<Long, Long> volumeReservationMap = new HashMap<>();
 
-                    if (DEPLOYMENT_PLANNING_SKIP_HYPERVISORS.contains(vm.getHypervisorType())) {
+                    if (!DEPLOYMENT_PLANNING_SKIP_HYPERVISORS.contains(vm.getHypervisorType())) {
                         for (Volume vo : plannedDestination.getStorageForDisks().keySet()) {
                             volumeReservationMap.put(vo.getId(), plannedDestination.getStorageForDisks().get(vo).getId());
                         }
