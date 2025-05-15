@@ -978,7 +978,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             return _configDao.findByName(name);
         }
 
-        ConfigKey.Scope scope = ConfigKey.Scope.Global;
+        ConfigKey.Scope scope = null;
         Long id = null;
         int paramCountCheck = 0;
 
@@ -1224,7 +1224,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     private String getConfigurationValueInScope(ConfigurationVO config, String name, ConfigKey.Scope scope, Long id) {
         String configValue;
-        if (ConfigKey.Scope.Global.equals(scope)) {
+        if (scope == null || ConfigKey.Scope.Global.equals(scope)) {
             configValue = config.getValue();
         } else {
             ConfigKey<?> configKey = _configDepot.get(name);
