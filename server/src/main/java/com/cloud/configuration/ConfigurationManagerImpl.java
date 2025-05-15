@@ -4411,25 +4411,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Long physicalNetworkId = cmd.getPhysicalNetworkId();
 
         // Verify that network exists
-        Network network = null;
-        if (networkId != null) {
-            network = _networkDao.findById(networkId);
-            if (network == null) {
-                throw new InvalidParameterValueException("Unable to find network by id " + networkId);
-            } else {
-                zoneId = network.getDataCenterId();
-                physicalNetworkId = network.getPhysicalNetworkId();
-            }
+        Network network = getNetwork(networkId);
+        if (network != null) {
+            zoneId = network.getDataCenterId();
+            physicalNetworkId = network.getPhysicalNetworkId();
         }
 
         String vlanId = cmd.getVlan();
-        if (StringUtils.isBlank(vlanId)) {
-            vlanId = Vlan.UNTAGGED;
-            if (network != null & network.getTrafficType() == TrafficType.Guest) {
-                boolean connectivityWithoutVlan = isConnectivityWithoutVlan(network);
-                vlanId = getNetworkVlanId(network, connectivityWithoutVlan);
-            }
-        }
+        vlanId = verifyAndUpdateVlanId(vlanId, network);
 
         // TODO decide if we should be forgiving or demand a valid and complete URI
         if (!(vlanId == null || "".equals(vlanId) || vlanId.startsWith(BroadcastDomainType.Vlan.scheme()))) {
@@ -4646,6 +4635,32 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         return commitVlan(zoneId, podId, startIP, endIP, newVlanGateway, newVlanNetmask, vlanId, forVirtualNetwork, forSystemVms, networkId, physicalNetworkId, startIPv6, endIPv6, ip6Gateway,
                 ip6Cidr, domain, vlanOwner, network, sameSubnet);
+    }
+
+    private Network getNetwork(Long networkId) {
+        if (networkId == null) {
+            return null;
+        }
+
+        Network network = _networkDao.findById(networkId);
+        if (network == null) {
+            throw new InvalidParameterValueException("Unable to find network by id " + networkId);
+        }
+
+        return network;
+    }
+
+    private String verifyAndUpdateVlanId(String vlanId, Network network) {
+        if (!StringUtils.isBlank(vlanId)) {
+            return vlanId;
+        }
+
+        if (network == null || network.getTrafficType() != TrafficType.Guest) {
+            return Vlan.UNTAGGED;
+        }
+
+        boolean connectivityWithoutVlan = isConnectivityWithoutVlan(network);
+        return getNetworkVlanId(network, connectivityWithoutVlan);
     }
 
     private Vlan commitVlan(final Long zoneId, final Long podId, final String startIP, final String endIP, final String newVlanGatewayFinal, final String newVlanNetmaskFinal,
