@@ -48,7 +48,7 @@ class TestScaleVm(cloudstackTestCase):
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][
-                    0].__dict__
+            0].__dict__
         cls._cleanup = []
         cls.unsupportedHypervisor = False
         cls.hypervisor = cls.testClient.getHypervisorInfo()
@@ -115,10 +115,10 @@ class TestScaleVm(cloudstackTestCase):
         cls._cleanup.append(cls.big_offering)
 
         Configurations.update(
-                    cls.apiclient,
-                    name="enable.dynamic.scale.vm",
-                    value="true"
-                )
+            cls.apiclient,
+            name="enable.dynamic.scale.vm",
+            value="true"
+        )
 
         cls.small_offering_dynamic_scaling_disabled = ServiceOffering.create(
             cls.apiclient,
@@ -228,11 +228,11 @@ class TestScaleVm(cloudstackTestCase):
         if self.hypervisor.lower() != 'simulator':
             hostid = self.virtual_machine.hostid
             host = Host.list(
-                       self.apiclient,
-                       zoneid=self.zone.id,
-                       hostid=hostid,
-                       type='Routing'
-                   )[0]
+                self.apiclient,
+                zoneid=self.zone.id,
+                hostid=hostid,
+                type='Routing'
+            )[0]
 
             try:
                 username = self.hostConfig["username"]
@@ -566,11 +566,11 @@ class TestScaleVm(cloudstackTestCase):
             )[0]
             hostid = list_vm_response.hostid
             host = Host.list(
-                       self.apiclient,
-                       zoneid=self.zone.id,
-                       hostid=hostid,
-                       type='Routing'
-                   )[0]
+                self.apiclient,
+                zoneid=self.zone.id,
+                hostid=hostid,
+                type='Routing'
+            )[0]
 
             try:
                 username = self.hostConfig["username"]
@@ -664,11 +664,49 @@ class TestScaleVm(cloudstackTestCase):
         # update setting allow.diskOffering.change.during.scale.vm to true
         # scale up the VM to serviceoffering3
         # Check disk offering of root volume to be diskoffering3 since setting allow.diskOffering.change.during.scale.vm is true
+        template = self.template
+        if self.hypervisor.lower() in ['xenserver']:
+            test_template = get_test_template(self.apiclient, self.zone.id, self.hypervisor)
+            self.services["template_2"]["url"] = test_template["url"]
+            self.services["template_2"]["hypervisor"] = test_template["hypervisor"]
+            self.services["template_2"]["format"] = test_template["format"]
+            self.services["template_2"]["ostype"] = "CentOS 5.6 (64-bit)"
 
+            try:
+                template = Template.register(self.apiclient,
+                                             self.services["template_2"],
+                                             zoneid=self.zone.id,
+                                             account=self.account.name,
+                                             domainid=self.account.domainid,
+                                             hypervisor=self.hypervisor
+                                             )
+
+                template.download(self.apiclient)
+            except Exception as e:
+                self.fail("Failed to register template: %s" % e)
+
+            time.sleep(120)
+
+            template = Template.update(
+                template,
+                self.apiclient,
+                isdynamicallyscalable='true'
+            )
+
+            templates = Template.list(self.apiclient,
+                                      templatefilter= \
+                                          self.services["template_2"]["templatefilter"],
+                                      id=template.id,
+                                      )
+
+            template = templates[0]
+
+        disk_offering = self.services["disk_offering"]
+        disk_offering["name"] = "Disk Offering 1"
         self.disk_offering1 = DiskOffering.create(
-                                    self.apiclient,
-                                    self.services["disk_offering"],
-                                    )
+            self.apiclient,
+            disk_offering,
+        )
         self._cleanup.append(self.disk_offering1)
         offering_data = {
             'displaytext': 'ServiceOffering1WithDiskOffering1',
@@ -689,6 +727,7 @@ class TestScaleVm(cloudstackTestCase):
         self.virtual_machine_test = VirtualMachine.create(
             self.apiclient,
             self.services["small"],
+            templateid=template.id,
             accountid=self.account.name,
             domainid=self.account.domainid,
             serviceofferingid=self.ServiceOffering1WithDiskOffering1.id,
@@ -707,11 +746,11 @@ class TestScaleVm(cloudstackTestCase):
         if self.hypervisor.lower() != 'simulator':
             hostid = self.virtual_machine_test.hostid
             host = Host.list(
-                       self.apiclient,
-                       zoneid=self.zone.id,
-                       hostid=hostid,
-                       type='Routing'
-                   )[0]
+                self.apiclient,
+                zoneid=self.zone.id,
+                hostid=hostid,
+                type='Routing'
+            )[0]
 
             try:
                 username = self.hostConfig["username"]
@@ -728,10 +767,12 @@ class TestScaleVm(cloudstackTestCase):
             self.apiclient,
             isdynamicallyscalable='true')
 
+        disk_offering2 = self.services["disk_offering"]
+        disk_offering2["name"] = "Disk Offering 2"
         self.disk_offering2 = DiskOffering.create(
-                                    self.apiclient,
-                                    self.services["disk_offering"],
-                                    )
+            self.apiclient,
+            disk_offering2
+        )
         self._cleanup.append(self.disk_offering2)
         offering_data = {
             'displaytext': 'ServiceOffering2WithDiskOffering2',
@@ -809,6 +850,7 @@ class TestScaleVm(cloudstackTestCase):
             self.debug("Simulator doesn't support changing disk offering, volume resize")
             return
         disk_offering_data = self.services["disk_offering"]
+        disk_offering_data["name"] = "Disk Offering 3"
         if self.hypervisor.lower() in ['xenserver']:
             self.debug("For hypervisor %s, do not resize volume and just change try to change the disk offering")
             volume_response = Volume.list(
@@ -818,9 +860,9 @@ class TestScaleVm(cloudstackTestCase):
             )[0]
             disk_offering_data["disksize"] = int(volume_response.size / (1024 ** 3))
         self.disk_offering3 = DiskOffering.create(
-                                    self.apiclient,
-                                    disk_offering_data,
-                                    )
+            self.apiclient,
+            disk_offering_data,
+        )
         self._cleanup.append(self.disk_offering3)
         offering_data = {
             'displaytext': 'ServiceOffering3WithDiskOffering3',
@@ -845,6 +887,8 @@ class TestScaleVm(cloudstackTestCase):
             name="allow.diskOffering.change.during.scale.vm",
             value="true"
         )
+
+        time.sleep(30)
 
         self.debug("Scaling VM-ID: %s to service offering: %s and state %s" % (
             self.virtual_machine_test.id,

@@ -35,6 +35,8 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
+import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
 import org.apache.commons.collections.CollectionUtils;
 
@@ -42,6 +44,7 @@ import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.cluster.agentlb.HostTransferMapVO;
 import com.cloud.cluster.agentlb.dao.HostTransferMapDao;
 import com.cloud.configuration.ManagementServiceConfiguration;
+import com.cloud.cpu.CPU;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
@@ -76,6 +79,7 @@ import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.lang3.ObjectUtils;
 
 @DB
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
@@ -1795,17 +1799,52 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     @Override
     public List<HypervisorType> listDistinctHypervisorTypes(final Long zoneId) {
-        GenericSearchBuilder<HostVO, HypervisorType> sb = createSearchBuilder(HypervisorType.class);
+        GenericSearchBuilder<HostVO, String> sb = createSearchBuilder(String.class);
         sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
         sb.select(null, Func.DISTINCT, sb.entity().getHypervisorType());
         sb.done();
-        SearchCriteria<HypervisorType> sc = sb.create();
+        SearchCriteria<String> sc = sb.create();
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
         }
         sc.setParameters("type", Type.Routing);
-        return customSearch(sc, null);
+        List<String> hypervisorString = customSearch(sc, null);
+        return hypervisorString.stream().map(HypervisorType::getType).collect(Collectors.toList());
+    }
+
+    @Override
+    public List<Pair<HypervisorType, CPU.CPUArch>> listDistinctHypervisorArchTypes(final Long zoneId) {
+        SearchBuilder<HostVO> sb = createSearchBuilder();
+        sb.select(null, Func.DISTINCT_PAIR, sb.entity().getHypervisorType(), sb.entity().getArch());
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+        sb.and("zoneId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        sb.done();
+        SearchCriteria<HostVO> sc = sb.create();
+        sc.setParameters("type", Type.Routing);
+        if (zoneId != null) {
+            sc.setParameters("zoneId", zoneId);
+        }
+        final List<HostVO> hosts = search(sc, null);
+        return hosts.stream()
+                .map(h -> new Pair<>(h.getHypervisorType(), h.getArch()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CPU.CPUArch> listDistinctArchTypes(final Long clusterId) {
+        GenericSearchBuilder<HostVO, String> sb = createSearchBuilder(String.class);
+        sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
+        sb.and("type", sb.entity().getType(), SearchCriteria.Op.EQ);
+        sb.select(null, Func.DISTINCT, sb.entity().getArch());
+        sb.done();
+        SearchCriteria<String> sc = sb.create();
+        if (clusterId != null) {
+            sc.setParameters("clusterId", clusterId);
+        }
+        sc.setParameters("type", Type.Routing);
+        List<String> archStrings = customSearch(sc, null);
+        return archStrings.stream().map(CPU.CPUArch::fromType).collect(Collectors.toList());
     }
 
     @Override
@@ -1817,4 +1856,24 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         sc.setParameters("id", ids.toArray());
         return search(sc, null);
     }
+
+
+    @Override
+    public Long findClusterIdByVolumeInfo(VolumeInfo volumeInfo) {
+        VirtualMachine virtualMachine = volumeInfo.getAttachedVM();
+        if (virtualMachine == null) {
+            return null;
+        }
+
+        Long hostId = ObjectUtils.defaultIfNull(virtualMachine.getHostId(), virtualMachine.getLastHostId());
+        Host host = findById(hostId);
+
+        if (host == null) {
+            logger.warn(String.format("VM [%s] has null host on DB, either this VM was never started, or there is some inconsistency on the DB.", virtualMachine.getUuid()));
+            return null;
+        }
+
+        return host.getClusterId();
+    }
+
 }

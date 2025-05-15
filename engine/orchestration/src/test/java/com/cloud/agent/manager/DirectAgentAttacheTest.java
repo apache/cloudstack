@@ -24,6 +24,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ServerResource;
 
 import java.util.UUID;
@@ -42,7 +43,7 @@ public class DirectAgentAttacheTest {
 
     @Before
     public void setup() {
-        directAgentAttache = new DirectAgentAttache(_agentMgr, _id, _uuid, "myDirectAgentAttache", _resource, false);
+        directAgentAttache = new DirectAgentAttache(_agentMgr, _id, _uuid, "myDirectAgentAttache", Hypervisor.HypervisorType.KVM, _resource, false);
 
         MockitoAnnotations.initMocks(directAgentAttache);
     }
