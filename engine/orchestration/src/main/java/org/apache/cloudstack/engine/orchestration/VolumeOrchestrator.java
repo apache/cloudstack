@@ -18,8 +18,95 @@
  */
 package org.apache.cloudstack.engine.orchestration;
 
-import static com.cloud.storage.resource.StorageProcessor.REQUEST_TEMPLATE_RELOAD;
-import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DatadiskTO;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.manager.allocator.PodAllocator;
+import com.cloud.cluster.ClusterManager;
+import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.Pod;
+import com.cloud.deploy.DataCenterDeployment;
+import com.cloud.deploy.DeployDestination;
+import com.cloud.deploy.DeploymentPlanner.ExcludeList;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientStorageCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.StorageAccessException;
+import com.cloud.exception.StorageUnavailableException;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.DiskOffering;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.org.Cluster;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolHostVO;
+import com.cloud.storage.StorageUtil;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.Volume.Type;
+import com.cloud.storage.VolumeApiService;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.template.TemplateManager;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.Pair;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
+import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.db.UUIDManager;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.DiskProfile;
+import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.UserVmCloneSettingVO;
+import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.VirtualMachineProfile;
+import com.cloud.vm.VirtualMachineProfileImpl;
+import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.VmWorkAttachVolume;
+import com.cloud.vm.VmWorkMigrateVolume;
+import com.cloud.vm.VmWorkSerializer;
+import com.cloud.vm.VmWorkTakeVolumeSnapshot;
+import com.cloud.vm.dao.SecondaryStorageVmDao;
+import com.cloud.vm.dao.UserVmCloneSettingDao;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -38,12 +125,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.user.AccountManager;
+
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
@@ -90,96 +173,16 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+
 import org.jetbrains.annotations.Nullable;
 
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.DatadiskTO;
-import com.cloud.agent.api.to.DiskTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.manager.allocator.PodAllocator;
-import com.cloud.cluster.ClusterManager;
-import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.Pod;
-import com.cloud.deploy.DataCenterDeployment;
-import com.cloud.deploy.DeployDestination;
-import com.cloud.deploy.DeploymentPlanner.ExcludeList;
-import com.cloud.event.ActionEvent;
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientStorageCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.StorageAccessException;
-import com.cloud.exception.StorageUnavailableException;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.offering.DiskOffering;
-import com.cloud.offering.ServiceOffering;
-import com.cloud.org.Cluster;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolHostVO;
-import com.cloud.storage.StorageUtil;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.Volume;
-import com.cloud.storage.Volume.Type;
-import com.cloud.storage.VolumeApiService;
-import com.cloud.storage.VolumeDetailVO;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.StoragePoolHostDao;
-import com.cloud.storage.dao.VMTemplateDetailsDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.template.TemplateManager;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.Account;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.uservm.UserVm;
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionCallbackNoReturn;
-import com.cloud.utils.db.TransactionStatus;
-import com.cloud.utils.db.UUIDManager;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.utils.fsm.StateMachine2;
-import com.cloud.vm.DiskProfile;
-import com.cloud.vm.SecondaryStorageVmVO;
-import com.cloud.vm.UserVmCloneSettingVO;
-import com.cloud.vm.UserVmDetailVO;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.VirtualMachineProfileImpl;
-import com.cloud.vm.VmDetailConstants;
-import com.cloud.vm.VmWorkAttachVolume;
-import com.cloud.vm.VmWorkMigrateVolume;
-import com.cloud.vm.VmWorkSerializer;
-import com.cloud.vm.VmWorkTakeVolumeSnapshot;
-import com.cloud.vm.dao.SecondaryStorageVmDao;
-import com.cloud.vm.dao.UserVmCloneSettingDao;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import static com.cloud.storage.resource.StorageProcessor.REQUEST_TEMPLATE_RELOAD;
+import static com.cloud.utils.NumbersUtil.toHumanReadableSize;
 
 public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrationService, Configurable {
 
@@ -892,10 +895,19 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     private DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
-                                                Account owner, long deviceId, String configurationId) {
+                                                Account owner, long deviceId, String configurationId, Volume volume, Snapshot snapshot) {
         assert (template.getFormat() != ImageFormat.ISO) : "ISO is not a template.";
 
-        Long size = _tmpltMgr.getTemplateSize(template, vm.getDataCenterId());
+        if (volume != null) {
+            volume = attachExistingVolumeToVm(vm, deviceId, volume, type);
+            return toDiskProfile(volume, offering);
+        }
+        Long size;
+        if (snapshot != null) {
+            size = _volsDao.findByIdIncludingRemoved(snapshot.getVolumeId()).getSize();
+        } else {
+            size = _tmpltMgr.getTemplateSize(template, vm.getDataCenterId());
+        }
         if (rootDisksize != null) {
             if (template.isDeployAsIs()) {
                 // Volume size specified from template deploy-as-is
@@ -955,7 +967,30 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
             _resourceLimitMgr.incrementVolumeResourceCount(vm.getAccountId(), vol.isDisplayVolume(), vol.getSize(), offering);
         }
+        if (snapshot != null) {
+            UserVmVO userVmVO = _userVmDao.findById(vm.getId());
+            try {
+                VolumeInfo volumeInfo = createVolumeFromSnapshot(vol, snapshot, userVmVO);
+                return toDiskProfile(volumeInfo, offering);
+            } catch (StorageUnavailableException ex) {
+                throw new CloudRuntimeException("Could not create volume from a snapshot", ex);
+            }
+        }
         return toDiskProfile(vol, offering);
+    }
+
+    private Volume attachExistingVolumeToVm(VirtualMachine vm, long deviceId, Volume volume, Type type) {
+        VolumeVO volumeVO = _volumeDao.findById(volume.getId());
+        if (volumeVO == null) {
+            throw new CloudRuntimeException(String.format("Could not find the volume %s in the DB", volume));
+        }
+        volumeVO.setDeviceId(deviceId);
+        volumeVO.setVolumeType(type);
+        if (vm != null) {
+            volumeVO.setInstanceId(vm.getId());
+        }
+        _volumeDao.update(volumeVO.getId(), volumeVO);
+        return volumeVO;
     }
 
     @Override
@@ -987,7 +1022,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating ROOT volume", create = true)
     @Override
     public List<DiskProfile> allocateTemplatedVolumes(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
-                                                      Account owner) {
+                                                      Account owner, Volume volume, Snapshot snapshot) {
         String templateToString = getReflectOnlySelectedFields(template);
 
         int volumesNumber = 1;
@@ -1034,7 +1069,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             }
             logger.info("Adding disk object [{}] to VM [{}]", volumeName, vm);
             DiskProfile diskProfile = allocateTemplatedVolume(type, volumeName, offering, volumeSize, minIops, maxIops,
-                    template, vm, owner, deviceId, configurationId);
+                    template, vm, owner, deviceId, configurationId, volume, snapshot);
             profiles.add(diskProfile);
         }
 

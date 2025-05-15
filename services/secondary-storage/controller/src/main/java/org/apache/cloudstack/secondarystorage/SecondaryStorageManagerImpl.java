@@ -693,7 +693,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             secStorageVm = createOrUpdateSecondaryStorageVm(secStorageVm, dataCenterId, id, name, serviceOffering,
                     template, systemAcct, role);
             try {
-                _itMgr.allocate(name, template, serviceOffering, networks, plan, template.getHypervisorType());
+                _itMgr.allocate(name, template, serviceOffering, networks, plan, template.getHypervisorType(), null, null);
                 secStorageVm = _secStorageVmDao.findById(secStorageVm.getId());
                 _itMgr.checkDeploymentPlan(secStorageVm, template, serviceOffering, systemAcct, plan);
                 break;
