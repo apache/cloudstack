@@ -23,7 +23,6 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.ApiCommandResourceType;
-import com.cloud.user.Account;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.kubernetes.version.AddKubernetesSupportedVersionCmd;
 import org.apache.cloudstack.api.command.admin.kubernetes.version.DeleteKubernetesSupportedVersionCmd;
@@ -54,6 +53,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.template.TemplateApiService;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
@@ -86,10 +86,8 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
     public static final String MINIMUN_AUTOSCALER_SUPPORTED_VERSION = "1.15.0";
 
     protected void updateTemplateDetailsInKubernetesSupportedVersionResponse(
-            final KubernetesSupportedVersion kubernetesSupportedVersion, KubernetesSupportedVersionResponse response) {
-        Account caller = CallContext.current().getCallingAccount();
+            final KubernetesSupportedVersion kubernetesSupportedVersion, KubernetesSupportedVersionResponse response, boolean isRootAdmin) {
         TemplateJoinVO template = templateJoinDao.findById(kubernetesSupportedVersion.getIsoId());
-        boolean isAdmin = accountManager.isRootAdmin(caller.getId());
         if (template == null) {
             return;
         }
@@ -98,7 +96,7 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         if (template.getState() != null) {
             response.setIsoState(template.getState().toString());
         }
-        if (isAdmin) {
+        if (isRootAdmin) {
             response.setIsoUrl(template.getUrl());
         }
         response.setIsoArch(template.getArch().getType());
@@ -124,7 +122,9 @@ public class KubernetesVersionManagerImpl extends ManagerBase implements Kuberne
         response.setSupportsHA(compareSemanticVersions(kubernetesSupportedVersion.getSemanticVersion(),
             KubernetesClusterService.MIN_KUBERNETES_VERSION_HA_SUPPORT)>=0);
         response.setSupportsAutoscaling(versionSupportsAutoscaling(kubernetesSupportedVersion));
-        updateTemplateDetailsInKubernetesSupportedVersionResponse(kubernetesSupportedVersion, response);
+        Account caller = CallContext.current().getCallingAccount();
+        boolean isRootAdmin = accountManager.isRootAdmin(caller.getId());
+        updateTemplateDetailsInKubernetesSupportedVersionResponse(kubernetesSupportedVersion, response, isRootAdmin);
         response.setCreated(kubernetesSupportedVersion.getCreated());
         return response;
     }
