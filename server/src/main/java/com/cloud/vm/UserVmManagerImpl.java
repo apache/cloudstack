@@ -7592,7 +7592,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             logger.debug("No need to ensure an isolated network for the VM because security groups is enabled for this zone.");
             return null;
         }
-        if (securityGroupIdList != null && !securityGroupIdList.isEmpty()) {
+        if (CollectionUtils.isNotEmpty(securityGroupIdList)) {
             throw new InvalidParameterValueException("Cannot move VM with security groups; security group feature is not enabled in this zone.");
         }
 
