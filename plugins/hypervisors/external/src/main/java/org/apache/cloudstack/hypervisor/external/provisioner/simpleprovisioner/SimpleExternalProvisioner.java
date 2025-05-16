@@ -138,7 +138,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
             logger.error("Provisioner script {} for extension: {} does not exist", path, extensionName);
             return null;
         }
-        if (!file.exists()) {
+        if (!file.isFile()) {
             logger.error("Provisioner script {} for extension: {} is not a file", path, extensionName);
             return null;
         }
@@ -154,6 +154,16 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
         extensionsDirectory = ExtensionsDirectory.value();
+        if (StringUtils.isBlank(extensionsDirectory)) {
+            throw new ConfigurationException("Extension directory path is blank");
+        }
+
+        File dir = new File(extensionsDirectory);
+        if (!dir.exists() || !dir.isDirectory() || !dir.canWrite()) {
+            String msg = String.format("Extension directory [%s] is not properly set up", extensionsDirectory);
+            logger.error("{}. It must exist, be a directory, and be writeable", msg);
+            throw new ConfigurationException(msg);
+        }
         return true;
     }
 
