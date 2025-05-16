@@ -179,6 +179,7 @@ export default {
       }
     }
   },
+  emits: ['update-network-config', 'select-default-network-item', 'handler-error'],
   methods: {
     initForm () {
       this.formRef = ref()

@@ -26,7 +26,7 @@ import com.cloud.serializer.Param;
 import com.cloud.storage.GuestOsCategory;
 
 @EntityReference(value = GuestOsCategory.class)
-public class GuestOSCategoryResponse extends BaseResponse {
+public class GuestOSCategoryResponse extends BaseResponse implements SetResourceIconResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the OS category")
     private String id;
@@ -34,6 +34,14 @@ public class GuestOSCategoryResponse extends BaseResponse {
     @SerializedName(ApiConstants.NAME)
     @Param(description = "the name of the OS category")
     private String name;
+
+    @SerializedName(ApiConstants.IS_FEATURED)
+    @Param(description = "Whether the OS category is featured", since = "4.20.1")
+    private Boolean featured;
+
+    @SerializedName(ApiConstants.RESOURCE_ICON)
+    @Param(description = "Base64 string representation of the resource icon", since = "4.20.1")
+    private ResourceIconResponse resourceIconResponse;
 
     public String getId() {
         return id;
@@ -49,5 +57,14 @@ public class GuestOSCategoryResponse extends BaseResponse {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setFeatured(Boolean featured) {
+        this.featured = featured;
+    }
+
+    @Override
+    public void setResourceIconResponse(ResourceIconResponse resourceIconResponse) {
+        this.resourceIconResponse = resourceIconResponse;
     }
 }

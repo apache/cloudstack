@@ -17,6 +17,7 @@
 package com.cloud.storage.dao;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -518,6 +519,48 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         sc.setParameters("state", (Object[])states);
         sc.setJoinParameters("tmpltzone", "zoneId", dataCenterId);
         return listBy(sc);
+    }
+
+    @Override
+    public List<Long> listTemplateIsoByArchVnfAndZone(Long dataCenterId, CPU.CPUArch arch, Boolean isIso,
+                  Boolean isVnf) {
+        GenericSearchBuilder<VMTemplateVO, Long> sb = createSearchBuilder(Long.class);
+        sb.select(null, Func.DISTINCT, sb.entity().getGuestOSId());
+        sb.and("state", sb.entity().getState(), SearchCriteria.Op.IN);
+        sb.and("type", sb.entity().getTemplateType(), SearchCriteria.Op.IN);
+        sb.and("arch", sb.entity().getArch(), SearchCriteria.Op.EQ);
+        if (isIso != null) {
+            sb.and("isIso", sb.entity().getFormat(), isIso ? SearchCriteria.Op.EQ : SearchCriteria.Op.NEQ);
+        }
+        if (dataCenterId != null) {
+            SearchBuilder<VMTemplateZoneVO> templateZoneSearch = _templateZoneDao.createSearchBuilder();
+            templateZoneSearch.and("removed", templateZoneSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
+            templateZoneSearch.and("zoneId", templateZoneSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+            sb.join("templateZoneSearch", templateZoneSearch, templateZoneSearch.entity().getTemplateId(),
+                    sb.entity().getId(), JoinBuilder.JoinType.INNER);
+            templateZoneSearch.done();
+        }
+        sb.done();
+        SearchCriteria<Long> sc = sb.create();
+        List<TemplateType> types = new ArrayList<>(Arrays.asList(TemplateType.USER, TemplateType.BUILTIN,
+                TemplateType.PERHOST));
+        if (isVnf == null) {
+            types.add(TemplateType.VNF);
+        } else if (isVnf) {
+            types = Collections.singletonList(TemplateType.VNF);
+        }
+        sc.setParameters("type", types.toArray());
+        sc.setParameters("state", VirtualMachineTemplate.State.Active);
+        if (dataCenterId != null) {
+            sc.setJoinParameters("templateZoneSearch", "zoneId", dataCenterId);
+        }
+        if (arch != null) {
+            sc.setParameters("arch", arch);
+        }
+        if (isIso != null) {
+            sc.setParameters("isIso", ImageFormat.ISO);
+        }
+        return customSearch(sc, null);
     }
 
     @Override
