@@ -61,7 +61,7 @@ import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserVO;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 
 import junit.framework.TestCase;
 
@@ -84,7 +84,7 @@ public class CreateNetworkOfferingTest extends TestCase {
     VpcManager vpcMgr;
 
     @Mock
-    UserVmDetailsDao userVmDetailsDao;
+    VMInstanceDetailsDao vmInstanceDetailsDao;
 
     @Mock
     UsageEventDao UsageEventDao;

@@ -75,7 +75,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicDetailsDao;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
@@ -111,7 +111,7 @@ public class ResourceCleanupServiceImplTest {
     @Mock
     VMSnapshotDetailsDao vmSnapshotDetailsDao;
     @Mock
-    UserVmDetailsDao userVmDetailsDao;
+    VMInstanceDetailsDao vmInstanceDetailsDao;
     @Mock
     AutoScaleVmGroupVmMapDao autoScaleVmGroupVmMapDao;
     @Mock
@@ -297,7 +297,7 @@ public class ResourceCleanupServiceImplTest {
         resourceCleanupService.purgeLinkedVMEntities(new ArrayList<>(), 50L);
         Mockito.verify(resourceCleanupService, Mockito.never()).purgeVMVolumes(Mockito.anyList(),
                 Mockito.anyLong());
-        Mockito.verify(userVmDetailsDao, Mockito.never())
+        Mockito.verify(vmInstanceDetailsDao, Mockito.never())
                 .batchExpungeForResources(Mockito.anyList(), Mockito.anyLong());
     }
 
@@ -307,7 +307,7 @@ public class ResourceCleanupServiceImplTest {
                 Mockito.eq(batchSize));
         Mockito.doReturn(2L).when(resourceCleanupService).purgeVMNics(Mockito.anyList(),
                 Mockito.eq(batchSize));
-        Mockito.when(userVmDetailsDao.batchExpungeForResources(Mockito.anyList(), Mockito.anyLong())).thenReturn(2L);
+        Mockito.when(vmInstanceDetailsDao.batchExpungeForResources(Mockito.anyList(), Mockito.anyLong())).thenReturn(2L);
         Mockito.doReturn(2L).when(resourceCleanupService).purgeVMSnapshots(Mockito.anyList(),
                 Mockito.eq(batchSize));
         Mockito.when(autoScaleVmGroupVmMapDao.expungeByVmList(Mockito.anyList(), Mockito.anyLong())).thenReturn(2);
@@ -327,7 +327,7 @@ public class ResourceCleanupServiceImplTest {
 
         Mockito.verify(resourceCleanupService, Mockito.times(1)).purgeVMVolumes(ids, batchSize);
         Mockito.verify(resourceCleanupService, Mockito.times(1)).purgeVMNics(ids, batchSize);
-        Mockito.verify(userVmDetailsDao, Mockito.times(1))
+        Mockito.verify(vmInstanceDetailsDao, Mockito.times(1))
                 .batchExpungeForResources(ids, batchSize);
         Mockito.verify(resourceCleanupService, Mockito.times(1))
                 .purgeVMSnapshots(ids, batchSize);

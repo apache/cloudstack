@@ -65,3 +65,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`reconcile_commands` (
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'kvm_checkpoint_path', 'varchar(255)');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'end_of_chain', 'int(1) unsigned');
+
+-- Rename user_vm_details to vm_instance_details
+ALTER TABLE `cloud`.`user_vm_details` RENAME TO `cloud`.`vm_instance_details`;
+ALTER TABLE `cloud`.`vm_instance_details` DROP FOREIGN KEY `fk_user_vm_details__vm_id`;
+ALTER TABLE `cloud`.`vm_instance_details` ADD CONSTRAINT `fk_vm_instance_details__vm_id` FOREIGN KEY (vm_id) REFERENCES vm_instance(id) ON DELETE CASCADE;

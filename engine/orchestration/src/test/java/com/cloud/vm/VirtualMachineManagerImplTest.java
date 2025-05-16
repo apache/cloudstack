@@ -131,7 +131,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -224,7 +224,7 @@ public class VirtualMachineManagerImplTest {
     @Mock
     private ClusterDetailsDao _clusterDetailsDao;
     @Mock
-    private UserVmDetailsDao userVmDetailsDao;
+    private VMInstanceDetailsDao vmInstanceDetailsDao;
     @Mock
     private ItWorkDao _workDao;
     @Mock
@@ -1098,7 +1098,7 @@ public class VirtualMachineManagerImplTest {
         when(cluster.getId()).thenReturn(1L);
         when(_clusterDetailsDao.findDetail(1L, VmDetailConstants.CPU_OVER_COMMIT_RATIO)).thenReturn(cluster_detail_cpu);
         when(_clusterDetailsDao.findDetail(1L, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO)).thenReturn(cluster_detail_ram);
-        when(userVmDetailsDao.findDetail(anyLong(), Mockito.anyString())).thenReturn(null);
+        when(vmInstanceDetailsDao.findDetail(anyLong(), Mockito.anyString())).thenReturn(null);
         when(cluster_detail_cpu.getValue()).thenReturn("1.0");
         when(cluster_detail_ram.getValue()).thenReturn("1.0");
         doReturn(false).when(virtualMachineManagerImpl).areAllVolumesAllocated(Mockito.anyLong());
@@ -1194,7 +1194,7 @@ public class VirtualMachineManagerImplTest {
         when(cluster.getId()).thenReturn(1L);
         when(_clusterDetailsDao.findDetail(1L, VmDetailConstants.CPU_OVER_COMMIT_RATIO)).thenReturn(cluster_detail_cpu);
         when(_clusterDetailsDao.findDetail(1L, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO)).thenReturn(cluster_detail_ram);
-        when(userVmDetailsDao.findDetail(anyLong(), Mockito.anyString())).thenReturn(null);
+        when(vmInstanceDetailsDao.findDetail(anyLong(), Mockito.anyString())).thenReturn(null);
         when(cluster_detail_cpu.getValue()).thenReturn("1.0");
         when(cluster_detail_ram.getValue()).thenReturn("1.0");
         doReturn(true).when(virtualMachineManagerImpl).areAllVolumesAllocated(Mockito.anyLong());
