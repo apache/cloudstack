@@ -63,6 +63,18 @@
               </a-statistic>
             </router-link>
           </a-col>
+          <a-col :span="12" v-if="'listVirtualMachines' in $store.getters.apis && isLeaseFeatureEnabled">
+            <router-link :to="{ path: '/vm', query: { leased: true } }">
+              <a-statistic
+                :title="$t('label.leasedinstances')"
+                :value="data.leasedinstances"
+                :value-style="{ color: $config.theme['@primary-color'] }">
+                <template #prefix>
+                  <field-time-outlined/>&nbsp;
+                </template>
+              </a-statistic>
+            </router-link>
+          </a-col>
           <a-col :span="12" v-if="'listKubernetesClusters' in $store.getters.apis">
             <router-link :to="{ path: '/kubernetes' }">
               <a-statistic
@@ -393,8 +405,10 @@ export default {
         networks: 0,
         vpcs: 0,
         ips: 0,
-        templates: 0
-      }
+        templates: 0,
+        leasedinstances: 0
+      },
+      isLeaseFeatureEnabled: this.$store.getters.features.instanceleaseenabled
     }
   },
   computed: {
@@ -556,6 +570,15 @@ export default {
         this.loading = false
         this.data.stopped = json?.listvirtualmachinesresponse?.count
       })
+      if (this.isLeaseFeatureEnabled) {
+        api('listVirtualMachines', { leased: true, listall: true, details: 'min', page: 1, pagesize: 1 }).then(json => {
+          this.loading = false
+          this.data.leasedinstances = json?.listvirtualmachinesresponse?.count
+          if (!this.data.leasedinstances) {
+            this.data.leasedinstances = 0
+          }
+        })
+      }
     },
     listEvents () {
       if (!('listEvents' in this.$store.getters.apis)) {

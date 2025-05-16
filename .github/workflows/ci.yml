@@ -164,7 +164,8 @@ jobs:
                   component/test_cpu_limits
                   component/test_cpu_max_limits
                   component/test_cpu_project_limits
-                  component/test_deploy_vm_userdata_multi_nic",
+                  component/test_deploy_vm_userdata_multi_nic
+                  component/test_deploy_vm_lease",
                 "component/test_egress_fw_rules
                   component/test_invalid_gw_nm
                   component/test_ip_reservation",

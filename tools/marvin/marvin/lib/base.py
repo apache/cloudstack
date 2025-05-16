@@ -527,7 +527,8 @@ class VirtualMachine:
                customcpuspeed=None, custommemory=None, rootdisksize=None,
                rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
                properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None,
-               userdataid=None, userdatadetails=None, extraconfig=None, size=None, overridediskofferingid=None):
+               userdataid=None, userdatadetails=None, extraconfig=None, size=None, overridediskofferingid=None,
+               leaseduration=None, leaseexpiryaction=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -690,6 +691,12 @@ class VirtualMachine:
 
         if extraconfig:
             cmd.extraconfig = extraconfig
+
+        if leaseduration:
+            cmd.leaseduration = leaseduration
+
+        if leaseexpiryaction:
+            cmd.leaseexpiryaction = leaseexpiryaction
 
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
