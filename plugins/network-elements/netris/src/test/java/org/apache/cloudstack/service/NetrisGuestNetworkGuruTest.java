@@ -28,6 +28,7 @@ import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
@@ -78,6 +79,8 @@ public class NetrisGuestNetworkGuruTest {
     private VpcDao vpcDao;
     @Mock
     private NetrisService netrisService;
+    @Mock
+    private NetworkDetailsDao networkDetailsDao;
 
     @Spy
     @InjectMocks
@@ -219,6 +222,7 @@ public class NetrisGuestNetworkGuruTest {
         Mockito.when(dataCenterDao.allocateVnet(Mockito.eq(zoneId), Mockito.eq(physicalNetworkId),
                 Mockito.eq(accountId), Mockito.nullable(String.class), Mockito.anyBoolean())).thenReturn(vnet);
         actionEventUtilsMocked.when(() -> ActionEventUtils.onCompletedActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyLong())).thenReturn(1L);
+        Mockito.when(networkDetailsDao.findDetail(Mockito.anyLong(), Mockito.anyString())).thenReturn(null);
         Network implemented = guru.implement(network, networkOffering, destination, context);
         Assert.assertEquals(String.format("netris://%s", vnet), implemented.getBroadcastUri().toString());
         Assert.assertEquals(Network.State.Implemented, implemented.getState());

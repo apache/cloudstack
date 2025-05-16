@@ -32,6 +32,8 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PublicIpAddress;
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.guru.GuestNetworkGuru;
@@ -47,6 +49,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.api.ApiCommandResourceType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.context.CallContext;
 
 import javax.inject.Inject;
@@ -61,6 +64,8 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
     private NetrisService netrisService;
     @Inject
     NetworkModel networkModel;
+    @Inject
+    NetworkDetailsDao networkDetailsDao;
 
     public NetrisGuestNetworkGuru() {
         super();
@@ -203,14 +208,21 @@ public class NetrisGuestNetworkGuru  extends GuestNetworkGuru implements Network
     @Override
     protected void allocateVnet(Network network, NetworkVO implemented, long dcId, long physicalNetworkId, String reservationId)
             throws InsufficientVirtualNetworkCapacityException {
+        String vnet = null;
+        Long networkId = implemented.getId() > 0 ? implemented.getId() : network.getId();
         if (network.getBroadcastUri() == null) {
-            String vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId, UseSystemGuestVlans.valueIn(network.getAccountId()));
-            if (vnet == null) {
-                throw new InsufficientVirtualNetworkCapacityException("Unable to allocate vnet as a " + "part of network " + network + " implement ", DataCenter.class,
-                        dcId);
+            NetworkDetailVO netrisVnetDetail = networkDetailsDao.findDetail(networkId, ApiConstants.NETRIS_VXLAN_ID);
+            if (nonNull(netrisVnetDetail)) {
+                vnet = netrisVnetDetail.getValue();
+            } else {
+                vnet = _dcDao.allocateVnet(dcId, physicalNetworkId, network.getAccountId(), reservationId, UseSystemGuestVlans.valueIn(network.getAccountId()));
+                if (vnet == null) {
+                    throw new InsufficientVirtualNetworkCapacityException("Unable to allocate vnet as a " + "part of network " + network + " implement ", DataCenter.class,
+                            dcId);
+                }
+                networkDetailsDao.addDetail(networkId, ApiConstants.NETRIS_VXLAN_ID, vnet, true);
             }
             implemented.setBroadcastUri(Networks.BroadcastDomainType.Netris.toUri(vnet));
-            Long networkId = implemented.getId() > 0 ? implemented.getId() : network.getId();
             ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), network.getAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_ZONE_VXLAN_ASSIGN,
                     "Assigned Zone vNet: " + vnet + " Network Id: " + networkId, networkId, ApiCommandResourceType.Network.toString(), 0);
         } else {
