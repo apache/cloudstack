@@ -107,7 +107,7 @@ class CsVpcGuestNetwork(CsDataBag):
             self.conf.append("    AdvSendAdvert on;")
             self.conf.append("    MinRtrAdvInterval 5;")
             self.conf.append("    MaxRtrAdvInterval 15;")
-            if entry['router_guest_ip6'] is entry['router_guest_ip6_gateway']:
+            if entry['router_guest_ip6'] == entry['router_guest_ip6_gateway']:
                 self.conf.append("    prefix %s" % full_addr)
                 self.conf.append("    {")
                 self.conf.append("        AdvOnLink on;")
