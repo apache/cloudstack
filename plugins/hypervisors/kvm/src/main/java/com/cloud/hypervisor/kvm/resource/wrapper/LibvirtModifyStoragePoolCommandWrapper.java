@@ -38,6 +38,17 @@ public final class LibvirtModifyStoragePoolCommandWrapper extends CommandWrapper
     @Override
     public Answer execute(final ModifyStoragePoolCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+        if (!command.getAdd()) {
+            boolean status = storagePoolMgr.deleteStoragePool(command.getPool().getType(), command.getPool().getUuid(), command.getDetails());
+            if (status) {
+                final ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(command, true, null);
+                return answer;
+            }
+
+            final ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(command, false, "Failed to delete storage pool");
+            return answer;
+        }
+
         final KVMStoragePool storagepool =
                 storagePoolMgr.createStoragePool(command.getPool().getUuid(), command.getPool().getHost(), command.getPool().getPort(), command.getPool().getPath(), command.getPool()
                         .getUserInfo(), command.getPool().getType(), command.getDetails());
@@ -47,7 +58,6 @@ public final class LibvirtModifyStoragePoolCommandWrapper extends CommandWrapper
 
         final Map<String, TemplateProp> tInfo = new HashMap<String, TemplateProp>();
         final ModifyStoragePoolAnswer answer = new ModifyStoragePoolAnswer(command, storagepool.getCapacity(), storagepool.getAvailable(), tInfo, storagepool.getDetails());
-
         return answer;
     }
 }

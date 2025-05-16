@@ -22,6 +22,7 @@ package org.apache.cloudstack.storage.datastore.lifecycle;
 import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
@@ -163,7 +164,7 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     @Test
     public void testMaintain() {
         final DataStore store = mock(DataStore.class);
-        when(storagePoolAutomation.maintain(any(DataStore.class))).thenReturn(true);
+        when(storagePoolAutomation.maintain(any(DataStore.class), anyMap())).thenReturn(true);
         when(dataStoreHelper.maintain(any(DataStore.class))).thenReturn(true);
         final boolean result = scaleIOPrimaryDataStoreLifeCycleTest.maintain(store);
         assertThat(result).isTrue();
@@ -173,7 +174,7 @@ public class ScaleIOPrimaryDataStoreLifeCycleTest {
     public void testCancelMaintain() {
         final DataStore store = mock(DataStore.class);
         when(dataStoreHelper.cancelMaintain(any(DataStore.class))).thenReturn(true);
-        when(storagePoolAutomation.cancelMaintain(any(DataStore.class))).thenReturn(true);
+        when(storagePoolAutomation.cancelMaintain(any(DataStore.class), anyMap())).thenReturn(true);
         final boolean result = scaleIOPrimaryDataStoreLifeCycleTest.cancelMaintain(store);
         assertThat(result).isTrue();
     }

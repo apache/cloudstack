@@ -25,9 +25,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -42,8 +44,17 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import javax.naming.ConfigurationException;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 import com.cloud.agent.api.Command;
+import com.cloud.hypervisor.kvm.resource.LibvirtXMLParser;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.direct.download.DirectDownloadHelper;
@@ -79,9 +90,12 @@ import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
 import org.apache.cloudstack.utils.qemu.QemuObject;
 import org.apache.cloudstack.utils.qemu.QemuObject.EncryptFormat;
+import org.apache.cloudstack.utils.security.ParserUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
@@ -143,7 +157,10 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.S3.S3Utils;
 import com.cloud.vm.VmDetailConstants;
-
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 public class KVMStorageProcessor implements StorageProcessor {
     protected Logger logger = LogManager.getLogger(getClass());
@@ -164,6 +181,47 @@ public class KVMStorageProcessor implements StorageProcessor {
      * Time interval before rechecking virsh commands
      */
     private final long waitDelayForVirshCommands = 1000L;
+
+    private int incrementalSnapshotTimeout;
+
+    private static final String CHECKPOINT_XML_TEMP_DIR = "/tmp/cloudstack/checkpointXMLs";
+
+    private static final String BACKUP_XML_TEMP_DIR = "/tmp/cloudstack/backupXMLs";
+
+    private static final String BACKUP_BEGIN_COMMAND = "virsh backup-begin --domain %s --backupxml %s --checkpointxml %s";
+
+    private static final String BACKUP_XML = "<domainbackup><disks><disk name='%s' type='file'><target file='%s'/><driver type='qcow2'/></disk></disks></domainbackup>";
+
+    private static final String INCREMENTAL_BACKUP_XML = "<domainbackup><incremental>%s</incremental><disks><disk name='%s' type='file'><target file='%s'/><driver type='qcow2'/></disk></disks></domainbackup>";
+
+    private static final String CHECKPOINT_XML = "<domaincheckpoint><name>%s</name><disks><disk name='%s' checkpoint='bitmap'/></disks></domaincheckpoint>";
+
+    private static final String CHECKPOINT_DUMP_XML_COMMAND = "virsh checkpoint-dumpxml --domain %s --checkpointname %s --no-domain";
+
+    private static final String DOMJOBINFO_COMPLETED_COMMAND = "virsh domjobinfo --domain %s --completed";
+
+    private static final String DOMJOBABORT_COMMAND = "virsh domjobabort --domain %s";
+
+    private static final String DUMMY_VM_XML = "<domain type='qemu'>\n" +
+            "  <name>%s</name>\n" +
+            "  <memory unit='MiB'>256</memory>\n" +
+            "  <currentMemory unit='MiB'>256</currentMemory>\n" +
+            "  <vcpu>1</vcpu>\n" +
+            "  <os>\n" +
+            "    <type arch='%s' machine='%s'>hvm</type>\n" +
+            "    <boot dev='hd'/>\n" +
+            "  </os>\n" +
+            "  <devices>\n" +
+            "    <emulator>%s</emulator>\n" +
+            "    <disk type='file' device='disk'>\n" +
+            "      <driver name='qemu' type='qcow2' cache='none'/>\n"+
+            "      <source file='%s'/>\n" +
+            "      <target dev='sda'/>\n" +
+            "    </disk>\n" +
+            "    <graphics type='vnc' port='-1'/>\n" +
+            "  </devices>\n" +
+            "</domain>";
+
 
     public KVMStorageProcessor(final KVMStoragePoolManager storagePoolMgr, final LibvirtComputingResource resource) {
         this.storagePoolMgr = storagePoolMgr;
@@ -191,6 +249,8 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
 
         _cmdsTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.CMDS_TIMEOUT) * 1000;
+
+        incrementalSnapshotTimeout = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.INCREMENTAL_SNAPSHOT_TIMEOUT) * 1000;
         return true;
     }
 
@@ -1572,6 +1632,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                     vol.getIopsReadRate(), vol.getIopsReadRateMax(), vol.getIopsReadRateMaxLength(),
                     vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode, encryptDetails, disk.getDetails());
 
+            resource.recreateCheckpointsOnVm(List.of((VolumeObjectTO) disk.getData()), vmName, conn);
+
             return new AttachAnswer(disk);
         } catch (final LibvirtException e) {
             logger.debug(String.format("Failed to attach volume [id: %d, uuid: %s, name: %s, path: %s], due to ",
@@ -1610,6 +1672,8 @@ public class KVMStorageProcessor implements StorageProcessor {
                     vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength(), volCacheMode, null, waitDetachDevice, null);
 
             storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
+
+            resource.removeCheckpointsOnVm(vmName, vol.getUuid(), vol.getCheckpointPaths());
 
             return new DettachAnswer(disk);
         } catch (final LibvirtException | InternalErrorException | CloudRuntimeException e) {
@@ -1756,6 +1820,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     public Answer createSnapshot(final CreateObjectCommand cmd) {
         final SnapshotObjectTO snapshotTO = (SnapshotObjectTO)cmd.getData();
         final PrimaryDataStoreTO primaryStore = (PrimaryDataStoreTO)snapshotTO.getDataStore();
+        DataStoreTO imageStoreTo = snapshotTO.getImageStore();
         final VolumeObjectTO volume = snapshotTO.getVolume();
         final String snapshotName = UUID.randomUUID().toString();
         final String vmName = volume.getVmName();
@@ -1773,101 +1838,45 @@ public class KVMStorageProcessor implements StorageProcessor {
                 }
             }
 
-            if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && volume.requiresEncryption()) {
+            if (DomainInfo.DomainState.VIR_DOMAIN_RUNNING.equals(state) && volume.requiresEncryption()) {
                 throw new CloudRuntimeException("VM is running, encrypted volume snapshots aren't supported");
             }
 
-            final KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
+            KVMStoragePool primaryPool = storagePoolMgr.getStoragePool(primaryStore.getPoolType(), primaryStore.getUuid());
+            KVMStoragePool secondaryPool = imageStoreTo != null ? storagePoolMgr.getStoragePoolByURI(imageStoreTo.getUrl()) : null;
 
-            final KVMPhysicalDisk disk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volume.getPath());
+            KVMPhysicalDisk disk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), volume.getPath());
 
             String diskPath = disk.getPath();
             String snapshotPath = diskPath + File.separator + snapshotName;
-            if (state == DomainInfo.DomainState.VIR_DOMAIN_RUNNING && !primaryPool.isExternalSnapshot()) {
-
-                validateAvailableSizeOnPoolToTakeVolumeSnapshot(primaryPool, disk);
-
-                try {
-                    snapshotPath = getSnapshotPathInPrimaryStorage(primaryPool.getLocalPath(), snapshotName);
-
-                    String diskLabel = takeVolumeSnapshot(resource.getDisks(conn, vmName), snapshotName, diskPath, vm);
-                    String convertResult = convertBaseFileToSnapshotFileInPrimaryStorageDir(primaryPool, disk, snapshotPath, volume, cmd.getWait());
-
-                    mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, snapshotName, volume, conn);
-
-                    validateConvertResult(convertResult, snapshotPath);
-                } catch (LibvirtException e) {
-                    if (!e.getMessage().contains(LIBVIRT_OPERATION_NOT_SUPPORTED_MESSAGE)) {
-                        throw e;
-                    }
-
-                    logger.info(String.format("It was not possible to take live disk snapshot for volume [%s], in VM [%s], due to [%s]. We will take full snapshot of the VM"
-                            + " and extract the disk instead. Consider upgrading your QEMU binary.", volume, vmName, e.getMessage()));
-
-                    takeFullVmSnapshotForBinariesThatDoesNotSupportLiveDiskSnapshot(vm, snapshotName, vmName);
-                    primaryPool.createFolder(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR);
-                    extractDiskFromFullVmSnapshot(disk, volume, snapshotPath, snapshotName, vmName, vm);
-                }
-
-                /*
-                 * libvirt on RHEL6 doesn't handle resume event emitted from
-                 * qemu
-                 */
-                vm = resource.getDomain(conn, vmName);
-                state = vm.getInfo().state;
-                if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
-                    vm.resume();
+            SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
+            if (DomainInfo.DomainState.VIR_DOMAIN_RUNNING.equals(state) && !primaryPool.isExternalSnapshot()) {
+                if (snapshotTO.isKvmIncrementalSnapshot()) {
+                    newSnapshot = takeIncrementalVolumeSnapshotOfRunningVm(snapshotTO, primaryPool, secondaryPool, imageStoreTo != null ? imageStoreTo.getUrl() : null, snapshotName, volume, vm, conn, cmd.getWait());
+                } else {
+                    newSnapshot = takeFullVolumeSnapshotOfRunningVm(cmd, primaryPool, secondaryPool, disk, snapshotName, conn, vmName, diskPath, vm, volume, snapshotPath);
                 }
             } else {
-                /**
-                 * For RBD we can't use libvirt to do our snapshotting or any Bash scripts.
-                 * libvirt also wants to store the memory contents of the Virtual Machine,
-                 * but that's not possible with RBD since there is no way to store the memory
-                 * contents in RBD.
-                 *
-                 * So we rely on the Java bindings for RBD to create our snapshot
-                 *
-                 * This snapshot might not be 100% consistent due to writes still being in the
-                 * memory of the Virtual Machine, but if the VM runs a kernel which supports
-                 * barriers properly (>2.6.32) this won't be any different then pulling the power
-                 * cord out of a running machine.
-                 */
                 if (primaryPool.getType() == StoragePoolType.RBD) {
-                    try {
-                        Rados r = radosConnect(primaryPool);
-
-                        final IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
-                        final Rbd rbd = new Rbd(io);
-                        final RbdImage image = rbd.open(disk.getName());
-
-                        logger.debug("Attempting to create RBD snapshot " + disk.getName() + "@" + snapshotName);
-                        image.snapCreate(snapshotName);
-
-                        rbd.close(image);
-                        r.ioCtxDestroy(io);
-                    } catch (final Exception e) {
-                        logger.error("A RBD snapshot operation on " + disk.getName() + " failed. The error was: " + e.getMessage());
-                    }
+                    takeRbdVolumeSnapshotOfStoppedVm(primaryPool, disk, snapshotName);
+                    newSnapshot.setPath(snapshotPath);
                 } else if (primaryPool.getType() == StoragePoolType.CLVM) {
-                    /* VM is not running, create a snapshot by ourself */
-                    final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, logger);
-                    command.add(MANAGE_SNAPSTHOT_CREATE_OPTION, disk.getPath());
-                    command.add(NAME_OPTION, snapshotName);
-                    final String result = command.execute();
-                    if (result != null) {
-                        logger.debug("Failed to manage snapshot: " + result);
-                        return new CreateObjectAnswer("Failed to manage snapshot: " + result);
-                    }
+                    CreateObjectAnswer result = takeClvmVolumeSnapshotOfStoppedVm(disk, snapshotName);
+                    if (result != null) return result;
+                    newSnapshot.setPath(snapshotPath);
                 } else {
-                    snapshotPath = getSnapshotPathInPrimaryStorage(primaryPool.getLocalPath(), snapshotName);
-                    String convertResult = convertBaseFileToSnapshotFileInPrimaryStorageDir(primaryPool, disk, snapshotPath, volume, cmd.getWait());
-                    validateConvertResult(convertResult, snapshotPath);
+                    if (snapshotTO.isKvmIncrementalSnapshot()) {
+                        newSnapshot = takeIncrementalVolumeSnapshotOfStoppedVm(snapshotTO, primaryPool, secondaryPool, imageStoreTo != null ? imageStoreTo.getUrl() : null, snapshotName, volume, conn, cmd.getWait());
+                    } else {
+                        newSnapshot = takeFullVolumeSnapshotOfStoppedVm(cmd, primaryPool, secondaryPool, snapshotName, disk, volume);
+                    }
                 }
             }
 
-            final SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
+            if (secondaryPool != null) {
+                storagePoolMgr.deleteStoragePool(secondaryPool.getType(), secondaryPool.getUuid());
+            }
 
-            newSnapshot.setPath(snapshotPath);
             return new CreateObjectAnswer(newSnapshot);
         } catch (CloudRuntimeException | LibvirtException | IOException ex) {
             String errorMsg = String.format("Failed take snapshot for volume [%s], in VM [%s], due to [%s].", volume, vmName, ex.getMessage());
@@ -1876,6 +1885,504 @@ public class KVMStorageProcessor implements StorageProcessor {
         } finally {
             volume.clearPassphrase();
         }
+    }
+
+    private SnapshotObjectTO createSnapshotToAndUpdatePathAndSize(String path, String fullPath) {
+        final File snapFile = new File(fullPath);
+        long size = 0;
+
+        if (snapFile.exists()) {
+            size = snapFile.length();
+        }
+
+        SnapshotObjectTO snapshotObjectTo = new SnapshotObjectTO();
+
+        snapshotObjectTo.setPath(path);
+        snapshotObjectTo.setPhysicalSize(size);
+
+        return snapshotObjectTo;
+    }
+
+    private SnapshotObjectTO takeIncrementalVolumeSnapshotOfStoppedVm(SnapshotObjectTO snapshotObjectTO, KVMStoragePool primaryPool, KVMStoragePool secondaryPool,
+                                                                      String secondaryPoolUrl, String snapshotName, VolumeObjectTO volumeObjectTo, Connect conn, int wait) throws LibvirtException {
+        resource.validateLibvirtAndQemuVersionForIncrementalSnapshots();
+        Domain vm = null;
+        logger.debug("Taking incremental volume snapshot of volume [{}]. Snapshot will be copied to [{}].", volumeObjectTo,
+                ObjectUtils.defaultIfNull(secondaryPool, primaryPool));
+        try {
+            String vmName = String.format("DUMMY-VM-%s", snapshotName);
+
+            String vmXml = getVmXml(primaryPool, volumeObjectTo, vmName);
+
+            logger.debug("Creating dummy VM with volume [{}] to take an incremental snapshot of it.", volumeObjectTo);
+            resource.startVM(conn, vmName, vmXml, Domain.CreateFlags.PAUSED);
+
+            vm = resource.getDomain(conn, vmName);
+
+            resource.recreateCheckpointsOnVm(List.of(volumeObjectTo), vmName, conn);
+
+            return takeIncrementalVolumeSnapshotOfRunningVm(snapshotObjectTO, primaryPool, secondaryPool, secondaryPoolUrl, snapshotName, volumeObjectTo, vm, conn, wait);
+        } catch (InternalErrorException | LibvirtException | CloudRuntimeException e) {
+            logger.error("Failed to take incremental volume snapshot of volume [{}] due to {}.", volumeObjectTo, e.getMessage(), e);
+            throw new CloudRuntimeException(e);
+        } finally {
+            if (vm != null) {
+                vm.destroy();
+            }
+        }
+    }
+
+    private String getVmXml(KVMStoragePool primaryPool, VolumeObjectTO volumeObjectTo, String vmName) {
+        String machine = resource.isGuestAarch64() ? LibvirtComputingResource.VIRT : LibvirtComputingResource.PC;
+        String cpuArch = resource.getGuestCpuArch() != null ? resource.getGuestCpuArch() : "x86_64";
+
+        return String.format(DUMMY_VM_XML, vmName, cpuArch, machine, resource.getHypervisorPath(), primaryPool.getLocalPathFor(volumeObjectTo.getPath()));
+    }
+
+    private SnapshotObjectTO takeIncrementalVolumeSnapshotOfRunningVm(SnapshotObjectTO snapshotObjectTO, KVMStoragePool primaryPool, KVMStoragePool secondaryPool,
+                                                                      String secondaryPoolUrl, String snapshotName, VolumeObjectTO volumeObjectTo, Domain vm, Connect conn, int wait) {
+        logger.debug("Taking incremental volume snapshot of volume [{}] attached to running VM [{}]. Snapshot will be copied to [{}].", volumeObjectTo, volumeObjectTo.getVmName(),
+                ObjectUtils.defaultIfNull(secondaryPool, primaryPool));
+        resource.validateLibvirtAndQemuVersionForIncrementalSnapshots();
+
+        Pair<String, String> fullSnapshotPathAndDirPath = getFullSnapshotOrCheckpointPathAndDirPathOnCorrectStorage(primaryPool, secondaryPool, snapshotName, volumeObjectTo, false);
+
+        String diskLabel;
+        String vmName;
+        try {
+            List<DiskDef> disks = resource.getDisks(conn, vm.getName());
+            diskLabel = getDiskLabelToSnapshot(disks, volumeObjectTo.getPath(), vm);
+            vmName = vm.getName();
+        } catch (LibvirtException e) {
+            logger.error("Failed to get VM's disks or VM name due to: [{}].", e.getMessage(), e);
+            throw new CloudRuntimeException(e);
+        }
+
+        String[] parents = snapshotObjectTO.getParents();
+        String fullSnapshotPath = fullSnapshotPathAndDirPath.first();
+
+        String backupXml = generateBackupXml(volumeObjectTo, parents, diskLabel, fullSnapshotPath);
+        String checkpointXml = String.format(CHECKPOINT_XML, snapshotName, diskLabel);
+
+        Path backupXmlPath = createFileAndWrite(backupXml, BACKUP_XML_TEMP_DIR, snapshotName);
+        Path checkpointXmlPath = createFileAndWrite(checkpointXml, CHECKPOINT_XML_TEMP_DIR, snapshotName);
+
+        String backupCommand = String.format(BACKUP_BEGIN_COMMAND, vmName, backupXmlPath.toString(), checkpointXmlPath.toString());
+
+        createFolderOnCorrectStorage(primaryPool, secondaryPool, fullSnapshotPathAndDirPath);
+
+        if (Script.runSimpleBashScript(backupCommand) == null) {
+            throw new CloudRuntimeException(String.format("Error backing up using backupXML [%s], checkpointXML [%s] for volume [%s].", backupXml, checkpointXml,
+                    volumeObjectTo));
+        }
+
+        try {
+            waitForBackup(vmName);
+        } catch (CloudRuntimeException ex) {
+            cancelBackupJob(snapshotObjectTO);
+            throw ex;
+        }
+
+        rebaseSnapshot(snapshotObjectTO, secondaryPool, secondaryPoolUrl, fullSnapshotPath, snapshotName, parents, wait);
+
+        try {
+            Files.setPosixFilePermissions(Path.of(fullSnapshotPath), PosixFilePermissions.fromString("rw-r--r--"));
+        } catch (IOException ex) {
+            logger.warn("Failed to change permissions of snapshot [{}], snapshot download will not be possible.", snapshotName);
+        }
+
+        String checkpointPath = dumpCheckpoint(primaryPool, secondaryPool, snapshotName, volumeObjectTo, vmName, parents);
+
+        SnapshotObjectTO result = createSnapshotToAndUpdatePathAndSize(secondaryPool == null ? fullSnapshotPath : fullSnapshotPathAndDirPath.second() + File.separator + snapshotName,
+                fullSnapshotPath);
+
+        result.setCheckpointPath(checkpointPath);
+
+        return result;
+    }
+
+    protected void createFolderOnCorrectStorage(KVMStoragePool primaryPool, KVMStoragePool secondaryPool, Pair<String, String> fullSnapshotPathAndDirPath) {
+        if (secondaryPool == null) {
+            primaryPool.createFolder(fullSnapshotPathAndDirPath.second());
+        } else {
+            secondaryPool.createFolder(fullSnapshotPathAndDirPath.second());
+        }
+    }
+
+    protected String generateBackupXml(VolumeObjectTO volumeObjectTo, String[] parents, String diskLabel, String fullSnapshotPath) {
+        if (parents == null) {
+            logger.debug("Snapshot of volume [{}] does not have a parent, taking a full snapshot.", volumeObjectTo);
+            return String.format(BACKUP_XML, diskLabel, fullSnapshotPath);
+        } else {
+            logger.debug("Snapshot of volume [{}] has parents [{}], taking an incremental snapshot.", volumeObjectTo, Arrays.toString(parents));
+            String parentCheckpointName = getParentCheckpointName(parents);
+            return String.format(INCREMENTAL_BACKUP_XML, parentCheckpointName, diskLabel, fullSnapshotPath);
+        }
+    }
+
+    private void waitForBackup(String vmName) throws CloudRuntimeException {
+        int timeout = incrementalSnapshotTimeout;
+        logger.debug("Waiting for backup of VM [{}] to finish, timeout is [{}].", vmName, timeout);
+
+        String result;
+
+        while (timeout > 0) {
+            result = checkBackupJob(vmName);
+
+            if (result.contains("Completed") && result.contains("Backup")) {
+                return;
+            }
+
+            timeout -= 10000;
+            try {
+                Thread.sleep(10000);
+            } catch (InterruptedException e) {
+                throw new CloudRuntimeException(e);
+            }
+        }
+
+        throw new CloudRuntimeException(String.format("Timeout while waiting for incremental snapshot for VM [%s] to finish.", vmName));
+    }
+
+    private void cancelBackupJob(SnapshotObjectTO snapshotObjectTO) {
+        Script.runSimpleBashScript(String.format(DOMJOBABORT_COMMAND, snapshotObjectTO.getVmName()));
+
+        String result = checkBackupJob(snapshotObjectTO.getVmName());
+
+        if (result.contains("Backup") && result.contains("Cancelled")) {
+            logger.debug("Successfully canceled incremental snapshot job.");
+        } else {
+            logger.warn("Couldn't cancel the incremental snapshot job correctly. Job status is [{}].", result);
+        }
+    }
+
+    private String checkBackupJob(String vmName) {
+        return Script.runSimpleBashScriptWithFullResult(String.format(DOMJOBINFO_COMPLETED_COMMAND, vmName), 10);
+    }
+
+    protected void rebaseSnapshot(SnapshotObjectTO snapshotObjectTO, KVMStoragePool secondaryPool, String secondaryUrl, String snapshotPath, String snapshotName, String[] parents, int wait) {
+        if (parents == null) {
+            logger.debug("No need to rebase snapshot [{}], this snapshot has no parents, therefore it is the first on its backing chain.", snapshotName);
+            return;
+        }
+        String parentSnapshotPath;
+
+        if (secondaryPool == null) {
+            parentSnapshotPath = parents[parents.length - 1];
+        } else if (!secondaryUrl.equals(snapshotObjectTO.getParentStore().getUrl())) {
+            KVMStoragePool parentPool = storagePoolMgr.getStoragePoolByURI(snapshotObjectTO.getParentStore().getUrl());
+            parentSnapshotPath = parentPool.getLocalPath() + File.separator + parents[parents.length - 1];
+            storagePoolMgr.deleteStoragePool(parentPool.getType(), parentPool.getUuid());
+        } else {
+            parentSnapshotPath = secondaryPool.getLocalPath() + File.separator + parents[parents.length - 1];
+        }
+
+        QemuImgFile snapshotFile = new QemuImgFile(snapshotPath);
+        QemuImgFile parentSnapshotFile = new QemuImgFile(parentSnapshotPath);
+
+        logger.debug("Rebasing snapshot [{}] with parent [{}].", snapshotName, parentSnapshotPath);
+
+        try {
+            QemuImg qemuImg = new QemuImg(wait);
+            qemuImg.rebase(snapshotFile, parentSnapshotFile, PhysicalDiskFormat.QCOW2.toString(), false);
+        } catch (LibvirtException | QemuImgException e) {
+            logger.error("Exception while rebasing incremental snapshot [{}] due to: [{}].", snapshotName, e.getMessage(), e);
+            throw new CloudRuntimeException(e);
+        }
+    }
+
+    protected String getParentCheckpointName(String[] parents) {
+        String immediateParentPath = parents[parents.length - 1];
+        return immediateParentPath.substring(immediateParentPath.lastIndexOf(File.separator) + 1);
+    }
+
+    private Path createFileAndWrite(String content, String dir, String fileName) {
+        File dirFile = new File(dir);
+        if (!dirFile.exists()) {
+            dirFile.mkdirs();
+        }
+
+        Path filePath = Path.of(dirFile.getPath(), fileName);
+        try {
+            return Files.write(filePath, content.getBytes());
+        } catch (IOException ex) {
+            String message = String.format("Error while writing file [%s].", filePath);
+            logger.error(message, ex);
+            throw new CloudRuntimeException(message, ex);
+        }
+    }
+
+    private String dumpCheckpoint(KVMStoragePool primaryPool, KVMStoragePool secondaryPool, String snapshotName, VolumeObjectTO volumeObjectTo, String vmName, String[] snapshotParents) {
+        String result = Script.runSimpleBashScriptWithFullResult(String.format(CHECKPOINT_DUMP_XML_COMMAND, vmName, snapshotName), 10);
+
+        String snapshotParent = null;
+        if (snapshotParents != null) {
+            String snapshotParentPath = snapshotParents[snapshotParents.length - 1];
+            snapshotParent = snapshotParentPath.substring(snapshotParentPath.lastIndexOf(File.separator) + 1);
+        }
+
+        return cleanupCheckpointXmlDumpCheckpointAndRedefine(result, primaryPool, secondaryPool, snapshotName, volumeObjectTo, snapshotParent, vmName);
+    }
+
+    private String cleanupCheckpointXmlDumpCheckpointAndRedefine(String checkpointXml, KVMStoragePool primaryPool, KVMStoragePool secondaryPool, String snapshotName, VolumeObjectTO volumeObjectTo, String snapshotParent, String vmName) {
+        String updatedCheckpointXml;
+        try {
+            updatedCheckpointXml = updateCheckpointXml(checkpointXml, snapshotParent);
+        } catch (TransformerException | ParserConfigurationException | IOException | SAXException |
+                 XPathExpressionException e) {
+            logger.error("Exception while parsing checkpoint XML [{}].", checkpointXml, e);
+            throw new CloudRuntimeException(e);
+        }
+
+        Pair<String, String> checkpointFullPathAndDirPath = getFullSnapshotOrCheckpointPathAndDirPathOnCorrectStorage(primaryPool, secondaryPool, snapshotName, volumeObjectTo, true);
+
+        String fullPath = checkpointFullPathAndDirPath.first();
+        String dirPath = checkpointFullPathAndDirPath.second();
+
+        KVMStoragePool workPool = ObjectUtils.defaultIfNull(secondaryPool, primaryPool);
+        workPool.createFolder(dirPath);
+
+        logger.debug("Saving checkpoint of volume [{}], attached to VM [{}], referring to snapshot [{}] to path [{}].", volumeObjectTo, vmName, snapshotName, fullPath);
+        createFileAndWrite(updatedCheckpointXml, workPool.getLocalPath() + File.separator + dirPath, snapshotName);
+
+        logger.debug("Redefining checkpoint on VM [{}].", vmName);
+        Script.runSimpleBashScript(String.format(LibvirtComputingResource.CHECKPOINT_CREATE_COMMAND, vmName, fullPath));
+
+        return fullPath;
+    }
+
+    /**
+     * Updates the checkpoint XML, setting the parent to {@code snapshotParent} and removing any disks that were not backed up.
+     * @param checkpointXml checkpoint XML to be parsed
+     * @param snapshotParent snapshot parent
+     * */
+    private String updateCheckpointXml(String checkpointXml, String snapshotParent) throws ParserConfigurationException, XPathExpressionException, IOException, SAXException, TransformerException {
+        logger.debug("Parsing checkpoint XML [{}].", checkpointXml);
+
+        InputStream in = IOUtils.toInputStream(checkpointXml);
+        DocumentBuilderFactory docFactory = ParserUtils.getSaferDocumentBuilderFactory();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(in);
+        XPath xPath = XPathFactory.newInstance().newXPath();
+
+        updateParent(snapshotParent, doc, xPath);
+
+        removeUnnecessaryDisks(doc, xPath);
+
+        String finalXml = LibvirtXMLParser.getXml(doc);
+
+        logger.debug("Checkpoint XML after parsing is [{}].", finalXml);
+
+        return finalXml;
+    }
+
+    /**
+     * Removes all the disk definitions on the checkpoint XML from disks that were not affected.
+     * @param checkpointXml the checkpoint XML to be updated.
+     * */
+    private void removeUnnecessaryDisks(Document checkpointXml, XPath xPath) throws XPathExpressionException {
+        Node disksNode = (Node) xPath.compile("/domaincheckpoint/disks").evaluate(checkpointXml, XPathConstants.NODE);
+        NodeList disksNodeChildren = disksNode.getChildNodes();
+        for (int j = 0; j < disksNodeChildren.getLength(); j++) {
+            Node diskNode = disksNodeChildren.item(j);
+            if (diskNode == null) {
+                continue;
+            }
+            if ("disk".equals(diskNode.getNodeName()) && "no".equals(diskNode.getAttributes().getNamedItem("checkpoint").getNodeValue())) {
+                disksNode.removeChild(diskNode);
+                logger.trace("Removing node [{}].", diskNode);
+            }
+        }
+    }
+
+    /**
+     * Updates the parent on the {@code checkpointXml} to {@code snapshotParent}. If {@code snapshotParent} is null, removes the parent.
+     * @param checkpointXml the checkpoint XML to be updated
+     * @param snapshotParent the snapshot parent. Inform null if no parent.
+     * */
+    private void updateParent(String snapshotParent, Document checkpointXml, XPath xPath) throws XPathExpressionException {
+        if (snapshotParent == null) {
+            Object parentNodeObject = xPath.compile("/domaincheckpoint/parent").evaluate(checkpointXml, XPathConstants.NODE);
+            if (parentNodeObject == null) {
+                return;
+            }
+            Node parentNode = (Node) parentNodeObject;
+            parentNode.getParentNode().removeChild(parentNode);
+            return;
+        }
+
+        Node parentNameNode = (Node) xPath.compile("/domaincheckpoint/parent/name").evaluate(checkpointXml, XPathConstants.NODE);
+        parentNameNode.setTextContent(snapshotParent);
+    }
+
+    /**
+     * If imageStore is not null, copy the snapshot directly to secondary storage, else, copy it to the primary storage.
+     *
+     * @return SnapshotObjectTO of the new snapshot.
+     * */
+    private SnapshotObjectTO takeFullVolumeSnapshotOfRunningVm(CreateObjectCommand cmd, KVMStoragePool primaryPool, KVMStoragePool secondaryPool, KVMPhysicalDisk disk, String snapshotName,
+                                                               Connect conn, String vmName, String diskPath, Domain vm, VolumeObjectTO volume, String snapshotPath) throws IOException, LibvirtException {
+        logger.debug("Taking full volume snapshot of volume [{}] attached to running VM [{}]. Snapshot will be copied to [{}].", volume, vmName,
+                ObjectUtils.defaultIfNull(secondaryPool, primaryPool));
+
+        validateAvailableSizeOnPoolToTakeVolumeSnapshot(primaryPool, disk);
+        String relativePath = null;
+        try {
+            String diskLabel = takeVolumeSnapshot(resource.getDisks(conn, vmName), snapshotName, diskPath, vm);
+
+            Pair<String, String> fullSnapPathAndDirPath = getFullSnapshotOrCheckpointPathAndDirPathOnCorrectStorage(primaryPool, secondaryPool, snapshotName, volume, false);
+
+            snapshotPath = fullSnapPathAndDirPath.first();
+            String directoryPath = fullSnapPathAndDirPath.second();
+            relativePath = directoryPath + File.separator + snapshotName;
+
+            String convertResult = convertBaseFileToSnapshotFileInStorageDir(ObjectUtils.defaultIfNull(secondaryPool, primaryPool), disk, snapshotPath, directoryPath, volume, cmd.getWait());
+
+            mergeSnapshotIntoBaseFile(vm, diskLabel, diskPath, snapshotName, volume, conn);
+
+            validateConvertResult(convertResult, snapshotPath);
+        } catch (LibvirtException e) {
+            if (!e.getMessage().contains(LIBVIRT_OPERATION_NOT_SUPPORTED_MESSAGE)) {
+                throw e;
+            }
+
+            logger.info("It was not possible to take live disk snapshot for volume [{}], in VM [{}], due to [{}]. We will take full snapshot of the VM"
+                    + " and extract the disk instead. Consider upgrading your QEMU binary.", volume, vmName, e.getMessage());
+
+            takeFullVmSnapshotForBinariesThatDoesNotSupportLiveDiskSnapshot(vm, snapshotName, vmName);
+            primaryPool.createFolder(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR);
+            extractDiskFromFullVmSnapshot(disk, volume, snapshotPath, snapshotName, vmName, vm);
+        }
+
+        /*
+         * libvirt on RHEL6 doesn't handle resume event emitted from
+         * qemu
+         */
+        vm = resource.getDomain(conn, vmName);
+        DomainInfo.DomainState state = vm.getInfo().state;
+        if (state == DomainInfo.DomainState.VIR_DOMAIN_PAUSED) {
+            vm.resume();
+        }
+
+        return createSnapshotToAndUpdatePathAndSize(secondaryPool == null ? snapshotPath : relativePath, snapshotPath);
+    }
+
+
+    private SnapshotObjectTO takeFullVolumeSnapshotOfStoppedVm(CreateObjectCommand cmd, KVMStoragePool primaryPool, KVMStoragePool secondaryPool, String snapshotName, KVMPhysicalDisk disk, VolumeObjectTO volume) throws IOException {
+        logger.debug("Taking full volume snapshot of volume [{}]. Snapshot will be copied to [{}].", volume,
+                ObjectUtils.defaultIfNull(secondaryPool, primaryPool));
+        Pair<String, String> fullSnapPathAndDirPath = getFullSnapshotOrCheckpointPathAndDirPathOnCorrectStorage(primaryPool, secondaryPool, snapshotName, volume, false);
+
+        String snapshotPath = fullSnapPathAndDirPath.first();
+        String directoryPath = fullSnapPathAndDirPath.second();
+        String relativePath = directoryPath + File.separator + snapshotName;
+
+        String convertResult = convertBaseFileToSnapshotFileInStorageDir(ObjectUtils.defaultIfNull(secondaryPool, primaryPool), disk, snapshotPath, directoryPath, volume, cmd.getWait());
+
+        validateConvertResult(convertResult, snapshotPath);
+
+        return createSnapshotToAndUpdatePathAndSize(secondaryPool == null ? snapshotPath : relativePath, snapshotPath);
+    }
+
+    private CreateObjectAnswer takeClvmVolumeSnapshotOfStoppedVm(KVMPhysicalDisk disk, String snapshotName) {
+        /* VM is not running, create a snapshot by ourself */
+        final Script command = new Script(_manageSnapshotPath, _cmdsTimeout, logger);
+        command.add(MANAGE_SNAPSTHOT_CREATE_OPTION, disk.getPath());
+        command.add(NAME_OPTION, snapshotName);
+        final String result = command.execute();
+        if (result != null) {
+            String message = String.format("Failed to manage snapshot [%s] due to: [%s].", snapshotName, result);
+            logger.debug(message);
+            return new CreateObjectAnswer(message);
+        }
+        return null;
+    }
+
+    /**
+     * For RBD we can't use libvirt to do our snapshotting or any Bash scripts.
+     * libvirt also wants to store the memory contents of the Virtual Machine,
+     * but that's not possible with RBD since there is no way to store the memory
+     * contents in RBD.
+     * <p>
+     * So we rely on the Java bindings for RBD to create our snapshot
+     * <p>
+     * This snapshot might not be 100% consistent due to writes still being in the
+     * memory of the Virtual Machine, but if the VM runs a kernel which supports
+     * barriers properly (>2.6.32) this won't be any different then pulling the power
+     * cord out of a running machine.
+     */
+    private void takeRbdVolumeSnapshotOfStoppedVm(KVMStoragePool primaryPool, KVMPhysicalDisk disk, String snapshotName) {
+        try {
+            Rados r = radosConnect(primaryPool);
+
+            final IoCTX io = r.ioCtxCreate(primaryPool.getSourceDir());
+            final Rbd rbd = new Rbd(io);
+            final RbdImage image = rbd.open(disk.getName());
+
+            logger.debug("Attempting to create RBD snapshot {}@{}", disk.getName(), snapshotName);
+            image.snapCreate(snapshotName);
+
+            rbd.close(image);
+            r.ioCtxDestroy(io);
+        } catch (final Exception e) {
+            logger.error("A RBD snapshot operation on [{}] failed. The error was: {}", disk.getName(), e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Retrieves the disk label to take snapshot;
+     * @param disks List of VM's disks;
+     * @param diskPath Path of the disk to take snapshot;
+     * @param vm VM in which disks are;
+     * @return the label to take snapshot. If the disk path is not found in VM's XML, it will throw a CloudRuntimeException.
+     * @throws org.libvirt.LibvirtException if the disk is not found
+     */
+    protected String getDiskLabelToSnapshot(List<DiskDef> disks, String diskPath, Domain vm) throws LibvirtException {
+        logger.debug("Searching disk label of disk with path [{}] on VM [{}].", diskPath, vm.getName());
+        for (DiskDef disk : disks) {
+            String diskDefPath = disk.getDiskPath();
+
+            if (StringUtils.isEmpty(diskDefPath)) {
+                continue;
+            }
+
+            if (!diskDefPath.contains(diskPath)) {
+                continue;
+            }
+            logger.debug("Found disk label [{}] for volume with path [{}] on VM [{}].", disk.getDiskLabel(), diskPath, vm.getName());
+
+            return disk.getDiskLabel();
+        }
+
+        throw new CloudRuntimeException(String.format("VM [%s] has no disk with path [%s]. VM's XML [%s].", vm.getName(), diskPath, vm.getXMLDesc(0)));
+    }
+
+    /**
+     * Gets the fully qualified path of the snapshot or checkpoint and the directory path. If a secondary pool is informed, the path will be on the secondary pool,
+     * otherwise, the path will be on the primary pool.
+     * @param primaryPool Primary pool definition, the path returned will be here if no secondary pool is informed;
+     * @param secondaryPool Secondary pool definition. If informed, the primary pool will be ignored and the path returned will be on the secondary pool;
+     * @param snapshotName Name of the snapshot;
+     * @param volume Volume that is being snapshot;
+     * @param checkpoint Whether to return a path for a snapshot or a snapshot's checkpoint;
+     * @return Fully qualified path and the directory path of the snapshot/checkpoint.
+     * */
+    private Pair<String, String> getFullSnapshotOrCheckpointPathAndDirPathOnCorrectStorage(KVMStoragePool primaryPool, KVMStoragePool secondaryPool, String snapshotName,
+                                                                                           VolumeObjectTO volume, boolean checkpoint) {
+        String fullSnapshotPath;
+        String dirPath;
+
+        if (secondaryPool == null) {
+            fullSnapshotPath = getSnapshotOrCheckpointPathInPrimaryStorage(primaryPool.getLocalPath(), snapshotName, checkpoint);
+            dirPath = checkpoint ? TemplateConstants.DEFAULT_CHECKPOINT_ROOT_DIR : TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR;
+        } else {
+            Pair<String, String> fullPathAndDirectoryPath = getSnapshotOrCheckpointPathAndDirectoryPathInSecondaryStorage(secondaryPool.getLocalPath(), snapshotName,
+                    volume.getAccountId(), volume.getVolumeId(), checkpoint);
+
+            fullSnapshotPath = fullPathAndDirectoryPath.first();
+            dirPath = fullPathAndDirectoryPath.second();
+        }
+        return new Pair<>(fullSnapshotPath, dirPath);
     }
 
     protected void deleteFullVmSnapshotAfterConvertingItToExternalDiskSnapshot(Domain vm, String snapshotName, VolumeObjectTO volume, String vmName) throws LibvirtException {
@@ -1978,18 +2485,22 @@ public class KVMStorageProcessor implements StorageProcessor {
 
     /**
      * Creates the snapshot directory in the primary storage, if it does not exist; then, converts the base file (VM's old writing file) to the snapshot directory.
-     * @param primaryPool Storage to create folder, if not exists;
-     * @param baseFile Base file of VM, which will be converted;
+     * @param pool         Storage to create folder, if not exists;
+     * @param baseFile     Base file of VM, which will be converted;
      * @param snapshotPath Path to convert the base file;
+     * @param snapshotFolder Folder where the snapshot will be converted to;
+     * @param volume Volume being snapshot, used for logging only;
+     * @param wait timeout;
      * @return null if the conversion occurs successfully or an error message that must be handled.
      */
-    protected String convertBaseFileToSnapshotFileInPrimaryStorageDir(KVMStoragePool primaryPool,
-            KVMPhysicalDisk baseFile, String snapshotPath, VolumeObjectTO volume, int wait) {
+
+    protected String convertBaseFileToSnapshotFileInStorageDir(KVMStoragePool pool,
+            KVMPhysicalDisk baseFile, String snapshotPath, String snapshotFolder, VolumeObjectTO volume, int wait) {
         try (KeyFile srcKey = new KeyFile(volume.getPassphrase())) {
             logger.debug(
-                    String.format("Trying to convert volume [%s] (%s) to snapshot [%s].", volume, baseFile, snapshotPath));
+                    "Trying to convert volume [{}] ({}) to snapshot [{}].", volume, baseFile, snapshotPath);
 
-            primaryPool.createFolder(TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR);
+            pool.createFolder(snapshotFolder);
             convertTheBaseFileToSnapshot(baseFile, snapshotPath, wait, srcKey);
         } catch (QemuImgException | LibvirtException | IOException ex) {
             return String.format("Failed to convert %s snapshot of volume [%s] to [%s] due to [%s].", volume, baseFile,
@@ -2022,14 +2533,26 @@ public class KVMStorageProcessor implements StorageProcessor {
         q.convert(srcFile, destFile, options, qemuObjects, qemuImageOpts, null, true);
     }
 
+    protected String getSnapshotOrCheckpointPathInPrimaryStorage(String primaryStoragePath, String snapshotName, boolean checkpoint) {
+        String rootDir = checkpoint ? TemplateConstants.DEFAULT_CHECKPOINT_ROOT_DIR : TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR;
+        return String.format("%s%s%s%s%s", primaryStoragePath, File.separator, rootDir, File.separator, snapshotName);
+    }
+
     /**
-     * Retrieves the path of the snapshot on primary storage snapshot's dir.
-     * @param primaryStoragePath Path of the primary storage;
+     * Retrieves the path of the snapshot or snapshot's checkpoint on secondary storage snapshot's dir.
+     * @param secondaryStoragePath Path of the secondary storage;
      * @param snapshotName Snapshot name;
-     * @return the path of the snapshot in primary storage snapshot's dir.
+     * @param accountId accountId;
+     * @param volumeId volumeId;
+     * @param checkpoint Whether to return a path for a snapshot or a snapshot's checkpoint;
+     * @return the path of the snapshot or snapshot's checkpoint in secondary storage and the snapshot's dir.
      */
-    protected String getSnapshotPathInPrimaryStorage(String primaryStoragePath, String snapshotName) {
-        return String.format("%s%s%s%s%s", primaryStoragePath, File.separator, TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR, File.separator, snapshotName);
+    protected Pair<String, String> getSnapshotOrCheckpointPathAndDirectoryPathInSecondaryStorage(String secondaryStoragePath, String snapshotName, long accountId, long volumeId, boolean checkpoint) {
+        String rootDir = checkpoint ? TemplateConstants.DEFAULT_CHECKPOINT_ROOT_DIR : TemplateConstants.DEFAULT_SNAPSHOT_ROOT_DIR;
+        String snapshotParentDirectories = String.format("%s%s%s%s%s", rootDir, File.separator, accountId, File.separator, volumeId);
+        String fullSnapPath = String.format("%s%s%s%s%s", secondaryStoragePath, File.separator, snapshotParentDirectories, File.separator, snapshotName);
+
+        return new Pair<>(fullSnapPath, snapshotParentDirectories);
     }
 
     /**
@@ -2276,6 +2799,7 @@ public class KVMStorageProcessor implements StorageProcessor {
         KVMPhysicalDisk disk = storagePoolMgr.copyPhysicalDisk(snapshotDisk, path != null ? path : volUuid, primaryPool, cmd.getWaitInMillSeconds());
 
         storagePoolMgr.disconnectPhysicalDisk(pool.getPoolType(), pool.getUuid(), path);
+        secondaryPool.delete();
         return disk;
     }
 
@@ -2378,6 +2902,9 @@ public class KVMStorageProcessor implements StorageProcessor {
                 logger.info(String.format("Deleting snapshot (id=%s, name=%s, path=%s, storage type=%s) on primary storage", snapshotTO.getId(), snapshotTO.getName(),
                         snapshotTO.getPath(), primaryPool.getType()));
                 deleteSnapshotFile(snapshotTO);
+                if (snapshotTO.isKvmIncrementalSnapshot()) {
+                    deleteCheckpoint(snapshotTO);
+                }
             } else {
                 logger.warn("Operation not implemented for storage pool type of " + primaryPool.getType().toString());
                 throw new InternalErrorException("Operation not implemented for storage pool type of " + primaryPool.getType().toString());
@@ -2397,6 +2924,24 @@ public class KVMStorageProcessor implements StorageProcessor {
         } finally {
             volume.clearPassphrase();
         }
+    }
+
+    /**
+     * Deletes the checkpoint dump if it exists. And deletes the checkpoint definition on the VM if it is running.
+     * */
+    protected void deleteCheckpoint(SnapshotObjectTO snapshotTO) throws IOException {
+        if (snapshotTO.getCheckpointPath() != null) {
+            Files.deleteIfExists(Path.of(snapshotTO.getCheckpointPath()));
+        }
+
+        String vmName = snapshotTO.getVmName();
+        if (vmName == null) {
+            return;
+        }
+        String checkpointName = snapshotTO.getPath().substring(snapshotTO.getPath().lastIndexOf(File.separator) + 1);
+
+        logger.debug("Deleting checkpoint [{}] of VM [{}].", checkpointName, vmName);
+        Script.runSimpleBashScript(String.format(LibvirtComputingResource.CHECKPOINT_DELETE_COMMAND, vmName, checkpointName));
     }
 
     /**
