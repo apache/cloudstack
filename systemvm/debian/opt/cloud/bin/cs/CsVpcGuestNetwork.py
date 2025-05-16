@@ -102,18 +102,17 @@ class CsVpcGuestNetwork(CsDataBag):
         if 'router_guest_ip6' in list(entry.keys()) and entry['router_guest_ip6']:
             cidr_size = entry['router_guest_ip6_cidr'].split("/")[-1]
             full_addr = entry['router_guest_ip6_gateway'] + "/" + cidr_size
-            if entry['router_guest_ip6'] is not entry['router_guest_ip6_gateway']:
-                full_addr = entry['router_guest_ip6_cidr']
             self.conf.append("interface %s" % entry['device'])
             self.conf.append("{")
             self.conf.append("    AdvSendAdvert on;")
             self.conf.append("    MinRtrAdvInterval 5;")
             self.conf.append("    MaxRtrAdvInterval 15;")
-            self.conf.append("    prefix %s" % full_addr)
-            self.conf.append("    {")
-            self.conf.append("        AdvOnLink on;")
-            self.conf.append("        AdvAutonomous on;")
-            self.conf.append("    };")
+            if entry['router_guest_ip6'] is entry['router_guest_ip6_gateway']:
+                self.conf.append("    prefix %s" % full_addr)
+                self.conf.append("    {")
+                self.conf.append("        AdvOnLink on;")
+                self.conf.append("        AdvAutonomous on;")
+                self.conf.append("    };")
             if 'dns6' in list(entry.keys()) and entry['dns6']:
                 for dns in entry['dns6'].split(","):
                     self.conf.append("    RDNSS %s" % dns)
