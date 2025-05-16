@@ -28,7 +28,9 @@ import javax.inject.Inject;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.network.dao.NetrisProviderDao;
 import com.cloud.network.dao.NsxProviderDao;
+import com.cloud.network.element.NetrisProviderVO;
 import com.cloud.network.element.NsxProviderVO;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
@@ -41,6 +43,7 @@ import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -104,6 +107,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     private VpcService _vpcSvc;
     @Inject
     private NsxProviderDao nsxProviderDao;
+    @Inject
+    private NetrisProviderDao netrisProviderDao;
 
     private String supportedProtocolsForAclRules = "tcp,udp,icmp,all";
 
@@ -1031,10 +1036,12 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             }
             final DataCenter dc = _entityMgr.findById(DataCenter.class, vpc.getZoneId());
             final NsxProviderVO nsxProvider = nsxProviderDao.findByZoneId(dc.getId());
+            final NetrisProviderVO netrisProvider = netrisProviderDao.findByZoneId(dc.getId());
             List<NetworkVO> networks = _networkDao.listByAclId(lockedAcl.getId());
-            if (Objects.nonNull(nsxProvider) && !networks.isEmpty()) {
+            if (ObjectUtils.anyNotNull(nsxProvider, netrisProvider) && !networks.isEmpty()) {
                 allAclRules = getAllAclRulesSortedByNumber(lockedAcl.getId());
-                _networkAclMgr.reorderAclRules(vpc, networks, allAclRules);
+                Network.Provider networkProvider = nsxProvider != null ? Network.Provider.Nsx : Network.Provider.Netris;
+                _networkAclMgr.reorderAclRules(vpc, networks, allAclRules, networkProvider);
             }
             return networkACLItem;
         } finally {
