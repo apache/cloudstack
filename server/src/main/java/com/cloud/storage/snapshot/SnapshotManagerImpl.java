@@ -849,7 +849,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         } else if (intervalTypeStr != null && volumeId != null) {
             Type type = SnapshotVO.getSnapshotType(intervalTypeStr);
             if (type == null) {
-                throw new InvalidParameterValueException("Unsupported snapstho interval type " + intervalTypeStr);
+                throw new InvalidParameterValueException("Unsupported snapshot interval type " + intervalTypeStr);
             }
             sc.setParameters("snapshotTypeEQ", type.ordinal());
         } else {
