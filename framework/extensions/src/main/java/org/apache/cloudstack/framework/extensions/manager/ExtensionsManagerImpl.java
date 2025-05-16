@@ -19,6 +19,40 @@
 
 package org.apache.cloudstack.framework.extensions.manager;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
+import org.apache.cloudstack.api.response.ExtensionResourceMapResponse;
+import org.apache.cloudstack.api.response.ExtensionResponse;
+import org.apache.cloudstack.extension.CustomActionResponse;
+import org.apache.cloudstack.framework.extensions.api.AddCustomActionCmd;
+import org.apache.cloudstack.framework.extensions.api.CreateExtensionCmd;
+import org.apache.cloudstack.framework.extensions.api.DeleteCustomActionCmd;
+import org.apache.cloudstack.framework.extensions.api.DeleteExtensionCmd;
+import org.apache.cloudstack.framework.extensions.api.ListCustomActionCmd;
+import org.apache.cloudstack.framework.extensions.api.ListExtensionsCmd;
+import org.apache.cloudstack.framework.extensions.api.RegisterExtensionCmd;
+import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDao;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDetailsDao;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionDetailsDao;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDao;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDetailsDao;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionCustomActionDetailsVO;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionCustomActionVO;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionDetailsVO;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapDetailsVO;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
+import org.apache.commons.collections.CollectionUtils;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.RunCustomActionAnswer;
 import com.cloud.agent.api.RunCustomActionCommand;
@@ -28,12 +62,16 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.extension.Extension;
 import com.cloud.extension.ExtensionCustomAction;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.ExternalProvisioner;
+import com.cloud.org.Cluster;
 import com.cloud.utils.Pair;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
@@ -41,41 +79,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
-import org.apache.cloudstack.extension.CustomActionResponse;
-import org.apache.cloudstack.framework.extensions.api.CreateExtensionCmd;
-import org.apache.cloudstack.framework.extensions.api.DeleteCustomActionCmd;
-import org.apache.cloudstack.framework.extensions.api.DeleteExtensionCmd;
-import org.apache.cloudstack.framework.extensions.api.ListCustomActionCmd;
-import org.apache.cloudstack.framework.extensions.api.ListExtensionsCmd;
-import org.apache.cloudstack.framework.extensions.api.AddCustomActionCmd;
-import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
-import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.component.PluggableService;
-import org.apache.cloudstack.framework.extensions.api.RegisterExtensionCmd;
-import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDao;
-import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDetailsDao;
-import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDao;
-import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDetailsDao;
-import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
-import org.apache.cloudstack.framework.extensions.dao.ExtensionDetailsDao;
-import org.apache.cloudstack.api.response.ExtensionResourceMapResponse;
-import org.apache.cloudstack.api.response.ExtensionResponse;
-import com.cloud.extension.Extension;
-import org.apache.cloudstack.framework.extensions.vo.ExtensionCustomActionDetailsVO;
-import org.apache.cloudstack.framework.extensions.vo.ExtensionCustomActionVO;
-import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapDetailsVO;
-import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
-import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
-import org.apache.cloudstack.framework.extensions.vo.ExtensionDetailsVO;
-import org.apache.commons.collections.CollectionUtils;
-
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 
 public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsManager, PluggableService {
 
@@ -132,7 +135,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         ExtensionVO extension = new ExtensionVO();
         extension.setName(name);
         extension.setType(type);
-        String scriptPath = String.format(externalProvisioner.getScriptPath(), name);
+        String scriptPath = externalProvisioner.getExtensionScriptPath(name);
         extension.setScript(scriptPath);
         ExtensionVO savedExtension = extensionDao.persist(extension);
 
@@ -180,7 +183,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         for (ExtensionVO extension : result.first()) {
             Map<String, String> details = extensionDetailsDao.listDetailsKeyPairs(extension.getId());
             ExtensionResponse response = new ExtensionResponse(extension.getName(), extension.getType(), extension.getUuid(), details);
-            String scriptPath = String.format(externalProvisioner.getScriptPath(), extension.getName());
+            String scriptPath = externalProvisioner.getExtensionScriptPath(extension.getName());
             response.setScriptPath(scriptPath);
 
             List<ExtensionResourceMapVO> extensionResourceMapVOS = extensionResourceMapDao.listByExtensionId(extension.getId());
@@ -210,21 +213,22 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         Long extensionId = cmd.getExtensionId();
         String resourceType = cmd.getResourceType();
         if ("CLUSTER".equalsIgnoreCase(resourceType)) {
-            return registerExtensionWithCluster(resourceId, extensionId, resourceType, cmd.getExternalDetails());
+            return registerExtensionWithCluster(resourceId, extensionId, cmd.getExternalDetails());
         } else {
             throw new CloudRuntimeException("Currently only cluster can be used to register an extension of type Orchestrator");
         }
     }
 
     @Override
-    public ExtensionResponse registerExtensionWithCluster(String resourceId, Long extensionId, String resourceType, Map<String, String> externalDetails) {
+    public ExtensionResponse registerExtensionWithCluster(String resourceId, Long extensionId, Map<String, String> externalDetails) {
+        final String resourceType = Cluster.class.getSimpleName();
         ClusterVO cluster = clusterDao.findByUuid(resourceId);
         ExtensionResourceMapVO existing = extensionResourceMapDao.findByResourceIdAndType(cluster.getId(), resourceType);
         if (existing != null) {
             throw new CloudRuntimeException("Extension already registered with this resource");
         }
 
-        ExtensionResourceMapVO extensionMap = new ExtensionResourceMapVO();
+        ExtensionResourceMapVO extensionMap = new ExtensionResourceMapVO(extensionId, cluster.getId(), resourceType);
         extensionMap.setExtensionId(extensionId);
         extensionMap.setResourceId(cluster.getId());
         extensionMap.setResourceType(resourceType);
@@ -247,11 +251,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         clusterDetailsDao.persist(cluster.getId(), externalDetails);
 
         ExtensionResponse response = new ExtensionResponse(extension.getName(), extension.getType(), extension.getUuid(), details);
-        String scriptPath = String.format(externalProvisioner.getScriptPath(), extension.getName());
+        String scriptPath = externalProvisioner.getExtensionScriptPath(extension.getName());
         response.setScriptPath(scriptPath);
 
-        ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(cluster.getId(), "cluster");
-        ExtensionResourceMapResponse resourceResponse = new ExtensionResourceMapResponse(extension.getUuid(), cluster.getUuid(), "cluster");
+        ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(cluster.getId(), resourceType);
+        ExtensionResourceMapResponse resourceResponse = new ExtensionResourceMapResponse(extension.getUuid(), cluster.getUuid(), resourceType);
 
         Map<String, String> resourceMapDetails = extensionResourceMapDetailsDao.listDetailsKeyPairs(extensionResourceMapVO.getId());
         resourceResponse.setDetails(resourceMapDetails);

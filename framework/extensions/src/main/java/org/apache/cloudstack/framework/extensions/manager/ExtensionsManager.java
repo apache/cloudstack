@@ -20,23 +20,24 @@
 package org.apache.cloudstack.framework.extensions.manager;
 
 
-import com.cloud.extension.ExtensionCustomAction;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
+import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.extension.CustomActionResponse;
+import org.apache.cloudstack.framework.extensions.api.AddCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.CreateExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.DeleteCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.DeleteExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.ListCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.ListExtensionsCmd;
-import com.cloud.utils.component.Manager;
-import org.apache.cloudstack.framework.extensions.api.AddCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.RegisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
-import org.apache.cloudstack.api.response.ExtensionResponse;
-import com.cloud.extension.Extension;
 
-import java.util.List;
-import java.util.Map;
+import com.cloud.extension.Extension;
+import com.cloud.extension.ExtensionCustomAction;
+import com.cloud.utils.component.Manager;
 
 public interface ExtensionsManager extends Manager {
     Extension createExtension(CreateExtensionCmd cmd);
@@ -45,7 +46,7 @@ public interface ExtensionsManager extends Manager {
 
     ExtensionResponse registerExtensionWithResource(RegisterExtensionCmd cmd);
 
-    ExtensionResponse registerExtensionWithCluster(String resourceId, Long extensionId, String resourceType, Map<String, String> externalDetails);
+    ExtensionResponse registerExtensionWithCluster(String resourceId, Long extensionId, Map<String, String> externalDetails);
 
     void unregisterExtensionWithCluster(Long clusterId, Long extensionId);
 

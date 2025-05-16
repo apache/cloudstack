@@ -32,6 +32,8 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
 @Entity
 @Table(name = "extension")
 public class ExtensionVO implements Extension {
@@ -109,5 +111,10 @@ public class ExtensionVO implements Extension {
 
     public void setRemoved(Date removed) {
         this.removed = removed;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Extension %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, "id", "uuid", "name", "type"));
     }
 }

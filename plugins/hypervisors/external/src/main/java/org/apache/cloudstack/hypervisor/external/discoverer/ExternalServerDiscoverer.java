@@ -229,22 +229,22 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
     }
 
     @Override
-    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource, Map<String, String> details, List<String> hostTags) {
+    public HostVO createHostVOForDirectConnectAgent(HostVO host, StartupCommand[] startup, ServerResource resource,
+                    Map<String, String> details, List<String> hostTags) {
         StartupCommand firstCmd = startup[0];
         if (!(firstCmd instanceof StartupRoutingCommand)) {
             return null;
         }
-
-        StartupRoutingCommand ssCmd = ((StartupRoutingCommand)firstCmd);
+        StartupRoutingCommand ssCmd = (StartupRoutingCommand)firstCmd;
         if (ssCmd.getHypervisorType() != Hypervisor.HypervisorType.External) {
             return null;
         }
-
         final ClusterVO cluster = _clusterDao.findById(host.getClusterId());
-        ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(cluster.getId(), "cluster");
+        ExtensionResourceMapVO extensionResourceMapVO =
+                extensionResourceMapDao.findByResourceIdAndType(cluster.getId(), "cluster");
         ExtensionVO extensionVO = externalOrchestratorDao.findById(extensionResourceMapVO.getExtensionId());
-        externalProvisioner.loadScripts(extensionVO.getName());
-
+        logger.debug("Creating host for {}", extensionVO);
+        externalProvisioner.prepareScripts(extensionVO.getName()); // ToDo: good idea to add prepare here?
         return _resourceMgr.fillRoutingHostVO(host, ssCmd, Hypervisor.HypervisorType.External, details, hostTags);
     }
 

@@ -16,11 +16,13 @@
 // under the License.
 package com.cloud.hypervisor;
 
+import java.util.Map;
+
 import com.cloud.agent.api.HostVmStateReportEntry;
-import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
-import com.cloud.agent.api.PrepareExternalProvisioningCommand;
 import com.cloud.agent.api.PostExternalProvisioningAnswer;
 import com.cloud.agent.api.PostExternalProvisioningCommand;
+import com.cloud.agent.api.PrepareExternalProvisioningAnswer;
+import com.cloud.agent.api.PrepareExternalProvisioningCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RunCustomActionAnswer;
@@ -30,8 +32,6 @@ import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.utils.component.Manager;
-
-import java.util.HashMap;
 
 public interface ExternalProvisioner extends Manager {
     /**
@@ -46,25 +46,23 @@ public interface ExternalProvisioner extends Manager {
      */
     String getDescription();
 
-    PrepareExternalProvisioningAnswer prepareExternalProvisioning(PrepareExternalProvisioningCommand cmd);
+    String getExtensionScriptPath(String extensionName);
 
-    StartAnswer startInstance(StartCommand cmd);
+    PrepareExternalProvisioningAnswer prepareExternalProvisioning(String extensionName, PrepareExternalProvisioningCommand cmd);
 
-    StopAnswer stopInstance(StopCommand cmd);
+    StartAnswer startInstance(String extensionName, StartCommand cmd);
 
-    RebootAnswer rebootInstance(RebootCommand cmd);
+    StopAnswer stopInstance(String extensionName, StopCommand cmd);
 
-    StopAnswer expungeInstance(StopCommand cmd);
+    RebootAnswer rebootInstance(String extensionName, RebootCommand cmd);
 
-    PostExternalProvisioningAnswer postsetupInstance(PostExternalProvisioningCommand cmd);
+    StopAnswer expungeInstance(String extensionName, StopCommand cmd);
 
-    HashMap<String, HostVmStateReportEntry> getHostVmStateReport(Long hostId);
+    PostExternalProvisioningAnswer postSetupInstance(String extensionName, PostExternalProvisioningCommand cmd);
 
-    RunCustomActionAnswer runCustomAction(RunCustomActionCommand cmd);
+    Map<String, HostVmStateReportEntry> getHostVmStateReport(String extensionName, long hostId);
+
+    RunCustomActionAnswer runCustomAction(String extensionName, RunCustomActionCommand cmd);
 
     void prepareScripts(String extensionName);
-
-    void loadScripts(String extensionName);
-
-    String getScriptPath();
 }

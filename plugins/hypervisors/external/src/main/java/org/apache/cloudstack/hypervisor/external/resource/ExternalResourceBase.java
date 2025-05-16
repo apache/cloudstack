@@ -17,7 +17,6 @@
 package org.apache.cloudstack.hypervisor.external.resource;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -112,7 +111,7 @@ public class ExternalResourceBase implements ServerResource {
     }
 
     protected List<Object> getHostInfo() {
-        final ArrayList<Object> info = new ArrayList<Object>();
+        final ArrayList<Object> info = new ArrayList<>();
         long speed = 4000L;
         long cpus = 4L;
         long ram = 16000L * 1024L * 1024L;
@@ -129,7 +128,7 @@ public class ExternalResourceBase implements ServerResource {
 
     @Override
     public PingCommand getCurrentStatus(long id) {
-        final HashMap<String, HostVmStateReportEntry> vmStates = externalProvisioner.getHostVmStateReport(id);
+        final Map<String, HostVmStateReportEntry> vmStates = externalProvisioner.getHostVmStateReport(_extensionName, id);
         return new PingRoutingCommand(Host.Type.Routing, id, vmStates);
     }
 
@@ -139,7 +138,6 @@ public class ExternalResourceBase implements ServerResource {
             if (cmd instanceof CheckNetworkCommand) {
                 return new CheckNetworkAnswer((CheckNetworkCommand) cmd, true, "Network Setup check by names is done");
             }
-            externalProvisioner.loadScripts(_extensionName);
             if (cmd instanceof ReadyCommand) {
                 return new ReadyAnswer((ReadyCommand) cmd);
             } else if (cmd instanceof StartCommand) {
@@ -175,12 +173,12 @@ public class ExternalResourceBase implements ServerResource {
     }
 
     public RunCustomActionAnswer execute(RunCustomActionCommand cmd) {
-        return externalProvisioner.runCustomAction(cmd);
+        return externalProvisioner.runCustomAction(_extensionName, cmd);
     }
 
     public Answer execute(Command cmd) {
         RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(cmd.toString(), null);
-        RunCustomActionAnswer customActionAnswer = externalProvisioner.runCustomAction(runCustomActionCommand);
+        RunCustomActionAnswer customActionAnswer = externalProvisioner.runCustomAction(_extensionName, runCustomActionCommand);
         Answer answer = new Answer(cmd, customActionAnswer.getResult(), customActionAnswer.getRunDetails().toString());
         return answer;
     }
@@ -188,17 +186,17 @@ public class ExternalResourceBase implements ServerResource {
     public StopAnswer execute(StopCommand cmd) {
         Boolean expungeVM = cmd.isExpungeVM();
         if (expungeVM != null && expungeVM) {
-            return externalProvisioner.expungeInstance(cmd);
+            return externalProvisioner.expungeInstance(_extensionName, cmd);
         }
-        return externalProvisioner.stopInstance(cmd);
+        return externalProvisioner.stopInstance(_extensionName, cmd);
     }
 
     public RebootAnswer execute(RebootCommand cmd) {
-        return externalProvisioner.rebootInstance(cmd);
+        return externalProvisioner.rebootInstance(_extensionName, cmd);
     }
 
     public PostExternalProvisioningAnswer execute(PostExternalProvisioningCommand cmd) {
-        return externalProvisioner.postsetupInstance(cmd);
+        return externalProvisioner.postSetupInstance(_extensionName, cmd);
     }
 
     public GetHostStatsAnswer execute(GetHostStatsCommand cmd) {
@@ -206,11 +204,11 @@ public class ExternalResourceBase implements ServerResource {
     }
 
     public PrepareExternalProvisioningAnswer execute(PrepareExternalProvisioningCommand cmd) {
-        return externalProvisioner.prepareExternalProvisioning(cmd);
+        return externalProvisioner.prepareExternalProvisioning(_extensionName, cmd);
     }
 
     public StartAnswer execute(StartCommand cmd) {
-        return externalProvisioner.startInstance(cmd);
+        return externalProvisioner.startInstance(_extensionName, cmd);
     }
 
     @Override
