@@ -32,10 +32,12 @@ import com.cloud.deployasis.DeployAsIsConstants;
 import com.cloud.deployasis.TemplateDeployAsIsDetailVO;
 import com.cloud.deployasis.dao.TemplateDeployAsIsDetailsDao;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Storage;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.storage.VnfTemplateDetailVO;
 import com.cloud.storage.VnfTemplateNicVO;
+import com.cloud.storage.VnfTemplateDetailVO;
+import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VnfTemplateDetailsDao;
 import com.cloud.storage.dao.VnfTemplateNicDao;
 import com.cloud.user.dao.UserDataDao;
@@ -67,10 +69,8 @@ import com.cloud.api.ApiResponseHelper;
 import com.cloud.api.query.vo.ResourceTagJoinVO;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -241,7 +241,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         templateResponse.setDisplayText(template.getDisplayText());
         templateResponse.setPublic(template.isPublicTemplate());
         templateResponse.setCreated(template.getCreatedOnStore());
-        if (template.getFormat() == Storage.ImageFormat.BAREMETAL) {
+        if (template.getFormat() == Storage.ImageFormat.BAREMETAL || template.getFormat() == Storage.ImageFormat.EXTERNAL) {
             // for baremetal template, we didn't download, but is ready to use.
             templateResponse.setReady(true);
         } else {
@@ -253,12 +253,12 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         templateResponse.setDynamicallyScalable(template.isDynamicallyScalable());
         templateResponse.setSshKeyEnabled(template.isEnableSshKey());
         templateResponse.setCrossZones(template.isCrossZones());
-        templateResponse.setFormat(template.getFormat());
         if (template.getTemplateType() != null) {
             templateResponse.setTemplateType(template.getTemplateType().toString());
         }
 
         templateResponse.setHypervisor(template.getHypervisorType().getHypervisorDisplayName());
+        templateResponse.setFormat(template.getFormat());
 
         templateResponse.setOsTypeId(template.getGuestOSUuid());
         templateResponse.setOsTypeName(template.getGuestOSName());
@@ -329,6 +329,10 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         templateResponse.setRequiresHvm(template.isRequiresHvm());
         if (template.getArch() != null) {
             templateResponse.setArch(template.getArch().getType());
+        }
+        if (template.getExtensionId() != null) {
+            templateResponse.setExtensionId(template.getExtensionUuid());
+            templateResponse.setExtensionName(template.getExtensionName());
         }
 
         //set template children disks

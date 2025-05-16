@@ -257,6 +257,14 @@ known_categories = {
     'deleteASNRange': 'AS Number Range',
     'listASNumbers': 'AS Number',
     'releaseASNumber': 'AS Number',
+    'createExtension' : 'Extension',
+    'registerExtension' : 'Extension',
+    'deleteExtension' : 'Extension',
+    'listExtensions' : 'Extension',
+    'runCustomAction' : 'Extension',
+    'deleteCustomAction' : 'Extension',
+    'addCustomAction' : 'Extension',
+    'listCustomAction' : 'Extension'
 }
 
 

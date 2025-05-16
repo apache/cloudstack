@@ -17,9 +17,12 @@
 package org.apache.cloudstack.api.command.admin.host;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
+import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -75,6 +78,9 @@ public class AddHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "list of tags to be added to the host")
     private List<String> hostTags;
 
+    @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue", since = "4.21.0")
+    protected Map externalDetails;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -117,6 +123,30 @@ public class AddHostCmd extends BaseCmd {
 
     public String getAllocationState() {
         return allocationState;
+    }
+
+    public Map<String, String> getExternalDetails() {
+        boolean isStringMap = true;
+        if (externalDetails instanceof Map<?, ?>) {
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) externalDetails).entrySet()) {
+                if (!(entry.getKey() instanceof String) || !(entry.getValue() instanceof String)) {
+                    isStringMap = false;
+                    break;
+                }
+            }
+        }
+
+        if (!isStringMap) {
+            Map<String, String> customParameterMap = convertDetailsToMap(externalDetails);
+            Map<String, String> details = new HashMap<>();
+            for (String key : customParameterMap.keySet()) {
+                String value = customParameterMap.get(key);
+                details.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key, value);
+            }
+            return details;
+        }
+
+        return (Map<String, String>) externalDetails;
     }
 
     /////////////////////////////////////////////////////

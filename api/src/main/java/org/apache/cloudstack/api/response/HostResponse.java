@@ -90,7 +90,6 @@ public class HostResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "the host hypervisor")
     private String hypervisor;
-
     @SerializedName("cpusockets")
     @Param(description = "the number of CPU sockets on the host")
     private Integer cpuSockets;

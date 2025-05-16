@@ -130,7 +130,6 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @SerializedName(ApiConstants.HYPERVISOR)
     @Param(description = "the hypervisor on which the template runs")
     private String hypervisor;
-
     @SerializedName(ApiConstants.DOMAIN)
     @Param(description = "the name of the domain to which the template belongs")
     private String domainName;
@@ -246,6 +245,12 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     @SerializedName(ApiConstants.USER_DATA_PARAMS) @Param(description="list of parameters which contains the list of keys or string parameters that are needed to be passed for any variables declared in userdata", since = "4.18.0")
     private String userDataParams;
+
+    @SerializedName(ApiConstants.EXTENSION_ID) @Param(description="the id of extension linked to this template", since = "4.21.0")
+    private String extensionId;
+
+    @SerializedName(ApiConstants.EXTENSION_NAME) @Param(description="the name of extension linked to this template", since = "4.21.0")
+    private String extensionName;
 
     public TemplateResponse() {
         tags = new LinkedHashSet<>();
@@ -527,5 +532,21 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public void setArch(String arch) {
         this.arch = arch;
+    }
+
+    public String getExtensionId() {
+        return extensionId;
+    }
+
+    public void setExtensionId(String extensionId) {
+        this.extensionId = extensionId;
+    }
+
+    public String getExtensionName() {
+        return extensionName;
+    }
+
+    public void setExtensionName(String extensionName) {
+        this.extensionName = extensionName;
     }
 }
