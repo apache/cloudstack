@@ -18,7 +18,7 @@
 <template>
   <div class="form-layout">
     <a-spin :spinning="loading" v-if="!isSubmitted">
-      <p v-html="$t('message.desc.register.user.data')"></p>
+      <p v-html="$route.name === 'userdata' ? $t('message.desc.register.user.data') : $t('message.desc.register.cni.config')"></p>
       <a-form
         v-ctrl-enter="handleSubmit"
         :ref="formRef"
@@ -35,20 +35,34 @@
             :placeholder="apiParams.name.description"
             v-focus="true" />
         </a-form-item>
-        <a-form-item name="userdata" ref="userdata">
-          <template #label>
-            <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
-          </template>
-          <a-textarea
-            v-model:value="form.userdata"
-            :placeholder="apiParams.userdata.description"/>
-        </a-form-item>
+        <div v-if="$route.name === 'userdata'">
+          <a-form-item name="userdata" ref="userdata">
+            <template #label>
+              <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
+            </template>
+            <a-textarea
+              v-model:value="form.userdata"
+              :placeholder="apiParams.userdata.description"/>
+          </a-form-item>
+        </div>
+        <div v-else>
+          <a-form-item name="cniconfig" ref="cniconfig">
+            <template #label>
+              <tooltip-label :title="$t('label.cniconfiguration')" :tooltip="apiParams.cniconfig.description"/>
+            </template>
+            <a-textarea
+              v-model:value="form.cniconfig"
+              :placeholder="apiParams.cniconfig.description"/>
+          </a-form-item>
+        </div>
         <a-form-item name="isbase64" ref="isbase64" :label="$t('label.is.base64.encoded')">
           <a-checkbox v-model:checked="form.isbase64"></a-checkbox>
         </a-form-item>
         <a-form-item name="params" ref="params">
           <template #label>
-            <tooltip-label :title="$t('label.userdataparams')" :tooltip="apiParams.params.description"/>
+            <tooltip-label
+              :title="$route.name === 'userdata' ? $t('label.userdataparams') : $t('label.cniconfigparams')"
+              :tooltip="apiParams.params.description"/>
           </template>
           <a-select
             mode="tags"
@@ -135,7 +149,7 @@ export default {
     }
   },
   beforeCreate () {
-    this.apiParams = this.$getApiParams('registerUserData')
+    this.apiParams = this.$route.name === 'userdata' ? this.$getApiParams('registerUserData') : this.$getApiParams('registerCniConfiguration')
   },
   created () {
     this.initForm()
@@ -209,14 +223,24 @@ export default {
         if (this.isValidValueForKey(values, 'account') && values.account.length > 0) {
           params.account = values.account
         }
-        params.userdata = values.isbase64 ? values.userdata : this.$toBase64AndURIEncoded(values.userdata)
 
+        let apiName = 'registerUserData'
+        if (this.$route.name === 'cniconfiguration') {
+          apiName = 'registerCniConfiguration'
+        }
+
+        if (apiName === 'registerUserData') {
+          params.userdata = values.isbase64 ? values.userdata : this.$toBase64AndURIEncoded(values.userdata)
+        } else {
+          params.cniconfig = values.isbase64 ? values.cniconfig : this.$toBase64AndURIEncoded(values.cniconfig)
+        }
+        console.log(params)
         if (values.params != null && values.params.length > 0) {
           var userdataparams = values.params.join(',')
           params.params = userdataparams
         }
 
-        api('registerUserData', {}, 'POST', params).then(json => {
+        api(apiName, {}, 'POST', params).then(json => {
           this.$message.success(this.$t('message.success.register.user.data') + ' ' + values.name)
         }).catch(error => {
           this.$notifyError(error)
@@ -226,7 +250,8 @@ export default {
           this.closeAction()
         })
       }).catch(error => {
-        this.formRef.value.scrollToField(error.errorFields[0].name)
+        console.log(error)
+        this.formRef.value.scrollToField(error?.errorFields?.[0]?.name)
       })
     },
     downloadKey () {
