@@ -221,6 +221,11 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                     hostResponse.setArch(host.getArch().getType());
                 }
 
+                hostResponse.setStorageAccessGroups(host.getStorageAccessGroups());
+                hostResponse.setClusterStorageAccessGroups(host.getClusterStorageAccessGroups());
+                hostResponse.setPodStorageAccessGroups(host.getPodStorageAccessGroups());
+                hostResponse.setZoneStorageAccessGroups(host.getZoneStorageAccessGroups());
+
                 float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * cpuOverprovisioningFactor;
                 hostResponse.setCpuAllocatedValue(cpu);
                 String cpuAllocated = calculateResourceAllocatedPercentage(cpu, cpuWithOverprovisioning);
@@ -306,6 +311,16 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
         hostResponse.setUsername(host.getUsername());
 
         hostResponse.setObjectName("host");
+    }
+
+    @Override
+    public HostResponse newMinimalHostResponse(HostJoinVO host) {
+        HostResponse hostResponse = new HostResponse();
+        hostResponse.setId(host.getUuid());
+        hostResponse.setName(host.getName());
+        hostResponse.setObjectName("host");
+
+        return hostResponse;
     }
 
     @Override

@@ -405,6 +405,9 @@ public class EngineHostVO implements EngineHost, Identity {
     @Column(name = "engine_state", updatable = true, nullable = false, length = 32)
     protected State orchestrationState = null;
 
+    @Column(name = "storage_access_groups")
+    private String storageAccessGroups = null;
+
     public EngineHostVO(String guid) {
         this.guid = guid;
         this.status = Status.Creating;
@@ -806,5 +809,14 @@ public class EngineHostVO implements EngineHost, Identity {
     @Override
     public PartitionType partitionType() {
         return PartitionType.Host;
+    }
+
+    @Override
+    public String getStorageAccessGroups() {
+        return storageAccessGroups;
+    }
+
+    public void setStorageAccessGroups(String storageAccessGroups) {
+        this.storageAccessGroups = storageAccessGroups;
     }
 }
