@@ -30,6 +30,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.cloudstack.api.command.admin.resource.PurgeExpungedResourcesCmd;
+import org.apache.cloudstack.backup.BackupVO;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
@@ -138,12 +140,14 @@ public class ResourceCleanupServiceImplTest {
     ConsoleSessionDao consoleSessionDao;
     @Mock
     ServiceOfferingDetailsDao serviceOfferingDetailsDao;
+    @Mock
+    BackupDao backupDao;
 
     @Spy
     @InjectMocks
     ResourceCleanupServiceImpl resourceCleanupService = Mockito.spy(new ResourceCleanupServiceImpl());
 
-    List<Long> ids = List.of(1L, 2L);
+    List<Long> ids = List.of(1L, 2L, 3L);
     Long batchSize = 100L;
 
     private void overrideConfigValue(final ConfigKey configKey, final Object value) {
@@ -372,44 +376,53 @@ public class ResourceCleanupServiceImplTest {
 
     @Test
     public void testGetFilteredVmIdsForSnapshots() {
-        Long skippedVmIds = ids.get(0);
-        Long notSkippedVmIds = ids.get(1);
+        List<Long> skippedVmIds = ids.subList(0, 2);
+        Long notSkippedVmIds = ids.get(2);
         VMSnapshotVO vmSnapshotVO = Mockito.mock(VMSnapshotVO.class);
         Mockito.when(vmSnapshotVO.getVmId()).thenReturn(1L);
         Mockito.when(vmSnapshotDao.searchByVms(Mockito.anyList())).thenReturn(List.of(vmSnapshotVO));
         HashSet<Long> set = new HashSet<>();
         set.add(1L);
         Mockito.doReturn(set).when(resourceCleanupService).getVmIdsWithActiveVolumeSnapshots(ids);
-        Pair<List<Long>, List<Long>> result = resourceCleanupService.getFilteredVmIdsForSnapshots(new ArrayList<>(ids));
+        BackupVO backupVO = Mockito.mock(BackupVO.class);
+        Mockito.when(backupVO.getVmId()).thenReturn(2L);
+        Mockito.when(backupDao.searchByVmIds(Mockito.anyList())).thenReturn(List.of(backupVO));
+        Pair<List<Long>, List<Long>> result = resourceCleanupService.getFilteredVmIdsForSnapshotsAndBackups(new ArrayList<>(ids));
         Assert.assertEquals(1, result.first().size());
-        Assert.assertEquals(1, result.second().size());
+        Assert.assertEquals(2, result.second().size());
         Assert.assertEquals(notSkippedVmIds, result.first().get(0));
-        Assert.assertEquals(skippedVmIds, result.second().get(0));
+        Assert.assertEquals(skippedVmIds, result.second());
     }
 
     @Test
-    public void testGetVmIdsWithNoActiveSnapshots() {
+    public void testGetVmIdsWithNoActiveSnapshotsAndBackups() {
         VMInstanceVO vm1 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm1.getId()).thenReturn(ids.get(0));
         VMInstanceVO vm2 = Mockito.mock(VMInstanceVO.class);
         Mockito.when(vm2.getId()).thenReturn(ids.get(1));
+        VMInstanceVO vm3 = Mockito.mock(VMInstanceVO.class);
+        Mockito.when(vm3.getId()).thenReturn(ids.get(2));
         Mockito.when(vmInstanceDao.searchRemovedByRemoveDate(Mockito.any(), Mockito.any(),
-                        Mockito.anyLong(), Mockito.anyList())).thenReturn(List.of(vm1, vm2));
-        Long skippedVmIds = ids.get(0);
-        Long notSkippedVmIds = ids.get(1);
+                        Mockito.anyLong(), Mockito.anyList())).thenReturn(List.of(vm1, vm2, vm3));
+        List<Long> skippedVmIds = ids.subList(0, 2);
+        Long notSkippedVmIds = ids.get(2);
         VMSnapshotVO vmSnapshotVO = Mockito.mock(VMSnapshotVO.class);
         Mockito.when(vmSnapshotVO.getVmId()).thenReturn(1L);
         Mockito.when(vmSnapshotDao.searchByVms(Mockito.anyList())).thenReturn(List.of(vmSnapshotVO));
         HashSet<Long> set = new HashSet<>();
         set.add(1L);
         Mockito.doReturn(set).when(resourceCleanupService).getVmIdsWithActiveVolumeSnapshots(Mockito.anyList());
+        BackupVO backupVO = Mockito.mock(BackupVO.class);
+        Mockito.when(backupVO.getVmId()).thenReturn(2L);
+        Mockito.when(backupDao.searchByVmIds(Mockito.anyList())).thenReturn(List.of(backupVO));
+
         Pair<List<Long>, List<Long>> result =
-                resourceCleanupService.getVmIdsWithNoActiveSnapshots(new Date(), new Date(), batchSize,
+                resourceCleanupService.getVmIdsWithNoActiveSnapshotsAndBackups(new Date(), new Date(), batchSize,
                         new ArrayList<>());
         Assert.assertEquals(1, result.first().size());
-        Assert.assertEquals(1, result.second().size());
+        Assert.assertEquals(2, result.second().size());
         Assert.assertEquals(notSkippedVmIds, result.first().get(0));
-        Assert.assertEquals(skippedVmIds, result.second().get(0));
+        Assert.assertEquals(skippedVmIds, result.second());
     }
 
     @Test
@@ -422,7 +435,7 @@ public class ResourceCleanupServiceImplTest {
     @Test
     public void testPurgeVMEntities() {
         Mockito.doReturn(new Pair<>(ids, new ArrayList<>())).when(resourceCleanupService)
-                .getVmIdsWithNoActiveSnapshots(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyList());
+                .getVmIdsWithNoActiveSnapshotsAndBackups(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyList());
         Mockito.when(vmInstanceDao.expungeList(ids)).thenReturn(ids.size());
         Assert.assertEquals(ids.size(), resourceCleanupService.purgeVMEntities(batchSize, new Date(), new Date()));
     }
@@ -430,14 +443,14 @@ public class ResourceCleanupServiceImplTest {
     @Test
     public void testExpungeVMEntityFiltered() {
         Mockito.doReturn(new Pair<>(new ArrayList<>(), List.of(ids.get(0)))).when(resourceCleanupService)
-                .getFilteredVmIdsForSnapshots(Mockito.anyList());
+                .getFilteredVmIdsForSnapshotsAndBackups(Mockito.anyList());
         Assert.assertFalse(resourceCleanupService.purgeVMEntity(ids.get(0)));
     }
 
     @Test
     public void testPurgeVMEntityFiltered() {
         Mockito.doReturn(new Pair<>(List.of(ids.get(0)), new ArrayList<>())).when(resourceCleanupService)
-                .getFilteredVmIdsForSnapshots(Mockito.anyList());
+                .getFilteredVmIdsForSnapshotsAndBackups(Mockito.anyList());
         Mockito.doNothing().when(resourceCleanupService)
                 .purgeLinkedVMEntities(Mockito.anyList(), Mockito.anyLong());
         Mockito.when(vmInstanceDao.expunge(ids.get(0))).thenReturn(true);
@@ -447,7 +460,7 @@ public class ResourceCleanupServiceImplTest {
     @Test
     public void testPurgeVMEntity() {
         Mockito.doReturn(new Pair<>(List.of(ids.get(0)), new ArrayList<>())).when(resourceCleanupService)
-                .getFilteredVmIdsForSnapshots(Mockito.anyList());
+                .getFilteredVmIdsForSnapshotsAndBackups(Mockito.anyList());
         Mockito.doNothing().when(resourceCleanupService)
                 .purgeLinkedVMEntities(Mockito.anyList(), Mockito.anyLong());
         Mockito.when(vmInstanceDao.expunge(ids.get(0))).thenReturn(true);

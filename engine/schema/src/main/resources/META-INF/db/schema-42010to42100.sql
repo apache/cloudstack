@@ -19,10 +19,6 @@
 -- Schema upgrade from 4.20.1.0 to 4.21.0.0
 --;
 
--- Add columns max_backup and backup_interval_type to backup table
-ALTER TABLE `cloud`.`backup_schedule` ADD COLUMN `max_backups` int(8) default NULL COMMENT 'maximum number of backups to maintain';
-ALTER TABLE `cloud`.`backups` ADD COLUMN `backup_interval_type` int(5) COMMENT 'type of backup, e.g. manual, recurring - hourly, daily, weekly or monthly';
-
 -- Add console_endpoint_creator_address column to cloud.console_session table
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.console_session', 'console_endpoint_creator_address', 'VARCHAR(45)');
 
@@ -65,3 +61,90 @@ CREATE TABLE IF NOT EXISTS `cloud`.`reconcile_commands` (
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'kvm_checkpoint_path', 'varchar(255)');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'end_of_chain', 'int(1) unsigned');
+
+-- Add column max_backup to backup_schedule table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'max_backups', 'int(8) default NULL COMMENT "maximum number of backups to maintain"');
+
+-- Add columns name, description and backup_interval_type to backup table
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'name', 'VARCHAR(255) NULL COMMENT "name of the backup"');
+UPDATE `cloud`.`backups` backup INNER JOIN `cloud`.`vm_instance` vm ON backup.vm_id = vm.id SET backup.name = vm.name;
+ALTER TABLE `cloud`.`backups` MODIFY COLUMN `name` VARCHAR(255) NOT NULL;
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'description', 'VARCHAR(1024) COMMENT "description for the backup"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'backup_interval_type', 'int(5) COMMENT "type of backup, e.g. manual, recurring - hourly, daily, weekly or monthly"');
+
+-- Make the column vm_id in backups table nullable to handle orphan backups
+ALTER TABLE `cloud`.`backups` MODIFY COLUMN `vm_id` BIGINT UNSIGNED NULL;
+
+-- Create backup details table
+CREATE TABLE IF NOT EXISTS `cloud`.`backup_details` (
+  `id` bigint unsigned NOT NULL auto_increment,
+  `backup_id` bigint unsigned NOT NULL COMMENT 'backup id',
+  `name` varchar(255) NOT NULL,
+  `value` TEXT NOT NULL,
+  `display` tinyint(1) NOT NULL DEFAULT 1 COMMENT 'Should detail be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_backup_details__backup_id` FOREIGN KEY `fk_backup_details__backup_id`(`backup_id`) REFERENCES `backups`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Add diskOfferingId, deviceId, minIops and maxIops to backed_volumes in backups table
+UPDATE `cloud`.`backups` b
+INNER JOIN `cloud`.`vm_instance` vm ON b.vm_id = vm.id
+SET b.backed_volumes = (
+    SELECT CONCAT("[",
+        GROUP_CONCAT(
+            CONCAT(
+                "{\"uuid\":\"", v.uuid, "\",",
+                "\"type\":\"", v.volume_type, "\",",
+                "\"size\":", v.`size`, ",",
+                "\"path\":\"", IFNULL(v.path, 'null'), "\",",
+                "\"deviceId\":", IFNULL(v.device_id, 'null'), ",",
+                "\"diskOfferingId\":\"", doff.uuid, "\",",
+                "\"minIops\":", IFNULL(v.min_iops, 'null'), ",",
+                "\"maxIops\":", IFNULL(v.max_iops, 'null'),
+                "}"
+            )
+            SEPARATOR ","
+        ),
+    "]")
+    FROM `cloud`.`volumes` v
+    LEFT JOIN `cloud`.`disk_offering` doff ON v.disk_offering_id = doff.id
+    WHERE v.instance_id = vm.id
+);
+
+-- Add diskOfferingId, deviceId, minIops and maxIops to backup_volumes in vm_instance table
+UPDATE `cloud`.`vm_instance` vm
+SET vm.backup_volumes = (
+    SELECT CONCAT("[",
+        GROUP_CONCAT(
+            CONCAT(
+                "{\"uuid\":\"", v.uuid, "\",",
+                "\"type\":\"", v.volume_type, "\",",
+                "\"size\":", v.`size`, ",",
+                "\"path\":\"", IFNULL(v.path, 'null'), "\",",
+                "\"deviceId\":", IFNULL(v.device_id, 'null'), ",",
+                "\"diskOfferingId\":\"", doff.uuid, "\",",
+                "\"minIops\":", IFNULL(v.min_iops, 'null'), ",",
+                "\"maxIops\":", IFNULL(v.max_iops, 'null'),
+                "}"
+            )
+            SEPARATOR ","
+        ),
+    "]")
+    FROM `cloud`.`volumes` v
+    LEFT JOIN `cloud`.`disk_offering` doff ON v.disk_offering_id = doff.id
+    WHERE v.instance_id = vm.id
+)
+WHERE vm.backup_offering_id IS NOT NULL;
+
+-- Add column allocated_size to object_store table. Rename column 'used_bytes' to 'used_size'
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.object_store', 'allocated_size', 'bigint unsigned COMMENT "allocated size in bytes"');
+ALTER TABLE `cloud`.`object_store` CHANGE COLUMN `used_bytes` `used_size` BIGINT UNSIGNED COMMENT 'used size in bytes';
+ALTER TABLE `cloud`.`object_store` MODIFY COLUMN `total_size` bigint unsigned COMMENT 'total size in bytes';
+UPDATE `cloud`.`object_store`
+JOIN (
+    SELECT object_store_id, SUM(quota) AS total_quota
+    FROM `cloud`.`bucket`
+    WHERE removed IS NULL
+    GROUP BY object_store_id
+) buckets_quota_sum_view ON `object_store`.id = buckets_quota_sum_view.object_store_id
+SET `object_store`.allocated_size = buckets_quota_sum_view.total_quota;
