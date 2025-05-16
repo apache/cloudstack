@@ -1094,7 +1094,7 @@ test_data = {
             "url": "https://cloud-images.ubuntu.com/releases/22.04/release/ubuntu-22.04-server-cloudimg-amd64.ova",
             "requireshvm": "True",
             "ispublic": "True",
-            "deployasis": "True"
+            "deployasis": "False"
         },
     },
     "test_ovf_templates": [
