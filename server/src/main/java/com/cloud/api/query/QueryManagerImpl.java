@@ -5445,6 +5445,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 mgmtResponse.addPeer(createPeerManagementServerNodeResponse(peer));
             }
         }
+        mgmtResponse.setServiceIp(mgmt.getServiceIP());
         mgmtResponse.setIpAddress(mgmt.getServiceIP());
         mgmtResponse.setObjectName("managementserver");
         return mgmtResponse;
