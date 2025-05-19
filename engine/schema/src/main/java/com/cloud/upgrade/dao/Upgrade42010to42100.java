@@ -23,8 +23,6 @@ import java.sql.SQLException;
 import java.util.List;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDaoImpl;
 
 import com.cloud.upgrade.SystemVmTemplateRegistration;
 import com.cloud.utils.db.TransactionLegacy;
@@ -100,8 +98,6 @@ public class Upgrade42010to42100 extends DbUpgradeAbstractImpl implements DbUpgr
         migrateExistingConfigurationScopeValues(conn);
         DbUpgradeUtils.dropTableColumnsIfExist(conn, "configuration", List.of("scope"));
         DbUpgradeUtils.changeTableColumnIfNotExist(conn, "configuration", "new_scope", "scope", "BIGINT NOT NULL DEFAULT 0 COMMENT 'Bitmask for scope(s) of this parameter'");
-        ConfigurationDao dao = new ConfigurationDaoImpl();
-        dao.markForColumnsRefresh();
     }
 
     protected void migrateExistingConfigurationScopeValues(Connection conn) {
@@ -121,5 +117,10 @@ public class Upgrade42010to42100 extends DbUpgradeAbstractImpl implements DbUpgr
             logger.error("Failed to migrate existing configuration scope values to bitmask", e);
             throw new CloudRuntimeException(String.format("Failed to migrate existing configuration scope values to bitmask due to: %s", e.getMessage()));
         }
+    }
+
+    @Override
+    public boolean refreshPoolConnectionsAfterUpgrade() {
+        return true;
     }
 }

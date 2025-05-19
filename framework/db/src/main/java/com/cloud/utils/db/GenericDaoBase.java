@@ -42,11 +42,9 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -131,10 +129,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
 
     protected final static Map<Class<?>, GenericDao<?, ? extends Serializable>> s_daoMaps = new ConcurrentHashMap<Class<?>, GenericDao<?, ? extends Serializable>>(71);
-
-    private final static Set<String> tableWithColumnsNeedRefresh = new HashSet<>();
     private final ConversionSupport _conversionSupport;
-
 
     protected Class<T> _entityBeanType;
     protected String _table;
@@ -1919,7 +1914,6 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
     @DB()
     protected void toEntityBean(final ResultSet result, final T entity) throws SQLException {
-        refreshColumnsIfNeeded();
         ResultSetMetaData meta = result.getMetaData();
         for (int index = 1, max = meta.getColumnCount(); index <= max; index++) {
             setField(entity, result, meta, index);
@@ -2486,19 +2480,5 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
 
         public SumCount() {
         }
-    }
-
-    @Override
-    public void markForColumnsRefresh() {
-        tableWithColumnsNeedRefresh.add(_table);
-    }
-
-    private void refreshColumnsIfNeeded() {
-        if (!tableWithColumnsNeedRefresh.contains(_table)) {
-            return;
-        }
-        final SqlGenerator generator = new SqlGenerator(_entityBeanType);
-        _allColumns = generator.getAllColumns();
-        tableWithColumnsNeedRefresh.remove(_table);
     }
 }

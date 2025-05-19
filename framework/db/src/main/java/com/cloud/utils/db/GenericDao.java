@@ -311,6 +311,4 @@ public interface GenericDao<T, ID extends Serializable> {
     Integer countAll();
 
     List<T> findByUuids(String... uuidArray);
-
-    default void markForColumnsRefresh() {}
 }
