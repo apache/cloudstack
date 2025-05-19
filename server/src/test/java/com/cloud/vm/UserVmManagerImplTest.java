@@ -16,6 +16,60 @@
 // under the License.
 package com.cloud.vm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.nullable;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.cloud.storage.StorageManager;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
+import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
+import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
+import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
+import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.template.VnfTemplateManager;
+import org.apache.cloudstack.userdata.UserDataManager;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.test.util.ReflectionTestUtils;
+
 import com.cloud.api.query.dao.ServiceOfferingJoinDao;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.configuration.Resource;
@@ -102,72 +156,23 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
-import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVMCmd;
-import org.apache.cloudstack.api.command.user.vm.DeployVnfApplianceCmd;
-import org.apache.cloudstack.api.command.user.vm.ResetVMUserDataCmd;
-import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
-import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.storage.template.VnfTemplateManager;
-import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.vm.lease.VMLeaseManager;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockedStatic;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.junit.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 import java.util.TimeZone;
 import java.util.UUID;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyMap;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.nullable;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserVmManagerImplTest {
@@ -374,6 +379,9 @@ public class UserVmManagerImplTest {
     @Mock
     private VMInstanceVO vmInstanceMock;
 
+    @Mock
+    StorageManager storageManager;
+
     private static final long vmId = 1l;
     private static final long zoneId = 2L;
     private static final long accountId = 3L;
@@ -492,7 +500,7 @@ public class UserVmManagerImplTest {
         verifyMethodsThatAreAlwaysExecuted();
 
         Mockito.verify(userVmManagerImpl).updateDisplayVmFlag(false, vmId, userVmVoMock);
-        Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(anyLong(), anyString());
+        Mockito.verify(userVmDetailsDao, times(0)).removeDetail(anyLong(), anyString());
     }
 
     @Test
@@ -510,8 +518,8 @@ public class UserVmManagerImplTest {
         userVmManagerImpl.updateVirtualMachine(updateVmCommand);
         verifyMethodsThatAreAlwaysExecuted();
         Mockito.verify(userVmDetailsDao).removeDetail(vmId, "userdetail");
-        Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(vmId, "systemdetail");
-        Mockito.verify(userVmManagerImpl, Mockito.times(0)).updateDisplayVmFlag(false, vmId, userVmVoMock);
+        Mockito.verify(userVmDetailsDao, times(0)).removeDetail(vmId, "systemdetail");
+        Mockito.verify(userVmManagerImpl, times(0)).updateDisplayVmFlag(false, vmId, userVmVoMock);
     }
 
     @Test
@@ -575,11 +583,11 @@ public class UserVmManagerImplTest {
         userVmManagerImpl.updateVirtualMachine(updateVmCommand);
         verifyMethodsThatAreAlwaysExecuted();
 
-        Mockito.verify(userVmVoMock, Mockito.times(cleanUpDetails || isDetailsEmpty ? 0 : 1)).setDetails(details);
-        Mockito.verify(userVmDetailsDao, Mockito.times(cleanUpDetails ? 1 : 0)).removeDetail(vmId, "existingdetail");
-        Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(vmId, "systemdetail");
-        Mockito.verify(userVmDao, Mockito.times(cleanUpDetails || isDetailsEmpty ? 0 : 1)).saveDetails(userVmVoMock);
-        Mockito.verify(userVmManagerImpl, Mockito.times(0)).updateDisplayVmFlag(false, vmId, userVmVoMock);
+        Mockito.verify(userVmVoMock, times(cleanUpDetails || isDetailsEmpty ? 0 : 1)).setDetails(details);
+        Mockito.verify(userVmDetailsDao, times(cleanUpDetails ? 1 : 0)).removeDetail(vmId, "existingdetail");
+        Mockito.verify(userVmDetailsDao, times(0)).removeDetail(vmId, "systemdetail");
+        Mockito.verify(userVmDao, times(cleanUpDetails || isDetailsEmpty ? 0 : 1)).saveDetails(userVmVoMock);
+        Mockito.verify(userVmManagerImpl, times(0)).updateDisplayVmFlag(false, vmId, userVmVoMock);
     }
 
     private void configureDoNothingForDetailsMethod() {
@@ -668,7 +676,7 @@ public class UserVmManagerImplTest {
 
         String returnedMacAddress = userVmManagerImpl.validateOrReplaceMacAddress(macAddress, networkMock);
 
-        Mockito.verify(networkModel, Mockito.times(times)).getNextAvailableMacAddressInNetwork(Mockito.anyLong());
+        Mockito.verify(networkModel, times(times)).getNextAvailableMacAddressInNetwork(Mockito.anyLong());
         assertEquals(expectedMacAddress, returnedMacAddress);
     }
 
@@ -745,7 +753,7 @@ public class UserVmManagerImplTest {
         long rootDiskSize = userVmManagerImpl.configureCustomRootDiskSize(customParameters, template, Hypervisor.HypervisorType.KVM, diskfferingVo);
 
         Assert.assertEquals(expectedRootDiskSize, rootDiskSize);
-        Mockito.verify(userVmManagerImpl, Mockito.times(timesVerifyIfHypervisorSupports)).verifyIfHypervisorSupportsRootdiskSizeOverride(Mockito.any());
+        Mockito.verify(userVmManagerImpl, times(timesVerifyIfHypervisorSupports)).verifyIfHypervisorSupportsRootdiskSizeOverride(Mockito.any());
     }
 
     @Test
@@ -1622,18 +1630,18 @@ public class UserVmManagerImplTest {
         Long size = volumes.stream().filter(VolumeVO::isDisplay).mapToLong(VolumeVO::getSize).sum();
         try {
             userVmManagerImpl.checkVolumesLimits(account, volumes);
-            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+            Mockito.verify(resourceLimitMgr, times(1))
                     .checkResourceLimit(account, Resource.ResourceType.volume, 4);
-            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+            Mockito.verify(resourceLimitMgr, times(1))
                     .checkResourceLimit(account, Resource.ResourceType.primary_storage, size);
-            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+            Mockito.verify(resourceLimitMgr, times(1))
                     .checkResourceLimitWithTag(account, Resource.ResourceType.volume, "tag1", 2);
-            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+            Mockito.verify(resourceLimitMgr, times(1))
                     .checkResourceLimitWithTag(account, Resource.ResourceType.volume, "tag2", 3);
-            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+            Mockito.verify(resourceLimitMgr, times(1))
                     .checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, "tag1",
                             vol1.getSize() + vol5.getSize());
-            Mockito.verify(resourceLimitMgr, Mockito.times(1))
+            Mockito.verify(resourceLimitMgr, times(1))
                     .checkResourceLimitWithTag(account, Resource.ResourceType.primary_storage, "tag2",
                             vol1.getSize() + vol3.getSize() + vol5.getSize());
         } catch (ResourceAllocationException e) {
@@ -1660,7 +1668,7 @@ public class UserVmManagerImplTest {
         userVmManagerImpl.validateStrictHostTagCheck(vm, destinationHostVO);
 
         Mockito.verify(
-                destinationHostVO, Mockito.times(1)
+                destinationHostVO, times(1)
         ).checkHostServiceOfferingAndTemplateTags(Mockito.any(ServiceOffering.class), Mockito.any(VirtualMachineTemplate.class), Mockito.anySet());
     }
 
@@ -2866,7 +2874,7 @@ public class UserVmManagerImplTest {
 
         NetworkVO defaultNetwork = userVmManagerImpl.addNicsToApplicableNetworksAndReturnDefaultNetwork(applicableNetworks, requestedIPv4ForNics, requestedIPv6ForNics, networks);
 
-        Mockito.verify(networks, Mockito.times(2)).put(Mockito.any(), Mockito.any());
+        Mockito.verify(networks, times(2)).put(Mockito.any(), Mockito.any());
         Assert.assertEquals(defaultNetwork, networkMock);
     }
 
@@ -3133,6 +3141,96 @@ public class UserVmManagerImplTest {
             Mockito.verify(userVmManagerImpl).updateVmNetwork(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl, Mockito.never()).resourceCountIncrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
         }
+    }
+
+    @Test
+    public void validateStorageAccessGroupsOnHostsMatchingSAGsNoException() {
+        Host srcHost = Mockito.mock(Host.class);
+        Host destHost = Mockito.mock(Host.class);
+
+        Mockito.when(srcHost.getId()).thenReturn(1L);
+        Mockito.when(destHost.getId()).thenReturn(2L);
+        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(new String[]{"sag1", "sag2"});
+        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(new String[]{"sag1", "sag2", "sag3"});
+
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
+
+        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, srcHost.getId());
+        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, destHost.getId());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void validateSAGsOnHostsNonMatchingSAGsThrowsException() {
+        Host srcHost = Mockito.mock(Host.class);
+        Host destHost = Mockito.mock(Host.class);
+
+        Mockito.when(srcHost.getId()).thenReturn(1L);
+        Mockito.when(destHost.getId()).thenReturn(2L);
+        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(new String[]{"sag1", "sag2"});
+        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(new String[]{"sag1", "sag3"});
+
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
+    }
+
+    @Test
+    public void validateEmptyStorageAccessGroupOnHosts() {
+        Host srcHost = Mockito.mock(Host.class);
+        Host destHost = Mockito.mock(Host.class);
+
+        Mockito.when(srcHost.getId()).thenReturn(1L);
+        Mockito.when(destHost.getId()).thenReturn(2L);
+        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(new String[]{});
+        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(new String[]{});
+
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
+
+        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, srcHost.getId());
+        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, destHost.getId());
+    }
+
+    @Test
+    public void validateSAGsOnHostsNullStorageAccessGroups() {
+        Host srcHost = Mockito.mock(Host.class);
+        Host destHost = Mockito.mock(Host.class);
+
+        Mockito.when(srcHost.getId()).thenReturn(1L);
+        Mockito.when(destHost.getId()).thenReturn(2L);
+        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(null);
+        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(null);
+
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
+
+        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, srcHost.getId());
+        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, destHost.getId());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void validateSAGsOnDestHostNullStorageAccessGroups() {
+        Host srcHost = Mockito.mock(Host.class);
+        Host destHost = Mockito.mock(Host.class);
+
+        Mockito.when(srcHost.getId()).thenReturn(1L);
+        Mockito.when(destHost.getId()).thenReturn(2L);
+        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(new String[]{"sag1", "sag2"});
+        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(null);
+
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
+    }
+
+    @Test
+    public void validateNullStorageAccessGroupsOnSrcHost() {
+        Host srcHost = Mockito.mock(Host.class);
+        Host destHost = Mockito.mock(Host.class);
+
+        Mockito.when(srcHost.getId()).thenReturn(1L);
+        Mockito.when(destHost.getId()).thenReturn(2L);
+        when(storageManager.getStorageAccessGroups(null, null, null, srcHost.getId())).thenReturn(null);
+        when(storageManager.getStorageAccessGroups(null, null, null, destHost.getId())).thenReturn(new String[]{"sag1", "sag2"});
+
+        userVmManagerImpl.validateStorageAccessGroupsOnHosts(srcHost, destHost);
+
+        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, srcHost.getId());
+        Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, destHost.getId());
     }
 
     @Test(expected = InvalidParameterValueException.class)

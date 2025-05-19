@@ -60,3 +60,23 @@ CREATE TABLE IF NOT EXISTS `cloud`.`reconcile_commands` (
     INDEX `i_reconcile_command__host_id`(`host_id`),
     CONSTRAINT `fk_reconcile_command__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+--- KVM Incremental Snapshots
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'kvm_checkpoint_path', 'varchar(255)');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.snapshot_store_ref', 'end_of_chain', 'int(1) unsigned');
+
+-- Create table storage_pool_and_access_group_map
+CREATE TABLE IF NOT EXISTS `cloud`.`storage_pool_and_access_group_map` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `pool_id` bigint(20) unsigned NOT NULL COMMENT "pool id",
+  `storage_access_group` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_storage_pool_and_access_group_map__pool_id` (`pool_id`),
+  CONSTRAINT `fk_storage_pool_and_access_group_map__pool_id` FOREIGN KEY (`pool_id`) REFERENCES `storage_pool` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8;
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'storage_access_groups', 'varchar(255) DEFAULT NULL COMMENT "storage access groups for the host"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.cluster', 'storage_access_groups', 'varchar(255) DEFAULT NULL COMMENT "storage access groups for the hosts in the cluster"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host_pod_ref', 'storage_access_groups', 'varchar(255) DEFAULT NULL COMMENT "storage access groups for the hosts in the pod"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.data_center', 'storage_access_groups', 'varchar(255) DEFAULT NULL COMMENT "storage access groups for the hosts in the zone"');

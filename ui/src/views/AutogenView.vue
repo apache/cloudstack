@@ -829,7 +829,12 @@ export default {
       }
 
       if (this.$route && this.$route.meta && this.$route.meta.permission) {
-        this.apiName = (this.$route.meta.getApiToCall && this.$route.meta.getApiToCall()) || this.$route.meta.permission[0]
+        this.apiName = this.$route.meta.permission[0]
+        if (!store.getters.metrics && !this.dataView &&
+            this.apiName && this.apiName.endsWith('Metrics') &&
+            store.getters.apis[this.apiName.replace(/Metrics$/, '')]) {
+          this.apiName = this.apiName.replace(/Metrics$/, '')
+        }
         if (this.$route.meta.columns) {
           const columns = this.$route.meta.columns
           if (columns && typeof columns === 'function') {
@@ -1186,7 +1191,7 @@ export default {
       this.showAction = true
       const listIconForFillValues = ['copy-outlined', 'CopyOutlined', 'edit-outlined', 'EditOutlined', 'share-alt-outlined', 'ShareAltOutlined']
       for (const param of this.currentAction.paramFields) {
-        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'files'].includes(param.name)) {
+        if (param.type === 'list' && ['tags', 'hosttags', 'storagetags', 'storageaccessgroups', 'files'].includes(param.name)) {
           param.type = 'string'
         }
         this.setRules(param)
@@ -1581,7 +1586,7 @@ export default {
               }
               break
             }
-            if (input === '' && !['tags', 'hosttags', 'storagetags', 'dns2', 'ip6dns1',
+            if (input === '' && !['tags', 'hosttags', 'storagetags', 'storageaccessgroups', 'dns2', 'ip6dns1',
               'ip6dns2', 'internaldns2', 'networkdomain', 'secretkey'].includes(key)) {
               break
             }
