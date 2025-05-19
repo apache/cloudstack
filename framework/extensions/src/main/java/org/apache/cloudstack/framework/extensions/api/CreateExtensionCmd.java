@@ -57,9 +57,9 @@ public class CreateExtensionCmd extends BaseCmd {
             description = "Type of the extension")
     private String type;
 
-    @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP,
-            description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue")
-    protected Map externalDetails;
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
+            description = "Details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].endpoint.url=urlvalue")
+    protected Map details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -74,16 +74,11 @@ public class CreateExtensionCmd extends BaseCmd {
     }
 
     public Map<String, String> getExternalDetails() {
-        Map<String, String> customparameterMap = convertDetailsToMap(externalDetails);
-        Map<String, String> details = new HashMap<>();
-        for (String key : customparameterMap.keySet()) {
-            String value = customparameterMap.get(key);
-            details.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key, value);
+        Map<String, String> customParameterMap = convertDetailsToMap(details);
+        Map<String, String> externalDetails = new HashMap<>(customParameterMap.size());
+        for (Map.Entry<String, String> entry : customParameterMap.entrySet()) {
+            externalDetails.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + entry.getKey(), entry.getValue());
         }
-        return details;
-    }
-
-    public Map getDetails() {
         return externalDetails;
     }
 
