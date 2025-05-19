@@ -28,11 +28,11 @@ import com.linbit.linstor.api.model.ResourceDefinition;
 import com.linbit.linstor.api.model.ResourceDefinitionCloneRequest;
 import com.linbit.linstor.api.model.ResourceDefinitionCloneStarted;
 import com.linbit.linstor.api.model.ResourceDefinitionCreate;
-
 import com.linbit.linstor.api.model.ResourceDefinitionModify;
 import com.linbit.linstor.api.model.ResourceGroup;
 import com.linbit.linstor.api.model.ResourceGroupSpawn;
 import com.linbit.linstor.api.model.ResourceMakeAvailable;
+import com.linbit.linstor.api.model.ResourceWithVolumes;
 import com.linbit.linstor.api.model.Snapshot;
 import com.linbit.linstor.api.model.SnapshotRestore;
 import com.linbit.linstor.api.model.VolumeDefinition;
@@ -133,6 +133,9 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     ConfigurationDao _configDao;
     @Inject
     private HostDao _hostDao;
+
+    private long volumeStatsLastUpdate = 0L;
+    private final Map<String, Pair<Long, Long>> volumeStats = new HashMap<>();
 
     public LinstorPrimaryDataStoreDriverImpl()
     {
@@ -403,9 +406,9 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
         }
     }
 
-    private String getRscGrp(StoragePoolVO storagePoolVO) {
-        return storagePoolVO.getUserInfo() != null && !storagePoolVO.getUserInfo().isEmpty() ?
-            storagePoolVO.getUserInfo() : "DfltRscGrp";
+    private String getRscGrp(StoragePool storagePool) {
+        return storagePool.getUserInfo() != null && !storagePool.getUserInfo().isEmpty() ?
+            storagePool.getUserInfo() : "DfltRscGrp";
     }
 
     /**
@@ -618,7 +621,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
      */
     private void updateRscGrpIfNecessary(DevelopersApi api, String rscName, String tgtRscGrp) throws ApiException {
         List<ResourceDefinition> rscDfns = api.resourceDefinitionList(
-                Collections.singletonList(rscName), null, null, null);
+                Collections.singletonList(rscName), false, null, null, null);
         if (rscDfns != null && !rscDfns.isEmpty()) {
             ResourceDefinition rscDfn = rscDfns.get(0);
 
@@ -648,7 +651,7 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
     private void deleteTemplateForProps(
             DevelopersApi api, String rscName) throws ApiException {
         List<ResourceDefinition> rdList = api.resourceDefinitionList(
-                Collections.singletonList(rscName), null, null, null);
+                Collections.singletonList(rscName), false, null, null, null);
 
         if (CollectionUtils.isNotEmpty(rdList)) {
             ResourceDefinitionModify rdm = new ResourceDefinitionModify();
@@ -1506,22 +1509,77 @@ public class LinstorPrimaryDataStoreDriverImpl implements PrimaryDataStoreDriver
 
     @Override
     public boolean canProvideStorageStats() {
-        return false;
+        return true;
     }
 
     @Override
     public Pair<Long, Long> getStorageStats(StoragePool storagePool) {
-        return null;
+        logger.debug(String.format("Requesting storage stats: %s", storagePool));
+        return LinstorUtil.getStorageStats(storagePool.getHostAddress(), getRscGrp(storagePool));
     }
 
     @Override
     public boolean canProvideVolumeStats() {
-        return false;
+        return LinstorConfigurationManager.VolumeStatsCacheTime.value() > 0;
+    }
+
+    /**
+     * Updates the cache map containing current allocated size data.
+     * @param api Linstor Developers api object
+     */
+    private void fillVolumeStatsCache(DevelopersApi api) {
+        try {
+            logger.trace("Start volume stats cache update");
+            List<ResourceWithVolumes> resources = api.viewResources(
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    null,
+                    null,
+                    null);
+
+            List<ResourceDefinition> rscDfns = api.resourceDefinitionList(
+                    Collections.emptyList(), true, null, null, null);
+
+            HashMap<String, Long> resSizeMap = new HashMap<>();
+            for (ResourceDefinition rscDfn : rscDfns) {
+                if (CollectionUtils.isNotEmpty(rscDfn.getVolumeDefinitions())) {
+                    resSizeMap.put(rscDfn.getName(), rscDfn.getVolumeDefinitions().get(0).getSizeKib() * 1024);
+                }
+            }
+
+            HashMap<String, Long> allocSizeMap = new HashMap<>();
+            for (ResourceWithVolumes rsc : resources) {
+                if (!LinstorUtil.isRscDiskless(rsc) && !rsc.getVolumes().isEmpty()) {
+                    long allocatedBytes = allocSizeMap.getOrDefault(rsc.getName(), 0L);
+                    allocSizeMap.put(rsc.getName(), Math.max(allocatedBytes, rsc.getVolumes().get(0).getAllocatedSizeKib() * 1024));
+                }
+            }
+
+            volumeStats.clear();
+            for (Map.Entry<String, Long> entry : allocSizeMap.entrySet()) {
+                Long reserved = resSizeMap.getOrDefault(entry.getKey(), 0L);
+                Pair<Long, Long> volStat = new Pair<>(entry.getValue(), reserved);
+                volumeStats.put(entry.getKey(), volStat);
+            }
+            volumeStatsLastUpdate = System.currentTimeMillis();
+            logger.trace("Done volume stats cache update: {}", volumeStats.size());
+        } catch (ApiException e) {
+            logger.error("Unable to fetch Linstor resources: {}", e.getBestMessage());
+        }
     }
 
     @Override
     public Pair<Long, Long> getVolumeStats(StoragePool storagePool, String volumeId) {
-        return null;
+        final DevelopersApi api = LinstorUtil.getLinstorAPI(storagePool.getHostAddress());
+        synchronized (volumeStats) {
+            long invalidateCacheTime = volumeStatsLastUpdate +
+                    LinstorConfigurationManager.VolumeStatsCacheTime.value() * 1000;
+            if (invalidateCacheTime < System.currentTimeMillis()) {
+                fillVolumeStatsCache(api);
+            }
+            return volumeStats.get(LinstorUtil.RSC_PREFIX + volumeId);
+        }
     }
 
     @Override

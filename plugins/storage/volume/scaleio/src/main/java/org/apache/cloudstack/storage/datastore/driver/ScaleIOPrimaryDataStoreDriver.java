@@ -268,7 +268,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             }
             if (client.listVolumesMappedToSdc(sdcId).isEmpty()) {
                 sdcManager = ComponentContext.inject(sdcManager);
-                sdcManager.stopSDC(host, dataStore);
+                sdcManager.unprepareSDC(host, dataStore);
             }
         } catch (Exception e) {
             logger.warn("Failed to revoke access due to: " + e.getMessage(), e);
@@ -296,7 +296,7 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             client.unmapVolumeFromSdc(ScaleIOUtil.getVolumePath(volumePath), sdcId);
             if (client.listVolumesMappedToSdc(sdcId).isEmpty()) {
                 sdcManager = ComponentContext.inject(sdcManager);
-                sdcManager.stopSDC(host, dataStore);
+                sdcManager.unprepareSDC(host, dataStore);
             }
         } catch (Exception e) {
             logger.warn("Failed to revoke access due to: " + e.getMessage(), e);
@@ -1112,7 +1112,11 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
             volumeDetails.put(DiskTO.CHAP_TARGET_SECRET, chapInfo.getTargetSecret());
         }
 
-        String systemId = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID).getValue();
+        String systemId = null;
+        StoragePoolDetailVO systemIdDetail = storagePoolDetailsDao.findDetail(storagePoolId, ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID);
+        if (systemIdDetail != null) {
+            systemId = systemIdDetail.getValue();
+        }
         volumeDetails.put(ScaleIOGatewayClient.STORAGE_POOL_SYSTEM_ID, systemId);
 
         return volumeDetails;
@@ -1522,6 +1526,37 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return sdcManager.areSDCConnectionsWithinLimit(pool.getId());
     }
 
+    @Override
+    public boolean canDisconnectHostFromStoragePool(Host host, StoragePool pool) {
+        if (host == null || pool == null) {
+            return false;
+        }
+
+        StoragePoolHostVO poolHostVO = storagePoolHostDao.findByPoolHost(pool.getId(), host.getId());
+        if (poolHostVO == null) {
+            return false;
+        }
+
+        final String sdcId = poolHostVO.getLocalPath();
+        if (StringUtils.isBlank(sdcId)) {
+            return false;
+        }
+
+        List<StoragePoolHostVO> poolHostVOsBySdc = storagePoolHostDao.findByLocalPath(sdcId);
+        if (CollectionUtils.isNotEmpty(poolHostVOsBySdc) && poolHostVOsBySdc.size() > 1) {
+            logger.debug(String.format("There are other connected pools with the same SDC of the host %s, shouldn't disconnect SDC", host));
+            return false;
+        }
+
+        try {
+            final ScaleIOGatewayClient client = getScaleIOClient(pool);
+            return client.listVolumesMappedToSdc(sdcId).isEmpty();
+        } catch (Exception e) {
+            logger.warn("Unable to check whether the host: " + host.getId() + " can be disconnected from storage pool: " + pool.getId() + ", due to " + e.getMessage(), e);
+            return false;
+        }
+    }
+
     private void alertHostSdcDisconnection(Host host) {
         if (host == null) {
             return;
@@ -1590,5 +1625,10 @@ public class ScaleIOPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     @Override
     public boolean zoneWideVolumesAvailableWithoutClusterMotion() {
         return true;
+    }
+
+    @Override
+    public boolean canDisplayDetails() {
+        return false;
     }
 }

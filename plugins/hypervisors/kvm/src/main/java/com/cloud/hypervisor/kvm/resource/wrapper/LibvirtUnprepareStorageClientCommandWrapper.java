@@ -34,7 +34,7 @@ public class LibvirtUnprepareStorageClientCommandWrapper extends CommandWrapper<
     @Override
     public Answer execute(UnprepareStorageClientCommand cmd, LibvirtComputingResource libvirtComputingResource) {
         final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
-        Pair<Boolean, String> unprepareStorageClientResult = storagePoolMgr.unprepareStorageClient(cmd.getPoolType(), cmd.getPoolUuid());
+        Pair<Boolean, String> unprepareStorageClientResult = storagePoolMgr.unprepareStorageClient(cmd.getPoolType(), cmd.getPoolUuid(), cmd.getDetails());
         if (!unprepareStorageClientResult.first()) {
             String msg = unprepareStorageClientResult.second();
             logger.debug("Couldn't unprepare storage client, due to: " + msg);
