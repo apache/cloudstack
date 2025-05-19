@@ -19,6 +19,11 @@
 package org.apache.cloudstack.hypervisor.external.provisioner.simpleprovisioner;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -394,26 +399,43 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
             logger.info("File already exists at {}, skipping copy.", destinationPath);
             return;
         }
+        CloudRuntimeException exception =
+                new CloudRuntimeException(String.format("Failed to prepare scripts for extension: %s", extensionName));
         if (!checkExtensionsDirectory()) {
-            throw new CloudRuntimeException(String.format("Failed to prepare scripts for extension: %s", extensionName));
+            throw exception;
         }
-        String destinationDir = destinationPath.substring(0, destinationPath.lastIndexOf('/'));
-        Script mkdirScript = new Script(true, "/bin/mkdir", 0, logger);
-        mkdirScript.add("-p", destinationDir);
-        String result = mkdirScript.execute();
-        if (result != null) {
-            logger.warn("Failed to create directory {} due to {}", destinationDir, result);
-            throw new CloudRuntimeException(String.format("Failed to prepare scripts for extension: %s", extensionName));
+        Path sourcePath = null;
+        String sourceScriptPath = Script.findScript("", BASE_EXTERNAL_PROVISIONER_SCRIPT);
+        if (sourceScriptPath != null) {
+            sourcePath = Paths.get(sourceScriptPath);
         }
-
-        String prepareExternalScript = Script.findScript("", BASE_EXTERNAL_PROVISIONER_SCRIPT);
-        Script copyScript = new Script(true, "/bin/cp", 0, logger);
-        copyScript.add(prepareExternalScript, destinationPath);
-        result = copyScript.execute();
-        if (result != null) {
-            logger.warn("Failed to copy script to {} due to {}", destinationPath, result);
-            throw new CloudRuntimeException(String.format("Failed to prepare scripts for extension: %s", extensionName));
+        if (sourcePath == null) {
+            logger.error("Failed to find base script for preparing extension: {}",
+                    extensionName);
+            throw exception;
         }
+        Path destinationPathObj = Paths.get(destinationPath);
+        Path destinationDirPath = destinationPathObj.getParent();
+        if (destinationDirPath == null) {
+            logger.error("Failed to find parent directory for extension: {} script path {}",
+                    extensionName, destinationPath);
+            throw exception;
+        }
+        try {
+            Files.createDirectories(destinationDirPath);
+        } catch (IOException e) {
+            logger.error("Failed to create directory: {} for extension: {}", destinationDirPath,
+                    extensionName, e);
+            throw exception;
+        }
+        try {
+            Files.copy(sourcePath, destinationPathObj, StandardCopyOption.REPLACE_EXISTING);
+        } catch (IOException e) {
+            logger.error("Failed to copy script from {} to {}", sourcePath, destinationPath, e);
+            throw exception;
+        }
+        logger.debug("Successfully copied prepared script [{}] for extension: {}", destinationPath,
+                extensionName);
     }
 
     public Pair<Boolean, String> runCustomActionOnExternalSystem(String filename, String actionName, Map<String, String> accessDetails, int wait) {
