@@ -941,7 +941,7 @@ public enum Config {
     ElasticLoadBalancerEnabled(
             "Advanced",
             ManagementServer.class,
-            String.class,
+            Boolean.class,
             "network.loadbalancer.basiczone.elb.enabled",
             "false",
             "Whether the load balancing service is enabled for basic zones",
