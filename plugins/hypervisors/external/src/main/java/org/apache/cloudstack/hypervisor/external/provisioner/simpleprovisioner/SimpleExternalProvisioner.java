@@ -107,7 +107,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
 
     private String extensionsDirectory;
 
-    private Map<String, String> loadAccessDetails(Map<String, String> accessDetails, VirtualMachineTO virtualMachineTO) {
+    protected Map<String, String> loadAccessDetails(Map<String, String> accessDetails, VirtualMachineTO virtualMachineTO) {
         Map<String, String> modifiedDetails = new HashMap<>();
         for (Map.Entry<String, String> entry : accessDetails.entrySet()) {
             String key = entry.getKey();
@@ -131,7 +131,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         return modifiedDetails;
     }
 
-    private String getExtensionCheckedScriptPath(String extensionName) {
+    protected String getExtensionCheckedScriptPath(String extensionName) {
         String path = getExtensionScriptPath(extensionName);
         File file = new File(path);
         if (!file.exists()) {
@@ -150,6 +150,16 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
 
     }
 
+    protected boolean checkExtensionsDirectory() {
+        File dir = new File(extensionsDirectory);
+        if (!dir.exists() || !dir.isDirectory() || !dir.canWrite()) {
+            logger.error("Extension directory [{}] specified by config - {} is not properly set up. It must exist, be a directory, and be writeable",
+                    extensionsDirectory, ExtensionsDirectory.key());
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
@@ -157,13 +167,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         if (StringUtils.isBlank(extensionsDirectory)) {
             throw new ConfigurationException("Extension directory path is blank");
         }
-
-        File dir = new File(extensionsDirectory);
-        if (!dir.exists() || !dir.isDirectory() || !dir.canWrite()) {
-            String msg = String.format("Extension directory [%s] is not properly set up", extensionsDirectory);
-            logger.error("{}. It must exist, be a directory, and be writeable", msg);
-            throw new ConfigurationException(msg);
-        }
+        checkExtensionsDirectory();
         return true;
     }
 
@@ -390,14 +394,16 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
             logger.info("File already exists at {}, skipping copy.", destinationPath);
             return;
         }
-
+        if (!checkExtensionsDirectory()) {
+            throw new CloudRuntimeException(String.format("Failed to prepare scripts for extension: %s", extensionName));
+        }
         String destinationDir = destinationPath.substring(0, destinationPath.lastIndexOf('/'));
         Script mkdirScript = new Script(true, "/bin/mkdir", 0, logger);
         mkdirScript.add("-p", destinationDir);
         String result = mkdirScript.execute();
         if (result != null) {
             logger.warn("Failed to create directory {} due to {}", destinationDir, result);
-            throw new CloudRuntimeException("Failed to create destination directory: " + result);
+            throw new CloudRuntimeException(String.format("Failed to prepare scripts for extension: %s", extensionName));
         }
 
         String prepareExternalScript = Script.findScript("", BASE_EXTERNAL_PROVISIONER_SCRIPT);
@@ -406,7 +412,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         result = copyScript.execute();
         if (result != null) {
             logger.warn("Failed to copy script to {} due to {}", destinationPath, result);
-            throw new CloudRuntimeException("Script copy failed: " + result);
+            throw new CloudRuntimeException(String.format("Failed to prepare scripts for extension: %s", extensionName));
         }
     }
 
