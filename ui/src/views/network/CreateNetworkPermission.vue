@@ -29,47 +29,27 @@
             <template #label>
               <tooltip-label :title="$t('label.account')" :tooltip="apiParams.accountids.description"/>
             </template>
-            <a-select
+            <infinite-scroll-select
               v-model:value="form.accountids"
               mode="multiple"
-              :loading="accountLoading"
               :placeholder="apiParams.accountids.description"
-              showSearch
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }" >
-              <a-select-option v-for="(opt, optIndex) in accounts" :key="optIndex" :label="opt.name || opt.description">
-                <span>
-                  <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <global-outlined style="margin-right: 5px" />
-                  {{ opt.name || opt.description }}
-                </span>
-              </a-select-option>
-            </a-select>
+              api="listAccounts"
+              :apiParams="accountsApiParams"
+              resourceType="account"
+              defaultIcon="team-outlined" />
           </a-form-item>
           <a-form-item v-if="isAdminOrDomainAdmin()" name="projectids" ref="projectids">
             <template #label>
               <tooltip-label :title="$t('label.project')" :tooltip="apiParams.projectids.description"/>
             </template>
-            <a-select
+            <infinite-scroll-select
               v-model:value="form.projectids"
               mode="multiple"
-              :loading="projectLoading"
               :placeholder="apiParams.projectids.description"
-              showSearch
-              optionFilterProp="label"
-              :filterOption="(input, option) => {
-                return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-              }" >
-              <a-select-option v-for="(opt, optIndex) in projects" :key="optIndex" :label="opt.name || opt.description">
-                <span>
-                  <resource-icon v-if="opt.icon" :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
-                  <global-outlined style="margin-right: 5px" />
-                  {{ opt.name || opt.description }}
-                </span>
-              </a-select-option>
-            </a-select>
+              api="listProjects"
+              :apiParams="projectsApiParams"
+              resourceType="project"
+              defaultIcon="project-outlined" />
           </a-form-item>
           <a-form-item v-if="!isAdminOrDomainAdmin()">
             <template #label>
@@ -106,12 +86,14 @@ import { isAdminOrDomainAdmin } from '@/role'
 import { ref, reactive, toRaw } from 'vue'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import InfiniteScrollSelect from '@/components/widgets/InfiniteScrollSelect'
 
 export default {
   name: 'CreateNetworkPermissions',
   components: {
     TooltipLabel,
-    ResourceIcon
+    ResourceIcon,
+    InfiniteScrollSelect
   },
   props: {
     resource: {
@@ -121,11 +103,7 @@ export default {
   },
   data () {
     return {
-      loading: false,
-      accountLoading: false,
-      projectLoading: false,
-      accounts: [],
-      projects: []
+      loading: false
     }
   },
   created () {
@@ -133,44 +111,23 @@ export default {
     this.form = reactive({})
     this.rules = reactive({})
     this.apiParams = this.$getApiParams('createNetworkPermissions')
-    this.fetchData()
+  },
+  computed: {
+    accountsApiParams () {
+      return {
+        details: 'min',
+        domainid: this.resource.domainid
+      }
+    },
+    projectsApiParams () {
+      return {
+        details: 'min'
+      }
+    }
   },
   methods: {
     isAdminOrDomainAdmin () {
       return isAdminOrDomainAdmin()
-    },
-    async fetchData () {
-      this.fetchAccountData()
-      this.fetchProjectData()
-    },
-    fetchAccountData () {
-      this.accounts = []
-      const params = {}
-      params.showicon = true
-      params.details = 'min'
-      params.domainid = this.resource.domainid
-      this.accountLoading = true
-      api('listAccounts', params).then(json => {
-        const listaccounts = json.listaccountsresponse.account || []
-        this.accounts = listaccounts
-      }).finally(() => {
-        this.accountLoading = false
-      })
-    },
-    fetchProjectData () {
-      this.projects = []
-      const params = {}
-      params.listall = true
-      params.showicon = true
-      params.details = 'min'
-      params.domainid = this.resource.domainid
-      this.projectLoading = true
-      api('listProjects', params).then(json => {
-        const listProjects = json.listprojectsresponse.project || []
-        this.projects = listProjects
-      }).finally(() => {
-        this.projectLoading = false
-      })
     },
     handleSubmit (e) {
       e.preventDefault()
@@ -179,31 +136,12 @@ export default {
         const values = toRaw(this.form)
         const params = {}
         params.networkid = this.resource.id
-        var accountIndexes = values.accountids
-        var accountId = null
-        if (accountIndexes && accountIndexes.length > 0) {
-          var accountIds = []
-          for (var i = 0; i < accountIndexes.length; i++) {
-            accountIds = accountIds.concat(this.accounts[accountIndexes[i]].id)
-          }
-          accountId = accountIds.join(',')
+        if (values.accountids && values.accountids.length > 0) {
+          params.accountids = values.accountids.join(',')
         }
-        if (accountId) {
-          params.accountids = accountId
+        if (values.projectids && values.projectids.length > 0) {
+          params.projectids = values.projectids.join(',')
         }
-        var projectIndexes = values.projectids
-        var projectId = null
-        if (projectIndexes && projectIndexes.length > 0) {
-          var projectIds = []
-          for (var j = 0; j < projectIndexes.length; j++) {
-            projectIds = projectIds.concat(this.projects[projectIndexes[j]].id)
-          }
-          projectId = projectIds.join(',')
-        }
-        if (projectId) {
-          params.projectids = projectId
-        }
-
         if (values.accounts && values.accounts.length > 0) {
           params.accounts = values.accounts
         }
