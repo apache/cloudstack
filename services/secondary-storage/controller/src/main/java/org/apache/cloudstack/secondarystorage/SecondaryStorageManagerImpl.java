@@ -1089,6 +1089,12 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         try {
             _itMgr.expunge(ssvm.getUuid());
+            ssvm.setPublicIpAddress(null);
+            ssvm.setPublicMacAddress(null);
+            ssvm.setPublicNetmask(null);
+            ssvm.setPrivateMacAddress(null);
+            ssvm.setPrivateIpAddress(null);
+            _secStorageVmDao.update(ssvm.getId(), ssvm);
             _secStorageVmDao.remove(ssvm.getId());
             HostVO host = _hostDao.findByTypeNameAndZoneId(ssvm.getDataCenterId(), ssvm.getHostName(), Host.Type.SecondaryStorageVM);
             if (host != null) {
@@ -1373,7 +1379,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     @Override
     public void finalizeExpunge(VirtualMachine vm) {
         SecondaryStorageVmVO ssvm = _secStorageVmDao.findByUuid(vm.getUuid());
-
+        ssvm.setPrivateMacAddress(null);
         ssvm.setPublicIpAddress(null);
         ssvm.setPublicMacAddress(null);
         ssvm.setPublicNetmask(null);
