@@ -413,9 +413,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     ResourceCleanupService resourceCleanupService;
     @Inject
     VmWorkJobDao vmWorkJobDao;
+    @Inject
+    DataStoreProviderManager dataStoreProviderManager;
 
     private SingleCache<List<Long>> vmIdsInProgressCache;
-    DataStoreProviderManager dataStoreProviderManager;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
