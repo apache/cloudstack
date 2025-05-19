@@ -77,12 +77,12 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             logDisabledStoragePools(dcId, podId, clusterId, ScopeType.CLUSTER);
         }
 
-        List<StoragePoolVO> pools = storagePoolDao.findPoolsByTags(dcId, podId, clusterId, dskCh.getTags(), true, VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value());
+        List<StoragePoolVO> pools = storagePoolDao.findPoolsByTags(dcId, podId, clusterId, ScopeType.CLUSTER, dskCh.getTags(), true, VolumeApiServiceImpl.storageTagRuleExecutionTimeout.value());
         pools.addAll(storagePoolJoinDao.findStoragePoolByScopeAndRuleTags(dcId, podId, clusterId, ScopeType.CLUSTER, List.of(dskCh.getTags())));
         logger.debug(String.format("Found pools [%s] that match with tags [%s].", pools, Arrays.toString(dskCh.getTags())));
 
         // add remaining pools in cluster, that did not match tags, to avoid set
-        List<StoragePoolVO> allPools = storagePoolDao.findPoolsByTags(dcId, podId, clusterId, null, false, 0);
+        List<StoragePoolVO> allPools = storagePoolDao.findPoolsByTags(dcId, podId, clusterId, ScopeType.CLUSTER, null, false, 0);
         allPools.removeAll(pools);
         for (StoragePoolVO pool : allPools) {
             logger.trace(String.format("Adding pool [%s] to the 'avoid' set since it did not match any tags.", pool));
@@ -100,7 +100,7 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
             }
             StoragePool storagePool = (StoragePool)dataStoreMgr.getPrimaryDataStore(pool.getId());
             if (filter(avoid, storagePool, dskCh, plan)) {
-                logger.debug(String.format("Found suitable local storage pool [%s] to allocate disk [%s] to it, adding to list.", pool, dskCh));
+                logger.debug(String.format("Found suitable cluster storage pool [%s] to allocate disk [%s] to it, adding to list.", pool, dskCh));
                 suitablePools.add(storagePool);
             } else {
                 logger.debug(String.format("Adding storage pool [%s] to avoid set during allocation of disk [%s].", pool, dskCh));

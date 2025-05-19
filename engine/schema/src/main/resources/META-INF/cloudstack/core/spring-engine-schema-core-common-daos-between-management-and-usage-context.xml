@@ -62,6 +62,7 @@
 	<bean id="storagePoolDetailsDaoImpl" class="com.cloud.storage.dao.StoragePoolDetailsDaoImpl" />
 	<bean id="storagePoolHostDaoImpl" class="com.cloud.storage.dao.StoragePoolHostDaoImpl" />
 	<bean id="storagePoolTagsDaoImpl" class="com.cloud.storage.dao.StoragePoolTagsDaoImpl" />
+	<bean id="storagePoolAndAccessGroupMapDaoImpl" class="com.cloud.storage.dao.StoragePoolAndAccessGroupMapDaoImpl" />
 	<bean id="userVmDetailsDaoImpl" class="com.cloud.vm.dao.UserVmDetailsDaoImpl" />
 	<bean id="vGPUTypesDaoImpl" class="com.cloud.gpu.dao.VGPUTypesDaoImpl" />
 	<bean id="vMInstanceDaoImpl" class="com.cloud.vm.dao.VMInstanceDaoImpl" />

@@ -42,6 +42,7 @@ select
     data_center.type,
     data_center.removed,
     data_center.sort_key,
+    data_center.storage_access_groups,
     domain.id domain_id,
     domain.uuid domain_uuid,
     domain.name domain_name,

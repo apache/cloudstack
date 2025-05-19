@@ -496,6 +496,11 @@ public class ApiConstants {
     public static final String SYSTEM_VM_TYPE = "systemvmtype";
     public static final String TAGS = "tags";
     public static final String STORAGE_TAGS = "storagetags";
+    public static final String STORAGE_ACCESS_GROUPS = "storageaccessgroups";
+    public static final String STORAGE_ACCESS_GROUP = "storageaccessgroup";
+    public static final String CLUSTER_STORAGE_ACCESS_GROUPS = "clusterstorageaccessgroups";
+    public static final String POD_STORAGE_ACCESS_GROUPS = "podstorageaccessgroups";
+    public static final String ZONE_STORAGE_ACCESS_GROUPS = "zonestorageaccessgroups";
     public static final String SUCCESS = "success";
     public static final String SUITABLE_FOR_VM = "suitableforvirtualmachine";
     public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";

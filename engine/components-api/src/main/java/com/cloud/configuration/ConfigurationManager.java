@@ -147,12 +147,12 @@ public interface ConfigurationManager {
      * @param startIp
      * @param endIp
      * @param allocationState
-     * @param skipGatewayOverlapCheck
-     *            (true if it is ok to not validate that gateway IP address overlap with Start/End IP of the POD)
+     * @param skipGatewayOverlapCheck (true if it is ok to not validate that gateway IP address overlap with Start/End IP of the POD)
+     * @param storageAccessGroups
      * @return Pod
      */
     HostPodVO createPod(long userId, String podName, DataCenter zone, String gateway, String cidr, String startIp, String endIp, String allocationState,
-        boolean skipGatewayOverlapCheck);
+                        boolean skipGatewayOverlapCheck, List<String> storageAccessGroups);
 
     /**
      * Creates a new zone
@@ -170,13 +170,14 @@ public interface ConfigurationManager {
      * @param isSecurityGroupEnabled
      * @param ip6Dns1
      * @param ip6Dns2
+     * @param storageAccessGroups
      * @return
      * @throws
      * @throws
      */
     DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain,
         Long domainId, NetworkType zoneType, String allocationState, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1,
-        String ip6Dns2, boolean isEdge);
+        String ip6Dns2, boolean isEdge, List<String> storageAccessGroups);
 
     /**
      * Deletes a VLAN from the database, along with all of its IP addresses. Will not delete VLANs that have allocated
