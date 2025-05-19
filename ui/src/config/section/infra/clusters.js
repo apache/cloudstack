@@ -35,7 +35,7 @@ export default {
     fields.push('zonename')
     return fields
   },
-  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'arch', 'hypervisortype', 'externalprovisioner', 'podname', 'zonename', 'drsimbalance'],
+  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'arch', 'hypervisortype', 'externalprovisioner', 'podname', 'zonename', 'drsimbalance', 'storageaccessgroups', 'podstorageaccessgroups', 'zonestorageaccessgroups'],
   related: [{
     name: 'host',
     title: 'label.hosts',
@@ -83,12 +83,8 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['clustername', 'arch'],
-      mapping: {
-        arch: {
-          options: ['x86_64', 'aarch64']
-        }
-      }
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ClusterUpdate.vue')))
     },
     {
       api: 'updateCluster',

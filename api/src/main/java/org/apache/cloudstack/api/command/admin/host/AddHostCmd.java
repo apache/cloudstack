@@ -21,8 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
-import com.cloud.vm.VmDetailConstants;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -38,6 +36,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
+import com.cloud.vm.VmDetailConstants;
 
 @APICommand(name = "addHost", description = "Adds a new host.", responseObject = HostResponse.class,
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
@@ -78,7 +77,16 @@ public class AddHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.LIST, collectionType = CommandType.STRING, description = "list of tags to be added to the host")
     private List<String> hostTags;
 
-    @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue", since = "4.21.0")
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUPS,
+            type = CommandType.LIST, collectionType = CommandType.STRING,
+            description = "comma separated list of storage access groups for the host",
+            since = "4.21.0")
+    private List<String> storageAccessGroups;
+
+    @Parameter(name = ApiConstants.EXTERNAL_DETAILS,
+            type = CommandType.MAP,
+            description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue",
+            since = "4.21.0")
     protected Map externalDetails;
 
     /////////////////////////////////////////////////////
@@ -119,6 +127,10 @@ public class AddHostCmd extends BaseCmd {
 
     public List<String> getHostTags() {
         return hostTags;
+    }
+
+    public List<String> getStorageAccessGroups() {
+        return storageAccessGroups;
     }
 
     public String getAllocationState() {

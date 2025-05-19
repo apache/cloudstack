@@ -22,11 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.cpu.CPU;
-import com.cloud.vm.VmDetailConstants;
-import org.apache.cloudstack.api.ApiCommandResourceType;
-
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -38,10 +35,12 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 
+import com.cloud.cpu.CPU;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.org.Cluster;
 import com.cloud.user.Account;
+import com.cloud.vm.VmDetailConstants;
 
 @APICommand(name = "addCluster", description = "Adds a new cluster", responseObject = ClusterResponse.class,
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
@@ -122,10 +121,23 @@ public class AddClusterCmd extends BaseCmd {
     @Parameter(name = ApiConstants.OVM3_VIP, type = CommandType.STRING, required = false,  description = "Ovm3 vip to use for pool (and cluster)")
     private String ovm3vip;
 
-    @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID, entityType = ExtensionResponse.class, description = "UUID of the extension")
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUPS,
+            type = CommandType.LIST, collectionType = CommandType.STRING,
+            description = "comma separated list of storage access groups for the hosts in the cluster",
+            since = "4.21.0")
+    private List<String> storageAccessGroups;
+
+
+    @Parameter(name = ApiConstants.EXTENSION_ID,
+            type = CommandType.UUID, entityType = ExtensionResponse.class,
+            description = "UUID of the extension",
+            since = "4.21.0")
     private Long extensionId;
 
-    @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP, description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue", since = "4.21.0")
+    @Parameter(name = ApiConstants.EXTERNAL_DETAILS,
+            type = CommandType.MAP,
+            description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue",
+            since = "4.21.0")
     protected Map externalDetails;
 
     public String getOvm3Pool() {
@@ -204,6 +216,10 @@ public class AddClusterCmd extends BaseCmd {
 
     public void setClusterType(String type) {
         this.clusterType = type;
+    }
+
+    public List<String> getStorageAccessGroups() {
+        return storageAccessGroups;
     }
 
     @Override

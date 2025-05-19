@@ -50,7 +50,6 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.hypervisor.ExternalProvisioner;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -206,6 +205,7 @@ import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
+import com.cloud.hypervisor.ExternalProvisioner;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
@@ -254,6 +254,7 @@ import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
+import com.cloud.resource.ResourceManager;
 import com.cloud.server.ConfigurationServer;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingDetailsVO;
@@ -475,6 +476,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     Ipv6Service ipv6Service;
     @Inject
     NsxProviderDao nsxProviderDao;
+    @Inject
+    ResourceManager resourceManager;
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
     @Inject
@@ -2460,7 +2463,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_POD_CREATE, eventDescription = "creating pod", async = false)
-    public Pod createPod(final long zoneId, final String name, final String startIp, final String endIp, final String gateway, final String netmask, String allocationState) {
+    public Pod createPod(final long zoneId, final String name, final String startIp, final String endIp, final String gateway, final String netmask, String allocationState, List<String> storageAccessGroups) {
         final DataCenterVO zone = _zoneDao.findById(zoneId);
         if (zone == null) {
             throw new InvalidParameterValueException("Please specify a valid zone.");
@@ -2486,13 +2489,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (allocationState == null) {
             allocationState = Grouping.AllocationState.Enabled.toString();
         }
-        return createPod(userId.longValue(), name, zone, gateway, cidr, startIp, endIp, allocationState, false);
+        return createPod(userId.longValue(), name, zone, gateway, cidr, startIp, endIp, allocationState, false, storageAccessGroups);
     }
 
     @Override
     @DB
     public HostPodVO createPod(final long userId, final String podName, final DataCenter zone, final String gateway, final String cidr, String startIp, String endIp, final String allocationStateStr,
-            final boolean skipGatewayOverlapCheck) {
+                               final boolean skipGatewayOverlapCheck, List<String> storageAccessGroups) {
         final String cidrAddress = DataCenter.Type.Edge.equals(zone.getType()) ? "" : getCidrAddress(cidr);
         final int cidrSize = DataCenter.Type.Edge.equals(zone.getType()) ? 0 : getCidrSize(cidr);
         if (DataCenter.Type.Edge.equals(zone.getType())) {
@@ -2523,6 +2526,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (allocationStateStr != null && !allocationStateStr.isEmpty()) {
             allocationState = Grouping.AllocationState.valueOf(allocationStateStr);
             podFinal.setAllocationState(allocationState);
+        }
+
+        if (CollectionUtils.isNotEmpty(storageAccessGroups)) {
+            podFinal.setStorageAccessGroups(String.join(",", storageAccessGroups));
         }
 
         final String startIpFinal = startIp;
@@ -2985,8 +2992,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Override
     @DB
     public DataCenterVO createZone(final long userId, final String zoneName, final String dns1, final String dns2, final String internalDns1, final String internalDns2, final String guestCidr, final String domain,
-            final Long domainId, final NetworkType zoneType, final String allocationStateStr, final String networkDomain, final boolean isSecurityGroupEnabled, final boolean isLocalStorageEnabled,
-            final String ip6Dns1, final String ip6Dns2, final boolean isEdge) {
+                                   final Long domainId, final NetworkType zoneType, final String allocationStateStr, final String networkDomain, final boolean isSecurityGroupEnabled, final boolean isLocalStorageEnabled,
+                                   final String ip6Dns1, final String ip6Dns2, final boolean isEdge, List<String> storageAccessGroups) {
 
         // checking the following params outside checkzoneparams method as we do
         // not use these params for updatezone
@@ -3021,6 +3028,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             zoneFinal.setAllocationState(Grouping.AllocationState.Disabled);
         }
         zoneFinal.setType(isEdge ? DataCenter.Type.Edge : DataCenter.Type.Core);
+        if (CollectionUtils.isNotEmpty(storageAccessGroups)) {
+            zoneFinal.setStorageAccessGroups(String.join(",", storageAccessGroups));
+        }
 
         return Transaction.execute(new TransactionCallback<DataCenterVO>() {
             @Override
@@ -3132,6 +3142,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         boolean isSecurityGroupEnabled = cmd.getSecuritygroupenabled();
         final boolean isLocalStorageEnabled = cmd.getLocalStorageEnabled();
         final boolean isEdge = cmd.isEdge();
+        final List<String> storageAccessGroups = cmd.getStorageAccessGroups();
 
         if (allocationState == null) {
             allocationState = Grouping.AllocationState.Disabled.toString();
@@ -3165,7 +3176,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return createZone(userId, zoneName, dns1, dns2, internalDns1, internalDns2, guestCidr, domainVO != null ? domainVO.getName() : null, domainId, zoneType, allocationState,
-                networkDomain, isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2, isEdge);
+                networkDomain, isSecurityGroupEnabled, isLocalStorageEnabled, ip6Dns1, ip6Dns2, isEdge, storageAccessGroups);
     }
 
     @Override
