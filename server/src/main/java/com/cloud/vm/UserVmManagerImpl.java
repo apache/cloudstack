@@ -8444,6 +8444,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                         getRootVolumeSizeForVmRestore(newVol, template, userVm, diskOffering, details, true);
                         volumeMgr.saveVolumeDetails(newVol.getDiskOfferingId(), newVol.getId());
+                        newVol = _volsDao.findById(newVol.getId());
 
                         // 1. Save usage event and update resource count for user vm volumes
                         try {
@@ -8543,7 +8544,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     Long getRootVolumeSizeForVmRestore(Volume vol, VMTemplateVO template, UserVmVO userVm, DiskOffering diskOffering, Map<String, String> details, boolean update) {
         VolumeVO resizedVolume = (VolumeVO) vol;
-
         Long size = null;
         if (template != null && template.getSize() != null) {
             UserVmDetailVO vmRootDiskSizeDetail = userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE);

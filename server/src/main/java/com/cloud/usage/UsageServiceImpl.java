@@ -26,8 +26,6 @@ import java.util.TimeZone;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.domain.Domain;
-import com.cloud.utils.DateUtil;
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
@@ -42,6 +40,7 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
+import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
@@ -58,6 +57,8 @@ import com.cloud.network.rules.PortForwardingRuleVO;
 import com.cloud.network.rules.dao.PortForwardingRulesDao;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.dao.SecurityGroupDao;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.projects.Project;
 import com.cloud.projects.ProjectManager;
 import com.cloud.storage.SnapshotVO;
@@ -72,6 +73,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.ManagerBase;
@@ -121,6 +123,8 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
     private IPAddressDao _ipDao;
     @Inject
     private HostDao _hostDao;
+    @Inject
+    private NetworkOfferingDao _networkOfferingDao;
 
     public UsageServiceImpl() {
     }
@@ -245,6 +249,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
             }
 
             Long usageDbId = null;
+            boolean offeringExistsForNetworkOfferingType = false;
 
             switch (usageType.intValue()) {
                 case UsageTypes.NETWORK_BYTES_RECEIVED:
@@ -318,13 +323,19 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
                         usageDbId = ip.getId();
                     }
                     break;
+                case UsageTypes.NETWORK_OFFERING:
+                    NetworkOfferingVO networkOffering = _networkOfferingDao.findByUuidIncludingRemoved(usageId);
+                    if (networkOffering != null) {
+                        offeringExistsForNetworkOfferingType = true;
+                        sc.addAnd("offeringId", SearchCriteria.Op.EQ, networkOffering.getId());
+                    }
                 default:
                     break;
             }
 
             if (usageDbId != null) {
                 sc.addAnd("usageId", SearchCriteria.Op.EQ, usageDbId);
-            } else {
+            } else if (!offeringExistsForNetworkOfferingType) {
                 // return an empty list if usageId was not found
                 return new Pair<List<? extends Usage>, Integer>(new ArrayList<Usage>(), new Integer(0));
             }

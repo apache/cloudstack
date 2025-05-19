@@ -2333,7 +2333,7 @@ public class VirtualMachineMO extends BaseMO {
                     vmdkDescriptor = getVmdkFileInfo(fileItem.first());
 
                     logger.info("Move VM disk file " + srcFile.getPath() + " to " + destFile.getPath());
-                    srcDsMo.moveDatastoreFile(fileItem.first(), dcMo.getMor(), destDsMo.getMor(), destFile.getPath(), dcMo.getMor(), true);
+                    moveDatastoreFile(srcDsMo, fileItem.first(), dcMo.getMor(), destDsMo.getMor(), destFile.getPath(), dcMo.getMor(), true);
 
                     if (vmdkDescriptor != null) {
                         String vmdkBaseFileName = vmdkDescriptor.first().getBaseFileName();
@@ -2341,11 +2341,36 @@ public class VirtualMachineMO extends BaseMO {
                         destFile = new DatastoreFile(destDsMo.getName(), destDsDir, vmdkBaseFileName);
 
                         logger.info("Move VM disk file " + baseFilePath + " to " + destFile.getPath());
-                        srcDsMo.moveDatastoreFile(baseFilePath, dcMo.getMor(), destDsMo.getMor(), destFile.getPath(), dcMo.getMor(), true);
+                        moveDatastoreFile(srcDsMo, baseFilePath, dcMo.getMor(), destDsMo.getMor(), destFile.getPath(), dcMo.getMor(), true);
                     }
                 }
             }
         }
+    }
+
+    private boolean moveDatastoreFile(final DatastoreMO dsMo, String srcFilePath, ManagedObjectReference morSrcDc, ManagedObjectReference morDestDs,
+                                   String destFilePath, ManagedObjectReference morDestDc, boolean forceOverwrite) throws Exception {
+        final int retry = 20;
+        int retryAttempt = 0;
+        while (++retryAttempt <= retry) {
+            try {
+                logger.debug(String.format("Move datastore file %s, attempt #%d", srcFilePath, retryAttempt));
+                return dsMo.moveDatastoreFile(srcFilePath, morSrcDc, morDestDs, destFilePath, morDestDc, forceOverwrite);
+            } catch (Exception e) {
+                logger.info(String.format("Got exception while moving datastore file %s ", srcFilePath), e);
+                if (e.getMessage() != null && e.getMessage().contains("Unable to access file")) {
+                    logger.debug(String.format("Failed to move datastore file %s. Retrying", srcFilePath));
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException ie) {
+                        logger.debug(String.format("Waiting to move datastore file %s been interrupted: ", srcFilePath));
+                    }
+                } else {
+                    throw e;
+                }
+            }
+        }
+        return false;
     }
 
     public int getPvScsiDeviceControllerKeyNoException() throws Exception {
