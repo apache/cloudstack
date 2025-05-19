@@ -26,6 +26,7 @@ import com.cloud.event.EventTypes;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
+import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
@@ -33,20 +34,27 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
+import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.lang3.time.DateUtils;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -70,11 +78,17 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
 
     @Inject
     private AsyncJobManager asyncJobManager;
+    @Inject
+    private MessageBus messageBus;
 
     private AsyncJobDispatcher asyncJobDispatcher;
 
     ScheduledExecutorService vmLeaseExecutor;
     ScheduledExecutorService vmLeaseExpiryEventExecutor;
+    Gson gson = ApiGsonHelper.getBuilder().create();
+    VMLeaseManagerSubscriber leaseManagerSubscriber;
+
+    public static final String JOB_INITIATOR = "jobInitiator";
 
     @Override
     public String getConfigComponentName() {
@@ -148,6 +162,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             vmLeaseExpiryEventExecutor = Executors.newSingleThreadScheduledExecutor(new NamedThreadFactory("VmLeaseExpiryEventExecutor"));
             vmLeaseExpiryEventExecutor.scheduleAtFixedRate(new VMLeaseExpiryEventSchedulerTask(), 5L, InstanceLeaseExpiryEventSchedulerInterval.value(), TimeUnit.SECONDS);
         }
+        addLeaseExpiryListener();
     }
 
     private void shutDownLeaseExecutors() {
@@ -162,6 +177,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             vmLeaseExpiryEventExecutor.shutdown();
             vmLeaseExpiryEventExecutor = null;
         }
+        removeLeaseExpiryListener();
     }
 
     class VMLeaseSchedulerTask extends ManagedContextRunnable {
@@ -257,7 +273,6 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             if (jobId != null) {
                 submittedJobIds.add(jobId);
                 successfulInstanceIds.add(instanceId);
-                userVmDetailsDao.addDetail(instanceId, VmDetailConstants.INSTANCE_LEASE_EXECUTION, LeaseActionExecution.DONE.name(), false);
             } else {
                 failedToSubmitInstanceIds.add(instanceId);
             }
@@ -294,10 +309,10 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         params.put("ctxAccountId", String.valueOf(Account.ACCOUNT_ID_SYSTEM));
         params.put(ApiConstants.CTX_START_EVENT_ID, String.valueOf(eventId));
         params.put(ApiConstants.FORCED, String.valueOf(isForced));
+        params.put(JOB_INITIATOR, VMLeaseManager.class.getSimpleName());
         final StopVMCmd cmd = new StopVMCmd();
         ComponentContext.inject(cmd);
-        AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, vm.getAccountId(), StopVMCmd.class.getName(),
-                ApiGsonHelper.getBuilder().create().toJson(params), vm.getId(),
+        AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, vm.getAccountId(), StopVMCmd.class.getName(), gson.toJson(params), vm.getId(),
                 cmd.getApiResourceType() != null ? cmd.getApiResourceType().toString() : null, null);
         job.setDispatcher(asyncJobDispatcher.getName());
         return asyncJobManager.submitAsyncJob(job);
@@ -310,12 +325,11 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         params.put("ctxAccountId", String.valueOf(Account.ACCOUNT_ID_SYSTEM));
         params.put(ApiConstants.CTX_START_EVENT_ID, String.valueOf(eventId));
         params.put(ApiConstants.FORCED, String.valueOf(isForced));
-
+        params.put(JOB_INITIATOR, VMLeaseManager.class.getSimpleName());
         final DestroyVMCmd cmd = new DestroyVMCmd();
         ComponentContext.inject(cmd);
 
-        AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, vm.getAccountId(), DestroyVMCmd.class.getName(),
-                ApiGsonHelper.getBuilder().create().toJson(params), vm.getId(),
+        AsyncJobVO job = new AsyncJobVO("", User.UID_SYSTEM, vm.getAccountId(), DestroyVMCmd.class.getName(), gson.toJson(params), vm.getId(),
                 cmd.getApiResourceType() != null ? cmd.getApiResourceType().toString() : null, null);
         job.setDispatcher(asyncJobDispatcher.getName());
         return asyncJobManager.submitAsyncJob(job);
@@ -334,5 +348,47 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
             logger.error("Invalid expiry action configured for instance: {} (id: {})", instance.getName(), instance.getUuid(), ex);
         }
         return expiryAction;
+    }
+
+    private void addLeaseExpiryListener() {
+        logger.debug("Adding Lease subscriber for async job events");
+        if (this.leaseManagerSubscriber == null) {
+            this.leaseManagerSubscriber = new VMLeaseManagerSubscriber();
+        }
+        messageBus.subscribe(AsyncJob.Topics.JOB_EVENT_PUBLISH, this.leaseManagerSubscriber);
+    }
+
+    private void removeLeaseExpiryListener() {
+        logger.debug("Removing Lease subscriber for async job events");
+        messageBus.unsubscribe(AsyncJob.Topics.JOB_EVENT_PUBLISH, this.leaseManagerSubscriber);
+        this.leaseManagerSubscriber = null;
+    }
+
+    class VMLeaseManagerSubscriber implements MessageSubscriber {
+        @Override
+        public void onPublishMessage(String senderAddress, String subject, Object args) {
+            try {
+                @SuppressWarnings("unchecked")
+                Pair<AsyncJob, String> eventInfo = (Pair<AsyncJob, String>) args;
+                AsyncJob asyncExpiryJob = eventInfo.first();
+                if (!"ApiAsyncJobDispatcher".equalsIgnoreCase(asyncExpiryJob.getDispatcher()) || !"complete".equalsIgnoreCase(eventInfo.second())) {
+                    return;
+                }
+                String cmd = asyncExpiryJob.getCmd();
+                if ((cmd.equalsIgnoreCase(StopVMCmd.class.getName()) || cmd.equalsIgnoreCase(DestroyVMCmd.class.getName()))
+                        && asyncExpiryJob.getStatus() == JobInfo.Status.SUCCEEDED && asyncExpiryJob.getInstanceId() != null) {
+
+                    Map<String, String> params = gson.fromJson(asyncExpiryJob.getCmdInfo(), new TypeToken<Map<String, String>>() {
+                    }.getType());
+
+                    if (VMLeaseManager.class.getSimpleName().equals(params.get(JOB_INITIATOR))) {
+                        logger.debug("Lease expiry job: {} successfully executed for instanceId: {}", asyncExpiryJob.getId(), asyncExpiryJob.getInstanceId());
+                        userVmDetailsDao.addDetail(asyncExpiryJob.getInstanceId(), VmDetailConstants.INSTANCE_LEASE_EXECUTION, LeaseActionExecution.DONE.name(), false);
+                    }
+                }
+            } catch (final Exception e) {
+                logger.error("Caught exception while executing lease expiry job", e);
+            }
+        }
     }
 }

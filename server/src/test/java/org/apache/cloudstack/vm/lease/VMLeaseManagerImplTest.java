@@ -36,6 +36,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -90,6 +91,8 @@ public class VMLeaseManagerImplTest {
 
     @Mock
     private AlertManager alertManager;
+    @Mock
+    MessageBus messageBus;
 
     @Mock
     private UserVmDetailsDao userVmDetailsDao;
