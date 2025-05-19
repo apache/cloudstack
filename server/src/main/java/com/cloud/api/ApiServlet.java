@@ -22,8 +22,11 @@ import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
+import java.util.Set;
 
 import javax.inject.Inject;
 import javax.servlet.ServletConfig;
@@ -78,6 +81,9 @@ public class ApiServlet extends HttpServlet {
     private static final Logger ACCESSLOGGER = LogManager.getLogger("apiserver." + ApiServlet.class.getName());
     private static final String REPLACEMENT = "_";
     private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
+    private static final Pattern GET_REQUEST_COMMANDS = Pattern.compile("^(get|list|query|find)(\\w+)+$");
+    private static final HashSet<String> GET_REQUEST_COMMANDS_LIST = new HashSet<String>(Set.of("isaccountallowedtocreateofferingswithtags",
+            "readyforshutdown", "cloudianisenabled", "quotabalance", "quotasummary", "quotatarifflist", "quotaisenabled", "quotastatement"));
 
     @Inject
     ApiServerService apiServer;
@@ -317,6 +323,19 @@ public class ApiServlet extends HttpServlet {
                 }
             }
 
+            if (apiServer.isEnforcePostRequestsAndTimestamps() && !isStateChangingCommandUsingPOST(command, req.getMethod(), params)) {
+                String errorText = String.format("State changing command %s needs to be sent using POST request", command);
+                if (command.equalsIgnoreCase("updateConfiguration") && params.containsKey("name")) {
+                    errorText = String.format("Changes for configuration %s needs to be sent using POST request", params.get("name")[0]);
+                }
+                auditTrailSb.append(" " + HttpServletResponse.SC_BAD_REQUEST + " " + errorText);
+                final String serializedResponse =
+                        apiServer.getSerializedApiError(new ServerApiException(ApiErrorCode.BAD_REQUEST, errorText), params,
+                                responseType);
+                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType, ApiServer.JSONcontentType.value());
+                return;
+            }
+
             Long userId = null;
             if (!isNew) {
                 userId = (Long)session.getAttribute("userid");
@@ -405,6 +424,15 @@ public class ApiServlet extends HttpServlet {
             verify2FA = false;
         }
         return verify2FA;
+    }
+
+    private boolean isStateChangingCommandUsingPOST(String command, String method, Map<String, Object[]> params) {
+        if (command == null || (!GET_REQUEST_COMMANDS.matcher(command.toLowerCase()).matches() && !GET_REQUEST_COMMANDS_LIST.contains(command.toLowerCase())
+                && !command.equalsIgnoreCase("updateConfiguration") && !method.equals("POST"))) {
+            return false;
+        }
+        return !command.equalsIgnoreCase("updateConfiguration") || method.equals("POST") || (params.containsKey("name")
+                && params.get("name")[0].toString().equalsIgnoreCase(ApiServer.EnforcePostRequestsAndTimestamps.key()));
     }
 
     protected boolean skip2FAcheckForAPIs(String command) {
