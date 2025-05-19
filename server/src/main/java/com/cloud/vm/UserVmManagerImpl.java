@@ -794,6 +794,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         }
                     }
                 } else {
+                    // since no changes are being done, we should not decrement IP usage
+                    decrementCount = false;
                     if (answer.getDetails() != null) {
                         logger.debug("Failed to get vm ip for Vm [id: {}, uuid: {}, name: {}], details: {}",
                                 vmId, vmUuid, vmName, answer.getDetails());
