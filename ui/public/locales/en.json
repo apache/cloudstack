@@ -414,6 +414,8 @@
 "label.auto.assign": "Automatically assign",
 "label.auto.assign.diskoffering.disk.size": "Automatically assign offering matching the disk size",
 "label.auto.assign.random.ip": "Automatically assign a random IP address",
+"label.auto.refresh.statistics": "Period between auto refreshes",
+"label.auto.refresh.statistics.none": "None",
 "label.automigrate.volume": "Auto migrate volume to another storage pool if required",
 "label.autoscale.vm.groups": "AutoScaling Groups",
 "label.autoscale.vm.profile": "AutoScale Instance Profile",
