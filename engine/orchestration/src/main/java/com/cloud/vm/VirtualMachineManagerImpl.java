@@ -413,9 +413,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     ResourceCleanupService resourceCleanupService;
     @Inject
     VmWorkJobDao vmWorkJobDao;
+    @Inject
+    DataStoreProviderManager dataStoreProviderManager;
 
     private SingleCache<List<Long>> vmIdsInProgressCache;
-    DataStoreProviderManager dataStoreProviderManager;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -1230,9 +1231,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             }
                         }
                         DataStoreProvider storeProvider = dataStoreProviderManager.getDataStoreProvider(pool.getStorageProviderName());
-                        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
-                        if (storeDriver instanceof PrimaryDataStoreDriver) {
-                            ((PrimaryDataStoreDriver)storeDriver).detachVolumeFromAllStorageNodes(vol);
+                        if (storeProvider != null) {
+                            DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+                            if (storeDriver instanceof PrimaryDataStoreDriver) {
+                                ((PrimaryDataStoreDriver)storeDriver).detachVolumeFromAllStorageNodes(vol);
+                            }
                         }
                     }
                 }
