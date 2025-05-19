@@ -485,12 +485,11 @@ public class ApiConstants {
     public static final String STATE = "state";
     public static final String STATS = "stats";
     public static final String STATUS = "status";
+    public static final String STORAGE_TYPE = "storagetype";
+    public static final String STORAGE_POLICY = "storagepolicy";
+    public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
     public static final String STORAGE_CAPABILITIES = "storagecapabilities";
     public static final String STORAGE_CUSTOM_STATS = "storagecustomstats";
-    public static final String STORAGE_MOTION_ENABLED = "storagemotionenabled";
-    public static final String STORAGE_POLICY = "storagepolicy";
-    public static final String STORAGE_POOL = "storagepool";
-    public static final String STORAGE_TYPE = "storagetype";
     public static final String SUBNET = "subnet";
     public static final String OWNER = "owner";
     public static final String SWAP_OWNER = "swapowner";
@@ -1150,6 +1149,7 @@ public class ApiConstants {
     public static final String PENDING_JOBS_COUNT = "pendingjobscount";
     public static final String AGENTS_COUNT = "agentscount";
     public static final String AGENTS = "agents";
+    public static final String LAST_AGENTS = "lastagents";
 
     public static final String PUBLIC_MTU = "publicmtu";
     public static final String PRIVATE_MTU = "privatemtu";

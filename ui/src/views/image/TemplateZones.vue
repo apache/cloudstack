@@ -48,6 +48,9 @@
           <span v-if="record.isready">{{ $t('label.yes') }}</span>
           <span v-else>{{ $t('label.no') }}</span>
         </template>
+        <template v-else-if="column.key === 'created'">
+          <span v-if="record.created">{{ $toLocaleDate(record.created) }}</span>
+        </template>
         <template v-if="column.key === 'actions'">
           <tooltip-button
             style="margin-right: 5px"
@@ -307,6 +310,11 @@ export default {
         key: 'zonename',
         title: this.$t('label.zonename'),
         dataIndex: 'zonename'
+      },
+      {
+        key: 'created',
+        title: this.$t('label.created'),
+        dataIndex: 'created'
       },
       {
         title: this.$t('label.status'),

@@ -21,7 +21,6 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,7 +34,9 @@ import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.cpu.CPU;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -108,6 +109,9 @@ public class ListHostsCmd extends BaseListCmd {
 
     @Parameter(name = ApiConstants.MANAGEMENT_SERVER_ID, type = CommandType.UUID, entityType = ManagementServerResponse.class, description = "the id of the management server", since="4.21.0")
     private Long managementServerId;
+
+    @Parameter(name = ApiConstants.ARCH, type = CommandType.STRING, description = "CPU Arch of the host", since = "4.20.1")
+    private String arch;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -195,6 +199,10 @@ public class ListHostsCmd extends BaseListCmd {
 
     public Long getManagementServerId() {
         return managementServerId;
+    }
+
+    public CPU.CPUArch getArch() {
+        return StringUtils.isBlank(arch) ? null : CPU.CPUArch.fromType(arch);
     }
 
     /////////////////////////////////////////////////////

@@ -171,7 +171,9 @@ public class VirtualRouterElementTest {
     @Mock private RemoteAccessVpnDao _vpnDao;
     @Mock private VpnUserDao _vpnUsersDao;
     @Mock private VirtualRouterProviderDao _vrProviderDao;
+    @Mock private LoadBalancerDao loadBalancerDao;
     @Mock private LoadBalancerDao _lbDao;
+    @Mock private NetworkDao networkDao;
     @Mock private NetworkDao _networksDao;
     @Mock private OvsProviderDao _ovsProviderDao;
 
@@ -180,6 +182,7 @@ public class VirtualRouterElementTest {
 
     @Mock private AccountManager _accountMgr;
     @Mock private ConfigurationManager _configMgr;
+    @Mock private NetworkModel networkModel;
     @Mock private NetworkModel _networkMdl;
     @Mock private NetworkOrchestrationService _networkMgr;
     @Mock private ResourceManager _resourceMgr;

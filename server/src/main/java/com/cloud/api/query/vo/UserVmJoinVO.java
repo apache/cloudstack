@@ -439,6 +439,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "delete_protection")
     protected Boolean deleteProtection;
 
+    @Column(name = "arch")
+    protected String arch;
+
 
     public UserVmJoinVO() {
         // Empty constructor
@@ -976,5 +979,9 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
 
     public String getUserDataDetails() {
         return userDataDetails;
+    }
+
+    public String getArch() {
+        return arch;
     }
 }

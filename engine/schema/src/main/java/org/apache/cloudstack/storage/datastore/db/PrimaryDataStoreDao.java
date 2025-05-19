@@ -60,6 +60,8 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     StoragePoolVO persist(StoragePoolVO pool, Map<String, String> details, List<String> tags, Boolean isTagARule);
 
+    StoragePoolVO persist(StoragePoolVO pool, Map<String, String> details, List<String> tags, Boolean isTagARule, boolean displayDetails);
+
     /**
      * Find pool by name.
      *
@@ -102,6 +104,8 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
     List<StoragePoolVO> listPoolByHostPath(String host, String path);
 
     void updateDetails(long poolId, Map<String, String> details);
+
+    void removeDetails(long poolId);
 
     Map<String, String> getDetails(long poolId);
 

@@ -115,4 +115,8 @@ public class NioClient extends NioConnection {
         }
         logger.info("NioClient connection closed");
     }
+
+    public String getHost() {
+        return host;
+    }
 }
