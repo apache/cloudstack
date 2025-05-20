@@ -210,6 +210,7 @@ public class ApiConstants {
     public static final String FORMAT = "format";
     public static final String FOR_VIRTUAL_NETWORK = "forvirtualnetwork";
     public static final String FOR_SYSTEM_VMS = "forsystemvms";
+    public static final String FOR_PROVIDER = "forprovider";
     public static final String FULL_PATH = "fullpath";
     public static final String GATEWAY = "gateway";
     public static final String IP6_GATEWAY = "ip6gateway";
@@ -253,6 +254,7 @@ public class ApiConstants {
     public static final String PREVIOUS_OWNER_ID = "previousownerid";
     public static final String PREVIOUS_OWNER_NAME = "previousownername";
     public static final String NEXT_ACL_RULE_ID = "nextaclruleid";
+    public static final String NEXT_HOP = "nexthop";
     public static final String MOVE_ACL_CONSISTENCY_HASH = "aclconsistencyhash";
     public static final String IMAGE_PATH = "imagepath";
     public static final String INSTANCE_CONVERSION_SUPPORTED = "instanceconversionsupported";
@@ -325,6 +327,8 @@ public class ApiConstants {
     public static final String MIN_CPU_NUMBER = "mincpunumber";
     public static final String MIN_MEMORY = "minmemory";
     public static final String MIGRATION_TYPE = "migrationtype";
+    public static final String MIGRATION_JOB_ID = "migrationjobid";
+    public static final String MIGRATION_JOB_STATUS = "migrationjobstatus";
     public static final String MIGRATIONS = "migrations";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
@@ -448,6 +452,7 @@ public class ApiConstants {
     public static final String SIGNATURE = "signature";
     public static final String SIGNATURE_VERSION = "signatureversion";
     public static final String SINCE = "since";
+    public static final String SITE_NAME = "sitename";
     public static final String SIZE = "size";
     public static final String SIZEGB = "sizegb";
     public static final String SNAPSHOT = "snapshot";
@@ -490,6 +495,7 @@ public class ApiConstants {
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
     public static final String TIMEZONEOFFSET = "timezoneoffset";
+    public static final String TENANT_NAME = "tenantname";
     public static final String TOTAL = "total";
     public static final String TOTAL_SUBNETS = "totalsubnets";
     public static final String TYPE = "type";
@@ -858,6 +864,8 @@ public class ApiConstants {
     public static final String NETWORK = "network";
     public static final String VPC_ID = "vpcid";
     public static final String VPC_NAME = "vpcname";
+    public static final String VPC_GATEWAY_ID = "vpcgatewayid";
+    public static final String VPC_GATEWAY_IP = "vpcgatewayip";
     public static final String GATEWAY_ID = "gatewayid";
     public static final String CAN_USE_FOR_DEPLOY = "canusefordeploy";
     public static final String RESOURCE_IDS = "resourceids";
@@ -1143,6 +1151,9 @@ public class ApiConstants {
     public static final String SOURCE_NAT_IP_ID = "sourcenatipaddressid";
     public static final String HAS_RULES = "hasrules";
     public static final String NSX_DETAIL_KEY = "forNsx";
+    public static final String NETRIS_DETAIL_KEY = "forNetris";
+    public static final String NETRIS_TAG = "netristag";
+    public static final String NETRIS_VXLAN_ID = "netrisvxlanid";
     public static final String DISK_PATH = "diskpath";
     public static final String IMPORT_SOURCE = "importsource";
     public static final String TEMP_PATH = "temppath";

@@ -207,7 +207,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     DomainManager _domainMgr;
 
     @Inject
-    NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
+    protected NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
     @Inject
@@ -494,7 +494,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public Map<Provider, ArrayList<PublicIpAddress>> getProviderToIpList(Network network, Map<PublicIpAddress, Set<Service>> ipToServices) {
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        if (!offering.isConserveMode() && !offering.isForNsx()) {
+        boolean isForNsx = isProviderForNetworkOffering(Provider.Nsx, offering.getId());
+        if (!offering.isConserveMode() && !isForNsx) {
             for (PublicIpAddress ip : ipToServices.keySet()) {
                 Set<Service> services = new HashSet<Service>();
                 services.addAll(ipToServices.get(ip));
@@ -1623,7 +1624,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (!canIpUsedForService(publicIp, service, networkId)) {
             return false;
         }
-        if (!offering.isConserveMode() && !offering.isForNsx()) {
+        boolean isForNsx = isProviderForNetworkOffering(Provider.Nsx, offering.getId());
+        if (!offering.isConserveMode() && !isForNsx) {
             return canIpUsedForNonConserveService(publicIp, service);
         }
         return true;
@@ -2298,6 +2300,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             }
             if (capabilities != null && implementedProvider != null) {
                 for (Service service : capabilities.keySet()) {
+                    logger.info("Add provider {} and service {}", implementedProvider.getName(), service.getName());
                     if (s_serviceToImplementedProvidersMap.containsKey(service)) {
                         List<Provider> providers = s_serviceToImplementedProvidersMap.get(service);
                         providers.add(implementedProvider);

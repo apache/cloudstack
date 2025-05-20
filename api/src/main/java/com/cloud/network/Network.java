@@ -206,6 +206,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Provider Tungsten = new Provider("Tungsten", false);
 
         public static final Provider Nsx = new Provider("Nsx", false);
+        public static final Provider Netris = new Provider("Netris", false);
 
         private final String name;
         private final boolean isExternal;

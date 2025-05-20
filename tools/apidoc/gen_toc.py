@@ -98,6 +98,9 @@ known_categories = {
     'listNsxControllers': 'NSX',
     'addNsxController': 'NSX',
     'deleteNsxController': 'NSX',
+    'addNetrisProvider': 'Netris',
+    'listNetrisProviders': 'Netris',
+    'deleteNetrisProvider': 'Netris',
     'Vpn': 'VPN',
     'Limit': 'Resource Limit',
     'Netscaler': 'Netscaler',
@@ -256,6 +259,7 @@ known_categories = {
     'deleteASNRange': 'AS Number Range',
     'listASNumbers': 'AS Number',
     'releaseASNumber': 'AS Number',
+    'addNetrisProvider': 'Netris',
 }
 
 

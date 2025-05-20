@@ -495,6 +495,8 @@ public class EventTypes {
 
     public static final String EVENT_ZONE_VLAN_ASSIGN = "ZONE.VLAN.ASSIGN";
     public static final String EVENT_ZONE_VLAN_RELEASE = "ZONE.VLAN.RELEASE";
+    public static final String EVENT_ZONE_VXLAN_ASSIGN = "ZONE.VXLAN.ASSIGN";
+    public static final String EVENT_ZONE_VXLAN_RELEASE = "ZONE.VXLAN.RELEASE";
 
     // Projects
     public static final String EVENT_PROJECT_CREATE = "PROJECT.CREATE";

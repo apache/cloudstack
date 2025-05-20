@@ -58,6 +58,8 @@ class CsVpcGuestNetwork(CsDataBag):
             self.enable_ipv6(entry['device'])
             cidr_size = entry['router_guest_ip6_cidr'].split("/")[-1]
             full_addr = entry['router_guest_ip6_gateway'] + "/" + cidr_size
+            if entry['router_guest_ip6'] != entry['router_guest_ip6_gateway']:
+                full_addr = entry['router_guest_ip6'] + "/" + cidr_size
             if not CsHelper.execute("ip -6 addr show dev %s | grep -w %s" % (entry['device'], full_addr)):
                 CsHelper.execute("ip -6 addr add %s dev %s" % (full_addr, entry['device']))
             if 'router_ip6' in list(entry.keys()) and entry['router_ip6']:
@@ -74,6 +76,8 @@ class CsVpcGuestNetwork(CsDataBag):
         if 'router_guest_ip6' in list(entry.keys()) and entry['router_guest_ip6']:
             cidr_size = entry['router_guest_ip6_cidr'].split("/")[-1]
             full_addr = entry['router_guest_ip6_gateway'] + "/" + cidr_size
+            if entry['router_guest_ip6'] != entry['router_guest_ip6_gateway']:
+                full_addr = entry['router_guest_ip6'] + "/" + cidr_size
             CsHelper.execute("ip -6 addr del %s dev %s" % (full_addr, entry['device']))
             if 'router_ip6' in list(entry.keys()) and entry['router_ip6']:
                 full_public_addr = entry['router_ip6'] + "/" + cidr_size
@@ -103,11 +107,12 @@ class CsVpcGuestNetwork(CsDataBag):
             self.conf.append("    AdvSendAdvert on;")
             self.conf.append("    MinRtrAdvInterval 5;")
             self.conf.append("    MaxRtrAdvInterval 15;")
-            self.conf.append("    prefix %s" % full_addr)
-            self.conf.append("    {")
-            self.conf.append("        AdvOnLink on;")
-            self.conf.append("        AdvAutonomous on;")
-            self.conf.append("    };")
+            if entry['router_guest_ip6'] == entry['router_guest_ip6_gateway']:
+                self.conf.append("    prefix %s" % full_addr)
+                self.conf.append("    {")
+                self.conf.append("        AdvOnLink on;")
+                self.conf.append("        AdvAutonomous on;")
+                self.conf.append("    };")
             if 'dns6' in list(entry.keys()) and entry['dns6']:
                 for dns in entry['dns6'].split(","):
                     self.conf.append("    RDNSS %s" % dns)

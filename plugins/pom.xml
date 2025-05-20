@@ -105,6 +105,7 @@
         <module>network-elements/elastic-loadbalancer</module>
         <module>network-elements/globodns</module>
         <module>network-elements/internal-loadbalancer</module>
+        <module>network-elements/netris</module>
         <module>network-elements/netscaler</module>
         <module>network-elements/nicira-nvp</module>
         <module>network-elements/opendaylight</module>
@@ -233,6 +234,7 @@
                 <module>hypervisors/vmware</module>
                 <module>network-elements/cisco-vnmc</module>
                 <module>network-elements/nsx</module>
+                <module>network-elements/netris</module>
                 <module>network-elements/juniper-contrail</module>
                 <module>network-elements/tungsten</module>
             </modules>
