@@ -3126,12 +3126,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             keyPair = _accountService.getLatestUserKeyPair(userId);
         }
 
-        validateKeyPairIsNotNull(keyPair);
-        validateAccessingKeyPairPermissionsIsSupersetOfAccessedKeyPair(keyPair, cmd);
-
         Map<String, String> keys = new HashMap<>();
-        keys.put("apikey", keyPair.getApiKey());
-        keys.put("secretkey", keyPair.getSecretKey());
+        if (keyPair != null && isAccessingKeypairSuperset(keyPair, cmd)) {
+            keys.put("apikey", keyPair.getApiKey());
+            keys.put("secretkey", keyPair.getSecretKey());
+        }
 
         Boolean apiKeyAccess = user.getApiKeyAccess();
         if (apiKeyAccess == null) {
