@@ -17,11 +17,10 @@
 
 package org.apache.cloudstack.framework.extensions.api;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -30,14 +29,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
 import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 
-import javax.inject.Inject;
-import java.util.List;
-
-@APICommand(name = "listCustomAction", description = "delete the custom action",
-        responseObject = SuccessResponse.class, responseHasSensitiveInfo = false, since = "4.21.0")
+@APICommand(name = "listCustomActions",
+        description = "Lists the custom actions",
+        responseObject = ExtensionCustomActionResponse.class,
+        responseHasSensitiveInfo = false,
+        since = "4.21.0")
 public class ListCustomActionCmd extends BaseListCmd {
 
     @Inject
@@ -54,6 +52,16 @@ public class ListCustomActionCmd extends BaseListCmd {
             entityType = ExtensionResponse.class, description = "uuid of the extension")
     private Long extensionId;
 
+    @Parameter(name = ApiConstants.RESOURCE_TYPE,
+            type = CommandType.STRING,
+            description = "Type of the resource for actions")
+    private String resourceType;
+
+    @Parameter(name = ApiConstants.ENABLED,
+            type = CommandType.BOOLEAN,
+            description = "List actions whether they are enabled or not")
+    private Boolean enabled;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -61,6 +69,7 @@ public class ListCustomActionCmd extends BaseListCmd {
     public Long getId() {
         return id;
     }
+
     public String getName() {
         return name;
     }
@@ -69,8 +78,16 @@ public class ListCustomActionCmd extends BaseListCmd {
         return extensionId;
     }
 
+    public String getResourceType() {
+        return resourceType;
+    }
+
+    public Boolean isEnabled() {
+        return enabled;
+    }
+
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() throws ServerApiException {
         List<ExtensionCustomActionResponse> responses = extensionsManager.listCustomActions(this);
         ListResponse<ExtensionCustomActionResponse> response = new ListResponse<>();
         response.setResponses(responses, responses.size());

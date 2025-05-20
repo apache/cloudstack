@@ -20,17 +20,25 @@
 package org.apache.cloudstack.framework.extensions.manager;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.response.ExtensionCustomActionParameterResponse;
 import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
 import org.apache.cloudstack.api.response.ExtensionResourceMapResponse;
 import org.apache.cloudstack.api.response.ExtensionResponse;
-import org.apache.cloudstack.extension.CustomActionResponse;
+import org.apache.cloudstack.extension.CustomActionResultResponse;
 import org.apache.cloudstack.framework.extensions.api.AddCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.CreateExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.DeleteCustomActionCmd;
@@ -39,6 +47,7 @@ import org.apache.cloudstack.framework.extensions.api.ListCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.ListExtensionsCmd;
 import org.apache.cloudstack.framework.extensions.api.RegisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
+import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDetailsDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
@@ -52,6 +61,8 @@ import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapDetails
 import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.RunCustomActionAnswer;
@@ -120,6 +131,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Inject
     VMInstanceDao vmInstanceDao;
+
+    private static final List<String> CUSTOM_ACTION_VALID_RESOURCE_TYPES = Arrays.asList(
+            ApiCommandResourceType.VirtualMachine.name(),
+            ApiCommandResourceType.Host.name(),
+            ApiCommandResourceType.Cluster.name());
 
 
     @Override
@@ -279,7 +295,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     @Override
-    public CustomActionResponse runCustomAction(RunCustomActionCmd cmd) {
+    public CustomActionResultResponse runCustomAction(RunCustomActionCmd cmd) {
         Long customActionId =  cmd.getCustomActionId();
         Long instanceId = cmd.getInstanceId();
         Map<String, String> externalDetails = cmd.getExternalDetails();
@@ -317,22 +333,48 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
 
         RunCustomActionAnswer answer;
-        CustomActionResponse response;
+        CustomActionResultResponse response = new CustomActionResultResponse();
+        response.setId(customActionVO.getUuid());
+        response.setName(action);
+        response.setObjectName("CustomActionResult");
+        Map<String, String> details = new HashMap<>();
+        details.put(ApiConstants.SUCCESS, String.valueOf(false));
         try {
             RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(action, externalDetails);
             answer = (RunCustomActionAnswer) agentMgr.send(hostid, runCustomActionCommand);
-            response = new CustomActionResponse();
-            response.setActionName(action);
-            response.setDetails(answer.getRunDetails());
-            response.setResponseName("CustomActionResult");
-            response.setObjectName("CustomActionResult");
+            details = answer.getRunDetails();
         } catch (AgentUnavailableException e) {
-            throw new CloudRuntimeException("Unable to run custom action");
+            String msg = "Unable to run custom action";
+            logger.error("{} due to {}", msg, e.getMessage(), e);
+            details.put(ApiConstants.RESULT1, msg);
         } catch (OperationTimedoutException e) {
-            throw new CloudRuntimeException("Running custom action timed out, please try again");
+            String msg = "Running custom action timed out, please try again";
+            logger.error(msg, e);
+            details.put(ApiConstants.RESULT1, msg);
         }
+        response.setDetails(details);
 
         return response;
+    }
+
+    protected List<ExtensionCustomAction.Parameter> getParametersListFromMap(String actionName, Map parametersMap) {
+        if (MapUtils.isEmpty(parametersMap)) {
+            return Collections.emptyList();
+        }
+        List<ExtensionCustomAction.Parameter> parameters = new ArrayList<>();
+        for (Map<String, String> entry : (Collection<Map<String, String>>)parametersMap.values()) {
+            String name = entry.get("name");
+            String type = entry.get("type");
+            String required = entry.get("required");
+            if (StringUtils.isBlank(name)) {
+                throw new InvalidParameterValueException("Invalid parameter specified with empty name");
+            }
+            ExtensionCustomAction.Parameter parameter = new ExtensionCustomAction.Parameter(name,
+                    ExtensionCustomAction.Parameter.Type.fromString(type), Boolean.getBoolean(required));
+            logger.debug("Adding {} for custom action [{}]", parameter, actionName);
+            parameters.add(parameter);
+        }
+        return parameters;
     }
 
     @Override
@@ -340,31 +382,47 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         String name = cmd.getName();
         String description = cmd.getDescription();
         Long extensionId = cmd.getExtensionId();
+        String resourceType = cmd.getResourceType();
         List<String> rolesList = cmd.getRolesList();
-        Map<String, String> externalDetails = cmd.getCustomActionParameters();
+        final boolean enabled = cmd.isEnabled();
+        Map parametersMap = cmd.getParametersMap();
+        Map<String, String> details = cmd.getDetails();
 
         ExtensionCustomActionVO customAction = extensionCustomActionDao.findByNameAndExtensionId(extensionId, name);
         if (customAction != null) {
             throw new CloudRuntimeException("Action by name already exists");
         }
+        List<ExtensionCustomAction.Parameter> parameters = getParametersListFromMap(name, parametersMap);
 
-        customAction = new ExtensionCustomActionVO();
-        customAction.setName(name);
-        customAction.setDescription(description);
-        customAction.setExtensionId(extensionId);
+        customAction = new ExtensionCustomActionVO(name, description, extensionId, enabled);
+        if (StringUtils.isNotBlank(resourceType)) {
+            if (!CUSTOM_ACTION_VALID_RESOURCE_TYPES.contains(resourceType)) {
+                throw new InvalidParameterValueException(String.format("Invalid %s specified. Valid options are: %s",
+                        ApiConstants.RESOURCE_TYPE,
+                        StringUtils.join(CUSTOM_ACTION_VALID_RESOURCE_TYPES, ", ")));
+            }
+            customAction.setResourceType(resourceType);
+        }
         if (CollectionUtils.isNotEmpty(rolesList)) {
             customAction.setRolesList(rolesList.toString());
         }
         ExtensionCustomActionVO savedAction = extensionCustomActionDao.persist(customAction);
 
         List<ExtensionCustomActionDetailsVO> detailsVOList = new ArrayList<>();
-        if (externalDetails != null && !externalDetails.isEmpty()) {
-            for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
+        detailsVOList.add(new ExtensionCustomActionDetailsVO(
+                savedAction.getId(),
+                ApiConstants.PARAMETERS,
+                ExtensionCustomAction.Parameter.toJsonFromList(parameters),
+                false
+        ));
+        if (MapUtils.isNotEmpty(details)) {
+            for (Map.Entry<String, String> entry : details.entrySet()) {
                 detailsVOList.add(new ExtensionCustomActionDetailsVO(savedAction.getId(), entry.getKey(), entry.getValue()));
             }
+        }
+        if (CollectionUtils.isNotEmpty(detailsVOList)) {
             extensionCustomActionDetailsDao.saveDetails(detailsVOList);
         }
-
         externalProvisioner.prepareScripts(savedAction.getName());
 
         return savedAction;
@@ -391,6 +449,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         String name = cmd.getName();
         Long extensionId = cmd.getExtensionId();
         String keyword = cmd.getKeyword();
+        final String resourceType = cmd.getResourceType();
+        final Boolean enabled = cmd.isEnabled();
         final SearchBuilder<ExtensionCustomActionVO> sb = extensionCustomActionDao.createSearchBuilder();
         final Filter searchFilter = new Filter(ExtensionCustomActionVO.class, "id", false, cmd.getStartIndex(), cmd.getPageSizeVal());
 
@@ -398,32 +458,36 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         sb.and("extensionid", sb.entity().getExtensionId(), SearchCriteria.Op.EQ);
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("keyword", sb.entity().getName(), SearchCriteria.Op.LIKE);
+        sb.and("enabled", sb.entity().isEnabled(), SearchCriteria.Op.EQ);
+        if (StringUtils.isNotBlank(resourceType)) {
+            sb.and().op("resourceTypeNull", sb.entity().getResourceType(), SearchCriteria.Op.NULL);
+            sb.or("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
+            sb.cp();
+        }
+        sb.done();
         final SearchCriteria<ExtensionCustomActionVO> sc = sb.create();
-
         if (id != null) {
             sc.setParameters("id", id);
         }
-
         if (extensionId != null) {
             sc.setParameters("extensionid", extensionId);
         }
-
-        if (name != null) {
+        if (StringUtils.isNotBlank(name)) {
             sc.setParameters("name", name);
         }
-
-        if (keyword != null) {
+        if (StringUtils.isNotBlank(keyword)) {
             sc.setParameters("keyword",  "%" + keyword + "%");
         }
-
+        if (enabled != null) {
+            sc.setParameters("enabled",  true);
+        }
+        if (StringUtils.isNotBlank(resourceType)) {
+            sc.setParameters("resourceType",  resourceType);
+        }
         final Pair<List<ExtensionCustomActionVO>, Integer> result = extensionCustomActionDao.searchAndCount(sc, searchFilter);
         List<ExtensionCustomActionResponse> responses = new ArrayList<>();
         for (ExtensionCustomActionVO customAction : result.first()) {
-            Map<String, String> details = extensionCustomActionDetailsDao.listDetailsKeyPairs(customAction.getId());
-            ExtensionCustomActionResponse response = new ExtensionCustomActionResponse(customAction.getUuid(), customAction.getName(), customAction.getDescription(), customAction.getRolesList());
-            response.setDetails(details);
-            response.setObjectName(ApiConstants.EXTENSION_CUSTOM_ACTION);
-            responses.add(response);
+            responses.add(createCustomActionResponse(customAction));
         }
 
         return responses;
@@ -448,11 +512,122 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     }
 
     @Override
+    public ExtensionCustomAction updateCustomAction(UpdateCustomActionCmd cmd) {
+        final long id = cmd.getId();
+        String description = cmd.getDescription();
+        String resourceType = cmd.getResourceType();
+        List<String> rolesList = cmd.getRolesList();
+        Boolean enabled = cmd.isEnabled();
+        Map parametersMap = cmd.getParametersMap();
+        Boolean cleanupParameters = cmd.getCleanupParameters();
+        Map<String, String> details = cmd.getDetails();
+        Boolean cleanupDetails = cmd.getCleanupDetails();
+
+        ExtensionCustomActionVO customAction = extensionCustomActionDao.findById(id);
+        if (customAction == null) {
+            throw new CloudRuntimeException("Action not found");
+        }
+
+        boolean needUpdate = false;
+        if (StringUtils.isNotBlank(description)) {
+            customAction.setDescription(description);
+            needUpdate = true;
+        }
+        if (resourceType != null) {
+            if (StringUtils.isNotBlank(resourceType) && !CUSTOM_ACTION_VALID_RESOURCE_TYPES.contains(resourceType)) {
+                throw new InvalidParameterValueException(String.format("Invalid %s specified. Valid options are: %s",
+                        ApiConstants.RESOURCE_TYPE,
+                        StringUtils.join(CUSTOM_ACTION_VALID_RESOURCE_TYPES, ", ")));
+            }
+            customAction.setResourceType(StringUtils.isNotBlank(resourceType) ? resourceType : null);
+            needUpdate = true;
+        }
+        if (CollectionUtils.isNotEmpty(rolesList)) {
+            customAction.setRolesList(rolesList.toString());
+            needUpdate = true;
+        }
+        if (enabled != null) {
+            customAction.setEnabled(enabled);
+            needUpdate = true;
+        }
+
+        List<ExtensionCustomAction.Parameter> parameters = null;
+        if (!Boolean.TRUE.equals(cleanupParameters) && MapUtils.isNotEmpty(parametersMap)) {
+            parameters = getParametersListFromMap(customAction.getName(), parametersMap);
+        }
+        if (needUpdate) {
+            boolean result = extensionCustomActionDao.update(id, customAction);
+            if (!result) {
+                throw new CloudRuntimeException(String.format("Failed to update custom action: %s",
+                        customAction.getName()));
+            }
+        }
+        List<ExtensionCustomActionDetailsVO> detailsVOList = new ArrayList<>();
+        if (Boolean.TRUE.equals(cleanupParameters) || CollectionUtils.isNotEmpty(parameters)) {
+            extensionCustomActionDetailsDao.removeDetail(customAction.getId(), ApiConstants.PARAMETERS);
+            if (CollectionUtils.isNotEmpty(parameters)) {
+                detailsVOList.add(new ExtensionCustomActionDetailsVO(
+                        customAction.getId(),
+                        ApiConstants.PARAMETERS,
+                        ExtensionCustomAction.Parameter.toJsonFromList(parameters),
+                        false
+                ));
+            }
+        }
+
+        if (Boolean.TRUE.equals(cleanupDetails) || MapUtils.isNotEmpty(details)) {
+            if (CollectionUtils.isNotEmpty(detailsVOList)) {
+                ExtensionCustomActionDetailsVO paramDetails =
+                        extensionCustomActionDetailsDao.findDetail(customAction.getId(), ApiConstants.PARAMETERS);
+                if (paramDetails != null) {
+                    detailsVOList.add(paramDetails);
+                }
+            }
+            extensionCustomActionDetailsDao.removeDetails(customAction.getId());
+            if (!Boolean.TRUE.equals(cleanupDetails) && MapUtils.isNotEmpty(details)) {
+                details.forEach((key, value) -> detailsVOList.add(
+                            new ExtensionCustomActionDetailsVO(customAction.getId(), key, value)));
+            }
+        }
+        if (CollectionUtils.isNotEmpty(detailsVOList)) {
+            extensionCustomActionDetailsDao.saveDetails(detailsVOList);
+        }
+
+        return customAction;
+    }
+
+    @Override
+    public ExtensionCustomActionResponse createCustomActionResponse(ExtensionCustomAction customAction) {
+        ExtensionCustomActionResponse response = new ExtensionCustomActionResponse( customAction.getUuid(),
+                customAction.getName(), customAction.getDescription(), customAction.getRolesList());
+        Optional.ofNullable(extensionDao.findById(customAction.getExtensionId())).ifPresent(extensionVO -> {
+            response.setExtensionId(extensionVO.getUuid());
+            response.setName(extensionVO.getName());
+        });
+        Optional.ofNullable(extensionCustomActionDetailsDao.findDetail(customAction.getId(), ApiConstants.PARAMETERS))
+                .map(ExtensionCustomActionDetailsVO::getValue)
+                .map(ExtensionCustomAction.Parameter::toListFromJson)
+                .ifPresent(parameters -> {
+                    Set<ExtensionCustomActionParameterResponse> paramResponses = parameters.stream()
+                            .map(p -> new ExtensionCustomActionParameterResponse(p.getName(),
+                                    p.getType().name(), p.isRequired()))
+                            .collect(Collectors.toSet());
+                    response.setParameters(paramResponses);
+                });
+        Map<String, String> details =
+                extensionCustomActionDetailsDao.listDetailsKeyPairs(customAction.getId(), true);
+        response.setDetails(details);
+        response.setObjectName(ApiConstants.EXTENSION_CUSTOM_ACTION);
+        return response;
+    }
+
+    @Override
     public List<Class<?>> getCommands() {
-        List<Class<?>> cmds = new ArrayList<Class<?>>();
+        List<Class<?>> cmds = new ArrayList<>();
         cmds.add(AddCustomActionCmd.class);
         cmds.add(ListCustomActionCmd.class);
         cmds.add(DeleteCustomActionCmd.class);
+        cmds.add(UpdateCustomActionCmd.class);
         cmds.add(RunCustomActionCmd.class);
 
         cmds.add(CreateExtensionCmd.class);

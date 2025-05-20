@@ -17,8 +17,8 @@
 
 package org.apache.cloudstack.framework.extensions.api;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.user.Account;
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -29,13 +29,12 @@ import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 
-import javax.inject.Inject;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.user.Account;
 
-@APICommand(name = "deleteCustomAction", description = "delete the custom action",
+@APICommand(name = "deleteCustomAction", description = "Delete the custom action",
         responseObject = SuccessResponse.class, responseHasSensitiveInfo = false, since = "4.21.0")
 public class DeleteCustomActionCmd extends BaseCmd {
-
-    public static final String APINAME = "deleteCustomAction";
 
     @Inject
     ExtensionsManager extensionsManager;
@@ -68,7 +67,7 @@ public class DeleteCustomActionCmd extends BaseCmd {
             response.setSuccess(result);
             setResponseObject(response);
         } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete userdata");
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete extension custom action");
         }
     }
 

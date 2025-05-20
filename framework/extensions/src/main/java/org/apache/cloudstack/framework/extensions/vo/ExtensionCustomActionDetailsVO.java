@@ -40,7 +40,7 @@ public class ExtensionCustomActionDetailsVO implements ResourceDetail {
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
-    @Column(name = "value", nullable = false, length = 255)
+    @Column(name = "value", nullable = false, length = 65535)
     private String value;
 
     @Column(name = "display")

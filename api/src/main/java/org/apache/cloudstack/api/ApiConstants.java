@@ -209,7 +209,7 @@ public class ApiConstants {
     public static final String EXTERNAL_UUID = "externaluuid";
     public static final String EXTERNAL_PROVISIONER = "externalprovisioner";
     public static final String EXTERNAL_DETAILS = "externaldetails";
-    public static final String CUSTOM_ACTION_PARAMETERS = "parameters";
+    public static final String PARAMETERS = "parameters";
     public static final String EXTENSION = "extension";
     public static final String EXTENSIONS = "extensions";
     public static final String EXTENSION_ID = "extensionid";
@@ -648,6 +648,7 @@ public class ApiConstants {
     public static final String ZONE_TOKEN = "zonetoken";
     public static final String DHCP_PROVIDER = "dhcpprovider";
     public static final String RESULT = "success";
+    public static final String RESULT1 = "result";
     public static final String RESUME = "resume";
     public static final String LUN_ID = "lunId";
     public static final String IQN = "iqn";
@@ -1074,6 +1075,7 @@ public class ApiConstants {
     public static final String OVM3_CLUSTER = "ovm3cluster";
     public static final String OVM3_VIP = "ovm3vip";
     public static final String CLEAN_UP_DETAILS = "cleanupdetails";
+    public static final String CLEAN_UP_PARAMETERS = "cleanupparameters";
     public static final String VIRTUAL_SIZE = "virtualsize";
     public static final String NETSCALER_CONTROLCENTER_ID = "netscalercontrolcenterid";
     public static final String NETSCALER_SERVICEPACKAGE_ID = "netscalerservicepackageid";

@@ -33,6 +33,7 @@ public class RunCustomActionAnswer extends Answer {
     public RunCustomActionAnswer(RunCustomActionCommand cmd, boolean success, String details) {
         super(cmd, success, details);
         runDetails = new HashMap<>();
+        runDetails.put("success", String.valueOf(success));
         runDetails.put("result", details);
     }
 

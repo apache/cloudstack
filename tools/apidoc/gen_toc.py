@@ -259,14 +259,10 @@ known_categories = {
     'releaseASNumber': 'AS Number',
     'configureStorageAccess': 'Storage Access Groups',
     'listStorageAccessGroups': 'Storage Access Groups',
-    'createExtension' : 'Extension',
-    'registerExtension' : 'Extension',
-    'deleteExtension' : 'Extension',
-    'listExtensions' : 'Extension',
-    'runCustomAction' : 'Extension',
-    'deleteCustomAction' : 'Extension',
-    'addCustomAction' : 'Extension',
-    'listCustomAction' : 'Extension'
+    'Extension' : 'Extension',
+    'Extensions' : 'Extension',
+    'CustomAction' : 'Extension',
+    'CustomActions' : 'Extension'
 }
 
 

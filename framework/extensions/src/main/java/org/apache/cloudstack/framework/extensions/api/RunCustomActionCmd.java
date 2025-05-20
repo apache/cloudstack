@@ -17,28 +17,32 @@
 
 package org.apache.cloudstack.framework.extensions.api;
 
-import com.cloud.event.EventTypes;
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.user.Account;
-import com.cloud.vm.VmDetailConstants;
-import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.extension.CustomActionResponse;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
+import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
 import org.apache.cloudstack.api.response.ExtensionResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.extension.CustomActionResultResponse;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 
-import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.Map;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.user.Account;
+import com.cloud.vm.VmDetailConstants;
 
-@APICommand(name = RunCustomActionCmd.APINAME, description = "Run the custom action",
-        responseObject = CustomActionResponse.class, responseHasSensitiveInfo = false, since = "4.21.0")
+@APICommand(name = RunCustomActionCmd.APINAME,
+        description = "Run the custom action",
+        responseObject = CustomActionResultResponse.class,
+        responseHasSensitiveInfo = false, since = "4.21.0")
 public class RunCustomActionCmd extends BaseAsyncCmd {
 
     public static final String APINAME = "runCustomAction";
@@ -106,7 +110,7 @@ public class RunCustomActionCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException {
-        CustomActionResponse response = extensionsManager.runCustomAction(this);
+        CustomActionResultResponse response = extensionsManager.runCustomAction(this);
         if (response != null) {
             setResponseObject(response);
         } else {

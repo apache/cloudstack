@@ -32,34 +32,33 @@ import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.extension.ExtensionCustomAction;
 import com.cloud.user.Account;
 
-@APICommand(name = "addCustomAction", description = "Register the custom action",
-        responseObject = SuccessResponse.class, responseHasSensitiveInfo = false, since = "4.21.0")
-public class AddCustomActionCmd extends BaseCmd {
+@APICommand(name = "UpdateCustomAction",
+        description = "Update the custom action",
+        responseObject = SuccessResponse.class,
+        responseHasSensitiveInfo = false, since = "4.21.0")
+public class UpdateCustomActionCmd extends BaseCmd {
 
     @Inject
     ExtensionsManager extensionsManager;
 
-    @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID, required = true,
-            entityType = ExtensionResponse.class, description = "the extension id used to call the custom action")
-    private Long extensionId;
+    @Parameter(name = ApiConstants.ID,
+            type = CommandType.UUID,
+            required = true,
+            entityType = ExtensionResponse.class,
+            description = "ID of the custom action")
+    private Long id;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the command")
-    private String name;
-
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "The description of the command")
+    @Parameter(name = ApiConstants.DESCRIPTION,
+            type = CommandType.STRING,
+            description = "The description of the command")
     private String description;
 
     @Parameter(name = ApiConstants.RESOURCE_TYPE,
             type = CommandType.STRING,
-            description = "Resource type for which the action is available")
+            description = "Type of the resource for actions")
     private String resourceType;
 
     @Parameter(name = ApiConstants.ROLES_LIST,
@@ -70,7 +69,7 @@ public class AddCustomActionCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ENABLED,
             type = CommandType.BOOLEAN,
-            description = "Whether the action is enabled or not. Default is enabled.")
+            description = "Whether the action is enabled or not")
     private Boolean enabled;
 
     @Parameter(name = ApiConstants.PARAMETERS, type = CommandType.MAP,
@@ -80,22 +79,32 @@ public class AddCustomActionCmd extends BaseCmd {
                     + "Example: parameters[0].name=xxx&parameters[0].type=BOOLEAN&parameters[0].required=true")
     protected Map parameters;
 
+    @Parameter(name = ApiConstants.CLEAN_UP_PARAMETERS,
+            type = CommandType.BOOLEAN,
+            description = "Optional boolean field, which indicates if parameters should be cleaned up or not " +
+                    "(If set to true, parameters will be removed for this action, parameters field ignored; " +
+                    "if false or not set, no action)")
+    private Boolean cleanupParameters;
+
     @Parameter(name = ApiConstants.DETAILS,
             type = CommandType.MAP,
             description = "Details in key/value pairs using format details[i].keyname=keyvalue. "
                     + "Example: details[0].vendor=xxx&&details[0].version=2.0")
     protected Map details;
 
+    @Parameter(name = ApiConstants.CLEAN_UP_DETAILS,
+            type = CommandType.BOOLEAN,
+            description = "Optional boolean field, which indicates if details should be cleaned up or not " +
+                    "(If set to true, details removed for this action, details field ignored; " +
+                    "if false or not set, no action)")
+    private Boolean cleanupDetails;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getExtensionId() {
-        return extensionId;
-    }
-
-    public String getName() {
-        return name;
+    public long getId() {
+        return id;
     }
 
     public String getDescription() {
@@ -106,20 +115,28 @@ public class AddCustomActionCmd extends BaseCmd {
         return resourceType;
     }
 
-    public List<String> getRolesList() {
-        return rolesList;
+    public Boolean isEnabled() {
+        return enabled;
     }
 
-    public boolean isEnabled() {
-        return Boolean.TRUE.equals(enabled);
+    public List<String> getRolesList() {
+        return rolesList;
     }
 
     public Map getParametersMap() {
         return parameters;
     }
 
+    public Boolean getCleanupParameters() {
+        return cleanupParameters;
+    }
+
     public Map<String, String> getDetails() {
         return convertDetailsToMap(details);
+    }
+
+    public Boolean getCleanupDetails() {
+        return cleanupDetails;
     }
 
     /////////////////////////////////////////////////////
@@ -127,8 +144,8 @@ public class AddCustomActionCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        ExtensionCustomAction extensionCustomAction = extensionsManager.addCustomAction(this);
+    public void execute() throws ServerApiException {
+        ExtensionCustomAction extensionCustomAction = extensionsManager.updateCustomAction(this);
         ExtensionCustomActionResponse response = extensionsManager.createCustomActionResponse(extensionCustomAction);
         setResponseObject(response);
     }

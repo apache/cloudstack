@@ -26,12 +26,13 @@ import org.apache.cloudstack.api.EntityReference;
 
 import java.util.Date;
 import java.util.Map;
+import java.util.Set;
 
 @EntityReference(value = ExtensionCustomAction.class)
 public class ExtensionCustomActionResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "UUID of the extension custom action")
+    @Param(description = "ID of the extension custom action")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
@@ -42,16 +43,28 @@ public class ExtensionCustomActionResponse extends BaseResponse {
     @Param(description = "Description of the extension custom action")
     private String description;
 
+    @SerializedName(ApiConstants.EXTENSION_ID)
+    @Param(description = "ID of the extension that this extension custom action belongs to")
+    private String extensionId;
+
+    @SerializedName(ApiConstants.EXTENSION_NAME)
+    @Param(description = "Name of the extension that this extension custom action belongs to")
+    private String extensionName;
+
     @SerializedName(ApiConstants.ROLES_LIST)
     @Param(description = "Comma separated list of roles associated with the extension custom action")
     private String rolesList;
 
     @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "the details of the extension")
+    @Param(description = "Details of the extension custom action")
     private Map<String, String> details;
 
+    @SerializedName(ApiConstants.PARAMETERS)
+    @Param(description = "List of the parameters for the action", responseObject = ExtensionCustomActionParameterResponse.class)
+    private Set<ExtensionCustomActionParameterResponse> parameters;
+
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "Creation timestamp of the extension")
+    @Param(description = "Creation timestamp of the extension custom action")
     private Date created;
 
     public ExtensionCustomActionResponse(String id, String name, String description, String rolesList) {
@@ -85,12 +98,24 @@ public class ExtensionCustomActionResponse extends BaseResponse {
         this.description = description;
     }
 
+    public void setExtensionId(String extensionId) {
+        this.extensionId = extensionId;
+    }
+
+    public void setExtensionName(String extensionName) {
+        this.extensionName = extensionName;
+    }
+
     public String getRolesList() {
         return rolesList;
     }
 
     public void setRolesList(String rolesList) {
         this.rolesList = rolesList;
+    }
+
+    public void setParameters(Set<ExtensionCustomActionParameterResponse> parameters) {
+        this.parameters = parameters;
     }
 
     public void setDetails(Map<String, String> details) {

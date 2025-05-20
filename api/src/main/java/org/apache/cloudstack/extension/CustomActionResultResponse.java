@@ -17,28 +17,37 @@
 
 package org.apache.cloudstack.extension;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
+import java.util.Map;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
-import java.util.Map;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
-public class CustomActionResponse extends BaseResponse {
+public class CustomActionResultResponse extends BaseResponse {
 
-    @SerializedName(ApiConstants.ACTION)
-    @Param(description = "name of the action")
-    private String actionName;
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "ID of the action")
+    private String id;
+
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "Name of the action")
+    private String name;
 
     @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "details of the custom action run")
-    private Map details;
+    @Param(description = "Details of the action execution")
+    private Map<String, String> details;
 
-    public void setDetails(Map details) {
-        this.details = details;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public void setActionName(String name) {
-        this.actionName = name;
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }

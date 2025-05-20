@@ -51,8 +51,14 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
     @Column(name = "extension_id", nullable = false)
     private Long extensionId;
 
+    @Column(name = "resource_type")
+    private String resourceType;
+
     @Column(name = "roles_list")
     private String rolesList;
+
+    @Column(name = "enabled")
+    private boolean enabled;
 
     @Column(name = "created", nullable = false, updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
@@ -61,11 +67,20 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-
     public ExtensionCustomActionVO() {
         this.uuid = UUID.randomUUID().toString();
         this.created = new Date();
     }
+
+    public ExtensionCustomActionVO(String name, String description, long extensionId, boolean enabled) {
+        this.uuid = UUID.randomUUID().toString();
+        this.created = new Date();
+        this.name = name;
+        this.description = description;
+        this.extensionId = extensionId;
+        this.enabled = enabled;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -99,12 +114,21 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
         this.description = description;
     }
 
-    public Long getExtensionId() {
+    @Override
+    public long getExtensionId() {
         return extensionId;
     }
 
     public void setExtensionId(Long extensionId) {
         this.extensionId = extensionId;
+    }
+
+    public String getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
     }
 
     @Override
@@ -115,6 +139,15 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
     @Override
     public long getId() {
         return id;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
 
     public Date getCreated() {
