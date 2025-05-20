@@ -322,6 +322,8 @@ public interface StorageManager extends StorageService {
 
     boolean canHostPrepareStoragePoolAccess(Host host, StoragePool pool);
 
+    boolean canDisconnectHostFromStoragePool(Host host, StoragePool pool);
+
     Host getHost(long hostId);
 
     Host updateSecondaryStorage(long secStorageId, String newUrl);
@@ -415,6 +417,12 @@ public interface StorageManager extends StorageService {
     void syncDatastoreClusterStoragePool(long datastoreClusterPoolId, List<ModifyStoragePoolAnswer> childDatastoreAnswerList, long hostId);
 
     void validateChildDatastoresToBeAddedInUpState(StoragePoolVO datastoreClusterPool, List<ModifyStoragePoolAnswer> childDatastoreAnswerList);
+
+    boolean checkIfHostAndStoragePoolHasCommonStorageAccessGroups(Host host, StoragePool pool);
+
+    Pair<Boolean, String> checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(StoragePool destPool, Volume volume);
+
+    String[] getStorageAccessGroups(Long zoneId, Long podId, Long clusterId, Long hostId);
 
     CapacityVO getObjectStorageUsedStats(Long zoneId);
 }

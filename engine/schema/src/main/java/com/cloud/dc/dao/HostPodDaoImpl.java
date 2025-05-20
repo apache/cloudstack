@@ -143,4 +143,36 @@ public class HostPodDaoImpl extends GenericDaoBase<HostPodVO, Long> implements H
         return listBy(sc);
     }
 
+    @Override
+    public List<String> listDistinctStorageAccessGroups(String name, String keyword) {
+        GenericSearchBuilder<HostPodVO, String> searchBuilder = createSearchBuilder(String.class);
+
+        searchBuilder.select(null, SearchCriteria.Func.DISTINCT, searchBuilder.entity().getStorageAccessGroups());
+        if (name != null) {
+            searchBuilder.and().op("storageAccessGroupExact", searchBuilder.entity().getStorageAccessGroups(), Op.EQ);
+            searchBuilder.or("storageAccessGroupPrefix", searchBuilder.entity().getStorageAccessGroups(), Op.LIKE);
+            searchBuilder.or("storageAccessGroupSuffix", searchBuilder.entity().getStorageAccessGroups(), Op.LIKE);
+            searchBuilder.or("storageAccessGroupMiddle", searchBuilder.entity().getStorageAccessGroups(), Op.LIKE);
+            searchBuilder.cp();
+        }
+        if (keyword != null) {
+            searchBuilder.and("keyword", searchBuilder.entity().getStorageAccessGroups(), Op.LIKE);
+        }
+        searchBuilder.done();
+
+        SearchCriteria<String> sc = searchBuilder.create();
+        if (name != null) {
+            sc.setParameters("storageAccessGroupExact", name);
+            sc.setParameters("storageAccessGroupPrefix", name + ",%");
+            sc.setParameters("storageAccessGroupSuffix", "%," + name);
+            sc.setParameters("storageAccessGroupMiddle", "%," + name + ",%");
+        }
+
+        if (keyword != null) {
+            sc.setParameters("keyword", "%" + keyword + "%");
+        }
+
+        return customSearch(sc, null);
+    }
+
 }

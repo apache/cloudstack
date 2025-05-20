@@ -28,6 +28,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -6691,6 +6692,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         VMInstanceVO vm = preVmStorageMigrationCheck(vmId);
         Map<Long, Long> volumeToPoolIds = new HashMap<>();
         checkDestinationHypervisorType(destPool, vm);
+        checkIfDestinationPoolHasSameStorageAccessGroups(destPool, vm);
         List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
         StoragePoolVO destinationPoolVo = _storagePoolDao.findById(destPool.getId());
         Long destPoolPodId = ScopeType.CLUSTER.equals(destinationPoolVo.getScope()) || ScopeType.HOST.equals(destinationPoolVo.getScope()) ?
@@ -6705,6 +6707,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         !destPoolPodId.equals(pool.getPodId())) {
                     throw new InvalidParameterValueException("Storage migration of non-user VMs cannot be done between storage pools of different pods");
                 }
+            }
+            Pair<Boolean, String> checkResult = storageManager.checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(destPool, volume);
+            if (!checkResult.first()) {
+                throw new CloudRuntimeException(String.format("Storage suitability check failed for volume %s with error, %s", volume, checkResult.second()));
             }
             volumeToPoolIds.put(volume.getId(), destPool.getId());
         }
@@ -6730,10 +6736,25 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 poolClusterId = pool.getClusterId();
             }
             checkDestinationHypervisorType(pool, vm);
+            Pair<Boolean, String> checkResult = storageManager.checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(pool, volume);
+            if (!checkResult.first()) {
+                throw new CloudRuntimeException(String.format("Storage suitability check failed for volume %s with error %s", volume, checkResult.second()));
+            }
+
             volumeToPoolIds.put(volume.getId(), pool.getId());
         }
         _itMgr.storageMigration(vm.getUuid(), volumeToPoolIds);
         return findMigratedVm(vm.getId(), vm.getType());
+    }
+
+    private void checkIfDestinationPoolHasSameStorageAccessGroups(StoragePool destPool, VMInstanceVO vm) {
+        Long hostId = vm.getHostId();
+        if (hostId != null) {
+            Host host = _hostDao.findById(hostId);
+            if (!storageManager.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, destPool)) {
+                throw new InvalidParameterValueException(String.format("Destination pool %s does not have matching storage access groups as host %s", destPool.getName(), host.getName()));
+            }
+        }
     }
 
     private void checkDestinationHypervisorType(StoragePool destPool, VMInstanceVO vm) {
@@ -6855,6 +6876,26 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return host.checkHostServiceOfferingAndTemplateTags(serviceOffering, template, strictHostTags);
     }
 
+    protected void validateStorageAccessGroupsOnHosts(Host srcHost, Host destinationHost) {
+        String[] storageAccessGroupsOnSrcHost = storageManager.getStorageAccessGroups(null, null, null, srcHost.getId());
+        String[] storageAccessGroupsOnDestHost = storageManager.getStorageAccessGroups(null, null, null, destinationHost.getId());
+
+        List<String> srcHostStorageAccessGroupsList = storageAccessGroupsOnSrcHost != null ? Arrays.asList(storageAccessGroupsOnSrcHost) : Collections.emptyList();
+        List<String> destHostStorageAccessGroupsList = storageAccessGroupsOnDestHost != null ? Arrays.asList(storageAccessGroupsOnDestHost) : Collections.emptyList();
+
+        if (CollectionUtils.isEmpty(srcHostStorageAccessGroupsList)) {
+            return;
+        }
+
+        if (CollectionUtils.isEmpty(destHostStorageAccessGroupsList)) {
+            throw new CloudRuntimeException("Source host has storage access groups, but destination host has none.");
+        }
+
+        if (!destHostStorageAccessGroupsList.containsAll(srcHostStorageAccessGroupsList)) {
+            throw new CloudRuntimeException("Storage access groups on the source and destination hosts did not match.");
+        }
+    }
+
     protected void validateStrictHostTagCheck(VMInstanceVO vm, HostVO host) {
         ServiceOffering serviceOffering = serviceOfferingDao.findByIdIncludingRemoved(vm.getServiceOfferingId());
         VirtualMachineTemplate template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
@@ -6897,6 +6938,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         HostVO destinationHostVO = _hostDao.findById(destinationHost.getId());
         _hostDao.loadHostTags(destinationHostVO);
         validateStrictHostTagCheck(vm, destinationHostVO);
+        validateStorageAccessGroupsOnHosts(srcHost, destinationHost);
 
         checkHostsDedication(vm, srcHost.getId(), destinationHost.getId());
 
@@ -7257,6 +7299,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     destinationHost.getName(), destinationHost.getUuid()));
         }
 
+        validateStorageAccessGroupsOnHosts(srcHost, destinationHost);
+
         return new Pair<>(srcHost, destinationHost);
     }
 
@@ -7294,8 +7338,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
                     volToPoolObjectMap.put(volume.getId(), pool.getId());
                 }
-                HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
+                HostVO host = _hostDao.findById(vm.getHostId());
+                if (!storageManager.checkIfHostAndStoragePoolHasCommonStorageAccessGroups(host, pool)) {
+                    throw new InvalidParameterValueException(String.format("Destination pool %s for the volume %s does not have matching storage access groups as host %s", pool.getName(), volume.getName(), host.getName()));
+                }
 
+                HypervisorType hypervisorType = _volsDao.getHypervisorType(volume.getId());
                 try {
                     snapshotHelper.checkKvmVolumeSnapshotsOnlyInPrimaryStorage(volume, hypervisorType);
                 } catch (CloudRuntimeException ex) {
@@ -8440,6 +8488,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                         getRootVolumeSizeForVmRestore(newVol, template, userVm, diskOffering, details, true);
                         volumeMgr.saveVolumeDetails(newVol.getDiskOfferingId(), newVol.getId());
+                        newVol = _volsDao.findById(newVol.getId());
 
                         // 1. Save usage event and update resource count for user vm volumes
                         try {
@@ -8539,7 +8588,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     Long getRootVolumeSizeForVmRestore(Volume vol, VMTemplateVO template, UserVmVO userVm, DiskOffering diskOffering, Map<String, String> details, boolean update) {
         VolumeVO resizedVolume = (VolumeVO) vol;
-
         Long size = null;
         if (template != null && template.getSize() != null) {
             UserVmDetailVO vmRootDiskSizeDetail = userVmDetailsDao.findDetail(userVm.getId(), VmDetailConstants.ROOT_DISK_SIZE);

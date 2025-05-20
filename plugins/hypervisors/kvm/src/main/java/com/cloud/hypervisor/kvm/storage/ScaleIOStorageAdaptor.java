@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.apache.cloudstack.storage.datastore.client.ScaleIOGatewayClient;
+import org.apache.cloudstack.storage.datastore.manager.ScaleIOSDCManager;
 import org.apache.cloudstack.storage.datastore.util.ScaleIOUtil;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetup;
 import org.apache.cloudstack.utils.cryptsetup.CryptSetupException;
@@ -148,12 +149,37 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
     @Override
     public KVMStoragePool createStoragePool(String uuid, String host, int port, String path, String userInfo, Storage.StoragePoolType type, Map<String, String> details, boolean isPrimaryStorage) {
         ScaleIOStoragePool storagePool = new ScaleIOStoragePool(uuid, host, port, path, type, details, this);
+        if (details != null && details.containsKey(ScaleIOSDCManager.ConnectOnDemand.key())) {
+            String connectOnDemand = details.get(ScaleIOSDCManager.ConnectOnDemand.key());
+            if (connectOnDemand != null && !Boolean.parseBoolean(connectOnDemand)) {
+                Ternary<Boolean, Map<String, String>, String> prepareStorageClientStatus = prepareStorageClient(uuid, details);
+                if (prepareStorageClientStatus.first()) {
+                    details.putAll(prepareStorageClientStatus.second());
+                }
+            }
+        }
         MapStorageUuidToStoragePool.put(uuid, storagePool);
         return storagePool;
     }
 
     @Override
     public boolean deleteStoragePool(String uuid) {
+        ScaleIOStoragePool storagePool = (ScaleIOStoragePool) MapStorageUuidToStoragePool.get(uuid);
+        if (storagePool != null) {
+            unprepareStorageClient(uuid, storagePool.getDetails());
+        }
+        return MapStorageUuidToStoragePool.remove(uuid) != null;
+    }
+
+    @Override
+    public boolean deleteStoragePool(String uuid, Map<String, String> details) {
+        if (details != null && details.containsKey(ScaleIOSDCManager.ConnectOnDemand.key())) {
+            String connectOnDemand = details.get(ScaleIOSDCManager.ConnectOnDemand.key());
+            if (connectOnDemand != null && !Boolean.parseBoolean(connectOnDemand)) {
+                Pair<Boolean, String> unprepareStorageClientStatus = unprepareStorageClient(uuid, details);
+                return MapStorageUuidToStoragePool.remove(uuid) != null && unprepareStorageClientStatus.first();
+            }
+        }
         return MapStorageUuidToStoragePool.remove(uuid) != null;
     }
 
@@ -567,7 +593,7 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
         qemu.resize(options, objects, usableSizeBytes);
     }
 
-    public Ternary<Boolean, Map<String, String>, String> prepareStorageClient(Storage.StoragePoolType type, String uuid, Map<String, String> details) {
+    public Ternary<Boolean, Map<String, String>, String> prepareStorageClient(String uuid, Map<String, String> details) {
         if (!ScaleIOUtil.isSDCServiceInstalled()) {
             logger.debug("SDC service not installed on host, preparing the SDC client not possible");
             return new Ternary<>(false, null, "SDC service not installed on host");
@@ -584,14 +610,28 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             if (!ScaleIOUtil.startSDCService()) {
                 return new Ternary<>(false, null, "Couldn't start SDC service on host");
             }
-        } else if (!ScaleIOUtil.restartSDCService()) {
-            return new Ternary<>(false, null, "Couldn't restart SDC service on host");
+        }
+
+        if (details != null && details.containsKey(ScaleIOGatewayClient.STORAGE_POOL_MDMS)) {
+            // Assuming SDC service is started, add mdms
+            String mdms = details.get(ScaleIOGatewayClient.STORAGE_POOL_MDMS);
+            String[] mdmAddresses = mdms.split(",");
+            if (mdmAddresses.length > 0) {
+                if (ScaleIOUtil.mdmAdded(mdmAddresses[0])) {
+                    return new Ternary<>(true, getSDCDetails(details), "MDM added, no need to prepare the SDC client");
+                }
+
+                ScaleIOUtil.addMdms(Arrays.asList(mdmAddresses));
+                if (!ScaleIOUtil.mdmAdded(mdmAddresses[0])) {
+                    return new Ternary<>(false, null, "Failed to add MDMs");
+                }
+            }
         }
 
         return new Ternary<>( true, getSDCDetails(details), "Prepared client successfully");
     }
 
-    public Pair<Boolean, String> unprepareStorageClient(Storage.StoragePoolType type, String uuid) {
+    public Pair<Boolean, String> unprepareStorageClient(String uuid, Map<String, String> details) {
         if (!ScaleIOUtil.isSDCServiceInstalled()) {
             logger.debug("SDC service not installed on host, no need to unprepare the SDC client");
             return new Pair<>(true, "SDC service not installed on host, no need to unprepare the SDC client");
@@ -602,8 +642,19 @@ public class ScaleIOStorageAdaptor implements StorageAdaptor {
             return new Pair<>(true, "SDC service not enabled on host, no need to unprepare the SDC client");
         }
 
-        if (!ScaleIOUtil.stopSDCService()) {
-            return new Pair<>(false, "Couldn't stop SDC service on host");
+        if (details != null && details.containsKey(ScaleIOGatewayClient.STORAGE_POOL_MDMS)) {
+            String mdms = details.get(ScaleIOGatewayClient.STORAGE_POOL_MDMS);
+            String[] mdmAddresses = mdms.split(",");
+            if (mdmAddresses.length > 0) {
+                if (!ScaleIOUtil.mdmAdded(mdmAddresses[0])) {
+                    return new Pair<>(true, "MDM not added, no need to unprepare the SDC client");
+                }
+
+                ScaleIOUtil.removeMdms(Arrays.asList(mdmAddresses));
+                if (ScaleIOUtil.mdmAdded(mdmAddresses[0])) {
+                    return new Pair<>(false, "Failed to remove MDMs, unable to unprepare the SDC client");
+                }
+            }
         }
 
         return new Pair<>(true, "Unprepared SDC client successfully");
