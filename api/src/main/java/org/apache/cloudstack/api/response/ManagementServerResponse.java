@@ -74,6 +74,7 @@ public class ManagementServerResponse extends BaseResponse {
     @Param(description = "the running OS kernel version for this Management Server")
     private String kernelVersion;
 
+    @Deprecated
     @SerializedName(ApiConstants.SERVICE_IP)
     @Param(description = "the IP Address for this Management Server. This is deprecated, please use 'ipaddress' instead.")
     private String serviceIp;
