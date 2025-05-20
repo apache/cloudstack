@@ -167,9 +167,7 @@ public class ApiConstants {
     public static final String DISK_IO_WRITE = "diskiowrite";
     public static final String DISK_IO_PSTOTAL = "diskiopstotal";
     public static final String DISK_SIZE = "disksize";
-    public static final String DISK_SIZES = "disksizes";
     public static final String DISK_SIZE_STRICTNESS = "disksizestrictness";
-    public static final String DISK_OFFERING_IDS = "diskofferingids";
     public static final String DISK_OFFERING_STRICTNESS = "diskofferingstrictness";
     public static final String DOWNLOAD_DETAILS = "downloaddetails";
     public static final String UTILIZATION = "utilization";

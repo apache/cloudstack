@@ -996,10 +996,16 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Override
     public void updateDiskOfferingSizeFromBackup(List<DiskOfferingInfo> dataDiskOfferingsInfo, Backup backup) {
         List<DiskOfferingInfo> dataDiskOfferingsInfoFromBackup = getDataDiskOfferingListFromBackup(backup);
+        if (dataDiskOfferingsInfoFromBackup == null) {
+            return;
+        }
         int index = 0;
         for (DiskOfferingInfo diskOfferingInfo : dataDiskOfferingsInfo) {
-            if (dataDiskOfferingsInfoFromBackup != null && index < dataDiskOfferingsInfoFromBackup.size()) {
-                diskOfferingInfo.setSize(Math.max(diskOfferingInfo.getSize(), dataDiskOfferingsInfoFromBackup.get(index).getSize()));
+            if (index < dataDiskOfferingsInfoFromBackup.size()) {
+                if (diskOfferingInfo.getSize() < dataDiskOfferingsInfoFromBackup.get(index).getSize()) {
+                    throw new InvalidParameterValueException(String.format("Backed-up volume size [%d]GiB cannot be greater than the instance volume size [%d]GiB.",
+                            dataDiskOfferingsInfoFromBackup.get(index).getSize(), diskOfferingInfo.getSize()));
+                }
             }
             index++;
         }
@@ -1015,25 +1021,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                     if (diskOffering == null) {
                         throw new CloudRuntimeException("Unable to find the root disk offering with uuid (" + volume.getDiskOfferingId() + ") stored in backup. Please specify a valid root disk offering id while creating the instance");
                     }
-                    return new DiskOfferingInfo(diskOffering, volume.getSize(), volume.getMinIops(), volume.getMaxIops());
-                }
-            }
-        } else {
-            String diskOfferingIds = backup.getDetail(ApiConstants.DISK_OFFERING_IDS);
-            String deviceIds = backup.getDetail(ApiConstants.DEVICE_IDS);
-            String diskSizes = backup.getDetail(ApiConstants.DISK_SIZES);
-            if (diskOfferingIds != null && deviceIds != null && diskSizes != null) {
-                String[] offeringIds = diskOfferingIds.split(",");
-                String[] deviceIdArray = deviceIds.split(",");
-                String[] sizeArray = diskSizes.split(",");
-                if (offeringIds.length > 0) {
-                    DiskOfferingVO diskOffering = diskOfferingDao.findByUuid(offeringIds[0]);
-                    if (diskOffering == null) {
-                        throw new CloudRuntimeException("Unable to find the root disk offering with uuid (" + offeringIds[0] + ") stored in backup. Please specify a valid root disk offering id while creating the instance");
-                    }
-                    Long size = Long.parseLong(sizeArray[0]) / (1024 * 1024 * 1024); // Convert to GB
-                    Long deviceId = Long.parseLong(deviceIdArray[0]);
-                    return new DiskOfferingInfo(diskOffering, size, null, null, deviceId);
+                    Long size = volume.getSize() / (1024 * 1024 * 1024);
+                    return new DiskOfferingInfo(diskOffering, size, volume.getMinIops(), volume.getMaxIops());
                 }
             }
         }
@@ -1044,41 +1033,17 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     public List<DiskOfferingInfo> getDataDiskOfferingListFromBackup(Backup backup) {
         List<DiskOfferingInfo> diskOfferingInfoList = new ArrayList<>();
         List<Backup.VolumeInfo> volumes = backup.getBackedUpVolumes();
-        if (volumes != null && !volumes.isEmpty()) {
-            for (Backup.VolumeInfo volume : volumes) {
-                if (volume.getType() == Volume.Type.DATADISK) {
-                    DiskOfferingVO diskOffering = diskOfferingDao.findByUuid(volume.getDiskOfferingId());
-                    if (diskOffering == null || diskOffering.getState().equals(DiskOffering.State.Inactive)) {
-                        throw new CloudRuntimeException("Unable to find the disk offering with uuid (" + volume.getDiskOfferingId() + ") stored in backup. Please specify a valid disk offering id while creating the instance");
-                    }
-                    diskOfferingInfoList.add(new DiskOfferingInfo(diskOffering, volume.getSize(), volume.getMinIops(), volume.getMaxIops(), volume.getDeviceId()));
+        if (volumes == null) {
+            return diskOfferingInfoList;
+        }
+        for (Backup.VolumeInfo volume : volumes) {
+            if (volume.getType() == Volume.Type.DATADISK) {
+                DiskOfferingVO diskOffering = diskOfferingDao.findByUuid(volume.getDiskOfferingId());
+                if (diskOffering == null || diskOffering.getState().equals(DiskOffering.State.Inactive)) {
+                    throw new CloudRuntimeException("Unable to find the disk offering with uuid (" + volume.getDiskOfferingId() + ") stored in backup. Please specify a valid disk offering id while creating the instance");
                 }
-            }
-        } else {
-            String diskOfferingIds = backup.getDetail(ApiConstants.DISK_OFFERING_IDS);
-            String deviceIds = backup.getDetail(ApiConstants.DEVICE_IDS);
-            String diskSizes = backup.getDetail(ApiConstants.DISK_SIZES);
-            String minIops = backup.getDetail(ApiConstants.MIN_IOPS);
-            String maxIops = backup.getDetail(ApiConstants.MAX_IOPS);
-            if (diskOfferingIds != null && deviceIds != null && diskSizes != null) {
-                String[] offeringIds = diskOfferingIds.split(",");
-                String[] deviceIdArray = deviceIds.split(",");
-                String[] sizeArray = diskSizes.split(",");
-                String[] minIopsArray = minIops != null ? minIops.split(",") : null;
-                String[] maxIopsArray = maxIops != null ? maxIops.split(",") : null;
-                // If only one disk, treat it as data disk for test compatibility
-                int startIdx = (offeringIds.length == 1) ? 0 : 1;
-                for (int i = startIdx; i < offeringIds.length; i++) {
-                    DiskOfferingVO diskOffering = diskOfferingDao.findByUuid(offeringIds[i]);
-                    if (diskOffering == null || diskOffering.getState().equals(DiskOffering.State.Inactive)) {
-                        throw new CloudRuntimeException("Unable to find the disk offering with uuid (" + offeringIds[i] + ") stored in backup. Please specify a valid disk offering id while creating the instance");
-                    }
-                    Long size = Long.parseLong(sizeArray[i]) / (1024 * 1024 * 1024); // Convert to GB
-                    Long deviceId = Long.parseLong(deviceIdArray[i]);
-                    Long minIopsValue = minIopsArray != null && !"null".equals(minIopsArray[i]) ? Long.parseLong(minIopsArray[i]) : null;
-                    Long maxIopsValue = maxIopsArray != null && !"null".equals(maxIopsArray[i]) ? Long.parseLong(maxIopsArray[i]) : null;
-                    diskOfferingInfoList.add(new DiskOfferingInfo(diskOffering, size, minIopsValue, maxIopsValue, deviceId));
-                }
+                Long size = volume.getSize() / (1024 * 1024 * 1024);
+                diskOfferingInfoList.add(new DiskOfferingInfo(diskOffering, size, volume.getMinIops(), volume.getMaxIops(), volume.getDeviceId()));
             }
         }
         return diskOfferingInfoList;

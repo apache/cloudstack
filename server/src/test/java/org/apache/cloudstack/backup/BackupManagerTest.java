@@ -824,13 +824,24 @@ public class BackupManagerTest {
         Long size1 = 5L * 1024 * 1024 * 1024;
         Long size2 = 10L * 1024 * 1024 * 1024;
         Backup backup = mock(Backup.class);
-        when(backup.getDetail(ApiConstants.DISK_OFFERING_IDS)).thenReturn("root-disk-offering-uuid,disk-offering-uuid-1,disk-offering-uuid-2");
-        when(backup.getDetail(ApiConstants.DEVICE_IDS)).thenReturn("0,1,2");
-        when(backup.getDetail(ApiConstants.DISK_SIZES)).thenReturn("0," + size1 + "," + size2);
-        when(backup.getDetail(ApiConstants.MIN_IOPS)).thenReturn("0,100,200");
-        when(backup.getDetail(ApiConstants.MAX_IOPS)).thenReturn("0,300,400");
 
-        DiskOfferingVO rootDiskOffering = mock(DiskOfferingVO.class);
+        Backup.VolumeInfo volumeInfo0 = mock(Backup.VolumeInfo.class);
+        when(volumeInfo0.getType()).thenReturn(Volume.Type.ROOT);
+        Backup.VolumeInfo volumeInfo1 = mock(Backup.VolumeInfo.class);
+        when(volumeInfo1.getDiskOfferingId()).thenReturn("disk-offering-uuid-1");
+        when(volumeInfo1.getSize()).thenReturn(size1);
+        when(volumeInfo1.getMinIops()).thenReturn(100L);
+        when(volumeInfo1.getMaxIops()).thenReturn(300L);
+        when(volumeInfo1.getType()).thenReturn(Volume.Type.DATADISK);
+        when(volumeInfo1.getDeviceId()).thenReturn(1L);
+        Backup.VolumeInfo volumeInfo2 = mock(Backup.VolumeInfo.class);
+        when(volumeInfo2.getDiskOfferingId()).thenReturn("disk-offering-uuid-2");
+        when(volumeInfo2.getSize()).thenReturn(size2);
+        when(volumeInfo2.getMinIops()).thenReturn(200L);
+        when(volumeInfo2.getMaxIops()).thenReturn(400L);
+        when(volumeInfo2.getType()).thenReturn(Volume.Type.DATADISK);
+        when(volumeInfo2.getDeviceId()).thenReturn(2L);
+        when(backup.getBackedUpVolumes()).thenReturn(List.of(volumeInfo0, volumeInfo1, volumeInfo2));
 
         DiskOfferingVO diskOffering1 = mock(DiskOfferingVO.class);
         when(diskOffering1.getUuid()).thenReturn("disk-offering-uuid-1");
@@ -863,11 +874,14 @@ public class BackupManagerTest {
     public void getDataDiskOfferingListFromBackupNullIops() {
         Long size = 5L * 1024 * 1024 * 1024;
         Backup backup = mock(Backup.class);
-        when(backup.getDetail(ApiConstants.DISK_OFFERING_IDS)).thenReturn("disk-offering-uuid-1");
-        when(backup.getDetail(ApiConstants.DEVICE_IDS)).thenReturn("1");
-        when(backup.getDetail(ApiConstants.DISK_SIZES)).thenReturn("" + size);
-        when(backup.getDetail(ApiConstants.MIN_IOPS)).thenReturn("null");
-        when(backup.getDetail(ApiConstants.MAX_IOPS)).thenReturn("null");
+        Backup.VolumeInfo volumeInfo1 = mock(Backup.VolumeInfo.class);
+        when(volumeInfo1.getDiskOfferingId()).thenReturn("disk-offering-uuid-1");
+        when(volumeInfo1.getSize()).thenReturn(size);
+        when(volumeInfo1.getMinIops()).thenReturn(null);
+        when(volumeInfo1.getMaxIops()).thenReturn(null);
+        when(volumeInfo1.getType()).thenReturn(Volume.Type.DATADISK);
+        when(volumeInfo1.getDeviceId()).thenReturn(1L);
+        when(backup.getBackedUpVolumes()).thenReturn(List.of(volumeInfo1));
 
         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
         when(diskOffering.getUuid()).thenReturn("disk-offering-uuid-1");
@@ -885,35 +899,34 @@ public class BackupManagerTest {
         assertNull(diskOfferingInfoList.get(0).getMaxIops());
     }
 
-    @Test
+    @Test (expected = InvalidParameterValueException.class)
     public void testUpdateDiskOfferingSizeFromBackup() {
-        Long sizeInBackup = 5L;
+        Long sizeInBackup = 5L * 1024 * 1024 * 1024;
         Long sizeInCmd = 2L;
         Backup backup = mock(Backup.class);
-        when(backup.getDetail(ApiConstants.DISK_OFFERING_IDS)).thenReturn("disk-offering-uuid-1");
-        when(backup.getDetail(ApiConstants.DEVICE_IDS)).thenReturn("1");
-        when(backup.getDetail(ApiConstants.DISK_SIZES)).thenReturn("" + sizeInBackup * 1024 * 1024 * 1024);
-        when(backup.getDetail(ApiConstants.MIN_IOPS)).thenReturn("null");
-        when(backup.getDetail(ApiConstants.MAX_IOPS)).thenReturn("null");
+        Backup.VolumeInfo volumeInfo = mock(Backup.VolumeInfo.class);
+        when(volumeInfo.getDiskOfferingId()).thenReturn("disk-offering-uuid-1");
+        when(volumeInfo.getSize()).thenReturn(sizeInBackup);
+        when(volumeInfo.getType()).thenReturn(Volume.Type.DATADISK);
+        when(backup.getBackedUpVolumes()).thenReturn(List.of(volumeInfo));
 
         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
         when(diskOffering.getState()).thenReturn(DiskOffering.State.Active);
-
         when(diskOfferingDao.findByUuid("disk-offering-uuid-1")).thenReturn(diskOffering);
         List<DiskOfferingInfo> diskOfferingInfoList = List.of(new DiskOfferingInfo(diskOffering, sizeInCmd, 1L, null, null));
 
         backupManager.updateDiskOfferingSizeFromBackup(diskOfferingInfoList, backup);
-
-        assertEquals(sizeInBackup, diskOfferingInfoList.get(0).getSize());
     }
 
     @Test
     public void testGetRootDiskOfferingInfoFromBackup() {
         Long size = 5L * 1024 * 1024 * 1024;
         Backup backup = mock(Backup.class);
-        when(backup.getDetail(ApiConstants.DISK_OFFERING_IDS)).thenReturn("root-disk-offering-uuid");
-        when(backup.getDetail(ApiConstants.DEVICE_IDS)).thenReturn("0");
-        when(backup.getDetail(ApiConstants.DISK_SIZES)).thenReturn("" + size);
+        Backup.VolumeInfo volumeInfo = mock(Backup.VolumeInfo.class);
+        when(volumeInfo.getDiskOfferingId()).thenReturn("root-disk-offering-uuid");
+        when(volumeInfo.getSize()).thenReturn(size);
+        when(volumeInfo.getType()).thenReturn(Volume.Type.ROOT);
+        when(backup.getBackedUpVolumes()).thenReturn(List.of(volumeInfo));
 
         DiskOfferingVO diskOffering = mock(DiskOfferingVO.class);
         when(diskOffering.getUuid()).thenReturn("root-disk-offering-uuid");
@@ -923,7 +936,7 @@ public class BackupManagerTest {
 
         assertEquals("root-disk-offering-uuid", diskOfferingInfo.getDiskOffering().getUuid());
         assertEquals(Long.valueOf(5), diskOfferingInfo.getSize());
-        assertEquals(Long.valueOf(0), diskOfferingInfo.getDeviceId());
+        assertEquals(null, diskOfferingInfo.getDeviceId());
     }
 
     @Test
