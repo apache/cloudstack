@@ -40,7 +40,7 @@ export default {
       filters: ['active', 'inactive'],
       columns: ['name', 'displaytext', 'state', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot', 'purgeresources']
+        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storageaccessgroups', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot', 'purgeresources']
         if (store.getters.apis.createServiceOffering &&
           store.getters.apis.createServiceOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')
@@ -95,7 +95,7 @@ export default {
         label: 'label.edit',
         docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
         dataView: true,
-        args: ['name', 'displaytext', 'storagetags', 'hosttags']
+        args: ['name', 'displaytext', 'storageaccessgroups', 'hosttags']
       }, {
         api: 'updateServiceOffering',
         icon: 'lock-outlined',

@@ -189,7 +189,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationService#createPod(long, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String, java.lang.String)
      */
     @Override
-    public Pod createPod(long zoneId, String name, String startIp, String endIp, String gateway, String netmask, String allocationState) {
+    public Pod createPod(long zoneId, String name, String startIp, String endIp, String gateway, String netmask, String allocationState, List<String> storageAccessGroups) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -507,7 +507,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public HostPodVO createPod(long userId, String podName, DataCenter zone, String gateway, String cidr, String startIp, String endIp, String allocationState,
-        boolean skipGatewayOverlapCheck) {
+                               boolean skipGatewayOverlapCheck, List<String> storageAccessGroups) {
         // TODO Auto-generated method stub
         return null;
     }
@@ -632,8 +632,8 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      */
     @Override
     public DataCenterVO createZone(long userId, String zoneName, String dns1, String dns2, String internalDns1, String internalDns2, String guestCidr, String domain,
-        Long domainId, NetworkType zoneType, String allocationState, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1,
-        String ip6Dns2, boolean isEdge) {
+                                   Long domainId, NetworkType zoneType, String allocationState, String networkDomain, boolean isSecurityGroupEnabled, boolean isLocalStorageEnabled, String ip6Dns1,
+                                   String ip6Dns2, boolean isEdge, List<String> storageAccessGroups) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -118,6 +118,12 @@ public class AddClusterCmd extends BaseCmd {
     private String ovm3cluster;
     @Parameter(name = ApiConstants.OVM3_VIP, type = CommandType.STRING, required = false,  description = "Ovm3 vip to use for pool (and cluster)")
     private String ovm3vip;
+    @Parameter(name = ApiConstants.STORAGE_ACCESS_GROUPS,
+            type = CommandType.LIST, collectionType = CommandType.STRING,
+            description = "comma separated list of storage access groups for the hosts in the cluster",
+            since = "4.21.0")
+    private List<String> storageAccessGroups;
+
     public String getOvm3Pool() {
          return ovm3pool;
     }
@@ -190,6 +196,10 @@ public class AddClusterCmd extends BaseCmd {
 
     public void setClusterType(String type) {
         this.clusterType = type;
+    }
+
+    public List<String> getStorageAccessGroups() {
+        return storageAccessGroups;
     }
 
     @Override
