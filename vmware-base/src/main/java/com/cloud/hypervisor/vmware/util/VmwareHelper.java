@@ -59,6 +59,8 @@ import com.vmware.vim25.NasDatastoreInfo;
 import com.vmware.vim25.VMwareDVSPortSetting;
 import com.vmware.vim25.VirtualDeviceFileBackingInfo;
 import com.vmware.vim25.VirtualIDEController;
+import com.vmware.vim25.VirtualMachineBootOptions;
+import com.vmware.vim25.VirtualMachineConfigInfo;
 import com.vmware.vim25.VirtualMachineConfigSummary;
 import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachineToolsStatus;
@@ -810,6 +812,17 @@ public class VmwareHelper {
                 instance.setCpuCores(configSummary.getNumCpu());
                 instance.setCpuSpeed(configSummary.getCpuReservation());
                 instance.setMemory(configSummary.getMemorySizeMB());
+            }
+            VirtualMachineConfigInfo configInfo = vmMo.getConfigInfo();
+            if (configInfo != null) {
+                String firmware = configInfo.getFirmware();
+                instance.setBootType(firmware.equalsIgnoreCase("efi") ? "UEFI" : "BIOS");
+                VirtualMachineBootOptions bootOptions = configInfo.getBootOptions();
+                String bootMode = "LEGACY";
+                if (bootOptions != null && bootOptions.isEfiSecureBootEnabled()) {
+                    bootMode = "SECURE";
+                }
+                instance.setBootMode(bootMode);
             }
 
             try {

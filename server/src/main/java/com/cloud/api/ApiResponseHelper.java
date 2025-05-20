@@ -1302,6 +1302,15 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
+    public PodResponse createMinimalPodResponse(Pod pod) {
+        PodResponse podResponse = new PodResponse();
+        podResponse.setId(pod.getUuid());
+        podResponse.setName(pod.getName());
+        podResponse.setObjectName("pod");
+        return podResponse;
+    }
+
+    @Override
     public PodResponse createPodResponse(Pod pod, Boolean showCapacities) {
         String[] ipRange = new String[2];
         List<String> startIps = new ArrayList<String>();
@@ -1344,7 +1353,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         PodResponse podResponse = new PodResponse();
         podResponse.setId(pod.getUuid());
         podResponse.setName(pod.getName());
-        DataCenter zone = ApiDBUtils.findZoneById(pod.getDataCenterId());
+        DataCenterVO zone = ApiDBUtils.findZoneById(pod.getDataCenterId());
         if (zone != null) {
             podResponse.setZoneId(zone.getUuid());
             podResponse.setZoneName(zone.getName());
@@ -1357,6 +1366,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         podResponse.setVlanId(vlanIds);
         podResponse.setGateway(pod.getGateway());
         podResponse.setAllocationState(pod.getAllocationState().toString());
+        podResponse.setStorageAccessGroups(pod.getStorageAccessGroups());
+        podResponse.setZoneStorageAccessGroups(zone.getStorageAccessGroups());
         if (showCapacities != null && showCapacities) {
             List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(null, pod.getId(), null);
             Set<CapacityResponse> capacityResponses = new HashSet<CapacityResponse>();
@@ -1507,6 +1518,15 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
+    public ClusterResponse createMinimalClusterResponse(Cluster cluster) {
+        ClusterResponse clusterResponse = new ClusterResponse();
+        clusterResponse.setId(cluster.getUuid());
+        clusterResponse.setName(cluster.getName());
+        clusterResponse.setObjectName("cluster");
+        return clusterResponse;
+    }
+
+    @Override
     public ClusterResponse createClusterResponse(Cluster cluster, Boolean showCapacities) {
         ClusterResponse clusterResponse = new ClusterResponse();
         clusterResponse.setId(cluster.getUuid());
@@ -1516,7 +1536,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             clusterResponse.setPodId(pod.getUuid());
             clusterResponse.setPodName(pod.getName());
         }
-        DataCenter dc = ApiDBUtils.findZoneById(cluster.getDataCenterId());
+        DataCenterVO dc = ApiDBUtils.findZoneById(cluster.getDataCenterId());
         if (dc != null) {
             clusterResponse.setZoneId(dc.getUuid());
             clusterResponse.setZoneName(dc.getName());
@@ -1533,6 +1553,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         if (cluster.getArch() != null) {
             clusterResponse.setArch(cluster.getArch().getType());
         }
+
+        clusterResponse.setStorageAccessGroups(cluster.getStorageAccessGroups());
+        clusterResponse.setPodStorageAccessGroups(pod.getStorageAccessGroups());
+        clusterResponse.setZoneStorageAccessGroups(dc.getStorageAccessGroups());
 
         if (showCapacities != null && showCapacities) {
             List<SummedCapacity> capacities = ApiDBUtils.getCapacityByClusterPodZone(null, null, cluster.getId());
@@ -5267,6 +5291,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setMemory(instance.getMemory());
         response.setOperatingSystemId(instance.getOperatingSystemId());
         response.setOperatingSystem(instance.getOperatingSystem());
+        response.setBootMode(instance.getBootMode());
+        response.setBootType(instance.getBootType());
         response.setObjectName("unmanagedinstance");
 
         if (instance.getDisks() != null) {

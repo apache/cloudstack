@@ -262,6 +262,15 @@ public class ViewResponseHelper {
         return new ArrayList<HostResponse>(vrDataList.values());
     }
 
+    public static List<HostResponse> createMinimalHostResponse(HostJoinVO... hosts) {
+        LinkedHashMap<Long, HostResponse> vrDataList = new LinkedHashMap<>();
+        for (HostJoinVO vr : hosts) {
+            HostResponse vrData = ApiDBUtils.newMinimalHostResponse(vr);
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<HostResponse>(vrDataList.values());
+    }
+
     public static List<HostForMigrationResponse> createHostForMigrationResponse(EnumSet<HostDetails> details, HostJoinVO... hosts) {
         LinkedHashMap<Long, HostForMigrationResponse> vrDataList = new LinkedHashMap<>();
         // Initialise the vrdatalist with the input data
@@ -324,6 +333,18 @@ public class ViewResponseHelper {
             } else {
                 // update tags
                 vrData = ApiDBUtils.fillStoragePoolDetails(vrData, vr);
+            }
+            vrDataList.put(vr.getId(), vrData);
+        }
+        return new ArrayList<StoragePoolResponse>(vrDataList.values());
+    }
+
+    public static List<StoragePoolResponse> createMinimalStoragePoolResponse(StoragePoolJoinVO... pools) {
+        LinkedHashMap<Long, StoragePoolResponse> vrDataList = new LinkedHashMap<>();
+        for (StoragePoolJoinVO vr : pools) {
+            StoragePoolResponse vrData = vrDataList.get(vr.getId());
+            if (vrData == null) {
+                vrData = ApiDBUtils.newMinimalStoragePoolResponse(vr);
             }
             vrDataList.put(vr.getId(), vrData);
         }
@@ -596,8 +617,16 @@ public class ViewResponseHelper {
 
     public static List<ZoneResponse> createDataCenterResponse(ResponseView view, Boolean showCapacities, Boolean showResourceImage, DataCenterJoinVO... dcs) {
         List<ZoneResponse> respList = new ArrayList<ZoneResponse>();
-        for (DataCenterJoinVO vt : dcs){
+        for (DataCenterJoinVO vt : dcs) {
             respList.add(ApiDBUtils.newDataCenterResponse(view, vt, showCapacities, showResourceImage));
+        }
+        return respList;
+    }
+
+    public static List<ZoneResponse> createMinimalDataCenterResponse(ResponseView view, DataCenterJoinVO... dcs) {
+        List<ZoneResponse> respList = new ArrayList<ZoneResponse>();
+        for (DataCenterJoinVO vt : dcs) {
+            respList.add(ApiDBUtils.newMinimalDataCenterResponse(view, vt));
         }
         return respList;
     }
