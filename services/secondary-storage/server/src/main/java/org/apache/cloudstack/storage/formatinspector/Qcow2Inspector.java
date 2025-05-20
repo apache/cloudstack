@@ -18,6 +18,7 @@
 package org.apache.cloudstack.storage.formatinspector;
 
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -130,7 +131,7 @@ public class Qcow2Inspector {
                 return version >= minVersion;
             }
         } catch (IOException ex) {
-            throw new RuntimeException(String.format("Unable to validate file [%s] due to: ", filePath), ex);
+            throw new CloudRuntimeException(String.format("Unable to validate file [%s] due to: ", filePath), ex);
         }
         return false;
     }
