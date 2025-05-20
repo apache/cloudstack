@@ -39,7 +39,7 @@ public interface DbUpgrade {
 
     InputStream[] getCleanupScripts();
 
-    default boolean refreshPoolConnectionsAfterUpgrade() { 
-        return false; 
+    default boolean refreshPoolConnectionsAfterUpgrade() {
+        return false;
     }
 }
