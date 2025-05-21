@@ -55,7 +55,7 @@
 
 <script>
 import { reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 
 export default {
   name: 'HostEnableDisable',
@@ -87,7 +87,7 @@ export default {
       if (this.resource.hypervisor !== 'KVM') {
         return
       }
-      api('listConfigurations', { name: 'enable.kvm.host.auto.enable.disable', clusterid: this.resource.clusterid }).then(json => {
+      getAPI('listConfigurations', { name: 'enable.kvm.host.auto.enable.disable', clusterid: this.resource.clusterid }).then(json => {
         if (json.listconfigurationsresponse.configuration?.[0]) {
           this.kvmAutoEnableDisableSetting = json?.listconfigurationsresponse?.configuration?.[0]?.value || false
         }
@@ -103,7 +103,7 @@ export default {
         if (values.reason) {
           data.annotation = values.reason
         }
-        api('updateHost', data).then(_ => {
+        postAPI('updateHost', data).then(_ => {
           this.$emit('close-action')
           this.$emit('refresh-data')
         }).catch(err => {

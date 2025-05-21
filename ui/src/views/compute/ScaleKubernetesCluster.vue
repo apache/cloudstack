@@ -92,7 +92,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -172,7 +172,7 @@ export default {
       if (!this.isObjectEmpty(this.resource)) {
         params.id = this.resource.serviceofferingid
       }
-      api('listServiceOfferings', params).then(json => {
+      getAPI('listServiceOfferings', params).then(json => {
         var items = json?.listserviceofferingsresponse?.serviceoffering || []
         if (this.arrayHasItems(items) && !this.isObjectEmpty(items[0])) {
           this.minCpu = items[0].cpunumber
@@ -187,7 +187,7 @@ export default {
       if (!this.isObjectEmpty(this.resource)) {
         params.id = this.resource.kubernetesversionid
       }
-      api('listKubernetesSupportedVersions', params).then(json => {
+      getAPI('listKubernetesSupportedVersions', params).then(json => {
         const versionObjs = json?.listkubernetessupportedversionsresponse?.kubernetessupportedversion || []
         if (this.arrayHasItems(versionObjs) && !this.isObjectEmpty(versionObjs[0])) {
           this.minCpu = versionObjs[0].mincpunumber
@@ -204,7 +204,7 @@ export default {
         memory: this.minMemory
       }
       this.serviceOfferingLoading = true
-      api('listServiceOfferings', params).then(json => {
+      getAPI('listServiceOfferings', params).then(json => {
         var items = json?.listserviceofferingsresponse?.serviceoffering || []
         if (this.arrayHasItems(items)) {
           for (var i = 0; i < items.length; i++) {
@@ -250,7 +250,7 @@ export default {
         if (this.isValidValueForKey(values, 'maxsize')) {
           params.maxsize = values.maxsize
         }
-        api('scaleKubernetesCluster', params).then(json => {
+        postAPI('scaleKubernetesCluster', params).then(json => {
           const jobId = json.scalekubernetesclusterresponse.jobid
           this.$pollJob({
             jobId,

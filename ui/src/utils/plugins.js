@@ -17,7 +17,7 @@
 
 import _ from 'lodash'
 import { i18n } from '@/locales'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { message, notification, Modal } from 'ant-design-vue'
 import eventBus from '@/config/eventBus'
 import store from '@/store'
@@ -88,7 +88,7 @@ export const pollJobPlugin = {
       })
 
       options.originalPage = options.originalPage || this.$router.currentRoute.value.path
-      api('queryAsyncJobResult', { jobId }).then(json => {
+      getAPI('queryAsyncJobResult', { jobId }).then(json => {
         const result = json.queryasyncjobresultresponse
         eventBus.emit('update-job-details', { jobId, resourceId })
         if (result.jobstatus === 1) {

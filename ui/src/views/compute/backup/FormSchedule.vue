@@ -155,7 +155,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import { mixinForm } from '@/utils/mixin'
 import debounce from 'lodash/debounce'
@@ -276,7 +276,7 @@ export default {
             break
         }
         this.actionLoading = true
-        api('createBackupSchedule', params).then(json => {
+        postAPI('createBackupSchedule', params).then(json => {
           this.$notification.success({
             message: this.$t('label.scheduled.backups'),
             description: this.$t('message.success.config.backup.schedule')

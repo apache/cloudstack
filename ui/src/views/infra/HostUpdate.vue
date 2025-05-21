@@ -92,7 +92,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -162,7 +162,7 @@ export default {
     fetchOsCategories () {
       this.osCategories.loading = true
       this.osCategories.opts = []
-      api('listOsCategories').then(json => {
+      getAPI('listOsCategories').then(json => {
         this.osCategories.opts = json.listoscategoriesresponse.oscategory || []
       }).catch(error => {
         this.$notifyError(error)
@@ -184,7 +184,7 @@ export default {
         }
         this.loading = true
 
-        api('updateHost', params).then(json => {
+        postAPI('updateHost', params).then(json => {
           this.$message.success({
             content: `${this.$t('label.action.update.host')} - ${values.name}`,
             duration: 2

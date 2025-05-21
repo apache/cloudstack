@@ -485,7 +485,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -645,7 +645,7 @@ export default {
         }
         params.showicon = true
         this.zoneLoading = true
-        api('listZones', params).then(json => {
+        getAPI('listZones', params).then(json => {
           for (const i in json.listzonesresponse.zone) {
             const zone = json.listzonesresponse.zone[i]
             if (zone.networktype === 'Advanced' && (isAdmin() || zone.securitygroupsenabled !== true)) {
@@ -684,7 +684,7 @@ export default {
         zoneid: this.selectedZone.id
       }
       this.formPhysicalNetworkLoading = true
-      api('listPhysicalNetworks', params).then(json => {
+      getAPI('listPhysicalNetworks', params).then(json => {
         var networks = json.listphysicalnetworksresponse.physicalnetwork
         if (this.arrayHasItems(networks)) {
           for (const network of networks) {
@@ -714,7 +714,7 @@ export default {
       const params = {}
       params.physicalnetworkid = physicalNetwork.id
       return new Promise((resolve, reject) => {
-        api('listTrafficTypes', params).then(json => {
+        getAPI('listTrafficTypes', params).then(json => {
           var trafficTypes = json.listtraffictypesresponse.traffictype
           if (this.arrayHasItems(trafficTypes)) {
             for (const type of trafficTypes) {
@@ -799,7 +799,7 @@ export default {
       }
       this.handleNetworkOfferingChange(null)
       this.networkOfferings = []
-      api('listNetworkOfferings', params).then(json => {
+      getAPI('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering || []
       }).catch(error => {
         this.$notifyError(error)
@@ -868,7 +868,7 @@ export default {
       }
       this.handleNetworkChange(null)
       this.networks = []
-      api('listNetworks', params).then(json => {
+      getAPI('listNetworks', params).then(json => {
         var networks = json.listnetworksresponse.network || []
         for (const network of networks) {
           if (network.type === 'Isolated' || network.type === 'L2') {
@@ -885,7 +885,7 @@ export default {
       this.selectedNetwork = selectedNetwork
     },
     networkServiceProviderMap (id) {
-      api('listNetworkOfferings', { id: id }).then(json => {
+      getAPI('listNetworkOfferings', { id: id }).then(json => {
         var networkOffering = json.listnetworkofferingsresponse.networkoffering[0]
         const services = networkOffering.service
         this.selectedServiceProviderMap = {}
@@ -913,7 +913,7 @@ export default {
       }
       params.showicon = true
       this.domainLoading = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         const listDomains = json.listdomainsresponse.domain || []
         this.domains = listDomains
       }).finally(() => {
@@ -947,7 +947,7 @@ export default {
       }
       this.accountLoading = true
       this.handleAccountChange(null)
-      api('listAccounts', params).then(json => {
+      getAPI('listAccounts', params).then(json => {
         this.accounts = json.listaccountsresponse.account || []
       }).finally(() => {
         this.accountLoading = false
@@ -977,7 +977,7 @@ export default {
       }
       this.projectLoading = true
       this.handleProjectChange(null)
-      api('listProjects', params).then(json => {
+      getAPI('listProjects', params).then(json => {
         this.projects = json.listprojectsresponse.project || []
       }).finally(() => {
         this.projectLoading = false
@@ -1080,7 +1080,7 @@ export default {
         if (this.isValidTextValueForKey(values, 'privatemtu')) {
           params.privatemtu = values.privatemtu
         }
-        api('createNetwork', params).then(json => {
+        postAPI('createNetwork', params).then(json => {
           this.$notification.success({
             message: this.$t('label.network'),
             description: this.$t('message.success.add.guest.network')

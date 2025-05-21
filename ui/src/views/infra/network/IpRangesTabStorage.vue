@@ -123,7 +123,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -214,7 +214,7 @@ export default {
     fetchData () {
       this.fetchPods()
       this.componentLoading = true
-      api('listStorageNetworkIpRange', {
+      getAPI('listStorageNetworkIpRange', {
         zoneid: this.resource.zoneid,
         page: this.page,
         pageSize: this.pageSize
@@ -229,7 +229,7 @@ export default {
     },
     fetchPods () {
       this.componentLoading = true
-      api('listPods', {
+      getAPI('listPods', {
         zoneid: this.resource.zoneid
       }).then(response => {
         this.pods = response.listpodsresponse.pod ? response.listpodsresponse.pod : []
@@ -254,7 +254,7 @@ export default {
     },
     handleDeleteIpRange (id) {
       this.componentLoading = true
-      api('deleteStorageNetworkIpRange', { id }).then(response => {
+      postAPI('deleteStorageNetworkIpRange', { id }).then(response => {
         this.$pollJob({
           jobId: response.deletestoragenetworkiprangeresponse.jobid,
           title: this.$t('label.remove.ip.range'),
@@ -288,7 +288,7 @@ export default {
         const values = toRaw(this.form)
         this.componentLoading = true
         this.addIpRangeModal = false
-        api('createStorageNetworkIpRange', {
+        postAPI('createStorageNetworkIpRange', {
           podid: values.pod,
           zoneid: this.resource.zoneid,
           gateway: values.gateway,

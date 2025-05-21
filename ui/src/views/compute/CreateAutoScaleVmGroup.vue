@@ -1024,7 +1024,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import _ from 'lodash'
 import { mixin, mixinDevice } from '@/utils/mixin.js'
 import store from '@/store'
@@ -1885,7 +1885,7 @@ export default {
         }
         if (!apiName) return resolve(zones)
 
-        api(apiName, params).then(json => {
+        postAPI(apiName, params).then(json => {
           let objectName
           const responseName = [apiName.toLowerCase(), 'response'].join('')
           for (const key in json[responseName]) {
@@ -1953,7 +1953,7 @@ export default {
       this.fetchOptions(param, 'loadbalancers')
     },
     fetchCountersList () {
-      api('listNetworks', {
+      getAPI('listNetworks', {
         listAll: true,
         id: this.defaultNetworkId
       }).then(response => {
@@ -1965,7 +1965,7 @@ export default {
           return
         }
         this.selectedLbProdiver = services[index].provider[0].name
-        api('listCounters', {
+        getAPI('listCounters', {
           listAll: true,
           provider: this.selectedLbProdiver
         }).then(response => {
@@ -1974,7 +1974,7 @@ export default {
       })
     },
     fetchUserData () {
-      api('listUsers', {
+      getAPI('listUsers', {
         domainid: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.domainid,
         account: store.getters.project && store.getters.project.id ? null : store.getters.userInfo.account
       }).then(json => {
@@ -2241,7 +2241,7 @@ export default {
       }
       this.form.userdataid = id
       this.userDataParams = []
-      api('listUserData', { id: id }).then(json => {
+      getAPI('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
         if (resp) {
           var params = resp[0].params
@@ -2264,7 +2264,7 @@ export default {
       }
       this.templateUserDataParams = []
 
-      api('listUserData', { id: id }).then(json => {
+      getAPI('listUserData', { id: id }).then(json => {
         const resp = json?.listuserdataresponse?.userdata || []
         if (resp) {
           var params = resp[0].params
@@ -2290,7 +2290,7 @@ export default {
     async pollJob (jobId) {
       return new Promise(resolve => {
         const asyncJobInterval = setInterval(() => {
-          api('queryAsyncJobResult', { jobId }).then(async json => {
+          getAPI('queryAsyncJobResult', { jobId }).then(async json => {
             const result = json.queryasyncjobresultresponse
             if (result.jobstatus === 0) {
               return
@@ -2377,7 +2377,7 @@ export default {
         const args = httpMethod === 'POST' ? {} : params
         const data = httpMethod === 'POST' ? params : {}
 
-        api('createAutoScaleVmProfile', args, httpMethod, data).then(async json => {
+        postAPI('createAutoScaleVmProfile', args, httpMethod, data).then(async json => {
           const jobId = json.autoscalevmprofileresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -2403,7 +2403,7 @@ export default {
           relationaloperator: relationaloperator,
           threshold: threshold
         }
-        api('createCondition', params).then(async json => {
+        postAPI('createCondition', params).then(async json => {
           const jobId = json.conditionresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -2431,7 +2431,7 @@ export default {
           quiettime: quiettime,
           conditionids: conditionIds
         }
-        api('createAutoScalePolicy', params).then(async json => {
+        postAPI('createAutoScalePolicy', params).then(async json => {
           const jobId = json.autoscalepolicyresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -2835,7 +2835,7 @@ export default {
           minmembers: values.minmembers,
           interval: values.interval
         }
-        api('createAutoScaleVmGroup', params).then(async response => {
+        postAPI('createAutoScaleVmGroup', params).then(async response => {
           const jobId = response.autoscalevmgroupresponse.jobid
           const result = await this.pollJob(jobId)
           if (result.jobstatus === 2) {
@@ -2891,7 +2891,7 @@ export default {
         const param = this.params.zones
         const args = { showicon: true }
         if (zoneId) args.id = zoneId
-        api(param.list, args).then(json => {
+        postAPI(param.list, args).then(json => {
           const zoneResponse = (json.listzonesresponse.zone || []).filter(item => item.securitygroupsenabled === false)
           if (listZoneAllow && listZoneAllow.length > 0) {
             zoneResponse.map(zone => {
@@ -2923,7 +2923,7 @@ export default {
         if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'dynamicScalingVmConfig', 'hypervisors'].includes(name)) {
           options.listall = true
         }
-        api(param.list, options).then((response) => {
+        postAPI(param.list, options).then((response) => {
           param.loading = false
           _.map(response, (responseItem, responseKey) => {
             if (Object.keys(responseItem).length === 0) {
@@ -2994,7 +2994,7 @@ export default {
       delete args.featured
 
       return new Promise((resolve, reject) => {
-        api('listTemplates', args).then((response) => {
+        getAPI('listTemplates', args).then((response) => {
           resolve(response)
         }).catch((reason) => {
           // ToDo: Handle errors
