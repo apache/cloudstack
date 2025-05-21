@@ -338,7 +338,7 @@
 
 <script>
 import { reactive, ref, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
@@ -513,7 +513,7 @@ export default {
       }
       this.selectedTier = null
       this.tiers.loading = true
-      api('listNetworks', {
+      getAPI('listNetworks', {
         supportedservices: 'PortForwarding',
         vpcid: this.resource.vpcid,
         listall: this.resource.vpcid !== null
@@ -528,7 +528,7 @@ export default {
     },
     fetchPFRules () {
       this.loading = true
-      api('listPortForwardingRules', {
+      getAPI('listPortForwardingRules', {
         listAll: true,
         ipaddressid: this.resource.id,
         page: this.page,
@@ -595,7 +595,7 @@ export default {
     },
     deleteRule (rule) {
       this.loading = true
-      api('deletePortForwardingRule', { id: rule.id }).then(response => {
+      postAPI('deletePortForwardingRule', { id: rule.id }).then(response => {
         const jobId = response.deleteportforwardingruleresponse.jobid
         eventBus.emit('update-job-details', { jobId, resourceId: null })
         this.$pollJob({
@@ -631,7 +631,7 @@ export default {
       this.loading = true
       this.addVmModalVisible = false
       const networkId = ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
-      api('createPortForwardingRule', {
+      postAPI('createPortForwardingRule', {
         ...this.newRule,
         ipaddressid: this.resource.id,
         networkid: networkId
@@ -693,7 +693,7 @@ export default {
       this.selectedRule = id
       this.tagsModalVisible = true
       this.tags = []
-      api('listTags', {
+      getAPI('listTags', {
         resourceId: id,
         resourceType: 'PortForwardingRule',
         listAll: true
@@ -714,7 +714,7 @@ export default {
         const values = toRaw(this.form)
         this.tagsModalLoading = false
 
-        api('createTags', {
+        postAPI('createTags', {
           'tags[0].key': values.key,
           'tags[0].value': values.value,
           resourceIds: this.selectedRule,
@@ -747,7 +747,7 @@ export default {
     },
     handleDeleteTag (tag) {
       this.tagsModalLoading = true
-      api('deleteTags', {
+      postAPI('deleteTags', {
         'tags[0].key': tag.key,
         'tags[0].value': tag.value,
         resourceIds: this.selectedRule,
@@ -786,7 +786,7 @@ export default {
       this.nics = []
       this.addVmModalNicLoading = true
       this.newRule.virtualmachineid = e.target.value
-      api('listNics', {
+      getAPI('listNics', {
         virtualmachineid: e.target.value,
         networkId: ('vpcid' in this.resource && !('associatednetworkid' in this.resource)) ? this.selectedTier : this.resource.associatednetworkid
       }).then(response => {
@@ -813,7 +813,7 @@ export default {
         this.addVmModalLoading = false
         return
       }
-      api('listVirtualMachines', {
+      getAPI('listVirtualMachines', {
         listAll: true,
         keyword: this.searchQuery,
         page: this.vmPage,

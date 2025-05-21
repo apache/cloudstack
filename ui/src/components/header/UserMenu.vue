@@ -71,7 +71,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import CreateMenu from './CreateMenu'
 import ExternalLink from './ExternalLink'
 import HeaderNotice from './HeaderNotice'
@@ -139,7 +139,7 @@ export default {
     },
     fetchResourceIcon (id) {
       return new Promise((resolve, reject) => {
-        api('listUsers', {
+        getAPI('listUsers', {
           id: id,
           showicon: true
         }).then(json => {

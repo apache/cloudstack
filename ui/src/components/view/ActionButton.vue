@@ -101,7 +101,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import Console from '@/components/widgets/Console'
 
 export default {
@@ -194,7 +194,7 @@ export default {
           const action = actionBadge[i]
 
           arrAsync.push(new Promise((resolve, reject) => {
-            api(action.api, action.param).then(json => {
+            postAPI(action.api, action.param).then(json => {
               let responseJsonName
               const response = {}
 

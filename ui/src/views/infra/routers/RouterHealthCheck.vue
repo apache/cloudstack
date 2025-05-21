@@ -81,7 +81,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -177,7 +177,7 @@ export default {
     checkConfigurationAndGetHealthChecks (performFreshChecks) {
       var params = { name: 'router.health.checks.enabled' }
       this.loading = true
-      api('listConfigurations', params).then(json => {
+      getAPI('listConfigurations', params).then(json => {
         this.routerHealthChecksEnabled = false
         if (json.listconfigurationsresponse.configuration !== null) {
           var config = json.listconfigurationsresponse.configuration[0]
@@ -200,7 +200,7 @@ export default {
         params.performfreshchecks = performFreshChecks
       }
       this.loading = true
-      api('getRouterHealthCheckResults', params).then(json => {
+      getAPI('getRouterHealthCheckResults', params).then(json => {
         this.healthChecks = json.getrouterhealthcheckresultsresponse.routerhealthchecks.healthchecks
       }).catch(error => {
         this.$notifyError(error)

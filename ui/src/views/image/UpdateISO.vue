@@ -150,7 +150,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -228,7 +228,7 @@ export default {
       params.listAll = true
       this.osTypes.opts = []
       this.osTypes.loading = true
-      api('listOsTypes', params).then(json => {
+      getAPI('listOsTypes', params).then(json => {
         const listOsTypes = json.listostypesresponse.ostype
         this.osTypes.opts = listOsTypes
       }).finally(() => {
@@ -262,7 +262,7 @@ export default {
       this.userdata.opts = []
       this.userdata.loading = true
 
-      api('listUserData', params).then(json => {
+      getAPI('listUserData', params).then(json => {
         const userdataIdAndName = []
         const userdataOpts = json.listuserdataresponse.userdata
         userdataIdAndName.push({
@@ -295,7 +295,7 @@ export default {
           if (!this.isValidValueForKey(values, key)) continue
           params[key] = values[key]
         }
-        api('updateIso', params).then(json => {
+        postAPI('updateIso', params).then(json => {
           if (this.userdataid !== null) {
             this.linkUserdataToTemplate(this.userdataid, json.updateisoresponse.iso.id, this.userdatapolicy)
           }
@@ -325,7 +325,7 @@ export default {
       if (userdatapolicy) {
         params.userdatapolicy = userdatapolicy
       }
-      api('linkUserDataToTemplate', params).then(json => {
+      postAPI('linkUserDataToTemplate', params).then(json => {
         this.closeAction()
       }).catch(error => {
         this.$notifyError(error)

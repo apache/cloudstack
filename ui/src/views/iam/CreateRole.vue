@@ -117,7 +117,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -196,7 +196,7 @@ export default {
     },
     createRole (params) {
       this.loading = true
-      api('createRole', params).then(json => {
+      postAPI('createRole', params).then(json => {
         const role = json.createroleresponse.role
         if (role) {
           this.$emit('refresh-data')
@@ -214,7 +214,7 @@ export default {
     },
     fetchRoles () {
       const params = {}
-      api('listRoles', params).then(json => {
+      getAPI('listRoles', params).then(json => {
         if (json && json.listrolesresponse && json.listrolesresponse.role) {
           this.roles = json.listrolesresponse.role
         }

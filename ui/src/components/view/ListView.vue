@@ -588,7 +588,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import OsLogo from '@/components/widgets/OsLogo'
 import Status from '@/components/widgets/Status'
 import QuickView from '@/components/view/QuickView'
@@ -778,7 +778,7 @@ export default {
       this.$router.push({ name: 'dashboard' })
     },
     saveValue (record) {
-      api('updateConfiguration', {
+      postAPI('updateConfiguration', {
         name: record.name,
         value: this.editableValue
       }).then(json => {
@@ -802,7 +802,7 @@ export default {
       })
     },
     resetConfig (item) {
-      api('resetConfiguration', {
+      postAPI('resetConfiguration', {
         name: item.name
       }).then(() => {
         this.$messageConfigSuccess(`${this.$t('label.setting')} ${item.name} ${this.$t('label.reset.config.value')}`, item)
@@ -859,7 +859,7 @@ export default {
       const apiString = this.getUpdateApi()
 
       return new Promise((resolve, reject) => {
-        api(apiString, {
+        postAPI(apiString, {
           id,
           sortKey: index
         }).then((response) => {
@@ -998,7 +998,7 @@ export default {
       }
     },
     updateAdminsOnly (e) {
-      api('updateAnnotationVisibility', {
+      postAPI('updateAnnotationVisibility', {
         id: e.target.value,
         adminsonly: e.target.checked
       }).finally(() => {
@@ -1055,7 +1055,7 @@ export default {
     },
     getUsageTypes () {
       if (this.$route.path.split('/')[1] === 'usage') {
-        api('listUsageTypes').then(json => {
+        getAPI('listUsageTypes').then(json => {
           if (json && json.listusagetypesresponse && json.listusagetypesresponse.usagetype) {
             this.usageTypes = json.listusagetypesresponse.usagetype.map(x => {
               return {

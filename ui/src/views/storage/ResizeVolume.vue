@@ -65,7 +65,7 @@
 </template>
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
@@ -105,7 +105,7 @@ export default {
     },
     fetchData () {
       this.loading = true
-      api('listDiskOfferings', {
+      getAPI('listDiskOfferings', {
         zoneid: this.resource.zoneid,
         listall: true
       }).then(json => {
@@ -124,7 +124,7 @@ export default {
         const values = this.handleRemoveFields(formRaw)
         this.loading = true
         values.id = this.resource.id
-        api('resizeVolume', values).then(response => {
+        postAPI('resizeVolume', values).then(response => {
           this.$pollJob({
             jobId: response.resizevolumeresponse.jobid,
             title: this.$t('label.action.resize.volume'),

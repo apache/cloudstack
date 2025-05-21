@@ -381,7 +381,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinDevice } from '@/utils/mixin.js'
 import DetailsTab from '@/components/view/DetailsTab'
 import Status from '@/components/widgets/Status'
@@ -577,7 +577,7 @@ export default {
     },
     fetchComments () {
       this.fetchLoading = true
-      api('listAnnotations', { entityid: this.resource.id, entitytype: 'VPC', annotationfilter: 'all' }).then(json => {
+      getAPI('listAnnotations', { entityid: this.resource.id, entitytype: 'VPC', annotationfilter: 'all' }).then(json => {
         if (json.listannotationsresponse && json.listannotationsresponse.annotation) {
           this.annotations = json.listannotationsresponse.annotation
         }
@@ -589,7 +589,7 @@ export default {
     },
     fetchPrivateGateways () {
       this.fetchLoading = true
-      api('listPrivateGateways', {
+      getAPI('listPrivateGateways', {
         vpcid: this.resource.id,
         listAll: true,
         page: this.page,
@@ -603,7 +603,7 @@ export default {
         this.fetchLoading = false
       })
       this.associatedNetworks = []
-      api('listNetworks', {
+      getAPI('listNetworks', {
         domainid: this.resource.domainid,
         account: this.resource.account,
         listAll: true,
@@ -621,7 +621,7 @@ export default {
     },
     fetchVpnGateways () {
       this.fetchLoading = true
-      api('listVpnGateways', {
+      getAPI('listVpnGateways', {
         vpcid: this.resource.id,
         listAll: true
       }).then(json => {
@@ -634,7 +634,7 @@ export default {
     },
     fetchVpnConnections () {
       this.fetchLoading = true
-      api('listVpnConnections', {
+      getAPI('listVpnConnections', {
         vpcid: this.resource.id,
         listAll: true,
         page: this.page,
@@ -650,7 +650,7 @@ export default {
     },
     fetchAclList () {
       this.fetchLoading = true
-      api('listNetworkACLLists', {
+      getAPI('listNetworkACLLists', {
         vpcid: this.resource.id,
         listAll: true,
         page: this.page,
@@ -673,7 +673,7 @@ export default {
         this.modals.gatewayLoading = false
         return
       }
-      api('listPhysicalNetworks', { zoneid: this.resource.zoneid }).then(json => {
+      getAPI('listPhysicalNetworks', { zoneid: this.resource.zoneid }).then(json => {
         this.physicalnetworks = json.listphysicalnetworksresponse.physicalnetwork
         if (this.modals.gateway === true) {
           this.form.physicalnetwork = this.physicalnetworks[0].id
@@ -686,7 +686,7 @@ export default {
     },
     fetchVpnCustomerGateways () {
       this.modals.vpnConnectionLoading = true
-      api('listVpnCustomerGateways', { listAll: true }).then(json => {
+      getAPI('listVpnCustomerGateways', { listAll: true }).then(json => {
         this.vpncustomergateways = json.listvpncustomergatewaysresponse.vpncustomergateway || []
         if (this.modals.vpnConnection === true) {
           this.form.vpncustomergateway = this.vpncustomergateways[0]?.id
@@ -759,7 +759,7 @@ export default {
           params.associatednetworkid = data.associatednetworkid
         }
 
-        api('createPrivateGateway', params).then(response => {
+        postAPI('createPrivateGateway', params).then(response => {
           this.$pollJob({
             jobId: response.createprivategatewayresponse.jobid,
             title: this.$t('message.success.add.private.gateway'),
@@ -804,7 +804,7 @@ export default {
           s2scustomergatewayid: values.vpncustomergateway,
           passive: values.passive ? values.passive : false
         }
-        api('createVpnConnection', params).then(response => {
+        postAPI('createVpnConnection', params).then(response => {
           this.$pollJob({
             jobId: response.createvpnconnectionresponse.jobid,
             title: this.$t('label.vpn.connection'),
@@ -843,7 +843,7 @@ export default {
       this.formRef.value.validate().then(() => {
         const values = toRaw(this.form)
 
-        api('createNetworkACLList', {
+        postAPI('createNetworkACLList', {
           name: values.name,
           description: values.description,
           vpcid: this.resource.id
@@ -879,7 +879,7 @@ export default {
     },
     handleCreateVpnGateway () {
       this.fetchLoading = true
-      api('createVpnGateway', {
+      postAPI('createVpnGateway', {
         vpcid: this.resource.id
       }).then(response => {
         this.$pollJob({
