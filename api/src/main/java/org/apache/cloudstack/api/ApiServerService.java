@@ -49,5 +49,5 @@ public interface ApiServerService {
 
     boolean resetPassword(UserAccount userAccount, String token, String password);
 
-    boolean isEnforcePostRequestsAndTimestamps();
+    boolean isPostRequestsAndTimestampsEnforced();
 }
