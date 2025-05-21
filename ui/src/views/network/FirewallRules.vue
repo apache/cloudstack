@@ -216,7 +216,7 @@
 
 <script>
 import { reactive, ref, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import BulkActionView from '@/components/view/BulkActionView'
@@ -327,12 +327,12 @@ export default {
       })
     },
     fetchNetworkProtocols () {
-      api('listNetworkProtocols', {
+      getAPI('listNetworkProtocols', {
         option: 'protocolnumber'
       }).then(json => {
         this.protocolNumbers = json.listnetworkprotocolsresponse?.networkprotocol || []
       })
-      api('listNetworkProtocols', {
+      getAPI('listNetworkProtocols', {
         option: 'icmptype'
       }).then(json => {
         this.icmpTypes.push({ index: -1, description: this.$t('label.all') })
@@ -356,7 +356,7 @@ export default {
     },
     fetchData () {
       this.loading = true
-      api('listFirewallRules', {
+      getAPI('listFirewallRules', {
         listAll: true,
         ipaddressid: this.resource.id,
         page: this.page,
@@ -423,7 +423,7 @@ export default {
     },
     deleteRule (rule) {
       this.loading = true
-      api('deleteFirewallRule', { id: rule.id }).then(response => {
+      postAPI('deleteFirewallRule', { id: rule.id }).then(response => {
         const jobId = response.deletefirewallruleresponse.jobid
         eventBus.emit('update-job-details', { jobId, resourceId: null })
         this.$pollJob({
@@ -460,7 +460,7 @@ export default {
       if (this.newRule.cidrlist == null || this.newRule.cidrlist.trim?.() === '') {
         delete this.newRule.cidrlist
       }
-      api('createFirewallRule', { ...this.newRule }).then(response => {
+      postAPI('createFirewallRule', { ...this.newRule }).then(response => {
         this.$pollJob({
           jobId: response.createfirewallruleresponse.jobid,
           successMessage: this.$t('message.success.add.firewall.rule'),
@@ -510,7 +510,7 @@ export default {
       this.selectedRule = id
       this.tagsModalVisible = true
 
-      api('listTags', {
+      getAPI('listTags', {
         resourceId: id,
         resourceType: 'FirewallRule',
         listAll: true
@@ -529,7 +529,7 @@ export default {
         const values = toRaw(this.form)
 
         this.addTagLoading = true
-        api('createTags', {
+        postAPI('createTags', {
           'tags[0].key': values.key,
           'tags[0].value': values.value,
           resourceIds: this.selectedRule,
@@ -565,7 +565,7 @@ export default {
       })
     },
     handleDeleteTag (tag) {
-      api('deleteTags', {
+      postAPI('deleteTags', {
         'tags[0].key': tag.key,
         'tags[0].value': tag.value,
         resourceIds: this.selectedRule,
