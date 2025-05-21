@@ -49,16 +49,28 @@
             | <project-outlined /> {{ item.project }}
             </span>
             <a-tooltip :title="$t('label.passwordenabled')" v-if="item.passwordenabled">
-              <lock-outlined style="margin-left: 10px;"/>
+              <lock-outlined style="margin-left: 8px;"/>
             </a-tooltip>
             <a-tooltip :title="$t('label.userdata')" v-if="item.userdataid">
-              <solution-outlined style="margin-left: 10px;"/>
+              <solution-outlined style="margin-left: 8px;"/>
             </a-tooltip>
-            <a-tag v-if="item.isfeatured" style="margin-left: 10px;">
+            <a-tooltip :title="$t('label.isdynamicallyscalable')" v-if="item.isdynamicallyscalable">
+              <arrows-alt-outlined style="margin-left: 8px;"/>
+            </a-tooltip>
+            <a-tooltip :title="$t('label.isextractable')" v-if="item.isextractable">
+              <file-zip-outlined style="margin-left: 8px;"/>
+            </a-tooltip>
+            <a-tag v-if="item.isfeatured" style="margin-left: 8px;">
               {{ $t('label.isfeatured') }}
             </a-tag>
-            <a-tag v-if="item.ispublic" style="margin-left: 10px;">
+            <a-tag v-if="item.ispublic" style="margin-left: 8px;">
               {{ $t('label.ispublic') }}
+            </a-tag>
+            <a-tag v-if="item.directdownload" style="margin-left: 8px;">
+              {{ $t('label.directdownload') }}
+            </a-tag>
+            <a-tag v-if="item.requireshvm" style="margin-left: 8px;">
+              {{ $t('label.requireshvm') }}
             </a-tag>
           </a-radio>
         </a-radio-group>
