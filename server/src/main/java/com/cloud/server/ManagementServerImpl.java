@@ -2778,17 +2778,21 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<>(result.first(), result.second());
     }
 
+
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_CATEGORY_ADD, eventDescription = "adding OS category")
     public GuestOsCategory addGuestOsCategory(AddGuestOsCategoryCmd cmd) {
         final String name = cmd.getName();
         final boolean featured = cmd.isFeatured();
-        final GuestOSCategoryVO guestOSCategory = new GuestOSCategoryVO();
-        guestOSCategory.setName(name);
-        guestOSCategory.setFeatured(featured);
-        return _guestOSCategoryDao.persist(guestOSCategory);
+        final GuestOSCategoryVO guestOSCategory = new GuestOSCategoryVO(name, featured);
+        GuestOsCategory guestOsCategory = _guestOSCategoryDao.persist(guestOSCategory);
+        CallContext.current().setEventResourceId(guestOsCategory.getId());
+        CallContext.current().setEventResourceType(ApiCommandResourceType.GuestOsCategory);
+        return guestOSCategory;
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_CATEGORY_UPDATE, eventDescription = "updating OS category")
     public GuestOsCategory updateGuestOsCategory(UpdateGuestOsCategoryCmd cmd) {
         final long id = cmd.getId();
         final String name = cmd.getName();
@@ -2817,6 +2821,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_GUEST_OS_CATEGORY_DELETE, eventDescription = "deleting OS category")
     public boolean deleteGuestOsCategory(DeleteGuestOsCategoryCmd cmd) {
         final long id = cmd.getId();
         final GuestOSCategoryVO guestOSCategory = _guestOSCategoryDao.findById(id);

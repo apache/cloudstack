@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.guest;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -98,5 +99,15 @@ public class UpdateGuestOsCategoryCmd extends BaseCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update OS category");
         }
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.GuestOsCategory;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getId();
     }
 }

@@ -3891,6 +3891,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         categoryResponse.setId(guestOsCategory.getUuid());
         categoryResponse.setName(guestOsCategory.getName());
         categoryResponse.setFeatured(guestOsCategory.isFeatured());
+        categoryResponse.setCreated(guestOsCategory.getCreated());
         if (showIcon) {
             ResourceIconVO resourceIcon = ApiDBUtils.getResourceIconByResourceUUID(guestOsCategory.getUuid(),
                     ResourceObjectType.GuestOsCategory);

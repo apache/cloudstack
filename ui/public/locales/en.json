@@ -1053,6 +1053,7 @@
 "label.guest.netmask": "Guest netmask",
 "label.guest.networks": "Guest Networks",
 "label.guest.os": "Guest OS",
+"label.guest.os.category": "Guest OS Category",
 "label.guest.os.categories": "Guest OS Categories",
 "label.guest.os.hypervisor.mappings": "Guest OS mappings",
 "label.guest.start.ip": "Guest start IP",

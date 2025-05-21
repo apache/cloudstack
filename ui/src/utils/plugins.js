@@ -412,6 +412,7 @@ export const resourceTypePlugin = {
         case 'VpnCustomerGateway':
         case 'AutoScaleVmGroup':
         case 'QuotaTariff':
+        case 'GuestOsCategory':
           return resourceType.toLowerCase()
       }
       return ''

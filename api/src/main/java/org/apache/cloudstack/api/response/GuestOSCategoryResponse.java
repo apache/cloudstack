@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import java.util.Date;
+
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,6 +45,10 @@ public class GuestOSCategoryResponse extends BaseResponse implements SetResource
     @Param(description = "Base64 string representation of the resource icon", since = "4.20.1")
     private ResourceIconResponse resourceIconResponse;
 
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "Date when the OS category was created." )
+    private Date created;
+
     public String getId() {
         return id;
     }
@@ -66,5 +72,9 @@ public class GuestOSCategoryResponse extends BaseResponse implements SetResource
     @Override
     public void setResourceIconResponse(ResourceIconResponse resourceIconResponse) {
         this.resourceIconResponse = resourceIconResponse;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
     }
 }

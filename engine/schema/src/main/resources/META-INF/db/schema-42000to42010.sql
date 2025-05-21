@@ -82,6 +82,8 @@ UPDATE `cloud`.`network_offerings` SET conserve_mode=1 WHERE name='DefaultIsolat
 -- Add featured column for guest_os_category
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.guest_os_category', 'featured', 'tinyint(1) NOT NULL DEFAULT 0 COMMENT "whether the category is featured or not" AFTER `uuid`');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.guest_os_category', 'sort_key', 'int NOT NULL DEFAULT 0 COMMENT "sort key used for customising sort method" AFTER `featured`');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.guest_os_category', 'created', 'date COMMENT "date on which the category was created" AFTER `sort_key`');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.guest_os_category', 'removed', 'date COMMENT "date removed if not null" AFTER `created`');
 UPDATE `cloud`.`guest_os_category` SET `featured` = 1 WHERE `name` NOT IN ('Novel', 'None');
 
 -- Begin: Changes for Guest OS category cleanup
@@ -136,7 +138,7 @@ BEGIN
 ;   UPDATE `cloud`.`guest_os`
     SET `category_id` = to_category_id
     WHERE `category_id` = (SELECT `id` FROM `cloud`.`guest_os_category` WHERE `name` = from_category_name)
-;   DELETE FROM `cloud`.`guest_os_category` WHERE `name` = from_category_name
+;   UPDATE `cloud`.`guest_os_category` SET `removed``=now() WHERE `name` = from_category_name
 ; END;
 CALL `cloud`.`UPDATE_NEW_AND_DELETE_OLD_CATEGORY_FOR_GUEST_OS`('Other', 'Novel');
 CALL `cloud`.`UPDATE_NEW_AND_DELETE_OLD_CATEGORY_FOR_GUEST_OS`('Other', 'None');

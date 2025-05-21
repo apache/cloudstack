@@ -193,8 +193,8 @@ export default {
       docHelp: 'adminguide/guest_os.html#guest-os-categories',
       icon: 'group-outlined',
       permission: ['listOsCategories', 'addOsCategory'],
-      columns: ['name', 'isfeatured', 'order'],
-      details: ['name', 'isfeatured'],
+      columns: ['name', 'isfeatured', 'created', 'order'],
+      details: ['name', 'isfeatured', 'created'],
       related: [{
         name: 'guestos',
         title: 'label.guest.os',

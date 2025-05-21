@@ -718,7 +718,7 @@ public class ManagementServerImplTest {
     @Test
     public void testUpdateGuestOsCategory() {
         UpdateGuestOsCategoryCmd updateCmd = Mockito.mock(UpdateGuestOsCategoryCmd.class);
-        GuestOSCategoryVO guestOSCategory = new GuestOSCategoryVO();
+        GuestOSCategoryVO guestOSCategory = new GuestOSCategoryVO("Old name", false);
         long id = 1L;
         String name = "Updated Name";
         Boolean featured = true;
@@ -749,7 +749,7 @@ public class ManagementServerImplTest {
     @Test
     public void testUpdateGuestOsCategory_NoChanges() {
         UpdateGuestOsCategoryCmd updateCmd = Mockito.mock(UpdateGuestOsCategoryCmd.class);
-        GuestOSCategoryVO guestOSCategory = new GuestOSCategoryVO();
+        GuestOSCategoryVO guestOSCategory = new GuestOSCategoryVO("Old name", false);
         long id = 1L;
         when(updateCmd.getId()).thenReturn(id);
         when(updateCmd.getName()).thenReturn(null);
@@ -767,11 +767,9 @@ public class ManagementServerImplTest {
     @Test
     public void testUpdateGuestOsCategory_UpdateNameOnly() {
         UpdateGuestOsCategoryCmd updateCmd = Mockito.mock(UpdateGuestOsCategoryCmd.class);
-        GuestOSCategoryVO guestOSCategory = new GuestOSCategoryVO();
+        GuestOSCategoryVO guestOSCategory = new GuestOSCategoryVO("Old name", false);
         long id = 1L;
         String name = "Updated Name";
-        Boolean featured = null;
-        Integer sortKey = null;
         Mockito.when(updateCmd.getId()).thenReturn(id);
         Mockito.when(updateCmd.getName()).thenReturn(name);
         Mockito.when(updateCmd.isFeatured()).thenReturn(null);
