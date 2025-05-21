@@ -48,7 +48,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 import ListView from '@/components/view/ListView'
 
@@ -127,7 +127,7 @@ export default {
         listall: true
       }
       this.tabLoading = true
-      api('listEvents', params).then(json => {
+      getAPI('listEvents', params).then(json => {
         this.events = []
         this.totalCount = json?.listeventsresponse?.count || 0
         this.events = json?.listeventsresponse?.event || []
