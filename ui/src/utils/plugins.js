@@ -550,3 +550,17 @@ export const cpuArchitectureUtilPlugin = {
     }
   }
 }
+
+export const imagesUtilPlugin = {
+  install (app) {
+    app.config.globalProperties.$fetchTemplateTypes = function () {
+      const baseTypes = ['USER', 'VNF']
+      const adminTypes = ['SYSTEM', 'BUILTIN', 'ROUTING']
+      const types = [...baseTypes]
+      if (store.getters.userInfo?.roletype === 'Admin') {
+        types.push(...adminTypes)
+      }
+      return types.map(type => ({ id: type, name: type, description: type }))
+    }
+  }
+}

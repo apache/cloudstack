@@ -312,7 +312,7 @@ export default {
           'clusterid', 'podid', 'groupid', 'entitytype', 'accounttype', 'systemvmtype', 'scope', 'provider',
           'type', 'scope', 'managementserverid', 'serviceofferingid',
           'diskofferingid', 'networkid', 'usagetype', 'restartrequired',
-          'displaynetwork', 'arch', 'oscategoryid'].includes(item)
+          'displaynetwork', 'arch', 'oscategoryid', 'templatetype'].includes(item)
         ) {
           type = 'list'
         } else if (item === 'tags') {
@@ -452,6 +452,13 @@ export default {
         const typeIndex = this.fields.findIndex(item => item.name === 'arch')
         this.fields[typeIndex].loading = true
         this.fields[typeIndex].opts = this.$fetchCpuArchitectureTypes()
+        this.fields[typeIndex].loading = false
+      }
+
+      if (arrayField.includes('templatetype')) {
+        const typeIndex = this.fields.findIndex(item => item.name === 'templatetype')
+        this.fields[typeIndex].loading = true
+        this.fields[typeIndex].opts = this.$fetchTemplateTypes()
         this.fields[typeIndex].loading = false
       }
     },

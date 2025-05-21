@@ -67,7 +67,7 @@ export default {
         return fields
       },
       searchFilters: () => {
-        var filters = ['name', 'zoneid', 'tags', 'arch', 'oscategoryid']
+        var filters = ['name', 'zoneid', 'tags', 'arch', 'oscategoryid', 'templatetype']
         if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
           filters.push('storageid')
           filters.push('imagestoreid')
