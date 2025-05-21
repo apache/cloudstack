@@ -190,7 +190,7 @@ export default {
     {
       name: 'guestoscategory',
       title: 'label.guest.os.categories',
-      docHelp: 'adminguide/guest_os.html#guest-os',
+      docHelp: 'adminguide/guest_os.html#guest-os-categories',
       icon: 'group-outlined',
       permission: ['listOsCategories', 'addOsCategory'],
       columns: ['name', 'isfeatured', 'order'],
