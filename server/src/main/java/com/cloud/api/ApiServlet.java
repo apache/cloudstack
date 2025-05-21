@@ -323,7 +323,7 @@ public class ApiServlet extends HttpServlet {
                 }
             }
 
-            if (apiServer.isEnforcePostRequestsAndTimestamps() && !isStateChangingCommandUsingPOST(command, req.getMethod(), params)) {
+            if (apiServer.isPostRequestsAndTimestampsEnforced() && !isStateChangingCommandUsingPOST(command, req.getMethod(), params)) {
                 String errorText = String.format("State changing command %s needs to be sent using POST request", command);
                 if (command.equalsIgnoreCase("updateConfiguration") && params.containsKey("name")) {
                     errorText = String.format("Changes for configuration %s needs to be sent using POST request", params.get("name")[0]);

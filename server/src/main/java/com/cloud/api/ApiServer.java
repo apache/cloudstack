@@ -201,7 +201,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private static final String SANITIZATION_REGEX = "[\n\r]";
 
     private static boolean encodeApiResponse = false;
-    private boolean isEnforcePostRequestsAndTimestamps = false;
+    private boolean isPostRequestsAndTimestampsEnforced = false;
 
     /**
      * Non-printable ASCII characters - numbers 0 to 31 and 127 decimal
@@ -287,9 +287,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             , ConfigKey.Scope.Global);
     static final ConfigKey<Boolean> EnforcePostRequestsAndTimestamps = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED
             , Boolean.class
-            , "enable.enforce.post.requests.and.timestamps"
+            , "enforce.post.requests.and.timestamps"
             , "false"
-            , "enables/disables whether the ApiServer only accepts state-changing POST requests and requests with timestamps."
+            , "Enable/Disable whether the ApiServer should only accept POST requests for state-changing APIs and requests with timestamps."
             , false
             , ConfigKey.Scope.Global);
     private static final ConfigKey<String> JSONDefaultContentType = new ConfigKey<> (ConfigKey.CATEGORY_ADVANCED
@@ -449,7 +449,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     public boolean start() {
         Security.addProvider(new BouncyCastleProvider());
         Integer apiPort = IntegrationAPIPort.value(); // api port, null by default
-        isEnforcePostRequestsAndTimestamps = EnforcePostRequestsAndTimestamps.value();
+        isPostRequestsAndTimestampsEnforced = EnforcePostRequestsAndTimestamps.value();
 
         final Long snapshotLimit = ConcurrentSnapshotsThresholdPerHost.value();
         if (snapshotLimit == null || snapshotLimit <= 0) {
@@ -730,8 +730,8 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     }
 
     @Override
-    public boolean isEnforcePostRequestsAndTimestamps() {
-        return isEnforcePostRequestsAndTimestamps;
+    public boolean isPostRequestsAndTimestampsEnforced() {
+        return isPostRequestsAndTimestampsEnforced;
     }
 
     private String getBaseAsyncResponse(final long jobId, final BaseAsyncCmd cmd) {
@@ -1038,13 +1038,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     apiKey = apiKey.replaceAll(SANITIZATION_REGEX, "_");
                     logger.debug("Request expired -- ignoring ...sig [{}], apiKey [{}].", signature, apiKey);
                     return false;
-                } else if (isEnforcePostRequestsAndTimestamps && expiresTS.after(thresholdTime)) {
+                } else if (isPostRequestsAndTimestampsEnforced && expiresTS.after(thresholdTime)) {
                     signature = signature.replaceAll(SANITIZATION_REGEX, "_");
                     apiKey = apiKey.replaceAll(SANITIZATION_REGEX, "_");
                     logger.debug(String.format("Expiration parameter is set for too long -- ignoring ...sig [%s], apiKey [%s].", signature, apiKey));
                     return false;
                 }
-            } else if (isEnforcePostRequestsAndTimestamps) {
+            } else if (isPostRequestsAndTimestampsEnforced) {
                 // Force expiration parameter
                 logger.debug("Signature Version must be 3, and should be along with the Expires parameter -- ignoring request.");
                 return false;
