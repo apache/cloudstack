@@ -75,7 +75,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import _ from 'lodash'
 
 export default {
@@ -228,7 +228,7 @@ export default {
     listResourceLimits (params) {
       return new Promise((resolve, reject) => {
         let dataResource = []
-        api('listResourceLimits', params).then(json => {
+        getAPI('listResourceLimits', params).then(json => {
           if (json.listresourcelimitsresponse.resourcelimit) {
             dataResource = json.listresourcelimitsresponse.resourcelimit
             dataResource.sort((a, b) => a.resourcetype - b.resourcetype)
@@ -251,7 +251,7 @@ export default {
     },
     updateResourceLimit (params) {
       return new Promise((resolve, reject) => {
-        api('updateResourceLimit', params).then(json => {
+        postAPI('updateResourceLimit', params).then(json => {
           resolve()
         }).catch(error => {
           reject(error)

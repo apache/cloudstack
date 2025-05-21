@@ -537,7 +537,7 @@
 <script>
 import { message } from 'ant-design-vue'
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI, getAPI } from '@/api'
 import _ from 'lodash'
 import Breadcrumb from '@/components/widgets/Breadcrumb'
 import Status from '@/components/widgets/Status'
@@ -1001,7 +1001,7 @@ export default {
       if (!('listall' in options) && !['zones', 'pods', 'clusters', 'hosts', 'pools'].includes(name)) {
         options.listall = true
       }
-      api(param.list, options).then((response) => {
+      postAPI(param.list, options).then((response) => {
         param.loading = false
         _.map(response, (responseItem, responseKey) => {
           if (Object.keys(responseItem).length === 0) {
@@ -1200,7 +1200,7 @@ export default {
         }
       }
 
-      api(apiName, params).then(json => {
+      postAPI(apiName, params).then(json => {
         const response = this.isMigrateFromVmware ? json.listvmwaredcvmsresponse : json.listunmanagedinstancesresponse
         const listUnmanagedInstances = response.unmanagedinstance
         if (this.arrayHasItems(listUnmanagedInstances)) {
@@ -1244,7 +1244,7 @@ export default {
         }
       }
       this.searchParams.unmanaged = params
-      api(this.listInstancesApi.external, params).then(json => {
+      getAPI(this.listInstancesApi.external, params).then(json => {
         const listUnmanagedInstances = json.listvmsforimportresponse.unmanagedinstance
         if (this.arrayHasItems(listUnmanagedInstances)) {
           this.unmanagedInstances = this.unmanagedInstances.concat(listUnmanagedInstances)
@@ -1281,7 +1281,7 @@ export default {
       }
       this.managedInstancesLoading = true
       this.searchParams.managed = params
-      api(this.listInstancesApi.managed, params).then(json => {
+      getAPI(this.listInstancesApi.managed, params).then(json => {
         const listManagedInstances = json.listvirtualmachinesresponse.virtualmachine
         if (this.arrayHasItems(listManagedInstances)) {
           this.managedInstances = this.managedInstances.concat(listManagedInstances)
@@ -1330,7 +1330,7 @@ export default {
         params.instancename = vmname
         params.hostname = hostname
       }
-      api('listVmwareDcVms', params).then(json => {
+      getAPI('listVmwareDcVms', params).then(json => {
         const response = json.listvmwaredcvmsresponse
         this.selectedUnmanagedInstance = response.unmanagedinstance[0]
         this.selectedUnmanagedInstance.ostypename = this.selectedUnmanagedInstance.osdisplayname
@@ -1428,7 +1428,7 @@ export default {
       for (var index of this.managedInstancesSelectedRowKeys) {
         const vm = this.managedInstances[index]
         var params = { id: vm.id }
-        api('unmanageVirtualMachine', params).then(json => {
+        postAPI('unmanageVirtualMachine', params).then(json => {
           const jobId = json.unmanagevirtualmachineresponse.jobid
           this.$pollJob({
             jobId,

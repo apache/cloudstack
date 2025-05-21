@@ -124,7 +124,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import DiskOfferingSelection from '@views/compute/wizard/DiskOfferingSelection'
 import DiskSizeSelection from '@views/compute/wizard/DiskSizeSelection'
 import TemplateIsoSelection from '@views/compute/wizard/TemplateIsoSelection'
@@ -215,7 +215,7 @@ export default {
         params.rootdisksize = this.overrideRootDiskSize
       }
       params.expunge = this.expungeDisk
-      api('restoreVirtualMachine', params).then(response => {
+      postAPI('restoreVirtualMachine', params).then(response => {
         this.$pollJob({
           jobId: response.restorevmresponse.jobid,
           successMessage: this.$t('label.reinstall.vm') + ' ' + this.$t('label.success'),
@@ -276,7 +276,7 @@ export default {
       args.showicon = 'true'
 
       return new Promise((resolve, reject) => {
-        api('listTemplates', args).then((response) => {
+        getAPI('listTemplates', args).then((response) => {
           resolve(response)
         }).catch((reason) => {
           reject(reason)
@@ -284,7 +284,7 @@ export default {
       })
     },
     fetchDiskOfferings (params) {
-      api('listDiskOfferings', { zoneid: this.resource.zoneid, listall: true, ...params }).then((response) => {
+      getAPI('listDiskOfferings', { zoneid: this.resource.zoneid, listall: true, ...params }).then((response) => {
         this.diskOfferings = response?.listdiskofferingsresponse?.diskoffering || []
         this.diskOfferingCount = response?.listdiskofferingsresponse?.count || 0
       })

@@ -297,7 +297,7 @@
 
 <script>
 import { ref, reactive, toRaw, nextTick } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -445,7 +445,7 @@ export default {
     fetchListTiers () {
       this.tiers.loading = true
 
-      api('listNetworks', {
+      getAPI('listNetworks', {
         account: this.resource.account,
         domainid: this.resource.domainid,
         supportedservices: 'Lb',
@@ -462,7 +462,7 @@ export default {
       this.lbRules = []
       this.stickinessPolicies = []
 
-      api('listLoadBalancerRules', {
+      getAPI('listLoadBalancerRules', {
         listAll: true,
         id: this.resource.lbruleid,
         page: this.page,
@@ -488,7 +488,7 @@ export default {
     fetchLBRuleInstances () {
       for (const rule of this.lbRules) {
         this.loading = true
-        api('listLoadBalancerRuleInstances', {
+        getAPI('listLoadBalancerRuleInstances', {
           listAll: true,
           lbvmips: true,
           id: rule.id
@@ -504,7 +504,7 @@ export default {
     fetchLBStickinessPolicies () {
       this.loading = true
       this.lbRules.forEach(rule => {
-        api('listLBStickinessPolicies', {
+        getAPI('listLBStickinessPolicies', {
           listAll: true,
           lbruleid: rule.id
         }).then(response => {
@@ -519,7 +519,7 @@ export default {
     fetchAutoScaleVMgroups () {
       this.loading = true
       this.lbRules.forEach(rule => {
-        api('listAutoScaleVmGroups', {
+        getAPI('listAutoScaleVmGroups', {
           listAll: true,
           lbruleid: rule.id
         }).then(response => {
@@ -565,7 +565,7 @@ export default {
       this.tagsModalVisible = true
       this.tags = []
       this.selectedRule = id
-      api('listTags', {
+      getAPI('listTags', {
         resourceId: id,
         resourceType: 'LoadBalancer',
         listAll: true
@@ -586,7 +586,7 @@ export default {
         const formRaw = toRaw(this.form)
         const values = this.handleRemoveFields(formRaw)
 
-        api('createTags', {
+        postAPI('createTags', {
           'tags[0].key': values.key,
           'tags[0].value': values.value,
           resourceIds: this.selectedRule,
@@ -623,7 +623,7 @@ export default {
     },
     handleDeleteTag (tag) {
       this.tagsModalLoading = true
-      api('deleteTags', {
+      postAPI('deleteTags', {
         'tags[0].key': tag.key,
         'tags[0].value': tag.value,
         resourceIds: tag.resourceid,
@@ -682,7 +682,7 @@ export default {
       }
     },
     handleAddStickinessPolicy (data, values) {
-      api('createLBStickinessPolicy', {
+      postAPI('createLBStickinessPolicy', {
         ...data,
         lbruleid: this.selectedRule,
         name: values.name,
@@ -719,7 +719,7 @@ export default {
     },
     handleDeleteStickinessPolicy () {
       this.stickinessModalLoading = true
-      api('deleteLBStickinessPolicy', { id: this.selectedStickinessPolicy.id }).then(response => {
+      postAPI('deleteLBStickinessPolicy', { id: this.selectedStickinessPolicy.id }).then(response => {
         this.$pollJob({
           jobId: response.deleteLBstickinessrruleresponse.jobid,
           successMessage: this.$t('message.success.remove.sticky.policy'),
@@ -803,7 +803,7 @@ export default {
     },
     handleDeleteInstanceFromRule (instance, rule, ip) {
       this.loading = true
-      api('removeFromLoadBalancerRule', {
+      postAPI('removeFromLoadBalancerRule', {
         id: rule.id,
         'vmidipmap[0].vmid': instance.loadbalancerruleinstance.id,
         'vmidipmap[0].vmip': ip
@@ -840,7 +840,7 @@ export default {
       if (this.editRuleModalLoading) return
       this.loading = true
       this.editRuleModalLoading = true
-      api('updateLoadBalancerRule', {
+      postAPI('updateLoadBalancerRule', {
         ...this.editRuleDetails,
         id: this.selectedRule.id
       }).then(response => {

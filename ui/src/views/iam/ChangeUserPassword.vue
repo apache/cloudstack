@@ -61,7 +61,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -134,7 +134,7 @@ export default {
         if (this.isValidValueForKey(values, 'currentpassword') && values.currentpassword.length > 0) {
           params.currentpassword = values.currentpassword
         }
-        api('updateUser', {}, 'POST', params).then(json => {
+        postAPI('updateUser', params).then(json => {
           this.$notification.success({
             message: this.$t('label.action.change.password'),
             description: `${this.$t('message.success.change.password')} ${this.resource.username}`

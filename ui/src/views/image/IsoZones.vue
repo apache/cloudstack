@@ -201,7 +201,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import OsLogo from '@/components/widgets/OsLogo'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -351,7 +351,7 @@ export default {
       this.dataSource = []
       this.itemCount = 0
       this.fetchLoading = true
-      api('listIsos', params).then(json => {
+      getAPI('listIsos', params).then(json => {
         this.dataSource = json.listisosresponse.iso || []
         this.itemCount = json.listisosresponse.count || 0
       }).catch(error => {
@@ -450,7 +450,7 @@ export default {
         zoneid: record.zoneid
       }
       this.deleteLoading = true
-      api('deleteIso', params).then(json => {
+      postAPI('deleteIso', params).then(json => {
         const jobId = json.deleteisoresponse.jobid
         eventBus.emit('update-job-details', { jobId, resourceId: null })
         const singleZone = (this.dataSource.length === 1)
@@ -499,7 +499,7 @@ export default {
     fetchZoneData () {
       this.zones = []
       this.zoneLoading = true
-      api('listZones', { showicon: true }).then(json => {
+      getAPI('listZones', { showicon: true }).then(json => {
         const zones = json.listzonesresponse.zone || []
         this.zones = [...zones.filter((zone) => this.currentRecord.zoneid !== zone.id)]
       }).finally(() => {
@@ -527,7 +527,7 @@ export default {
           destzoneids: values.zoneid.join()
         }
         this.copyLoading = true
-        api('copyIso', params).then(json => {
+        postAPI('copyIso', params).then(json => {
           const jobId = json.copytemplateresponse.jobid
           eventBus.emit('update-job-details', { jobId, resourceId: null })
           this.$pollJob({
