@@ -99,6 +99,7 @@ import {
   GlobalOutlined,
   GoldOutlined,
   GoogleOutlined,
+  GroupOutlined,
   HddOutlined,
   HomeOutlined,
   IdcardOutlined,
@@ -269,6 +270,7 @@ export default {
     app.component('GlobalOutlined', GlobalOutlined)
     app.component('GoldOutlined', GoldOutlined)
     app.component('GoogleOutlined', GoogleOutlined)
+    app.component('GroupOutlined', GroupOutlined)
     app.component('HddOutlined', HddOutlined)
     app.component('HomeOutlined', HomeOutlined)
     app.component('IdcardOutlined', IdcardOutlined)
