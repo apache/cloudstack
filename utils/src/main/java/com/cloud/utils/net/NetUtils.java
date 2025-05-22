@@ -847,7 +847,7 @@ public class NetUtils {
         isSuperset, isSubset, neitherSubetNorSuperset, sameSubnet, errorInCidrFormat
     }
 
-    public static SupersetOrSubset isNetowrkASubsetOrSupersetOfNetworkB(final String cidrA, final String cidrB) {
+    public static SupersetOrSubset isNetworkASubsetOrSupersetOfNetworkB(final String cidrA, final String cidrB) {
         if (!areCidrsNotEmpty(cidrA, cidrB)) {
             return SupersetOrSubset.errorInCidrFormat;
         }
