@@ -115,7 +115,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -218,7 +218,7 @@ export default {
       this.$emit('close-action')
     },
     updateStoragePool (args, values) {
-      api('updateStoragePool', args).then(json => {
+      postAPI('updateStoragePool', args).then(json => {
         this.$message.success(`${this.$t('message.success.edit.primary.storage')}: ${this.resource.name}`)
 
         if (values.storageaccessgroups != null && values.storageaccessgroups.length > 0) {

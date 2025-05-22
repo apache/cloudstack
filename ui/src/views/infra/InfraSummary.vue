@@ -294,7 +294,7 @@ export default {
           domainsuffix: formValues.dns,
           name: 'root'
         }
-        postAPI('uploadCustomCertificate', {}, 'POST', data).then(response => {
+        postAPI('uploadCustomCertificate', data).then(response => {
           this.pollActionCompletion(response.uploadcustomcertificateresponse.jobid, count)
         }).then(() => {
           this.sslModalClose()
@@ -309,7 +309,7 @@ export default {
               domainsuffix: formValues.dns,
               name: key
             }
-            postAPI('uploadCustomCertificate', {}, 'POST', data).then(response => {
+            postAPI('uploadCustomCertificate', data).then(response => {
               this.pollActionCompletion(response.uploadcustomcertificateresponse.jobid, count)
             }).then(() => {
               this.sslModalClose()
@@ -324,7 +324,7 @@ export default {
           domainsuffix: formValues.dns,
           privatekey: formValues.pkcs
         }
-        postAPI('uploadCustomCertificate', {}, 'POST', data).then(response => {
+        postAPI('uploadCustomCertificate', data).then(response => {
           this.pollActionCompletion(response.uploadcustomcertificateresponse.jobid, count)
         }).then(() => {
           this.sslModalClose()
