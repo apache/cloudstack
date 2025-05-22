@@ -247,7 +247,7 @@ export default {
         newImage.src = await this.getResourceIcon()
         base64Canvas = await this.getNewImage(newImage)
       }
-      postAPI('uploadResourceIcon', {}, 'POST', {
+      postAPI('uploadResourceIcon', {
         resourceids: resourceid,
         resourcetype: resourceType,
         base64image: base64Canvas

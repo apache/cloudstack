@@ -620,7 +620,7 @@ export default {
         data.id = this.selectedAcl.id
         data.partialupgrade = false
 
-        postAPI('updateNetworkACLItem', {}, 'POST', data).then(response => {
+        postAPI('updateNetworkACLItem', data).then(response => {
           this.$pollJob({
             jobId: response.createnetworkaclresponse.jobid,
             title: this.$t('label.edit.acl.rule'),
@@ -709,7 +709,7 @@ export default {
         const data = this.getDataFromForm(values)
         data.aclid = this.resource.id
 
-        postAPI('createNetworkACL', {}, 'POST', data).then(() => {
+        postAPI('createNetworkACL', data).then(() => {
           this.$notification.success({
             message: this.$t('label.success'),
             description: this.$t('message.success.add.rule')

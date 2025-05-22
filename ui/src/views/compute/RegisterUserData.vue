@@ -216,7 +216,7 @@ export default {
           params.params = userdataparams
         }
 
-        postAPI('registerUserData', {}, 'POST', params).then(json => {
+        postAPI('registerUserData', params).then(json => {
           this.$message.success(this.$t('message.success.register.user.data') + ' ' + values.name)
         }).catch(error => {
           this.$notifyError(error)

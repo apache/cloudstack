@@ -200,7 +200,7 @@ export default {
     },
     changeOrder () {
       this.updateTable = true
-      postAPI('updateRolePermission', {}, 'POST', {
+      postAPI('updateRolePermission', {
         roleid: this.resource.id,
         ruleorder: this.rules.map(rule => rule.id)
       }).catch(error => {
