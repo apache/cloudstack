@@ -451,7 +451,7 @@ export default {
         }
         Object.keys(args).forEach((key) => (args[key] == null) && delete args[key])
         this.loading = true
-        postAPI('addHost', {}, 'POST', args).then(response => {
+        postAPI('addHost', args).then(response => {
           const host = response.addhostresponse.host[0] || {}
           if (host.id && this.showDedicated) {
             this.dedicateHost(host.id)

@@ -178,7 +178,7 @@ export default {
       })
     },
     changeOrder () {
-      postAPI('updateProjectRolePermission', {}, 'POST', {
+      postAPI('updateProjectRolePermission', {
         projectid: this.resource.id,
         projectroleid: this.role.id,
         ruleorder: this.rules.map(rule => rule.id)

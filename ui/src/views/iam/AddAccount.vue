@@ -366,7 +366,7 @@ export default {
           params.networkdomain = values.networkdomain
         }
 
-        postAPI('createAccount', {}, 'POST', params).then(response => {
+        postAPI('createAccount', params).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.create.account'),

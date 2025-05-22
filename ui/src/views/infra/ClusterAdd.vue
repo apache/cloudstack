@@ -342,7 +342,7 @@ export default {
       if (this.password) {
         data.password = this.password
       }
-      postAPI('addCluster', {}, 'POST', data).then(response => {
+      postAPI('addCluster', data).then(response => {
         const cluster = response.addclusterresponse.cluster[0] || {}
         if (cluster.id && this.showDedicated) {
           this.dedicateCluster(cluster.id)

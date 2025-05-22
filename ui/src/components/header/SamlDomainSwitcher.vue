@@ -102,7 +102,7 @@ export default {
     },
     changeAccount (index) {
       const account = this.samlAccounts[index]
-      postAPI('listAndSwitchSamlAccount', {}, 'POST', {
+      postAPI('listAndSwitchSamlAccount', {
         userid: account.userId,
         domainid: account.domainId
       }).then(response => {

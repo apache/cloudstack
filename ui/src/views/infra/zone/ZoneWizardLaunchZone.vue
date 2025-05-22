@@ -2108,7 +2108,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        postAPI('addVmwareDc', {}, 'POST', args).then(json => {
+        postAPI('addVmwareDc', args).then(json => {
           const item = json.addvmwaredcresponse.vmwaredc
           resolve(item)
         }).catch(error => {
@@ -2121,7 +2121,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        postAPI('addCluster', args, 'POST').then(json => {
+        postAPI('addCluster', args).then(json => {
           const result = json.addclusterresponse.cluster[0]
           resolve(result)
         }).catch(error => {
@@ -2134,7 +2134,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        postAPI('addHost', {}, 'POST', args).then(json => {
+        postAPI('addHost', args).then(json => {
           const result = json.addhostresponse.host[0]
           resolve(result)
         }).catch(error => {
@@ -2202,7 +2202,7 @@ export default {
       return new Promise((resolve, reject) => {
         let message = ''
 
-        postAPI('addNetscalerLoadBalancer', {}, 'POST', args).then(async json => {
+        postAPI('addNetscalerLoadBalancer', args).then(async json => {
           const jobId = json.addnetscalerloadbalancerresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)
@@ -2234,7 +2234,7 @@ export default {
     },
     createTungstenFabricProvider (args) {
       return new Promise((resolve, reject) => {
-        postAPI('createTungstenFabricProvider', {}, 'POST', args).then(json => {
+        postAPI('createTungstenFabricProvider', args).then(json => {
           resolve()
         }).catch(error => {
           const message = error.response.headers['x-description']
@@ -2244,7 +2244,7 @@ export default {
     },
     addNsxController (args) {
       return new Promise((resolve, reject) => {
-        postAPI('addNsxController', {}, 'POST', args).then(json => {
+        postAPI('addNsxController', args).then(json => {
           resolve()
         }).catch(error => {
           const message = error.response.headers['x-description']
@@ -2254,7 +2254,7 @@ export default {
     },
     configTungstenFabricService (args) {
       return new Promise((resolve, reject) => {
-        postAPI('configTungstenFabricService', {}, 'POST', args).then(json => {
+        postAPI('configTungstenFabricService', args).then(json => {
           resolve()
         }).catch(error => {
           const message = error.response.headers['x-description']
