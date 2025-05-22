@@ -37,11 +37,11 @@
         </a-form-item>
         <a-form-item name="userdata" ref="userdata">
           <template #label>
-            <tooltip-label :title="$t('label.userdata')" :tooltip="apiParams.userdata.description"/>
+            <tooltip-label :title="$t('label.userdata')" :tooltip="$t('label.register.user.data.details')"/>
           </template>
           <a-textarea
             v-model:value="form.userdata"
-            :placeholder="apiParams.userdata.description"/>
+            :placeholder="$t('label.register.user.data.details')"/>
         </a-form-item>
         <a-form-item name="isbase64" ref="isbase64" :label="$t('label.is.base64.encoded')">
           <a-checkbox v-model:checked="form.isbase64"></a-checkbox>
