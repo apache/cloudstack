@@ -484,36 +484,36 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private Set<String> weightBasedParametersForValidation = new HashSet<>();
     private Set<String> overprovisioningFactorsForValidation = new HashSet<>();
 
-    public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
+    public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
 
-    public final static ConfigKey<Long> BYTES_MAX_READ_LENGTH= new ConfigKey<Long>(Long.class, "vm.disk.bytes.maximum.read.length", "Advanced", "0",
+    public final static ConfigKey<Long> BYTES_MAX_READ_LENGTH= new ConfigKey<>(Long.class, "vm.disk.bytes.maximum.read.length", "Advanced", "0",
             "Maximum Bytes read burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
-    public final static ConfigKey<Long> BYTES_MAX_WRITE_LENGTH = new ConfigKey<Long>(Long.class, "vm.disk.bytes.maximum.write.length", "Advanced", "0",
+    public final static ConfigKey<Long> BYTES_MAX_WRITE_LENGTH = new ConfigKey<>(Long.class, "vm.disk.bytes.maximum.write.length", "Advanced", "0",
             "Maximum Bytes write burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
-    public final static ConfigKey<Long> IOPS_MAX_READ_LENGTH = new ConfigKey<Long>(Long.class, "vm.disk.iops.maximum.read.length", "Advanced", "0",
+    public final static ConfigKey<Long> IOPS_MAX_READ_LENGTH = new ConfigKey<>(Long.class, "vm.disk.iops.maximum.read.length", "Advanced", "0",
             "Maximum IOPS read burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
-    public final static ConfigKey<Long> IOPS_MAX_WRITE_LENGTH = new ConfigKey<Long>(Long.class, "vm.disk.iops.maximum.write.length", "Advanced", "0",
+    public final static ConfigKey<Long> IOPS_MAX_WRITE_LENGTH = new ConfigKey<>(Long.class, "vm.disk.iops.maximum.write.length", "Advanced", "0",
             "Maximum IOPS write burst duration (seconds). If '0' (zero) then does not check for maximum burst length.", true, ConfigKey.Scope.Global, null);
-    public static final ConfigKey<Boolean> ADD_HOST_ON_SERVICE_RESTART_KVM = new ConfigKey<Boolean>(Boolean.class, "add.host.on.service.restart.kvm", "Advanced", "true",
+    public static final ConfigKey<Boolean> ADD_HOST_ON_SERVICE_RESTART_KVM = new ConfigKey<>(Boolean.class, "add.host.on.service.restart.kvm", "Advanced", "true",
             "Indicates whether the host will be added back to cloudstack after restarting agent service on host. If false it won't be added back even after service restart",
             true, ConfigKey.Scope.Global, null);
-    public static final ConfigKey<Boolean> SET_HOST_DOWN_TO_MAINTENANCE = new ConfigKey<Boolean>(Boolean.class, "set.host.down.to.maintenance", "Advanced", "false",
+    public static final ConfigKey<Boolean> SET_HOST_DOWN_TO_MAINTENANCE = new ConfigKey<>(Boolean.class, "set.host.down.to.maintenance", "Advanced", "false",
                         "Indicates whether the host in down state can be put into maintenance state so thats its not enabled after it comes back.",
                         true, ConfigKey.Scope.Zone, null);
-    public static final ConfigKey<Boolean> ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN = new ConfigKey<Boolean>(Boolean.class, "enable.account.settings.for.domain", "Advanced", "false",
+    public static final ConfigKey<Boolean> ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN = new ConfigKey<>(Boolean.class, "enable.account.settings.for.domain", "Advanced", "false",
             "Indicates whether to add account settings for domain. If true, account settings will be added to domain settings, all accounts in the domain will inherit the domain setting if account setting is not set.", true, ConfigKey.Scope.Global, null);
-    public static final ConfigKey<Boolean> ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN = new ConfigKey<Boolean>(Boolean.class, "enable.domain.settings.for.child.domain", "Advanced", "false",
+    public static final ConfigKey<Boolean> ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN = new ConfigKey<>(Boolean.class, "enable.domain.settings.for.child.domain", "Advanced", "false",
             "Indicates whether the settings of parent domain should be applied for child domain. If true, the child domain will get value from parent domain if its not configured in child domain else global value is taken.",
             true, ConfigKey.Scope.Global, null);
 
-    public static ConfigKey<Integer> VM_SERVICE_OFFERING_MAX_CPU_CORES = new ConfigKey<Integer>("Advanced", Integer.class, "vm.serviceoffering.cpu.cores.max", "0", "Maximum CPU cores "
+    public static ConfigKey<Integer> VM_SERVICE_OFFERING_MAX_CPU_CORES = new ConfigKey<>("Advanced", Integer.class, "vm.serviceoffering.cpu.cores.max", "0", "Maximum CPU cores "
       + "for vm service offering. If 0 - no limitation", true);
 
-    public static ConfigKey<Integer> VM_SERVICE_OFFERING_MAX_RAM_SIZE = new ConfigKey<Integer>("Advanced", Integer.class, "vm.serviceoffering.ram.size.max", "0", "Maximum RAM size in "
+    public static ConfigKey<Integer> VM_SERVICE_OFFERING_MAX_RAM_SIZE = new ConfigKey<>("Advanced", Integer.class, "vm.serviceoffering.ram.size.max", "0", "Maximum RAM size in "
       + "MB for vm service offering. If 0 - no limitation", true);
 
-    public static final ConfigKey<Boolean> MIGRATE_VM_ACROSS_CLUSTERS = new ConfigKey<Boolean>(Boolean.class, "migrate.vm.across.clusters", "Advanced", "false",
+    public static final ConfigKey<Boolean> MIGRATE_VM_ACROSS_CLUSTERS = new ConfigKey<>(Boolean.class, "migrate.vm.across.clusters", "Advanced", "false",
             "Indicates whether the VM can be migrated to different cluster if no host is found in same cluster",true, ConfigKey.Scope.Zone, null);
 
     public static final ConfigKey<Boolean> ALLOW_DOMAIN_ADMINS_TO_CREATE_TAGGED_OFFERINGS = new ConfigKey<>(Boolean.class, "allow.domain.admins.to.create.tagged.offerings", "Advanced",
@@ -523,6 +523,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             "Indicates the limit applied while deleting entries in bulk. With this, the delete query will apply the limit as many times as necessary," +
                     " to delete all the entries. This is advised when retaining several days of records, which can lead to slowness. <= 0 means that no limit will " +
                     "be applied. Default value is 0. For now, this is used for deletion of vm & volume stats only.", true);
+    public static final ConfigKey<Integer> NETWORK_LB_HAPROXY_MAX_CONN = new ConfigKey<>(
+            "Network",
+            Integer.class,
+            "network.loadbalancer.haproxy.max.conn",
+            "4096",
+            "Load Balancer(haproxy) maximum number of concurrent connections(global max)",
+            true,
+            ConfigKey.Scope.Global);
 
     private static final String IOPS_READ_RATE = "IOPS Read";
     private static final String IOPS_WRITE_RATE = "IOPS Write";
@@ -6480,7 +6488,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (lbServiceCapabilityMap != null && !lbServiceCapabilityMap.isEmpty()) {
             maxconn = cmd.getMaxconnections();
             if (maxconn == null) {
-                maxconn = Integer.parseInt(_configDao.getValue(Config.NetworkLBHaproxyMaxConn.key()));
+                maxconn = ConfigurationManagerImpl.NETWORK_LB_HAPROXY_MAX_CONN.value();
             }
         }
         if (cmd.getKeepAliveEnabled() != null && cmd.getKeepAliveEnabled()) {
@@ -8135,7 +8143,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 BYTES_MAX_READ_LENGTH, BYTES_MAX_WRITE_LENGTH, ADD_HOST_ON_SERVICE_RESTART_KVM, SET_HOST_DOWN_TO_MAINTENANCE,
                 VM_SERVICE_OFFERING_MAX_CPU_CORES, VM_SERVICE_OFFERING_MAX_RAM_SIZE, MIGRATE_VM_ACROSS_CLUSTERS,
                 ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN, ENABLE_DOMAIN_SETTINGS_FOR_CHILD_DOMAIN,
-                ALLOW_DOMAIN_ADMINS_TO_CREATE_TAGGED_OFFERINGS, DELETE_QUERY_BATCH_SIZE, AllowNonRFC1918CompliantIPs
+                ALLOW_DOMAIN_ADMINS_TO_CREATE_TAGGED_OFFERINGS, DELETE_QUERY_BATCH_SIZE, AllowNonRFC1918CompliantIPs, NETWORK_LB_HAPROXY_MAX_CONN
         };
     }
 

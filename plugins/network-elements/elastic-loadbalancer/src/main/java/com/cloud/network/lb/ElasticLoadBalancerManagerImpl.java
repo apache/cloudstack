@@ -46,6 +46,7 @@ import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.LoadBalancerTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
@@ -201,7 +202,7 @@ public class ElasticLoadBalancerManagerImpl extends ManagerBase implements Elast
         NetworkOffering offering = _networkOfferingDao.findById(guestNetworkId);
         String maxconn = null;
         if (offering.getConcurrentConnections() == null) {
-            maxconn = _configDao.getValue(Config.NetworkLBHaproxyMaxConn.key());
+            maxconn = ConfigurationManagerImpl.NETWORK_LB_HAPROXY_MAX_CONN.value().toString();
         } else {
             maxconn = offering.getConcurrentConnections().toString();
         }
