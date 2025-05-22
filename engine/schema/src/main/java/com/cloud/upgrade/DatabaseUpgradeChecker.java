@@ -34,6 +34,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import com.cloud.upgrade.dao.Upgrade41910to41920;
+import com.cloud.upgrade.dao.Upgrade41920to41930;
 import com.cloud.utils.FileUtil;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang3.StringUtils;
@@ -229,6 +230,7 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 .next("4.18.1.0", new Upgrade41810to41900())
                 .next("4.19.0.0", new Upgrade41900to41910())
                 .next("4.19.1.0", new Upgrade41910to41920())
+                .next("4.19.2.0", new Upgrade41920to41930())
                 .build();
     }
 
