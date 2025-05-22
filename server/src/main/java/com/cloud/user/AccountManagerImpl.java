@@ -3127,10 +3127,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         Map<String, String> keys = new HashMap<>();
-        if (keyPair != null && isAccessingKeypairSuperset(keyPair, cmd)) {
-            keys.put("apikey", keyPair.getApiKey());
-            keys.put("secretkey", keyPair.getSecretKey());
-        }
+        boolean isAllowed = keyPair != null && isAccessingKeypairSuperset(keyPair, cmd);
+        keys.put("apikey", isAllowed ? keyPair.getApiKey() : null);
+        keys.put("secretkey", isAllowed ? keyPair.getSecretKey() : null);
 
         Boolean apiKeyAccess = user.getApiKeyAccess();
         if (apiKeyAccess == null) {
