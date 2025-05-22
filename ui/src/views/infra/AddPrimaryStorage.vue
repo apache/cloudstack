@@ -928,7 +928,7 @@ export default {
           params.tags = this.selectedTags.join()
         }
         this.loading = true
-        postAPI('createStoragePool', {}, 'POST', params).then(json => {
+        postAPI('createStoragePool', params).then(json => {
           this.$notification.success({
             message: this.$t('label.add.primary.storage'),
             description: this.$t('label.add.primary.storage')

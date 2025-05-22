@@ -181,7 +181,7 @@
 <script>
 
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import OwnershipSelection from '@/views/compute/wizard/OwnershipSelection.vue'
@@ -298,7 +298,7 @@ export default {
     fetchZones () {
       this.zoneLoading = true
       const params = { showicon: true }
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         var listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = []
@@ -332,7 +332,7 @@ export default {
       } else {
         params.account = this.owner.account
       }
-      api('listServiceOfferings', params).then(json => {
+      getAPI('listServiceOfferings', params).then(json => {
         var items = json.listserviceofferingsresponse.serviceoffering || []
         if (items != null) {
           for (var i = 0; i < items.length; i++) {
@@ -360,7 +360,7 @@ export default {
       } else {
         params.account = this.owner.account
       }
-      api('listDiskOfferings', params).then(json => {
+      getAPI('listDiskOfferings', params).then(json => {
         this.diskofferings = json.listdiskofferingsresponse.diskoffering || []
         this.form.diskofferingid = this.diskofferings[0].id || ''
         this.customDiskOffering = this.diskofferings[0].iscustomized || false
@@ -382,7 +382,7 @@ export default {
       } else {
         params.account = this.owner.account
       }
-      api('listNetworks', params).then(json => {
+      getAPI('listNetworks', params).then(json => {
         this.networks = json.listnetworksresponse.network || []
         this.form.networkid = this.networks[0].id || ''
       }).finally(() => {
@@ -423,7 +423,7 @@ export default {
           data.account = this.owner.account
         }
         this.loading = true
-        api('createSharedFileSystem', data).then(response => {
+        postAPI('createSharedFileSystem', data).then(response => {
           this.$pollJob({
             jobId: response.createsharedfilesystemresponse.jobid,
             title: this.$t('label.create.sharedfs'),
