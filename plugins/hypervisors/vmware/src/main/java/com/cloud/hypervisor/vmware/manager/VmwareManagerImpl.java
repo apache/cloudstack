@@ -253,7 +253,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     private boolean _fullCloneFlag;
     private boolean _instanceNameFlag;
     private String _serviceConsoleName;
-    private String _managemetPortGroupName;
+    private String _managementPortGroupName;
     private String _defaultSystemVmNicAdapterType = VirtualEthernetCardType.E1000.toString();
     private String _recycleHungWorker = "false";
     private int _additionalPortRangeStart;
@@ -351,9 +351,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             _serviceConsoleName = "Service Console";
         }
 
-        _managemetPortGroupName = _configDao.getValue(Config.VmwareManagementPortGroup.key());
-        if (_managemetPortGroupName == null) {
-            _managemetPortGroupName = "Management Network";
+        _managementPortGroupName = _configDao.getValue(Config.VmwareManagementPortGroup.key());
+        if (_managementPortGroupName == null) {
+            _managementPortGroupName = "Management Network";
         }
 
         _defaultSystemVmNicAdapterType = _configDao.getValue(Config.VmwareSystemVmNicDeviceType.key());
@@ -618,13 +618,13 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @Override
     public String getManagementPortGroupName() {
-        return _managemetPortGroupName;
+        return _managementPortGroupName;
     }
 
     @Override
     public String getManagementPortGroupByHost(HostMO hostMo) throws Exception {
         if (hostMo.getHostType() == VmwareHostType.ESXi) {
-            return _managemetPortGroupName;
+            return _managementPortGroupName;
         }
         return _serviceConsoleName;
     }
@@ -634,7 +634,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         params.put("vmware.create.full.clone", _fullCloneFlag);
         params.put("vm.instancename.flag", _instanceNameFlag);
         params.put("service.console.name", _serviceConsoleName);
-        params.put("management.portgroup.name", _managemetPortGroupName);
+        params.put("management.portgroup.name", _managementPortGroupName);
         params.put("vmware.root.disk.controller", _rootDiskController);
         params.put("vmware.data.disk.controller", _dataDiskController);
         params.put("vmware.recycle.hung.wokervm", _recycleHungWorker);
