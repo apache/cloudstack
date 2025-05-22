@@ -84,7 +84,7 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     ConfigKey<String> ExtensionsDirectory = new ConfigKey<>("Advanced", String.class,
             "external.provisioner.extensions.directory", "/usr/share/cloudstack-management/extensions",
             "Directory on the management server where extensions are present",
-            true, ConfigKey.Scope.Global);
+            false, ConfigKey.Scope.Global);
 
     public static final String BASE_EXTERNAL_PROVISIONER_SCRIPT = "scripts/vm/hypervisor/external/simpleExternalProvisioner/provisioner.sh";
 
