@@ -2381,11 +2381,7 @@ export default {
           j++
         }
 
-        const httpMethod = createVmGroupData.userdata ? 'POST' : 'GET'
-        const args = httpMethod === 'POST' ? {} : params
-        const data = httpMethod === 'POST' ? params : {}
-
-        postAPI('createAutoScaleVmProfile', args, httpMethod, data).then(async json => {
+        postAPI('createAutoScaleVmProfile', params).then(async json => {
           const jobId = json.autoscalevmprofileresponse.jobid
           if (jobId) {
             const result = await this.pollJob(jobId)

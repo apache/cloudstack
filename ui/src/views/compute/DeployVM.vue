@@ -2378,11 +2378,7 @@ export default {
           }
         }
 
-        const httpMethod = deployVmData.userdata ? 'POST' : 'GET'
-        const args = httpMethod === 'POST' ? {} : deployVmData
-        const data = httpMethod === 'POST' ? deployVmData : {}
-
-        postAPI('deployVirtualMachine', args, httpMethod, data).then(response => {
+        postAPI('deployVirtualMachine', deployVmData).then(response => {
           const jobId = response.deployvirtualmachineresponse.jobid
           if (jobId) {
             this.$pollJob({
