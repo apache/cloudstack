@@ -5663,6 +5663,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         mgmtResponse.setAgents(agents);
         mgmtResponse.setAgentsCount((long) agents.size());
         mgmtResponse.setPendingJobsCount(jobManager.countPendingNonPseudoJobs(mgmt.getMsid()));
+        mgmtResponse.setServiceIp(mgmt.getServiceIP());
         mgmtResponse.setIpAddress(mgmt.getServiceIP());
         mgmtResponse.setObjectName("managementserver");
         return mgmtResponse;
