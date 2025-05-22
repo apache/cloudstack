@@ -3557,7 +3557,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
                 final List<Long> networkIds = _networksDao.findNetworksToGarbageCollect();
                 final int netGcWait = NumbersUtil.parseInt(_configDao.getValue(NetworkGcWait.key()), 60);
-                logger.info("NetworkGarbageCollector uses '{}' seconds for GC interval.", netGcWait);
+                final int netGcInterval = NumbersUtil.parseInt(_configDao.getValue(NetworkGcInterval.key()), 60);
+                logger.info("NetworkGarbageCollector uses '{}' seconds for GC wait and '{}' seconds for GC interval.", netGcWait, netGcInterval);
 
                 for (final Long networkId : networkIds) {
                     if (!_networkModel.isNetworkReadyForGc(networkId)) {
@@ -4869,7 +4870,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public static final ConfigKey<Integer> NetworkGcWait = new ConfigKey<Integer>(Integer.class, "network.gc.wait", "Advanced", "600",
             "Time (in seconds) to wait before shutting down a network that's not in used", false, Scope.Global, null);
     public static final ConfigKey<Integer> NetworkGcInterval = new ConfigKey<Integer>(Integer.class, "network.gc.interval", "Advanced", "600",
-            "Seconds to wait before checking for networks to shutdown", true, Scope.Global, null);
+            "Seconds to wait before checking for networks to shutdown", false, Scope.Global, null);
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
