@@ -126,7 +126,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
 
 export default {
@@ -182,7 +182,7 @@ export default {
     fetchStorageAccessGroupsData () {
       const params = {}
       this.storageAccessGroupsLoading = true
-      api('listStorageAccessGroups', params).then(json => {
+      getAPI('listStorageAccessGroups', params).then(json => {
         const sags = json.liststorageaccessgroupsresponse.storageaccessgroup || []
         for (const sag of sags) {
           if (!this.storageAccessGroups.includes(sag.name)) {
@@ -202,7 +202,7 @@ export default {
 
         this.loading = true
 
-        api('updateZone', params).then(json => {
+        postAPI('updateZone', params).then(json => {
           this.$message.success({
             content: `${this.$t('label.action.update.zone')} - ${values.name}`,
             duration: 2
@@ -215,7 +215,7 @@ export default {
           }
 
           if (params.storageaccessgroups !== undefined && (this.resource.storageaccessgroups ? this.resource.storageaccessgroups.split(',').join(',') : '') !== params.storageaccessgroups) {
-            api('configureStorageAccess', {
+            postAPI('configureStorageAccess', {
               zoneid: params.id,
               storageaccessgroups: params.storageaccessgroups
             }).then(response => {
