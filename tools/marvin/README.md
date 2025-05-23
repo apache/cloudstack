@@ -1,6 +1,6 @@
 # Marvin
 
-Marvin is the Apache CloudStack python client written around the unittest framework.
+Marvin is the Apache CloudStack Python client written for running smoke tests.
 
 ## Overview
 
