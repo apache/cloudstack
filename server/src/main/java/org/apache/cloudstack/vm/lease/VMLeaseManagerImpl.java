@@ -288,11 +288,11 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         switch (expiryAction) {
             case STOP: {
                 logger.debug("Stopping instance: {} (id: {}) on lease expiry", instance.getName(), instance.getUuid());
-                return executeStopInstanceJob(instance, true, eventId);
+                return executeStopInstanceJob(instance, eventId);
             }
             case DESTROY: {
                 logger.debug("Destroying instance: {} (id: {}) on lease expiry", instance.getName(), instance.getUuid());
-                return executeDestroyInstanceJob(instance, true, eventId);
+                return executeDestroyInstanceJob(instance, eventId);
             }
             default: {
                 logger.error("Invalid configuration for instance.lease.expiryaction for instance: {} (id: {}), " +
@@ -302,13 +302,12 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         return null;
     }
 
-    long executeStopInstanceJob(UserVmJoinVO vm, boolean isForced, long eventId) {
+    long executeStopInstanceJob(UserVmJoinVO vm, long eventId) {
         final Map<String, String> params = new HashMap<>();
         params.put(ApiConstants.ID, String.valueOf(vm.getId()));
         params.put("ctxUserId", String.valueOf(User.UID_SYSTEM));
         params.put("ctxAccountId", String.valueOf(Account.ACCOUNT_ID_SYSTEM));
         params.put(ApiConstants.CTX_START_EVENT_ID, String.valueOf(eventId));
-        params.put(ApiConstants.FORCED, String.valueOf(isForced));
         params.put(JOB_INITIATOR, VMLeaseManager.class.getSimpleName());
         final StopVMCmd cmd = new StopVMCmd();
         ComponentContext.inject(cmd);
@@ -318,13 +317,12 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
         return asyncJobManager.submitAsyncJob(job);
     }
 
-    long executeDestroyInstanceJob(UserVmJoinVO vm, boolean isForced, long eventId) {
+    long executeDestroyInstanceJob(UserVmJoinVO vm, long eventId) {
         final Map<String, String> params = new HashMap<>();
         params.put(ApiConstants.ID, String.valueOf(vm.getId()));
         params.put("ctxUserId", String.valueOf(User.UID_SYSTEM));
         params.put("ctxAccountId", String.valueOf(Account.ACCOUNT_ID_SYSTEM));
         params.put(ApiConstants.CTX_START_EVENT_ID, String.valueOf(eventId));
-        params.put(ApiConstants.FORCED, String.valueOf(isForced));
         params.put(JOB_INITIATOR, VMLeaseManager.class.getSimpleName());
         final DestroyVMCmd cmd = new DestroyVMCmd();
         ComponentContext.inject(cmd);

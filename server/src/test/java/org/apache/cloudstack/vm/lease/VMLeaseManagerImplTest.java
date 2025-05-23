@@ -145,14 +145,14 @@ public class VMLeaseManagerImplTest {
         List<UserVmJoinVO> expiredVms = Arrays.asList(vm);
         when(userVmJoinDao.listEligibleInstancesWithExpiredLease()).thenReturn(expiredVms);
         when(userVmJoinDao.findById(1L)).thenReturn(vm);
-        doReturn(1L).when(vmLeaseManager).executeStopInstanceJob(eq(vm), eq(true), anyLong());
+        doReturn(1L).when(vmLeaseManager).executeStopInstanceJob(eq(vm), anyLong());
         try (MockedStatic<ActionEventUtils> utilities = Mockito.mockStatic(ActionEventUtils.class)) {
             utilities.when(() -> ActionEventUtils.onStartedActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
                     Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyLong())).thenReturn(1L);
 
             vmLeaseManager.reallyRun();
         }
-        verify(vmLeaseManager).executeStopInstanceJob(eq(vm), eq(true), anyLong());
+        verify(vmLeaseManager).executeStopInstanceJob(eq(vm), anyLong());
     }
 
     @Test
@@ -161,33 +161,33 @@ public class VMLeaseManagerImplTest {
         List<UserVmJoinVO> expiredVms = Arrays.asList(vm);
         when(userVmJoinDao.listEligibleInstancesWithExpiredLease()).thenReturn(expiredVms);
         when(userVmJoinDao.findById(1L)).thenReturn(vm);
-        doReturn(1L).when(vmLeaseManager).executeDestroyInstanceJob(eq(vm), eq(true), anyLong());
+        doReturn(1L).when(vmLeaseManager).executeDestroyInstanceJob(eq(vm), anyLong());
         try (MockedStatic<ActionEventUtils> utilities = Mockito.mockStatic(ActionEventUtils.class)) {
             utilities.when(() -> ActionEventUtils.onStartedActionEvent(Mockito.anyLong(), Mockito.anyLong(), Mockito.anyString(),
                     Mockito.anyString(), Mockito.anyLong(), Mockito.anyString(), Mockito.anyBoolean(), Mockito.anyLong())).thenReturn(1L);
             vmLeaseManager.reallyRun();
         }
-        verify(vmLeaseManager).executeDestroyInstanceJob(eq(vm), eq(true), anyLong());
+        verify(vmLeaseManager).executeDestroyInstanceJob(eq(vm), anyLong());
     }
 
     @Test
     public void testExecuteExpiryActionStop() {
         UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, false);
-        doReturn(1L).when(vmLeaseManager).executeStopInstanceJob(eq(vm), eq(true), eq(123L));
+        doReturn(1L).when(vmLeaseManager).executeStopInstanceJob(eq(vm), eq(123L));
         Long jobId = vmLeaseManager.executeExpiryAction(vm, VMLeaseManager.ExpiryAction.STOP, 123L);
         assertNotNull(jobId);
         assertEquals(1L, jobId.longValue());
-        verify(vmLeaseManager).executeStopInstanceJob(eq(vm), eq(true), eq(123L));
+        verify(vmLeaseManager).executeStopInstanceJob(eq(vm), eq(123L));
     }
 
     @Test
     public void testExecuteExpiryActionDestroy() {
         UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, false, DESTROY);
-        doReturn(1L).when(vmLeaseManager).executeDestroyInstanceJob(eq(vm), eq(true), eq(123L));
+        doReturn(1L).when(vmLeaseManager).executeDestroyInstanceJob(eq(vm), eq(123L));
         Long jobId = vmLeaseManager.executeExpiryAction(vm, VMLeaseManager.ExpiryAction.DESTROY, 123L);
         assertNotNull(jobId);
         assertEquals(1L, jobId.longValue());
-        verify(vmLeaseManager).executeDestroyInstanceJob(eq(vm), eq(true), eq(123L));
+        verify(vmLeaseManager).executeDestroyInstanceJob(eq(vm), eq(123L));
     }
 
     @Test
@@ -198,7 +198,7 @@ public class VMLeaseManagerImplTest {
             ApplicationContext mockAppContext = mock(ApplicationContext.class);
             mockedComponentContext.when(ComponentContext::getApplicationContext).thenReturn(mockAppContext);
             mockedComponentContext.when(() -> ComponentContext.inject(any())).thenReturn(true);
-            long jobId = vmLeaseManager.executeStopInstanceJob(vm, true, 123L);
+            long jobId = vmLeaseManager.executeStopInstanceJob(vm, 123L);
             assertEquals(1L, jobId);
             ArgumentCaptor<AsyncJobVO> jobCaptor = ArgumentCaptor.forClass(AsyncJobVO.class);
             verify(asyncJobManager).submitAsyncJob(jobCaptor.capture());
@@ -218,7 +218,7 @@ public class VMLeaseManagerImplTest {
             ApplicationContext mockAppContext = mock(ApplicationContext.class);
             mockedComponentContext.when(ComponentContext::getApplicationContext).thenReturn(mockAppContext);
             mockedComponentContext.when(() -> ComponentContext.inject(any())).thenReturn(true);
-            long jobId = vmLeaseManager.executeDestroyInstanceJob(vm, true, 123L);
+            long jobId = vmLeaseManager.executeDestroyInstanceJob(vm, 123L);
             assertEquals(1L, jobId);
             ArgumentCaptor<AsyncJobVO> jobCaptor = ArgumentCaptor.forClass(AsyncJobVO.class);
             verify(asyncJobManager).submitAsyncJob(jobCaptor.capture());
