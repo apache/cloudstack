@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.apache.cloudstack.storage.formatinspector.Qcow2Inspector;
 import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.libvirt.LibvirtException;
@@ -52,6 +53,8 @@ public class QemuImg {
     public static final String TARGET_ZERO_FLAG = "--target-is-zero";
     public static final long QEMU_2_10 = 2010000;
     public static final long QEMU_5_10 = 5010000;
+
+    public static final int MIN_BITMAP_VERSION = 3;
 
     /* The qemu-img binary. We expect this to be in $PATH */
     public String _qemuImgPath = "qemu-img";
@@ -466,7 +469,7 @@ public class QemuImg {
             script.add(srcFile.getFileName());
         }
 
-        if (this.version >= QEMU_5_10 && keepBitmaps) {
+        if (this.version >= QEMU_5_10 && keepBitmaps && Qcow2Inspector.validateQcow2Version(srcFile.getFileName(), MIN_BITMAP_VERSION)) {
             script.add("--bitmaps");
         }
 
