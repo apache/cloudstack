@@ -115,7 +115,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { postAPI } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
