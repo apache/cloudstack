@@ -31,7 +31,7 @@
 </template>
 
 <script>
-import { getAPI, postAPI } from '@/api'
+import { getAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 import ConfigurationTable from '@/views/setting/ConfigurationTable.vue'
 
