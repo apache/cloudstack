@@ -36,6 +36,13 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import com.cloud.network.PublicIpQuarantine;
+import com.cloud.network.dao.PublicIpQuarantineDao;
+import com.cloud.network.vo.PublicIpQuarantineVO;
+import org.apache.cloudstack.acl.RoleService;
+import org.apache.cloudstack.acl.RoleVO;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPairService;
+import org.apache.cloudstack.acl.dao.RoleDao;
 import com.cloud.dc.Pod;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
@@ -45,6 +52,7 @@ import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.acl.dao.ApiKeyPairDao;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
@@ -255,7 +263,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.PublicIpQuarantine;
 import com.cloud.network.RouterHealthCheckResult;
 import com.cloud.network.VNF;
 import com.cloud.network.VpcVirtualNetworkApplianceService;
@@ -266,13 +273,11 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.PublicIpQuarantineDao;
 import com.cloud.network.dao.RouterHealthCheckResultDao;
 import com.cloud.network.dao.RouterHealthCheckResultVO;
 import com.cloud.network.router.VirtualNetworkApplianceManager;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
-import com.cloud.network.vo.PublicIpQuarantineVO;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.org.Grouping;
@@ -370,6 +375,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     AccountManager accountMgr;
+
+    @Inject
+    RoleService roleService;
 
     @Inject
     ProjectManager _projectMgr;
@@ -642,6 +650,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     @Inject
     HostPodDao podDao;
 
+    @Inject
+    ApiKeyPairDao apiKeyPairDao;
+
+    @Inject
+    ApiKeyPairService apiKeyPairService;
+
+    @Inject
+    RoleDao roleDao;
+
     private SearchCriteria<ServiceOfferingJoinVO> getMinimumCpuServiceOfferingJoinSearchCriteria(int cpu) {
         SearchCriteria<ServiceOfferingJoinVO> sc = _srvOfferingJoinDao.createSearchCriteria();
         SearchCriteria<ServiceOfferingJoinVO> sc1 = _srvOfferingJoinDao.createSearchCriteria();
@@ -862,6 +879,20 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return _userAccountJoinDao.searchAndCount(sc, searchFilter);
+    }
+
+    @Override
+    public List<Long> searchForAccessibleUsers() {
+        List<Long> permittedAccounts = new ArrayList<>();
+        Account callingAccount = CallContext.current().getCallingAccount();
+        Filter searchFilter = new Filter(UserAccountJoinVO.class, "id", true);
+        List<RoleVO> allowedRoles = roleDao.listAll();
+        roleService.removeRolesIfNeeded(allowedRoles);
+        List<Long> allowedRolesId = allowedRoles.stream().map(RoleVO::getId).collect(Collectors.toList());
+
+        Pair<List<UserAccountJoinVO>, Integer> usersPair = getUserListInternal(callingAccount, permittedAccounts,
+                true, null, null, null, null, null, null, null, callingAccount.getDomainId(), true, searchFilter, null);
+        return usersPair.first().stream().filter(userAccount -> allowedRolesId.contains(userAccount.getAccountRoleId())).map(UserAccountJoinVO::getId).collect(Collectors.toList());
     }
 
     @Override

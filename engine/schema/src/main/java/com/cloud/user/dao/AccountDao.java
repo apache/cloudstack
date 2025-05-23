@@ -20,14 +20,16 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
+import com.cloud.utils.Ternary;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.acl.apikeypair.ApiKeyPair;
 
 import java.util.Date;
 import java.util.List;
 
 public interface AccountDao extends GenericDao<AccountVO, Long> {
-    Pair<User, Account> findUserAccountByApiKey(String apiKey);
+    Ternary<User, Account, ApiKeyPair> findUserAccountByApiKey(String apiKey);
 
     List<AccountVO> findAccountsLike(String accountName);
 
