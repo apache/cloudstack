@@ -121,7 +121,7 @@
                 {{ cksSshStartingPort + index }}
               </div>
               <div v-else>
-                {{ parseInt(etcdSshPort) + parseInt(getEtcdIndex(record.name)) }}
+                {{ parseInt(etcdSshPort) + parseInt(getEtcdIndex(record.name)) - 1 }}
               </div>
             </template>
             <template v-if="column.key === 'kubernetesnodeversion'">
