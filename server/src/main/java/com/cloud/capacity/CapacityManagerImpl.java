@@ -179,12 +179,18 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             return true;
         }
         HostVO host = _hostDao.findById(hostId);
+        if (HypervisorType.External.equals(host.getHypervisorType())) {
+            return true;
+        }
         return releaseVmCapacity(vm, moveFromReserved, moveToReservered, host);
     }
 
     @DB
     public boolean releaseVmCapacity(VirtualMachine vm, final boolean moveFromReserved, final boolean moveToReservered, final Host host) {
         if (host == null) {
+            return true;
+        }
+        if (HypervisorType.External.equals(host.getHypervisorType())) {
             return true;
         }
 
@@ -290,6 +296,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
         final long hostId = vm.getHostId();
         final HostVO host = _hostDao.findById(hostId);
+        if (HypervisorType.External.equals(host.getHypervisorType())) {
+            return;
+        }
         final long clusterId = host.getClusterId();
         final float cpuOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, VmDetailConstants.CPU_OVER_COMMIT_RATIO).getValue());
         final float memoryOvercommitRatio = Float.parseFloat(_clusterDetailsDao.findDetail(clusterId, VmDetailConstants.MEMORY_OVER_COMMIT_RATIO).getValue());
@@ -671,6 +680,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @DB
     @Override
     public void updateCapacityForHost(final Host host) {
+        if (HypervisorType.External.equals(host.getHypervisorType())) {
+            return;
+        }
         long usedCpuCore = 0;
         long reservedCpuCore = 0;
         long usedCpu = 0;
@@ -1128,6 +1140,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     @Override
     public Pair<Boolean, Boolean> checkIfHostHasCpuCapabilityAndCapacity(Host host, ServiceOffering offering, boolean considerReservedCapacity) {
+        if (HypervisorType.External.equals(host.getHypervisorType())) {
+            logger.debug("Skipping capability and capacity check for the External {}", host);
+            return new Pair<>(true, true);
+        }
+
         int cpu_requested = offering.getCpu() * offering.getSpeed();
         long ram_requested = offering.getRamSize() * 1024L * 1024L;
         Pair<String, String> clusterDetails = getClusterValues(host.getClusterId());

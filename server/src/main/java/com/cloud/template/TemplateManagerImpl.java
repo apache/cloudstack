@@ -325,6 +325,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         TemplateAdapter adapter = null;
         if (type == HypervisorType.BareMetal) {
             adapter = AdapterBase.getAdapterByName(_adapters, TemplateAdapterType.BareMetal.getName());
+        } else if (type == HypervisorType.External) {
+            adapter = AdapterBase.getAdapterByName(_adapters, TemplateAdapterType.External.getName());
         } else {
             // Get template adapter according to hypervisor
             adapter = AdapterBase.getAdapterByName(_adapters, type.name());
@@ -937,7 +939,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         List<String> failedZones = new ArrayList<>();
 
         boolean success = false;
-        if (template.getHypervisorType() == HypervisorType.BareMetal) {
+        if (template.getHypervisorType() == HypervisorType.BareMetal || template.getHypervisorType() == HypervisorType.External) {
             if (template.isCrossZones()) {
                 logger.debug("Template {} is cross-zone, don't need to copy", template);
                 return template;
@@ -1194,6 +1196,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         if (UserVmManager.SHAREDFSVM.equals(vm.getUserVmType())) {
             throw new InvalidParameterValueException("Operation not supported on Shared FileSystem Instance");
+        }
+
+        if (HypervisorType.External.equals(vm.getHypervisorType())) {
+            throw new InvalidParameterValueException("Attach ISO operation is not allowed for External hypervisor type");
         }
 
         VMTemplateVO iso = _tmpltDao.findById(isoId);
@@ -1950,7 +1956,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         privateTemplate = new VMTemplateVO(nextTemplateId, name, ImageFormat.RAW, isPublic, featured, isExtractable,
                 TemplateType.USER, null, requiresHvmValue, bitsValue, templateOwner.getId(), null, description,
-                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), sshKeyEnabledValue, isDynamicScalingEnabled, false, false, arch);
+                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), sshKeyEnabledValue, isDynamicScalingEnabled, false, false, arch, null);
 
         if (sourceTemplateId != null) {
             if (logger.isDebugEnabled()) {
@@ -2337,6 +2343,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (MapUtils.isEmpty(details)) {
             return;
         }
+
         String bootMode = details.get(ApiConstants.BootType.UEFI.toString());
         if (bootMode == null) {
             return;

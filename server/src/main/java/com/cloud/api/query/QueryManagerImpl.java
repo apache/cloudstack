@@ -318,6 +318,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.tags.ResourceTagVO;
@@ -629,6 +630,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private AsyncJobManager jobManager;
+    @Inject
+    private VMTemplateDetailsDao templateDetailsDao;
 
     @Inject
     private StoragePoolAndAccessGroupMapDao storagePoolAndAccessGroupMapDao;
@@ -1333,6 +1336,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long userdataId = cmd.getUserdataId();
         Map<String, String> tags = cmd.getTags();
         final CPU.CPUArch arch = cmd.getArch();
+        final Long extensionId = cmd.getExtensionId();
 
         boolean isAdmin = false;
         boolean isRootAdmin = false;
@@ -1560,12 +1564,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         Boolean isVnf = cmd.getVnf();
-        boolean templateJoinNeeded = isVnf != null || arch != null;
+        boolean templateJoinNeeded = ObjectUtils.anyNotNull(isVnf, arch, extensionId);
         if (templateJoinNeeded) {
             SearchBuilder<VMTemplateVO> templateSearch = _templateDao.createSearchBuilder();
             templateSearch.and("templateArch", templateSearch.entity().getArch(), Op.EQ);
             templateSearch.and("templateTypeEQ", templateSearch.entity().getTemplateType(), Op.EQ);
             templateSearch.and("templateTypeNEQ", templateSearch.entity().getTemplateType(), Op.NEQ);
+            templateSearch.and("templateExtensionId", templateSearch.entity().getExtensionId(), Op.EQ);
 
             userVmSearchBuilder.join("vmTemplate", templateSearch, templateSearch.entity().getId(), userVmSearchBuilder.entity().getTemplateId(), JoinBuilder.JoinType.INNER);
         }
@@ -1694,6 +1699,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
         if (arch != null) {
             userVmSearchCriteria.setJoinParameters("vmTemplate", "templateArch", arch);
+        }
+        if (extensionId != null) {
+            userVmSearchCriteria.setJoinParameters("vmTemplate", "templateExtensionId", extensionId);
         }
 
         if (isRootAdmin) {
@@ -4790,9 +4798,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         List<HypervisorType> hypers = null;
         if (!isIso) {
             hypers = _resourceMgr.listAvailHypervisorInZone(null);
-            if (hypers == null || hypers.isEmpty()) {
-                return new Pair<>(new ArrayList<>(), 0);
-            }
+            hypers.add(HypervisorType.External);
         }
 
         VMTemplateVO template;
@@ -4830,7 +4836,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setJoinParameters("storagePool", "pool_id", storagePoolId);
         }
 
-        // verify templateId parameter and specially handle it
+            // verify templateId parameter and specially handle it
         if (templateId != null) {
             template = _templateDao.findByIdIncludingRemoved(templateId); // Done for backward compatibility - Bug-5221
             if (template == null) {
@@ -5080,7 +5086,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         if (onlyReady) {
             SearchCriteria<TemplateJoinVO> readySc = _templateJoinDao.createSearchCriteria();
             readySc.addOr("state", SearchCriteria.Op.EQ, TemplateState.Ready);
-            readySc.addOr("format", SearchCriteria.Op.EQ, ImageFormat.BAREMETAL);
+            readySc.addOr("format", SearchCriteria.Op.IN, ImageFormat.BAREMETAL, ImageFormat.EXTERNAL);
             SearchCriteria<TemplateJoinVO> isoPerhostSc = _templateJoinDao.createSearchCriteria();
             isoPerhostSc.addAnd("format", SearchCriteria.Op.EQ, ImageFormat.ISO);
             isoPerhostSc.addAnd("templateType", SearchCriteria.Op.EQ, TemplateType.PERHOST);
