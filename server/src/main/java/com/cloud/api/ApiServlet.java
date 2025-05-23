@@ -83,7 +83,7 @@ public class ApiServlet extends HttpServlet {
     private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
     private static final Pattern GET_REQUEST_COMMANDS = Pattern.compile("^(get|list|query|find)(\\w+)+$");
     private static final HashSet<String> GET_REQUEST_COMMANDS_LIST = new HashSet<String>(Set.of("isaccountallowedtocreateofferingswithtags",
-            "readyforshutdown", "cloudianisenabled", "quotabalance", "quotasummary", "quotatarifflist", "quotaisenabled", "quotastatement"));
+            "readyforshutdown", "cloudianisenabled", "quotabalance", "quotasummary", "quotatarifflist", "quotaisenabled", "quotastatement", "verifyoauthcodeandgetuser"));
 
     @Inject
     ApiServerService apiServer;
