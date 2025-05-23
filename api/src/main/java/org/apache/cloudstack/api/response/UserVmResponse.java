@@ -392,13 +392,25 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "VNF details", since = "4.19.0")
     private Map<String, String> vnfDetails;
 
-    @SerializedName((ApiConstants.VM_TYPE))
+    @SerializedName(ApiConstants.VM_TYPE)
     @Param(description = "User VM type", since = "4.20.0")
     private String vmType;
 
     @SerializedName(ApiConstants.ARCH)
     @Param(description = "CPU arch of the VM", since = "4.20.1")
     private String arch;
+
+    @SerializedName(ApiConstants.INSTANCE_LEASE_DURATION)
+    @Param(description = "Instance lease duration in days", since = "4.21.0")
+    private Integer leaseDuration;
+
+    @SerializedName(ApiConstants.INSTANCE_LEASE_EXPIRY_DATE)
+    @Param(description = "Instance lease expiry date", since = "4.21.0")
+    private Date leaseExpiryDate;
+
+    @SerializedName(ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION)
+    @Param(description = "Instance lease expiry action", since = "4.21.0")
+    private String leaseExpiryAction;
 
     public UserVmResponse() {
         securityGroupList = new LinkedHashSet<>();
@@ -1181,4 +1193,29 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     public void setArch(String arch) {
         this.arch = arch;
     }
+
+    public Integer getLeaseDuration() {
+        return leaseDuration;
+    }
+
+    public void setLeaseDuration(Integer leaseDuration) {
+        this.leaseDuration = leaseDuration;
+    }
+
+    public String getLeaseExpiryAction() {
+        return leaseExpiryAction;
+    }
+
+    public void setLeaseExpiryAction(String leaseExpiryAction) {
+        this.leaseExpiryAction = leaseExpiryAction;
+    }
+
+    public Date getLeaseExpiryDate() {
+        return leaseExpiryDate;
+    }
+
+    public void setLeaseExpiryDate(Date leaseExpiryDate) {
+        this.leaseExpiryDate = leaseExpiryDate;
+    }
+
 }
