@@ -49,6 +49,7 @@ import org.apache.cloudstack.api.command.user.consoleproxy.CreateConsoleEndpoint
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.managed.context.ManagedContext;
 import org.apache.cloudstack.utils.consoleproxy.ConsoleAccessUtils;
+import org.apache.commons.collections.MapUtils;
 
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
@@ -82,8 +83,38 @@ public class ApiServlet extends HttpServlet {
     private static final String REPLACEMENT = "_";
     private static final String LOGGER_REPLACEMENTS = "[\n\r\t]";
     private static final Pattern GET_REQUEST_COMMANDS = Pattern.compile("^(get|list|query|find)(\\w+)+$");
-    private static final HashSet<String> GET_REQUEST_COMMANDS_LIST = new HashSet<String>(Set.of("isaccountallowedtocreateofferingswithtags",
+    private static final HashSet<String> GET_REQUEST_COMMANDS_LIST = new HashSet<>(Set.of("isaccountallowedtocreateofferingswithtags",
             "readyforshutdown", "cloudianisenabled", "quotabalance", "quotasummary", "quotatarifflist", "quotaisenabled", "quotastatement", "verifyoauthcodeandgetuser"));
+    private static final HashSet<String> POST_REQUESTS_TO_DISABLE_LOGGING = new HashSet<>(Set.of(
+            "login",
+            "oauthlogin",
+            "createaccount",
+            "createuser",
+            "updateuser",
+            "forgotpassword",
+            "resetpassword",
+            "importrole",
+            "updaterolepermission",
+            "updateprojectrolepermission",
+            "createstoragepool",
+            "addhost",
+            "updatehostpassword",
+            "addcluster",
+            "addvmwaredc",
+            "configureoutofbandmanagement",
+            "uploadcustomcertificate",
+            "addciscovnmcresource",
+            "addnetscalerloadbalancer",
+            "createtungstenfabricprovider",
+            "addnsxcontroller",
+            "configtungstenfabricservice",
+            "createnetworkacl",
+            "updatenetworkaclitem",
+            "quotavalidateactivationrule",
+            "quotatariffupdate",
+            "listandswitchsamlaccount",
+            "uploadresourceicon"
+    ));
 
     @Inject
     ApiServerService apiServer;
@@ -199,11 +230,24 @@ public class ApiServlet extends HttpServlet {
 
         utf8Fixup(req, params);
 
+        final Object[] commandObj = params.get(ApiConstants.COMMAND);
+        final String command = commandObj == null ? null : (String) commandObj[0];
+
         // logging the request start and end in management log for easy debugging
         String reqStr = "";
         String cleanQueryString = StringUtils.cleanString(req.getQueryString());
         if (LOGGER.isDebugEnabled()) {
             reqStr = auditTrailSb.toString() + " " + cleanQueryString;
+            if (req.getMethod().equalsIgnoreCase("POST") && org.apache.commons.lang3.StringUtils.isNotBlank(command)) {
+                if (!POST_REQUESTS_TO_DISABLE_LOGGING.contains(command.toLowerCase()) && !reqParams.containsKey(ApiConstants.USER_DATA)) {
+                    String cleanParamsString = getCleanParamsString(reqParams);
+                    if (org.apache.commons.lang3.StringUtils.isNotBlank(cleanParamsString)) {
+                        reqStr += "\n" + cleanParamsString;
+                    }
+                } else {
+                    reqStr += " " + command;
+                }
+            }
             LOGGER.debug("===START=== " + reqStr);
         }
 
@@ -219,8 +263,6 @@ public class ApiServlet extends HttpServlet {
                 responseType = (String)responseTypeParam[0];
             }
 
-            final Object[] commandObj = params.get(ApiConstants.COMMAND);
-            final String command = commandObj == null ? null : (String) commandObj[0];
             final Object[] userObj = params.get(ApiConstants.USERNAME);
             String username = userObj == null ? null : (String)userObj[0];
             if (LOGGER.isTraceEnabled()) {
@@ -671,5 +713,46 @@ public class ApiServlet extends HttpServlet {
             }
         }
         return null;
+    }
+
+    private String getCleanParamsString(Map<String, String[]> reqParams) {
+        if (MapUtils.isEmpty(reqParams)) {
+            return "";
+        }
+
+        StringBuilder cleanParamsString = new StringBuilder();
+        for (Map.Entry<String, String[]> reqParam : reqParams.entrySet()) {
+            if (org.apache.commons.lang3.StringUtils.isBlank(reqParam.getKey())) {
+                continue;
+            }
+
+            cleanParamsString.append(reqParam.getKey());
+            cleanParamsString.append("=");
+
+            if (reqParam.getKey().toLowerCase().contains("password")
+                    || reqParam.getKey().toLowerCase().contains("privatekey")
+                    || reqParam.getKey().toLowerCase().contains("accesskey")
+                    || reqParam.getKey().toLowerCase().contains("secretkey")) {
+                cleanParamsString.append("\n");
+                continue;
+            }
+
+            if (reqParam.getValue() == null || reqParam.getValue().length == 0) {
+                cleanParamsString.append("\n");
+                continue;
+            }
+
+            for (String param : reqParam.getValue()) {
+                if (org.apache.commons.lang3.StringUtils.isBlank(param)) {
+                    continue;
+                }
+                String cleanParamString = StringUtils.cleanString(param.trim());
+                cleanParamsString.append(cleanParamString);
+                cleanParamsString.append(" ");
+            }
+            cleanParamsString.append("\n");
+        }
+
+        return cleanParamsString.toString();
     }
 }
