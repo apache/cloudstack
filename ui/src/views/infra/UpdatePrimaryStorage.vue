@@ -179,7 +179,7 @@ export default {
     fetchStorageAccessGroupsData () {
       const params = {}
       this.storageAccessGroupsLoading = true
-      api('listStorageAccessGroups', params).then(json => {
+      getAPI('listStorageAccessGroups', params).then(json => {
         const sags = json.liststorageaccessgroupsresponse.storageaccessgroup || []
         for (const sag of sags) {
           if (!this.storageAccessGroups.includes(sag.name)) {
@@ -228,7 +228,7 @@ export default {
         }
 
         if (args.storageaccessgroups !== undefined && (this.resource.storageaccessgroups ? this.resource.storageaccessgroups.split(',').join(',') : '') !== args.storageaccessgroups) {
-          api('configureStorageAccess', {
+          postAPI('configureStorageAccess', {
             storageid: args.id,
             storageaccessgroups: args.storageaccessgroups
           }).then(response => {
