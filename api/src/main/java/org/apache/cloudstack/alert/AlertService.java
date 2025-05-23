@@ -73,6 +73,8 @@ public interface AlertService {
         public static final AlertType ALERT_TYPE_VM_SNAPSHOT = new AlertType((short)32, "ALERT.VM.SNAPSHOT", true);
         public static final AlertType ALERT_TYPE_VR_PUBLIC_IFACE_MTU = new AlertType((short)32, "ALERT.VR.PUBLIC.IFACE.MTU", true);
         public static final AlertType ALERT_TYPE_VR_PRIVATE_IFACE_MTU = new AlertType((short)32, "ALERT.VR.PRIVATE.IFACE.MTU", true);
+        public static final AlertType ALERT_TYPE_BACKUP_STORAGE = new AlertType(Capacity.CAPACITY_TYPE_BACKUP_STORAGE, "ALERT.STORAGE.BACKUP", true);
+        public static final AlertType ALERT_TYPE_OBJECT_STORAGE = new AlertType(Capacity.CAPACITY_TYPE_OBJECT_STORAGE, "ALERT.STORAGE.OBJECT", true);
 
         public short getType() {
             return type;
