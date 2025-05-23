@@ -898,10 +898,19 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     private DiskProfile allocateTemplatedVolume(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
-                                                Account owner, long deviceId, String configurationId) {
+                                                Account owner, long deviceId, String configurationId, Volume volume, Snapshot snapshot) {
         assert (template.getFormat() != ImageFormat.ISO) : "ISO is not a template.";
 
-        Long size = _tmpltMgr.getTemplateSize(template, vm.getDataCenterId());
+        if (volume != null) {
+            volume = attachExistingVolumeToVm(vm, deviceId, volume, type);
+            return toDiskProfile(volume, offering);
+        }
+        Long size;
+        if (snapshot != null) {
+            size = _volsDao.findByIdIncludingRemoved(snapshot.getVolumeId()).getSize();
+        } else {
+            size = _tmpltMgr.getTemplateSize(template, vm.getDataCenterId());
+        }
         if (rootDisksize != null) {
             if (template.isDeployAsIs()) {
                 // Volume size specified from template deploy-as-is
@@ -961,7 +970,30 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
             _resourceLimitMgr.incrementVolumeResourceCount(vm.getAccountId(), vol.isDisplayVolume(), vol.getSize(), offering);
         }
+        if (snapshot != null) {
+            UserVmVO userVmVO = _userVmDao.findById(vm.getId());
+            try {
+                VolumeInfo volumeInfo = createVolumeFromSnapshot(vol, snapshot, userVmVO);
+                return toDiskProfile(volumeInfo, offering);
+            } catch (StorageUnavailableException ex) {
+                throw new CloudRuntimeException("Could not create volume from a snapshot", ex);
+            }
+        }
         return toDiskProfile(vol, offering);
+    }
+
+    private Volume attachExistingVolumeToVm(VirtualMachine vm, long deviceId, Volume volume, Type type) {
+        VolumeVO volumeVO = _volumeDao.findById(volume.getId());
+        if (volumeVO == null) {
+            throw new CloudRuntimeException(String.format("Could not find the volume %s in the DB", volume));
+        }
+        volumeVO.setDeviceId(deviceId);
+        volumeVO.setVolumeType(type);
+        if (vm != null) {
+            volumeVO.setInstanceId(vm.getId());
+        }
+        _volumeDao.update(volumeVO.getId(), volumeVO);
+        return volumeVO;
     }
 
     @Override
@@ -993,7 +1025,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_CREATE, eventDescription = "creating ROOT volume", create = true)
     @Override
     public List<DiskProfile> allocateTemplatedVolumes(Type type, String name, DiskOffering offering, Long rootDisksize, Long minIops, Long maxIops, VirtualMachineTemplate template, VirtualMachine vm,
-                                                      Account owner) {
+                                                      Account owner, Volume volume, Snapshot snapshot) {
         String templateToString = getReflectOnlySelectedFields(template);
 
         int volumesNumber = 1;
@@ -1040,7 +1072,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             }
             logger.info("Adding disk object [{}] to VM [{}]", volumeName, vm);
             DiskProfile diskProfile = allocateTemplatedVolume(type, volumeName, offering, volumeSize, minIops, maxIops,
-                    template, vm, owner, deviceId, configurationId);
+                    template, vm, owner, deviceId, configurationId, volume, snapshot);
             profiles.add(diskProfile);
         }
 

@@ -527,7 +527,7 @@ class VirtualMachine:
                customcpuspeed=None, custommemory=None, rootdisksize=None,
                rootdiskcontroller=None, vpcid=None, macaddress=None, datadisktemplate_diskoffering_list={},
                properties=None, nicnetworklist=None, bootmode=None, boottype=None, dynamicscalingenabled=None,
-               userdataid=None, userdatadetails=None, extraconfig=None, size=None, overridediskofferingid=None):
+               userdataid=None, userdatadetails=None, extraconfig=None, size=None, overridediskofferingid=None, volumeid=None, snapshotid=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -690,6 +690,12 @@ class VirtualMachine:
 
         if extraconfig:
             cmd.extraconfig = extraconfig
+
+        if volumeid:
+            cmd.volumeid = volumeid
+
+        if snapshotid:
+            cmd.snapshotid = snapshotid
 
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
@@ -1208,12 +1214,15 @@ class Volume:
 
     @classmethod
     def create_from_snapshot(cls, apiclient, snapshot_id, services,
-                             account=None, domainid=None, projectid=None):
+                             account=None, domainid=None, projectid=None, zoneid=None):
         """Create Volume from snapshot"""
         cmd = createVolume.createVolumeCmd()
         cmd.name = "-".join([services["diskname"], random_gen()])
         cmd.snapshotid = snapshot_id
-        cmd.zoneid = services["zoneid"]
+        if zoneid:
+            cmd.zoneid = zoneid
+        elif "zoneid" in services:
+            cmd.zoneid = services["zoneid"]
         if "size" in services:
             cmd.size = services["size"]
         if "ispublic" in services:
@@ -2729,10 +2738,13 @@ class DiskOffering:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, tags=None, custom=False, domainid=None, cacheMode=None, **kwargs):
+    def create(cls, apiclient, services, tags=None, custom=False, domainid=None, cacheMode=None, displaytext=None, **kwargs):
         """Create Disk offering"""
         cmd = createDiskOffering.createDiskOfferingCmd()
-        cmd.displaytext = services["displaytext"]
+        if displaytext:
+            cmd.displaytext = displaytext
+        else:
+            cmd.displaytext = services["displaytext"]
         cmd.name = services["name"]
         if custom:
             cmd.customized = True
