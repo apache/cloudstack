@@ -959,7 +959,7 @@ class TestVolumes(cloudstackTestCase):
                 return True, list_volume_response[0]
             return False, None
 
-        # sleep interval is 1s, retries is 360, this will sleep atmost 360 seconds, or 6 mins
+        # sleep interval is 1s, retries is 360, this will sleep at most 360 seconds, or 6 mins
         res, response = wait_until(1, 360, checkVolumeResponse)
         if not res:
             self.fail("Failed to return root volume response")

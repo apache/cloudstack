@@ -423,7 +423,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     }
 
     /**
-     * Return pretified PEM certificate
+     * Return prettified PEM certificate
      */
     protected String getPretifiedCertificate(String certificateCer) {
         String cert = certificateCer.replaceAll("(.{64})", "$1\n");
