@@ -43,7 +43,7 @@
             buttonStyle="solid"
             @change="handleDurationChange">
             <a-radio-button value="">
-              {{ $t('1 hour') }}
+              {{ $t('label.duration.1hour') }}
             </a-radio-button>
             <a-radio-button value="6hours" v-if="statsRetentionTime >= 60">
               {{ $t('label.duration.6hours') }}
@@ -62,6 +62,16 @@
             </a-radio-button>
           </a-radio-group>
           <InfoCircleOutlined class="info-icon" :title="$t('label.see.more.info.shown.charts')" @click="onClickShowResourceInfoModal('CHART')"/>
+          <span>{{$t('label.auto.refresh.statistics')}}</span>
+          <a-select
+            v-model:value="refreshTime"
+            style="width: 100px">
+            <a-select-option value="0">{{$t('label.auto.refresh.statistics.none')}}</a-select-option>
+            <a-select-option value="5000">5s</a-select-option>
+            <a-select-option value="30000">30s</a-select-option>
+            <a-select-option value="60000">1min</a-select-option>
+            <a-select-option value="300000">5min</a-select-option>
+          </a-select>
         </div>
         <div class="ant-tag" v-if="durationSelectorValue==='custom'">
           <a-button @click="openFilter()">
@@ -297,6 +307,8 @@ export default {
       selectedDiskUnitOfMeasurement: 'KiB',
       diskUnitsOfMeasurement: ['KiB', 'MiB', 'GiB'],
       chartLabels: [],
+      refreshTime: '0',
+      refreshIntervalId: null,
       resourceUsageHistory: {
         cpu: [],
         memory: {
@@ -333,6 +345,9 @@ export default {
   },
   mounted () {
     this.fetchData()
+  },
+  unmounted () {
+    window.clearInterval(this.refreshIntervalId)
   },
   computed: {
     statsRetentionTime () {
@@ -371,6 +386,15 @@ export default {
         return
       }
       this.fetchData()
+    },
+    refreshTime: function () {
+      this.fetchData()
+      if (this.refreshTime === '0') return window.clearInterval(this.refreshIntervalId)
+
+      window.clearInterval(this.refreshIntervalId)
+      this.refreshIntervalId = window.setInterval(() => {
+        this.fetchData()
+      }, parseInt(this.refreshTime))
     }
   },
   methods: {
