@@ -102,7 +102,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { timeZone } from '@/utils/timezone'
 import debounce from 'lodash/debounce'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
@@ -209,7 +209,7 @@ export default {
           params.timezone = values.timezone
         }
 
-        api('updateUser', params).then(response => {
+        postAPI('updateUser', params).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
             message: this.$t('label.edit.user'),

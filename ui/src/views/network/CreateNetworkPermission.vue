@@ -81,7 +81,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import { isAdminOrDomainAdmin } from '@/role'
 import { ref, reactive, toRaw } from 'vue'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -148,7 +148,7 @@ export default {
 
         this.loading = true
 
-        api('createNetworkPermissions', params)
+        postAPI('createNetworkPermissions', params)
           .then(() => {
             this.$notification.success({
               message: this.$t('message.success.add.network.permissions')

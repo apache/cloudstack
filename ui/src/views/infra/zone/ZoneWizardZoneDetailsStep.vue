@@ -248,7 +248,7 @@
 <script>
 
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI } from '@/api'
 
 export default {
   props: {
@@ -455,7 +455,7 @@ export default {
       })
     },
     fetchData () {
-      api('listHypervisors').then(json => {
+      getAPI('listHypervisors').then(json => {
         this.hypervisors = json.listhypervisorsresponse.hypervisor
         if ('listSimulatorHAStateTransitions' in this.$store.getters.apis) {
           this.hypervisors.push({ name: 'Simulator' })
@@ -465,7 +465,7 @@ export default {
       })
 
       if (!this.isAdvancedZone || this.securityGroupsEnabled) {
-        api('listNetworkOfferings', { state: 'Enabled', guestiptype: 'Shared' }).then(json => {
+        getAPI('listNetworkOfferings', { state: 'Enabled', guestiptype: 'Shared' }).then(json => {
           this.networkOfferings = {}
           json.listnetworkofferingsresponse.networkoffering.forEach(offering => {
             this.setupNetworkOfferingAdditionalFlags(offering)
@@ -477,7 +477,7 @@ export default {
         })
       }
 
-      api('listDomains', { listAll: true }).then(json => {
+      getAPI('listDomains', { listAll: true }).then(json => {
         this.domains = {}
         json.listdomainsresponse.domain.forEach(dom => {
           this.domains[dom.id] = dom
