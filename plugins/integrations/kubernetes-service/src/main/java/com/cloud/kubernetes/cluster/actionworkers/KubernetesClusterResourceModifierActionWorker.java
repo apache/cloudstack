@@ -772,8 +772,36 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
         }
     }
 
+    /**
+     * Generates a valid name prefix for Kubernetes cluster nodes.
+     *
+     * <p>The prefix must comply with Kubernetes naming constraints:
+     * <ul>
+     *   <li>Maximum 63 characters total</li>
+     *   <li>Only lowercase alphanumeric characters and hyphens</li>
+     *   <li>Must start with a letter</li>
+     *   <li>Must end with an alphanumeric character</li>
+     * </ul>
+     *
+     * <p>The generated prefix is limited to 43 characters to accommodate the full node naming pattern:
+     * <pre>{'prefix'}-{'control' | 'node'}-{'11-digit-hash'}</pre>
+     *
+     * @return A valid node name prefix, truncated if necessary
+     * @see <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names/">Kubernetes "Object Names and IDs" documentation</a>
+     */
     protected String getKubernetesClusterNodeNamePrefix() {
-        return kubernetesCluster.getName();
+        int maxPrefixLength = 43;
+        String prefix = kubernetesCluster.getName().toLowerCase();
+
+        if (NetUtils.verifyDomainNameLabel(prefix, true)) {
+            return StringUtils.truncate(prefix, maxPrefixLength);
+        }
+
+        prefix = prefix.replaceAll("[^a-z0-9-]", "");
+        if (prefix.isEmpty()) {
+            prefix = kubernetesCluster.getUuid();
+        }
+        return StringUtils.truncate("k8s-" + prefix, maxPrefixLength);
     }
 
     protected KubernetesClusterVO updateKubernetesClusterEntry(final Long cores, final Long memory, final Long size,
