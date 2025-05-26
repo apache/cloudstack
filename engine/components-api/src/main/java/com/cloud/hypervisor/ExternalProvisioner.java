@@ -18,6 +18,8 @@ package com.cloud.hypervisor;
 
 import java.util.Map;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PostExternalProvisioningAnswer;
 import com.cloud.agent.api.PostExternalProvisioningCommand;
@@ -65,4 +67,6 @@ public interface ExternalProvisioner extends Manager {
     RunCustomActionAnswer runCustomAction(String extensionName, RunCustomActionCommand cmd);
 
     void prepareScripts(String extensionName);
+
+    Answer checkHealth(String extensionName, CheckHealthCommand cmd);
 }

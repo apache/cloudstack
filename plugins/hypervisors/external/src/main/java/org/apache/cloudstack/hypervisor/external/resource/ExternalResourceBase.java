@@ -30,6 +30,7 @@ import org.apache.cloudstack.hypervisor.external.provisioner.simpleprovisioner.S
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkAnswer;
 import com.cloud.agent.api.CheckNetworkCommand;
 import com.cloud.agent.api.Command;
@@ -155,6 +156,8 @@ public class ExternalResourceBase implements ServerResource {
                 return execute((PingTestCommand) cmd);
             } else if (cmd instanceof MaintainCommand) {
                 return execute((MaintainCommand) cmd);
+            } else if (cmd instanceof CheckHealthCommand) {
+                return execute((CheckHealthCommand) cmd);
             } else if (cmd instanceof RunCustomActionCommand) {
                 return execute((RunCustomActionCommand) cmd);
             } else {
@@ -210,6 +213,10 @@ public class ExternalResourceBase implements ServerResource {
 
     public StartAnswer execute(StartCommand cmd) {
         return externalProvisioner.startInstance(_extensionName, cmd);
+    }
+
+    private Answer execute(CheckHealthCommand cmd) {
+        return externalProvisioner.checkHealth(_extensionName, cmd);
     }
 
     @Override

@@ -39,6 +39,8 @@ import org.apache.cloudstack.guru.ExternalHypervisorGuru;
 import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.PostExternalProvisioningAnswer;
 import com.cloud.agent.api.PostExternalProvisioningCommand;
@@ -529,6 +531,16 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         } catch (Exception e) {
             throw new CloudRuntimeException(String.format("%s: External operation failed", logPrefix), e);
         }
+    }
+
+    @Override
+    public Answer checkHealth(String extensionName, CheckHealthCommand cmd) {
+        String extensionPath = getExtensionCheckedScriptPath(extensionName);
+        if (StringUtils.isEmpty(extensionPath)) {
+            return new Answer(cmd, false, "Extension not configured");
+        }
+        // ToDo: should we check with provisioner script?
+        return new Answer(cmd);
     }
 
     private String prepareParameters(Map<String, String> details) throws JsonProcessingException {
