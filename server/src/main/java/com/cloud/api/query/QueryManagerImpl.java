@@ -3483,6 +3483,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     diskOfferingSearch.and("displayOffering", diskOfferingSearch.entity().getDisplayOffering(), Op.EQ);
                 }
 
+                diskOfferingSearch.and("activeState", diskOfferingSearch.entity().getState(), Op.EQ);
+
                 SearchCriteria<DiskOfferingVO> sc = diskOfferingSearch.create();
                 sc.setParameters("computeOnly", false);
                 sc.setParameters("activeState", DiskOffering.State.Active);
