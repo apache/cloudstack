@@ -2153,7 +2153,10 @@ class TestSharedNetworkWithConfigDrive(cloudstackTestCase):
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = template.id
-        cls.services["virtual_machine"]["username"] = "ubuntu"
+        if cls.hv.lower() == 'xenserver':
+            cls.services["virtual_machine"]["username"] = "root"
+        else:
+            cls.services["virtual_machine"]["username"] = "ubuntu"
         # Create Network Offering
         cls.services["shared_network_offering_configdrive"]["specifyVlan"] = "True"
         cls.services["shared_network_offering_configdrive"]["specifyIpRanges"] = "True"
