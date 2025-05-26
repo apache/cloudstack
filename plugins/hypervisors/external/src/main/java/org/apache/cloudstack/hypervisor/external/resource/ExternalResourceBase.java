@@ -17,6 +17,7 @@
 package org.apache.cloudstack.hypervisor.external.resource;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -177,7 +178,7 @@ public class ExternalResourceBase implements ServerResource {
     }
 
     public Answer execute(Command cmd) {
-        RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(cmd.toString(), null);
+        RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(cmd.toString(), new HashMap<>());
         RunCustomActionAnswer customActionAnswer = externalProvisioner.runCustomAction(_extensionName, runCustomActionCommand);
         Answer answer = new Answer(cmd, customActionAnswer.getResult(), customActionAnswer.getRunDetails().toString());
         return answer;
@@ -259,6 +260,7 @@ public class ExternalResourceBase implements ServerResource {
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         externalProvisioner = ComponentContext.inject(SimpleExternalProvisioner.class);
+        externalProvisioner.configure(name, params);
         _externalAgentMgr = ComponentContext.inject(ExternalAgentManagerImpl.class);
         _externalAgentMgr.configure(name, params);
 

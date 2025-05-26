@@ -120,6 +120,9 @@ public class ExternalHypervisorGuru extends HypervisorGuruBase implements Hyperv
 
     public static void loadExternalResourceAccessDetails(Map<String, String> resourceDetails, Map<String, String> accessDetails) {
         Map<String, String> externalInstanceDetails = new HashMap<>();
+        if (resourceDetails == null) {
+            return;
+        }
         for (Map.Entry<String, String> entry : resourceDetails.entrySet()) {
             if (entry.getKey().startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX)) {
                 externalInstanceDetails.put(entry.getKey(), entry.getValue());
