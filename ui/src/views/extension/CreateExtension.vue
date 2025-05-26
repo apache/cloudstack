@@ -55,7 +55,7 @@
         <template #label>
           <tooltip-label :title="$t('label.details')" :tooltip="apiParams.details.description"/>
         </template>
-        <div style="margin-bottom: 10px">{{ $t('message.add.details') }}</div>
+        <div style="margin-bottom: 10px">{{ $t('message.add.external.details') }}</div>
         <details-input
           v-model:value="form.details" />
       </a-form-item>
@@ -121,9 +121,9 @@ export default {
           name: values.name,
           type: values.type
         }
-        if (values.details.length > 0) {
-          values.details.forEach((item) => {
-            params['externaldetails[0].' + item.name] = item.value
+        if (values.details) {
+          Object.entries(values.details).forEach(([key, value]) => {
+            params['details[0].' + key] = value
           })
         }
         api('createExtension', params).then(response => {
