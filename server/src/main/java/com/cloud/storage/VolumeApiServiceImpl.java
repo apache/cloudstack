@@ -4017,7 +4017,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     @Override
-    public Snapshot allocSnapshotForVm(Long vmId, Long volumeId, String snapshotName) throws ResourceAllocationException {
+    public Snapshot allocSnapshotForVm(Long vmId, Long volumeId, String snapshotName, Long vmSnapshotId) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
         if (vm == null) {
@@ -4067,6 +4067,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (storagePool.getPoolType() == Storage.StoragePoolType.PowerFlex) {
             throw new InvalidParameterValueException("Cannot perform this operation, unsupported on storage pool type " + storagePool.getPoolType());
+        }
+
+        if (vmSnapshotDetailsDao.listDetails(vmSnapshotId).stream().anyMatch(vmSnapshotDetailsVO -> vmSnapshotDetailsVO.getName().equals(KVM_FILE_BASED_STORAGE_SNAPSHOT))) {
+            throw new InvalidParameterValueException("Cannot perform this operation, unsupported VM snapshot type.");
         }
 
         return snapshotMgr.allocSnapshot(volumeId, Snapshot.MANUAL_POLICY_ID, snapshotName, null, true, null);
