@@ -95,7 +95,7 @@ import com.cloud.user.AccountVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
+import com.cloud.vm.dao.VMInstanceDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -113,7 +113,7 @@ public class FirstFitPlannerTest {
     @Inject
     HostDetailsDao hostDetailsDao;
     @Inject
-    UserVmDetailsDao vmDetailsDao;
+    VMInstanceDetailsDao vmDetailsDao;
     @Inject
     ConfigurationDao configDao;
     @Inject
@@ -408,8 +408,8 @@ public class FirstFitPlannerTest {
         }
 
         @Bean
-        public UserVmDetailsDao userVmDetailsDao() {
-            return Mockito.mock(UserVmDetailsDao.class);
+        public VMInstanceDetailsDao vmInstanceDetailsDao() {
+            return Mockito.mock(VMInstanceDetailsDao.class);
         }
 
         @Bean

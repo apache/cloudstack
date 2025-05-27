@@ -50,7 +50,7 @@
     <bean id="ipv6ServiceImpl" class="com.cloud.network.Ipv6ServiceImpl" />
     <bean id="managementServiceConfigurationImpl" class="com.cloud.configuration.ManagementServiceConfigurationImpl" />
     <bean class="org.apache.cloudstack.networkoffering.ChildTestConfiguration" />
-    <bean id="UservmDetailsDaoImpl" class="com.cloud.vm.dao.UserVmDetailsDaoImpl" />
+    <bean id="UservmDetailsDaoImpl" class="com.cloud.vm.dao.VMInstanceDetailsDaoImpl" />
     <bean id="hostGpuGroupsDaoImpl" class="com.cloud.gpu.dao.HostGpuGroupsDaoImpl" />
     <bean id="vGPUTypesDaoImpl" class="com.cloud.gpu.dao.VGPUTypesDaoImpl" />
     <bean id="usageEventDaoImpl" class="com.cloud.event.dao.UsageEventDaoImpl" />

@@ -82,7 +82,7 @@ import com.cloud.vm.dao.DomainRouterDaoImpl;
 import com.cloud.vm.dao.NicDaoImpl;
 import com.cloud.vm.dao.NicSecondaryIpDaoImpl;
 import com.cloud.vm.dao.UserVmDaoImpl;
-import com.cloud.vm.dao.UserVmDetailsDaoImpl;
+import com.cloud.vm.dao.VMInstanceDetailsDaoImpl;
 import com.cloud.vm.dao.VMInstanceDaoImpl;
 import com.cloud.vpc.dao.MockNetworkOfferingDaoImpl;
 import com.cloud.vpc.dao.MockNetworkOfferingServiceMapDaoImpl;
@@ -113,7 +113,7 @@ import java.io.IOException;
     Site2SiteVpnGatewayDaoImpl.class, PodVlanMapDaoImpl.class, AccountVlanMapDaoImpl.class, DomainVlanMapDaoImpl.class, HostDaoImpl.class, HostDetailsDaoImpl.class,
     HostTagsDaoImpl.class, HostTransferMapDaoImpl.class, ClusterDaoImpl.class, HostPodDaoImpl.class, RouterNetworkDaoImpl.class,
     UserStatisticsDaoImpl.class, PhysicalNetworkTrafficTypeDaoImpl.class, FirewallRulesCidrsDaoImpl.class, ResourceLimitManagerImpl.class,
-    ResourceLimitDaoImpl.class, ResourceCountDaoImpl.class, DomainDaoImpl.class, UserVmDaoImpl.class, UserVmDetailsDaoImpl.class, NicDaoImpl.class,
+    ResourceLimitDaoImpl.class, ResourceCountDaoImpl.class, DomainDaoImpl.class, UserVmDaoImpl.class, VMInstanceDetailsDaoImpl.class, NicDaoImpl.class,
     SnapshotDaoImpl.class, VMInstanceDaoImpl.class, VolumeDaoImpl.class, UserIpv6AddressDaoImpl.class, NicSecondaryIpDaoImpl.class,
     VpcServiceMapDaoImpl.class, ServiceOfferingDaoImpl.class, MockVpcDaoImpl.class, VMTemplateDaoImpl.class,
     VMTemplateZoneDaoImpl.class, VMTemplateDetailsDaoImpl.class, DataCenterDaoImpl.class, DataCenterIpAddressDaoImpl.class,
