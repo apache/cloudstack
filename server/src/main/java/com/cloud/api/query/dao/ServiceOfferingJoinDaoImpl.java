@@ -179,7 +179,7 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
 
         if (VMLeaseManager.InstanceLeaseEnabled.value() && offering.getLeaseDuration() != null && offering.getLeaseDuration() > 0L) {
             offeringResponse.setLeaseDuration(offering.getLeaseDuration());
-            offeringResponse.setLeaseExpiryAction(offering.getLeaseExpiryAction());
+            offeringResponse.setLeaseExpiryAction(offering.getLeaseExpiryAction().name());
         }
 
         long rootDiskSizeInGb = (long) offering.getRootDiskSize() / GB_TO_BYTES;

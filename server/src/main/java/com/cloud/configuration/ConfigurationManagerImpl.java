@@ -3340,7 +3340,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // validate lease properties and set leaseExpiryAction
         Integer leaseDuration = cmd.getLeaseDuration();
-        String leaseExpiryAction = validateAndGetLeaseExpiryAction(leaseDuration, cmd.getLeaseExpiryAction());
+        VMLeaseManager.ExpiryAction leaseExpiryAction = validateAndGetLeaseExpiryAction(leaseDuration, cmd.getLeaseExpiryAction());
 
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
                 cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainIds(), cmd.getZoneIds(), cmd.getHostTag(),
@@ -3363,7 +3363,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                                                       Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
                                                       final Integer hypervisorSnapshotReserve, String cacheMode, final Long storagePolicyID,
                                                       final boolean dynamicScalingEnabled, final Long diskOfferingId, final boolean diskOfferingStrictness,
-                                                      final boolean isCustomized, final boolean encryptRoot, final boolean purgeResources, Integer leaseDuration, String leaseExpiryAction) {
+                                                      final boolean isCustomized, final boolean encryptRoot, final boolean purgeResources, Integer leaseDuration, VMLeaseManager.ExpiryAction leaseExpiryAction) {
 
         // Filter child domains when both parent and child domains are present
         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
@@ -3471,9 +3471,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if ((serviceOffering = _serviceOfferingDao.persist(serviceOffering)) != null) {
             //persist lease properties if leaseExpiryAction is valid
-            if (StringUtils.isNotEmpty(leaseExpiryAction)) {
+            if (leaseExpiryAction != null) {
                 detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.INSTANCE_LEASE_DURATION, String.valueOf(leaseDuration), false));
-                detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, leaseExpiryAction, false));
+                detailsVOList.add(new ServiceOfferingDetailsVO(serviceOffering.getId(), ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION, leaseExpiryAction.name(), false));
             }
 
             for (Long domainId : filteredDomainIds) {
@@ -3507,13 +3507,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
      * @param cmdExpiryAction
      * @return leaseExpiryAction
      */
-    public static String validateAndGetLeaseExpiryAction(Integer leaseDuration, String cmdExpiryAction) {
+    public static VMLeaseManager.ExpiryAction validateAndGetLeaseExpiryAction(Integer leaseDuration, VMLeaseManager.ExpiryAction cmdExpiryAction) {
         if (!VMLeaseManager.InstanceLeaseEnabled.value() || ObjectUtils.allNull(leaseDuration, cmdExpiryAction)) { // both are null
             return null;
         }
 
         // one of them is non-null
-        if (leaseDuration == null || StringUtils.isEmpty(cmdExpiryAction)) {
+        if (ObjectUtils.anyNull(leaseDuration, cmdExpiryAction)) {
             throw new InvalidParameterValueException("Provide values for both: leaseduration and leaseexpiryaction");
         }
 
@@ -3521,15 +3521,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Invalid leaseduration: must be a natural number (>=1), max supported value is 36500");
         }
 
-        if (StringUtils.isNotEmpty(cmdExpiryAction)) {
-            try {
-                VMLeaseManager.ExpiryAction.valueOf(cmdExpiryAction);
-            } catch (IllegalArgumentException e) {
-                throw new InvalidParameterValueException("Invalid value configured for leaseexpiryaction, valid values are: " +
-                        com.cloud.utils.EnumUtils.listValues(VMLeaseManager.ExpiryAction.values()));
-            }
-        }
-        return cmdExpiryAction.toUpperCase();
+        return cmdExpiryAction;
     }
 
     @Override

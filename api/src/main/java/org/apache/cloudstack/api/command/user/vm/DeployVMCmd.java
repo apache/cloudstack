@@ -60,9 +60,11 @@ import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
@@ -485,8 +487,16 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return leaseDuration;
     }
 
-    public String getLeaseExpiryAction() {
-        return leaseExpiryAction;
+    public VMLeaseManager.ExpiryAction getLeaseExpiryAction() {
+        if (StringUtils.isBlank(leaseExpiryAction)) {
+            return null;
+        }
+        VMLeaseManager.ExpiryAction action = EnumUtils.getEnumIgnoreCase(VMLeaseManager.ExpiryAction.class, leaseExpiryAction);
+        if (action == null) {
+            throw new InvalidParameterValueException("Invalid value configured for leaseexpiryaction, valid values are: " +
+                    com.cloud.utils.EnumUtils.listValues(VMLeaseManager.ExpiryAction.values()));
+        }
+        return action;
     }
 
     public List<Long> getNetworkIds() {

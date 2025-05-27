@@ -27,7 +27,6 @@ import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
@@ -50,6 +49,7 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.time.DateUtils;
 
 import javax.inject.Inject;
@@ -167,7 +167,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
 
     private void shutDownLeaseExecutors() {
         if (vmLeaseExecutor != null) {
-                logger.debug("Shutting down lease executor");
+            logger.debug("Shutting down lease executor");
             vmLeaseExecutor.shutdown();
             vmLeaseExecutor = null;
         }
@@ -334,18 +334,7 @@ public class VMLeaseManagerImpl extends ManagerBase implements VMLeaseManager, C
     }
 
     public ExpiryAction getLeaseExpiryAction(UserVmJoinVO instance) {
-        String action = instance.getLeaseExpiryAction();
-        if (StringUtils.isEmpty(action)) {
-            return null;
-        }
-
-        ExpiryAction expiryAction = null;
-        try {
-            expiryAction = ExpiryAction.valueOf(action);
-        } catch (Exception ex) {
-            logger.error("Invalid expiry action configured for instance: {} (id: {})", instance.getName(), instance.getUuid(), ex);
-        }
-        return expiryAction;
+        return EnumUtils.getEnumIgnoreCase(VMLeaseManager.ExpiryAction.class, instance.getLeaseExpiryAction());
     }
 
     private void addLeaseExpiryListener() {

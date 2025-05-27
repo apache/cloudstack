@@ -21,6 +21,7 @@ import com.cloud.storage.Storage;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -223,7 +224,8 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     private Integer leaseDuration;
 
     @Column(name = "lease_expiry_action")
-    private String leaseExpiryAction;
+    @Enumerated(value = EnumType.STRING)
+    private VMLeaseManager.ExpiryAction leaseExpiryAction;
 
     public ServiceOfferingJoinVO() {
     }
@@ -468,7 +470,7 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
         return leaseDuration;
     }
 
-    public String getLeaseExpiryAction() {
+    public VMLeaseManager.ExpiryAction getLeaseExpiryAction() {
         return leaseExpiryAction;
     }
 }

@@ -18,7 +18,6 @@
 
 package org.apache.cloudstack.vm.lease;
 
-import com.cloud.alert.AlertManager;
 import com.cloud.api.query.dao.UserVmJoinDao;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.event.ActionEventUtils;
@@ -32,7 +31,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.api.command.user.vm.DestroyVMCmd;
 import org.apache.cloudstack.api.command.user.vm.StopVMCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJobDispatcher;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
@@ -86,11 +84,6 @@ public class VMLeaseManagerImplTest {
     @Mock
     private UserVmJoinDao userVmJoinDao;
 
-    @Mock
-    private ConfigurationDao configurationDao;
-
-    @Mock
-    private AlertManager alertManager;
     @Mock
     MessageBus messageBus;
 
@@ -267,12 +260,6 @@ public class VMLeaseManagerImplTest {
     public void testConfigure() throws Exception {
         overrideDefaultConfigValue(VMLeaseManager.InstanceLeaseEnabled, "true");
         vmLeaseManager.configure("VMLeaseManagerImpl", new HashMap<>());
-    }
-
-    @Test
-    public void testDefaultExpiryAction() {
-        UserVmJoinVO vm = createMockVm(1L, VM_UUID, VM_NAME, VirtualMachine.State.Running, false);
-        assertNull(vmLeaseManager.executeExpiryAction(vm, VMLeaseManager.ExpiryAction.UNKNOWN, 123L));
     }
 
     @Test

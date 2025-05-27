@@ -19,7 +19,6 @@
 package org.apache.cloudstack.vm.lease;
 
 import com.cloud.utils.component.Manager;
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import java.util.List;
@@ -30,9 +29,7 @@ public interface VMLeaseManager extends Manager {
 
     enum ExpiryAction {
         STOP,
-        DESTROY,
-        @VisibleForTesting
-        UNKNOWN
+        DESTROY
     }
 
     enum LeaseActionExecution {
@@ -44,8 +41,8 @@ public interface VMLeaseManager extends Manager {
 
     ConfigKey<Boolean> InstanceLeaseEnabled = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Boolean.class,
             "instance.lease.enabled", "false", "Indicates whether to enable the Instance lease," +
-            " will be applicable only on instances created after lease is enabled. Disabling the feature cancels lease on existing instances with lease. " +
-            "Re-enabling feature will not cause lease expiry actions on grandfathered instances",
+            " will be applicable only on instances created after lease is enabled. Disabling the feature cancels lease on existing instances with lease." +
+            " Re-enabling feature will not cause lease expiry actions on grandfathered instances",
             true, List.of(ConfigKey.Scope.Global));
 
     ConfigKey<Integer> InstanceLeaseSchedulerInterval = new ConfigKey<>(ConfigKey.CATEGORY_ADVANCED, Integer.class,

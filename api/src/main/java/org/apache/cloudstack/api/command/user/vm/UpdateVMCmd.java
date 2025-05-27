@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.command.user.vm;
 
 import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
@@ -41,6 +42,9 @@ import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserDataResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
+import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -334,8 +338,16 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction,
         return leaseDuration;
     }
 
-    public String getLeaseExpiryAction() {
-        return leaseExpiryAction;
+    public VMLeaseManager.ExpiryAction getLeaseExpiryAction() {
+        if (StringUtils.isBlank(leaseExpiryAction)) {
+            return null;
+        }
+        VMLeaseManager.ExpiryAction action = EnumUtils.getEnumIgnoreCase(VMLeaseManager.ExpiryAction.class, leaseExpiryAction);
+        if (action == null) {
+            throw new InvalidParameterValueException("Invalid value configured for leaseexpiryaction, valid values are: " +
+                    com.cloud.utils.EnumUtils.listValues(VMLeaseManager.ExpiryAction.values()));
+        }
+        return action;
     }
 
 }
