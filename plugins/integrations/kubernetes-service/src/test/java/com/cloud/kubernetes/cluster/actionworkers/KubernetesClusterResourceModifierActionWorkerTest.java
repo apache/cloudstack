@@ -113,8 +113,7 @@ public class KubernetesClusterResourceModifierActionWorkerTest {
         String expectedPrefix = "k8s-cluster-01";
 
         Mockito.when(kubernetesClusterMock.getName()).thenReturn(originalPrefix);
-        String normalizedPrefix = kubernetesClusterResourceModifierActionWorker.getKubernetesClusterNodeNamePrefix();
-        Assert.assertEquals(expectedPrefix, normalizedPrefix);
+        Assert.assertEquals(expectedPrefix, kubernetesClusterResourceModifierActionWorker.getKubernetesClusterNodeNamePrefix());
     }
 
     @Test
@@ -125,8 +124,7 @@ public class KubernetesClusterResourceModifierActionWorkerTest {
 
         Mockito.when(kubernetesClusterMock.getUuid()).thenReturn(clusterUuid);
         Mockito.when(kubernetesClusterMock.getName()).thenReturn(originalPrefix);
-        String normalizedPrefix = kubernetesClusterResourceModifierActionWorker.getKubernetesClusterNodeNamePrefix();
-        Assert.assertEquals(expectedPrefix, normalizedPrefix);
+        Assert.assertEquals(expectedPrefix, kubernetesClusterResourceModifierActionWorker.getKubernetesClusterNodeNamePrefix());
     }
 
     @Test
