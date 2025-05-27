@@ -153,6 +153,8 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
 
     protected String kubernetesClusterNodeNamePrefix;
 
+    private static final int MAX_CLUSTER_PREFIX_LENGTH = 43;
+
     protected KubernetesClusterResourceModifierActionWorker(final KubernetesCluster kubernetesCluster, final KubernetesClusterManagerImpl clusterManager) {
         super(kubernetesCluster, clusterManager);
     }
@@ -790,18 +792,17 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
      * @see <a href="https://kubernetes.io/docs/concepts/overview/working-with-objects/names/">Kubernetes "Object Names and IDs" documentation</a>
      */
     protected String getKubernetesClusterNodeNamePrefix() {
-        int maxPrefixLength = 43;
         String prefix = kubernetesCluster.getName().toLowerCase();
 
         if (NetUtils.verifyDomainNameLabel(prefix, true)) {
-            return StringUtils.truncate(prefix, maxPrefixLength);
+            return StringUtils.truncate(prefix, MAX_CLUSTER_PREFIX_LENGTH);
         }
 
         prefix = prefix.replaceAll("[^a-z0-9-]", "");
         if (prefix.isEmpty()) {
             prefix = kubernetesCluster.getUuid();
         }
-        return StringUtils.truncate("k8s-" + prefix, maxPrefixLength);
+        return StringUtils.truncate("k8s-" + prefix, MAX_CLUSTER_PREFIX_LENGTH);
     }
 
     protected KubernetesClusterVO updateKubernetesClusterEntry(final Long cores, final Long memory, final Long size,
