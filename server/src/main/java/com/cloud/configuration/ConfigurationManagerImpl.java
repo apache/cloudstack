@@ -1512,33 +1512,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return true;
     }
 
-    protected void validateConfigurationAllowedOnlyForDefaultAdmin(String configName, String value) {
-        if (configKeysAllowedOnlyForDefaultAdmin.contains(configName)) {
-            final Long userId = CallContext.current().getCallingUserId();
-            if (userId != User.UID_ADMIN) {
-                throw new CloudRuntimeException("Only default admin is allowed to change this setting");
-            }
-
-            if (AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key().equals(configName)) {
-                if (value != null && !value.isBlank()) {
-                    List<String> validRoleTypes = Arrays.stream(RoleType.values())
-                            .map(Enum::name)
-                            .collect(Collectors.toList());
-
-                    boolean allValid = Arrays.stream(value.split(","))
-                            .map(String::trim)
-                            .allMatch(validRoleTypes::contains);
-
-                    if (!allValid) {
-                        throw new CloudRuntimeException("Invalid role types provided in value");
-                    }
-                } else {
-                    throw new CloudRuntimeException("Value for role types must not be empty");
-                }
-            }
-        }
-    }
-
     /**
      * A valid value should be an integer between min and max (the values from the range).
      */

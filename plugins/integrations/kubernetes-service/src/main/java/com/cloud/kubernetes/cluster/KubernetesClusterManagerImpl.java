@@ -250,33 +250,6 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
     private static final String DEFAULT_NSX_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT = "Network Offering for NSX CloudStack Kubernetes Service";
     private static final String DEFAULT_NSX_VPC_NETWORK_OFFERING_FOR_KUBERNETES_SERVICE_DISPLAY_TEXT = "Network Offering for NSX CloudStack Kubernetes service on VPC";
 
-    private static final List<Class<?>> PROJECT_KUBERNETES_ACCOUNT_ROLE_ALLOWED_APIS = Arrays.asList(
-            QueryAsyncJobResultCmd.class,
-            ListVMsCmd.class,
-            ListNetworksCmd.class,
-            ListPublicIpAddressesCmd.class,
-            AssociateIPAddrCmd.class,
-            DisassociateIPAddrCmd.class,
-            ListLoadBalancerRulesCmd.class,
-            CreateLoadBalancerRuleCmd.class,
-            UpdateLoadBalancerRuleCmd.class,
-            DeleteLoadBalancerRuleCmd.class,
-            AssignToLoadBalancerRuleCmd.class,
-            RemoveFromLoadBalancerRuleCmd.class,
-            ListLoadBalancerRuleInstancesCmd.class,
-            ListFirewallRulesCmd.class,
-            CreateFirewallRuleCmd.class,
-            UpdateFirewallRuleCmd.class,
-            DeleteFirewallRuleCmd.class,
-            ListNetworkACLsCmd.class,
-            CreateNetworkACLCmd.class,
-            DeleteNetworkACLCmd.class,
-            ListKubernetesClustersCmd.class,
-            ScaleKubernetesClusterCmd.class
-    );
-    private static final String PROJECT_KUBERNETES_ACCOUNT_FIRST_NAME = "Kubernetes";
-    private static final String PROJECT_KUBERNETES_ACCOUNT_LAST_NAME = "Service User";
-
     protected StateMachine2<KubernetesCluster.State, KubernetesCluster.Event, KubernetesCluster> _stateMachine = KubernetesCluster.State.getStateMachine();
 
     ScheduledExecutorService _gcExecutor;
