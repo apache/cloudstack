@@ -780,7 +780,7 @@ public class InternalLoadBalancerVMManagerImpl extends ManagerBase implements In
             try {
                 internalLbVm = createOrUpdateInternalLb(internalLbVm, id, internalLbProviderId, owner, userId, vpcId,
                         routerOffering, template);
-                _itMgr.allocate(internalLbVm.getInstanceName(), template, routerOffering, networks, plan, null);
+                _itMgr.allocate(internalLbVm.getInstanceName(), template, routerOffering, networks, plan, null, null, null);
                 internalLbVm = _internalLbVmDao.findById(internalLbVm.getId());
                 if (templatesIterator.hasNext()) {
                     _itMgr.checkDeploymentPlan(internalLbVm, template, routerOffering, owner, plan);
