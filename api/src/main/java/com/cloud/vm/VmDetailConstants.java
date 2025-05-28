@@ -113,4 +113,8 @@ public interface VmDetailConstants {
     // CPU mode and model, ADMIN only
     String GUEST_CPU_MODE = "guest.cpu.mode";
     String GUEST_CPU_MODEL = "guest.cpu.model";
+
+    String INSTANCE_LEASE_EXPIRY_DATE = "leaseexpirydate";
+    String INSTANCE_LEASE_EXPIRY_ACTION = "leaseexpiryaction";
+    String INSTANCE_LEASE_EXECUTION = "leaseactionexecution";
 }

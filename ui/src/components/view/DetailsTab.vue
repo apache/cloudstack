@@ -159,6 +159,13 @@
           <div>{{ $toLocaleDate(dataResource[item]) }}</div>
         </div>
       </a-list-item>
+      <a-list-item v-else-if="item === 'leaseexpirydate' && dataResource[item]">
+        <div>
+          <strong>{{ $t('label.' + item.replace('date', '.date.and.time'))}}</strong>
+          <br/>
+          <div>{{ $toLocaleDate(dataResource[item]) }}</div>
+        </div>
+      </a-list-item>
       <a-list-item v-else-if="item === 'details' && $route.meta.name === 'storagepool' && dataResource[item].rbd_default_data_pool">
         <div>
           <strong>{{ $t('label.data.pool') }}</strong>
@@ -226,6 +233,9 @@ export default {
       if (this.$route.meta.name === 'webhookdeliveries') {
         items.push('startdate')
         items.push('enddate')
+      }
+      if (this.$route.meta.name === 'vm') {
+        items.push('leaseexpirydate')
       }
       return items
     },
