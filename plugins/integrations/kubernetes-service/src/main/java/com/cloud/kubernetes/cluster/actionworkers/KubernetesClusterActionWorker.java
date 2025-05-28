@@ -21,6 +21,9 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -143,6 +146,7 @@ public class KubernetesClusterActionWorker {
 
     public static final String CKS_CLUSTER_SECURITY_GROUP_NAME = "CKSSecurityGroup";
     public static final String CKS_SECURITY_GROUP_DESCRIPTION = "Security group for CKS nodes";
+    public static final String CKS_CONFIG_PATH = "/usr/share/cloudstack-management/cks";
 
     protected Logger logger = LogManager.getLogger(getClass());
 
@@ -264,6 +268,11 @@ public class KubernetesClusterActionWorker {
         return IOUtils.toString(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResourceAsStream(resource)), com.cloud.utils.StringUtils.getPreferredCharset());
     }
 
+    protected String readK8sConfigFile(String resource) throws IOException {
+        Path path = Paths.get(String.format("%s%s", CKS_CONFIG_PATH, resource));
+        return Files.readString(path);
+    }
+
     protected String getControlNodeLoginUser() {
         List<KubernetesClusterVmMapVO> vmMapVOList = getKubernetesClusterVMMaps();
         if (!vmMapVOList.isEmpty()) {
@@ -316,7 +325,7 @@ public class KubernetesClusterActionWorker {
     }
 
     protected void logTransitStateDetachIsoAndThrow(final Level logLevel, final String message, final KubernetesCluster kubernetesCluster,
-        final List<UserVm> clusterVMs, final KubernetesCluster.Event event, final Exception e) throws CloudRuntimeException {
+                                                    final List<UserVm> clusterVMs, final KubernetesCluster.Event event, final Exception e) throws CloudRuntimeException {
         logMessage(logLevel, message, e);
         stateTransitTo(kubernetesCluster.getId(), event);
         detachIsoKubernetesVMs(clusterVMs);
@@ -670,14 +679,14 @@ public class KubernetesClusterActionWorker {
 
         try {
             String command = String.format("sudo %s/%s -u '%s' -k '%s' -s '%s'",
-                scriptPath, deploySecretsScriptFilename, ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]);
+                    scriptPath, deploySecretsScriptFilename, ApiServiceConfiguration.ApiServletPath.value(), keys[0], keys[1]);
             Account account = accountDao.findById(kubernetesCluster.getAccountId());
             if (account != null && account.getType() == Account.Type.PROJECT) {
                 String projectId = projectService.findByProjectAccountId(account.getId()).getUuid();
                 command = String.format("%s -p '%s'", command, projectId);
             }
             Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
-                pkFile, null, command, 10000, 10000, 60000);
+                    pkFile, null, command, 10000, 10000, 60000);
             return result.first();
         } catch (Exception e) {
             String msg = String.format("Failed to add cloudstack-secret to Kubernetes cluster: %s", kubernetesCluster.getName());
@@ -696,7 +705,7 @@ public class KubernetesClusterActionWorker {
             writer.close();
         } catch (IOException e) {
             logAndThrow(Level.ERROR, String.format("Kubernetes Cluster %s : Failed to fetch script %s",
-                kubernetesCluster.getName(), filename), e);
+                    kubernetesCluster.getName(), filename), e);
         }
         return file;
     }
@@ -719,11 +728,11 @@ public class KubernetesClusterActionWorker {
                 sshKeyFile = getManagementServerSshPublicKeyFile();
             }
             SshHelper.scpTo(nodeAddress, sshPort, getControlNodeLoginUser(), sshKeyFile, null,
-                "~/", file.getAbsolutePath(), "0755", 20000, 30 * 60 * 1000);
+                    "~/", file.getAbsolutePath(), "0755", 20000, 30 * 60 * 1000);
             // Ensure destination dir scriptPath exists and copy file to destination
             String cmdStr = String.format("sudo mkdir -p %s ; sudo mv ~/%s %s/%s", scriptPath, file.getName(), scriptPath, destination);
             SshHelper.sshExecute(nodeAddress, sshPort, getControlNodeLoginUser(), sshKeyFile, null,
-                cmdStr, 10000, 10000, 10 * 60 * 1000);
+                    cmdStr, 10000, 10000, 10 * 60 * 1000);
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
         }
@@ -771,7 +780,7 @@ public class KubernetesClusterActionWorker {
         // Since the provider creates IP addresses, don't deploy it unless the underlying network supports it
         if (manager.isDirectAccess(network)) {
             logMessage(Level.INFO, String.format("Skipping adding the provider as %s is not on an isolated network",
-                kubernetesCluster.getName()), null);
+                    kubernetesCluster.getName()), null);
             return true;
         }
         File pkFile = getManagementServerSshPublicKeyFile();
@@ -782,7 +791,7 @@ public class KubernetesClusterActionWorker {
         try {
             String command = String.format("sudo %s/%s", scriptPath, deployProviderScriptFilename);
             Pair<Boolean, String> result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
-                pkFile, null, command, 10000, 10000, 60000);
+                    pkFile, null, command, 10000, 10000, 60000);
 
             // Maybe the file isn't present. Try and copy it
             if (!result.first()) {
@@ -792,12 +801,12 @@ public class KubernetesClusterActionWorker {
 
                 if (!createCloudStackSecret(keys)) {
                     logTransitStateAndThrow(Level.ERROR, String.format("Failed to setup keys for Kubernetes cluster %s",
-                        kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
+                            kubernetesCluster.getName()), kubernetesCluster.getId(), KubernetesCluster.Event.OperationFailed);
                 }
 
                 // If at first you don't succeed ...
                 result = SshHelper.sshExecute(publicIpAddress, sshPort, getControlNodeLoginUser(),
-                    pkFile, null, command, 10000, 10000, 60000);
+                        pkFile, null, command, 10000, 10000, 60000);
                 if (!result.first()) {
                     throw new CloudRuntimeException(result.second());
                 }
@@ -871,7 +880,7 @@ public class KubernetesClusterActionWorker {
     }
 
     public String getKubernetesNodeConfig(final String joinIp, final boolean ejectIso, final boolean mountCksIsoOnVR) throws IOException {
-        String k8sNodeConfig = readResourceFile("/conf/k8s-node.yml");
+        String k8sNodeConfig = readK8sConfigFile("/conf/k8s-node.yml");
         final String sshPubKey = "{{ k8s.ssh.pub.key }}";
         final String joinIpKey = "{{ k8s_control_node.join_ip }}";
         final String clusterTokenKey = "{{ k8s_control_node.cluster.token }}";

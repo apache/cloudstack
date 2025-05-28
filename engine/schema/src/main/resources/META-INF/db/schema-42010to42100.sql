@@ -68,6 +68,9 @@ ALTER TABLE `cloud`.`kubernetes_cluster` ADD CONSTRAINT `fk_cluster__etcd_templa
 
 -- Add for_cks column to the user_data table to represent CNI Configuration stored as userdata
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user_data','for_cks', 'int(1) unsigned DEFAULT "0" COMMENT "if true, the userdata represent CNI configuration meant for CKS use only"');
+
+-- Add use VR IP as resolver option on VPC
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc','use_router_ip_resolver', 'tinyint(1) DEFAULT 0 COMMENT "use router ip as resolver instead of dns options"');
 -----------------------------------------------------------
 -- END - CKS Enhancements
 -----------------------------------------------------------

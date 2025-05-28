@@ -2488,6 +2488,7 @@
 "label.usagetypedescription": "Usage description",
 "label.use.kubectl.access.cluster": "<code><b>kubectl</b></code> and <code><b>kubeconfig</b></code> file to access cluster",
 "label.use.local.timezone": "Use local timezone",
+"label.use.router.ip.resolver": "Use Virtual Router IP as resolver",
 "label.used": "Used",
 "label.usehttps": "Use HTTPS",
 "label.usenewdiskoffering": "Replace disk offering?",

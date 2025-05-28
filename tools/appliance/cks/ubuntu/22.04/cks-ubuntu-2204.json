@@ -46,6 +46,8 @@
         "scripts/apt_upgrade.sh",
         "scripts/configure_networking.sh",
         "scripts/configure-cloud-init.sh",
+        "scripts/setup-interfaces.sh",
+        "scripts/add-interface-rule.sh",
         "scripts/cleanup.sh"
       ],
       "type": "shell"
