@@ -26,7 +26,9 @@ from marvin.lib.base import (DiskOffering,
                              StoragePool,
                              VirtualMachine,
                              SecurityGroup,
-                             ResourceDetails
+                             ResourceDetails,
+                             Snapshot,
+                             Volume,
                              )
 from marvin.lib.common import (get_domain,
                                get_template,
@@ -167,6 +169,26 @@ class TestStorPoolTiers(cloudstackTestCase):
         cls.random_data_0 = random_gen(size=100)
         cls.test_dir = "/tmp"
         cls.random_data = "random.data"
+        cls.virtual_machine = VirtualMachine.create(
+            cls.apiclient,
+            cls.services["small"],
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            templateid=cls.template.id,
+            serviceofferingid=cls.service_offering.id,
+            overridediskofferingid=cls.disk_offerings_tier1_tags.id,
+        )
+
+        volume = list_volumes(
+            cls.apiclient,
+            virtualmachineid=cls.virtual_machine.id,
+            type='ROOT',
+            listall=True
+        )[0]
+        cls.snapshot = Snapshot.create(
+            cls.apiclient,
+            volume.id,
+        )
         return
 
     @classmethod
@@ -437,6 +459,22 @@ class TestStorPoolTiers(cloudstackTestCase):
                             disk_offering_id=self.disk_offerings_tier2_tags.id, attached=True)
         virtual_machine_tier1_tag.stop(self.apiclient, forced=True)
 
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_13_deploy_vm_from_volume_check_tags(self):
+        vm = self.deploy_vm_from_snapshot_or_template(snapshotid=self.snapshot.id, is_snapshot=False)
+        root_volume = list_volumes(self.apiclient, virtualmachineid=vm.id, type="ROOT",
+                               listall=True)
+        self.vc_policy_tags(volumes=root_volume, vm=vm, qos_or_template=self.qos,
+                            disk_offering_id=self.disk_offerings_tier1_tags.id, attached=True)
+
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_14_deploy_vm_from_snapshot_check_tags(self):
+        vm = self.deploy_vm_from_snapshot_or_template(snapshotid=self.snapshot.id, is_snapshot=True)
+        root_volume = list_volumes(self.apiclient, virtualmachineid=vm.id, type="ROOT",
+                                   listall=True)
+        self.vc_policy_tags(volumes=root_volume, vm=vm, qos_or_template=self.qos,
+                            disk_offering_id=self.disk_offerings_tier1_tags.id, attached=True)
+
     def deploy_vm_and_check_tier_tag(self):
         virtual_machine_tier1_tag = VirtualMachine.create(
             self.apiclient,
@@ -542,3 +580,41 @@ class TestStorPoolTiers(cloudstackTestCase):
         change_offering_for_volume_cmd.shrinkok = shrinkok
 
         return self.apiclient.changeOfferingForVolume(change_offering_for_volume_cmd)
+
+    def deploy_vm_from_snapshot_or_template(self, snapshotid, is_snapshot=False):
+        if is_snapshot:
+            virtual_machine = VirtualMachine.create(self.apiclient,
+                                                    {"name": "StorPool-%s" % uuid.uuid4()},
+                                                    zoneid=self.zone.id,
+                                                    accountid=self.account.name,
+                                                    domainid=self.account.domainid,
+                                                    serviceofferingid=self.service_offering.id,
+                                                    snapshotid=snapshotid,
+                                                    )
+            try:
+                ssh_client = virtual_machine.get_ssh_client()
+            except Exception as e:
+                self.fail("SSH failed for virtual machine: %s - %s" %
+                          (virtual_machine.ipaddress, e))
+
+            return virtual_machine
+        volume = Volume.create_from_snapshot(
+            self.apiclient,
+            snapshot_id=snapshotid,
+            services=self.services,
+            disk_offering=self.disk_offering.id,
+            zoneid=self.zone.id,
+        )
+        virtual_machine = VirtualMachine.create(self.apiclient,
+                                                {"name": "StorPool-%s" % uuid.uuid4()},
+                                                zoneid=self.zone.id,
+                                                accountid=self.account.name,
+                                                domainid=self.account.domainid,
+                                                serviceofferingid=self.service_offering.id,
+                                                volumeid=volume.id,
+                                                )
+        try:
+            ssh_client = virtual_machine.get_ssh_client()
+        except Exception as e:
+            self.fail("SSH failed for virtual machine: %s - %s" %
+                      (virtual_machine.ipaddress, e))

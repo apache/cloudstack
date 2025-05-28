@@ -626,8 +626,11 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                 VolumeInfo vinfo = (VolumeInfo)dstData;
                 final String volumeName = vinfo.getUuid();
                 final Long size = vinfo.getSize();
+
                 SpConnectionDesc conn = StorPoolUtil.getSpConnection(vinfo.getDataStore().getUuid(), vinfo.getDataStore().getId(), storagePoolDetailsDao, primaryStoreDao);
-                SpApiResponse resp = StorPoolUtil.volumeCreate(volumeName, snapshotName, size, null, null, "volume", sinfo.getBaseVolume().getMaxIops(), conn);
+
+                StorPoolVolumeDef spVolume = createVolumeWithTags(sinfo, snapshotName, vinfo, volumeName, size, conn);
+                SpApiResponse resp = StorPoolUtil.volumeCreate(spVolume, conn);
                 if (resp.getError() == null) {
                     updateStoragePool(dstData.getDataStore().getId(), size);
 
@@ -643,9 +646,10 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                     SnapshotDataStoreVO snap = getSnapshotImageStoreRef(sinfo.getId(), vinfo.getDataCenterId());
                     SnapshotDetailsVO snapshotDetail = snapshotDetailsDao.findDetail(sinfo.getId(), StorPoolUtil.SP_DELAY_DELETE);
                     if (snapshotDetail != null) {
-                        err = String.format("Could not create volume from snapshot due to: %s. The snapshot was created with the delayDelete option.", resp.getError());
+                        answer = new Answer(cmd, false, String.format("Could not create volume from snapshot due to: %s. The snapshot was created with the delayDelete option.", resp.getError()));
                     } else if (snap != null && StorPoolStorageAdaptor.getVolumeNameFromPath(snap.getInstallPath(), false) == null) {
-                        SpApiResponse emptyVolumeCreateResp = StorPoolUtil.volumeCreate(volumeName, null, size, null, null, "volume", null, conn);
+                        spVolume.setParent(null);
+                        SpApiResponse emptyVolumeCreateResp = StorPoolUtil.volumeCreate(spVolume, conn);
                         if (emptyVolumeCreateResp.getError() == null) {
                             answer = createVolumeFromSnapshot(srcData, dstData, size, emptyVolumeCreateResp);
                         } else {
@@ -655,7 +659,7 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
                         answer = new Answer(cmd, false, String.format("The snapshot %s does not exists neither on primary, neither on secondary storage. Cannot create volume from snapshot", snapshotName));
                     }
                 } else {
-                    err = String.format("Could not create Storpool volume %s from snapshot %s. Error: %s", volumeName, snapshotName, resp.getError());
+                    answer = new Answer(cmd, false, String.format("Could not create Storpool volume %s from snapshot %s. Error: %s", volumeName, snapshotName, resp.getError()));
                 }
             } else if (srcType == DataObjectType.SNAPSHOT && dstType == DataObjectType.SNAPSHOT) {
                 SnapshotInfo sinfo = (SnapshotInfo)srcData;
@@ -980,6 +984,23 @@ public class StorPoolPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         CopyCommandResult res = new CopyCommandResult(null, answer);
         res.setResult(err);
         callback.complete(res);
+    }
+
+    private StorPoolVolumeDef createVolumeWithTags(SnapshotInfo sinfo, String snapshotName, VolumeInfo vinfo, String volumeName, Long size, SpConnectionDesc conn) {
+        String tier = null;
+        String template = null;
+        if (vinfo.getDiskOfferingId() != null) {
+            tier = getTierFromOfferingDetail(vinfo.getDiskOfferingId());
+            if (tier == null) {
+                template = getTemplateFromOfferingDetail(vinfo.getDiskOfferingId());
+            }
+        }
+
+        if (template == null) {
+            template = conn.getTemplateName();
+        }
+        Map<String, String> tags = StorPoolHelper.addStorPoolTags(volumeName, getVMInstanceUUID(vinfo.getInstanceId()), "volume", getVcPolicyTag(vinfo.getInstanceId()), tier);
+        return new StorPoolVolumeDef(null, size, tags, snapshotName, sinfo.getBaseVolume().getMaxIops(), template, null, null, null);
     }
 
     private Answer createVolumeSnapshot(StorageSubSystemCommand cmd, Long size, SpConnectionDesc conn,

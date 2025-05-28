@@ -296,6 +296,7 @@ class TestDeployVMFromSnapshotOrVolume(cloudstackTestCase):
         volume = Volume.create_from_snapshot(
             self.apiclient,
             snapshot_id=snapshotid,
+            services=self.services,
             disk_offering=self.disk_offering.id,
             zoneid=self.zone.id,
         )
