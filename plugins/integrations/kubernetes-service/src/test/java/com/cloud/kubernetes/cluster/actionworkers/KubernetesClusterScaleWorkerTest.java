@@ -18,10 +18,14 @@ package com.cloud.kubernetes.cluster.actionworkers;
 
 import com.cloud.kubernetes.cluster.KubernetesCluster;
 import com.cloud.kubernetes.cluster.KubernetesClusterManagerImpl;
+import com.cloud.kubernetes.cluster.KubernetesClusterVmMapVO;
+import com.cloud.kubernetes.cluster.dao.KubernetesClusterVmMapDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.utils.Pair;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.dao.UserVmDao;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,6 +33,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
+
+import java.util.List;
 
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.DEFAULT;
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
@@ -42,6 +48,10 @@ public class KubernetesClusterScaleWorkerTest {
     private KubernetesClusterManagerImpl clusterManager;
     @Mock
     private ServiceOfferingDao serviceOfferingDao;
+    @Mock
+    private KubernetesClusterVmMapDao kubernetesClusterVmMapDao;
+    @Mock
+    private UserVmDao userVmDao;
 
     private KubernetesClusterScaleWorker worker;
 
@@ -51,6 +61,8 @@ public class KubernetesClusterScaleWorkerTest {
     public void setUp() {
         worker = new KubernetesClusterScaleWorker(kubernetesCluster, clusterManager);
         worker.serviceOfferingDao = serviceOfferingDao;
+        worker.kubernetesClusterVmMapDao = kubernetesClusterVmMapDao;
+        worker.userVmDao = userVmDao;
     }
 
     @Test
@@ -78,6 +90,8 @@ public class KubernetesClusterScaleWorkerTest {
     @Test
     public void testCalculateNewClusterCountAndCapacityNodeTypeScaleControlOffering() {
         long controlNodes = 2L;
+        long kubernetesClusterId = 10L;
+        Mockito.when(kubernetesCluster.getId()).thenReturn(kubernetesClusterId);
         Mockito.when(kubernetesCluster.getControlNodeCount()).thenReturn(controlNodes);
 
         ServiceOfferingVO existingOffering = Mockito.mock(ServiceOfferingVO.class);
@@ -90,7 +104,6 @@ public class KubernetesClusterScaleWorkerTest {
         Mockito.when(kubernetesCluster.getCores()).thenReturn(remainingClusterCpu + (controlNodes * existingCores));
         Mockito.when(kubernetesCluster.getMemory()).thenReturn(remainingClusterMemory + (controlNodes * existingMemory));
 
-        Mockito.when(kubernetesCluster.getControlServiceOfferingId()).thenReturn(1L);
         Mockito.when(serviceOfferingDao.findById(1L)).thenReturn(existingOffering);
 
         ServiceOfferingVO newOffering = Mockito.mock(ServiceOfferingVO.class);
@@ -99,6 +112,12 @@ public class KubernetesClusterScaleWorkerTest {
         Mockito.when(newOffering.getCpu()).thenReturn(newCores);
         Mockito.when(newOffering.getRamSize()).thenReturn(newMemory);
 
+        KubernetesClusterVmMapVO controlNodeVM1 = Mockito.mock(KubernetesClusterVmMapVO.class);
+        Mockito.when(controlNodeVM1.getVmId()).thenReturn(10L);
+        UserVmVO userVmVO = Mockito.mock(UserVmVO.class);
+        Mockito.when(userVmVO.getServiceOfferingId()).thenReturn(defaultOfferingId);
+        Mockito.when(userVmDao.findById(10L)).thenReturn(userVmVO);
+        Mockito.when(kubernetesClusterVmMapDao.listByClusterIdAndVmType(kubernetesClusterId, CONTROL)).thenReturn(List.of(controlNodeVM1));
         Pair<Long, Long> newClusterCapacity = worker.calculateNewClusterCountAndCapacity(null, CONTROL, newOffering);
 
         long expectedCores = remainingClusterCpu + (controlNodes * newCores);
