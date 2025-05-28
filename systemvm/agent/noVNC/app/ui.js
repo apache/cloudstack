@@ -1147,6 +1147,7 @@ const UI = {
             msg = _("Connected (unencrypted) to ") + UI.desktopName;
         }
         UI.showStatus(msg);
+        UI.resetModifierKeysState();
         UI.updateVisualState('connected');
 
         // Do this last because it can only be used on rendered elements
@@ -1781,6 +1782,35 @@ const UI = {
         optn.text = text;
         optn.value = value;
         selectbox.options.add(optn);
+    },
+
+    // Function to reset all modifier key states when reconnecting
+    resetModifierKeysState() {
+        // Reset the UI buttons for special keys
+        const modifierButtons = [
+            'noVNC_toggle_ctrl_button',
+            'noVNC_toggle_shift_button',
+            'noVNC_toggle_alt_button',
+            'noVNC_toggle_windows_button'
+        ];
+
+        for (let id of modifierButtons) {
+            const btn = document.getElementById(id);
+            if (btn && btn.classList.contains("noVNC_selected")) {
+                btn.classList.remove("noVNC_selected");
+
+                // Also send the key-up event if needed
+                if (id === 'noVNC_toggle_ctrl_button') {
+                    UI.sendKey(KeyTable.XK_Control_L, "ControlLeft", false);
+                } else if (id === 'noVNC_toggle_shift_button') {
+                    UI.sendKey(KeyTable.XK_Shift_L, "ShiftLeft", false);
+                } else if (id === 'noVNC_toggle_alt_button') {
+                    UI.sendKey(KeyTable.XK_Alt_L, "AltLeft", false);
+                } else if (id === 'noVNC_toggle_windows_button') {
+                    UI.sendKey(KeyTable.XK_Super_L, "MetaLeft", false);
+                }
+            }
+        }
     },
 
 /* ------^-------
