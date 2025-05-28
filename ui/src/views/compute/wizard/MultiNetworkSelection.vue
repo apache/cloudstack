@@ -81,7 +81,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import _ from 'lodash'
 import CheckBoxInputPair from '@/components/CheckBoxInputPair'
 
@@ -221,7 +221,7 @@ export default {
         params.domainid = this.domainid
         params.account = this.account
       }
-      api('listNetworks', params).then(response => {
+      getAPI('listNetworks', params).then(response => {
         this.networks = response.listnetworksresponse.network || []
       }).catch(() => {
         this.networks = []

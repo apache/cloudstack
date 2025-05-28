@@ -25,7 +25,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import moment from 'moment'
 
 import ResourceView from '@/components/view/ResourceView'
@@ -76,7 +76,7 @@ export default {
       }
       this.loading = true
 
-      api('quotaBalance', params).then(json => {
+      getAPI('quotaBalance', params).then(json => {
         const quotaBalance = json.quotabalanceresponse.balance || {}
         if (Object.keys(quotaBalance).length > 0) {
           quotaBalance.currency = `${quotaBalance.currency} ${quotaBalance.startquota}`

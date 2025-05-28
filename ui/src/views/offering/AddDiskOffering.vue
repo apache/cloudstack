@@ -311,7 +311,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { reactive, ref, toRaw } from 'vue'
 import { isAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
@@ -422,7 +422,7 @@ export default {
     },
     checkIfDomainAdminIsAllowedToInformTag () {
       const params = { id: store.getters.userInfo.accountid }
-      api('isAccountAllowedToCreateOfferingsWithTags', params).then(json => {
+      getAPI('isAccountAllowedToCreateOfferingsWithTags', params).then(json => {
         this.isDomainAdminAllowedToInformTags = json.isaccountallowedtocreateofferingswithtagsresponse.isallowed.isallowed
       })
     },
@@ -435,7 +435,7 @@ export default {
       params.showicon = true
       params.details = 'min'
       this.domainLoading = true
-      api('listDomains', params).then(json => {
+      getAPI('listDomains', params).then(json => {
         const listDomains = json.listdomainsresponse.domain
         this.domains = this.domains.concat(listDomains)
       }).finally(() => {
@@ -446,7 +446,7 @@ export default {
       const params = {}
       params.showicon = true
       this.zoneLoading = true
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         const listZones = json.listzonesresponse.zone
         if (listZones) {
           this.zones = this.zones.concat(listZones)
@@ -458,7 +458,7 @@ export default {
     fetchStorageTagData () {
       const params = {}
       this.storageTagLoading = true
-      api('listStorageTags', params).then(json => {
+      getAPI('listStorageTags', params).then(json => {
         const tags = json.liststoragetagsresponse.storagetag || []
         for (const tag of tags) {
           if (!this.storageTags.includes(tag.name)) {
@@ -477,7 +477,7 @@ export default {
       const zoneid = this.zones[zoneIndex].id
       if ('importVsphereStoragePolicies' in this.$store.getters.apis) {
         this.storagePolicies = []
-        api('listVsphereStoragePolicies', {
+        getAPI('listVsphereStoragePolicies', {
           zoneid: zoneid
         }).then(response => {
           this.storagePolicies = response.listvspherestoragepoliciesresponse.StoragePolicy || []
@@ -570,7 +570,7 @@ export default {
         if (values.storagepolicy) {
           params.storagepolicy = values.storagepolicy
         }
-        api('createDiskOffering', params).then(json => {
+        postAPI('createDiskOffering', params).then(json => {
           this.$emit('publish-disk-offering-id', json?.creatediskofferingresponse?.diskoffering?.id)
           this.$message.success(`${this.$t('message.disk.offering.created')} ${values.name}`)
           this.$emit('refresh-data')

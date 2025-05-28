@@ -317,7 +317,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import { mixinForm } from '@/utils/mixin'
 import ResourceIcon from '@/components/view/ResourceIcon'
@@ -448,7 +448,7 @@ export default {
       }
       params.showicon = true
       this.zoneLoading = true
-      api('listZones', params).then(json => {
+      getAPI('listZones', params).then(json => {
         for (const i in json.listzonesresponse.zone) {
           const zone = json.listzonesresponse.zone[i]
           if (zone.networktype === 'Advanced' && zone.securitygroupsenabled !== true && zone.type !== 'Edge') {
@@ -477,7 +477,7 @@ export default {
       this.asNumberLoading = true
       params.zoneid = this.selectedZone.id
       params.isallocated = false
-      api('listASNumbers', params).then(json => {
+      getAPI('listASNumbers', params).then(json => {
         this.asNumbersZone = json.listasnumbersresponse.asnumber
         this.asNumberLoading = false
       })
@@ -518,7 +518,7 @@ export default {
         var params = {}
         this.networkOfferingLoading = true
         if ('listVPCs' in this.$store.getters.apis) {
-          api('listVPCs', params).then(json => {
+          getAPI('listVPCs', params).then(json => {
             const listVPCs = json.listvpcsresponse.vpc
             var vpcAvailable = this.arrayHasItems(listVPCs)
             if (vpcAvailable === false) {
@@ -550,7 +550,7 @@ export default {
       }
       this.networkOfferings = []
       this.selectedNetworkOffering = {}
-      api('listNetworkOfferings', params).then(json => {
+      getAPI('listNetworkOfferings', params).then(json => {
         this.networkOfferings = json.listnetworkofferingsresponse.networkoffering
         this.networkOfferings = this.networkOfferings.filter(offering => offering.fornsx === this.selectedZone.isnsxenabled)
         if (!this.selectedZone.routedmodeenabled) {
@@ -584,7 +584,7 @@ export default {
       if (this.vpc !== null) {
         params.id = this.vpc.id
       }
-      api('listVPCs', params).then(json => {
+      getAPI('listVPCs', params).then(json => {
         this.vpcs = json.listvpcsresponse.vpc
       }).finally(() => {
         this.vpcLoading = false
@@ -634,7 +634,7 @@ export default {
           params.asnumber = values.asnumber
         }
 
-        api('createNetwork', params).then(json => {
+        postAPI('createNetwork', params).then(json => {
           this.$notification.success({
             message: 'Network',
             description: this.$t('message.success.create.isolated.network')
