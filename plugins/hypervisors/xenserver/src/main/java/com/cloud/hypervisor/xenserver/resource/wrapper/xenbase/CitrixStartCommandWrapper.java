@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
@@ -247,7 +248,7 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
         List<DiskTO> disks = new ArrayList<DiskTO>(vmSpec.getDisks().length);
         int index = 0;
         for (final DiskTO disk : vmSpec.getDisks()) {
-            if (Volume.Type.ISO.equals(disk.getType())) {
+            if (Volume.Type.ISO.equals(disk.getType()) && Objects.nonNull(disk.getPath())) {
                 disks.add(0, disk);
             } else {
                 disks.add(index, disk);
