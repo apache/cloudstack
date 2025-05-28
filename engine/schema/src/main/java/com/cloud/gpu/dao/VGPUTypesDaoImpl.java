@@ -42,7 +42,7 @@ public class VGPUTypesDaoImpl extends GenericDaoBase<VGPUTypesVO, Long> implemen
     private static final String LIST_ZONE_POD_CLUSTER_WIDE_GPU_CAPACITIES =
             "SELECT host_gpu_groups.group_name, vgpu_type, max_vgpu_per_pgpu, SUM(remaining_capacity) AS remaining_capacity, SUM(max_capacity) AS total_capacity FROM" +
                     " `cloud`.`vgpu_types` INNER JOIN `cloud`.`host_gpu_groups` ON vgpu_types.gpu_group_id = host_gpu_groups.id INNER JOIN `cloud`.`host`" +
-                    " ON host_gpu_groups.host_id = host.id WHERE host.type =  'Routing' AND host.data_center_id = ?";
+                    " ON host_gpu_groups.host_id = host.id WHERE host.type =  'Routing' AND vgpu_types.max_capacity > 0 AND host.data_center_id = ?";
     private final SearchBuilder<VGPUTypesVO> _searchByGroupId;
     private final SearchBuilder<VGPUTypesVO> _searchByGroupIdVGPUType;
     @Inject
@@ -80,7 +80,7 @@ public class VGPUTypesDaoImpl extends GenericDaoBase<VGPUTypesVO, Long> implemen
             finalQuery.append(" AND host.cluster_id = ?");
             resourceIdList.add(clusterId);
         }
-        finalQuery.append(" GROUP BY host_gpu_groups.group_name, vgpu_type");
+        finalQuery.append(" GROUP BY host_gpu_groups.group_name, vgpu_type, max_vgpu_per_pgpu");
 
         try {
             pstmt = txn.prepareAutoCloseStatement(finalQuery.toString());

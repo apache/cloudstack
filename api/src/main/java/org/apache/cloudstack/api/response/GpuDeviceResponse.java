@@ -70,6 +70,10 @@ public class GpuDeviceResponse extends BaseResponse {
     @Param(description = "the vGPU profile name assigned to this GPU device")
     private GpuDevice.State state;
 
+    @SerializedName(ApiConstants.PARENT_GPU_DEVICE_ID)
+    @Param(description = "the ID of the parent GPU device, if this is a vGPU")
+    private String parentGpuDeviceId;
+
 
     public GpuDeviceResponse() {
         // Empty constructor for serialization
@@ -162,5 +166,13 @@ public class GpuDeviceResponse extends BaseResponse {
 
     public void setState(GpuDevice.State state) {
         this.state = state;
+    }
+
+    public String getParentGpuDeviceId() {
+        return parentGpuDeviceId;
+    }
+
+    public void setParentGpuDeviceId(String parentGpuDeviceId) {
+        this.parentGpuDeviceId = parentGpuDeviceId;
     }
 }

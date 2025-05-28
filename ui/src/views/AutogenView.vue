@@ -18,9 +18,15 @@
 <template>
   <div>
     <a-affix :offsetTop="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 103 : 78">
-      <a-card class="breadcrumb-card" style="z-index: 10">
+      <a-card
+        class="breadcrumb-card"
+        style="z-index: 10"
+      >
         <a-row>
-          <a-col :span="device === 'mobile' ? 24 : 12" style="padding-left: 12px; margin-top: 10px">
+          <a-col
+            :span="device === 'mobile' ? 24 : 12"
+            style="padding-left: 12px; margin-top: 10px"
+          >
             <breadcrumb :resource="resource">
               <template #end>
                 <a-button
@@ -28,7 +34,8 @@
                   style="margin-bottom: 5px"
                   shape="round"
                   size="small"
-                  @click="fetchData({ irefresh: true })">
+                  @click="fetchData({ irefresh: true })"
+                >
                   <template #icon><reload-outlined /></template>
                   {{ $t('label.refresh') }}
                 </a-button>
@@ -47,22 +54,27 @@
                     optionFilterProp="label"
                     :filterOption="(input, option) => {
                       return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-                    }" >
+                    }"
+                  >
                     <template #suffixIcon><filter-outlined class="ant-select-suffix" /></template>
                     <a-select-option
                       v-if="['Admin', 'DomainAdmin'].includes($store.getters.userInfo.roletype) &&
                       ['vm', 'iso', 'template', 'pod', 'cluster', 'host', 'systemvm', 'router', 'storagepool', 'kubernetes', 'computeoffering', 'systemoffering', 'diskoffering', 'gpuoffering', 'sharedfs'].includes($route.name) ||
                       ['account'].includes($route.name)"
                       key="all"
-                      :label="$t('label.all')">
+                      :label="$t('label.all')"
+                    >
                       {{ $t('label.all') }}
                     </a-select-option>
                     <a-select-option
                       v-for="filter in filters"
                       :key="filter"
-                      :label="$t('label.' + (['comment'].includes($route.name) ? 'filter.annotations.' : '') + filter)">
+                      :label="$t('label.' + (['comment'].includes($route.name) ? 'filter.annotations.' : '') + filter)"
+                    >
                       {{ $t('label.' + (['comment'].includes($route.name) ? 'filter.annotations.' : '') + filter) }}
-                      <clock-circle-outlined v-if="['comment'].includes($route.name) && !['Admin'].includes($store.getters.userInfo.roletype) && filter === 'all'" />
+                      <clock-circle-outlined
+                        v-if="['comment'].includes($route.name) && !['Admin'].includes($store.getters.userInfo.roletype) && filter === 'all'"
+                      />
                     </a-select-option>
                   </a-select>
                 </a-tooltip>
@@ -72,21 +84,27 @@
                   :checked-children="$t('label.metrics')"
                   :un-checked-children="$t('label.metrics')"
                   :checked="$store.getters.metrics"
-                  @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"/>
+                  @change="(checked, event) => { $store.dispatch('SetMetrics', checked) }"
+                />
                 <a-switch
                   v-if="!projectView && hasProjectId"
                   style="margin-left: 8px; min-height: 23px; margin-bottom: 4px"
                   :checked-children="$t('label.projects')"
                   :un-checked-children="$t('label.projects')"
                   :checked="$store.getters.listAllProjects"
-                  @change="(checked, event) => { $store.dispatch('SetListAllProjects', checked) }"/>
+                  @change="(checked, event) => { $store.dispatch('SetListAllProjects', checked) }"
+                />
               </template>
             </breadcrumb>
           </a-col>
           <a-col
             :span="device === 'mobile' ? 24 : 12"
-            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-top': '6px' }" >
-            <slot name="action" v-if="dataView && $route.path.startsWith('/publicip')"></slot>
+            :style="device === 'mobile' ? { float: 'right', 'margin-top': '12px', 'margin-bottom': '-6px', display: 'table' } : { float: 'right', display: 'table', 'margin-top': '6px' }"
+          >
+            <slot
+              name="action"
+              v-if="dataView && $route.path.startsWith('/publicip')"
+            ></slot>
             <action-button
               v-else
               :style="dataView ? { float: device === 'mobile' ? 'left' : 'right' } : { 'margin-right': '10px', display: getStyle() }"
@@ -96,21 +114,25 @@
               :selectedItems="selectedItems"
               :dataView="dataView"
               :resource="resource"
-              @exec-action="(action) => execAction(action, action.groupAction && !dataView)"/>
+              @exec-action="(action) => execAction(action, action.groupAction && !dataView)"
+            />
             <search-view
               v-if="!dataView"
               :searchFilters="searchFilters"
               :searchParams="searchParams"
               :apiName="apiName"
               @search="onSearch"
-              @change-filter="changeFilter"/>
+              @change-filter="changeFilter"
+            />
           </a-col>
         </a-row>
       </a-card>
     </a-affix>
 
     <div v-show="showAction">
-      <keep-alive v-if="currentAction.component && (!currentAction.groupAction || selectedRowKeys.length === 0 || (this.selectedRowKeys.length > 0 && currentAction.api === 'destroyVirtualMachine'))">
+      <keep-alive
+        v-if="currentAction.component && (!currentAction.groupAction || selectedRowKeys.length === 0 || (this.selectedRowKeys.length > 0 && currentAction.api === 'destroyVirtualMachine'))"
+      >
         <a-modal
           :visible="showAction"
           :closable="true"
@@ -129,7 +151,8 @@
               v-if="currentAction.docHelp || $route.meta.docHelp"
               style="margin-left: 5px"
               :href="$config.docBase + '/' + (currentAction.docHelp || $route.meta.docHelp)"
-              target="_blank">
+              target="_blank"
+            >
               <question-circle-outlined />
             </a>
           </template>
@@ -146,7 +169,8 @@
               @refresh-data="fetchData"
               @poll-action="pollActionCompletion"
               @close-action="closeAction"
-              @cancel-bulk-action="handleCancel"/>
+              @cancel-bulk-action="handleCancel"
+            />
           </keep-alive>
         </a-modal>
       </keep-alive>
@@ -170,25 +194,39 @@
             v-if="currentAction.docHelp || $route.meta.docHelp"
             style="margin-left: 5px"
             :href="$config.docBase + '/' + (currentAction.docHelp || $route.meta.docHelp)"
-            target="_blank">
+            target="_blank"
+          >
             <question-circle-outlined />
           </a>
         </template>
-        <a-spin :spinning="actionLoading" v-ctrl-enter="handleSubmit">
+        <a-spin
+          :spinning="actionLoading"
+          v-ctrl-enter="handleSubmit"
+        >
           <span v-if="currentAction.message">
             <div v-if="selectedRowKeys.length > 0">
               <a-alert
                 v-if="['delete-outlined', 'DeleteOutlined', 'poweroff-outlined', 'PoweroffOutlined'].includes(currentAction.icon)"
-                type="error">
+                type="error"
+              >
                 <template #message>
                   <exclamation-circle-outlined style="color: red; fontSize: 30px; display: inline-flex" />
-                  <span style="padding-left: 5px" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+                  <span
+                    style="padding-left: 5px"
+                    v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`"
+                  />
                   <span v-html="currentAction.message" />
                 </template>
               </a-alert>
-              <a-alert v-else type="warning">
+              <a-alert
+                v-else
+                type="warning"
+              >
                 <template #message>
-                  <span v-if="selectedRowKeys.length > 0" v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`" />
+                  <span
+                    v-if="selectedRowKeys.length > 0"
+                    v-html="`<b>${selectedRowKeys.length} ` + $t('label.items.selected') + `. </b>`"
+                  />
                   <span v-html="currentAction.message" />
                 </template>
               </a-alert>
@@ -218,15 +256,19 @@
                 </template>
               </a-table>
             </div>
-            <br v-if="currentAction.paramFields.length > 0"/>
+            <br v-if="currentAction.paramFields.length > 0" />
           </span>
           <a-form
             :ref="formRef"
             :model="form"
             :rules="rules"
             @finish="handleSubmit"
-            layout="vertical">
-            <div v-for="(field, fieldIndex) in currentAction.paramFields" :key="fieldIndex">
+            layout="vertical"
+          >
+            <div
+              v-for="(field, fieldIndex) in currentAction.paramFields"
+              :key="fieldIndex"
+            >
               <a-form-item
                 :name="field.name"
                 :ref="field.name"
@@ -237,8 +279,13 @@
                   <tooltip-label
                     v-if="['domain', 'guestcidraddress'].includes(field.name) && ['createZone', 'updateZone'].includes(currentAction.api)"
                     :title="$t('label.default.network.' + field.name + '.isolated.network')"
-                    :tooltip="field.description"/>
-                  <tooltip-label v-else :title="$t('label.' + field.name)" :tooltip="field.description"/>
+                    :tooltip="field.description"
+                  />
+                  <tooltip-label
+                    v-else
+                    :title="$t('label.' + field.name)"
+                    :tooltip="field.description"
+                  />
                 </template>
 
                 <a-switch
@@ -259,11 +306,15 @@
                     return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
                   }"
                 >
-                  <a-select-option key="" label="">{{ }}</a-select-option>
+                  <a-select-option
+                    key=""
+                    label=""
+                  >{{ }}</a-select-option>
                   <a-select-option
                     v-for="(opt, optIndex) in currentAction.mapping[field.name].options"
                     :key="optIndex"
-                    :label="opt">
+                    :label="opt"
+                  >
                     {{ opt }}
                   </a-select-option>
                 </a-select>
@@ -280,11 +331,15 @@
                   }"
                   v-focus="fieldIndex === firstIndex"
                 >
-                  <a-select-option key="" label="">{{ }}</a-select-option>
+                  <a-select-option
+                    key=""
+                    label=""
+                  >{{ }}</a-select-option>
                   <a-select-option
                     v-for="(opt, optIndex) in field.opts"
                     :key="optIndex"
-                    :label="opt.name || opt.description || opt.traffictype || opt.publicip">
+                    :label="opt.name || opt.description || opt.traffictype || opt.publicip"
+                  >
                     {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                   </a-select-option>
                 </a-select>
@@ -300,44 +355,96 @@
                   }"
                   v-focus="fieldIndex === firstIndex"
                 >
-                  <a-select-option key="" label="">{{ }}</a-select-option>
-                  <a-select-option v-for="opt in field.opts" :key="opt.id" :label="opt.name || opt.description || opt.traffictype || opt.publicip">
+                  <a-select-option
+                    key=""
+                    label=""
+                  >{{ }}</a-select-option>
+                  <a-select-option
+                    v-for="opt in field.opts"
+                    :key="opt.id"
+                    :label="opt.name || opt.description || opt.traffictype || opt.publicip"
+                  >
                     <div>
                       <span v-if="(field.name.startsWith('template') || field.name.startsWith('iso'))">
                         <span v-if="opt.icon">
-                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                          <resource-icon
+                            :image="opt.icon.base64image"
+                            size="1x"
+                            style="margin-right: 5px"
+                          />
                         </span>
-                        <os-logo v-else :osId="opt.ostypeid" :osName="opt.ostypename" size="lg" style="margin-left: -1px" />
+                        <os-logo
+                          v-else
+                          :osId="opt.ostypeid"
+                          :osName="opt.ostypename"
+                          size="lg"
+                          style="margin-left: -1px"
+                        />
                       </span>
                       <span v-if="(field.name.startsWith('zone'))">
                         <span v-if="opt.icon">
-                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                          <resource-icon
+                            :image="opt.icon.base64image"
+                            size="1x"
+                            style="margin-right: 5px"
+                          />
                         </span>
-                        <global-outlined v-else style="margin-right: 5px" />
+                        <global-outlined
+                          v-else
+                          style="margin-right: 5px"
+                        />
                       </span>
                       <span v-if="(field.name.startsWith('project'))">
                         <span v-if="opt.icon">
-                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                          <resource-icon
+                            :image="opt.icon.base64image"
+                            size="1x"
+                            style="margin-right: 5px"
+                          />
                         </span>
-                        <project-outlined v-else style="margin-right: 5px" />
+                        <project-outlined
+                          v-else
+                          style="margin-right: 5px"
+                        />
                       </span>
                       <span v-if="(field.name.startsWith('account') || field.name.startsWith('user'))">
                         <span v-if="opt.icon">
-                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                          <resource-icon
+                            :image="opt.icon.base64image"
+                            size="1x"
+                            style="margin-right: 5px"
+                          />
                         </span>
-                        <user-outlined v-else style="margin-right: 5px"/>
+                        <user-outlined
+                          v-else
+                          style="margin-right: 5px"
+                        />
                       </span>
                       <span v-if="(field.name.startsWith('network'))">
                         <span v-if="opt.icon">
-                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                          <resource-icon
+                            :image="opt.icon.base64image"
+                            size="1x"
+                            style="margin-right: 5px"
+                          />
                         </span>
-                        <apartment-outlined v-else style="margin-right: 5px"/>
+                        <apartment-outlined
+                          v-else
+                          style="margin-right: 5px"
+                        />
                       </span>
                       <span v-if="(field.name.startsWith('domain'))">
                         <span v-if="opt.icon">
-                          <resource-icon :image="opt.icon.base64image" size="1x" style="margin-right: 5px"/>
+                          <resource-icon
+                            :image="opt.icon.base64image"
+                            size="1x"
+                            style="margin-right: 5px"
+                          />
                         </span>
-                        <block-outlined v-else style="margin-right: 5px"/>
+                        <block-outlined
+                          v-else
+                          style="margin-right: 5px"
+                        />
                       </span>
                       {{ opt.name || opt.description || opt.traffictype || opt.publicip }}
                     </div>
@@ -359,13 +466,13 @@
                   <a-select-option
                     v-for="(opt, optIndex) in field.opts"
                     :key="optIndex"
-                    :label="opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description">
-                    <a-span v-if="field.name === 'vgpuprofileids'">
-                      {{ opt.gpucardname + ' (' + opt.name + ')' }}
-                    </a-span>
-                    <a-span v-else>
-                      {{ opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description }}
-                    </a-span>
+                    :label="field.name !== 'vgpuprofileids' ?
+                        (opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description) :
+                        opt.gpucardname + ' (' + opt.name + ')'"
+                  >
+                    {{ field.name !== 'vgpuprofileids' ?
+                      (opt.name && opt.type ? opt.name + ' (' + opt.type + ')' : opt.name || opt.description) :
+                       opt.gpucardname + ' (' + opt.name + ')' }}
                   </a-select-option>
                 </a-select>
                 <a-input-number
@@ -393,13 +500,21 @@
                   v-else
                   v-focus="fieldIndex === firstIndex"
                   v-model:value="form[field.name]"
-                  :placeholder="field.description" />
+                  :placeholder="field.description"
+                />
               </a-form-item>
             </div>
 
-            <div :span="24" class="action-button">
+            <div
+              :span="24"
+              class="action-button"
+            >
               <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
-              <a-button type="primary" @click="handleSubmit" ref="submit">{{ $t('label.ok') }}</a-button>
+              <a-button
+                type="primary"
+                @click="handleSubmit"
+                ref="submit"
+              >{{ $t('label.ok') }}</a-button>
             </div>
           </a-form>
         </a-spin>
@@ -407,16 +522,25 @@
       </a-modal>
     </div>
 
-    <div :style="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 'margin-top: 24px; margin-bottom: 12px' : null">
+    <div
+      :style="this.$store.getters.maintenanceInitiated || this.$store.getters.shutdownTriggered ? 'margin-top: 24px; margin-bottom: 12px' : null"
+    >
       <div v-if="dataView">
-        <slot name="resource" v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"></slot>
+        <slot
+          name="resource"
+          v-if="$route.path.startsWith('/quotasummary') || $route.path.startsWith('/publicip')"
+        ></slot>
         <resource-view
           v-else
           :resource="resource"
           :loading="loading"
-          :tabs="$route.meta.tabs" />
+          :tabs="$route.meta.tabs"
+        />
       </div>
-      <div class="row-element" v-else>
+      <div
+        class="row-element"
+        v-else
+      >
         <list-view
           :loading="loading"
           :columns="columns"
@@ -443,7 +567,8 @@
           @change="changePage"
           @showSizeChange="changePageSize"
           showSizeChanger
-          showQuickJumper>
+          showQuickJumper
+        >
           <template #buildOptionText="props">
             <span>{{ props.value }} / {{ $t('label.page') }}</span>
           </template>
@@ -455,7 +580,8 @@
       :selectedItems="selectedItems"
       :selectedColumns="bulkColumns"
       :message="modalInfo"
-      @handle-cancel="handleCancel" />
+      @handle-cancel="handleCancel"
+    />
   </div>
 </template>
 

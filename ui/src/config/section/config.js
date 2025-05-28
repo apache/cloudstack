@@ -15,6 +15,8 @@
 // specific language governing permissions and limitations
 // under the License.
 
+import { shallowRef, defineAsyncComponent } from 'vue'
+
 export default {
   name: 'config',
   title: 'label.configuration',
@@ -357,6 +359,14 @@ export default {
         name: 'vgpuprofile',
         title: 'label.vgpu.profile',
         param: 'gpucardid'
+      }],
+      tabs: [{
+        name: 'details',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+      }, {
+        name: 'vgpu',
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/VgpuProfilesTab.vue'))),
+        resourceType: 'GpuCard'
       }],
       actions: [
         {
