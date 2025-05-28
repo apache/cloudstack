@@ -126,7 +126,7 @@ class CsConfig(object):
             else:
                 dns.append(self.address().get_guest_ip())
 
-        if not 'userouteripresolver' in conf:
+        if 'userouteripresolver' not in conf:
             for name in ('dns1', 'dns2'):
                 if name in conf:
                     dns.append(conf[name])

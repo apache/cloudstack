@@ -275,7 +275,7 @@ write_files:
       echo "Already provisioned!"
       exit 0
       fi
-      
+
       HA_CLUSTER={{ k8s.ha.cluster }}
       CLUSTER_PUBLIC_IP={{ k8s.public.ip }}
 
@@ -322,7 +322,7 @@ write_files:
       cp -i /etc/kubernetes/admin.conf /root/.kube/config
       chown $(id -u):$(id -g) /root/.kube/config
       echo export PATH=\$PATH:/opt/bin >> /root/.bashrc
-      
+
       if [[ "$HA_CLUSTER" == "true" ]]; then
         sed -i -E "s|(server:\\s*).*|\\1https://${CLUSTER_PUBLIC_IP}:6443|" /root/.kube/config
       fi
