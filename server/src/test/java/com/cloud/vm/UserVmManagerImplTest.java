@@ -80,6 +80,10 @@ import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanningManager;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
@@ -91,12 +95,28 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerVMMapDao;
+import com.cloud.network.dao.LoadBalancerVMMapVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.rules.FirewallRuleVO;
+import com.cloud.network.rules.PortForwardingRule;
+import com.cloud.network.rules.dao.PortForwardingRulesDao;
+import com.cloud.network.security.SecurityGroupManager;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.server.ManagementService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -136,31 +156,23 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.mockito.MockedStatic;
 
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.network.Network;
-import com.cloud.network.dao.FirewallRulesDao;
-import com.cloud.network.dao.IPAddressDao;
-import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.LoadBalancerVMMapDao;
-import com.cloud.network.dao.LoadBalancerVMMapVO;
-import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.network.guru.NetworkGuru;
-import com.cloud.network.rules.FirewallRuleVO;
-import com.cloud.network.rules.PortForwardingRule;
-import com.cloud.network.rules.dao.PortForwardingRulesDao;
-import com.cloud.network.security.SecurityGroupManager;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.NetworkOfferingVO;
-import com.cloud.offerings.dao.NetworkOfferingDao;
+import java.util.TimeZone;
+import java.util.UUID;
+
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.verify;
 
 @RunWith(MockitoJUnitRunner.class)
 public class UserVmManagerImplTest {
@@ -3089,7 +3101,7 @@ public class UserVmManagerImplTest {
             configureDoNothingForMethodsThatWeDoNotWantToTest();
 
             userVmManagerImpl.executeStepsToChangeOwnershipOfVm(assignVmCmdMock, callerAccount, accountMock, accountMock, userVmVoMock, serviceOfferingVoMock, volumes,
-                    virtualMachineTemplateMock, 1l);
+                    virtualMachineTemplateMock, 1L);
 
             Mockito.verify(userVmManagerImpl).resourceCountDecrement(Mockito.anyLong(), Mockito.any(), Mockito.any(), Mockito.any());
             Mockito.verify(userVmManagerImpl).updateVmOwner(Mockito.any(), Mockito.any(), Mockito.anyLong(), Mockito.anyLong());
@@ -3210,5 +3222,177 @@ public class UserVmManagerImplTest {
 
         Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, srcHost.getId());
         Mockito.verify(storageManager, times(1)).getStorageAccessGroups(null, null, null, destHost.getId());
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateLeasePropertiesInvalidDuration() {
+        userVmManagerImpl.validateLeaseProperties(-2, VMLeaseManager.ExpiryAction.STOP);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateLeasePropertiesNullActionValue() {
+        userVmManagerImpl.validateLeaseProperties(20, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateLeasePropertiesNullDurationValue() {
+        userVmManagerImpl.validateLeaseProperties(null, VMLeaseManager.ExpiryAction.STOP);
+    }
+
+    @Test
+    public void testValidateLeasePropertiesMinusOneDuration() {
+        userVmManagerImpl.validateLeaseProperties(-1, null);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testValidateLeasePropertiesZeroDayDuration() {
+        userVmManagerImpl.validateLeaseProperties(0, VMLeaseManager.ExpiryAction.STOP);
+    }
+
+    @Test
+    public void testValidateLeasePropertiesValidValues() {
+        userVmManagerImpl.validateLeaseProperties(20, VMLeaseManager.ExpiryAction.STOP);
+    }
+
+    @Test
+    public void testValidateLeasePropertiesBothNUll() {
+        userVmManagerImpl.validateLeaseProperties(null, null);
+    }
+
+    @Test
+    public void testAddLeaseDetailsForInstance() {
+        UserVm userVm = mock(UserVm.class);
+        when(userVm.getId()).thenReturn(vmId);
+        when(userVm.getUuid()).thenReturn(UUID.randomUUID().toString());
+        userVmManagerImpl.addLeaseDetailsForInstance(userVm, 10, VMLeaseManager.ExpiryAction.STOP);
+        verify(userVmDetailsDao).addDetail(eq(vmId), eq(VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION), eq(VMLeaseManager.ExpiryAction.STOP.name()), anyBoolean());
+        verify(userVmDetailsDao).addDetail(eq(vmId), eq(VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE), eq(getLeaseExpiryDate(10L)), anyBoolean());
+    }
+
+    @Test
+    public void testAddNullDurationLeaseDetailsForInstance() {
+        UserVm userVm = mock(UserVm.class);
+        userVmManagerImpl.addLeaseDetailsForInstance(userVm, null, VMLeaseManager.ExpiryAction.STOP);
+        Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(vmId, VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION);
+        Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(vmId, VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
+    }
+
+    @Test
+    public void testApplyLeaseOnCreateInstanceFeatureEnabled() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
+        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, 10, VMLeaseManager.ExpiryAction.DESTROY, svcOfferingMock);
+        Mockito.verify(userVmManagerImpl, Mockito.times(1)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test
+    public void testApplyLeaseOnCreateInstanceNegativeLease() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, -1, VMLeaseManager.ExpiryAction.DESTROY, null);
+        Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test
+    public void testApplyLeaseOnCreateInstanceFromSvcOfferingWithoutLease() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
+        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, null, VMLeaseManager.ExpiryAction.DESTROY, svcOfferingMock);
+        Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test
+    public void testApplyLeaseOnCreateInstanceFromSvcOfferingWithLease() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
+        when(svcOfferingMock.getLeaseDuration()).thenReturn(10);
+        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, null, VMLeaseManager.ExpiryAction.DESTROY, svcOfferingMock);
+        Mockito.verify(userVmManagerImpl, Mockito.times(1)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test
+    public void testApplyLeaseOnCreateInstanceNullExpiryAction() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        ServiceOfferingJoinVO svcOfferingMock = Mockito.mock(ServiceOfferingJoinVO.class);
+        userVmManagerImpl.applyLeaseOnCreateInstance(userVm, 10, null, svcOfferingMock);
+        Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testApplyLeaseOnUpdateInstanceForNoLease() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        when(userVm.getId()).thenReturn(vmId);
+        when(userVmDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(5, VMLeaseManager.LeaseActionExecution.DISABLED.name()));
+        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, VMLeaseManager.ExpiryAction.STOP);
+        Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test
+    public void testApplyLeaseOnUpdateInstanceForLease() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        when(userVm.getId()).thenReturn(vmId);
+        when(userVmDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(5, VMLeaseManager.LeaseActionExecution.PENDING.name()));
+        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, VMLeaseManager.ExpiryAction.STOP);
+        Mockito.verify(userVmManagerImpl, Mockito.times(1)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testApplyLeaseOnUpdateInstanceForDisabledLeaseInstance() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        when(userVm.getId()).thenReturn(vmId);
+        when(userVmDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(5, VMLeaseManager.LeaseActionExecution.DISABLED.name()));
+        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, VMLeaseManager.ExpiryAction.STOP);
+        Mockito.verify(userVmManagerImpl, Mockito.times(1)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testApplyLeaseOnUpdateInstanceForLeaseExpired() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        when(userVmDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(-2, VMLeaseManager.LeaseActionExecution.PENDING.name()));
+        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, 10, VMLeaseManager.ExpiryAction.STOP);
+        Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+    }
+
+    @Test
+    public void testApplyLeaseOnUpdateInstanceToRemoveLease() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        when(userVm.getId()).thenReturn(vmId);;
+        when(userVmDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(2, VMLeaseManager.LeaseActionExecution.PENDING.name()));
+        try (MockedStatic<ActionEventUtils> ignored = Mockito.mockStatic(ActionEventUtils.class)) {
+            Mockito.when(ActionEventUtils.onActionEvent(Mockito.anyLong(), Mockito.anyLong(),
+                    Mockito.anyLong(),
+                    Mockito.anyString(), Mockito.anyString(),
+                    Mockito.anyLong(), Mockito.anyString())).thenReturn(1L);
+            userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, -1, VMLeaseManager.ExpiryAction.STOP);
+        }
+        Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+        Mockito.verify(userVmDetailsDao, Mockito.times(1)).
+                addDetail(vmId, VmDetailConstants.INSTANCE_LEASE_EXECUTION, VMLeaseManager.LeaseActionExecution.DISABLED.name(), false);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testApplyLeaseOnUpdateInstanceToRemoveLeaseForExpired() {
+        UserVmVO userVm = Mockito.mock(UserVmVO.class);
+        when(userVm.getId()).thenReturn(vmId);
+        when(userVmDetailsDao.listDetailsKeyPairs(anyLong(), anyList())).thenReturn(getLeaseDetails(-2, VMLeaseManager.LeaseActionExecution.PENDING.name()));
+        userVmManagerImpl.applyLeaseOnUpdateInstance(userVm, -1, VMLeaseManager.ExpiryAction.STOP);
+        Mockito.verify(userVmManagerImpl, Mockito.times(0)).addLeaseDetailsForInstance(any(), any(), any());
+        Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(vmId, VmDetailConstants.INSTANCE_LEASE_EXPIRY_ACTION);
+        Mockito.verify(userVmDetailsDao, Mockito.times(0)).removeDetail(vmId, VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE);
+    }
+
+    String getLeaseExpiryDate(long leaseDuration) {
+        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC);
+        LocalDateTime leaseExpiryDateTime = now.plusDays(leaseDuration);
+        Date leaseExpiryDate = Date.from(leaseExpiryDateTime.atZone(ZoneOffset.UTC).toInstant());
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        return sdf.format(leaseExpiryDate);
+    }
+
+    Map<String, String> getLeaseDetails(int leaseDuration, String leaseExecution) {
+        Map<String, String> leaseDetails = new HashMap<>();
+        leaseDetails.put(VmDetailConstants.INSTANCE_LEASE_EXPIRY_DATE, getLeaseExpiryDate(leaseDuration));
+        leaseDetails.put(VmDetailConstants.INSTANCE_LEASE_EXECUTION, leaseExecution);
+        return leaseDetails;
     }
 }
