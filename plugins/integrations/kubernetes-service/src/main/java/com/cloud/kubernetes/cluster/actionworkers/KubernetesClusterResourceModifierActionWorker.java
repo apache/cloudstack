@@ -852,7 +852,9 @@ public class KubernetesClusterResourceModifierActionWorker extends KubernetesClu
             }
             updatedCluster.setMinSize(minSize);
             updatedCluster.setMaxSize(maxSize);
-            return kubernetesClusterDao.persist(updatedCluster);
+            kubernetesClusterDao.persist(updatedCluster);
+            // Prevent null attributes set by the createForUpdate method
+            return kubernetesClusterDao.findById(kubernetesCluster.getId());
         });
     }
 

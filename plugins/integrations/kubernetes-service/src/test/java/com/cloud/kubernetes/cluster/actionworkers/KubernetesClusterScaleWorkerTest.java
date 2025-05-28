@@ -30,8 +30,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnitRunner;
 
-import java.util.Map;
-
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.DEFAULT;
 import static com.cloud.kubernetes.cluster.KubernetesServiceHelper.KubernetesClusterNodeType.CONTROL;
 
@@ -53,25 +51,6 @@ public class KubernetesClusterScaleWorkerTest {
     public void setUp() {
         worker = new KubernetesClusterScaleWorker(kubernetesCluster, clusterManager);
         worker.serviceOfferingDao = serviceOfferingDao;
-    }
-
-    @Test
-    public void testIsServiceOfferingScalingNeededForNodeTypeAllNodesSameOffering() {
-        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
-        Map<String, ServiceOffering> map = Map.of(DEFAULT.name(), serviceOffering);
-        Mockito.when(serviceOfferingDao.findById(defaultOfferingId)).thenReturn(serviceOffering);
-        Assert.assertFalse(worker.isServiceOfferingScalingNeededForNodeType(DEFAULT, map, kubernetesCluster, defaultOfferingId));
-    }
-
-    @Test
-    public void testIsServiceOfferingScalingNeededForNodeTypeAllNodesDifferentOffering() {
-        ServiceOfferingVO serviceOffering = Mockito.mock(ServiceOfferingVO.class);
-        Mockito.when(serviceOffering.getId()).thenReturn(defaultOfferingId);
-        ServiceOfferingVO newOffering = Mockito.mock(ServiceOfferingVO.class);
-        Mockito.when(newOffering.getId()).thenReturn(4L);
-        Map<String, ServiceOffering> map = Map.of(DEFAULT.name(), newOffering);
-        Mockito.when(serviceOfferingDao.findById(defaultOfferingId)).thenReturn(serviceOffering);
-        Assert.assertTrue(worker.isServiceOfferingScalingNeededForNodeType(DEFAULT, map, kubernetesCluster, defaultOfferingId));
     }
 
     @Test

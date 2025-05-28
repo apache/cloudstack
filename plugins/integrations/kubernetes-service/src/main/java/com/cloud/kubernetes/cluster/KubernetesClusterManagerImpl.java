@@ -1323,7 +1323,11 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                     throw new InvalidParameterValueException("Failed to find service offering ID: " + serviceOfferingId);
                 }
                 checkServiceOfferingForNodesScale(serviceOffering, kubernetesCluster, clusterVersion);
-                final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(kubernetesCluster.getServiceOfferingId());
+                Long nodeTypeOfferingId = getExistingServiceOfferingIdForNodeType(key, kubernetesCluster);
+                if (nodeTypeOfferingId == null) {
+                    nodeTypeOfferingId = kubernetesCluster.getServiceOfferingId();
+                }
+                final ServiceOffering existingServiceOffering = serviceOfferingDao.findById(nodeTypeOfferingId);
                 if (KubernetesCluster.State.Running.equals(kubernetesCluster.getState()) && (serviceOffering.getRamSize() < existingServiceOffering.getRamSize() ||
                         serviceOffering.getCpu() * serviceOffering.getSpeed() < existingServiceOffering.getCpu() * existingServiceOffering.getSpeed())) {
                     logAndThrow(Level.WARN, String.format("Kubernetes cluster cannot be scaled down for service offering. Service offering : %s offers lesser resources as compared to service offering : %s of Kubernetes cluster : %s",
@@ -1331,6 +1335,17 @@ public class KubernetesClusterManagerImpl extends ManagerBase implements Kuberne
                 }
             }
         }
+    }
+
+    private Long getExistingServiceOfferingIdForNodeType(String key, KubernetesClusterVO kubernetesCluster) {
+        if (key.equalsIgnoreCase(WORKER.name())) {
+            return kubernetesCluster.getWorkerServiceOfferingId();
+        } else if (key.equalsIgnoreCase(CONTROL.name())) {
+            return kubernetesCluster.getControlServiceOfferingId();
+        } else if (key.equalsIgnoreCase(ETCD.name())) {
+            return kubernetesCluster.getEtcdServiceOfferingId();
+        }
+        return kubernetesCluster.getServiceOfferingId();
     }
 
     protected void checkServiceOfferingForNodesScale(ServiceOffering serviceOffering, KubernetesClusterVO kubernetesCluster, KubernetesSupportedVersion clusterVersion) {
