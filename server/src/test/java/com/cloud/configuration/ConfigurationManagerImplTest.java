@@ -459,7 +459,7 @@ public class ConfigurationManagerImplTest {
     @Test
     public void testValidateInvalidConfiguration() {
         Mockito.doReturn(null).when(configDao).findByName(Mockito.anyString());
-        String msg = configurationManagerImplSpy.validateConfigurationValue("test.config.name", "testvalue", ConfigKey.Scope.Global.toString());
+        String msg = configurationManagerImplSpy.validateConfigurationValue("test.config.name", "testvalue", ConfigKey.Scope.Global);
         Assert.assertEquals("Invalid configuration variable.", msg);
     }
 
@@ -468,7 +468,7 @@ public class ConfigurationManagerImplTest {
         ConfigurationVO cfg = mock(ConfigurationVO.class);
         when(cfg.getScopes()).thenReturn(List.of(ConfigKey.Scope.Account));
         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
-        String msg = configurationManagerImplSpy.validateConfigurationValue("test.config.name", "testvalue", ConfigKey.Scope.Domain.toString());
+        String msg = configurationManagerImplSpy.validateConfigurationValue("test.config.name", "testvalue", ConfigKey.Scope.Domain);
         Assert.assertEquals("Invalid scope id provided for the parameter test.config.name", msg);
     }
 
@@ -480,7 +480,7 @@ public class ConfigurationManagerImplTest {
         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
 
-        String result = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "11", configKey.getScopes().get(0).name());
+        String result = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "11", configKey.getScopes().get(0));
 
         Assert.assertNotNull(result);
     }
@@ -492,7 +492,7 @@ public class ConfigurationManagerImplTest {
         ConfigKey<Integer> configKey = UnmanagedVMsManager.ThreadsOnKVMHostToImportVMwareVMFiles;
         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
-        String msg = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "10", configKey.getScopes().get(0).name());
+        String msg = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "10", configKey.getScopes().get(0));
         Assert.assertNull(msg);
     }
 
@@ -505,7 +505,7 @@ public class ConfigurationManagerImplTest {
         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
         configurationManagerImplSpy.populateConfigValuesForValidationSet();
 
-        String result = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "0", configKey.getScopes().get(0).name());
+        String result = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "0", configKey.getScopes().get(0));
 
         Assert.assertNotNull(result);
     }
@@ -518,7 +518,7 @@ public class ConfigurationManagerImplTest {
         Mockito.doReturn(cfg).when(configDao).findByName(Mockito.anyString());
         Mockito.doReturn(configKey).when(configurationManagerImplSpy._configDepot).get(configKey.key());
         configurationManagerImplSpy.populateConfigValuesForValidationSet();
-        String msg = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "9", configKey.getScopes().get(0).name());
+        String msg = configurationManagerImplSpy.validateConfigurationValue(configKey.key(), "9", configKey.getScopes().get(0));
         Assert.assertNull(msg);
     }
 
@@ -633,14 +633,14 @@ public class ConfigurationManagerImplTest {
     @Test
     public void validateConfigurationValueTestValidatesValueType() {
         Mockito.when(configKeyMock.type()).thenReturn(Integer.class);
-        configurationManagerImplSpy.validateConfigurationValue("validate.type", "100", ConfigKey.Scope.Global.name());
+        configurationManagerImplSpy.validateConfigurationValue("validate.type", "100", ConfigKey.Scope.Global);
         Mockito.verify(configurationManagerImplSpy).validateValueType("100", Integer.class);
     }
 
     @Test
     public void validateConfigurationValueTestValidatesValueRange() {
         Mockito.when(configKeyMock.type()).thenReturn(Integer.class);
-        configurationManagerImplSpy.validateConfigurationValue("validate.range", "100", ConfigKey.Scope.Global.name());
+        configurationManagerImplSpy.validateConfigurationValue("validate.range", "100", ConfigKey.Scope.Global);
         Mockito.verify(configurationManagerImplSpy).validateValueRange("validate.range", "100", Integer.class, null);
     }
 
