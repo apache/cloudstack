@@ -76,6 +76,12 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
             description = "list backups by zone id")
     private Long zoneId;
 
+    @Parameter(name = ApiConstants.NAME,
+            type = CommandType.STRING,
+            since = "4.21.0",
+            description = "list backups by name")
+    private String name;
+
     @Parameter(name = ApiConstants.BACKUP_OFFERING_ID,
             type = CommandType.UUID,
             entityType = BackupOfferingResponse.class,
@@ -99,6 +105,10 @@ public class ListBackupsCmd extends BaseListProjectAndAccountResourcesCmd {
 
     public Long getVmId() {
         return vmId;
+    }
+
+    public String getName() {
+        return name;
     }
 
     public Long getBackupOfferingId() {

@@ -732,6 +732,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     public Pair<List<Backup>, Integer> listBackups(final ListBackupsCmd cmd) {
         final Long id = cmd.getId();
         final Long vmId = cmd.getVmId();
+        final String name = cmd.getName();
         final Long zoneId = cmd.getZoneId();
         final Long backupOfferingId = cmd.getBackupOfferingId();
         final Account caller = CallContext.current().getCallingAccount();
@@ -759,14 +760,16 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
         sb.and("idIN", sb.entity().getId(), SearchCriteria.Op.IN);
         sb.and("vmId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.EQ);
         sb.and("backupOfferingId", sb.entity().getBackupOfferingId(), SearchCriteria.Op.EQ);
 
         if (keyword != null) {
+            sb.or().op("keywordName", sb.entity().getName(), SearchCriteria.Op.LIKE);
             SearchBuilder<VMInstanceVO> vmSearch = vmInstanceDao.createSearchBuilder();
-            vmSearch.and("name", vmSearch.entity().getHostName(), SearchCriteria.Op.LIKE);
-            sb.groupBy(sb.entity().getId());
             sb.join("vmSearch", vmSearch, sb.entity().getVmId(), vmSearch.entity().getId(), JoinBuilder.JoinType.INNER);
+            sb.or("vmSearch", "keywordVmName", vmSearch.entity().getHostName(), SearchCriteria.Op.LIKE);
+            sb.cp();
         }
 
         SearchCriteria<BackupVO> sc = sb.create();
@@ -780,6 +783,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             sc.setParameters("vmId", vmId);
         }
 
+        if (name != null) {
+            sc.setParameters("name", name);
+        }
+
         if (zoneId != null) {
             sc.setParameters("zoneId", zoneId);
         }
@@ -789,7 +796,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
 
         if (keyword != null) {
-            sc.setJoinParameters("vmSearch", "name", "%" + keyword + "%");
+            String keywordMatch = "%" + keyword + "%";
+            sc.setParameters("keywordName", keywordMatch);
+            sc.setParameters("keywordVmName", keywordMatch);
         }
 
         Pair<List<BackupVO>, Integer> result = backupDao.searchAndCount(sc, searchFilter);

@@ -37,12 +37,12 @@
             <a-input v-model:value="form.name" v-focus="true" />
           </a-form-item>
           <a-form-item name="description" ref="description" :label="$t('label.description')">
-            <a-input v-model:value="form.description" v-focus="true" />
+            <a-input v-model:value="form.description"/>
           </a-form-item>
         </div>
       </a-form>
       <div :span="24" class="action-button">
-        <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
+        <a-button @click="closeModal">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" type="primary" @click="handleSubmit" ref="submit">{{ $t('label.ok') }}</a-button>
       </div>
     </a-spin>
