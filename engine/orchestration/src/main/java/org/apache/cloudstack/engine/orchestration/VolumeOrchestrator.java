@@ -57,6 +57,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
@@ -271,6 +273,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
     @Inject
     protected SnapshotHelper snapshotHelper;
+
+    @Inject
+    private DataStoreProviderManager dataStoreProviderMgr;
 
     private final StateMachine2<Volume.State, Volume.Event, Volume> _volStateMachine;
     protected List<StoragePoolAllocator> _storagePoolAllocators;
@@ -903,6 +908,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         if (volume != null) {
             volume = attachExistingVolumeToVm(vm, deviceId, volume, type);
+            provideVmInfoToTheStorageVolume(vm, volume);
             return toDiskProfile(volume, offering);
         }
         Long size;
@@ -980,6 +986,19 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             }
         }
         return toDiskProfile(vol, offering);
+    }
+
+    private void provideVmInfoToTheStorageVolume(VirtualMachine vm, Volume volume) {
+
+        StoragePoolVO pool = _storagePoolDao.findById(volume.getPoolId());
+        if (pool != null) {
+            DataStoreProvider storeProvider = dataStoreProviderMgr
+                    .getDataStoreProvider(pool.getStorageProviderName());
+            DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+            if (storeDriver != null && storeDriver instanceof PrimaryDataStoreDriver && ((PrimaryDataStoreDriver) storeDriver).isVmInfoNeeded()) {
+                ((PrimaryDataStoreDriver) storeDriver).provideVmInfo(vm.getId(), volume.getId());
+            }
+        }
     }
 
     private Volume attachExistingVolumeToVm(VirtualMachine vm, long deviceId, Volume volume, Type type) {
