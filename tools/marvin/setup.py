@@ -38,7 +38,7 @@ setup(name="Marvin",
       maintainer_email="dev@cloudstack.apache.org",
       long_description="Marvin is the Apache CloudStack python "
                        "client written around the unittest framework",
-      platforms=("Any",),
+      platforms=["Any"],
       url="https://builds.apache.org/job/cloudstack-marvin/",
       packages=["marvin", "marvin.cloudstackAPI",
                 "marvin.lib", "marvin.config", "marvin.sandbox",
