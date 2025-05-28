@@ -169,7 +169,7 @@ export default {
       api: 'discoverGpuDevices',
       icon: 'file-sync-outlined',
       label: 'label.discover.gpu.devices',
-      message: 'label.discover.gpu.devices',
+      message: 'message.action.discover.gpu.devices',
       docHelp: 'adminguide/hosts.html#discovering-gpu-devices', // TODO: add doc help
       dataView: true,
       popup: true

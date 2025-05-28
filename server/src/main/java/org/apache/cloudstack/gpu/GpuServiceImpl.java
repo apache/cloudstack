@@ -555,10 +555,13 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
 
                 // Add vGPU profile IDs if provided
                 if (vgpuProfileIds != null && !vgpuProfileIds.isEmpty()) {
+                    List<GpuOfferingDetailVO> detailList = new ArrayList<>();
+
                     for (VgpuProfile vgpuProfile : vgpuProfileList) {
-                        gpuOfferingDetailsDao.addDetail(newGpuOffering.getId(), GpuOfferingDetailVO.VgpuProfileId,
-                                String.valueOf(vgpuProfile.getId()), true);
+                        detailList.add(new GpuOfferingDetailVO(gpuOffering.getId(),
+                                GpuOfferingDetailVO.VgpuProfileId, String.valueOf(vgpuProfile.getId()), true));
                     }
+                    gpuOfferingDetailsDao.saveDetails(detailList);
                     newGpuOffering.setVgpuProfiles(vgpuProfileList);
                 }
             }
@@ -632,10 +635,13 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
                     gpuOfferingDetailsDao.removeDetails(gpuOffering.getId());
 
                     // Then add the new ones if not empty
+                    List<GpuOfferingDetailVO> detailList = new ArrayList<>();
+
                     for (VgpuProfile vgpuProfile : vgpuProfileList) {
-                        gpuOfferingDetailsDao.addDetail(gpuOffering.getId(), GpuOfferingDetailVO.VgpuProfileId,
-                                String.valueOf(vgpuProfile.getId()), true);
+                        detailList.add(new GpuOfferingDetailVO(gpuOffering.getId(),
+                                GpuOfferingDetailVO.VgpuProfileId, String.valueOf(vgpuProfile.getId()), true));
                     }
+                    gpuOfferingDetailsDao.saveDetails(detailList);
 
                     // Refresh vGPU profiles list
                     gpuOffering.setVgpuProfiles(vgpuProfileList);
@@ -760,16 +766,14 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
                 gpuDeviceInfo =
                         new VgpuTypesInfo(card.getDeviceName(), vgpuProfile.getName(), card.getVramSize(), null, null,
                                 null, maxVgpuPerPgpu, GpuDevice.State.Free.equals(device.getState()) ? 1L : 0L,
-                                GpuDevice.State.HasVGPUs.equals(device.getState()) ? 0L : 1L);
+                                1L);
                 gpuGroupDetails.get(card.getDeviceName()).put(vgpuProfile.getName(), gpuDeviceInfo);
             } else {
                 // Update the existing VgpuTypesInfo with the new device's information
                 if (GpuDevice.State.Free.equals(device.getState())) {
                     gpuDeviceInfo.setRemainingCapacity(gpuDeviceInfo.getRemainingCapacity() + 1);
                 }
-                if (!GpuDevice.State.HasVGPUs.equals(device.getState())) {
-                    gpuDeviceInfo.setMaxVmCapacity(gpuDeviceInfo.getMaxCapacity() + 1);
-                }
+                gpuDeviceInfo.setMaxVmCapacity(gpuDeviceInfo.getMaxCapacity() + 1);
             }
         }
         return gpuGroupDetails;
@@ -966,6 +970,15 @@ public class GpuServiceImpl extends ManagerBase implements GpuService, Pluggable
                 response.setVmName(vm.getInstanceName());
             } else {
                 s_logger.debug("VM with ID {} not found for GPU device {}", gpuDevice.getVmId(), gpuDevice.getUuid());
+            }
+        }
+
+        if (gpuDevice.getParentGpuDeviceId() != null) {
+            GpuDeviceVO parentGpuDevice = gpuDeviceDao.findById(gpuDevice.getParentGpuDeviceId());
+            if (parentGpuDevice != null) {
+                response.setParentGpuDeviceId(parentGpuDevice.getUuid());
+            } else {
+                s_logger.debug("Parent GPU device with ID {} not found for GPU device {}", gpuDevice.getParentGpuDeviceId(), gpuDevice.getUuid());
             }
         }
 

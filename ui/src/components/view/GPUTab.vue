@@ -17,30 +17,54 @@
 
 <template>
   <div>
-    <list-view
-      :tabLoading="tabLoading"
+    <a-table
+      :loading="tabLoading"
       :columns="columns"
-      :items="items"
-      :actions="actions"
-      :columnKeys="columnKeys"
-      :selectedColumns="selectedColumnKeys"
-      ref="listview"
-      @update-selected-columns="updateSelectedColumns"
-      @refresh="this.fetchData"
-      @enable-gpu-device="enableGpuDevice"
-      @disable-gpu-device="disableGpuDevice" />
-    </div>
+      :dataSource="items"
+      :pagination="false"
+      :rowKey="record => record.id"
+      :childrenColumnName="'children'"
+      :defaultExpandAllRows="true"
+      size="small"
+    >
+      <template #bodyCell="{ column, record }">
+        <template v-if="column.key === 'gpuDeviceActions'">
+          <a-space>
+            <a-button
+              v-if="record.state === 'Disabled'"
+              type="primary"
+              size="small"
+              @click="enableGpuDevice(record)"
+            >
+              {{ $t('label.enable') }}
+            </a-button>
+            <a-button
+              v-if="record.state === 'Free'"
+              type="primary"
+              danger
+              size="small"
+              @click="disableGpuDevice(record)"
+            >
+              {{ $t('label.disable') }}
+            </a-button>
+          </a-space>
+        </template>
+        <template v-else-if="column.key === 'busaddress'">
+          <span :style="{ paddingLeft: record.parentgpudeviceid ? '20px' : '0px' }">
+            {{ record.busaddress }}
+          </span>
+        </template>
+      </template>
+    </a-table>
+  </div>
 </template>
 
 <script>
 import { api } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
-import ListView from '@/components/view/ListView'
+
 export default {
   name: 'GPUTab',
-  components: {
-    ListView
-  },
   props: {
     resource: {
       type: Object,
@@ -88,13 +112,46 @@ export default {
       }
       this.tabLoading = true
       api('listGpuDevices', params).then(json => {
-        this.items = []
-        this.items = json?.listgpudevicesresponse?.gpudevice || []
+        const devices = json?.listgpudevicesresponse?.gpudevice || []
+        this.items = this.buildGpuTree(devices)
       }).catch(error => {
         this.$notifyError(error)
       }).finally(() => {
         this.tabLoading = false
       })
+    },
+    buildGpuTree (devices) {
+      // Separate parent devices and vGPUs
+      const parentDevices = []
+      const vgpuDevices = []
+      for (const device of devices) {
+        if (device.parentgpudeviceid) {
+          vgpuDevices.push(device)
+        } else {
+          parentDevices.push(device)
+        }
+      }
+
+      // Group vGPUs by their parent ID
+      const vgpusByParent = {}
+      vgpuDevices.forEach(vgpu => {
+        const parentId = vgpu.parentgpudeviceid
+        if (!vgpusByParent[parentId]) {
+          vgpusByParent[parentId] = []
+        }
+        vgpusByParent[parentId].push(vgpu)
+      })
+
+      // Build tree structure
+      const treeData = parentDevices.map(parent => {
+        const children = vgpusByParent[parent.id] || []
+        return {
+          ...parent,
+          children: children.length > 0 ? children : undefined
+        }
+      })
+
+      return treeData
     },
     updateSelectedColumns (key) {
       if (this.selectedColumnKeys.includes(key)) {

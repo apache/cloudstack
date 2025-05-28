@@ -17,6 +17,9 @@
 
 <template>
   <div>
+    <a-button type="primary" @click="createVgpuProfile">
+      {{ $t('label.add.vgpu.profile') }}
+    </a-button>
     <list-view
       :tabLoading="tabLoading"
       :columns="columns"
@@ -31,6 +34,7 @@
 </template>
 
 <script>
+import { api } from '@/api'
 import { genericCompare } from '@/utils/sort.js'
 import ListView from '@/components/view/ListView'
 export default {
@@ -43,6 +47,11 @@ export default {
       type: Object,
       required: true
     },
+    resourceType: {
+      type: String,
+      required: true,
+      default: 'GpuOffering'
+    },
     loading: {
       type: Boolean,
       required: true
@@ -51,7 +60,7 @@ export default {
   data () {
     return {
       tabLoading: false,
-      columnKeys: ['name', 'gpucardname', 'vramsize'],
+      columnKeys: ['name', 'gpucardname', 'vramsize', 'vgpuProfileActions'],
       selectedColumnKeys: [],
       columns: [],
       cols: [],
@@ -62,11 +71,23 @@ export default {
   created () {
     this.selectedColumnKeys = this.columnKeys
     this.updateColumns()
+    this.actions = [{
+      api: 'createVgpuProfile',
+      icon: 'plus-outlined',
+      label: 'label.add.vgpu.profile',
+      listView: true,
+      dataView: false,
+      args: ['name', 'description', 'vramsize', 'gpucardid']
+    }]
     this.fetchData()
   },
   methods: {
     fetchData () {
-      this.items = this.resource.vgpuprofiles
+      if (this.resourceType === 'GpuCard') {
+        this.fetchVgpuProfiles()
+      } else {
+        this.items = this.resource.vgpuprofiles
+      }
     },
     updateSelectedColumns (key) {
       if (this.selectedColumnKeys.includes(key)) {
@@ -90,6 +111,13 @@ export default {
       if (this.columns.length > 0) {
         this.columns[this.columns.length - 1].customFilterDropdown = true
       }
+    },
+    fetchVgpuProfiles () {
+      api('listVgpuProfiles', {
+        gpucardid: this.resource.id
+      }).then(res => {
+        this.items = res?.listvgpuprofilesresponse?.vgpuprofile || []
+      })
     }
   }
 }

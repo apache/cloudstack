@@ -915,6 +915,34 @@
           />
         </a-popconfirm>
       </template>
+      <template v-if="column.key === 'vgpuProfileActions'">
+        <a-popconfirm
+          v-if="record.state === 'Disabled'"
+          :title="`${$t('label.action.enable.gpu.device')}?`"
+          @confirm="$emit('enable-gpu-device', record)"
+          :okText="$t('label.yes')"
+          :cancelText="$t('label.no')"
+        >
+          <tooltip-button
+            :tooltip="$t('label.enable.gpu.device')"
+            :disabled="!('enableGpuDevice' in $store.getters.apis)"
+            icon="play-circle-outlined"
+          />
+        </a-popconfirm>
+        <a-popconfirm
+          v-else
+          :title="`${$t('label.action.disable.gpu.device')}?`"
+          @confirm="$emit('disable-gpu-device', record)"
+          :okText="$t('label.yes')"
+          :cancelText="$t('label.no')"
+        >
+          <tooltip-button
+            :tooltip="$t('label.disable.gpu.device')"
+            :disabled="!('disableGpuDevice' in $store.getters.apis)"
+            icon="pause-circle-outlined"
+          />
+        </a-popconfirm>
+      </template>
       <template v-if="column.key === 'usageActions'">
         <tooltip-button
           :tooltip="$t('label.view')"
