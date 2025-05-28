@@ -45,10 +45,12 @@ import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -57,6 +59,7 @@ import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -192,6 +195,7 @@ public class ConfigurationManagerImplTest {
         configurationManagerImplSpy.populateConfigValuesForValidationSet();
         configurationManagerImplSpy.weightBasedParametersForValidation();
         configurationManagerImplSpy.overProvisioningFactorsForValidation();
+        configurationManagerImplSpy.populateConfigKeysAllowedOnlyForDefaultAdmin();
         ReflectionTestUtils.setField(configurationManagerImplSpy, "templateZoneDao", vmTemplateZoneDao);
         ReflectionTestUtils.setField(configurationManagerImplSpy, "annotationDao", annotationDao);
 
@@ -883,5 +887,47 @@ public class ConfigurationManagerImplTest {
 
         Pair<Configuration, String> result = configurationManagerImplSpy.resetConfiguration(cmd);
         Assert.assertEquals(".85", result.second());
+    }
+
+    @Test
+    public void testValidateConfigurationAllowedOnlyForDefaultAdmin_withAdminUser_shouldNotThrowException() {
+        CallContext callContext = mock(CallContext.class);
+        when(callContext.getCallingUserId()).thenReturn(User.UID_ADMIN);
+        try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+            when(CallContext.current()).thenReturn(callContext);
+            configurationManagerImplSpy.validateConfigurationAllowedOnlyForDefaultAdmin(AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key(), "Admin");
+        }
+    }
+
+    @Test
+    public void testValidateConfigurationAllowedOnlyForDefaultAdmin_withNonAdminUser_shouldThrowException() {
+        CallContext callContext = mock(CallContext.class);
+        when(callContext.getCallingUserId()).thenReturn(123L);
+        try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+            when(CallContext.current()).thenReturn(callContext);
+            Assert.assertThrows(CloudRuntimeException.class, () ->
+                    configurationManagerImplSpy.validateConfigurationAllowedOnlyForDefaultAdmin(AccountManagerImpl.allowOperationsOnUsersInSameAccount.key(), "Admin")
+            );
+        }
+    }
+
+    @Test
+    public void testValidateConfigurationAllowedOnlyForDefaultAdmin_withNonRestrictedKey_shouldNotThrowException() {
+        CallContext callContext = mock(CallContext.class);
+        try (MockedStatic<CallContext> ignored = Mockito.mockStatic(CallContext.class)) {
+            when(CallContext.current()).thenReturn(callContext);
+            configurationManagerImplSpy.validateConfigurationAllowedOnlyForDefaultAdmin("some.other.config.key", "Admin");
+        }
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testValidateConfigurationAllowedOnlyForDefaultAdmin_withValidConfigNameAndInvalidValue_shouldThrowException() {
+        CallContext callContext = mock(CallContext.class);
+        try (MockedStatic<CallContext> mockedCallContext = Mockito.mockStatic(CallContext.class)) {
+            mockedCallContext.when(CallContext::current).thenReturn(callContext);
+            when(callContext.getCallingUserId()).thenReturn(User.UID_ADMIN);
+            String invalidValue = "Admin, SuperUser";
+            configurationManagerImplSpy.validateConfigurationAllowedOnlyForDefaultAdmin(AccountManagerImpl.listOfRoleTypesAllowedForOperationsOfSameRoleType.key(), invalidValue);
+        }
     }
 }
