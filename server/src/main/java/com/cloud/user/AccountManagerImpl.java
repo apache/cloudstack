@@ -1539,16 +1539,20 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public void verifyCallerPrivilegeForUserOrAccountOperations(Account userAccount) {
         s_logger.debug(String.format("Verifying whether the caller has the correct privileges based on the user's role type and API permissions: %s", userAccount));
 
-        checkCallerRoleTypeAllowedForUserOrAccountOperations(userAccount, null);
-        checkCallerApiPermissionsForUserOrAccountOperations(userAccount);
+        if (!Account.Type.PROJECT.equals(userAccount.getType())) {
+            checkCallerRoleTypeAllowedForUserOrAccountOperations(userAccount, null);
+            checkCallerApiPermissionsForUserOrAccountOperations(userAccount);
+        }
     }
 
     protected void verifyCallerPrivilegeForUserOrAccountOperations(User user) {
         s_logger.debug(String.format("Verifying whether the caller has the correct privileges based on the user's role type and API permissions: %s", user));
 
         Account userAccount = getAccount(user.getAccountId());
-        checkCallerRoleTypeAllowedForUserOrAccountOperations(userAccount, user);
-        checkCallerApiPermissionsForUserOrAccountOperations(userAccount);
+        if (!Account.Type.PROJECT.equals(userAccount.getType())) {
+            checkCallerRoleTypeAllowedForUserOrAccountOperations(userAccount, user);
+            checkCallerApiPermissionsForUserOrAccountOperations(userAccount);
+        }
     }
 
     protected void checkCallerRoleTypeAllowedForUserOrAccountOperations(Account userAccount, User user) {
@@ -2626,10 +2630,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
         }
 
-        if (!Account.Type.PROJECT.equals(accountType)) {
-            AccountVO newAccount = new AccountVO(accountName, domainId, networkDomain, accountType, roleId, uuid);
-            verifyCallerPrivilegeForUserOrAccountOperations(newAccount);
-        }
+        AccountVO newAccount = new AccountVO(accountName, domainId, networkDomain, accountType, roleId, uuid);
+        verifyCallerPrivilegeForUserOrAccountOperations(newAccount);
 
         // Create the account
         return Transaction.execute(new TransactionCallback<AccountVO>() {
