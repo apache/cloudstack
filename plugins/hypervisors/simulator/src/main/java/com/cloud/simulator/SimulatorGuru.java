@@ -17,6 +17,7 @@
 package com.cloud.simulator;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -35,8 +36,8 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.dao.NicDao;
 
 public class SimulatorGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject
@@ -91,6 +92,29 @@ public class SimulatorGuru extends HypervisorGuruBase implements HypervisorGuru 
     }
 
     @Override
+    public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, Backup.VolumeInfo volumeInfo, VirtualMachine vm, long poolId, Backup backup) {
+
+        VMInstanceVO targetVM = instanceDao.findVMByInstanceNameIncludingRemoved(vm.getName());
+        List<VolumeVO> vmVolumes = volumeDao.findByInstance(targetVM.getId());
+        VolumeVO restoredVolume = volumeDao.findByUuid(location);
+        if (restoredVolume != null) {
+            try {
+                volumeDao.attachVolume(restoredVolume.getId(), vm.getId(), getNextAvailableDeviceId(vmVolumes));
+                restoredVolume.setState(Volume.State.Ready);
+                volumeDao.update(restoredVolume.getId(), restoredVolume);
+                return true;
+            } catch (Exception e) {
+                restoredVolume.setDisplay(false);
+                restoredVolume.setDisplayVolume(false);
+                restoredVolume.setState(Volume.State.Destroy);
+                volumeDao.update(restoredVolume.getId(), restoredVolume);
+                throw new RuntimeException("Unable to attach volume " + restoredVolume.getName() + " to VM" + vm.getName() + " due to : " + e.getMessage());
+            }
+        }
+        return false;
+    }
+
+    @Override
     public boolean trackVmHostChange() {
         return false;
     }
@@ -100,4 +124,11 @@ public class SimulatorGuru extends HypervisorGuruBase implements HypervisorGuru 
         return null;
     }
 
+    private long getNextAvailableDeviceId(List<VolumeVO> vmVolumes) {
+        if (vmVolumes == null || vmVolumes.isEmpty()) {
+            return 0;
+        }
+        long maxDeviceId = vmVolumes.stream() .mapToLong(VolumeVO::getDeviceId) .max() .orElse(-1);
+        return maxDeviceId + 1;
+    }
 }

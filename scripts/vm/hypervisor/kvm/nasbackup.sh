@@ -148,6 +148,15 @@ delete_backup() {
   rmdir $mount_point
 }
 
+get_backup_stats() {
+  mount_operation
+
+  echo $mount_point
+  df -P $mount_point 2>/dev/null | awk 'NR==2 {print $2, $3}'
+  umount $mount_point
+  rmdir $mount_point
+}
+
 mount_operation() {
   mount_point=$(mktemp -d -t csbackup.XXXXX)
   dest="$mount_point/${BACKUP_DIR}"
@@ -230,4 +239,6 @@ if [ "$OP" = "backup" ]; then
   fi
 elif [ "$OP" = "delete" ]; then
   delete_backup
+elif [ "$OP" = "stats" ]; then
+  get_backup_stats
 fi
