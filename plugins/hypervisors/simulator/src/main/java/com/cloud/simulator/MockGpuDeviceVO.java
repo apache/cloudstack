@@ -57,6 +57,9 @@ public class MockGpuDeviceVO implements MockGpuDevice, InternalIdentity {
     @Column(name = "vm_id")
     private Long vmId;
 
+    @Column(name = "max_vgpu_per_pgpu", nullable = false)
+    private Long maxVgpuPerPgpu = 1L;
+
     @Column(name = "state")
     @Enumerated(EnumType.STRING)
     private State state;
@@ -74,6 +77,12 @@ public class MockGpuDeviceVO implements MockGpuDevice, InternalIdentity {
 
     @Column(name = "passthrough_enabled")
     private boolean passthroughEnabled = true;
+
+    @Column(name = "numa_node")
+    private Integer numaNode;
+
+    @Column(name = "pci_root")
+    private String pciRoot;
 
     public MockGpuDeviceVO() {
     }
@@ -164,6 +173,14 @@ public class MockGpuDeviceVO implements MockGpuDevice, InternalIdentity {
         this.vmId = vmId;
     }
 
+    public Long getMaxVgpuPerPgpu() {
+        return maxVgpuPerPgpu;
+    }
+
+    public void setMaxVgpuPerPgpu(Long maxVgpuPerGpu) {
+        this.maxVgpuPerPgpu = maxVgpuPerGpu;
+    }
+
     @Override
     public State getState() {
         return state;
@@ -204,6 +221,22 @@ public class MockGpuDeviceVO implements MockGpuDevice, InternalIdentity {
 
     public void setPassthroughEnabled(boolean passthroughEnabled) {
         this.passthroughEnabled = passthroughEnabled;
+    }
+
+    public Integer getNumaNode() {
+        return numaNode;
+    }
+
+    public void setNumaNode(Integer numaNode) {
+        this.numaNode = numaNode;
+    }
+
+    public String getPciRoot() {
+        return pciRoot;
+    }
+
+    public void setPciRoot(String pciRoot) {
+        this.pciRoot = pciRoot;
     }
 
     /**

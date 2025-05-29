@@ -156,12 +156,6 @@
               v-if="record.id"
             >{{ $t(text.toLowerCase()) }}</router-link>
           </span>
-          <span v-else-if="$route.path.startsWith('/gpuoffering') && record.gpucardid">
-            <router-link
-              :to="{ path: '/vgpuprofile/' + record.id }"
-              v-if="record.id"
-            >{{ $t(text.toLowerCase()) }}</router-link>
-          </span>
           <span v-else>
             <router-link
               :to="{ path: $route.path + '/' + record.id }"
@@ -915,34 +909,6 @@
           />
         </a-popconfirm>
       </template>
-      <template v-if="column.key === 'vgpuProfileActions'">
-        <a-popconfirm
-          v-if="record.state === 'Disabled'"
-          :title="`${$t('label.action.enable.gpu.device')}?`"
-          @confirm="$emit('enable-gpu-device', record)"
-          :okText="$t('label.yes')"
-          :cancelText="$t('label.no')"
-        >
-          <tooltip-button
-            :tooltip="$t('label.enable.gpu.device')"
-            :disabled="!('enableGpuDevice' in $store.getters.apis)"
-            icon="play-circle-outlined"
-          />
-        </a-popconfirm>
-        <a-popconfirm
-          v-else
-          :title="`${$t('label.action.disable.gpu.device')}?`"
-          @confirm="$emit('disable-gpu-device', record)"
-          :okText="$t('label.yes')"
-          :cancelText="$t('label.no')"
-        >
-          <tooltip-button
-            :tooltip="$t('label.disable.gpu.device')"
-            :disabled="!('disableGpuDevice' in $store.getters.apis)"
-            icon="pause-circle-outlined"
-          />
-        </a-popconfirm>
-      </template>
       <template v-if="column.key === 'usageActions'">
         <tooltip-button
           :tooltip="$t('label.view')"
@@ -1385,7 +1351,6 @@ export default {
         case 'SERVICE_OFFERING' : return 'computeoffering'
         case 'DISK_OFFERING' : return 'diskoffering'
         case 'NETWORK_OFFERING' : return 'networkoffering'
-        case 'GPU_OFFERING' : return 'gpuoffering'
         case 'POD' : return 'pod'
         case 'ZONE' : return 'zone'
         case 'CLUSTER' : return 'cluster'

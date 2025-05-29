@@ -28,9 +28,7 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import com.cloud.gpu.GpuOfferingVO;
-import com.cloud.gpu.dao.GpuOfferingDao;
-import com.cloud.service.ServiceOfferingVO;
+import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.service.dao.ServiceOfferingDao;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.annotation.AnnotationService;
@@ -50,6 +48,7 @@ import org.apache.cloudstack.query.QueryService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -122,9 +121,9 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     @Inject
     ConfigurationDao configurationDao;
     @Inject
-    private GpuOfferingDao gpuOfferingDao;
-    @Inject
     private ServiceOfferingDao serviceOfferingDao;
+    @Inject
+    private VgpuProfileDao vgpuProfileDao;
 
     private final SearchBuilder<UserVmJoinVO> VmDetailSearch;
     private final SearchBuilder<UserVmJoinVO> activeVmByIsoSearch;
@@ -260,11 +259,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 userVmResponse.setDiskOfferingName(userVm.getDiskOfferingName());
             }
         }
-        if (details.contains(VMDetails.all) || details.contains(VMDetails.gpuoff)) {
-            userVmResponse.setGpuOfferingId(userVm.getGpuOfferingUuid());
-            userVmResponse.setGpuOfferingName(userVm.getGpuOfferingName());
-            userVmResponse.setGpuCount(userVm.getGpuCount());
-        }
+
         if (details.contains(VMDetails.all) || details.contains(VMDetails.backoff)) {
             userVmResponse.setBackupOfferingId(userVm.getBackupOfferingUuid());
             userVmResponse.setBackupOfferingName(userVm.getBackupOfferingName());
@@ -273,20 +268,16 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
             userVmResponse.setCpuNumber(userVm.getCpu());
             userVmResponse.setCpuSpeed(userVm.getSpeed());
             userVmResponse.setMemory(userVm.getRamSize());
+            userVmResponse.setGpuCount(userVm.getGpuCount());
+            userVmResponse.setGpuCardId(userVm.getGpuCardUuid());
+            userVmResponse.setGpuCardName(userVm.getGpuCardName());
+            userVmResponse.setVgpuProfileId(userVm.getVgpuProfileUuid());
+            userVmResponse.setVgpuProfileName(userVm.getVgpuProfileName());
+            userVmResponse.setVgpu(userVm.getVgpuProfileName());
 
-            ServiceOfferingVO serviceOffering = serviceOfferingDao.findById(userVm.getServiceOfferingId());
-
-            if (serviceOffering.getGpuOfferingId() != null) {
-                GpuOfferingVO gpuOffering = gpuOfferingDao.findById(serviceOffering.getGpuOfferingId());
-                if (gpuOffering != null) {
-                    userVmResponse.setVgpu(gpuOffering.getName());
-                }
-            } else {
-                ServiceOfferingDetailsVO serviceOfferingDetail = ApiDBUtils.findServiceOfferingDetail(userVm.getServiceOfferingId(),
-                                GPU.Keys.vgpuType.toString());
-                if (serviceOfferingDetail != null) {
-                    userVmResponse.setVgpu(serviceOfferingDetail.getValue());
-                }
+            ServiceOfferingDetailsVO serviceOfferingDetail = ApiDBUtils.findServiceOfferingDetail(userVm.getServiceOfferingId(), GPU.Keys.vgpuType.toString());
+            if (serviceOfferingDetail != null) {
+                userVmResponse.setVgpu(serviceOfferingDetail.getValue());
             }
         }
         userVmResponse.setGuestOsId(userVm.getGuestOsUuid());

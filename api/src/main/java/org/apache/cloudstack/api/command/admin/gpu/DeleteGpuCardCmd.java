@@ -30,7 +30,8 @@ import org.apache.cloudstack.gpu.GpuService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "deleteGpuCard", description = "Deletes a GPU card definition from the system", responseObject = SuccessResponse.class,
+@APICommand(name = "deleteGpuCard", description = "Deletes a GPU card definition from the system", responseObject =
+        SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.21.0",
         authorized = {RoleType.Admin})
 public class DeleteGpuCardCmd extends BaseCmd {
@@ -38,29 +39,20 @@ public class DeleteGpuCardCmd extends BaseCmd {
     @Inject
     private GpuService gpuService;
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// ///////////// API parameters /////////////////////
+    /// //////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GpuCardResponse.class,
             required = true, description = "the ID of the GPU card")
     private Long id;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// //////////////// Accessors ///////////////////////
+    /// //////////////////////////////////////////////////
 
     public Long getId() {
         return id;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
-    public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
@@ -76,5 +68,14 @@ public class DeleteGpuCardCmd extends BaseCmd {
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete GPU card: " + e.getMessage());
         }
+    }
+
+    /// //////////////////////////////////////////////////
+    /// //////////// API Implementation///////////////////
+    /// //////////////////////////////////////////////////
+
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 }

@@ -349,8 +349,8 @@ export default {
       docHelp: 'adminguide/guest_os.html#guest-os',
       icon: 'laptop-outlined',
       permission: ['listGpuCards'],
-      columns: ['name', 'deviceid', 'devicename', 'vendorid', 'vendorname', 'vramsize'],
-      details: ['name', 'deviceid', 'devicename', 'vendorid', 'vendorname', 'vramsize'],
+      columns: ['name', 'deviceid', 'devicename', 'vendorid', 'vendorname'],
+      details: ['name', 'deviceid', 'devicename', 'vendorid', 'vendorname'],
       related: [{
         name: 'gpudevices',
         title: 'label.gpu.device',
@@ -365,8 +365,7 @@ export default {
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
       }, {
         name: 'vgpu',
-        component: shallowRef(defineAsyncComponent(() => import('@/components/view/VgpuProfilesTab.vue'))),
-        resourceType: 'GpuCard'
+        component: shallowRef(defineAsyncComponent(() => import('@/components/view/VgpuProfilesTab.vue')))
       }],
       actions: [
         {
@@ -375,7 +374,7 @@ export default {
           label: 'label.add.gpu.card',
           listView: true,
           dataView: false,
-          args: ['name', 'deviceid', 'devicename', 'vendorid', 'vendorname', 'vramsize']
+          args: ['name', 'deviceid', 'devicename', 'vendorid', 'vendorname']
           // mapping: {
           //   deviceid: {
           //     options: ['nvidia-gpu', 'amd-gpu']
@@ -388,7 +387,7 @@ export default {
           label: 'label.edit',
           dataView: true,
           popup: true,
-          args: ['name', 'devicename', 'vendorname', 'vramsize']
+          args: ['name', 'devicename', 'vendorname']
         },
         {
           api: 'removeGpuCard',
@@ -409,13 +408,8 @@ export default {
       docHelp: 'adminguide/guest_os.html#guest-os',
       icon: 'laptop-outlined',
       permission: ['listVgpuProfiles'],
-      columns: ['gpucardname', 'name', 'description', 'vramsize'],
-      details: ['gpucardname', 'name', 'description', 'vramsize'],
-      // related: [{
-      //   name: 'guestoshypervisormapping',
-      //   title: 'label.guest.os.hypervisor.mappings',
-      //   param: 'ostypeid'
-      // }],
+      columns: ['gpucardname', 'name', 'description', 'maxvgpuperphysicalgpu'],
+      details: ['gpucardname', 'name', 'description', 'maxvgpuperphysicalgpu'],
       actions: [
         {
           api: 'createVgpuProfile',
@@ -423,12 +417,7 @@ export default {
           label: 'label.add.vgpu.profile',
           listView: true,
           dataView: false,
-          args: ['name', 'description', 'vramsize', 'gpucardid']
-          // mapping: {
-          //   deviceid: {
-          //     options: ['nvidia-gpu', 'amd-gpu']
-          //   }
-          // }
+          args: ['name', 'description', 'gpucardid', 'maxvgpuperphysicalgpu']
         },
         {
           api: 'updateVgpuProfile',
@@ -436,7 +425,7 @@ export default {
           label: 'label.edit',
           dataView: true,
           popup: true,
-          args: ['name', 'description', 'vramsize']
+          args: ['name', 'description', 'maxvgpuperphysicalgpu']
         },
         {
           api: 'removeVgpuProfile',

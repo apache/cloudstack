@@ -821,6 +821,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
                 reservationDao.setResourceId(Resource.ResourceType.user_vm, userVM.getId());
                 reservationDao.setResourceId(Resource.ResourceType.cpu, userVM.getId());
                 reservationDao.setResourceId(Resource.ResourceType.memory, userVM.getId());
+                reservationDao.setResourceId(Resource.ResourceType.gpu, userVM.getId());
                 return userVM;
             });
         }

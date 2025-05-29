@@ -44,6 +44,14 @@
         </a-button>
         <volumes-tab :resource="vm" :loading="loading" />
       </a-tab-pane>
+      <a-tab-pane :tab="$t('label.gpus')" key="gpus" v-if="dataResource.gpucardname">
+        <ListResourceTable
+          apiName="listGpuDevices"
+          :resource="dataResource"
+          :params="{virtualmachineid: dataResource.id}"
+          :columns="['id', 'gpucardname', 'vgpuprofilename', 'state']"
+          :routerlinks="(record) => { return { displayname: '/gpudevice/' + record.id } }"/>
+      </a-tab-pane>
       <a-tab-pane :tab="$t('label.nics')" key="nics" v-if="'listNics' in $store.getters.apis">
         <NicsTab :resource="vm"/>
       </a-tab-pane>

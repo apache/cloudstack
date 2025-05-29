@@ -40,9 +40,6 @@ public class GpuCardVO implements GpuCard {
     @Column(name = "vendor_id")
     private String vendorId;
 
-    @Column(name = "vram_size")
-    private Long vramSize;
-
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
 
@@ -51,22 +48,20 @@ public class GpuCardVO implements GpuCard {
     }
 
     public GpuCardVO(String deviceId, String deviceName, String name, String vendorName,
-                     String vendorId, Long vramSize) {
+                     String vendorId) {
         this.uuid = UUID.randomUUID().toString();
         this.deviceId = deviceId;
         this.deviceName = deviceName;
         this.name = name;
         this.vendorName = vendorName;
         this.vendorId = vendorId;
-        this.vramSize = vramSize;
         this.created = new Date();
     }
 
     @Override
     public String toString() {
         return String.format("GPUCard %s", ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                this, "id", "uuid", "deviceId", "deviceName", "displayName", "vendorId",
-                "vramSize"));
+                this, "id", "uuid", "deviceId", "deviceName", "displayName", "vendorId"));
     }
 
     @Override
@@ -122,15 +117,6 @@ public class GpuCardVO implements GpuCard {
 
     public void setVendorId(String vendorId) {
         this.vendorId = vendorId;
-    }
-
-    @Override
-    public Long getVramSize() {
-        return vramSize;
-    }
-
-    public void setVramSize(Long vramSize) {
-        this.vramSize = vramSize;
     }
 
     @Override

@@ -36,8 +36,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.gpu.GpuOfferingVO;
-import com.cloud.gpu.dao.GpuOfferingDao;
+import com.cloud.gpu.VgpuProfileVO;
+import com.cloud.gpu.dao.VgpuProfileDao;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -251,7 +251,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
     @Inject
     protected ResourceManager _resourceMgr;
     @Inject
-    protected GpuOfferingDao gpuOfferingDao;
+    protected VgpuProfileDao vgpuProfileDao;
     @Inject
     protected ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
 
@@ -586,18 +586,15 @@ StateListener<State, VirtualMachine.Event, VirtualMachine>, Configurable {
             return false;
         }
 
-        if (offering.getGpuOfferingId() != null) {
-            GpuOfferingVO gpuOffering = gpuOfferingDao.findById(offering.getGpuOfferingId());
-            if (gpuOffering == null) {
-                logger.debug("Cannot deploy VM [{}] in the last host [{}] because the GPU offering is not found. Skipping this and trying other available hosts.",
+        if (offering.getVgpuProfileId() != null) {
+            VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(offering.getVgpuProfileId());
+            if (vgpuProfile == null) {
+                logger.debug("Cannot deploy VM [{}] in the last host [{}] because the vgpu profile is not found. Skipping this and trying other available hosts.",
                         vm, host);
                 return false;
             }
-            Integer gpuCount = offering.getGpuCount();
-            if (gpuCount == null) {
-                gpuCount = 0;
-            }
-            if (!_resourceMgr.isGPUDeviceAvailable(host, vm.getId(), gpuOffering, gpuCount)) {
+            int gpuCount = offering.getGpuCount() != null ? offering.getGpuCount() : 1;
+            if (!_resourceMgr.isGPUDeviceAvailable(host, vm.getId(), vgpuProfile, gpuCount)) {
                 logger.debug("Cannot deploy VM [{}] in the last host [{}] because this host does not have GPU devices. Skipping this and trying other available hosts.",
                         vm, host);
                 return false;

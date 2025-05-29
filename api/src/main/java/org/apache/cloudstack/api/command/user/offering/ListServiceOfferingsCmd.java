@@ -22,11 +22,11 @@ import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.GpuOfferingResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VgpuProfileResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.lang3.EnumUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -111,12 +111,12 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
             since = "4.20.0")
     private Long templateId;
 
-    @Parameter(name = ApiConstants.GPU_OFFERING_ID,
+    @Parameter(name = ApiConstants.VGPU_PROFILE_ID,
             type = CommandType.UUID,
-            entityType = GpuOfferingResponse.class,
-            description = "The ID of the GPU offering that listed offerings must support",
+            entityType = VgpuProfileResponse.class,
+            description = "The ID of the vGPU profile that listed offerings must support",
             since = "4.21.0")
-    private Long gpuOfferingId;
+    private Long vgpuProfileId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -179,8 +179,8 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
         return templateId;
     }
 
-    public Long getGpuOfferingId() {
-        return gpuOfferingId;
+    public Long getVgpuProfileId() {
+        return vgpuProfileId;
     }
 
     /////////////////////////////////////////////////////

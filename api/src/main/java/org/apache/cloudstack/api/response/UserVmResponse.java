@@ -182,13 +182,21 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the name of the disk offering of the virtual machine. This parameter should not be used for retrieving disk offering details of DATA volumes. Use listVolumes API instead", since = "4.4")
     private String diskOfferingName;
 
-    @SerializedName(ApiConstants.GPU_OFFERING_ID)
-    @Param(description = "the ID of the GPU offering of the virtual machine.", since = "4.21")
-    private String gpuOfferingId;
+    @SerializedName(ApiConstants.GPU_CARD_ID)
+    @Param(description = "the ID of the gpu card to which service offering is linked", since = "4.21")
+    private String gpuCardId;
 
-    @SerializedName(ApiConstants.GPU_OFFERING_NAME)
-    @Param(description = "the name of the GPU offering of the virtual machine.", since = "4.21")
-    private String gpuOfferingName;
+    @SerializedName(ApiConstants.GPU_CARD_NAME)
+    @Param(description = "the name of the gpu card to which service offering is linked", since = "4.21")
+    private String gpuCardName;
+
+    @SerializedName(ApiConstants.VGPU_PROFILE_ID)
+    @Param(description = "the ID of the vgpu profile to which service offering is linked", since = "4.21")
+    private String vgpuProfileId;
+
+    @SerializedName(ApiConstants.VGPU_PROFILE_NAME)
+    @Param(description = "the name of the vgpu profile to which service offering is linked", since = "4.21")
+    private String vgpuProfileName;
 
     @SerializedName(ApiConstants.GPU_COUNT)
     @Param(description = "the count of GPUs on the virtual machine", since = "4.21")
@@ -577,12 +585,20 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         return diskOfferingName;
     }
 
-    public String getGpuOfferingId() {
-        return gpuOfferingId;
+    public String getGpuCardId() {
+        return gpuCardId;
     }
 
-    public String getGpuOfferingName() {
-        return gpuOfferingName;
+    public String getGpuCardName() {
+        return gpuCardName;
+    }
+
+    public String getVgpuProfileId() {
+        return vgpuProfileId;
+    }
+
+    public String getVgpuProfileName() {
+        return vgpuProfileName;
     }
 
     public Integer getGpuCount() {
@@ -871,12 +887,20 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
         this.diskOfferingName = diskOfferingName;
     }
 
-    public void setGpuOfferingId(String gpuOfferingId) {
-        this.gpuOfferingId = gpuOfferingId;
+    public void setGpuCardId(String gpuCardId) {
+        this.gpuCardId = gpuCardId;
     }
 
-    public void setGpuOfferingName(String gpuOfferingName) {
-        this.gpuOfferingName = gpuOfferingName;
+    public void setGpuCardName(String gpuCardName) {
+        this.gpuCardName = gpuCardName;
+    }
+
+    public void setVgpuProfileId(String vgpuProfileId) {
+        this.vgpuProfileId = vgpuProfileId;
+    }
+
+    public void setVgpuProfileName(String vgpuProfileName) {
+        this.vgpuProfileName = vgpuProfileName;
     }
 
     public void setGpuCount(Integer gpuCount) {

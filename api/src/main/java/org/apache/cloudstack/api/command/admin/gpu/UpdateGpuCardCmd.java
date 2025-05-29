@@ -30,7 +30,8 @@ import org.apache.cloudstack.gpu.GpuService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "updateGpuCard", description = "Updates a GPU card definition in the system", responseObject = GpuCardResponse.class,
+@APICommand(name = "updateGpuCard", description = "Updates a GPU card definition in the system", responseObject =
+        GpuCardResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.21.0",
         authorized = {RoleType.Admin})
 public class UpdateGpuCardCmd extends BaseCmd {
@@ -38,29 +39,28 @@ public class UpdateGpuCardCmd extends BaseCmd {
     @Inject
     private GpuService gpuService;
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// ///////////// API parameters /////////////////////
+    /// //////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GpuCardResponse.class,
             required = true, description = "the ID of the GPU card")
     private Long id;
 
-    @Parameter(name = ApiConstants.DEVICE_NAME, type = CommandType.STRING, description = "the device name of the GPU card")
+    @Parameter(name = ApiConstants.DEVICE_NAME, type = CommandType.STRING, description = "the device name of the GPU "
+                                                                                         + "card")
     private String deviceName;
 
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the display name of the GPU card")
     private String name;
 
-    @Parameter(name = ApiConstants.VENDOR_NAME, type = CommandType.STRING, description = "the vendor name of the GPU card")
+    @Parameter(name = ApiConstants.VENDOR_NAME, type = CommandType.STRING, description = "the vendor name of the GPU "
+                                                                                         + "card")
     private String vendorName;
 
-    @Parameter(name = ApiConstants.VRAM_SIZE, type = CommandType.LONG, description = "the VRAM size of the GPU card in MB")
-    private Long vramSize;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// //////////////// Accessors ///////////////////////
+    /// //////////////////////////////////////////////////
 
     public Long getId() {
         return id;
@@ -78,19 +78,6 @@ public class UpdateGpuCardCmd extends BaseCmd {
         return vendorName;
     }
 
-    public Long getVramSize() {
-        return vramSize;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
-    public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
-    }
-
     @Override
     public void execute() {
         try {
@@ -105,5 +92,14 @@ public class UpdateGpuCardCmd extends BaseCmd {
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update GPU card: " + e.getMessage());
         }
+    }
+
+    /// //////////////////////////////////////////////////
+    /// //////////// API Implementation///////////////////
+    /// //////////////////////////////////////////////////
+
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 }

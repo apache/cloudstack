@@ -240,14 +240,24 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
     @Column(name = "service_offering_name")
     private String serviceOfferingName;
 
-    @Column(name = "gpu_offering_id")
-    private Long gpuOfferingId;
 
-    @Column(name = "gpu_offering_uuid")
-    private String gpuOfferingUuid;
+    @Column(name = "gpu_card_id")
+    private Long gpuCardId;
 
-    @Column(name = "gpu_offering_name")
-    private String gpuOfferingName;
+    @Column(name = "gpu_card_uuid")
+    private String gpuCardUuid;
+
+    @Column(name = "gpu_card_name")
+    private String gpuCardName;
+
+    @Column(name = "vgpu_profile_id")
+    private Long vgpuProfileId;
+
+    @Column(name = "vgpu_profile_uuid")
+    private String vgpuProfileUuid;
+
+    @Column(name = "vgpu_profile_name")
+    private String vgpuProfileName;
 
     @Column(name = "gpu_count")
     private Integer gpuCount;
@@ -715,16 +725,28 @@ public class UserVmJoinVO extends BaseViewWithTagInformationVO implements Contro
         return serviceOfferingName;
     }
 
-    public Long getGpuOfferingId() {
-        return gpuOfferingId;
+    public Long getGpuCardId() {
+        return gpuCardId;
     }
 
-    public String getGpuOfferingUuid() {
-        return gpuOfferingUuid;
+    public String getGpuCardUuid() {
+        return gpuCardUuid;
     }
 
-    public String getGpuOfferingName() {
-        return gpuOfferingName;
+    public String getGpuCardName() {
+        return gpuCardName;
+    }
+
+    public Long getVgpuProfileId() {
+        return vgpuProfileId;
+    }
+
+    public String getVgpuProfileUuid() {
+        return vgpuProfileUuid;
+    }
+
+    public String getVgpuProfileName() {
+        return vgpuProfileName;
     }
 
     public Integer getGpuCount() {

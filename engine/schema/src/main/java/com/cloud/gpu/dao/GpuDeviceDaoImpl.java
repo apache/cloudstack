@@ -29,7 +29,9 @@ import org.apache.cloudstack.gpu.GpuDevice;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class GpuDeviceDaoImpl extends GenericDaoBase<GpuDeviceVO, Long> implements GpuDeviceDao {
@@ -41,8 +43,11 @@ public class GpuDeviceDaoImpl extends GenericDaoBase<GpuDeviceVO, Long> implemen
     private static final String VGPU_PROFILE_ID = "vgpuProfileId";
     private static final String PARENT_GPU_DEVICE_ID = "parentGpuDeviceId";
     private static final String STATE = "state";
+    private static final String RESOURCE_STATE = "resourceState";
+    private static final String OFFERING_ID = "offeringId";
+    private static final String TYPE = "type";
     private final SearchBuilder<GpuDeviceVO> allFieldSearch;
-    private final SearchBuilder<GpuDeviceVO> gpuDevicesForAllocationSearch;
+    private SearchBuilder<GpuDeviceVO> gpuDevicesForAllocationSearch;
     @Inject
     private GpuCardDao gpuCardDao;
     @Inject
@@ -60,6 +65,10 @@ public class GpuDeviceDaoImpl extends GenericDaoBase<GpuDeviceVO, Long> implemen
                 SearchCriteria.Op.EQ);
         allFieldSearch.and(VM_ID, allFieldSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         allFieldSearch.done();
+    }
+
+    @Override
+    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
 
         gpuDevicesForAllocationSearch = createSearchBuilder();
         gpuDevicesForAllocationSearch.and(HOST_ID,
@@ -68,8 +77,13 @@ public class GpuDeviceDaoImpl extends GenericDaoBase<GpuDeviceVO, Long> implemen
                 gpuDevicesForAllocationSearch.entity().getVgpuProfileId(), SearchCriteria.Op.IN);
         gpuDevicesForAllocationSearch.and(STATE,
                 gpuDevicesForAllocationSearch.entity().getState(), SearchCriteria.Op.EQ);
-        gpuDevicesForAllocationSearch.done();
+        gpuDevicesForAllocationSearch.and(RESOURCE_STATE,
+                gpuDevicesForAllocationSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
+        gpuDevicesForAllocationSearch.and(TYPE,
+                gpuDevicesForAllocationSearch.entity().getType(), SearchCriteria.Op.NEQ);
 
+        gpuDevicesForAllocationSearch.done();
+        return super.configure(name, params);
     }
 
     @Override
@@ -136,12 +150,14 @@ public class GpuDeviceDaoImpl extends GenericDaoBase<GpuDeviceVO, Long> implemen
         sc.setParameters(HOST_ID, hostId);
         sc.setParameters(VGPU_PROFILE_ID, vgpuProfileIdList.toArray());
         sc.setParameters(STATE, GpuDevice.State.Free);
+        sc.setParameters(RESOURCE_STATE, GpuDevice.ResourceState.Enabled);
+        sc.setParameters(TYPE, GpuDevice.DeviceType.VGPUOnly);
         return search(sc, null);
     }
 
     @Override
     public Pair<List<GpuDeviceVO>, Integer> searchAndCountGpuDevices(
-            Long id, String keyword, Long hostId, Long gpuCardId, Long vgpuProfileId,
+            Long id, String keyword, Long hostId, Long vmId, Long gpuCardId, Long vgpuProfileId,
             Long startIndex, Long pageSize
     ) {
         Filter searchFilter = new Filter(GpuDeviceVO.class, "id", true, startIndex, pageSize);
@@ -153,6 +169,9 @@ public class GpuDeviceDaoImpl extends GenericDaoBase<GpuDeviceVO, Long> implemen
         if (hostId != null) {
             sb.and("hostId", sb.entity().getHostId(), SearchCriteria.Op.EQ);
         }
+        if (vmId != null) {
+            sb.and("vmId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
+        }
         if (gpuCardId != null) {
             sb.and("cardId", sb.entity().getCardId(), SearchCriteria.Op.EQ);
         }
@@ -162,10 +181,8 @@ public class GpuDeviceDaoImpl extends GenericDaoBase<GpuDeviceVO, Long> implemen
         if (keyword != null) {
             SearchBuilder<GpuCardVO> cardSb = gpuCardDao.createSearchBuilder();
             SearchBuilder<VgpuProfileVO> profileSb = vgpuProfileDao.createSearchBuilder();
-            sb.join("cardJoin", cardSb, sb.entity().getCardId(), cardSb.entity().getId(),
-                    JoinBuilder.JoinType.INNER);
-            sb.join("profileJoin", profileSb, sb.entity().getCardId(), profileSb.entity().getId()
-                    , JoinBuilder.JoinType.INNER);
+            sb.join("cardJoin", cardSb, sb.entity().getCardId(), cardSb.entity().getId(),JoinBuilder.JoinType.INNER);
+            sb.join("profileJoin", profileSb, sb.entity().getCardId(), profileSb.entity().getId(), JoinBuilder.JoinType.INNER);
 
             sb.op("cardNameKeyword", cardSb.entity().getName(), SearchCriteria.Op.LIKE);
             sb.or("cardNameKeyword", cardSb.entity().getVendorName(), SearchCriteria.Op.LIKE);
@@ -186,6 +203,9 @@ public class GpuDeviceDaoImpl extends GenericDaoBase<GpuDeviceVO, Long> implemen
         }
         if (hostId != null) {
             sc.setParameters("hostId", hostId);
+        }
+        if (vmId != null) {
+            sc.setParameters("vmId", vmId);
         }
         if (gpuCardId != null) {
             sc.setParameters("cardId", gpuCardId);

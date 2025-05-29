@@ -40,7 +40,7 @@ export default {
       filters: ['active', 'inactive'],
       columns: ['name', 'displaytext', 'state', 'cpunumber', 'cpuspeed', 'memory', 'domain', 'zone', 'order'],
       details: () => {
-        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot', 'purgeresources', 'leaseduration', 'leaseexpiryaction', 'gpuofferingname', 'gpucount']
+        var fields = ['name', 'id', 'displaytext', 'offerha', 'provisioningtype', 'storagetype', 'iscustomized', 'iscustomizediops', 'limitcpuuse', 'cpunumber', 'cpuspeed', 'memory', 'hosttags', 'tags', 'storagetags', 'domain', 'zone', 'created', 'dynamicscalingenabled', 'diskofferingstrictness', 'encryptroot', 'purgeresources', 'leaseduration', 'leaseexpiryaction', 'gpucardid', 'gpucardname', 'vgpuprofileid', 'vgpuprofilename', 'gpucount']
         if (store.getters.apis.createServiceOffering &&
           store.getters.apis.createServiceOffering.params.filter(x => x.name === 'storagepolicy').length > 0) {
           fields.splice(6, 0, 'vspherestoragepolicy')
@@ -311,103 +311,6 @@ export default {
         popup: true,
         show: (record) => { return record.state === 'Active' },
         groupMap: (selection) => { return selection.map(x => { return { id: x } }) }
-      }]
-    },
-    {
-      name: 'gpuoffering',
-      title: 'label.gpu.offerings',
-      icon: 'hdd-outlined',
-      docHelp: 'adminguide/service_offerings.html#compute-and-disk-service-offerings',
-      permission: ['listGpuOfferings'],
-      searchFilters: ['name', 'zoneid', 'domainid', 'storageid'],
-      params: () => {
-        var params = {}
-        if (['Admin', 'DomainAdmin'].includes(store.getters.userInfo.roletype)) {
-          params = { isrecursive: 'true' }
-        }
-        return params
-      },
-      columns: ['name', 'description', 'state', 'order'],
-      details: () => {
-        var fields = ['name', 'description', 'state', 'order', 'created', 'vpuprofileids']
-        return fields
-      },
-      filters: ['active', 'inactive'],
-      resourceType: 'GpuOffering',
-      tabs: [
-        {
-          name: 'details',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
-        },
-        {
-          name: 'vgpuprofiles',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/VgpuProfilesTab.vue')))
-        },
-        {
-          name: 'events',
-          resourceType: 'GpuOffering',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
-          show: () => { return 'listEvents' in store.getters.apis }
-        },
-        {
-          name: 'comments',
-          component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue'))),
-          show: (record, route, user) => { return ['Admin', 'DomainAdmin'].includes(user.roletype) }
-        }
-      ],
-      related: [{
-        name: 'computeoffering',
-        title: 'label.compute.offerings',
-        param: 'gpuofferingid'
-      }],
-      actions: [{
-        api: 'createGpuOffering',
-        icon: 'plus-outlined',
-        label: 'label.add.gpu.offering',
-        docHelp: 'adminguide/service_offerings.html#creating-a-new-gpu-offering',
-        args: ['name', 'description', 'vgpuprofileids'],
-        listView: true,
-        popup: true
-      }, {
-        api: 'updateGpuOffering',
-        icon: 'edit-outlined',
-        label: 'label.edit',
-        docHelp: 'adminguide/service_offerings.html#modifying-or-deleting-a-service-offering',
-        dataView: true,
-        popup: true,
-        args: ['name', 'description', 'vgpuprofileids']
-      }, {
-        api: 'updateGpuOffering',
-        icon: 'play-circle-outlined',
-        label: 'label.enable.gpu.offering',
-        message: 'message.action.enable.gpu.offering',
-        dataView: true,
-        args: ['state'],
-        mapping: {
-          state: {
-            value: (record) => { return 'Active' }
-          }
-        },
-        groupAction: true,
-        popup: true,
-        show: (record) => { return record.state !== 'Active' },
-        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Active' } }) }
-      }, {
-        api: 'updateGpuOffering',
-        icon: 'pause-circle-outlined',
-        label: 'label.disable.gpu.offering',
-        message: 'message.action.disable.gpu.offering',
-        dataView: true,
-        args: ['state'],
-        mapping: {
-          state: {
-            value: (record) => { return 'Inactive' }
-          }
-        },
-        groupAction: true,
-        popup: true,
-        show: (record) => { return record.state !== 'Inactive' },
-        groupMap: (selection) => { return selection.map(x => { return { id: x, state: 'Inactive' } }) }
       }]
     },
     {

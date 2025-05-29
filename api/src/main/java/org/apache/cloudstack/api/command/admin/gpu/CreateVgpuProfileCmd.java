@@ -30,34 +30,37 @@ import org.apache.cloudstack.gpu.GpuService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "createVgpuProfile", description = "Creates a vGPU profile in the system", responseObject = VgpuProfileResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.21.0",
-        authorized = {RoleType.Admin})
+@APICommand(name = "createVgpuProfile", description = "Creates a vGPU profile in the system",
+        responseObject = VgpuProfileResponse.class, requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false, since = "4.21.0", authorized = {RoleType.Admin})
 public class CreateVgpuProfileCmd extends BaseCmd {
 
     @Inject
     private GpuService gpuService;
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// ///////////// API parameters /////////////////////
+    /// //////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the vGPU profile")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
+            description = "the name of the vGPU profile")
     private String name;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the vGPU profile")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING,
+            description = "the description of the vGPU profile")
     private String description;
 
     @Parameter(name = ApiConstants.GPU_CARD_ID, type = CommandType.UUID, entityType = GpuCardResponse.class,
             required = true, description = "the GPU card ID associated with this GPU device")
     private Long cardId;
 
-    @Parameter(name = ApiConstants.VRAM_SIZE, type = CommandType.LONG, description = "the VRAM size in MB")
-    private Long vramSize;
+    @Parameter(name = ApiConstants.MAX_VGPU_PER_PHYSICAL_GPU, type = CommandType.LONG,
+            description = "Max vGPU per physical GPU. This is used to calculate capacity.")
+    private Long maxVgpuPerPgpu;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// //////////////// Accessors ///////////////////////
+    /// //////////////////////////////////////////////////
 
     public String getName() {
         return name;
@@ -71,17 +74,8 @@ public class CreateVgpuProfileCmd extends BaseCmd {
         return cardId;
     }
 
-    public Long getVramSize() {
-        return vramSize;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
-    public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+    public Long getMaxVgpuPerPgpu() {
+        return maxVgpuPerPgpu;
     }
 
     @Override
@@ -94,7 +88,17 @@ public class CreateVgpuProfileCmd extends BaseCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create vGPU profile");
             }
         } catch (Exception e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to create vGPU profile: " + e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
+                    "Failed to create vGPU profile: " + e.getMessage());
         }
+    }
+
+    /// //////////////////////////////////////////////////
+    /// //////////// API Implementation///////////////////
+    /// //////////////////////////////////////////////////
+
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 }

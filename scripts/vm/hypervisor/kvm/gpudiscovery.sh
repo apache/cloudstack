@@ -17,13 +17,16 @@
 # under the License.
 
 #
-# Enumerate GPUs (NVIDIA, Intel, AMD) and output JSON for libvirt:
+# Enumerate GPUs (NVIDIA, Intel, AMD) and output JSON for libvirt,
+# including:
 #   - PCI metadata (address, vendor/device IDs, driver, pci_class)
 #   - IOMMU group
+#   - PCI root (for PCIe topology grouping)
+#   - NUMA node
 #   - SR-IOV VF counts
-#   - full_passthrough block
-#   - vGPU (MDEV) instances with available_instances
-#   - VF (SR-IOV/MIG) instances with actual profile names
+#   - full_passthrough block (with VM usage)
+#   - vGPU (MDEV) instances (with VM usage)
+#   - VF (SR-IOV / MIG) instances (with VM usage)
 #
 # Uses `lspci -nnm` for GPU discovery and `virsh` to detect VM attachments.
 # Compatible with Ubuntu (20.04+, 22.04+) and RHEL/CentOS (7/8), Bash ≥4.
@@ -360,6 +363,42 @@ get_sriov_counts() {
   fi
 }
 
+# Given a PCI address, return its NUMA node (or -1 if none)
+get_numa_node() {
+  local addr="$1"
+  local path="/sys/bus/pci/devices/0000:$addr/numa_node"
+  if [[ -f "$path" ]]; then
+    echo "$(<"$path")"
+  else
+    echo "-1"
+  fi
+}
+
+# Given a PCI address, return its PCI root (the top‐level bridge ID, e.g. "0000:00:03")
+get_pci_root() {
+  local addr="$1"
+  # Follow sysfs parent chain until you reach a PCI bridge whose parent is /sys/devices/pci0000:00
+  local devpath
+  devpath=$(readlink -f "/sys/bus/pci/devices/0000:$addr")
+  while [[ "$devpath" != "/sys/devices/pci0000:00" && "$devpath" =~ pci[0-9]+:([0-9A-Fa-f]{2}):([0-9A-Fa-f]{2})\.([0-9A-Fa-f]) ]]; do
+    if [[ $(basename "$devpath") =~ ^[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}\.[0-9A-Fa-f]$ ]]; then
+      root="${BASH_REMATCH[0]}"
+      # Move up one level to see if parent is a bridge
+      parent=$(dirname "$devpath")
+      if [[ $(basename "$parent") =~ ^[0-9A-Fa-f]{2}:[0-9A-Fa-f]{2}\.[0-9A-Fa-f]$ ]]; then
+        devpath="$parent"
+        continue
+      else
+        echo "0000:$root"
+        return
+      fi
+    fi
+    devpath=$(dirname "$devpath")
+  done
+  # Fallback: return the addr itself
+  echo "0000:$addr"
+}
+
 # Build VM → hostdev maps:
 #   pci_to_vm[BDF] = VM name that attaches that BDF
 #   mdev_to_vm[UUID] = VM name that attaches that MDEV UUID
@@ -456,6 +495,12 @@ for LINE in "${LINES[@]}"; do
   # IOMMU group
   IOMMU=$(get_iommu_group "$PCI_ADDR")
 
+  # PCI root (to group GPUs under same PCIe switch/root complex)
+  PCI_ROOT=$(get_pci_root "$PCI_ADDR")
+
+  # NUMA node
+  NUMA_NODE=$(get_numa_node "$PCI_ADDR")
+
   # SR-IOV counts
   read -r TOTALVFS NUMVFS < <(get_sriov_counts "$PCI_ADDR")
 
@@ -494,7 +539,7 @@ for LINE in "${LINES[@]}"; do
       SLOT="0x${PCI_ADDR:3:2}"
       FUNC="0x${PCI_ADDR:6:1}"
 
-      # Determine which VMs use this UUID
+      # Determine which VM uses this UUID
       raw="${mdev_to_vm[$MDEV_UUID]:-}"
       USED_JSON=$(to_json_vm "$raw")
 
@@ -536,7 +581,7 @@ for LINE in "${LINES[@]}"; do
       fi
       VF_PROFILE_JSON=$(json_escape "$VF_PROFILE")
 
-      # Determine which VMs use this VF_BDF
+      # Determine which VM uses this VF_BDF
       raw="${pci_to_vm[$VF_BDF]:-}"
       USED_JSON=$(to_json_vm "$raw")
 
@@ -571,6 +616,8 @@ for LINE in "${LINES[@]}"; do
       "driver":$(json_escape "$DRIVER"),
       "pci_class":$(json_escape "$PCI_CLASS"),
       "iommu_group":$(json_escape "$IOMMU"),
+      "pci_root":$(json_escape "$PCI_ROOT"),
+      "numa_node":$NUMA_NODE,
       "sriov_totalvfs":$TOTALVFS,
       "sriov_numvfs":$NUMVFS,
 

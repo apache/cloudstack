@@ -24,6 +24,8 @@ public class VgpuTypesInfo {
     private GpuDevice.DeviceType deviceType;
     private String parentBusAddress;
     private String busAddress;
+    private String numaNode;
+    private String pciRoot;
     private String deviceId;
     private String deviceName;
     private String vendorId;
@@ -65,6 +67,10 @@ public class VgpuTypesInfo {
 
     public Long getMaxVpuPerGpu() {
         return maxVgpuPerGpu;
+    }
+
+    public void setMaxVgpuPerGpu(Long maxVgpuPerGpu) {
+        this.maxVgpuPerGpu = maxVgpuPerGpu;
     }
 
     public Long getRemainingCapacity() {
@@ -115,6 +121,22 @@ public class VgpuTypesInfo {
         this.busAddress = busAddress;
     }
 
+    public String getNumaNode() {
+        return numaNode;
+    }
+
+    public void setNumaNode(String numaNode) {
+        this.numaNode = numaNode;
+    }
+
+    public String getPciRoot() {
+        return pciRoot;
+    }
+
+    public void setPciRoot(String pciRoot) {
+        this.pciRoot = pciRoot;
+    }
+
     public String getDeviceId() {
         return deviceId;
     }
@@ -155,7 +177,24 @@ public class VgpuTypesInfo {
         this.vmName = vmName;
     }
 
-    public VgpuTypesInfo(GpuDevice.DeviceType deviceType, String groupName, String modelName, String busAddress, String vendorId, String vendorName, String deviceId, String deviceName) {
+    public VgpuTypesInfo(GpuDevice.DeviceType deviceType, String groupName, String modelName, String busAddress,
+            String vendorId, String vendorName, String deviceId, String deviceName, String numaNode, String pciRoot
+    ) {
+        this.deviceType = deviceType;
+        this.groupName = groupName;
+        this.modelName = modelName;
+        this.busAddress = busAddress;
+        this.deviceId = deviceId;
+        this.deviceName = deviceName;
+        this.vendorId = vendorId;
+        this.vendorName = vendorName;
+        this.numaNode = numaNode;
+        this.pciRoot = pciRoot;
+    }
+
+    public VgpuTypesInfo(GpuDevice.DeviceType deviceType, String groupName, String modelName, String busAddress,
+                         String vendorId, String vendorName, String deviceId, String deviceName
+    ) {
         this.deviceType = deviceType;
         this.groupName = groupName;
         this.modelName = modelName;
@@ -166,8 +205,9 @@ public class VgpuTypesInfo {
         this.vendorName = vendorName;
     }
 
-    public VgpuTypesInfo(String groupName, String modelName, Long videoRam, Long maxHeads, Long maxResolutionX, Long maxResolutionY, Long maxVgpuPerGpu,
-            Long remainingCapacity, Long maxCapacity) {
+    public VgpuTypesInfo(String groupName, String modelName, Long videoRam, Long maxHeads, Long maxResolutionX,
+            Long maxResolutionY, Long maxVgpuPerGpu, Long remainingCapacity, Long maxCapacity
+    ) {
         this.groupName = groupName;
         this.modelName = modelName;
         this.videoRam = videoRam;

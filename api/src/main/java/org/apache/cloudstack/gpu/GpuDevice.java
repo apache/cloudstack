@@ -27,13 +27,18 @@ public interface GpuDevice extends InternalIdentity, Identity {
     enum State {
         Allocated,
         Free,
+        Error,
+    }
+
+    enum ResourceState {
+        Enabled,
         Disabled,
-        HasVGPUs,
     }
 
     enum DeviceType {
         PCI,
         MDEV,
+        VGPUOnly,
     }
 
     long getHostId();

@@ -32,7 +32,7 @@ export default {
       permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
       params: () => {
-        var params = { details: 'group,nics,secgrp,tmpl,servoff,diskoff,gpuoff,iso,volume,affgrp,backoff' }
+        var params = { details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff' }
         if (store.getters.metrics) {
           params = { details: 'all,stats' }
         }
@@ -84,7 +84,7 @@ export default {
       searchFilters: ['name', 'zoneid', 'domainid', 'account', 'groupid', 'arch', 'tags'],
       details: () => {
         var fields = ['name', 'displayname', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
-          'serviceofferingname', 'gpuofferingname', 'gpucount', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'arch', 'boottype', 'bootmode', 'account',
+          'serviceofferingname', 'gpucount', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'arch', 'boottype', 'bootmode', 'account',
           'domain', 'zonename', 'userdataid', 'userdataname', 'userdataparams', 'userdatadetails', 'userdatapolicy',
           'hostcontrolstate', 'deleteprotection', 'leaseexpirydate', 'leaseexpiryaction']
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)

@@ -44,8 +44,9 @@ import com.cloud.storage.StoragePoolAndAccessGroupMapVO;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.utils.StringUtils;
-import com.cloud.gpu.GpuOfferingVO;
-import com.cloud.gpu.dao.GpuOfferingDao;
+import com.cloud.gpu.GpuCardVO;
+import com.cloud.gpu.VgpuProfileVO;
+import com.cloud.gpu.dao.GpuCardDao;
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
@@ -69,7 +70,6 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.gpu.GpuDevice;
 import org.apache.cloudstack.gpu.GpuService;
-import org.apache.cloudstack.gpu.VgpuProfile;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
@@ -263,7 +263,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Inject
     protected VGPUTypesDao _vgpuTypesDao;
     @Inject
-    private GpuOfferingDao gpuOfferingDao;
+    private GpuCardDao gpuCardDao;
     @Inject
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
@@ -1421,7 +1421,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             for (final VMInstanceVO vm : vms) {
                 ServiceOfferingVO offering = serviceOfferingDao.findById(vm.getServiceOfferingId());
                 if (hosts == null || hosts.isEmpty() || !answer.getMigrate()
-                    || offering.getGpuOfferingId() != null
+                    || offering.getVgpuProfileId() != null
                     || _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) != null
                 ) {
                     handleVmForLastHostOrWithVGpu(host, vm);
@@ -4222,37 +4222,29 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public boolean isGPUDeviceAvailable(Host host, Long vmId, GpuOfferingVO gpuOffering, int gpuCount) {
+    public boolean isGPUDeviceAvailable(Host host, Long vmId, VgpuProfileVO vgpuProfile, int gpuCount) {
         if (host.getHypervisorType().equals(HypervisorType.XenServer)) {
-            gpuOfferingDao.loadVgpuProfiles(gpuOffering);
-            if (CollectionUtils.isEmpty(gpuOffering.getVgpuProfiles())) {
-                return false;
-            }
-            VgpuProfile vgpuProfile = gpuOffering.getVgpuProfiles().get(0);
-            String groupName = gpuOffering.getName();
+            GpuCardVO gpuCard = gpuCardDao.findById(vgpuProfile.getCardId());
+            String groupName = gpuCard.getName();
             String vgpuType = vgpuProfile.getName();
             return isGPUDeviceAvailable(host, groupName, vgpuType);
         } else {
             // Use GPU device
-            return gpuService.isGPUDeviceAvailable(host, vmId, gpuOffering, gpuCount);
+            return gpuService.isGPUDeviceAvailable(host, vmId, vgpuProfile, gpuCount);
         }
     }
 
     @Override
-    public GPUDeviceTO getGPUDevice(VirtualMachine vm, GpuOfferingVO gpuOffering, int gpuCount) {
+    public GPUDeviceTO getGPUDevice(VirtualMachine vm, VgpuProfileVO vgpuProfile, int gpuCount) {
         HostVO host = _hostDao.findById(vm.getHostId());
         if (host.getHypervisorType().equals(HypervisorType.XenServer)) {
-            gpuOfferingDao.loadVgpuProfiles(gpuOffering);
-            if (CollectionUtils.isEmpty(gpuOffering.getVgpuProfiles())) {
-                return null;
-            }
-            VgpuProfile vgpuProfile = gpuOffering.getVgpuProfiles().get(0);
-            String groupName = gpuOffering.getName();
+            GpuCardVO gpuCard = gpuCardDao.findById(vgpuProfile.getCardId());
+            String groupName = gpuCard.getName();
             String vgpuType = vgpuProfile.getName();
             return getGPUDevice(vm.getHostId(), groupName, vgpuType);
         } else {
             // Use GPU device
-            return gpuService.getGPUDevice(vm, gpuOffering, gpuCount);
+            return gpuService.getGPUDevice(vm, vgpuProfile, gpuCount);
         }
     }
 

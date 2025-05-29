@@ -74,6 +74,6 @@ public interface GpuDeviceDao extends GenericDao<GpuDeviceVO, Long> {
     List<GpuDeviceVO> listDevicesForAllocation(Long hostId, List<Long> vgpuProfileIdList);
 
     Pair<List<GpuDeviceVO>, Integer> searchAndCountGpuDevices(
-            Long id, String keyword, Long hostId, Long gpuCardId, Long vgpuProfileId,
+            Long id, String keyword, Long hostId, Long vmId, Long gpuCardId, Long vgpuProfileId,
             Long startIndex, Long pageSize);
 }

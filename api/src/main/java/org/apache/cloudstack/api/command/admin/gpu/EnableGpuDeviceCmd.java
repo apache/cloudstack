@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.gpu.GpuService;
 
 import javax.inject.Inject;
+import java.util.List;
 
 @APICommand(name = "enableGpuDevice", description = "Enables a GPU device", responseObject =
         SuccessResponse.class,
@@ -43,18 +44,18 @@ public class EnableGpuDeviceCmd extends BaseCmd {
     /// ///////////// API parameters /////////////////////
     /// //////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType =
+    @Parameter(name = ApiConstants.IDS,  type = CommandType.LIST, collectionType = CommandType.UUID, entityType =
             GpuDeviceResponse.class,
             required = true, description = "the ID of the GPU device")
-    private Long id;
+    private List<Long> ids;
 
 
     /// //////////////////////////////////////////////////
     /// //////////////// Accessors ///////////////////////
     /// //////////////////////////////////////////////////
 
-    public Long getId() {
-        return id;
+    public List<Long> getIds() {
+        return ids;
     }
 
     @Override

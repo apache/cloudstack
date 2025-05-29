@@ -24,22 +24,24 @@ import org.apache.cloudstack.api.response.GpuCardResponse;
 import org.apache.cloudstack.api.response.GpuDeviceResponse;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VgpuProfileResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.gpu.GpuService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "listGpuDevices", description = "Lists all available GPU devices", responseObject = GpuDeviceResponse.class,
+@APICommand(name = "listGpuDevices", description = "Lists all available GPU devices", responseObject =
+        GpuDeviceResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.21.0")
 public class ListGpuDevicesCmd extends BaseListCmd {
 
     @Inject
     private GpuService gpuService;
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// ///////////// API parameters /////////////////////
+    /// //////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = GpuDeviceResponse.class,
             description = "ID of the GPU device")
@@ -57,9 +59,13 @@ public class ListGpuDevicesCmd extends BaseListCmd {
             description = "the vGPU profile ID assigned to this GPU device")
     private Long vgpuProfileId;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class,
+            description = "the virtual machine ID to which the GPU device is assigned")
+    private Long vmId;
+
+    /// //////////////////////////////////////////////////
+    /// //////////////// Accessors ///////////////////////
+    /// //////////////////////////////////////////////////
 
     public Long getId() {
         return id;
@@ -77,9 +83,13 @@ public class ListGpuDevicesCmd extends BaseListCmd {
         return vgpuProfileId;
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation //////////////////
-    /////////////////////////////////////////////////////
+    public Long getVmId() {
+        return vmId;
+    }
+
+    /// //////////////////////////////////////////////////
+    /// //////////// API Implementation //////////////////
+    /// //////////////////////////////////////////////////
 
     @Override
     public void execute() {

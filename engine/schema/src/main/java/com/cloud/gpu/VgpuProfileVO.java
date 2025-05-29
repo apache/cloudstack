@@ -34,8 +34,8 @@ public class VgpuProfileVO implements VgpuProfile {
     @Column(name = "card_id")
     private Long cardId;
 
-    @Column(name = "vram_size")
-    private Long vramSize;
+    @Column(name = "max_vgpu_per_pgpu")
+    private Long maxVgpuPerPgpu;
 
     @Column(name = GenericDao.CREATED_COLUMN)
     private Date created;
@@ -44,12 +44,12 @@ public class VgpuProfileVO implements VgpuProfile {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public VgpuProfileVO(String name, String description, Long gpuCardId, Long vramSize) {
+    public VgpuProfileVO(String name, String description, Long gpuCardId, Long maxVgpuPerPgpu) {
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
         this.description = description;
         this.cardId = gpuCardId;
-        this.vramSize = vramSize;
+        this.maxVgpuPerPgpu = maxVgpuPerPgpu;
         this.created = new Date();
     }
 
@@ -103,11 +103,11 @@ public class VgpuProfileVO implements VgpuProfile {
     }
 
     @Override
-    public Long getVramSize() {
-        return vramSize;
+    public Long getMaxVgpuPerPgpu() {
+        return maxVgpuPerPgpu;
     }
 
-    public void setVramSize(Long vramSize) {
-        this.vramSize = vramSize;
+    public void setMaxVgpuPerPgpu(Long maxVgpuPerPgpu) {
+        this.maxVgpuPerPgpu = maxVgpuPerPgpu;
     }
 }

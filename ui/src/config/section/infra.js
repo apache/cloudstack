@@ -71,7 +71,7 @@ export default {
       permission: ['listGpuDevices'],
       columns: ['id', 'busaddress', 'gpucardname', 'vgpuprofilename', 'hostname', 'virtualmachinename'],
       details: ['id', 'busaddress', 'gpucardname', 'vgpuprofilename', 'hostname', 'virtualmachinename'],
-      searchFilters: ['hostid', 'gpucardid', 'vgpuprofileid']
+      searchFilters: ['gpucardid', 'vgpuprofileid']
     },
     {
       name: 'metric',
