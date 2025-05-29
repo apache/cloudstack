@@ -37,6 +37,10 @@ public class ExtensionResourceMapResponse extends BaseResponse {
     @Param(description = "ID of the resource associated with this mapping")
     private String resourceId;
 
+    @SerializedName(ApiConstants.RESOURCE_ID)
+    @Param(description = "Name of the resource associated with this mapping")
+    private String resourceName;
+
     @SerializedName(ApiConstants.RESOURCE_TYPE)
     @Param(description = "Type of the resource")
     private String resourceType;
@@ -56,6 +60,9 @@ public class ExtensionResourceMapResponse extends BaseResponse {
     @SerializedName(ApiConstants.REMOVED)
     @Param(description = "Removal timestamp of the mapping, if applicable")
     private Date removed;
+
+    public ExtensionResourceMapResponse() {
+    }
 
     public ExtensionResourceMapResponse(String extensionId, String resourceId, String resourceType) {
         this.extensionId = extensionId;
@@ -77,6 +84,10 @@ public class ExtensionResourceMapResponse extends BaseResponse {
 
     public void setResourceId(String resourceId) {
         this.resourceId = resourceId;
+    }
+
+    public void setResourceName(String resourceName) {
+        this.resourceName = resourceName;
     }
 
     public String getResourceType() {

@@ -21,5 +21,8 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface Extension extends InternalIdentity, Identity {
+    String getName();
+    String getDescription();
+    String getType();
     String getScript();
 }

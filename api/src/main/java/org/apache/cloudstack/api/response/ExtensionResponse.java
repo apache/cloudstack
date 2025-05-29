@@ -39,6 +39,10 @@ public class ExtensionResponse extends BaseResponse {
     @Param(description = "Name of the extension")
     private String name;
 
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "Description of the extension")
+    private String description;
+
     @SerializedName(ApiConstants.TYPE)
     @Param(description = "Type of the extension")
     private String type;
@@ -51,7 +55,7 @@ public class ExtensionResponse extends BaseResponse {
     @Param(description = "the details of the extension")
     private Map<String, String> details;
 
-    @SerializedName(ApiConstants.EXTENSION_RESOURCE_ID)
+    @SerializedName(ApiConstants.RESOURCES)
     @Param(description = "List of resources to which extension is registered to", responseObject = ExtensionResourceMapResponse.class)
     private List<ExtensionResourceMapResponse> resources;
 
@@ -63,11 +67,11 @@ public class ExtensionResponse extends BaseResponse {
     @Param(description = "Removal timestamp of the extension, if applicable")
     private Date removed;
 
-    public ExtensionResponse(String name, String type, String uuid, Map<String, String> details) {
+    public ExtensionResponse(String id, String name, String description, String type) {
+        this.id = id;
         this.name = name;
+        this.description = description;
         this.type = type;
-        this.id = uuid;
-        this.details = details;
     }
 
     public String getId() {

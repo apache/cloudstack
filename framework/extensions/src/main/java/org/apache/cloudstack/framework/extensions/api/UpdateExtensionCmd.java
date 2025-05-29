@@ -17,9 +17,6 @@
 
 package org.apache.cloudstack.framework.extensions.api;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.user.Account;
 
 import org.apache.cloudstack.api.APICommand;
@@ -35,12 +32,12 @@ import javax.inject.Inject;
 
 import java.util.Map;
 
-@APICommand(name = "createExtension",
+@APICommand(name = "updateExtension",
         description = "Create an extension",
         responseObject = ExtensionResponse.class,
         responseHasSensitiveInfo = false,
         since = "4.21.0")
-public class CreateExtensionCmd extends BaseCmd {
+public class UpdateExtensionCmd extends BaseCmd {
 
     @Inject
     ExtensionsManager extensionsManager;
@@ -51,17 +48,15 @@ public class CreateExtensionCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
-            description = "Name of the extension")
-    private String name;
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
+            entityType = ExtensionResponse.class,
+            required = true,
+            description = "The ID of the extension")
+    private Long id;
 
     @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING,
             description = "Description of the extension")
     private String description;
-
-    @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true,
-            description = "Type of the extension")
-    private String type;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
             description = "Details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].endpoint.url=urlvalue")
@@ -71,16 +66,12 @@ public class CreateExtensionCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getName() {
-        return name;
+    public Long getId() {
+        return id;
     }
 
     public String getDescription() {
         return description;
-    }
-
-    public String getType() {
-        return type;
     }
 
     public Map<String, String> getDetails() {
@@ -92,8 +83,8 @@ public class CreateExtensionCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        Extension extension = extensionsManager.createExtension(this);
+    public void execute() throws ServerApiException {
+        Extension extension = extensionsManager.updateExtension(this);
         ExtensionResponse response = extensionsManager.createExtensionResponse(extension);
         setResponseObject(response);
     }

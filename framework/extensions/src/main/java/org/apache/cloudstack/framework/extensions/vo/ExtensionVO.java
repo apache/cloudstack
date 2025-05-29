@@ -43,6 +43,15 @@ public class ExtensionVO implements Extension {
         this.created = new Date();
     }
 
+    public ExtensionVO(String name, String description, String type, String script) {
+        this.uuid = UUID.randomUUID().toString();
+        this.name = name;
+        this.description = description;
+        this.type = type;
+        this.script = script;
+        this.created = new Date();
+    }
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -53,6 +62,9 @@ public class ExtensionVO implements Extension {
 
     @Column(name = "name", nullable = false)
     private String name;
+
+    @Column(name = "description")
+    private String description;
 
     @Column(name = "type", nullable = false)
     private String type;
@@ -76,12 +88,31 @@ public class ExtensionVO implements Extension {
         return uuid;
     }
 
+    @Override
     public String getName() {
         return name;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    @Override
     public String getType() {
         return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 
     @Override
@@ -99,14 +130,6 @@ public class ExtensionVO implements Extension {
 
     public Date getRemoved() {
         return removed;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     public void setRemoved(Date removed) {

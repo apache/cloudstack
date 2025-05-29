@@ -38,30 +38,6 @@ AND NOT EXISTS(SELECT 1 FROM cloud.role_permissions rp_ WHERE rp.role_id = rp_.r
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host', 'last_mgmt_server_id', 'bigint unsigned DEFAULT NULL COMMENT "last management server this host is connected to" AFTER `mgmt_server_id`');
 
-UPDATE `cloud`.`configuration` SET value = CONCAT(value, ',External') WHERE name = 'hypervisor.list';
-
-CREATE TABLE IF NOT EXISTS `cloud`.`extension` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `uuid` varchar(40) NOT NULL UNIQUE,
-  `name` varchar(255) NOT NULL,
-  `type` varchar(255) NOT NULL,
-  `script` varchar(2048) NOT NULL,
-  `created` datetime NOT NULL,
-  `removed` datetime DEFAULT NULL,
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE `cloud`.`extension_details` (
-  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `extension_id` bigint unsigned NOT NULL COMMENT 'extension to which the detail is related to',
-  `name` varchar(255) NOT NULL COMMENT 'name of the detail',
-  `value` varchar(255) NOT NULL COMMENT 'value of the detail',
-  `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_extension_details__extension_id` FOREIGN KEY (`extension_id`)
-    REFERENCES `extension` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 -- Add table for reconcile commands
 CREATE TABLE IF NOT EXISTS `cloud`.`reconcile_commands` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
@@ -106,6 +82,31 @@ CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.host_pod_ref', 'storage_access_group
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.data_center', 'storage_access_groups', 'varchar(255) DEFAULT NULL COMMENT "storage access groups for the hosts in the zone"');
 
 -- Extension framework
+UPDATE `cloud`.`configuration` SET value = CONCAT(value, ',External') WHERE name = 'hypervisor.list';
+
+CREATE TABLE IF NOT EXISTS `cloud`.`extension` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(40) NOT NULL UNIQUE,
+  `name` varchar(255) NOT NULL,
+  `description` varchar(4096),
+  `type` varchar(255) NOT NULL,
+  `script` varchar(2048) NOT NULL,
+  `created` datetime NOT NULL,
+  `removed` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`extension_details` (
+  `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `extension_id` bigint unsigned NOT NULL COMMENT 'extension to which the detail is related to',
+  `name` varchar(255) NOT NULL COMMENT 'name of the detail',
+  `value` varchar(255) NOT NULL COMMENT 'value of the detail',
+  `display` tinyint(1) NOT NULL DEFAULT '1' COMMENT 'True if the detail can be displayed to the end user',
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_extension_details__extension_id` FOREIGN KEY (`extension_id`)
+    REFERENCES `extension` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `cloud`.`extension_resource_map` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `extension_id` bigint(20) unsigned NOT NULL,

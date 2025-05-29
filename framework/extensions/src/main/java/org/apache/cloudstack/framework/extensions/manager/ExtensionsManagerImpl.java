@@ -48,6 +48,7 @@ import org.apache.cloudstack.framework.extensions.api.ListExtensionsCmd;
 import org.apache.cloudstack.framework.extensions.api.RegisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
+import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionCustomActionDetailsDao;
 import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
@@ -140,25 +141,22 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
     @Override
     public Extension createExtension(CreateExtensionCmd cmd) {
-        String name = cmd.getName();
-        String type = cmd.getType();
+        final String name = cmd.getName();
+        final String description = cmd.getDescription();
+        final String type = cmd.getType();
 
         ExtensionVO extensionByName = extensionDao.findByName(name);
         if (extensionByName != null) {
             throw new CloudRuntimeException("Extension by name already exists");
         }
-
-        ExtensionVO extension = new ExtensionVO();
-        extension.setName(name);
-        extension.setType(type);
         String scriptPath = externalProvisioner.getExtensionScriptPath(name);
-        extension.setScript(scriptPath);
+        ExtensionVO extension = new ExtensionVO(name, description, type, scriptPath);
         ExtensionVO savedExtension = extensionDao.persist(extension);
 
-        Map<String, String> externalDetails = cmd.getExternalDetails();
+        Map<String, String> details = cmd.getDetails();
         List<ExtensionDetailsVO> detailsVOList = new ArrayList<>();
-        if (externalDetails != null && !externalDetails.isEmpty()) {
-            for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
+        if (MapUtils.isNotEmpty(details)) {
+            for (Map.Entry<String, String> entry : details.entrySet()) {
                 detailsVOList.add(new ExtensionDetailsVO(savedExtension.getId(), entry.getKey(), entry.getValue()));
             }
             extensionDetailsDao.saveDetails(detailsVOList);
@@ -197,26 +195,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         final Pair<List<ExtensionVO>, Integer> result = extensionDao.searchAndCount(sc, searchFilter);
         List<ExtensionResponse> responses = new ArrayList<>();
         for (ExtensionVO extension : result.first()) {
-            Map<String, String> details = extensionDetailsDao.listDetailsKeyPairs(extension.getId());
-            ExtensionResponse response = new ExtensionResponse(extension.getName(), extension.getType(), extension.getUuid(), details);
-            String scriptPath = externalProvisioner.getExtensionScriptPath(extension.getName());
-            response.setScriptPath(scriptPath);
-
-            List<ExtensionResourceMapVO> extensionResourceMapVOS = extensionResourceMapDao.listByExtensionId(extension.getId());
-            List<ExtensionResourceMapResponse> resourceMapResponses = new ArrayList<>();
-
-            for (ExtensionResourceMapVO resourceMap : extensionResourceMapVOS) {
-                ClusterVO cluster = clusterDao.findById(resourceMap.getResourceId());
-                ExtensionResourceMapResponse resourceResponse = new ExtensionResourceMapResponse(extension.getUuid(), cluster.getUuid(), resourceMap.getResourceType());
-
-                Map<String, String> resourceMapDetails = extensionResourceMapDetailsDao.listDetailsKeyPairs(resourceMap.getId());
-                resourceResponse.setDetails(resourceMapDetails);
-
-                resourceMapResponses.add(resourceResponse);
-            }
-
-            response.setResources(resourceMapResponses);
-            response.setObjectName(ApiConstants.EXTENSIONS);
+            ExtensionResponse response = createExtensionResponse(extension);
             responses.add(response);
         }
 
@@ -233,6 +212,33 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         } else {
             throw new CloudRuntimeException("Currently only cluster can be used to register an extension of type Orchestrator");
         }
+    }
+
+    @Override
+    public Extension updateExtension(UpdateExtensionCmd cmd) {
+        final long id = cmd.getId();
+        final String description = cmd.getDescription();
+        ExtensionVO extensionVO = extensionDao.findById(id);
+        if (extensionVO == null) {
+            throw new InvalidParameterValueException("Failed to find the extension");
+        }
+        if (description != null) {
+            extensionVO.setDescription(description);
+            if (!extensionDao.update(id, extensionVO)) {
+                throw new CloudRuntimeException(String.format("Failed to updated the extension: %s",
+                        extensionVO.getName()));
+            }
+        }
+        Map<String, String> details = cmd.getDetails();
+        List<ExtensionDetailsVO> detailsVOList = new ArrayList<>();
+        if (MapUtils.isNotEmpty(details)) {
+            extensionDetailsDao.removeDetails(extensionVO.getId());
+            for (Map.Entry<String, String> entry : details.entrySet()) {
+                detailsVOList.add(new ExtensionDetailsVO(extensionVO.getId(), entry.getKey(), entry.getValue()));
+            }
+            extensionDetailsDao.saveDetails(detailsVOList);
+        }
+        return extensionVO;
     }
 
     @Override
@@ -266,7 +272,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         externalDetails.putAll(clusterDetails);
         clusterDetailsDao.persist(cluster.getId(), externalDetails);
 
-        ExtensionResponse response = new ExtensionResponse(extension.getName(), extension.getType(), extension.getUuid(), details);
+        ExtensionResponse response = new ExtensionResponse(extension.getUuid(), extension.getName(), extension.getDescription(), extension.getType());
+        response.setDetails(details);
         String scriptPath = externalProvisioner.getExtensionScriptPath(extension.getName());
         response.setScriptPath(scriptPath);
 
@@ -277,6 +284,38 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         resourceResponse.setDetails(resourceMapDetails);
 
         response.setResources(Collections.singletonList(resourceResponse));
+        return response;
+    }
+
+    @Override
+    public ExtensionResponse createExtensionResponse(Extension extension) {
+        ExtensionVO extensionVO;
+        if (extension instanceof ExtensionVO) {
+            extensionVO = (ExtensionVO)extension;
+        } else {
+            extensionVO = extensionDao.findById(extension.getId());
+        }
+        ExtensionResponse response = new ExtensionResponse(extensionVO.getUuid(), extensionVO.getName(), extensionVO.getDescription(), extensionVO.getType());
+        String scriptPath = externalProvisioner.getExtensionScriptPath(extensionVO.getName());
+        response.setScriptPath(scriptPath);
+        List<ExtensionResourceMapResponse> resourcesResponse = new ArrayList<>();
+        List<ExtensionResourceMapVO> extensionResourceMapVOs = extensionResourceMapDao.listByExtensionId(extensionVO.getId());
+        for (ExtensionResourceMapVO extensionResourceMapVO : extensionResourceMapVOs) {
+            if (Cluster.class.getSimpleName().equalsIgnoreCase(extensionResourceMapVO.getResourceType())) {
+                Cluster cluster = clusterDao.findById(extensionResourceMapVO.getResourceId());
+                ExtensionResourceMapResponse resourceMapResponse = new ExtensionResourceMapResponse();
+                resourceMapResponse.setResourceType(Cluster.class.getSimpleName());
+                resourceMapResponse.setResourceId(cluster.getUuid());
+                resourceMapResponse.setResourceName(cluster.getName());
+                resourcesResponse.add(resourceMapResponse);
+            }
+        }
+        if (CollectionUtils.isNotEmpty(resourcesResponse)) {
+            response.setResources(resourcesResponse);
+        }
+        Map<String, String> extensionDetails = extensionDetailsDao.listDetailsKeyPairs(extensionVO.getId());
+        response.setDetails(extensionDetails);
+        response.setObjectName(Extension.class.getSimpleName().toLowerCase());
         return response;
     }
 

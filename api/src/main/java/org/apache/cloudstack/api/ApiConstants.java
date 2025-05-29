@@ -445,6 +445,7 @@ public class ApiConstants {
     public static final String RECOVER = "recover";
     public static final String REPAIR = "repair";
     public static final String REQUIRES_HVM = "requireshvm";
+    public static final String RESOURCES = "resources";
     public static final String RESOURCE_COUNT = "resourcecount";
     public static final String RESOURCE_NAME = "resourcename";
     public static final String RESOURCE_TYPE = "resourcetype";

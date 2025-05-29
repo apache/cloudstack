@@ -35,6 +35,7 @@ import org.apache.cloudstack.framework.extensions.api.ListExtensionsCmd;
 import org.apache.cloudstack.framework.extensions.api.RegisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
+import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
 
 import com.cloud.extension.Extension;
 import com.cloud.extension.ExtensionCustomAction;
@@ -45,9 +46,15 @@ public interface ExtensionsManager extends Manager {
 
     List<ExtensionResponse> listExtensions(ListExtensionsCmd cmd);
 
+    boolean deleteExtension(DeleteExtensionCmd cmd);
+
     ExtensionResponse registerExtensionWithResource(RegisterExtensionCmd cmd);
 
+    Extension updateExtension(UpdateExtensionCmd cmd);
+
     ExtensionResponse registerExtensionWithCluster(String resourceId, Long extensionId, Map<String, String> externalDetails);
+
+    ExtensionResponse createExtensionResponse(Extension extension);
 
     void unregisterExtensionWithCluster(Long clusterId, Long extensionId);
 
@@ -58,8 +65,6 @@ public interface ExtensionsManager extends Manager {
     boolean deleteCustomAction(DeleteCustomActionCmd cmd);
 
     List<ExtensionCustomActionResponse> listCustomActions(ListCustomActionCmd cmd);
-
-    boolean deleteExtension(DeleteExtensionCmd cmd);
 
     ExtensionCustomAction updateCustomAction(UpdateCustomActionCmd cmd);
 
