@@ -583,7 +583,10 @@ public class KubernetesClusterScaleWorker extends KubernetesClusterResourceModif
 
     protected boolean isServiceOfferingScalingNeededForNodeType(KubernetesClusterNodeType nodeType,
                                                                 Map<String, ServiceOffering> map, KubernetesCluster kubernetesCluster) {
-        Long existingOfferingId = getExistingOfferingIdForNodeType(nodeType, kubernetesCluster);
+        // DEFAULT node type means only the global service offering has been set for the Kubernetes cluster
+        Long existingOfferingId = map.containsKey(DEFAULT.name()) ?
+                kubernetesCluster.getServiceOfferingId() :
+                getExistingOfferingIdForNodeType(nodeType, kubernetesCluster);
         if (existingOfferingId == null) {
             logAndThrow(Level.ERROR, String.format("The Kubernetes cluster %s does not have a global service offering set", kubernetesCluster.getName()));
         }
