@@ -42,6 +42,8 @@ import com.cloud.extension.ExtensionCustomAction;
 import com.cloud.utils.component.Manager;
 
 public interface ExtensionsManager extends Manager {
+    String getExternalDetailKey(String key);
+
     Extension createExtension(CreateExtensionCmd cmd);
 
     List<ExtensionResponse> listExtensions(ListExtensionsCmd cmd);

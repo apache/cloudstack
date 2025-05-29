@@ -87,9 +87,12 @@ import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsManager, PluggableService {
@@ -138,6 +141,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             ApiCommandResourceType.Host.name(),
             ApiCommandResourceType.Cluster.name());
 
+    @Override
+    public String getExternalDetailKey(String key) {
+        return VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key;
+    }
 
     @Override
     public Extension createExtension(CreateExtensionCmd cmd) {
@@ -218,27 +225,29 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     public Extension updateExtension(UpdateExtensionCmd cmd) {
         final long id = cmd.getId();
         final String description = cmd.getDescription();
+        final Map<String, String> details = cmd.getDetails();
         ExtensionVO extensionVO = extensionDao.findById(id);
         if (extensionVO == null) {
             throw new InvalidParameterValueException("Failed to find the extension");
         }
-        if (description != null) {
-            extensionVO.setDescription(description);
-            if (!extensionDao.update(id, extensionVO)) {
-                throw new CloudRuntimeException(String.format("Failed to updated the extension: %s",
-                        extensionVO.getName()));
+        return Transaction.execute((TransactionCallbackWithException<ExtensionVO, CloudRuntimeException>) status -> {
+            if (description != null) {
+                extensionVO.setDescription(description);
+                if (!extensionDao.update(id, extensionVO)) {
+                    throw new CloudRuntimeException(String.format("Failed to updated the extension: %s",
+                            extensionVO.getName()));
+                }
             }
-        }
-        Map<String, String> details = cmd.getDetails();
-        List<ExtensionDetailsVO> detailsVOList = new ArrayList<>();
-        if (MapUtils.isNotEmpty(details)) {
-            extensionDetailsDao.removeDetails(extensionVO.getId());
-            for (Map.Entry<String, String> entry : details.entrySet()) {
-                detailsVOList.add(new ExtensionDetailsVO(extensionVO.getId(), entry.getKey(), entry.getValue()));
+            if (MapUtils.isNotEmpty(details)) {
+                List<ExtensionDetailsVO> detailsVOList = new ArrayList<>();
+                extensionDetailsDao.removeDetails(extensionVO.getId());
+                for (Map.Entry<String, String> entry : details.entrySet()) {
+                    detailsVOList.add(new ExtensionDetailsVO(extensionVO.getId(), entry.getKey(), entry.getValue()));
+                }
+                extensionDetailsDao.saveDetails(detailsVOList);
             }
-            extensionDetailsDao.saveDetails(detailsVOList);
-        }
-        return extensionVO;
+            return extensionVO;
+        });
     }
 
     @Override
@@ -257,8 +266,10 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         ExtensionResourceMapVO savedExtensionMap = extensionResourceMapDao.persist(extensionMap);
 
         List<ExtensionResourceMapDetailsVO> detailsVOList = new ArrayList<>();
-        if (externalDetails != null && !externalDetails.isEmpty()) {
+        Map<String, String> consolidatedDetails = new HashMap<>();
+        if (MapUtils.isNotEmpty(externalDetails)) {
             for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
+                consolidatedDetails.put(entry.getKey(), entry.getValue());
                 detailsVOList.add(new ExtensionResourceMapDetailsVO(savedExtensionMap.getId(), entry.getKey(), entry.getValue()));
             }
             extensionResourceMapDetailsDao.saveDetails(detailsVOList);
@@ -266,25 +277,17 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
 
         ExtensionVO extension = extensionDao.findById(extensionId);
         Map<String, String> details = extensionDetailsDao.listDetailsKeyPairs(extension.getId());
-        externalDetails.putAll(details);
-        externalDetails.put(ApiConstants.EXTENSION_ID, String.valueOf(extensionId));
+        if (MapUtils.isNotEmpty(details)) {
+            for (Map.Entry<String, String> entry : externalDetails.entrySet()) {
+                consolidatedDetails.put(getExternalDetailKey(entry.getKey()), entry.getValue());
+            }
+        }
+        consolidatedDetails.put(ApiConstants.EXTENSION_ID, String.valueOf(extensionId));
         Map<String, String> clusterDetails = clusterDetailsDao.listDetailsKeyPairs(cluster.getId());
-        externalDetails.putAll(clusterDetails);
-        clusterDetailsDao.persist(cluster.getId(), externalDetails);
+        consolidatedDetails.putAll(clusterDetails);
+        clusterDetailsDao.persist(cluster.getId(), consolidatedDetails);
 
-        ExtensionResponse response = new ExtensionResponse(extension.getUuid(), extension.getName(), extension.getDescription(), extension.getType());
-        response.setDetails(details);
-        String scriptPath = externalProvisioner.getExtensionScriptPath(extension.getName());
-        response.setScriptPath(scriptPath);
-
-        ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(cluster.getId(), resourceType);
-        ExtensionResourceMapResponse resourceResponse = new ExtensionResourceMapResponse(extension.getUuid(), cluster.getUuid(), resourceType);
-
-        Map<String, String> resourceMapDetails = extensionResourceMapDetailsDao.listDetailsKeyPairs(extensionResourceMapVO.getId());
-        resourceResponse.setDetails(resourceMapDetails);
-
-        response.setResources(Collections.singletonList(resourceResponse));
-        return response;
+        return createExtensionResponse(extension);
     }
 
     @Override
@@ -296,6 +299,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             extensionVO = extensionDao.findById(extension.getId());
         }
         ExtensionResponse response = new ExtensionResponse(extensionVO.getUuid(), extensionVO.getName(), extensionVO.getDescription(), extensionVO.getType());
+        response.setCreated(extensionVO.getCreated());
         String scriptPath = externalProvisioner.getExtensionScriptPath(extensionVO.getName());
         response.setScriptPath(scriptPath);
         List<ExtensionResourceMapResponse> resourcesResponse = new ArrayList<>();
@@ -314,7 +318,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             response.setResources(resourcesResponse);
         }
         Map<String, String> extensionDetails = extensionDetailsDao.listDetailsKeyPairs(extensionVO.getId());
-        response.setDetails(extensionDetails);
+        if (MapUtils.isNotEmpty(extensionDetails)) {
+            response.setDetails(extensionDetails);
+        }
         response.setObjectName(Extension.class.getSimpleName().toLowerCase());
         return response;
     }
@@ -672,6 +678,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         cmds.add(RegisterExtensionCmd.class);
         cmds.add(ListExtensionsCmd.class);
         cmds.add(DeleteExtensionCmd.class);
+        cmds.add(UpdateExtensionCmd.class);
         return cmds;
     }
 }

@@ -86,6 +86,7 @@ public class UpdateExtensionCmd extends BaseCmd {
     public void execute() throws ServerApiException {
         Extension extension = extensionsManager.updateExtension(this);
         ExtensionResponse response = extensionsManager.createExtensionResponse(extension);
+        response.setResponseName(getCommandName());
         setResponseObject(response);
     }
 

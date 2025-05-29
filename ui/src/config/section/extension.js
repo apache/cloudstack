@@ -33,11 +33,11 @@ export default {
       params: { type: 'Orchestrator' },
       resourceType: 'Extension',
       columns: () => {
-        var fields = ['name', 'type', 'script', 'details']
+        var fields = ['name', 'type', 'script', 'created']
         return fields
       },
       details: () => {
-        var fields = ['name', 'id', 'type', 'details', 'script', 'extensionresourceid']
+        var fields = ['name', 'id', 'type', 'details', 'script', 'extensionresourceid', 'created']
         return fields
       },
       tabs: [{
