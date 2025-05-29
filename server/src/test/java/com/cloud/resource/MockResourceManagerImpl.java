@@ -29,8 +29,8 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
-import com.cloud.gpu.GpuOfferingVO;
 import com.cloud.gpu.HostGpuGroupsVO;
+import com.cloud.gpu.VgpuProfileVO;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostStats;
@@ -658,13 +658,13 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
-    public boolean isGPUDeviceAvailable(Host host, Long vmId, GpuOfferingVO gpuOffering, int gpuCount) {
+    public boolean isGPUDeviceAvailable(Host host, Long vmId, VgpuProfileVO vgpuProfile, int gpuCount) {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public GPUDeviceTO getGPUDevice(VirtualMachine vm, GpuOfferingVO gpuOffering, int gpuCount) {
+    public GPUDeviceTO getGPUDevice(VirtualMachine vm, VgpuProfileVO vgpuProfile, int gpuCount) {
         // TODO Auto-generated method stub
         return null;
     }

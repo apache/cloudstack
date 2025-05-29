@@ -2009,8 +2009,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 JsonObject fullPassthrough = jsonObject.get("full_passthrough").getAsJsonObject();
                 boolean fullPassthroughEnabled = fullPassthrough.get("enabled").getAsInt() == 1;
 
+                String numaNode = getJsonStringValueOrNull(jsonObject, "numa_node");
+                String pciRoot = getJsonStringValueOrNull(jsonObject, "pci_root");
+
                 VgpuTypesInfo vgpuType = new VgpuTypesInfo(GpuDevice.DeviceType.PCI, "passthrough", "passthrough", busAddress, vendorId,
-                                vendorName, deviceId, deviceName);
+                                vendorName, deviceId, deviceName, numaNode, pciRoot);
                 if (fullPassthroughEnabled) {
                     vgpuType.setPassthroughEnabled(true);
                 } else {
@@ -2024,7 +2027,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     String mdevUuid = vgpuInstance.getAsJsonObject().get("mdev_uuid").getAsString();
                     String profileName = vgpuInstance.getAsJsonObject().get("profile_name").getAsString();
                     Long availableInstances = vgpuInstance.getAsJsonObject().get("available_instances").getAsLong();
-                    VgpuTypesInfo device = new VgpuTypesInfo(GpuDevice.DeviceType.MDEV, profileName, profileName, mdevUuid, vendorId, vendorName, deviceId, deviceName);
+                    VgpuTypesInfo device = new VgpuTypesInfo(GpuDevice.DeviceType.MDEV, profileName, profileName, mdevUuid, vendorId, vendorName, deviceId, deviceName, numaNode, pciRoot);
                     device.setParentBusAddress(busAddress);
                     device.setRemainingCapacity(availableInstances);
                     device.setVmName(getJsonStringValueOrNull(vgpuInstance.getAsJsonObject(), "used_by_vm"));
@@ -2034,7 +2037,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 for (JsonElement vfInstance : vfInstances) {
                     String vfPciAddress = vfInstance.getAsJsonObject().get("vf_pci_address").getAsString();
                     String vfProfile = vfInstance.getAsJsonObject().get("vf_profile").getAsString();
-                    VgpuTypesInfo device = new VgpuTypesInfo(GpuDevice.DeviceType.PCI, vfProfile, vfProfile, vfPciAddress, vendorId, vendorName, deviceId, deviceName);
+                    VgpuTypesInfo device = new VgpuTypesInfo(GpuDevice.DeviceType.PCI, vfProfile, vfProfile, vfPciAddress, vendorId, vendorName, deviceId, deviceName, numaNode, pciRoot);
                     device.setParentBusAddress(busAddress);
                     device.setVmName(getJsonStringValueOrNull(vfInstance.getAsJsonObject(), "used_by_vm"));
                     gpuDevices.add(device);
@@ -2054,7 +2057,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @param fieldName the name of the field to extract
      * @return the string value of the field, or null if the field is missing or null
      */
-    private String getJsonStringValueOrNull(JsonObject jsonObject, String fieldName) {
+    protected String getJsonStringValueOrNull(JsonObject jsonObject, String fieldName) {
         JsonElement element = jsonObject.get(fieldName);
         if (element == null || element.isJsonNull()) {
             return null;

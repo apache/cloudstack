@@ -29,7 +29,8 @@ import org.apache.cloudstack.gpu.GpuService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "updateVgpuProfile", description = "Updates a vGPU profile in the system", responseObject = VgpuProfileResponse.class,
+@APICommand(name = "updateVgpuProfile", description = "Updates a vGPU profile in the system", responseObject =
+        VgpuProfileResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.21.0",
         authorized = {RoleType.Admin})
 public class UpdateVgpuProfileCmd extends BaseCmd {
@@ -37,9 +38,9 @@ public class UpdateVgpuProfileCmd extends BaseCmd {
     @Inject
     private GpuService gpuService;
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// ///////////// API parameters /////////////////////
+    /// //////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VgpuProfileResponse.class,
             required = true, description = "the ID of the vGPU profile")
@@ -48,15 +49,19 @@ public class UpdateVgpuProfileCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "the name of the vGPU profile")
     private String profileName;
 
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the vGPU profile")
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "the description of the vGPU"
+                                                                                         + " profile")
     private String description;
 
-    @Parameter(name = ApiConstants.VRAM_SIZE, type = CommandType.LONG, description = "the VRAM size in MB")
-    private Long vramSize;
+    @Parameter(name = ApiConstants.MAX_VGPU_PER_PHYSICAL_GPU, type = CommandType.LONG, description = "the maximum "
+                                                                                                     + "number of "
+                                                                                                     + "vGPUs per "
+                                                                                                     + "physical GPU")
+    private Long maxVgpuPerPgpu;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// //////////////// Accessors ///////////////////////
+    /// //////////////////////////////////////////////////
 
     public Long getId() {
         return id;
@@ -70,17 +75,8 @@ public class UpdateVgpuProfileCmd extends BaseCmd {
         return description;
     }
 
-    public Long getVramSize() {
-        return vramSize;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
-    public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+    public Long getMaxVgpuPerPgpu() {
+        return maxVgpuPerPgpu;
     }
 
     @Override
@@ -93,7 +89,17 @@ public class UpdateVgpuProfileCmd extends BaseCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update vGPU profile");
             }
         } catch (Exception e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update vGPU profile: " + e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
+                    "Failed to update vGPU profile: " + e.getMessage());
         }
+    }
+
+    /// //////////////////////////////////////////////////
+    /// //////////// API Implementation///////////////////
+    /// //////////////////////////////////////////////////
+
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 }

@@ -56,11 +56,6 @@ public interface GpuCard extends InternalIdentity, Identity {
     String getVendorId();
 
     /**
-     * @return the VRAM size of the GPU card in MB
-     */
-    Long getVramSize();
-
-    /**
      * @return the date when the GPU card was created
      */
     Date getCreated();

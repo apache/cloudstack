@@ -66,12 +66,6 @@ public class CreateGpuCardCmd extends BaseCmd {
             description = "the vendor ID of the GPU card")
     private String vendorId;
 
-    @Parameter(name = ApiConstants.VRAM_SIZE, type = CommandType.LONG, description = "the VRAM "
-                                                                                     + "size of "
-                                                                                     + "the GPU "
-                                                                                     + "card in MB")
-    private Long vramSize;
-
     /// //////////////////////////////////////////////////
     /// //////////////// Accessors ///////////////////////
     /// //////////////////////////////////////////////////
@@ -94,10 +88,6 @@ public class CreateGpuCardCmd extends BaseCmd {
 
     public String getVendorId() {
         return vendorId;
-    }
-
-    public Long getVramSize() {
-        return vramSize;
     }
 
     @Override

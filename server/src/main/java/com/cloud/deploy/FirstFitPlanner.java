@@ -205,7 +205,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
             }
             // In case of non-GPU VMs, protect GPU enabled Hosts and prefer VM deployment on
             // non-GPU Hosts.
-            if (((offering.getGpuOfferingId() == null &&
+            if (((offering.getVgpuProfileId() == null &&
                   serviceOfferingDetailsDao.findDetail(offering.getId(),
                           GPU.Keys.vgpuType.toString()) == null)
                  && !(hostGpuGroupsDao.listHostIds().isEmpty())) || nonUefiVMDeploy

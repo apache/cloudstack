@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -33,6 +34,10 @@ public class GpuDeviceResponse extends BaseResponse {
     @SerializedName(ApiConstants.BUS_ADDRESS)
     @Param(description = "bus address of the GPU device")
     private String bussAddress;
+
+    @SerializedName(ApiConstants.GPU_DEVICE_TYPE)
+    @Param(description = "bus address of the GPU device")
+    private GpuDevice.DeviceType type;
 
     @SerializedName(ApiConstants.HOST_ID)
     @Param(description = "the host ID where the GPU device is attached")
@@ -70,10 +75,21 @@ public class GpuDeviceResponse extends BaseResponse {
     @Param(description = "the vGPU profile name assigned to this GPU device")
     private GpuDevice.State state;
 
+    @SerializedName(ApiConstants.RESOURCE_STATE)
+    @Param(description = "the resource state of the GPU device (Enabled/Disabled)")
+    private GpuDevice.ResourceState resourceState;
+
     @SerializedName(ApiConstants.PARENT_GPU_DEVICE_ID)
     @Param(description = "the ID of the parent GPU device, if this is a vGPU")
     private String parentGpuDeviceId;
 
+    @SerializedName(ApiConstants.NUMA_NODE)
+    @Param(description = "the NUMA node where the GPU device is located")
+    private String numaNode;
+
+    @SerializedName(ApiConstants.PCI_ROOT)
+    @Param(description = "the PCI root of the GPU device")
+    private String pciRoot;
 
     public GpuDeviceResponse() {
         // Empty constructor for serialization
@@ -94,6 +110,14 @@ public class GpuDeviceResponse extends BaseResponse {
 
     public void setBussAddress(String bussAddress) {
         this.bussAddress = bussAddress;
+    }
+
+    public GpuDevice.DeviceType getType() {
+        return type;
+    }
+
+    public void setType(GpuDevice.DeviceType type) {
+        this.type = type;
     }
 
     public String getHostId() {
@@ -168,11 +192,35 @@ public class GpuDeviceResponse extends BaseResponse {
         this.state = state;
     }
 
+    public GpuDevice.ResourceState getResourceState() {
+        return resourceState;
+    }
+
+    public void setResourceState(GpuDevice.ResourceState resourceState) {
+        this.resourceState = resourceState;
+    }
+
     public String getParentGpuDeviceId() {
         return parentGpuDeviceId;
     }
 
     public void setParentGpuDeviceId(String parentGpuDeviceId) {
         this.parentGpuDeviceId = parentGpuDeviceId;
+    }
+
+    public String getNumaNode() {
+        return numaNode;
+    }
+
+    public void setNumaNode(String numaNode) {
+        this.numaNode = numaNode;
+    }
+
+    public String getPciRoot() {
+        return pciRoot;
+    }
+
+    public void setPciRoot(String pciRoot) {
+        this.pciRoot = pciRoot;
     }
 }

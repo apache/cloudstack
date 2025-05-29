@@ -183,7 +183,6 @@ public final class AnnotationManagerImpl extends ManagerBase implements Annotati
         s_typeMap.put(EntityType.KUBERNETES_CLUSTER, ApiCommandResourceType.None);
         s_typeMap.put(EntityType.SERVICE_OFFERING, ApiCommandResourceType.ServiceOffering);
         s_typeMap.put(EntityType.DISK_OFFERING, ApiCommandResourceType.DiskOffering);
-        s_typeMap.put(EntityType.GPU_OFFERING, ApiCommandResourceType.GpuOffering);
         s_typeMap.put(EntityType.NETWORK_OFFERING, ApiCommandResourceType.NetworkOffering);
         s_typeMap.put(EntityType.ZONE, ApiCommandResourceType.Zone);
         s_typeMap.put(EntityType.POD, ApiCommandResourceType.Pod);

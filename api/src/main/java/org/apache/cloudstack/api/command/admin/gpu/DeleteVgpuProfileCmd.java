@@ -30,7 +30,8 @@ import org.apache.cloudstack.gpu.GpuService;
 
 import javax.inject.Inject;
 
-@APICommand(name = "deleteVgpuProfile", description = "Deletes a vGPU profile from the system", responseObject = SuccessResponse.class,
+@APICommand(name = "deleteVgpuProfile", description = "Deletes a vGPU profile from the system", responseObject =
+        SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.21.0",
         authorized = {RoleType.Admin})
 public class DeleteVgpuProfileCmd extends BaseCmd {
@@ -38,29 +39,20 @@ public class DeleteVgpuProfileCmd extends BaseCmd {
     @Inject
     private GpuService gpuService;
 
-    /////////////////////////////////////////////////////
-    //////////////// API parameters /////////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// ///////////// API parameters /////////////////////
+    /// //////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VgpuProfileResponse.class,
             required = true, description = "the ID of the vGPU profile")
     private Long id;
 
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
+    /// //////////////////////////////////////////////////
+    /// //////////////// Accessors ///////////////////////
+    /// //////////////////////////////////////////////////
 
     public Long getId() {
         return id;
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
-    public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
     }
 
     @Override
@@ -74,7 +66,17 @@ public class DeleteVgpuProfileCmd extends BaseCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete vGPU profile");
             }
         } catch (Exception e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to delete vGPU profile: " + e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR,
+                    "Failed to delete vGPU profile: " + e.getMessage());
         }
+    }
+
+    /// //////////////////////////////////////////////////
+    /// //////////// API Implementation///////////////////
+    /// //////////////////////////////////////////////////
+
+    @Override
+    public long getEntityOwnerId() {
+        return Account.ACCOUNT_ID_SYSTEM;
     }
 }

@@ -374,6 +374,7 @@ public class ApiConstants {
     public static final String NEW_START_IP = "newstartip";
     public static final String NEW_END_IP = "newendip";
     public static final String KUBERNETES_NODE_VERSION = "kubernetesnodeversion";
+    public static final String NUMA_NODE = "numanode";
     public static final String NUM_RETRIES = "numretries";
     public static final String OFFER_HA = "offerha";
     public static final String OS_DISTRIBUTION = "osdistribution";
@@ -393,8 +394,8 @@ public class ApiConstants {
     public static final String GPU_CARD_ID = "gpucardid";
     public static final String GPU_CARD_NAME = "gpucardname";
     public static final String GPU_COUNT = "gpucount";
-    public static final String GPU_OFFERING_ID = "gpuofferingid";
-    public static final String GPU_OFFERING_NAME = "gpuofferingname";
+    public static final String GPU_DEVICE_TYPE = "gpudevicetype";
+    public static final String MAX_VGPU_PER_PHYSICAL_GPU = "maxvgpuperphysicalgpu";
     public static final String GUEST_OS_LIST = "guestoslist";
     public static final String GUEST_OS_COUNT = "guestoscount";
     public static final String OS_MAPPING_CHECK_ENABLED = "osmappingcheckenabled";
@@ -410,6 +411,7 @@ public class ApiConstants {
     public static final String PARENT_SUBNET = "parentsubnet";
     public static final String PARENT_TEMPLATE_ID = "parenttemplateid";
     public static final String PASSWORD = "password";
+    public static final String PCI_ROOT = "pciroot";
     public static final String CURRENT_PASSWORD = "currentpassword";
     public static final String SHOULD_UPDATE_PASSWORD = "update_passwd_on_host";
     public static final String PASSWORD_ENABLED = "passwordenabled";
@@ -576,7 +578,6 @@ public class ApiConstants {
     public static final String VENDOR_NAME = "vendorname";
     public static final String VGPU_PROFILE_ID = "vgpuprofileid";
     public static final String VGPU_PROFILE_NAME = "vgpuprofilename";
-    public static final String VGPU_PROFILE_IDS = "vgpuprofileids";
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";
     public static final String VIRTUAL_MACHINE_NAME = "virtualmachinename";
@@ -585,7 +586,6 @@ public class ApiConstants {
     public static final String VIRTUAL_MACHINE_TYPE = "virtualmachinetype";
     public static final String VIRTUAL_MACHINE_STATE = "vmstate";
     public static final String VIRTUAL_MACHINES = "virtualmachines";
-    public static final String VRAM_SIZE = "vramsize";
     public static final String USAGE_ID = "usageid";
     public static final String USAGE_TYPE = "usagetype";
     public static final String INCLUDE_TAGS = "includetags";
@@ -1336,7 +1336,7 @@ public class ApiConstants {
     }
 
     public enum VMDetails {
-        all, group, nics, stats, secgrp, tmpl, servoff, diskoff, gpuoff, backoff, iso, volume, min, affgrp, vnfnics;
+        all, group, nics, stats, secgrp, tmpl, servoff, diskoff, backoff, iso, volume, min, affgrp, vnfnics;
     }
 
     public enum DomainDetails {

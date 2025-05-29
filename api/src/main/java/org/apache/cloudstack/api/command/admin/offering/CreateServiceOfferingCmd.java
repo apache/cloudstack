@@ -30,8 +30,8 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.GpuOfferingResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.VgpuProfileResponse;
 import org.apache.cloudstack.api.response.VsphereStoragePoliciesResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
@@ -264,16 +264,17 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             description = "Lease expiry action, valid values are STOP and DESTROY")
     private String leaseExpiryAction;
 
-    @Parameter(name = ApiConstants.GPU_OFFERING_ID,
+    @Parameter(name = ApiConstants.VGPU_PROFILE_ID,
             type = CommandType.UUID,
-            entityType = GpuOfferingResponse .class,
-            description = "the ID of the GPU offering to which service offering should be mapped",
+            entityType = VgpuProfileResponse.class,
+            description = "the ID of the vGPU profile to which service offering should be mapped",
             since = "4.21")
-    private Long gpuOfferingId;
+    private Long vgpuProfileId;
 
     @Parameter(name = ApiConstants.GPU_COUNT,
             type = CommandType.INTEGER,
-            description = "Count of GPUs to be assigned to the VM. This is applicable only for GPU enabled service offerings",
+            entityType = VgpuProfileResponse.class,
+            description = "Count of GPUs to be used with this service offering. This is applicable only for vGPU profiles.",
             since = "4.21")
     private Integer gpuCount;
 
@@ -531,8 +532,8 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return Boolean.TRUE.equals(purgeResources);
     }
 
-    public Long getGpuOfferingId() {
-        return gpuOfferingId;
+    public Long getVgpuProfileId() {
+        return vgpuProfileId;
     }
 
     public Integer getGpuCount() {

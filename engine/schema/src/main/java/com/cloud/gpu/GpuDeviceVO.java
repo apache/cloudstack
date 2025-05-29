@@ -64,20 +64,32 @@ public class GpuDeviceVO implements GpuDevice {
     @Enumerated(value = EnumType.STRING)
     private State state = State.Free;
 
+    @Column(name = "resource_state")
+    @Enumerated(value = EnumType.STRING)
+    private ResourceState resourceState = ResourceState.Enabled;
+
     @Column(name = "parent_gpu_device_id")
     private Long parentGpuDeviceId;
+
+    @Column(name = "numa_node")
+    private String numaNode;
+
+    @Column(name = "pci_root")
+    private String pciRoot;
 
     public GpuDeviceVO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public GpuDeviceVO(long cardId, long vgpuProfileId, String busAddress, long hostId, Long parentGpuDeviceId) {
+    public GpuDeviceVO(long cardId, long vgpuProfileId, String busAddress, long hostId, Long parentGpuDeviceId, String numaNode, String pciRoot) {
         this.uuid = UUID.randomUUID().toString();
         this.cardId = cardId;
         this.vgpuProfileId = vgpuProfileId;
         this.busAddress = busAddress;
         this.hostId = hostId;
         this.parentGpuDeviceId = parentGpuDeviceId;
+        this.numaNode = numaNode;
+        this.pciRoot = pciRoot;
     }
 
     @Override
@@ -85,7 +97,7 @@ public class GpuDeviceVO implements GpuDevice {
         return String.format("GpuDevice %s",
                 ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
                         this, "id", "uuid", "cardId", "vgpuProfileId", "busAddress", "hostId",
-                        "vmId", "parentGpuDeviceId", "state"));
+                        "vmId", "parentGpuDeviceId", "numaNode", "pciRoot", "state", "resourceState"));
     }
 
     @Override
@@ -146,6 +158,14 @@ public class GpuDeviceVO implements GpuDevice {
         this.state = state;
     }
 
+    public ResourceState getResourceState() {
+        return resourceState;
+    }
+
+    public void setResourceState(ResourceState resourceState) {
+        this.resourceState = resourceState;
+    }
+
     public Long getVmId() {
         return vmId;
     }
@@ -160,5 +180,21 @@ public class GpuDeviceVO implements GpuDevice {
 
     public void setParentGpuDeviceId(Long parentGpuDeviceId) {
         this.parentGpuDeviceId = parentGpuDeviceId;
+    }
+
+    public String getNumaNode() {
+        return numaNode;
+    }
+
+    public void setNumaNode(String numaNode) {
+        this.numaNode = numaNode;
+    }
+
+    public String getPciRoot() {
+        return pciRoot;
+    }
+
+    public void setPciRoot(String pciRoot) {
+        this.pciRoot = pciRoot;
     }
 }

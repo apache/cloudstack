@@ -1,22 +1,57 @@
 // Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
+// or more contributor license agreements. See the NOTICE file
 // distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
+// regarding copyright ownership. The ASF licenses this file
 // to you under the Apache License, Version 2.0 (the
 // "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
+// with the License. You may obtain a copy of the License at
 //
-//   http://www.apache.org/licenses/LICENSE-2.0
+// http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing,
 // software distributed under the License is distributed on an
 // "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
+// KIND, either express or implied. See the License for the
 // specific language governing permissions and limitations
 // under the License.
 
 <template>
   <div>
+    <!-- Toolbar for bulk actions -->
+    <div style="margin-bottom: 16px;">
+      <a-space wrap>
+        <!-- Bulk GPU Device Actions -->
+        <a-popconfirm
+          :title="$t('message.confirm.enable.gpu.devices', { count: selectedDeviceCount })"
+          @confirm="bulkEnableGpuDevices"
+          okText="Yes"
+          cancelText="No"
+        >
+          <a-button
+            type="primary"
+            :disabled="!hasSelectedDevices"
+          >
+            {{ $t('label.gpu.devices.enable') }}
+          </a-button>
+        </a-popconfirm>
+
+        <a-popconfirm
+          :title="$t('message.confirm.disable.gpu.devices', { count: selectedDeviceCount })"
+          @confirm="bulkDisableGpuDevices"
+          okText="Yes"
+          cancelText="No"
+        >
+          <a-button
+            type="primary"
+            danger
+            :disabled="!hasSelectedDevices"
+          >
+            {{ $t('label.gpu.devices.disable') }}
+          </a-button>
+        </a-popconfirm>
+      </a-space>
+    </div>
+
     <a-table
       :loading="tabLoading"
       :columns="columns"
@@ -25,35 +60,116 @@
       :rowKey="record => record.id"
       :childrenColumnName="'children'"
       :defaultExpandAllRows="true"
+      :rowSelection="{
+        selectedRowKeys: selectedGpuDeviceIds,
+        onChange: onGpuDeviceSelectionChange,
+        getCheckboxProps: record => ({
+          disabled: record.state === 'Disabled'
+        })
+      }"
+      :customRow="customRowProps"
       size="small"
     >
       <template #bodyCell="{ column, record }">
-        <template v-if="column.key === 'gpuDeviceActions'">
-          <a-space>
-            <a-button
-              v-if="record.state === 'Disabled'"
-              type="primary"
-              size="small"
-              @click="enableGpuDevice(record)"
-            >
-              {{ $t('label.enable') }}
-            </a-button>
-            <a-button
-              v-if="record.state === 'Free'"
-              type="primary"
-              danger
-              size="small"
-              @click="disableGpuDevice(record)"
-            >
-              {{ $t('label.disable') }}
-            </a-button>
-          </a-space>
-        </template>
-        <template v-else-if="column.key === 'busaddress'">
+        <template v-if="column.key === 'busaddress'">
           <span :style="{ paddingLeft: record.parentgpudeviceid ? '20px' : '0px' }">
             {{ record.busaddress }}
           </span>
         </template>
+        <template v-else-if="column.key === 'virtualmachinename'">
+          <router-link
+            v-if="record.virtualmachinename && record.virtualmachineid"
+            :to="{ path: '/vm/' + record.virtualmachineid }"
+          >
+            {{ record.virtualmachinename }}
+          </router-link>
+          <span v-else>{{ record.virtualmachinename }}</span>
+        </template>
+        <template v-else-if="column.key === 'gpucardname'">
+          <router-link
+            v-if="record.gpucardid"
+            :to="{ path: '/gpucard/' + record.gpucardid }"
+            :title="record.gpucardname"
+            class="text-ellipsis"
+          >
+            {{ record.gpucardname }}
+          </router-link>
+          <span
+            v-else
+            :title="record.gpucardname"
+            class="text-ellipsis"
+          >{{ record.gpucardname }}</span>
+        </template>
+        <template v-else-if="column.key === 'vgpuprofilename'">
+          <router-link
+            v-if="record.vgpuprofileid"
+            :to="{ path: '/vgpuprofile/' + record.vgpuprofileid }"
+            :title="record.vgpuprofilename"
+            class="text-ellipsis"
+          >
+            {{ record.vgpuprofilename }}
+          </router-link>
+          <span
+            v-else
+            :title="record.vgpuprofilename"
+            class="text-ellipsis"
+          >{{ record.vgpuprofilename }}</span>
+        </template>
+        <template v-else-if="column.key === 'hostname'">
+          <router-link
+            v-if="record.hostid"
+            :to="{ path: '/host/' + record.hostid }"
+            :title="record.hostname"
+            class="text-ellipsis"
+          >
+            {{ record.hostname }}
+          </router-link>
+          <span
+            v-else
+            :title="record.hostname"
+            class="text-ellipsis"
+          >{{ record.hostname }}</span>
+        </template>
+      </template>
+
+      <!-- Custom Filter Dropdown for Column Selection -->
+      <template #customFilterDropdown="{ column }">
+        <div
+          v-if="column.key === 'columnFilter'"
+          style="padding: 8px; min-width: 200px;"
+        >
+          <div style="margin-bottom: 8px; font-weight: 500;">{{ $t('label.select.columns') }}</div>
+          <div style="margin-bottom: 8px;">
+            <a-space>
+              <a-button
+                size="small"
+                @click="selectAllColumns"
+              >
+                {{ $t('label.select.all') }}
+              </a-button>
+              <a-button
+                size="small"
+                @click="clearAllColumns"
+              >
+                {{ $t('label.clear.all') }}
+              </a-button>
+            </a-space>
+          </div>
+          <div style="max-height: 200px; overflow-y: auto;">
+            <div
+              v-for="columnKey in columnKeys"
+              :key="columnKey"
+              style="margin-bottom: 4px;"
+            >
+              <a-checkbox
+                :checked="selectedColumnKeys.includes(columnKey)"
+                @change="updateSelectedColumns(columnKey)"
+              >
+                {{ $t('label.' + String(columnKey).toLowerCase()) }}
+              </a-checkbox>
+            </div>
+          </div>
+        </div>
       </template>
     </a-table>
   </div>
@@ -73,17 +189,29 @@ export default {
     loading: {
       type: Boolean,
       required: true
+    },
+    resourceType: {
+      type: String,
+      required: true,
+      default: 'Host'
     }
   },
   data () {
     return {
       tabLoading: false,
-      columnKeys: ['busaddress', 'gpucardname', 'vgpuprofilename', 'virtualmachinename', 'state'],
+      columnKeys: ['busaddress', 'gpucardname', 'vgpuprofilename', 'gpudevicetype', 'resourcestate', 'state', 'virtualmachinename'],
       selectedColumnKeys: [],
       columns: [],
-      cols: [],
       items: [],
-      actions: []
+      selectedGpuDeviceIds: []
+    }
+  },
+  computed: {
+    hasSelectedDevices () {
+      return this.selectedGpuDeviceIds.length > 0
+    },
+    selectedDeviceCount () {
+      return this.selectedGpuDeviceIds.length
     }
   },
   created () {
@@ -99,6 +227,24 @@ export default {
     }
   },
   methods: {
+    validateBulkOperation () {
+      if (this.selectedGpuDeviceIds.length === 0) {
+        this.$notification.warning({
+          message: this.$t('label.warning'),
+          description: this.$t('message.please.select.gpu.devices')
+        })
+        return false
+      }
+      return true
+    },
+    handleBulkOperationSuccess (messageKey, count) {
+      this.$notification.success({
+        message: this.$t('label.success'),
+        description: this.$t(messageKey, { count })
+      })
+      this.selectedGpuDeviceIds = []
+      this.fetchGPUDevices()
+    },
     fetchData () {
       this.fetchGPUDevices()
     },
@@ -107,8 +253,9 @@ export default {
       if (!this.resource.id) {
         return
       }
-      const params = {
-        hostid: this.resource.id
+      const params = {}
+      if (this.resourceType === 'Host') {
+        params.hostid = this.resource.id
       }
       this.tabLoading = true
       api('listGpuDevices', params).then(json => {
@@ -172,29 +319,49 @@ export default {
           sorter: (a, b) => { return genericCompare(a[columnKey] || '', b[columnKey] || '') }
         })
       }
+      // Add column filter as the last column
       this.columns.push({
-        key: 'gpuDeviceActions',
-        title: this.$t('label.actions'),
-        dataIndex: 'gpuDeviceActions'
+        key: 'columnFilter',
+        title: null,
+        dataIndex: 'columnFilter',
+        customFilterDropdown: true,
+        onFilter: () => true
       })
-      if (this.columns.length > 0) {
-        this.columns[this.columns.length - 1].customFilterDropdown = true
+    },
+    onGpuDeviceSelectionChange (keys) {
+      this.selectedGpuDeviceIds = keys
+    },
+    customRowProps (record) {
+      return {
+        class: record.parentgpudeviceid ? 'vgpu-row' : 'parent-gpu-row'
       }
     },
-    enableGpuDevice (record) {
+    selectAllColumns () {
+      this.selectedColumnKeys = this.columnKeys
+      this.updateColumns()
+    },
+    clearAllColumns () {
+      this.selectedColumnKeys = []
+      this.updateColumns()
+    },
+    bulkEnableGpuDevices () {
+      if (!this.validateBulkOperation()) return
+
       api('enableGpuDevice', {
-        id: record.id
-      }).then(json => {
-        this.fetchGPUDevices()
+        ids: this.selectedGpuDeviceIds.join(',')
+      }).then(() => {
+        this.handleBulkOperationSuccess('message.success.enable.gpu.devices', this.selectedGpuDeviceIds.length)
       }).catch(error => {
         this.$notifyError(error)
       })
     },
-    disableGpuDevice (record) {
+    bulkDisableGpuDevices () {
+      if (!this.validateBulkOperation()) return
+
       api('disableGpuDevice', {
-        id: record.id
-      }).then(json => {
-        this.fetchGPUDevices()
+        ids: this.selectedGpuDeviceIds.join(',')
+      }).then(() => {
+        this.handleBulkOperationSuccess('message.success.disable.gpu.devices', this.selectedGpuDeviceIds.length)
       }).catch(error => {
         this.$notifyError(error)
       })
@@ -202,3 +369,41 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+/* Background colors for GPU device types */
+:deep(.parent-gpu-row) {
+  background-color: #fafafa;
+}
+
+:deep(.vgpu-row) {
+  background-color: #f0f8ff;
+}
+
+:deep(.parent-gpu-row:hover) {
+  background-color: #f5f5f5 !important;
+}
+
+:deep(.vgpu-row:hover) {
+  background-color: #e6f4ff !important;
+}
+
+/* Text truncation for long names */
+:deep(.ant-table-tbody .ant-table-cell) {
+  max-width: 200px;
+}
+
+:deep(.ant-table-tbody .ant-table-cell:has([data-column="gpucardname"]),
+  .ant-table-tbody .ant-table-cell:has([data-column="vgpuprofilename"]),
+  .ant-table-tbody .ant-table-cell:has([data-column="hostname"])) {
+  max-width: 150px;
+}
+
+.text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+  display: inline-block;
+}
+</style>

@@ -124,8 +124,8 @@ public class ServiceOfferingVO implements ServiceOffering {
     @Column(name = "dynamic_scaling_enabled")
     private boolean dynamicScalingEnabled = true;
 
-    @Column(name = "gpu_offering_id")
-    private Long gpuOfferingId;
+    @Column(name = "vgpu_profile_id")
+    private Long vgpuProfileId;
 
     @Column(name = "gpu_count")
     private Integer gpuCount;
@@ -204,6 +204,8 @@ public class ServiceOfferingVO implements ServiceOffering {
         systemUse = offering.isSystemUse();
         dynamicScalingEnabled = offering.isDynamicScalingEnabled();
         diskOfferingStrictness = offering.diskOfferingStrictness;
+        vgpuProfileId = offering.vgpuProfileId;
+        gpuCount = offering.gpuCount;
     }
 
     @Override
@@ -453,12 +455,12 @@ public class ServiceOfferingVO implements ServiceOffering {
     }
 
     @Override
-    public Long getGpuOfferingId() {
-        return gpuOfferingId;
+    public Long getVgpuProfileId() {
+        return vgpuProfileId;
     }
 
-    public void setGpuOfferingId(Long gpuOfferingId) {
-        this.gpuOfferingId = gpuOfferingId;
+    public void setVgpuProfileId(Long vgpuProfileId) {
+        this.vgpuProfileId = vgpuProfileId;
     }
 
     @Override

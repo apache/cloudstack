@@ -307,6 +307,4 @@
   <bean id="gpuCardDaoImpl" class="com.cloud.gpu.dao.GpuCardDaoImpl" />
   <bean id="gpuDeviceDaoImpl" class="com.cloud.gpu.dao.GpuDeviceDaoImpl" />
   <bean id="vgpuProfileDaoImpl" class="com.cloud.gpu.dao.VgpuProfileDaoImpl" />
-  <bean id="gpuOfferingDaoImpl" class="com.cloud.gpu.dao.GpuOfferingDaoImpl" />
-  <bean id="gpuOfferingDetailDaoImpl" class="com.cloud.gpu.dao.GpuOfferingDetailsDaoImpl" />
 </beans>

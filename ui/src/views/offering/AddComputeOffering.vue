@@ -243,29 +243,51 @@
             </a-radio-button>
           </a-radio-group>
         </a-form-item>
-        <a-form-item name="gpuofferingid" ref="gpuofferingid" :label="$t('label.gpu.offering')" v-if="!isSystem">
+        <a-form-item name="gpucardid" ref="gpucardid" :label="$t('label.gpu.card')" v-if="!isSystem">
           <a-select
-            v-model:value="form.gpuofferingid"
+            v-model:value="form.gpucardid"
             showSearch
             optionFilterProp="label"
             :filterOption="(input, option) => {
               return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
             }"
-            :loading="gpuOfferingLoading"
-            :placeholder="$t('label.gpu.offering')"
-            @change="handleGpuOfferingChange">
-            <a-select-option v-for="(opt, optIndex) in gpuOfferings" :key="optIndex" :value="opt.id" :label="opt.name || opt.description || ''">
+            :loading="gpuCardLoading"
+            :placeholder="$t('label.gpu.card')"
+            @change="handleGpuCardChange">
+            <a-select-option v-for="(opt, optIndex) in gpuCards" :key="optIndex" :value="opt.id" :label="opt.name || opt.description || ''">
               {{ opt.description || opt.name || '' }}
             </a-select-option>
           </a-select>
         </a-form-item>
-        <a-form-item name="gpucount" ref="gpucount" :label="$t('label.gpu.count')" v-if="showGpuCount">
-          <a-input
-            v-model:value="form.gpucount"
-            :placeholder="$t('label.gpucount')"
-            :min="1"
-            type="number" />
+        <a-form-item name="vgpuprofile" ref="vgpuprofile" :label="$t('label.vgpu.profile')" v-if="!isSystem && form.gpucardid && vgpuProfiles.length > 0">
+          <a-select
+            v-model:value="form.vgpuprofile"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="vgpuProfileLoading"
+            :placeholder="$t('label.vgpu.profile')">
+            <a-select-option v-for="(vgpu, vgpuIndex) in vgpuProfiles" :key="vgpuIndex" :value="vgpu.id" :label="vgpu.vgpuprofile || ''">
+              {{ vgpu.name }}
+            </a-select-option>
+          </a-select>
         </a-form-item>
+        <a-row :gutter="12" v-if="!isSystem && form.gpucardid">
+          <a-col :md="12" :lg="12">
+            <a-form-item name="gpucount" ref="gpucount">
+              <template #label>
+                <tooltip-label :title="$t('label.gpu.count')" :tooltip="$t('label.gpu.count.tooltip')"/>
+              </template>
+              <a-input
+                v-model:value="form.gpucount"
+                type="number"
+                min="1"
+                :placeholder="$t('label.gpu.count')"/>
+            </a-form-item>
+          </a-col>
+        </a-row>
         <a-form-item name="ispublic" ref="ispublic" :label="$t('label.ispublic')" v-show="isAdmin()">
           <a-switch v-model:checked="form.ispublic" />
         </a-form-item>
@@ -667,11 +689,10 @@ export default {
       deploymentPlannerLoading: false,
       plannerModeVisible: false,
       plannerMode: '',
-      selectedGpuOffering: '',
+      selectedGpuCard: '',
       showDiskOfferingModal: false,
-      gpuOfferingLoading: false,
-      gpuOfferings: [],
-      showGpuCount: false,
+      gpuCardLoading: false,
+      gpuCards: [],
       loading: false,
       dynamicscalingenabled: true,
       diskofferingstrictness: false,
@@ -688,7 +709,9 @@ export default {
       defaultLeaseDuration: 90,
       defaultLeaseExpiryAction: 'STOP',
       leaseduration: undefined,
-      leaseexpiryaction: undefined
+      leaseexpiryaction: undefined,
+      vgpuProfiles: [],
+      vgpuProfileLoading: false
     }
   },
   beforeCreate () {
@@ -718,7 +741,9 @@ export default {
         ispublic: this.isPublic,
         dynamicscalingenabled: true,
         plannermode: this.plannerMode,
-        gpuofferingid: this.selectedGpuOffering,
+        gpucardid: this.selectedGpuCard,
+        vgpuprofile: '',
+        gpucount: '1',
         computeonly: this.computeonly,
         storagetype: this.storageType,
         provisioningtype: this.provisioningType,
@@ -772,6 +797,15 @@ export default {
         hypervisorsnapshotreserve: [this.naturalNumberRule],
         domainid: [{ type: 'array', required: true, message: this.$t('message.error.select') }],
         diskofferingid: [{ required: true, message: this.$t('message.error.select') }],
+        gpucount: [{
+          type: 'number',
+          validator: async (rule, value) => {
+            if (value && (isNaN(value) || value < 1)) {
+              return Promise.reject(this.$t('message.error.number.minimum.one'))
+            }
+            return Promise.resolve()
+          }
+        }],
         zoneid: [{
           type: 'array',
           validator: async (rule, value) => {
@@ -787,7 +821,7 @@ export default {
     fetchData () {
       this.fetchDomainData()
       this.fetchZoneData()
-      this.fetchGPUOfferings()
+      this.fetchGPUCards()
       if (isAdmin()) {
         this.fetchStorageTagData()
         this.fetchDeploymentPlannerData()
@@ -799,19 +833,19 @@ export default {
       }
       this.fetchDiskOfferings()
     },
-    fetchGPUOfferings () {
-      this.gpuOfferingLoading = true
-      api('listGpuOfferings', {
+    fetchGPUCards () {
+      this.gpuCardLoading = true
+      api('listGpuCards', {
         listall: true
       }).then(json => {
-        this.gpuOfferings = json.listgpuofferingsresponse.gpuoffering || []
+        this.gpuCards = json.listgpucardsresponse.gpucard || []
         // Add a "None" option at the beginning
-        this.gpuOfferings.unshift({
+        this.gpuCards.unshift({
           id: '',
           name: this.$t('label.none')
         })
       }).finally(() => {
-        this.gpuOfferingLoading = false
+        this.gpuCardLoading = false
       })
     },
     addDiskOffering () {
@@ -945,6 +979,30 @@ export default {
     handlePlannerModeChange (val) {
       this.plannerMode = val
     },
+    handleGpuCardChange (cardId) {
+      this.selectedGpuCard = cardId
+      if (cardId && cardId !== '') {
+        this.fetchVgpuProfiles(cardId)
+      } else {
+        this.vgpuProfiles = []
+        this.form.vgpuprofile = ''
+        this.form.gpucount = '1'
+      }
+    },
+    fetchVgpuProfiles (gpuCardId) {
+      this.vgpuProfileLoading = true
+      this.vgpuProfiles = []
+      api('listVgpuProfiles', {
+        gpucardid: gpuCardId
+      }).then(json => {
+        this.vgpuProfiles = json.listvgpuprofilesresponse.vgpuprofile || []
+      }).catch(error => {
+        console.error('Error fetching vGPU profiles:', error)
+        this.vgpuProfiles = []
+      }).finally(() => {
+        this.vgpuProfileLoading = false
+      })
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -973,12 +1031,12 @@ export default {
           params.diskofferingid = values.diskofferingid
         }
 
-        // Add GPU offering parameters
-        if (values.gpuofferingid) {
-          params.gpuofferingid = values.gpuofferingid
-          if (values.gpucount) {
-            params.gpucount = values.gpucount
-          }
+        // Add GPU parameters
+        if (values.vgpuprofile) {
+          params.vgpuprofileid = values.vgpuprofile
+        }
+        if (values.gpucount && values.gpucount.length > 0) {
+          params.gpucount = values.gpucount
         }
 
         // custom fields (begin)

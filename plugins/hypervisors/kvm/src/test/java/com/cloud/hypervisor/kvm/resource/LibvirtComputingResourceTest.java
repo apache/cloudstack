@@ -23,6 +23,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -63,6 +64,8 @@ import javax.xml.xpath.XPathFactory;
 import com.cloud.utils.net.NetUtils;
 
 import com.cloud.vm.VmDetailConstants;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.apache.cloudstack.api.ApiConstants.IoDriverPolicy;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -6624,11 +6627,13 @@ public class LibvirtComputingResourceTest {
 
         Mockito.doReturn(List.of("path")).when(volumeObjectToMock).getCheckpointPaths();
 
-        Mockito.doNothing().when(libvirtComputingResourceSpy).recreateCheckpointsOfDisk(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.doNothing().when(libvirtComputingResourceSpy)
+                .recreateCheckpointsOfDisk(Mockito.any(), Mockito.any(), Mockito.any());
 
         boolean result = libvirtComputingResourceSpy.recreateCheckpointsOnVm(List.of(volumeObjectToMock), null, null);
 
-        Mockito.verify(libvirtComputingResourceSpy, Mockito.times(1)).recreateCheckpointsOfDisk(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(libvirtComputingResourceSpy, Mockito.times(1))
+                .recreateCheckpointsOfDisk(Mockito.any(), Mockito.any(), Mockito.any());
         Assert.assertTrue(result);
     }
 
@@ -6778,5 +6783,133 @@ public class LibvirtComputingResourceTest {
     public void manuallyDeleteUnusedSnapshotFileTestLibvirtSupportingFlagDeleteOnCommandVirshBlockcommitIsTrueReturn() {
         libvirtComputingResourceSpy.manuallyDeleteUnusedSnapshotFile(true, "");
         Mockito.verify(libvirtComputingResourceSpy, Mockito.never()).deleteIfExists("");
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNullWithValidStringValue() {
+        // Test case: field exists and has a string value
+        String jsonString = "{\"testField\": \"testValue\"}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "testField");
+
+        assertEquals("testValue", result);
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNullWithEmptyStringValue() {
+        // Test case: field exists and has an empty string value
+        String jsonString = "{\"testField\": \"\"}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "testField");
+
+        assertEquals("", result);
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNullWithNullValue() {
+        // Test case: field exists but is null
+        String jsonString = "{\"testField\": null}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "testField");
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNullWithMissingField() {
+        // Test case: field doesn't exist in the JSON object
+        String jsonString = "{\"otherField\": \"otherValue\"}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "missingField");
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNullWithEmptyJsonObject() {
+        // Test case: empty JSON object
+        String jsonString = "{}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "anyField");
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNullWithNumericValue() {
+        // Test case: field exists but contains a numeric value (should still work as it gets converted to string)
+        String jsonString = "{\"numericField\": 123}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "numericField");
+
+        assertEquals("123", result);
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNullWithBooleanValue() {
+        // Test case: field exists but contains a boolean value (should still work as it gets converted to string)
+        String jsonString = "{\"booleanField\": true}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "booleanField");
+
+        assertEquals("true", result);
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNullWithNullFieldName() {
+        // Test case: null field name should return null
+        String jsonString = "{\"testField\": \"testValue\"}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, null);
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNullWithLongStringValue() {
+        // Test case: field exists and has a long string value
+        String longValue = "This is a very long string value that contains multiple words and special characters like @#$%^&*()";
+        String jsonString = "{\"longField\": \"" + longValue + "\"}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "longField");
+
+        assertEquals(longValue, result);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testGetJsonStringValueOrNullWithNullJsonObject() {
+        // Test case: null JSON object should throw NullPointerException
+        // This tests that the method doesn't handle null objects gracefully, which is expected behavior
+        libvirtComputingResourceSpy.getJsonStringValueOrNull(null, "testField");
+    }
+
+    @Test
+    public void testGetJsonStringValueOrNullWithSpecialCharacters() {
+        // Test case: field contains JSON special characters and unicode
+        String jsonString = "{\"specialField\": \"Value with \\\"quotes\\\", \\n newlines, and unicode: \\u00E9\"}";
+        JsonParser jsonParser = new JsonParser();
+        JsonObject jsonObject = jsonParser.parse(jsonString).getAsJsonObject();
+
+        String result = libvirtComputingResourceSpy.getJsonStringValueOrNull(jsonObject, "specialField");
+
+        assertEquals("Value with \"quotes\", \n newlines, and unicode: é", result);
     }
 }

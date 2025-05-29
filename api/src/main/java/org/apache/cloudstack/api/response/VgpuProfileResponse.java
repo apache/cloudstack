@@ -38,6 +38,10 @@ public class VgpuProfileResponse extends GpuCardResponse {
     @Param(description = "the name of the vGPU profile")
     private String gpuCardName;
 
+    @SerializedName(ApiConstants.MAX_VGPU_PER_PHYSICAL_GPU)
+    @Param(description = "the maximum number of vGPUs per physical GPU")
+    private Long maxVgpuPerPgpu;
+
     public VgpuProfileResponse(VgpuProfile vgpuProfile, GpuCard gpuCard) {
         super(gpuCard);
         id = vgpuProfile.getUuid();
@@ -45,7 +49,7 @@ public class VgpuProfileResponse extends GpuCardResponse {
         description = vgpuProfile.getDescription();
         gpuCardId = gpuCard.getUuid();
         gpuCardName = gpuCard.getName();
-        vramSize = vgpuProfile.getVramSize();
+        maxVgpuPerPgpu = vgpuProfile.getMaxVgpuPerPgpu();
         setObjectName("vgpuprofile");
     }
 

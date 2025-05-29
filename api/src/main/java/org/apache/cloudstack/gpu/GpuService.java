@@ -22,7 +22,6 @@ import com.cloud.host.Host;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.command.admin.gpu.CreateGpuCardCmd;
-import org.apache.cloudstack.api.command.admin.gpu.CreateGpuOfferingCmd;
 import org.apache.cloudstack.api.command.admin.gpu.CreateVgpuProfileCmd;
 import org.apache.cloudstack.api.command.admin.gpu.DeleteGpuCardCmd;
 import org.apache.cloudstack.api.command.admin.gpu.DeleteVgpuProfileCmd;
@@ -31,14 +30,13 @@ import org.apache.cloudstack.api.command.admin.gpu.DiscoverGpuDevicesCmd;
 import org.apache.cloudstack.api.command.admin.gpu.EnableGpuDeviceCmd;
 import org.apache.cloudstack.api.command.admin.gpu.ListGpuDevicesCmd;
 import org.apache.cloudstack.api.command.admin.gpu.UpdateGpuCardCmd;
-import org.apache.cloudstack.api.command.admin.gpu.UpdateGpuOfferingCmd;
 import org.apache.cloudstack.api.command.admin.gpu.UpdateVgpuProfileCmd;
+import org.apache.cloudstack.api.command.admin.gpu.CreateGpuDeviceCmd;
+import org.apache.cloudstack.api.command.admin.gpu.UpdateGpuDeviceCmd;
 import org.apache.cloudstack.api.command.user.gpu.ListGpuCardsCmd;
-import org.apache.cloudstack.api.command.user.gpu.ListGpuOfferingsCmd;
 import org.apache.cloudstack.api.command.user.gpu.ListVgpuProfilesCmd;
 import org.apache.cloudstack.api.response.GpuCardResponse;
 import org.apache.cloudstack.api.response.GpuDeviceResponse;
-import org.apache.cloudstack.api.response.GpuOfferingResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VgpuProfileResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -137,35 +135,27 @@ public interface GpuService extends Manager {
 
     ListResponse<GpuDeviceResponse> discoverGpuDevices(DiscoverGpuDevicesCmd cmd);
 
-    /**
-     * Creates a GPU offering in the database
-     *
-     * @param cmd the API command
-     * @return the created GPU offering
-     */
-    GpuOfferingResponse createGpuOffering(CreateGpuOfferingCmd cmd);
+    boolean isGPUDeviceAvailable(Host host, Long vmId, VgpuProfile vgpuProfile, int gpuCount);
 
-    /**
-     * Updates a GPU offering in the database
-     *
-     * @param cmd the API command
-     * @return the updated GPU offering
-     */
-    GpuOfferingResponse updateGpuOffering(UpdateGpuOfferingCmd cmd);
-
-    /**
-     * Lists GPU offerings based on criteria
-     *
-     * @param listGpuOfferingsCmd the API command
-     * @return a list of GPU offering responses
-     */
-    ListResponse<GpuOfferingResponse> listGpuOfferings(ListGpuOfferingsCmd listGpuOfferingsCmd);
-
-    boolean isGPUDeviceAvailable(Host host, Long vmId, GpuOffering gpuOffering, int gpuCount);
-
-    GPUDeviceTO getGPUDevice(VirtualMachine vm, GpuOffering gpuOffering, int gpuCount);
+    GPUDeviceTO getGPUDevice(VirtualMachine vm, VgpuProfile vgpuProfile, int gpuCount);
 
     HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetailsFromGpuDevices(Host host);
 
     void addGpuDevicesToHost(Host host, List<VgpuTypesInfo> newGpuDevicesInfo);
+
+    /**
+     * Creates a GPU device manually on a host
+     *
+     * @param cmd the API command
+     * @return the created GPU device response
+     */
+    GpuDeviceResponse createGpuDevice(CreateGpuDeviceCmd cmd);
+
+    /**
+     * Updates an existing GPU device
+     *
+     * @param cmd the API command
+     * @return the updated GPU device response
+     */
+    GpuDeviceResponse updateGpuDevice(UpdateGpuDeviceCmd cmd);
 }

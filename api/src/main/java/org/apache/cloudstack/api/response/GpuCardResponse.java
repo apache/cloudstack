@@ -61,7 +61,6 @@ public class GpuCardResponse extends BaseResponse {
         name = gpuCard.getName();
         vendorName = gpuCard.getVendorName();
         vendorId = gpuCard.getVendorId();
-        vramSize = gpuCard.getVramSize();
     }
 
     public String getId() {

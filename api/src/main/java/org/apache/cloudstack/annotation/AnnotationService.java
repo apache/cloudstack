@@ -42,7 +42,7 @@ public interface AnnotationService {
         VM_SNAPSHOT(true), INSTANCE_GROUP(true), SSH_KEYPAIR(true), USER_DATA(true),
         NETWORK(true), VPC(true), PUBLIC_IP_ADDRESS(true), VPN_CUSTOMER_GATEWAY(true),
         TEMPLATE(true), ISO(true), KUBERNETES_CLUSTER(true),
-        SERVICE_OFFERING(false), DISK_OFFERING(false), NETWORK_OFFERING(false), GPU_OFFERING(false),
+        SERVICE_OFFERING(false), DISK_OFFERING(false), NETWORK_OFFERING(false),
         ZONE(false), POD(false), CLUSTER(false), HOST(false), DOMAIN(false),
         PRIMARY_STORAGE(false), SECONDARY_STORAGE(false), VR(false), SYSTEM_VM(false),
         AUTOSCALE_VM_GROUP(true), MANAGEMENT_SERVER(false), OBJECT_STORAGE(false);
@@ -83,7 +83,6 @@ public interface AnnotationService {
                 list.add(EntityType.DOMAIN);
                 list.add(EntityType.SERVICE_OFFERING);
                 list.add(EntityType.DISK_OFFERING);
-                list.add(EntityType.GPU_OFFERING);
             }
             return list;
         }

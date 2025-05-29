@@ -24,7 +24,7 @@ import java.util.Map;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
-import com.cloud.gpu.GpuOfferingVO;
+import com.cloud.gpu.VgpuProfileVO;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -202,23 +202,22 @@ public interface ResourceManager extends ResourceService, Configurable {
      * @param host the host to be checked
      * @param groupName: gpuCard name
      * @param vgpuType the VGPU type
-     * @param gpuCount the number of GPUs requested
      * @return true when the host has the capacity with given VGPU type
      */
     boolean isGPUDeviceAvailable(Host host, String groupName, String vgpuType);
 
-
-    boolean isGPUDeviceAvailable(Host host, Long vmId, GpuOfferingVO gpuOffering, int gpuCount);
+    boolean isGPUDeviceAvailable(Host host, Long vmId, VgpuProfileVO vgpuProfile, int gpuCount);
 
     /**
      * Get available GPU device
-     * @param vm the vm for which GPU device is requested
+     *
      * @param groupName: gpuCard name
-     * @param vgpuType the VGPU type
-     * @param gpuCount the number of GPUs requested
+     * @param vgpuType   the VGPU type
+     * @param vm         the vm for which GPU device is requested
+     * @param gpuCount
      * @return GPUDeviceTO[]
      */
-    GPUDeviceTO getGPUDevice(VirtualMachine vm, GpuOfferingVO gpuOffering, int gpuCount);
+    GPUDeviceTO  getGPUDevice(VirtualMachine vm, VgpuProfileVO vgpuProfile, int gpuCount);
 
     GPUDeviceTO getGPUDevice(long hostId, String groupName, String vgpuType);
 

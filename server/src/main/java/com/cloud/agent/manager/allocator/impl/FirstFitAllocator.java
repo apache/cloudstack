@@ -31,8 +31,13 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.gpu.GpuOfferingVO;
 import com.cloud.gpu.dao.GpuOfferingDao;
+import com.cloud.gpu.VgpuProfileVO;
+import com.cloud.gpu.dao.VgpuProfileDao;
+import com.cloud.utils.exception.CloudRuntimeException;
+
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.manager.allocator.HostAllocator;
@@ -97,8 +102,6 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     @Inject
     ClusterDao _clusterDao;
     @Inject
-    GpuOfferingDao gpuOfferingDao;
-    @Inject
     ClusterDetailsDao _clusterDetailsDao;
     @Inject
     ServiceOfferingDetailsDao _serviceOfferingDetailsDao;
@@ -108,6 +111,8 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
     CapacityDao _capacityDao;
     @Inject
     UserVmDetailsDao _userVmDetailsDao;
+    @Inject
+    private VgpuProfileDao vgpuProfileDao;
 
     boolean _checkHvm = true;
     static DecimalFormat decimalFormat = new DecimalFormat("#.##");
@@ -346,18 +351,16 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
             }
 
             // Check if GPU device is required by offering and host has the availability
-            if (offering.getGpuOfferingId() != null) {
-                GpuOfferingVO gpuOffering = gpuOfferingDao.findById(offering.getGpuOfferingId());
-                if (gpuOffering == null) {
+            if (offering.getVgpuProfileId() != null) {
+                VgpuProfileVO vgpuProfile = vgpuProfileDao.findById(offering.getVgpuProfileId());
+                if (vgpuProfile == null) {
                     logger.debug("Adding host [{}] to avoid set, because this host does not have GPU devices available.", host);
                     avoid.addHost(host.getId());
                     continue;
                 }
-                Integer gpuCount = offering.getGpuCount();
-                if (gpuCount == null) {
-                    gpuCount = 1;
-                }
-                if(!_resourceMgr.isGPUDeviceAvailable(host, vmProfile.getId(), gpuOffering, gpuCount)){
+                int gpuCount = offering.getGpuCount() != null ? offering.getGpuCount() : 1;
+
+                if(!_resourceMgr.isGPUDeviceAvailable(host, vmProfile.getId(), vgpuProfile, gpuCount)) {
                     logger.debug("Adding host [{}] to avoid set, because this host does not have required GPU devices available.", host);
                     avoid.addHost(host.getId());
                     continue;
@@ -557,7 +560,7 @@ public class FirstFitAllocator extends AdapterBase implements HostAllocator {
         prioritizedHosts.addAll(lowPriorityHosts);
 
         // if service offering is not GPU enabled then move all the GPU enabled hosts to the end of priority list.
-        if (_serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) == null && offering.getGpuOfferingId() == null) {
+        if (_serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString()) == null && offering.getVgpuProfileId() == null) {
 
             List<Host> gpuEnabledHosts = new ArrayList<>();
             // Check for GPU enabled hosts.

@@ -48,7 +48,7 @@ public interface VgpuProfile extends InternalIdentity, Identity {
     Long getCardId();
 
     /**
-     * @return the VRAM size in MB
+     * @return the maximum number of vGPUs per physical GPU
      */
-    Long getVramSize();
+    Long getMaxVgpuPerPgpu();
 }
