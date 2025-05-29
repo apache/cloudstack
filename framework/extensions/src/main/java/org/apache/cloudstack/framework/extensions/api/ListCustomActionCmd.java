@@ -48,7 +48,7 @@ public class ListCustomActionCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name of the custom action")
     private String name;
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
+    @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID,
             entityType = ExtensionResponse.class, description = "uuid of the extension")
     private Long extensionId;
 

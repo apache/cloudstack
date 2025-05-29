@@ -423,7 +423,6 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (CollectionUtils.isNotEmpty(detailsVOList)) {
             extensionCustomActionDetailsDao.saveDetails(detailsVOList);
         }
-        externalProvisioner.prepareScripts(savedAction.getName());
 
         return savedAction;
     }
@@ -602,7 +601,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                 customAction.getName(), customAction.getDescription(), customAction.getRolesList());
         Optional.ofNullable(extensionDao.findById(customAction.getExtensionId())).ifPresent(extensionVO -> {
             response.setExtensionId(extensionVO.getUuid());
-            response.setName(extensionVO.getName());
+            response.setExtensionName(extensionVO.getName());
         });
         Optional.ofNullable(extensionCustomActionDetailsDao.findDetail(customAction.getId(), ApiConstants.PARAMETERS))
                 .map(ExtensionCustomActionDetailsVO::getValue)

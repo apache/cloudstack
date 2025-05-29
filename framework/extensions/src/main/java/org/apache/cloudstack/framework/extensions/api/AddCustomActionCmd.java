@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
 import org.apache.cloudstack.api.response.ExtensionResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -41,7 +40,7 @@ import com.cloud.extension.ExtensionCustomAction;
 import com.cloud.user.Account;
 
 @APICommand(name = "addCustomAction", description = "Register the custom action",
-        responseObject = SuccessResponse.class, responseHasSensitiveInfo = false, since = "4.21.0")
+        responseObject = ExtensionCustomActionResponse.class, responseHasSensitiveInfo = false, since = "4.21.0")
 public class AddCustomActionCmd extends BaseCmd {
 
     @Inject
@@ -130,6 +129,7 @@ public class AddCustomActionCmd extends BaseCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         ExtensionCustomAction extensionCustomAction = extensionsManager.addCustomAction(this);
         ExtensionCustomActionResponse response = extensionsManager.createCustomActionResponse(extensionCustomAction);
+        response.setResponseName(getCommandName());
         setResponseObject(response);
     }
 
