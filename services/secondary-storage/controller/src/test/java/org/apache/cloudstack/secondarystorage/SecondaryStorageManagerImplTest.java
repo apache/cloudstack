@@ -26,6 +26,8 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
@@ -71,6 +73,10 @@ public class SecondaryStorageManagerImplTest {
     private Account systemAccount;
     @Mock
     private User systemUser;
+    @Mock
+    private VMTemplateDao templateDao;
+    @Mock
+    private UserVmDetailsDao userVmDetailsDao;
 
     private List<DataStore> mockDataStoresForTestAddSecondaryStorageServerAddressToBuffer(List<String> addresses) {
         List<DataStore> dataStores = new ArrayList<>();
