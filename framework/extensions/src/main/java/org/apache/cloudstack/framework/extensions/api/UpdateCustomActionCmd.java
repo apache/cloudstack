@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -32,7 +33,7 @@ import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 
-import com.cloud.extension.ExtensionCustomAction;
+import org.apache.cloudstack.extension.ExtensionCustomAction;
 import com.cloud.user.Account;
 
 @APICommand(name = "UpdateCustomAction",
@@ -153,5 +154,15 @@ public class UpdateCustomActionCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.ExtensionCustomAction;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getId();
     }
 }

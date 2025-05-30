@@ -20,7 +20,7 @@ package org.apache.cloudstack.framework.extensions.vo;
 import java.util.Date;
 import java.util.UUID;
 
-import com.cloud.extension.Extension;
+import org.apache.cloudstack.extension.Extension;
 import com.cloud.utils.db.GenericDao;
 
 import javax.persistence.Column;

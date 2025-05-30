@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -36,7 +37,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.extension.ExtensionCustomAction;
+import org.apache.cloudstack.extension.ExtensionCustomAction;
 import com.cloud.user.Account;
 
 @APICommand(name = "addCustomAction", description = "Register the custom action",
@@ -136,5 +137,10 @@ public class AddCustomActionCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.ExtensionCustomAction;
     }
 }

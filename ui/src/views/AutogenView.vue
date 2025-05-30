@@ -763,10 +763,13 @@ export default {
       const refreshed = ('irefresh' in params)
 
       params.listall = true
+
+      this.dataView = !!(this.$route?.params?.id || !!this.$route?.query?.dataView)
+
       if (this.$route.meta.params) {
         const metaParams = this.$route.meta.params
         if (typeof metaParams === 'function') {
-          Object.assign(params, metaParams())
+          Object.assign(params, metaParams(this.dataView))
         } else {
           Object.assign(params, metaParams)
         }
@@ -810,14 +813,9 @@ export default {
         'vpc', 'securitygroups', 'publicip', 'vpncustomergateway', 'template', 'iso', 'event', 'kubernetes', 'sharedfs',
         'autoscalevmgroup', 'vnfapp', 'webhook'].includes(this.$route.name)
 
-      if ((this.$route && this.$route.params && this.$route.params.id) || this.$route.query.dataView) {
-        this.dataView = true
-        if (!refreshed) {
-          this.resource = {}
-          this.$emit('change-resource', this.resource)
-        }
-      } else {
-        this.dataView = false
+      if (this.dataView && !refreshed) {
+        this.resource = {}
+        this.$emit('change-resource', this.resource)
       }
 
       if (this.dataView && ['Admin'].includes(this.$store.getters.userInfo.roletype) && this.routeName === 'volume') {

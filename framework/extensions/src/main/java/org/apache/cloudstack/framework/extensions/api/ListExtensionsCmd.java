@@ -17,23 +17,29 @@
 
 package org.apache.cloudstack.framework.extensions.api;
 
-import com.cloud.exception.ConcurrentOperationException;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
-import org.apache.cloudstack.api.response.ExtensionResponse;
+import org.apache.commons.collections.CollectionUtils;
 
-import javax.inject.Inject;
-import java.util.List;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InvalidParameterValueException;
 
-@APICommand(name = ListExtensionsCmd.APINAME, description = "list of extensions",
+@APICommand(name = "listExtensions", description = "list of extensions",
         responseObject = ExtensionResponse.class, responseHasSensitiveInfo = false, since = "4.21.0")
 public class ListExtensionsCmd extends BaseListCmd {
-    public static final String APINAME = "listExtensions";
 
     @Inject
     ExtensionsManager extensionsManager;
@@ -49,6 +55,14 @@ public class ListExtensionsCmd extends BaseListCmd {
             entityType = ExtensionResponse.class, description = "uuid of the extension")
     private Long extensionId;
 
+    @Parameter(name = ApiConstants.DETAILS,
+            type = CommandType.LIST,
+            collectionType = CommandType.STRING,
+            description = "comma separated list of extension details requested, "
+                    + "value can be a list of [all, resources, external, min]."
+                    + " When no parameters are passed, all the details are returned.")
+    private List<String> details;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -59,6 +73,22 @@ public class ListExtensionsCmd extends BaseListCmd {
 
     public Long getExtensionId() {
         return extensionId;
+    }
+
+    public EnumSet<ApiConstants.ExtensionDetails> getDetails() throws InvalidParameterValueException {
+        if (CollectionUtils.isEmpty(details)) {
+            return EnumSet.of(ApiConstants.ExtensionDetails.all);
+        }
+        try {
+            Set<ApiConstants.ExtensionDetails> detailsSet = new HashSet<>();
+            for (String detail : details) {
+                detailsSet.add(ApiConstants.ExtensionDetails.valueOf(detail));
+            }
+            return EnumSet.copyOf(detailsSet);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidParameterValueException("The details parameter contains a non permitted value." +
+                    "The allowed values are " + EnumSet.allOf(ApiConstants.ExtensionDetails.class));
+        }
     }
 
     /////////////////////////////////////////////////////

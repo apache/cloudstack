@@ -15,10 +15,14 @@
 //specific language governing permissions and limitations
 //under the License.
 
-package com.cloud.extension;
+package org.apache.cloudstack.extension;
 
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
-public interface ExtensionResourceMap extends InternalIdentity, Identity {
+public interface Extension extends InternalIdentity, Identity {
+    String getName();
+    String getDescription();
+    String getType();
+    String getScript();
 }

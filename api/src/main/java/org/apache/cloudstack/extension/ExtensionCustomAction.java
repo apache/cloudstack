@@ -15,7 +15,7 @@
 //specific language governing permissions and limitations
 //under the License.
 
-package com.cloud.extension;
+package org.apache.cloudstack.extension;
 
 import java.util.List;
 

@@ -45,6 +45,8 @@ import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
 import com.cloud.dc.Vlan;
 import com.cloud.domain.Domain;
+import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.extension.ExtensionCustomAction;
 import com.cloud.host.Host;
 import com.cloud.network.GuestVlan;
 import com.cloud.network.IpAddress;
@@ -796,6 +798,16 @@ public class EventTypes {
     // Resource Limit
     public static final String EVENT_RESOURCE_LIMIT_UPDATE = "RESOURCE.LIMIT.UPDATE";
 
+    // Extension
+    public static final String EVENT_EXTENSION_CREATE = "EXTENSION.CREATE";
+    public static final String EVENT_EXTENSION_UPDATE = "EXTENSION.UPDATE";
+    public static final String EVENT_EXTENSION_DELETE = "EXTENSION.DELETE";
+    public static final String EVENT_EXTENSION_RESOURCE_REGISTER = "EXTENSION.RESOURCE.REGISTER";
+    public static final String EVENT_EXTENSION_RESOURCE_UNREGISTER = "EXTENSION.RESOURCE.UNREGISTER";
+    public static final String EVENT_EXTENSION_CUSTOM_ACTION_ADD = "EXTENSION.CUSTOM.ACTION.ADD";
+    public static final String EVENT_EXTENSION_CUSTOM_ACTION_UPDATE = "EXTENSION.CUSTOM.ACTION.UPDATE";
+    public static final String EVENT_EXTENSION_CUSTOM_ACTION_DELETE = "EXTENSION.CUSTOM.ACTION.DELETE";
+
     // Custom Action
     public static final String EVENT_CUSTOM_ACTION = "CUSTOM.ACTION";
 
@@ -1293,6 +1305,16 @@ public class EventTypes {
         entityEventDetails.put(EVENT_SHAREDFS_DESTROY, SharedFS.class);
         entityEventDetails.put(EVENT_SHAREDFS_EXPUNGE, SharedFS.class);
         entityEventDetails.put(EVENT_SHAREDFS_RECOVER, SharedFS.class);
+
+        // Extension
+        entityEventDetails.put(EVENT_EXTENSION_CREATE, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_UPDATE, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_DELETE, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_RESOURCE_REGISTER, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_RESOURCE_UNREGISTER, Extension.class);
+        entityEventDetails.put(EVENT_EXTENSION_CUSTOM_ACTION_ADD, ExtensionCustomAction.class);
+        entityEventDetails.put(EVENT_EXTENSION_CUSTOM_ACTION_UPDATE, ExtensionCustomAction.class);
+        entityEventDetails.put(EVENT_EXTENSION_CUSTOM_ACTION_DELETE, ExtensionCustomAction.class);
     }
 
     public static boolean isNetworkEvent(String eventType) {

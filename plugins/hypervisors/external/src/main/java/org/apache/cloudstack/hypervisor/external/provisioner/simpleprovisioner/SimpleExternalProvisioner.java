@@ -382,12 +382,12 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         logger.debug("Executing custom action '{}' in the external provisioner", cmd.getActionName());
 
         String actionName = cmd.getActionName();
-        Map<String, String> externalDetails = cmd.getExternalDetails();
+        Map<String, String> details = cmd.getDetails();
 
         logger.debug("Executing custom action '{}' in the external system", actionName);
 
         String prepareExternalScript = Script.findScript("", extensionPath);
-        Map<String, String> accessDetails = loadAccessDetails(externalDetails, null);
+        Map<String, String> accessDetails = loadAccessDetails(details, null);
 
         Pair<Boolean, String> result = runCustomActionOnExternalSystem(prepareExternalScript, actionName, accessDetails, cmd.getWait());
         return new RunCustomActionAnswer(cmd, result.first(), result.second());

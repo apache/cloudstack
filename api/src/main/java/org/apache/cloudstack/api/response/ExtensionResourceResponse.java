@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.api.response;
 
-import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.extension.ExtensionResourceMap;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
@@ -25,53 +25,32 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
-@EntityReference(value = Extension.class)
-public class ExtensionResponse extends BaseResponse {
+@EntityReference(value = ExtensionResourceMap.class)
+public class ExtensionResourceResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
-    @Param(description = "ID of the extension")
+    @Param(description = "ID of the resource associated with the extension")
     private String id;
 
     @SerializedName(ApiConstants.NAME)
-    @Param(description = "Name of the extension")
+    @Param(description = "Name of the resource associated with this mapping")
     private String name;
 
-    @SerializedName(ApiConstants.DESCRIPTION)
-    @Param(description = "Description of the extension")
-    private String description;
-
     @SerializedName(ApiConstants.TYPE)
-    @Param(description = "Type of the extension")
+    @Param(description = "Type of the resource")
     private String type;
 
-    @SerializedName(ApiConstants.SCRIPT)
-    @Param(description = "the path of the script")
-    private String script;
-
     @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "the details of the extension")
+    @Param(description = "the details of the resource map")
     private Map<String, String> details;
 
-    @SerializedName(ApiConstants.RESOURCES)
-    @Param(description = "List of resources to which extension is registered to", responseObject = ExtensionResourceResponse.class)
-    private List<ExtensionResourceResponse> resources;
-
     @SerializedName(ApiConstants.CREATED)
-    @Param(description = "Creation timestamp of the extension")
+    @Param(description = "Creation timestamp of the mapping")
     private Date created;
 
-    @SerializedName(ApiConstants.REMOVED)
-    @Param(description = "Removal timestamp of the extension, if applicable")
-    private Date removed;
-
-    public ExtensionResponse(String id, String name, String description, String type) {
-        this.id = id;
-        this.name = name;
-        this.description = description;
-        this.type = type;
+    public ExtensionResourceResponse() {
     }
 
     public String getId() {
@@ -98,24 +77,12 @@ public class ExtensionResponse extends BaseResponse {
         this.type = type;
     }
 
-    public String getScriptPath() {
-        return script;
-    }
-
-    public void setScriptPath(String script) {
-        this.script = script;
+    public Map<String, String> getDetails() {
+        return details;
     }
 
     public void setDetails(Map<String, String> details) {
         this.details = details;
-    }
-
-    public List<ExtensionResourceResponse> getResources() {
-        return resources;
-    }
-
-    public void setResources(List<ExtensionResourceResponse> resources) {
-        this.resources = resources;
     }
 
     public Date getCreated() {
@@ -124,13 +91,5 @@ public class ExtensionResponse extends BaseResponse {
 
     public void setCreated(Date created) {
         this.created = created;
-    }
-
-    public Date getRemoved() {
-        return removed;
-    }
-
-    public void setRemoved(Date removed) {
-        this.removed = removed;
     }
 }

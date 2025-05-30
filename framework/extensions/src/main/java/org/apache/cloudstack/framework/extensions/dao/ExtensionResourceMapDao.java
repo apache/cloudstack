@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.framework.extensions.dao;
 
+import org.apache.cloudstack.extension.ExtensionResourceMap;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.framework.extensions.vo.ExtensionResourceMapVO;
 
@@ -25,5 +26,7 @@ import java.util.List;
 public interface ExtensionResourceMapDao extends GenericDao<ExtensionResourceMapVO, Long> {
     List<ExtensionResourceMapVO> listByExtensionId(long extensionId);
 
-    ExtensionResourceMapVO findByResourceIdAndType(long resourceId, String resourceType);
+    ExtensionResourceMapVO findByResourceIdAndType(long resourceId, ExtensionResourceMap.ResourceType resourceType);
+
+    List<Long> listResourceIdsByExtensionIdAndType(long extensionId,ExtensionResourceMap.ResourceType resourceType);
 }

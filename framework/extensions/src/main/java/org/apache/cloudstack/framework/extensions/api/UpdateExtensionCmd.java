@@ -20,16 +20,18 @@ package org.apache.cloudstack.framework.extensions.api;
 import com.cloud.user.Account;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.api.response.ExtensionResponse;
-import com.cloud.extension.Extension;
+import org.apache.cloudstack.extension.Extension;
 
 import javax.inject.Inject;
 
+import java.util.EnumSet;
 import java.util.Map;
 
 @APICommand(name = "updateExtension",
@@ -85,7 +87,8 @@ public class UpdateExtensionCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException {
         Extension extension = extensionsManager.updateExtension(this);
-        ExtensionResponse response = extensionsManager.createExtensionResponse(extension);
+        ExtensionResponse response = extensionsManager.createExtensionResponse(extension,
+                EnumSet.of(ApiConstants.ExtensionDetails.all));
         response.setResponseName(getCommandName());
         setResponseObject(response);
     }
@@ -93,5 +96,15 @@ public class UpdateExtensionCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Extension;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getId();
     }
 }

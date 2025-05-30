@@ -19,15 +19,16 @@ package org.apache.cloudstack.agent.manager;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionResourceMapDao;
+import org.apache.cloudstack.framework.extensions.vo.ExtensionVO;
 import org.apache.commons.collections.CollectionUtils;
 
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
@@ -38,6 +39,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.exception.InsufficientServerCapacityException;
+import org.apache.cloudstack.extension.ExtensionResourceMap;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -63,7 +65,9 @@ public class ExternalServerPlanner extends AdapterBase implements DeploymentPlan
     @Inject
     protected ResourceManager resourceMgr;
     @Inject
-    ClusterDetailsDao clusterDetailsDao;
+    ExtensionDao extensionDao;
+    @Inject
+    ExtensionResourceMapDao extensionResourceMapDao;
 
     @Override
     public DeployDestination plan(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
@@ -71,6 +75,12 @@ public class ExternalServerPlanner extends AdapterBase implements DeploymentPlan
         ServiceOffering offering = vmProfile.getServiceOffering();
         VirtualMachineTemplate template = vmProfile.getTemplate();
         Long extensionId = template.getExtensionId();
+        final ExtensionVO extensionVO = extensionDao.findById(extensionId);
+        if (extensionVO == null) {
+            logger.error("Extension associated with {} cannot be found during deployment external instance {}",
+                    template, vmProfile.getInstanceName());
+            return null;
+        }
 
         String haVmTag = (String)vmProfile.getParameter(VirtualMachineProfile.Param.HaTag);
 
@@ -94,26 +104,34 @@ public class ExternalServerPlanner extends AdapterBase implements DeploymentPlan
         }
 
         List<ClusterVO> clusters = clusterDao.listClustersByDcId(vm.getDataCenterId());
+        List<Long> extensionClusterIds = extensionResourceMapDao.listResourceIdsByExtensionIdAndType(extensionId,
+                ExtensionResourceMap.ResourceType.Cluster);
+        if (CollectionUtils.isEmpty(extensionClusterIds)) {
+            logger.error("No clusters associated with {} to plan deployment of external instance {}",
+                    vmProfile.getInstanceName());
+            return null;
+        }
+        clusters = clusters.stream()
+                .filter(c -> !extensionClusterIds.contains(c.getId()))
+                .collect(Collectors.toList());
+        logger.debug("Found {} clusters associated with {}", clusters.size(), extensionVO);
         HostVO target = null;
         List<HostVO> hosts;
         for (ClusterVO cluster : clusters) {
-            ClusterDetailsVO clusterExtensionDetail = clusterDetailsDao.findDetail(cluster.getId(), ApiConstants.EXTENSION_ID);
-            if (clusterExtensionDetail != null && clusterExtensionDetail.getValue().equals(String.valueOf(extensionId))) {
-                hosts = resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
-                if (hostTag != null) {
-                    for (HostVO host : hosts) {
-                        hostDao.loadHostTags(host);
-                        List<String> hostTags = host.getHostTags();
-                        if (hostTags.contains(hostTag)) {
-                            target = host;
-                            break;
-                        }
+            hosts = resourceMgr.listAllUpAndEnabledHosts(Host.Type.Routing, cluster.getId(), cluster.getPodId(), cluster.getDataCenterId());
+            if (hostTag != null) {
+                for (HostVO host : hosts) {
+                    hostDao.loadHostTags(host);
+                    List<String> hostTags = host.getHostTags();
+                    if (hostTags.contains(hostTag)) {
+                        target = host;
+                        break;
                     }
-                } else {
-                    if (CollectionUtils.isNotEmpty(hosts)) {
-                        Collections.shuffle(hosts);
-                        target = hosts.get(0);
-                    }
+                }
+            } else {
+                if (CollectionUtils.isNotEmpty(hosts)) {
+                    Collections.shuffle(hosts);
+                    target = hosts.get(0);
                 }
             }
         }

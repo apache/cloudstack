@@ -19,10 +19,12 @@
 
 package org.apache.cloudstack.framework.extensions.vo;
 
-import com.cloud.extension.ExtensionResourceMap;
+import org.apache.cloudstack.extension.ExtensionResourceMap;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -47,7 +49,8 @@ public class ExtensionResourceMapVO implements ExtensionResourceMap {
     private Long resourceId;
 
     @Column(name = "resource_type", nullable = false)
-    private String resourceType;
+    @Enumerated(value = EnumType.STRING)
+    private ResourceType resourceType;
 
     @Column(name = "created", nullable = false, updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
@@ -60,24 +63,29 @@ public class ExtensionResourceMapVO implements ExtensionResourceMap {
     public ExtensionResourceMapVO() {
     }
 
-    public ExtensionResourceMapVO(long extensionId, long resourceId, String resourceType) {
+    public ExtensionResourceMapVO(long extensionId, long resourceId, ResourceType resourceType) {
         this.extensionId = extensionId;
         this.resourceId = resourceId;
         this.resourceType = resourceType;
     }
 
-    public Long getExtensionId() {
+    @Override
+    public long getExtensionId() {
         return extensionId;
     }
 
-    public Long getResourceId() {
+
+    @Override
+    public long getResourceId() {
         return resourceId;
     }
 
-    public String getResourceType() {
+    @Override
+    public ResourceType getResourceType() {
         return resourceType;
     }
 
+    @Override
     public Date getCreated() {
         return created;
     }
@@ -94,7 +102,7 @@ public class ExtensionResourceMapVO implements ExtensionResourceMap {
         this.resourceId = resourceId;
     }
 
-    public void setResourceType(String resourceType) {
+    public void setResourceType(ResourceType resourceType) {
         this.resourceType = resourceType;
     }
 

@@ -17,37 +17,38 @@
 
 package org.apache.cloudstack.framework.extensions.api;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.user.Account;
-import com.cloud.vm.VmDetailConstants;
+import java.util.EnumSet;
+import java.util.Map;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
-import org.apache.cloudstack.api.response.ExtensionResponse;
 
-import javax.inject.Inject;
-import java.util.HashMap;
-import java.util.Map;
+import com.cloud.exception.ConcurrentOperationException;
+import org.apache.cloudstack.extension.Extension;
+import com.cloud.user.Account;
 
-@APICommand(name = RegisterExtensionCmd.APINAME, description = "Register an extension with a resource",
+@APICommand(name = "registerExtension", description = "Register an extension with a resource",
         responseObject = SuccessResponse.class, responseHasSensitiveInfo = false, since = "4.21.0")
 public class RegisterExtensionCmd extends BaseCmd {
 
     @Inject
     ExtensionsManager extensionsManager;
 
-    public static final String APINAME = "registerExtension";
-
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID, required = true,
-            entityType = ExtensionResponse.class, description = "UUID of the extension")
+            entityType = ExtensionResponse.class, description = "ID of the extension")
     private Long extensionId;
 
     @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, required = true,
@@ -58,9 +59,9 @@ public class RegisterExtensionCmd extends BaseCmd {
             description = "Type of the resource")
     private String resourceType;
 
-    @Parameter(name = ApiConstants.EXTERNAL_DETAILS, type = CommandType.MAP,
-            description = "Details in key/value pairs using format externaldetails[i].keyname=keyvalue. Example: externaldetails[0].endpoint.url=urlvalue")
-    protected Map externalDetails;
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
+            description = "Details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].endpoint.url=urlvalue")
+    protected Map details;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -78,14 +79,8 @@ public class RegisterExtensionCmd extends BaseCmd {
         return resourceType;
     }
 
-    public Map<String, String> getExternalDetails() {
-        Map<String, String> customparameterMap = convertDetailsToMap(externalDetails);
-        Map<String, String> details = new HashMap<>();
-        for (String key : customparameterMap.keySet()) {
-            String value = customparameterMap.get(key);
-            details.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key, value);
-        }
-        return details;
+    public Map<String, String> getDetails() {
+        return convertDetailsToMap(details);
     }
 
     /////////////////////////////////////////////////////
@@ -94,14 +89,25 @@ public class RegisterExtensionCmd extends BaseCmd {
 
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException {
-        ExtensionResponse response = extensionsManager.registerExtensionWithResource(this);
+        Extension extension = extensionsManager.registerExtensionWithResource(this);
+        ExtensionResponse response = extensionsManager.createExtensionResponse(extension,
+                EnumSet.of(ApiConstants.ExtensionDetails.all));
         response.setResponseName(getCommandName());
-        response.setObjectName(ApiConstants.EXTENSION);
         setResponseObject(response);
     }
 
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
+    }
+
+    @Override
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Extension;
+    }
+
+    @Override
+    public Long getApiResourceId() {
+        return getExtensionId();
     }
 }

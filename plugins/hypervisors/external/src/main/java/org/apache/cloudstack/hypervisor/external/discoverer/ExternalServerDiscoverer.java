@@ -43,6 +43,7 @@ import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.dc.ClusterVO;
 import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
+import org.apache.cloudstack.extension.ExtensionResourceMap;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -174,7 +175,8 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
             params.put("cluster", cluster);
             params.put("guid", uri.toString());
 
-            ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(clusterId, "cluster");
+            ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(clusterId,
+                    ExtensionResourceMap.ResourceType.Cluster);
             ExtensionVO extensionVO = externalOrchestratorDao.findById(extensionResourceMapVO.getExtensionId());
             params.put("extensionName", extensionVO.getName());
 
@@ -189,8 +191,10 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
     @Override
     protected HashMap<String, Object> buildConfigParams(HostVO host) {
         HashMap<String, Object> params = super.buildConfigParams(host);
-        ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(Long.parseLong((String) params.get("cluster")), "cluster");
-        ExtensionVO extensionVO = externalOrchestratorDao.findById(Long.valueOf(extensionResourceMapVO.getExtensionId()));
+        ExtensionResourceMapVO extensionResourceMapVO =
+                extensionResourceMapDao.findByResourceIdAndType(Long.parseLong((String) params.get("cluster")),
+                        ExtensionResourceMap.ResourceType.Cluster);
+        ExtensionVO extensionVO = externalOrchestratorDao.findById(extensionResourceMapVO.getExtensionId());
         params.put("extensionName", extensionVO.getName());
 
         return params;
@@ -240,8 +244,8 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
             return null;
         }
         final ClusterVO cluster = _clusterDao.findById(host.getClusterId());
-        ExtensionResourceMapVO extensionResourceMapVO =
-                extensionResourceMapDao.findByResourceIdAndType(cluster.getId(), "cluster");
+        ExtensionResourceMapVO extensionResourceMapVO = extensionResourceMapDao.findByResourceIdAndType(cluster.getId(),
+                        ExtensionResourceMap.ResourceType.Cluster);
         ExtensionVO extensionVO = externalOrchestratorDao.findById(extensionResourceMapVO.getExtensionId());
         logger.debug("Creating host for {}", extensionVO);
         externalProvisioner.prepareScripts(extensionVO.getName()); // ToDo: good idea to add prepare here?

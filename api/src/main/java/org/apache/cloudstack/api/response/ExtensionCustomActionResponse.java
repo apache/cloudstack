@@ -17,7 +17,7 @@
 
 package org.apache.cloudstack.api.response;
 
-import com.cloud.extension.ExtensionCustomAction;
+import org.apache.cloudstack.extension.ExtensionCustomAction;
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;

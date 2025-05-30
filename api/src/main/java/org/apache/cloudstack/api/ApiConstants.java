@@ -1295,6 +1295,10 @@ public class ApiConstants {
         all, resource, min;
     }
 
+    public enum ExtensionDetails {
+        all, resource, external, min;
+    }
+
     public enum ApiKeyAccess {
         DISABLED(false),
         ENABLED(true),

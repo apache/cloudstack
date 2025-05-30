@@ -25,34 +25,21 @@ public class RunCustomActionCommand extends Command {
 
     String actionName;
 
-    Map<String, String> externalDetails;
+    Map<String, String> details;
 
-    Long clusterId;
-
-    public RunCustomActionCommand(String actionName, Map<String, String> externalDetails) {
+    public RunCustomActionCommand(String actionName, Map<String, String> details) {
         this.actionName = actionName;
-        this.externalDetails = externalDetails;
+        this.details = details;
     }
 
     public String getActionName() {
         return actionName;
     }
 
-    public void setActionName(String actionName) {
-        this.actionName = actionName;
+    public Map<String, String> getDetails() {
+        return details;
     }
 
-    public Map<String, String> getExternalDetails() {
-        return externalDetails;
-    }
-
-    public void setExternalDetails(Map<String, String> externalDetails) {
-        this.externalDetails = externalDetails;
-    }
-
-    public Long getClusterId() {
-        return clusterId;
-    }
     @Override
     public boolean executeInSequence() {
         return false;

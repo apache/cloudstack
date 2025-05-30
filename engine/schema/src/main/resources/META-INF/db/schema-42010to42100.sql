@@ -111,7 +111,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`extension_resource_map` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `extension_id` bigint(20) unsigned NOT NULL,
   `resource_id` bigint(20) unsigned NOT NULL,
-  `resource_type` varchar(255) NOT NULL,
+  `resource_type` char(255) NOT NULL,
   `created` datetime NOT NULL,
   `removed` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),

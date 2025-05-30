@@ -158,6 +158,15 @@
           <div>{{ dataResource[item].rbd_default_data_pool }}</div>
         </div>
       </a-list-item>
+      <a-list-item v-else-if="item === 'details' && ['xaas'].includes($route.meta.name)">
+        <div>
+          <strong>{{ $t('label.' + String(item).toLowerCase()) }}</strong>
+          <br/>
+          <div>
+            <key-value-table :data-map="dataResource[item]" />
+          </div>
+        </div>
+      </a-list-item>
     </template>
     <HostInfo :resource="dataResource" v-if="$route.meta.name === 'host' && 'listHosts' in $store.getters.apis" />
     <DedicateData :resource="dataResource" v-if="dedicatedSectionActive" />
@@ -169,6 +178,7 @@
 import DedicateData from './DedicateData'
 import HostInfo from '@/views/infra/HostInfo'
 import VmwareData from './VmwareData'
+import KeyValueTable from '@/components/view/KeyValueTable.vue'
 import { genericCompare } from '@/utils/sort'
 
 export default {
@@ -176,7 +186,8 @@ export default {
   components: {
     DedicateData,
     HostInfo,
-    VmwareData
+    VmwareData,
+    KeyValueTable
   },
   props: {
     resource: {

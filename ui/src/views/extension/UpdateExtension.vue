@@ -23,15 +23,6 @@
       :loading="loading"
       layout="vertical"
       @finish="handleSubmit">
-      <a-form-item name="name" ref="name">
-        <template #label>
-          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
-        </template>
-        <a-input
-          v-model:value="form.name"
-          :placeholder="apiParams.name.description"
-          v-focus="true" />
-      </a-form-item>
       <a-form-item name="description" ref="description">
         <template #label>
           <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
@@ -40,23 +31,6 @@
           v-model:value="form.description"
           :placeholder="apiParams.description.description"
           v-focus="true" />
-      </a-form-item>
-      <a-form-item ref="type" name="type">
-        <template #label>
-          <tooltip-label :title="$t('label.type')" :tooltip="apiParams.type.description"/>
-        </template>
-        <a-select
-          showSearch
-          v-model:value="form.type"
-          :placeholder="apiParams.type.description"
-          optionFilterProp="label"
-          :filterOption="(input, option) => {
-            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
-          }" >
-          <a-select-option v-for="opt in extensionTypes" :key="opt.id" :label="opt.id || opt.description">
-            {{ opt.id || opt.description }}
-          </a-select-option>
-        </a-select>
       </a-form-item>
       <a-form-item>
         <template #label>
@@ -81,37 +55,42 @@ import TooltipLabel from '@/components/widgets/TooltipLabel'
 import DetailsInput from '@/components/widgets/DetailsInput'
 
 export default {
-  name: 'CreateExtension',
+  name: 'RegisterExtension',
   components: {
     TooltipLabel,
     DetailsInput
   },
+  props: {
+    resource: {
+      type: Object,
+      required: true
+    }
+  },
   data () {
     return {
-      extensionTypes: [],
       loading: false
     }
   },
   beforeCreate () {
-    this.apiParams = this.$getApiParams('createExtension')
+    this.apiParams = this.$getApiParams('updateExtension')
   },
   created () {
     this.initForm()
-    this.fetchExtensionTypes()
+    this.fetchData()
   },
   methods: {
     initForm () {
       this.formRef = ref()
       this.form = reactive({})
+      this.form.description = this.resource.description
+      this.form.details = this.resource.details
     },
-    fetchExtensionTypes () {
-      this.extensionTypes = []
-      const extensionTypesList = ['Orchestrator']
-      extensionTypesList.forEach((item) => {
-        this.extensionTypes.push({
-          id: item,
-          description: item
-        })
+    fetchData () {
+      this.loading = true
+      api('listExtensions', { id: this.resource.id }).then(json => {
+        this.form.details = json?.listextensionsresponse?.extension?.[0]?.details
+      }).finally(() => {
+        this.loading = false
       })
     },
     handleSubmit (e) {
@@ -121,10 +100,9 @@ export default {
         const values = toRaw(this.form)
         this.loading = true
         const params = {
-          name: values.name,
-          type: values.type
+          id: this.resource.id
         }
-        if (values.description) {
+        if (values.description != null && values.description !== undefined) {
           params.description = values.description
         }
         if (values.details) {
@@ -132,11 +110,11 @@ export default {
             params['details[0].' + key] = value
           })
         }
-        api('createExtension', params).then(response => {
+        api('updateExtension', params).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
-            message: this.$t('label.create.extension'),
-            description: this.$t('message.success.create.extension')
+            message: this.$t('label.update.extension'),
+            description: this.$t('message.success.update.extension')
           })
           this.closeAction()
         }).catch(error => {

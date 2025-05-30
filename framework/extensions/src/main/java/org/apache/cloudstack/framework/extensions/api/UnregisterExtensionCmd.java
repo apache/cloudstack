@@ -17,33 +17,27 @@
 
 package org.apache.cloudstack.framework.extensions.api;
 
-import java.util.Map;
+import java.util.EnumSet;
 
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
 import org.apache.cloudstack.api.response.ExtensionResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.extension.CustomActionResultResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 
-import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
+import org.apache.cloudstack.extension.Extension;
 import com.cloud.user.Account;
 
-@APICommand(name = RunCustomActionCmd.APINAME,
-        description = "Run the custom action",
-        responseObject = CustomActionResultResponse.class,
-        responseHasSensitiveInfo = false, since = "4.21.0")
-public class RunCustomActionCmd extends BaseAsyncCmd {
-
-    public static final String APINAME = "runCustomAction";
+@APICommand(name = "unregisterExtension", description = "Unregister an extension with a resource",
+        responseObject = SuccessResponse.class, responseHasSensitiveInfo = false, since = "4.21.0")
+public class UnregisterExtensionCmd extends BaseCmd {
 
     @Inject
     ExtensionsManager extensionsManager;
@@ -52,49 +46,32 @@ public class RunCustomActionCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.EXTENSION_CUSTOM_ACTION_ID, type = CommandType.UUID, required = true,
-            entityType = ExtensionCustomActionResponse.class, description = "the custom action id")
-    private Long customActionId;
-
     @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID, required = true,
-            entityType = ExtensionResponse.class, description = "the extension id used to call the custom action")
+            entityType = ExtensionResponse.class, description = "ID of the extension")
     private Long extensionId;
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, required = true,
-            entityType = UserVmResponse.class,
-            description = "UUID of the instance")
-    private Long instanceId;
+    @Parameter(name = ApiConstants.RESOURCE_ID, type = CommandType.STRING, required = true,
+            description = "ID of the resource to register the extension with")
+    private String resourceId;
 
     @Parameter(name = ApiConstants.RESOURCE_TYPE, type = CommandType.STRING, required = true,
             description = "Type of the resource")
     private String resourceType;
 
-    @Parameter(name = ApiConstants.PARAMETERS, type = CommandType.MAP,
-            description = "Parameters in key/value pairs using format parameters[i].keyname=keyvalue. Example: parameters[0].endpoint.url=urlvalue")
-    protected Map parameters;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
-
-    public Long getCustomActionId() {
-        return customActionId;
-    }
 
     public Long getExtensionId() {
         return extensionId;
     }
 
-    public Long getInstanceId() {
-        return instanceId;
+    public String getResourceId() {
+        return resourceId;
     }
 
     public String getResourceType() {
         return resourceType;
-    }
-
-    public Map<String, String> getParameters() {
-        return convertDetailsToMap(parameters);
     }
 
     /////////////////////////////////////////////////////
@@ -103,12 +80,11 @@ public class RunCustomActionCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException {
-        CustomActionResultResponse response = extensionsManager.runCustomAction(this);
-        if (response != null) {
-            setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to run custom action");
-        }
+        Extension extension = extensionsManager.unregisterExtensionWithResource(this);
+        ExtensionResponse response = extensionsManager.createExtensionResponse(extension,
+                EnumSet.of(ApiConstants.ExtensionDetails.all));
+        response.setResponseName(getCommandName());
+        setResponseObject(response);
     }
 
     @Override
@@ -117,12 +93,12 @@ public class RunCustomActionCmd extends BaseAsyncCmd {
     }
 
     @Override
-    public String getEventType() {
-        return EventTypes.EVENT_CUSTOM_ACTION;
+    public ApiCommandResourceType getApiResourceType() {
+        return ApiCommandResourceType.Extension;
     }
 
     @Override
-    public String getEventDescription() {
-        return "Running custom action";
+    public Long getApiResourceId() {
+        return getExtensionId();
     }
 }

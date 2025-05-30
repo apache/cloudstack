@@ -30,7 +30,13 @@ export default {
       icon: 'rocket-outlined',
       docHelp: 'adminguide/extensions.html',
       permission: ['listExtensions'],
-      params: { type: 'Orchestrator' },
+      params: (dataView) => {
+        const params = { type: 'Orchestrator' }
+        if (!dataView) {
+          params.details = 'min'
+        }
+        return params
+      },
       resourceType: 'Extension',
       columns: () => {
         var fields = ['name', 'type', 'script', 'created']
@@ -43,6 +49,10 @@ export default {
       tabs: [{
         name: 'details',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
+      },
+      {
+        name: 'resources',
+        component: shallowRef(defineAsyncComponent(() => import('@/views/extension/ExtensionResourcesTab.vue')))
       },
       {
         name: 'events',
@@ -65,21 +75,22 @@ export default {
           component: shallowRef(defineAsyncComponent(() => import('@/views/extension/CreateExtension.vue')))
         },
         {
+          api: 'updateExtension',
+          icon: 'edit-outlined',
+          label: 'label.update.extension',
+          message: 'message.action.update.extension',
+          dataView: true,
+          popup: true,
+          component: shallowRef(defineAsyncComponent(() => import('@/views/extension/UpdateExtension.vue')))
+        },
+        {
           api: 'registerExtension',
           icon: 'api-outlined',
           label: 'label.register.extension',
           message: 'message.action.register.extension',
           dataView: true,
           popup: true,
-          args: ['resourcetype', 'resourceid', 'externaldetails', 'extensionid'],
-          mapping: {
-            resourcetype: {
-              options: ['Cluster']
-            },
-            extensionid: {
-              value: (record) => { return record.id }
-            }
-          }
+          component: shallowRef(defineAsyncComponent(() => import('@/views/extension/RegisterExtension.vue')))
         },
         {
           api: 'deleteExtension',

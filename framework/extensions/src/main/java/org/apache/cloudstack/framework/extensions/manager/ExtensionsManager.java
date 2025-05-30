@@ -20,9 +20,11 @@
 package org.apache.cloudstack.framework.extensions.manager;
 
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
 import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.extension.CustomActionResultResponse;
@@ -34,15 +36,17 @@ import org.apache.cloudstack.framework.extensions.api.ListCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.ListExtensionsCmd;
 import org.apache.cloudstack.framework.extensions.api.RegisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.RunCustomActionCmd;
+import org.apache.cloudstack.framework.extensions.api.UnregisterExtensionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateCustomActionCmd;
 import org.apache.cloudstack.framework.extensions.api.UpdateExtensionCmd;
 
-import com.cloud.extension.Extension;
-import com.cloud.extension.ExtensionCustomAction;
+import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.extension.ExtensionCustomAction;
+import org.apache.cloudstack.extension.ExtensionResourceMap;
+import com.cloud.org.Cluster;
 import com.cloud.utils.component.Manager;
 
 public interface ExtensionsManager extends Manager {
-    String getExternalDetailKey(String key);
 
     Extension createExtension(CreateExtensionCmd cmd);
 
@@ -50,15 +54,17 @@ public interface ExtensionsManager extends Manager {
 
     boolean deleteExtension(DeleteExtensionCmd cmd);
 
-    ExtensionResponse registerExtensionWithResource(RegisterExtensionCmd cmd);
+    Extension unregisterExtensionWithResource(UnregisterExtensionCmd cmd);
 
     Extension updateExtension(UpdateExtensionCmd cmd);
 
-    ExtensionResponse registerExtensionWithCluster(String resourceId, Long extensionId, Map<String, String> externalDetails);
+    Extension registerExtensionWithResource(RegisterExtensionCmd cmd);
 
-    ExtensionResponse createExtensionResponse(Extension extension);
+    ExtensionResponse createExtensionResponse(Extension extension, EnumSet<ApiConstants.ExtensionDetails> viewDetails);
 
-    void unregisterExtensionWithCluster(Long clusterId, Long extensionId);
+    ExtensionResourceMap registerExtensionWithCluster(Cluster cluster, long extensionId, Map<String, String> externalDetails);
+
+    void unregisterExtensionWithCluster(Cluster cluster, Long extensionId);
 
     CustomActionResultResponse runCustomAction(RunCustomActionCmd cmd);
 

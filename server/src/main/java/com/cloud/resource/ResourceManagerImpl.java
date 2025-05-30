@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.extension.ExtensionResourceMap;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePoolAndAccessGroupMapVO;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
@@ -437,6 +438,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         final String username = cmd.getUsername();
         final String password = cmd.getPassword();
         CPU.CPUArch arch = cmd.getArch();
+        final Long extensionId = cmd.getExtensionId();
+        final Map<String, String> externalDetails = cmd.getExternalDetails();
 
         if (url != null) {
             url = URLDecoder.decode(url, com.cloud.utils.StringUtils.getPreferredCharset());
@@ -493,6 +496,14 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     && hypervisorType != HypervisorType.LXC && hypervisorType != HypervisorType.Simulator) {
                 throw new InvalidParameterValueException("Don't support hypervisor type " + hypervisorType + " in advanced security enabled zone");
             }
+        }
+
+        if (!HypervisorType.External.equals(hypervisorType) && extensionId != null) {
+            throw new InvalidParameterValueException("Extension can be specified only for External hypervisor type");
+        }
+
+        if (MapUtils.isNotEmpty(externalDetails) && extensionId == null) {
+            throw new InvalidParameterValueException("External details can be specified only with extension");
         }
 
         Cluster.ClusterType clusterType = null;
@@ -564,8 +575,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             details.put(VmDetailConstants.CPU_OVER_COMMIT_RATIO, CapacityManager.CpuOverprovisioningFactor.value().toString());
             details.put(VmDetailConstants.MEMORY_OVER_COMMIT_RATIO, CapacityManager.MemOverprovisioningFactor.value().toString());
             _clusterDetailsDao.persist(cluster.getId(), details);
-            if (HypervisorType.External.equals(cluster.getHypervisorType())) {
-                extensionsManager.registerExtensionWithCluster(cluster.getUuid(), cmd.getExtensionId(), cmd.getExternalDetails());
+            if (HypervisorType.External.equals(cluster.getHypervisorType()) && extensionId != null) {
+                extensionsManager.registerExtensionWithCluster(cluster, extensionId, externalDetails);
             }
             return result;
         }
@@ -1145,9 +1156,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     }
 
                     if (HypervisorType.External.toString().equalsIgnoreCase(cluster.getHypervisorType().toString())) {
-                        ExtensionResourceMapVO registeredExtension = extensionResourceMapDao.findByResourceIdAndType(cluster.getId(), "cluster");
+                        ExtensionResourceMapVO registeredExtension =
+                                extensionResourceMapDao.findByResourceIdAndType(cluster.getId(),
+                                        ExtensionResourceMap.ResourceType.Cluster);
                         if (registeredExtension != null) {
-                            extensionsManager.unregisterExtensionWithCluster(cluster.getId(), registeredExtension.getExtensionId());
+                            extensionsManager.unregisterExtensionWithCluster(cluster, registeredExtension.getExtensionId());
                         }
                     }
 

@@ -23,38 +23,38 @@
       :loading="loading"
       layout="vertical"
       @finish="handleSubmit">
-      <a-form-item name="name" ref="name">
+      <a-form-item ref="resourcetype" name="resourcetype">
         <template #label>
-          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
-        </template>
-        <a-input
-          v-model:value="form.name"
-          :placeholder="apiParams.name.description"
-          v-focus="true" />
-      </a-form-item>
-      <a-form-item name="description" ref="description">
-        <template #label>
-          <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
-        </template>
-        <a-input
-          v-model:value="form.description"
-          :placeholder="apiParams.description.description"
-          v-focus="true" />
-      </a-form-item>
-      <a-form-item ref="type" name="type">
-        <template #label>
-          <tooltip-label :title="$t('label.type')" :tooltip="apiParams.type.description"/>
+          <tooltip-label :title="$t('label.resourcetype')" :tooltip="apiParams.resourcetype.description"/>
         </template>
         <a-select
           showSearch
-          v-model:value="form.type"
-          :placeholder="apiParams.type.description"
+          v-model:value="form.resourcetype"
+          :placeholder="apiParams.resourcetype.description"
+          optionFilterProp="label"
+          :filterOption="(input, option) => {
+            return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
+          }"
+          @change="handleResourceTypeChange" >
+          <a-select-option v-for="opt in resourceTypes" :key="opt.id" :label="opt.id || opt.description">
+            {{ opt.id || opt.description }}
+          </a-select-option>
+        </a-select>
+      </a-form-item>
+      <a-form-item ref="resourceid" name="resourceid">
+        <template #label>
+          <tooltip-label :title="$t('label.resourceid')" :tooltip="apiParams.resourceid.description"/>
+        </template>
+        <a-select
+          showSearch
+          v-model:value="form.resourceid"
+          :placeholder="apiParams.resourceid.description"
           optionFilterProp="label"
           :filterOption="(input, option) => {
             return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
-          <a-select-option v-for="opt in extensionTypes" :key="opt.id" :label="opt.id || opt.description">
-            {{ opt.id || opt.description }}
+          <a-select-option v-for="opt in resources.opts" :key="opt.id" :label="opt.name || opt.description">
+            {{ opt.name || opt.description }}
           </a-select-option>
         </a-select>
       </a-form-item>
@@ -81,37 +81,62 @@ import TooltipLabel from '@/components/widgets/TooltipLabel'
 import DetailsInput from '@/components/widgets/DetailsInput'
 
 export default {
-  name: 'CreateExtension',
+  name: 'RegisterExtension',
   components: {
     TooltipLabel,
     DetailsInput
   },
+  props: {
+    resource: {
+      type: Object,
+      required: true
+    }
+  },
   data () {
     return {
-      extensionTypes: [],
+      resourceTypes: [],
+      resources: {
+        loading: false,
+        opts: []
+      },
       loading: false
     }
   },
   beforeCreate () {
-    this.apiParams = this.$getApiParams('createExtension')
+    this.apiParams = this.$getApiParams('registerExtension')
   },
   created () {
     this.initForm()
-    this.fetchExtensionTypes()
+    this.fetchExtensionResourceTypes()
   },
   methods: {
     initForm () {
       this.formRef = ref()
       this.form = reactive({})
     },
-    fetchExtensionTypes () {
-      this.extensionTypes = []
-      const extensionTypesList = ['Orchestrator']
-      extensionTypesList.forEach((item) => {
-        this.extensionTypes.push({
+    fetchExtensionResourceTypes () {
+      this.resourceTypes = []
+      const resourceTypesList = ['Cluster']
+      resourceTypesList.forEach((item) => {
+        this.resourceTypes.push({
           id: item,
           description: item
         })
+      })
+    },
+    handleResourceTypeChange (id) {
+      this.resources.opts = []
+      if (!id) {
+        return
+      }
+      this.resources.loading = true
+      const resourceApi = 'list' + id + 's'
+      const type = id.toLowerCase()
+      api(resourceApi).then(json => {
+        this.resources.opts = json?.[resourceApi.toLowerCase() + 'response']?.[type] || []
+      }).finally(() => {
+        this.resources.loading = false
+        this.form.resourceid = this.resources?.opts?.[0]?.id || null
       })
     },
     handleSubmit (e) {
@@ -121,22 +146,20 @@ export default {
         const values = toRaw(this.form)
         this.loading = true
         const params = {
-          name: values.name,
-          type: values.type
-        }
-        if (values.description) {
-          params.description = values.description
+          extensionid: this.resource.id,
+          resourcetype: values.resourcetype,
+          resourceid: values.resourceid
         }
         if (values.details) {
           Object.entries(values.details).forEach(([key, value]) => {
             params['details[0].' + key] = value
           })
         }
-        api('createExtension', params).then(response => {
+        api('registerExtension', params).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
-            message: this.$t('label.create.extension'),
-            description: this.$t('message.success.create.extension')
+            message: this.$t('label.register.extension'),
+            description: this.$t('message.success.register.extension')
           })
           this.closeAction()
         }).catch(error => {

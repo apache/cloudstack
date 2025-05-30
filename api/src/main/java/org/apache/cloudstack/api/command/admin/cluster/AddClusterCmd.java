@@ -18,7 +18,6 @@
 package org.apache.cloudstack.api.command.admin.cluster;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -40,7 +39,6 @@ import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.org.Cluster;
 import com.cloud.user.Account;
-import com.cloud.vm.VmDetailConstants;
 
 @APICommand(name = "addCluster", description = "Adds a new cluster", responseObject = ClusterResponse.class,
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
@@ -245,13 +243,7 @@ public class AddClusterCmd extends BaseCmd {
     }
 
     public Map<String, String> getExternalDetails() {
-        Map<String, String> customparameterMap = convertDetailsToMap(externalDetails);
-        Map<String, String> details = new HashMap<>();
-        for (String key : customparameterMap.keySet()) {
-            String value = customparameterMap.get(key);
-            details.put(VmDetailConstants.EXTERNAL_DETAIL_PREFIX + key, value);
-        }
-        return details;
+        return convertDetailsToMap(externalDetails);
     }
 
     @Override

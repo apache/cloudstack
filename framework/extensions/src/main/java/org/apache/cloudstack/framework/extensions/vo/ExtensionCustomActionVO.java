@@ -16,7 +16,7 @@
 // under the License.
 package org.apache.cloudstack.framework.extensions.vo;
 
-import com.cloud.extension.ExtensionCustomAction;
+import org.apache.cloudstack.extension.ExtensionCustomAction;
 import com.cloud.utils.db.GenericDao;
 
 import javax.persistence.Column;
