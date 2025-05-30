@@ -93,7 +93,7 @@
             v-model:value="form.domain"
           >
             <template #prefix>
-              <block-outlined />
+              <project-outlined />
             </template>
           </a-input>
         </a-form-item>
