@@ -36,6 +36,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.command.user.volume.CheckAndRepairVolumeCmd;
+import org.apache.cloudstack.backup.NativeBackupService;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -221,6 +222,8 @@ public class VolumeServiceImpl implements VolumeService {
     private PassphraseDao passphraseDao;
     @Inject
     protected DiskOfferingDao diskOfferingDao;
+    @Inject
+    private NativeBackupService nativeBackupService;
 
     public VolumeServiceImpl() {
     }
@@ -501,6 +504,8 @@ public class VolumeServiceImpl implements VolumeService {
                     snapshotMgr.deletePoliciesForVolume(vo.getId());
                     volDao.remove(vo.getId());
                 }
+
+                nativeBackupService.cleanupBackupMetadata(vo.getVolumeId());
 
                 List<SnapshotDataStoreVO> snapStoreVOs = _snapshotStoreDao.listAllByVolumeAndDataStore(vo.getId(), DataStoreRole.Primary);
 

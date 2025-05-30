@@ -25,6 +25,8 @@ public final class RevertSnapshotCommand extends StorageSubSystemCommand {
     private SnapshotObjectTO dataOnPrimaryStorage;
     private boolean _executeInSequence = false;
 
+    private boolean deleteChain;
+
     public RevertSnapshotCommand(SnapshotObjectTO data, SnapshotObjectTO dataOnPrimaryStorage) {
         super();
         this.data = data;
@@ -41,6 +43,14 @@ public final class RevertSnapshotCommand extends StorageSubSystemCommand {
 
     public SnapshotObjectTO getDataOnPrimaryStorage() {
         return dataOnPrimaryStorage;
+    }
+
+    public boolean isDeleteChain() {
+        return deleteChain;
+    }
+
+    public void setDeleteChain(boolean deleteChain) {
+        this.deleteChain = deleteChain;
     }
 
     @Override

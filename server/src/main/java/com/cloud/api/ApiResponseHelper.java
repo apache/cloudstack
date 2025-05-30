@@ -120,6 +120,7 @@ import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
+import org.apache.cloudstack.api.response.NativeBackupOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
@@ -189,6 +190,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupOffering;
 import org.apache.cloudstack.backup.BackupRepository;
 import org.apache.cloudstack.backup.BackupSchedule;
+import org.apache.cloudstack.backup.NativeBackupOffering;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
 import org.apache.cloudstack.backup.dao.BackupRepositoryDao;
 import org.apache.cloudstack.config.Configuration;
@@ -5706,5 +5708,11 @@ protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<Templat
 
         consoleSessionResponse.setObjectName("consolesession");
         return consoleSessionResponse;
+    }
+
+    @Override
+    public NativeBackupOfferingResponse createNativeBackupOfferingResponse(NativeBackupOffering offering) {
+        return new NativeBackupOfferingResponse(offering.getUuid(), offering.getName(), offering.isCompress(), offering.isValidate(), offering.isAllowQuickRestore(),
+                offering.isAllowExtractFile(), offering.getBackupChainSize(), offering.getCreated(), offering.getRemoved());
     }
 }

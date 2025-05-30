@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.api.response.NativeBackupOfferingResponse;
+import org.apache.cloudstack.backup.NativeBackupOffering;
 import org.apache.cloudstack.api.response.ConsoleSessionResponse;
 import org.apache.cloudstack.consoleproxy.ConsoleSession;
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -583,4 +585,6 @@ public interface ResponseGenerator {
     GuiThemeResponse createGuiThemeResponse(GuiThemeJoin guiThemeJoin);
 
     ConsoleSessionResponse createConsoleSessionResponse(ConsoleSession consoleSession, ResponseView responseView);
+
+    NativeBackupOfferingResponse createNativeBackupOfferingResponse(NativeBackupOffering offering);
 }

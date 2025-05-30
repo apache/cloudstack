@@ -16,22 +16,30 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package com.cloud.agent.api.storage;
+package org.apache.cloudstack.storage.to;
 
 import com.cloud.agent.api.to.DataTO;
 import org.apache.commons.lang3.builder.ReflectionToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 
 import java.util.List;
 
-public class SnapshotMergeTreeTO {
+public class DeltaMergeTreeTO {
+
+    VolumeObjectTO volumeObjectTO;
     DataTO parent;
     DataTO child;
     List<DataTO> grandChildren;
 
-    public SnapshotMergeTreeTO(DataTO parent, DataTO child, List<DataTO> grandChildren) {
+    public DeltaMergeTreeTO(VolumeObjectTO volumeObjectTO, DataTO parent, DataTO child, List<DataTO> grandChildren) {
+        this.volumeObjectTO = volumeObjectTO;
         this.parent = parent;
         this.child = child;
         this.grandChildren = grandChildren;
+    }
+
+    public VolumeObjectTO getVolumeObjectTO() {
+        return volumeObjectTO;
     }
 
     public DataTO getParent() {
@@ -52,6 +60,6 @@ public class SnapshotMergeTreeTO {
 
     @Override
     public String toString() {
-        return ReflectionToStringBuilder.toString(this);
+        return ReflectionToStringBuilder.toString(this, ToStringStyle.JSON_STYLE);
     }
 }

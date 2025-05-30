@@ -99,6 +99,7 @@ public class BackupScheduleDaoImpl extends GenericDaoBase<BackupScheduleVO, Long
         response.setSchedule(schedule.getSchedule());
         response.setTimezone(schedule.getTimezone());
         response.setMaxBackups(schedule.getMaxBackups());
+        response.setIsolated(schedule.isIsolated());
         if (schedule.getQuiesceVM() != null) {
             response.setQuiesceVM(schedule.getQuiesceVM());
         }

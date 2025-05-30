@@ -156,7 +156,8 @@ public class AgentProperties{
     public static final Property<Integer> CMDS_TIMEOUT = new Property<>("cmds.timeout", 7200);
 
     /**
-     * The timeout (in seconds) for the snapshot merge operation, mainly used for classic volume snapshots and disk-only VM snapshots on file-based storage.<br>
+     * The timeout (in seconds) for QCOW2 delta merge operations, mainly used for classic volume snapshots, disk-only VM snapshots on file-based storage, and the KNIB plugin.
+     * If a value of 0 or less is informed, the default will be used.<br>
      * This configuration is only considered if libvirt.events.enabled is also true. <br>
      * Data type: Integer.<br>
      * Default value: <code>259200</code>

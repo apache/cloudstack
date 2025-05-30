@@ -63,7 +63,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private static final String URL_CREATED_BEFORE = "url_created_before";
     public static final String DOWNLOAD_URL = "downloadUrl";
     public static final String DATA_CENTER_ID = "data_center_id";
-
+    private static final String INSTALL_PATH = "install_path";
     private SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdEqStoreRoleEqStateNeqRefCntNeq;
     protected SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdEqStateEqStoreRoleEqIdEqUpdateCountEqSnapshotIdEqVolumeIdEq;
     private SearchBuilder<SnapshotDataStoreVO> stateSearch;
@@ -75,7 +75,9 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private SearchBuilder<SnapshotDataStoreVO> storeSnapshotDownloadStatusSearch;
     private SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull;
     private SearchBuilder<SnapshotDataStoreVO> searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore;
-    private SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq;
+    private SearchBuilder<SnapshotDataStoreVO> searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqPathEq;
+
+    private SearchBuilder<SnapshotDataStoreVO> searchFilteringVolumeIdAndStateAndCreatedAfter;
 
     private SearchBuilder<SnapshotDataStoreVO> searchBySnapshotId;
 
@@ -148,7 +150,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
 
         idStateNeqSearch = createSearchBuilder();
         idStateNeqSearch.and(SNAPSHOT_ID, idStateNeqSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
-        idStateNeqSearch.and(STATE, idStateNeqSearch.entity().getState(), SearchCriteria.Op.NEQ);
+        idStateNeqSearch.and(STATE, idStateNeqSearch.entity().getState(), SearchCriteria.Op.NIN);
         idStateNeqSearch.done();
 
         snapshotVOSearch = snapshotDao.createSearchBuilder();
@@ -192,17 +194,24 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.and(URL_CREATED_BEFORE, searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.entity().getExtractUrlCreated(), SearchCriteria.Op.LT);
         searchFilterStateAndDownloadUrlNotNullAndDownloadUrlCreatedBefore.done();
 
-        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq = createSearchBuilder();
-        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.and(STATE, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.entity().getState(), SearchCriteria.Op.EQ);
-        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.and(VOLUME_ID, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.entity().getVolumeId(), SearchCriteria.Op.EQ);
-        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.and(STORE_ROLE, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.entity().getRole(), SearchCriteria.Op.EQ);
-        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.and(STORE_ID, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.entity().getDataStoreId(), SearchCriteria.Op.IN);
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqPathEq = createSearchBuilder();
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqPathEq.and(STATE, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqPathEq.entity().getState(), SearchCriteria.Op.EQ);
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqPathEq.and(VOLUME_ID, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqPathEq.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqPathEq.and(STORE_ROLE, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqPathEq.entity().getRole(), SearchCriteria.Op.EQ);
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqPathEq.and(STORE_ID, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqPathEq.entity().getDataStoreId(), SearchCriteria.Op.IN);
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqPathEq.and(INSTALL_PATH, searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqPathEq.entity().getInstallPath(), SearchCriteria.Op.EQ);
+        searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqPathEq.done();
 
         searchBySnapshotId = createSearchBuilder();
         searchBySnapshotId.and(SNAPSHOT_ID, searchBySnapshotId.entity().getSnapshotId(), SearchCriteria.Op.EQ);
         searchBySnapshotId.and(STATE, searchBySnapshotId.entity().getState(), SearchCriteria.Op.EQ);
         searchBySnapshotId.done();
 
+        searchFilteringVolumeIdAndStateAndCreatedAfter = createSearchBuilder();
+        searchFilteringVolumeIdAndStateAndCreatedAfter.and(STATE, searchFilteringVolumeIdAndStateAndCreatedAfter.entity().getState(), SearchCriteria.Op.EQ);
+        searchFilteringVolumeIdAndStateAndCreatedAfter.and(VOLUME_ID, searchFilteringVolumeIdAndStateAndCreatedAfter.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        searchFilteringVolumeIdAndStateAndCreatedAfter.and(CREATED, searchFilteringVolumeIdAndStateAndCreatedAfter.entity().getCreated(), SearchCriteria.Op.GT);
+        searchFilteringVolumeIdAndStateAndCreatedAfter.done();
         return true;
     }
 
@@ -350,7 +359,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         if (kvmIncrementalSnapshot && Hypervisor.HypervisorType.KVM.equals(hypervisorType)) {
             sc = searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqKVMCheckpointNotNull.create();
         } else {
-            sc = searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEq.create();
+            sc = searchFilteringStoreIdInVolumeIdEqStoreRoleEqStateEqPathEq.create();
         }
 
         sc.setParameters(VOLUME_ID, volumeId);
@@ -452,6 +461,12 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     public SnapshotDataStoreVO findBySnapshotIdInAnyState(long snapshotId, DataStoreRole role) {
         SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
         return findOneBy(sc);
+    }
+
+    @Override
+    public void expungeBySnapshotIdAndStoreRole(long snapshotId, DataStoreRole role) {
+        SearchCriteria<SnapshotDataStoreVO> sc = createSearchCriteriaBySnapshotIdAndStoreRole(snapshotId, role);
+        expunge(sc);
     }
 
     @Override

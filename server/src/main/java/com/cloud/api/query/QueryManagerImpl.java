@@ -37,14 +37,14 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import com.cloud.dc.Pod;
+import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.Pod;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.org.Cluster;
 import com.cloud.server.ManagementService;
 import com.cloud.storage.dao.StoragePoolAndAccessGroupMapDao;
 import com.cloud.cluster.ManagementServerHostPeerJoinVO;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker;
@@ -89,6 +89,8 @@ import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.address.ListQuarantinedIpsCmd;
 import org.apache.cloudstack.api.command.user.affinitygroup.ListAffinityGroupsCmd;
+import org.apache.cloudstack.api.command.user.backup.ListBackupCompressionJobsCmd;
+import org.apache.cloudstack.api.command.user.backup.nativeoffering.ListNativeBackupOfferingsCmd;
 import org.apache.cloudstack.api.command.user.bucket.ListBucketsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
@@ -111,6 +113,7 @@ import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.BackupCompressionJobResponse;
 import org.apache.cloudstack.api.response.BucketResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.DetailOptionsResponse;
@@ -125,6 +128,7 @@ import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ManagementServerResponse;
+import org.apache.cloudstack.api.response.NativeBackupOfferingResponse;
 import org.apache.cloudstack.api.response.ObjectStoreResponse;
 import org.apache.cloudstack.api.response.PeerManagementServerNodeResponse;
 import org.apache.cloudstack.api.response.PodResponse;
@@ -148,8 +152,15 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VirtualMachineResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.backup.BackupCompressionJobVO;
 import org.apache.cloudstack.backup.BackupOfferingVO;
+import org.apache.cloudstack.backup.BackupVO;
+import org.apache.cloudstack.backup.NativeBackupOffering;
+import org.apache.cloudstack.backup.NativeBackupOfferingVO;
+import org.apache.cloudstack.backup.dao.BackupCompressionJobDao;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupOfferingDao;
+import org.apache.cloudstack.backup.dao.NativeBackupOfferingDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
@@ -645,6 +656,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     ExtensionHelper extensionHelper;
+
+    @Inject
+    private NativeBackupOfferingDao nativeBackupOfferingDao;
+
+    @Inject
+    private BackupCompressionJobDao backupCompressionJobDao;
+
+    @Inject
+    private BackupDao backupDao;
 
     /*
      * (non-Javadoc)
@@ -6281,6 +6301,99 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         }
 
         return bucketDao.searchByIds(bktIds);
+    }
+
+    @Override
+    public ListResponse<NativeBackupOfferingResponse> listNativeBackupOfferings(ListNativeBackupOfferingsCmd cmd) {
+        ListResponse<NativeBackupOfferingResponse> response = new ListResponse<>();
+        Pair<List<NativeBackupOfferingVO>, Integer> result = listNativeBackupOfferingsInternal(cmd);
+        List<NativeBackupOfferingResponse> nativeBackupOfferingResponses = new ArrayList<>();
+
+        for (NativeBackupOffering offering : result.first()) {
+            NativeBackupOfferingResponse nativeBackupOfferingResponse = responseGenerator.createNativeBackupOfferingResponse(offering);
+            nativeBackupOfferingResponses.add(nativeBackupOfferingResponse);
+        }
+
+        response.setResponses(nativeBackupOfferingResponses, result.second());
+        return response;
+    }
+
+    private Pair<List<NativeBackupOfferingVO>, Integer> listNativeBackupOfferingsInternal(ListNativeBackupOfferingsCmd cmd) {
+        SearchBuilder<NativeBackupOfferingVO> sb = nativeBackupOfferingDao.createSearchBuilder();
+
+        sb.and("id", sb.entity().getId(), SearchCriteria.Op.EQ);
+        sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
+        sb.and("compress", sb.entity().isCompress(), SearchCriteria.Op.EQ);
+        sb.and("validate", sb.entity().isValidate(), SearchCriteria.Op.EQ);
+        sb.and("allowquickrestore", sb.entity().isAllowQuickRestore(), SearchCriteria.Op.EQ);
+        sb.and("allowextractfile", sb.entity().isAllowExtractFile(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<NativeBackupOfferingVO> sc = sb.create();
+
+        sc.setParametersIfNotNull("id", cmd.getId());
+        sc.setParametersIfNotNull("name", cmd.getName());
+        sc.setParametersIfNotNull("compress", cmd.isCompress());
+        sc.setParametersIfNotNull("validate", cmd.isValidate());
+        sc.setParametersIfNotNull("allowquickrestore", cmd.isAllowQuickRestore());
+        sc.setParametersIfNotNull("allowextractfile", cmd.isAllowExtractFile());
+
+        Filter filter = new Filter(NativeBackupOfferingVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        return nativeBackupOfferingDao.searchAndCount(sc, filter, cmd.isShowRemoved());
+    }
+
+    @Override
+    public ListResponse<BackupCompressionJobResponse> listBackupCompressionJobs(ListBackupCompressionJobsCmd cmd) {
+        ListResponse<BackupCompressionJobResponse> responses = new ListResponse<>();
+        Pair<List<BackupCompressionJobVO>, Integer> result = listBackupCompressionJobsInternal(cmd);
+        List<BackupCompressionJobResponse> compressionJobResponses = new ArrayList<>();
+
+        for (BackupCompressionJobVO jobVO : result.first()) {
+            BackupVO backup = backupDao.findByIdIncludingRemoved(jobVO.getBackupId());
+            DataCenterVO zone = dataCenterDao.findByIdIncludingRemoved(jobVO.getZoneId());
+
+            BackupCompressionJobResponse response =  new BackupCompressionJobResponse(jobVO.getId(), backup.getUuid(), zone.getUuid(), jobVO.getAttempts(),
+                    jobVO.getType().toString(), jobVO.getStartTime(), jobVO.getScheduledStartTime(), jobVO.getRemoved());
+
+            if (jobVO.getHostId() != null) {
+                response.setHostId(hostDao.findByIdIncludingRemoved(jobVO.getHostId()).getUuid());
+            }
+            compressionJobResponses.add(response);
+        }
+
+        responses.setResponses(compressionJobResponses, result.second());
+        return responses;
+    }
+
+    private Pair<List<BackupCompressionJobVO>, Integer> listBackupCompressionJobsInternal(ListBackupCompressionJobsCmd cmd) {
+        SearchBuilder<BackupCompressionJobVO> sb = backupCompressionJobDao.createSearchBuilder();
+
+        sb.and("id", sb.entity().getId(), Op.EQ);
+        sb.and("backup_id", sb.entity().getBackupId(), Op.EQ);
+        sb.and("host_id", sb.entity().getHostId(), Op.EQ);
+        sb.and("zone_id", sb.entity().getZoneId(), Op.EQ);
+        sb.and("type", sb.entity().getType(), Op.EQ);
+
+        boolean removed = !cmd.getExecuting() && !cmd.getScheduled();
+        if (cmd.getExecuting() && !cmd.getScheduled()) {
+            sb.and("executing", sb.entity().getStartTime(), Op.NNULL);
+        } else if (cmd.getScheduled() && !cmd.getExecuting()) {
+            sb.and("scheduled", sb.entity().getStartTime(), Op.NULL);
+        }
+
+        SearchCriteria<BackupCompressionJobVO> sc = sb.create();
+
+        sc.setParametersIfNotNull("id", cmd.getId());
+        sc.setParametersIfNotNull("backup_id", cmd.getBackupId());
+        sc.setParametersIfNotNull("host_id", cmd.getHostId());
+        sc.setParametersIfNotNull("zone_id", cmd.getZoneId());
+        if (cmd.getType() != null) {
+            sc.setParameters("type", StringUtils.capitalize(cmd.getType().toLowerCase())+"Compression");
+        }
+
+        Filter filter = new Filter(BackupCompressionJobVO.class, "created", false, cmd.getStartIndex(), cmd.getPageSizeVal());
+
+        return backupCompressionJobDao.searchAndCount(sc, filter, removed);
     }
 
     @Override

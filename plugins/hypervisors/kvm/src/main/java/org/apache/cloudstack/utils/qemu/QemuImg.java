@@ -55,6 +55,7 @@ public class QemuImg {
     public static final String PREALLOCATION = "preallocation";
     public static final long QEMU_2_10 = 2010000;
     public static final long QEMU_5_10 = 5010000;
+    public static final long QEMU_5_20 = 5020000;
 
     public static final int MIN_BITMAP_VERSION = 3;
 
@@ -392,7 +393,7 @@ public class QemuImg {
      */
     public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
                         final Map<String, String> options, final List<QemuObject> qemuObjects, final QemuImageOptions srcImageOpts, final String snapshotName, final boolean forceSourceFormat) throws QemuImgException {
-        convert(srcFile, destFile, options, qemuObjects, srcImageOpts, snapshotName, forceSourceFormat, false);
+        convert(srcFile, destFile, null, options, qemuObjects, srcImageOpts, snapshotName, forceSourceFormat, false, false, false, null, null);
     }
 
     protected Map<String, String> getResizeOptionsFromConvertOptions(final Map<String, String> options) {
@@ -408,31 +409,41 @@ public class QemuImg {
 
     /**
      * Converts an image from source to destination.
-     *
+     * <p>
      * This method is a facade for 'qemu-img convert' and converts a disk image or snapshot into a disk image with the specified filename and format.
      *
      * @param srcFile
-     *            The source file.
+     *         The source file.
      * @param destFile
-     *            The destination file.
+     *         The destination file.
+     * @param backingFile
+     *         The destination's backing file.
      * @param options
-     *            Options for the conversion. Takes a Map<String, String> with key value
-     *            pairs which are passed on to qemu-img without validation.
+     *         Options for the conversion. Takes a Map<String, String> with key value
+     *         pairs which are passed on to qemu-img without validation.
      * @param qemuObjects
-     *            Pass qemu Objects to create - see objects in the qemu main page.
+     *         Pass qemu Objects to create - see objects in the qemu main page.
      * @param srcImageOpts
-     *            pass qemu --image-opts to convert.
+     *         pass qemu --image-opts to convert.
      * @param snapshotName
-     *            If it is provided, conversion uses it as parameter.
+     *         If it is provided, conversion uses it as parameter.
      * @param forceSourceFormat
-     *            If true, specifies the source format in the conversion command.
+     *         If true, specifies the source format in the conversion command.
      * @param keepBitmaps
-     *            If true, copies the bitmaps to the destination image.
+     *         If true, copies the bitmaps to the destination image.
+     * @param outOfOrderWrites
+     *         If true, inform -W to convert
+     * @param compress
+     *         If true, inform -c to convert
+     * @param coroutines
+     *         If not null, inform -m and number of coroutines. By default, qemu uses 8 coroutines.
+     * @param rateLimit
+     *         If not null, inform -r and rate limit in MB/s. By default, qemu does not limit the convert rate.
      * @return void
      */
-    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile,
-                        final Map<String, String> options, final List<QemuObject> qemuObjects, final QemuImageOptions srcImageOpts, final String snapshotName, final boolean forceSourceFormat,
-                        boolean keepBitmaps) throws QemuImgException {
+    public void convert(final QemuImgFile srcFile, final QemuImgFile destFile, QemuImgFile backingFile, final Map<String, String> options, final List<QemuObject> qemuObjects,
+            final QemuImageOptions srcImageOpts, final String snapshotName, final boolean forceSourceFormat, boolean keepBitmaps, boolean outOfOrderWrites, boolean compress,
+            Integer coroutines, Integer rateLimit) throws QemuImgException {
         Script script = new Script(_qemuImgPath, timeout);
         if (StringUtils.isNotBlank(snapshotName)) {
             String qemuPath = Script.runSimpleBashScript(getQemuImgPathScript);
@@ -455,8 +466,27 @@ public class QemuImg {
         script.add("-O");
         script.add(destFile.getFormat().toString());
 
+        addBackingFileToConvertCommand(script, backingFile);
         addScriptOptionsFromMap(options, script);
         addSnapshotToConvertCommand(srcFile.getFormat().toString(), snapshotName, forceSourceFormat, script, version);
+
+        if (outOfOrderWrites) {
+            script.add("-W");
+        }
+
+        if (rateLimit != null) {
+            script.add("-r");
+            script.add(rateLimit + "M");
+        }
+
+        if (coroutines != null) {
+            script.add("-m");
+            script.add(String.valueOf(coroutines));
+        }
+
+        if (compress) {
+            script.add("-c");
+        }
 
         if (noCache) {
             script.add("-t");
@@ -498,6 +528,23 @@ public class QemuImg {
         if (srcFile.getSize() < destFile.getSize()) {
             this.resize(destFile, destFile.getSize(), getResizeOptionsFromConvertOptions(options));
         }
+    }
+
+
+    protected void addBackingFileToConvertCommand(Script script, QemuImgFile backingFile) {
+        if (backingFile == null) {
+            return;
+        }
+
+        script.add("-o");
+
+        String opts;
+        if (backingFile.getFormat() == null) {
+            opts = String.format("backing_file=%s", backingFile.getFileName());
+        } else {
+            opts = String.format("backing_file=%s,backing_fmt=%s", backingFile.getFileName(), backingFile.getFormat().toString());
+        }
+        script.add(opts);
     }
 
     /**
@@ -873,9 +920,6 @@ public class QemuImg {
 
         final Script s = new Script(_qemuImgPath, timeout);
         s.add("commit");
-        if (skipEmptyingFiles) {
-            s.add("-d");
-        }
 
         if (file.getFormat() != null) {
             s.add("-f");
@@ -885,6 +929,8 @@ public class QemuImg {
         if (base != null) {
             s.add("-b");
             s.add(base.getFileName());
+        } else if (skipEmptyingFiles) {
+            s.add("-d");
         }
 
         s.add(file.getFileName());
@@ -1006,4 +1052,9 @@ public class QemuImg {
             throw new QemuImgException(String.format("Exception while removing bitmap [%s] from file [%s]. Result is [%s].", srcFile.getFileName(), bitmapName, result));
         }
     }
+
+    public long getVersion() {
+        return this.version;
+    }
+
 }

@@ -49,3 +49,68 @@ CREATE TABLE IF NOT EXISTS `cloud`.`webhook_filter` (
     INDEX `i_webhook_filter__webhook_id`(`webhook_id`),
     CONSTRAINT `fk_webhook_filter__webhook_id` FOREIGN KEY(`webhook_id`) REFERENCES `webhook`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- KNIB
+
+CREATE TABLE IF NOT EXISTS `cloud`.`native_backup_pool_ref` (
+    `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
+    `backup_id` bigint unsigned NOT NULL COMMENT 'The backup ID. Foreign key that points to the backups table.',
+    `storage_pool_id` bigint unsigned NOT NULL COMMENT 'The storage ID. Foreign key that points to the storage_pool table.',
+    `volume_id` bigint unsigned NOT NULL COMMENT 'The volumes ID. Foreign key that points to the volumes table.',
+    `backup_delta_path` varchar(255) COMMENT 'Path of the created delta.',
+    `backup_parent_path` varchar(255) COMMENT 'Path of the created delta parent.',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_native_backup_pool_ref__backup_id` FOREIGN KEY (`backup_id`) REFERENCES `backups`(`id`),
+    CONSTRAINT `fk_native_backup_pool_ref__storage_pool_id` FOREIGN KEY (`storage_pool_id`) REFERENCES `storage_pool`(`id`),
+    CONSTRAINT `fk_native_backup_pool_ref__volume_id` FOREIGN KEY (`volume_id`) REFERENCES `volumes`(`id`)
+    );
+
+CREATE TABLE IF NOT EXISTS `cloud`.`native_backup_store_ref` (
+     `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
+     `backup_id` bigint unsigned NOT NULL COMMENT 'The backup ID. Foreign key that points to the backups table.',
+     `volume_id` bigint unsigned NOT NULL COMMENT 'The volume ID. Foreign key that points to the volumes table.',
+     `device_id` bigint unsigned COMMENT 'device ID of the volume',
+     `path` varchar(255) COMMENT 'Path of the backup.',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_native_backup_store_ref__backup_id` FOREIGN KEY (`backup_id`) REFERENCES `backups`(`id`),
+    CONSTRAINT `fk_native_backup_store_ref__volume_id` FOREIGN KEY (`volume_id`) REFERENCES `volumes`(`id`)
+    );
+
+
+CREATE TABLE IF NOT EXISTS `cloud`.`native_backup_offering` (
+    `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
+    `uuid` varchar(40) NOT NULL,
+    `name` varchar(255) NOT NULL,
+    `compress` tinyint(1) UNSIGNED NOT NULL,
+    `validate` tinyint(1) UNSIGNED NOT NULL,
+    `allow_quick_restore` tinyint(1) UNSIGNED NOT NULL,
+    `allow_extract_file` tinyint(1) UNSIGNED NOT NULL,
+    `backup_chain_size` INT,
+    `compression_library` varchar(55) NOT NULL DEFAULT 'zstd',
+    `created` datetime NOT NULL,
+    `removed` datetime,
+    PRIMARY KEY (`id`)
+    );
+
+CREATE TABLE IF NOT EXISTS `cloud`.`backup_compression_job` (
+    `id` bigint NOT NULL UNIQUE AUTO_INCREMENT,
+    `backup_id` bigint unsigned NOT NULL COMMENT 'The backup ID. Foreign key that points to the backups table.',
+    `instance_id` bigint unsigned NOT NULL COMMENT 'The instance ID. Foreign key that points to the vm_instance table.',
+    `host_id` bigint unsigned COMMENT 'The host ID that is executing the compression. Foreign key that points to the host table.',
+    `zone_id` bigint unsigned NOT NULL COMMENT 'The zone ID of the where the VM is. Foreign key that points to the data_center table',
+    `attempts` int(32) unsigned NOT NULL DEFAULT 0,
+    `type` varchar(55) NOT NULL,
+    `created` datetime NOT NULL,
+    `scheduled_start_time` datetime NOT NULL,
+    `start_time` datetime,
+    `removed` datetime,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_backup_compression_job__backup_id` FOREIGN KEY (`backup_id`) REFERENCES `backups`(`id`),
+    CONSTRAINT `fk_backup_compression_job__instance_id` FOREIGN KEY (`instance_id`) REFERENCES `vm_instance`(`id`),
+    CONSTRAINT `fk_backup_compression_job__host_id` FOREIGN KEY (`host_id`) REFERENCES `host`(`id`),
+    CONSTRAINT `fk_backup_compression_job__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`)
+    );
+
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'uncompressed_size', 'bigint unsigned');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backups', 'compression_status', 'varchar(55)');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.backup_schedule', 'isolated', 'TINYINT(1) NOT NULL DEFAULT 0 COMMENT "Whether the scheduled backups will be isolated or not."');

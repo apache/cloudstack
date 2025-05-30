@@ -1500,6 +1500,10 @@ export default {
         params.isofilter = 'executable'
       } else if (possibleApi === 'listHosts') {
         params.type = 'routing'
+        if (this.currentAction?.api === 'restoreBackup') {
+          params.resourcestate = 'enabled'
+          params.state = 'up'
+        }
       } else if (possibleApi === 'listNetworkOfferings' && this.resource) {
         if (this.resource.type) {
           params.guestiptype = this.resource.type

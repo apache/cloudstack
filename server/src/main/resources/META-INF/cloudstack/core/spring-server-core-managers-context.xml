@@ -343,6 +343,8 @@
 
     <bean id="backupRepositoryService" class="org.apache.cloudstack.backup.BackupRepositoryServiceImpl" />
 
+    <bean id="nativeBackupOfferingService" class="org.apache.cloudstack.backup.NativeBackupOfferingServiceImpl" />
+
     <bean id="storageLayer" class="com.cloud.storage.JavaStorageLayer" />
 
     <bean id="nfsMountManager" class="org.apache.cloudstack.storage.NfsMountManagerImpl" >
@@ -398,4 +400,8 @@
     <bean id="ExternalOrchestratorDetailDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExternalOrchestratorDetailDaoImpl" />
     <bean id="ExtensionResourceMapDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExtensionResourceMapDaoImpl" />
     <bean id="ExtensionResourceMapDetailsDaoImpl" class="org.apache.cloudstack.hypervisor.external.provisioner.dao.ExtensionResourceMapDetailsDaoImpl" />
+    <bean id="nativeBackupServiceImpl" class="org.apache.cloudstack.backup.NativeBackupServiceImpl" >
+        <property name="nativeBackupProviders" value="#{nativeBackupProvidersRegistry.registered}" />
+    </bean>
+    <bean id="backupCompressionService" class="org.apache.cloudstack.backup.BackupCompressionService" />
 </beans>

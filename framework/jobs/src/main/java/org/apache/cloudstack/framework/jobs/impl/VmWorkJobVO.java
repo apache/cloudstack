@@ -69,6 +69,14 @@ public class VmWorkJobVO extends AsyncJobVO {
         setRelated(related);
     }
 
+    public VmWorkJobVO(String related, long userId, long accountId, String cmd, Long instanceId, VirtualMachine.Type vmType, Step step) {
+        super(null, userId, accountId, cmd, null, instanceId, null, null);
+        setRelated(related);
+        this.vmType = vmType;
+        this.step = step;
+        this.vmInstanceId = instanceId;
+    }
+
     public Step getStep() {
         return step;
     }
