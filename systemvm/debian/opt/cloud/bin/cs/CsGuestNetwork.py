@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 from merge import DataBag
-from . import CsHelper
 
 
 class CsGuestNetwork:
@@ -38,6 +37,9 @@ class CsGuestNetwork:
     def get_dns(self):
         if not self.guest:
             return self.config.get_dns()
+
+        if self.config.use_router_ip_as_resolver():
+            return [self.data['router_guest_ip']]
 
         dns = []
         if 'router_guest_gateway' in self.data and not self.config.use_extdns() and ('is_vr_guest_gateway' not in self.data or not self.data['is_vr_guest_gateway']):

@@ -19,8 +19,8 @@
 set -e
 
 if [ $# -lt 6 ]; then
-    echo "Invalid input. Valid usage: ./create-kubernetes-binaries-iso.sh OUTPUT_PATH KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION WEAVENET_NETWORK_YAML_CONFIG DASHBOARD_YAML_CONFIG BUILD_NAME"
-    echo "eg: ./create-kubernetes-binaries-iso.sh ./ 1.11.4 0.7.1 1.11.1 https://github.com/weaveworks/weave/releases/download/latest_release/weave-daemonset-k8s-1.11.yaml https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.0/src/deploy/recommended/kubernetes-dashboard.yaml setup-v1.11.4"
+    echo "Invalid input. Valid usage: ./create-kubernetes-binaries-iso.sh OUTPUT_PATH KUBERNETES_VERSION CNI_VERSION CRICTL_VERSION WEAVENET_NETWORK_YAML_CONFIG DASHBOARD_YAML_CONFIG BUILD_NAME [ETCD_VERSION]"
+    echo "eg: ./create-kubernetes-binaries-iso.sh ./ 1.11.4 0.7.1 1.11.1 https://github.com/weaveworks/weave/releases/download/latest_release/weave-daemonset-k8s-1.11.yaml https://raw.githubusercontent.com/kubernetes/dashboard/v1.10.0/src/deploy/recommended/kubernetes-dashboard.yaml setup-v1.11.4 3.5.1"
     exit 1
 fi
 
@@ -147,6 +147,14 @@ chmod ${kubeadm_file_permissions} "${working_dir}/k8s/kubeadm"
 
 echo "Updating imagePullPolicy to IfNotPresent in yaml files..."
 sed -i "s/imagePullPolicy:.*/imagePullPolicy: IfNotPresent/g" ${working_dir}/*.yaml
+
+if [ -n "${8}" ]; then
+  # Install etcd dependencies
+  etcd_dir="${working_dir}/etcd"
+  mkdir -p "${etcd_dir}"
+  ETCD_VERSION=v${8}
+  wget -q --show-progress "https://github.com/etcd-io/etcd/releases/download/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-amd64.tar.gz" -O ${etcd_dir}/etcd-linux-amd64.tar.gz
+fi
 
 mkisofs -o "${output_dir}/${build_name}" -J -R -l "${iso_dir}"
 
