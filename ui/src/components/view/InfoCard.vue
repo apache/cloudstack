@@ -34,7 +34,7 @@
                   <resource-icon :image="getImage(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon)" size="4x" style="margin-right: 5px"/>
                 </span>
                 <span v-else>
-                  <os-logo v-if="resource.ostypeid || resource.ostypename" :osId="resource.ostypeid" :osName="resource.ostypename" size="3x" @update-osname="setResourceOsType"/>
+                  <os-logo v-if="resource.ostypeid || resource.ostypename || ['guestoscategory'].includes($route.path.split('/')[1])" :osId="resource.ostypeid" :osName="resource.ostypename || resource.name" size="3x" @update-osname="setResourceOsType"/>
                   <render-icon v-else-if="typeof $route.meta.icon ==='string'" style="font-size: 36px" :icon="$route.meta.icon" />
                   <font-awesome-icon
                     v-else-if="$route.meta.icon && Array.isArray($route.meta.icon)"
@@ -764,6 +764,9 @@
             </a-button>
           </router-link>
         </div>
+        <image-deploy-instance-button
+          v-if="'deployVirtualMachine' in $store.getters.apis && ['template', 'iso'].includes($route.meta.name)"
+          :resource="resource" />
       </div>
 
       <div class="account-center-tags" v-if="showKeys || resource.apikeyaccess">
@@ -870,6 +873,7 @@ import UploadResourceIcon from '@/components/view/UploadResourceIcon'
 import eventBus from '@/config/eventBus'
 import ResourceIcon from '@/components/view/ResourceIcon'
 import ResourceLabel from '@/components/widgets/ResourceLabel'
+import ImageDeployInstanceButton from '@/components/view/ImageDeployInstanceButton.vue'
 
 export default {
   name: 'InfoCard',
@@ -881,7 +885,8 @@ export default {
     TooltipButton,
     UploadResourceIcon,
     ResourceIcon,
-    ResourceLabel
+    ResourceLabel,
+    ImageDeployInstanceButton
   },
   props: {
     resource: {
@@ -951,9 +956,6 @@ export default {
         }
         this.updateResourceAdditionalData()
       }
-    },
-    async templateIcon () {
-      this.getIcons()
     }
   },
   created () {
@@ -983,9 +985,6 @@ export default {
       }
       return [this.resource.keypairs.toString()]
     },
-    templateIcon () {
-      return this.resource.templateid
-    },
     resourceIcon () {
       if (this.$showIcon()) {
         if (this.resource?.icon?.base64image) {
@@ -999,6 +998,9 @@ export default {
     },
     routeFromResourceType () {
       return this.$getRouteFromResourceType(this.resource.resourcetype)
+    },
+    isModernImageSelection () {
+      return this.$config.imageSelectionInterface === undefined || this.$config.imageSelectionInterface === 'modern'
     }
   },
   methods: {
@@ -1027,7 +1029,7 @@ export default {
     getImage (image) {
       return (image || this.resource?.icon?.base64image)
     },
-    async getIcons () {
+    getIcons () {
       this.images = {
         zone: '',
         template: '',
@@ -1039,28 +1041,28 @@ export default {
         network: ''
       }
       if (this.resource.templateid) {
-        await this.fetchResourceIcon(this.resource.templateid, 'template')
+        this.fetchResourceIcon(this.resource.templateid, 'template')
       }
       if (this.resource.isoid) {
-        await this.fetchResourceIcon(this.resource.isoid, 'iso')
+        this.fetchResourceIcon(this.resource.isoid, 'iso')
       }
       if (this.resource.zoneid) {
-        await this.fetchResourceIcon(this.resource.zoneid, 'zone')
+        this.fetchResourceIcon(this.resource.zoneid, 'zone')
       }
       if (this.resource.domainid) {
-        await this.fetchResourceIcon(this.resource.domainid, 'domain')
+        this.fetchResourceIcon(this.resource.domainid, 'domain')
       }
       if (this.resource.account) {
-        await this.fetchAccount()
+        this.fetchAccount()
       }
       if (this.resource.projectid) {
-        await this.fetchResourceIcon(this.resource.projectid, 'project')
+        this.fetchResourceIcon(this.resource.projectid, 'project')
       }
       if (this.resource.vpcid) {
-        await this.fetchResourceIcon(this.resource.vpcid, 'vpc')
+        this.fetchResourceIcon(this.resource.vpcid, 'vpc')
       }
       if (this.resource.networkid) {
-        await this.fetchResourceIcon(this.resource.networkid, 'network')
+        this.fetchResourceIcon(this.resource.networkid, 'network')
       }
     },
     fetchAccount () {
@@ -1225,7 +1227,6 @@ export default {
           query[item.param] = this.resource.id
         }
       }
-
       return query
     }
   }
