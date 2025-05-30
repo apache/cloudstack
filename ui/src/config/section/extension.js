@@ -59,10 +59,6 @@ export default {
         resourceType: 'Extension',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/EventsTab.vue'))),
         show: () => { return 'listEvents' in store.getters.apis }
-      },
-      {
-        name: 'comments',
-        component: shallowRef(defineAsyncComponent(() => import('@/components/view/AnnotationsTab.vue')))
       }],
       actions: [
         {
