@@ -1010,6 +1010,7 @@
 "label.filter.annotations.self": "Created by me",
 "label.filterby": "Filter by",
 "label.fingerprint": "FingerPrint",
+"label.skip": "Skip",
 "label.finish": "Finish",
 "label.firewall": "Firewall",
 "label.firewall.policy": "Firewall Policy",
