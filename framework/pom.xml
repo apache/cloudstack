@@ -51,6 +51,7 @@
         <module>db</module>
         <module>direct-download</module>
         <module>events</module>
+        <module>extensions</module>
         <module>ipc</module>
         <module>jobs</module>
         <module>managed-context</module>

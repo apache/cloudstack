@@ -207,6 +207,19 @@ public class ApiConstants {
     public static final String EXTRA_DHCP_OPTION_VALUE = "extradhcpvalue";
     public static final String EXTERNAL = "external";
     public static final String EXTERNAL_UUID = "externaluuid";
+    public static final String EXTERNAL_PROVISIONER = "externalprovisioner";
+    public static final String EXTERNAL_DETAILS = "externaldetails";
+    public static final String PARAMETERS = "parameters";
+    public static final String EXTENSION = "extension";
+    public static final String EXTENSIONS = "extensions";
+    public static final String EXTENSION_ID = "extensionid";
+    public static final String EXTENSION_NAME = "extensionname";
+    public static final String EXTENSION_RESOURCE_ID = "extensionresourceid";
+    public static final String EXTENSION_RESOURCE_MAP = "extensionresourcemap";
+
+    public static final String EXTENSION_CUSTOM_ACTION = "extensioncustomaction";
+    public static final String EXTENSION_CUSTOM_ACTION_ID = "customactionid";
+    public static final String SCRIPT = "script";
     public static final String FENCE = "fence";
     public static final String FETCH_LATEST = "fetchlatest";
     public static final String FILESYSTEM = "filesystem";
@@ -437,6 +450,7 @@ public class ApiConstants {
     public static final String RECOVER = "recover";
     public static final String REPAIR = "repair";
     public static final String REQUIRES_HVM = "requireshvm";
+    public static final String RESOURCES = "resources";
     public static final String RESOURCE_COUNT = "resourcecount";
     public static final String RESOURCE_NAME = "resourcename";
     public static final String RESOURCE_TYPE = "resourcetype";
@@ -641,6 +655,7 @@ public class ApiConstants {
     public static final String ZONE_TOKEN = "zonetoken";
     public static final String DHCP_PROVIDER = "dhcpprovider";
     public static final String RESULT = "success";
+    public static final String RESULT1 = "result";
     public static final String RESUME = "resume";
     public static final String LUN_ID = "lunId";
     public static final String IQN = "iqn";
@@ -669,6 +684,7 @@ public class ApiConstants {
     public static final String PROJECT_ROLE_NAME = "projectrolename";
     public static final String ROLE_TYPE = "roletype";
     public static final String ROLE_NAME = "rolename";
+    public static final String ROLES_LIST = "roleslist";
     public static final String PERMISSION = "permission";
     public static final String RULE = "rule";
     public static final String RULES = "rules";
@@ -1066,6 +1082,7 @@ public class ApiConstants {
     public static final String OVM3_CLUSTER = "ovm3cluster";
     public static final String OVM3_VIP = "ovm3vip";
     public static final String CLEAN_UP_DETAILS = "cleanupdetails";
+    public static final String CLEAN_UP_PARAMETERS = "cleanupparameters";
     public static final String VIRTUAL_SIZE = "virtualsize";
     public static final String NETSCALER_CONTROLCENTER_ID = "netscalercontrolcenterid";
     public static final String NETSCALER_SERVICEPACKAGE_ID = "netscalerservicepackageid";
@@ -1282,6 +1299,10 @@ public class ApiConstants {
 
     public enum DomainDetails {
         all, resource, min;
+    }
+
+    public enum ExtensionDetails {
+        all, resource, external, min;
     }
 
     public enum ApiKeyAccess {

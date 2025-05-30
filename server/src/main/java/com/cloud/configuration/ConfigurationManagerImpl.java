@@ -207,6 +207,7 @@ import com.cloud.host.HostTagVO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostTagsDao;
+import com.cloud.hypervisor.ExternalProvisioner;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.kvm.dpdk.DpdkHelper;
@@ -388,6 +389,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @Inject
     AlertManager _alertMgr;
     List<SecurityChecker> _secChecker;
+    List<ExternalProvisioner> externalProvisioners;
 
     @Inject
     CapacityDao _capacityDao;
@@ -546,6 +548,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private static final List<String> SUPPORTED_ROUTING_MODE_STRS = Arrays.asList(Static.toString().toLowerCase(), Dynamic.toString().toLowerCase());
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
+    public List<ExternalProvisioner> getExternalProvisioners() {
+        return externalProvisioners;
+    }
+
+    public void setExternalProvisioners(final List<ExternalProvisioner> externalProvisioners) {
+        this.externalProvisioners = externalProvisioners;
+    }
+
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
         final String defaultPageSizeString = _configDao.getValue(Config.DefaultPageSize.key());
@@ -674,6 +684,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         if (err) {
             throw new InvalidParameterValueException("Invalid IP address value(s) specified for the config value.");
+        }
+    }
+
+    protected void validateExternalHypervisorConfigValues(final String configName, final String value) {
+        if (configName.equals("external.provisioners") && StringUtils.isNotEmpty(value)) {
+            if (externalProvisioners != null) {
+                logger.info("Found these external provisioners from the available plugins {}", externalProvisioners);
+                Set<String> externalProvisionersListFromConfig = Arrays.stream(value.split(","))
+                        .map(String::trim)
+                        .collect(Collectors.toSet());
+                Set<String> externalProvisionersListFromPlugins = externalProvisioners.stream()
+                        .map(ExternalProvisioner::getName)
+                        .collect(Collectors.toSet());
+                if (externalProvisionersListFromPlugins.containsAll(externalProvisionersListFromConfig)) {
+                    logger.info("Found the suitable external provisioner names: {}", value);
+                    return;
+                }
+            }
+         throw new InvalidParameterValueException(String.format("Invalid value %s for the external provisioners", value));
         }
     }
 
@@ -1415,6 +1444,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         validateIpAddressRelatedConfigValues(name, value);
+        validateExternalHypervisorConfigValues(name, value);
 
         if (!shouldValidateConfigRange(name, value, configuration)) {
             return null;
