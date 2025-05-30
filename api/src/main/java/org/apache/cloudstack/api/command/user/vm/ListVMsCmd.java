@@ -161,7 +161,14 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
             since = "4.20.1")
     private String arch;
 
-    @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID, entityType = ExtensionResponse.class, description = "UUID of the extension")
+    @Parameter(name = ApiConstants.LEASED, type = CommandType.BOOLEAN,
+            description = "Whether to return only leased instances",
+            since = "4.21.0")
+    private Boolean onlyLeasedInstances = false;
+
+    @Parameter(name = ApiConstants.EXTENSION_ID, type = CommandType.UUID,
+            entityType = ExtensionResponse.class, description = "UUID of the extension",
+            since = "4.21.0")
     private Long extensionId;
 
     /////////////////////////////////////////////////////
@@ -305,6 +312,10 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
 
     public CPU.CPUArch getArch() {
         return StringUtils.isBlank(arch) ? null : CPU.CPUArch.fromType(arch);
+    }
+
+    public boolean getOnlyLeasedInstances() {
+        return BooleanUtils.toBoolean(onlyLeasedInstances);
     }
 
     public Long getExtensionId() {
