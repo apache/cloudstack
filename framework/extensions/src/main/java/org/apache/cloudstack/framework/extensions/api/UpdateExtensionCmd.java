@@ -17,7 +17,10 @@
 
 package org.apache.cloudstack.framework.extensions.api;
 
-import com.cloud.user.Account;
+import java.util.EnumSet;
+import java.util.Map;
+
+import javax.inject.Inject;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
@@ -25,17 +28,14 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 
-import javax.inject.Inject;
-
-import java.util.EnumSet;
-import java.util.Map;
+import com.cloud.user.Account;
 
 @APICommand(name = "updateExtension",
-        description = "Create an extension",
+        description = "Update the extension",
         responseObject = ExtensionResponse.class,
         responseHasSensitiveInfo = false,
         since = "4.21.0")
@@ -43,8 +43,6 @@ public class UpdateExtensionCmd extends BaseCmd {
 
     @Inject
     ExtensionsManager extensionsManager;
-
-    public static final String APINAME = "createExtension";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -64,6 +62,13 @@ public class UpdateExtensionCmd extends BaseCmd {
             description = "Details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].endpoint.url=urlvalue")
     protected Map details;
 
+    @Parameter(name = ApiConstants.CLEAN_UP_DETAILS,
+            type = CommandType.BOOLEAN,
+            description = "Optional boolean field, which indicates if details should be cleaned up or not " +
+                    "(If set to true, details removed for this action, details field ignored; " +
+                    "if false or not set, no action)")
+    private Boolean cleanupDetails;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -78,6 +83,10 @@ public class UpdateExtensionCmd extends BaseCmd {
 
     public Map<String, String> getDetails() {
         return convertDetailsToMap(details);
+    }
+
+    public Boolean isCleanupDetails() {
+        return cleanupDetails;
     }
 
     /////////////////////////////////////////////////////

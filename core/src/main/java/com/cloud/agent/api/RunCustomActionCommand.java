@@ -24,16 +24,21 @@ import java.util.Map;
 public class RunCustomActionCommand extends Command {
 
     String actionName;
-
+    Map<String, Object> parameters;
     Map<String, String> details;
 
-    public RunCustomActionCommand(String actionName, Map<String, String> details) {
+    public RunCustomActionCommand(String actionName, Map<String, Object> parameters, Map<String, String> details) {
         this.actionName = actionName;
+        this.parameters = parameters;
         this.details = details;
     }
 
     public String getActionName() {
         return actionName;
+    }
+
+    public Map<String, Object> getParameters() {
+        return parameters;
     }
 
     public Map<String, String> getDetails() {

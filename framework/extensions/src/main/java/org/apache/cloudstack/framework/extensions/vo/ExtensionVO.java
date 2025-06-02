@@ -124,6 +124,7 @@ public class ExtensionVO implements Extension {
         this.script = script;
     }
 
+    @Override
     public Date getCreated() {
         return created;
     }

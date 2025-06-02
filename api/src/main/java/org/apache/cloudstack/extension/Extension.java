@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.extension;
 
+import java.util.Date;
+
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
@@ -25,4 +27,5 @@ public interface Extension extends InternalIdentity, Identity {
     String getDescription();
     String getType();
     String getScript();
+    Date getCreated();
 }

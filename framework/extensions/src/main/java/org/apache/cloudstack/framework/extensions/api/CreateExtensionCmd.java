@@ -17,37 +17,38 @@
 
 package org.apache.cloudstack.framework.extensions.api;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.user.Account;
+import java.util.EnumSet;
+import java.util.Map;
 
+import javax.inject.Inject;
+
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 
-import javax.inject.Inject;
-
-import java.util.EnumSet;
-import java.util.Map;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.user.Account;
 
 @APICommand(name = "createExtension",
         description = "Create an extension",
         responseObject = ExtensionResponse.class,
         responseHasSensitiveInfo = false,
+        entityType = {Extension.class},
+        authorized = {RoleType.Admin},
         since = "4.21.0")
 public class CreateExtensionCmd extends BaseCmd {
 
     @Inject
     ExtensionsManager extensionsManager;
-
-    public static final String APINAME = "createExtension";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -98,6 +99,7 @@ public class CreateExtensionCmd extends BaseCmd {
         Extension extension = extensionsManager.createExtension(this);
         ExtensionResponse response = extensionsManager.createExtensionResponse(extension,
                 EnumSet.of(ApiConstants.ExtensionDetails.all));
+        response.setResponseName(getCommandName());
         setResponseObject(response);
     }
 

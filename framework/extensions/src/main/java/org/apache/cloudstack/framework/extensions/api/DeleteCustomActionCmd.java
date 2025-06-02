@@ -19,6 +19,7 @@ package org.apache.cloudstack.framework.extensions.api;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,13 +29,19 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.extension.ExtensionCustomAction;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.user.Account;
 
-@APICommand(name = "deleteCustomAction", description = "Delete the custom action",
-        responseObject = SuccessResponse.class, responseHasSensitiveInfo = false, since = "4.21.0")
+@APICommand(name = "deleteCustomAction",
+        description = "Delete the custom action",
+        responseObject = SuccessResponse.class,
+        responseHasSensitiveInfo = false,
+        entityType = {ExtensionCustomAction.class},
+        authorized = {RoleType.Admin},
+        since = "4.21.0")
 public class DeleteCustomActionCmd extends BaseCmd {
 
     @Inject
@@ -46,14 +53,14 @@ public class DeleteCustomActionCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = ExtensionCustomActionResponse.class, description = "uuid of the custom action")
-    private Long customActionId;
+    private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getCustomActionId() {
-        return customActionId;
+    public Long getId() {
+        return id;
     }
 
     /////////////////////////////////////////////////////
@@ -84,6 +91,6 @@ public class DeleteCustomActionCmd extends BaseCmd {
 
     @Override
     public Long getApiResourceId() {
-        return getCustomActionId();
+        return getId();
     }
 }

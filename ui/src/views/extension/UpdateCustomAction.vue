@@ -24,15 +24,6 @@
       :loading="loading"
       layout="vertical"
       @finish="handleSubmit">
-      <a-form-item name="name" ref="name">
-        <template #label>
-          <tooltip-label :title="$t('label.name')" :tooltip="apiParams.name.description"/>
-        </template>
-        <a-input
-          v-model:value="form.name"
-          :placeholder="apiParams.name.description"
-          v-focus="true" />
-      </a-form-item>
       <a-form-item name="description" ref="description">
         <template #label>
           <tooltip-label :title="$t('label.description')" :tooltip="apiParams.description.description"/>
@@ -42,22 +33,30 @@
           :placeholder="apiParams.description.description"
           v-focus="true" />
       </a-form-item>
-      <a-form-item ref="type" name="type">
+      <a-form-item ref="resourcetype" name="resourcetype">
         <template #label>
-          <tooltip-label :title="$t('label.type')" :tooltip="apiParams.type.description"/>
+          <tooltip-label :title="$t('label.resourcetype')" :tooltip="apiParams.resourcetype.description"/>
         </template>
         <a-select
           showSearch
-          v-model:value="form.type"
-          :placeholder="apiParams.type.description"
+          v-model:value="form.resourcetype"
+          :placeholder="apiParams.resourcetype.description"
           optionFilterProp="label"
           :filterOption="(input, option) => {
             return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
-          <a-select-option v-for="opt in extensionTypes" :key="opt.id" :label="opt.id || opt.description">
+          <a-select-option v-for="opt in resourceTypes" :key="opt.id" :label="opt.id || opt.description">
             {{ opt.id || opt.description }}
           </a-select-option>
         </a-select>
+      </a-form-item>
+      <a-form-item>
+        <template #label>
+          <tooltip-label :title="$t('label.parameters')" :tooltip="apiParams.parameters.description"/>
+        </template>
+        <div style="margin-bottom: 10px">{{ $t('message.add.custom.action.parameters') }}</div>
+        <parameters-input
+          v-model:value="form.parameters" />
       </a-form-item>
       <a-form-item>
         <template #label>
@@ -79,41 +78,54 @@
 import { ref, reactive, toRaw } from 'vue'
 import { api } from '@/api'
 import TooltipLabel from '@/components/widgets/TooltipLabel'
+import ParametersInput from '@/views/extension/ParametersInput'
 import DetailsInput from '@/components/widgets/DetailsInput'
 
 export default {
-  name: 'CreateExtension',
+  name: 'AddCustomAction',
   components: {
     TooltipLabel,
+    ParametersInput,
     DetailsInput
+  },
+  props: {
+    resource: {
+      type: Object,
+      required: true
+    }
   },
   data () {
     return {
-      extensionTypes: [],
+      resourceTypes: [],
       loading: false
     }
   },
   beforeCreate () {
-    this.apiParams = this.$getApiParams('createExtension')
+    this.apiParams = this.$getApiParams('updateCustomAction')
+    this.extensionsApiParams = {
+      listall: true
+    }
   },
   created () {
     this.initForm()
-    this.fetchExtensionTypes()
+    this.fetchResourceTypes()
   },
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
-      this.rules = reactive({
-        name: [{ required: true, message: `${this.$t('message.error.name')}` }],
-        type: [{ required: true, message: `${this.$t('message.error.select')}` }]
+      this.form = reactive({
+        description: this.resource.description,
+        resourcetype: this.resource.resourcetype,
+        parameters: this.resource.parameters,
+        detail: this.resource.details
       })
+      this.rules = reactive({})
     },
-    fetchExtensionTypes () {
-      this.extensionTypes = []
-      const extensionTypesList = ['Orchestrator']
-      extensionTypesList.forEach((item) => {
-        this.extensionTypes.push({
+    fetchResourceTypes () {
+      this.resourceTypes = []
+      const resourceTypesList = ['VirtualMachine', 'Host', 'Cluster']
+      resourceTypesList.forEach((item) => {
+        this.resourceTypes.push({
           id: item,
           description: item
         })
@@ -126,22 +138,32 @@ export default {
         const values = toRaw(this.form)
         this.loading = true
         const params = {
-          name: values.name,
-          type: values.type
+          id: this.resource.id
         }
         if (values.description) {
           params.description = values.description
+        }
+        if (values.parameters && values.parameters.length > 0) {
+          values.parameters.forEach((param, index) => {
+            Object.keys(param).forEach(key => {
+              params['parameters[' + index + '].' + key] = param[key]
+            })
+          })
+        } else {
+          params.cleanupparameters = true
         }
         if (values.details) {
           Object.entries(values.details).forEach(([key, value]) => {
             params['details[0].' + key] = value
           })
+        } else {
+          params.cleanupdetails = true
         }
-        api('createExtension', params).then(response => {
+        api('updateCustomAction', params).then(response => {
           this.$emit('refresh-data')
           this.$notification.success({
-            message: this.$t('label.create.extension'),
-            description: this.$t('message.success.create.extension')
+            message: this.$t('label.update.custom.action'),
+            description: this.$t('message.success.update.custom.action')
           })
           this.closeAction()
         }).catch(error => {

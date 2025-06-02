@@ -113,6 +113,10 @@ export default {
     initForm () {
       this.formRef = ref()
       this.form = reactive({})
+      this.rules = reactive({
+        resourcetype: [{ required: true, message: `${this.$t('message.error.select')}` }],
+        resourceid: [{ required: true, message: `${this.$t('message.error.select')}` }]
+      })
     },
     fetchExtensionResourceTypes () {
       this.resourceTypes = []

@@ -81,9 +81,10 @@ export default {
   methods: {
     initForm () {
       this.formRef = ref()
-      this.form = reactive({})
-      this.form.description = this.resource.description
-      this.form.details = this.resource.details
+      this.form = reactive({
+        description: this.resource.description,
+        details: this.resource.details
+      })
     },
     fetchData () {
       this.loading = true

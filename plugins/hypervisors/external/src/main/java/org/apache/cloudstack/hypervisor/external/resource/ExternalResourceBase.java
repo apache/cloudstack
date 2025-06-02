@@ -68,17 +68,17 @@ import com.cloud.utils.component.ComponentContext;
 public class ExternalResourceBase implements ServerResource {
 
     @Inject
-    ExternalAgentManager _externalAgentMgr = null;
+    ExternalAgentManager externalAgentManager = null;
     @Inject
     ExternalProvisioner externalProvisioner;
-    protected String _url;
-    protected String _dcId;
-    protected String _pod;
-    protected String _cluster;
-    protected String _guid;
-    private Host.Type _type;
+    protected String url;
+    protected String dcId;
+    protected String pod;
+    protected String cluster;
+    protected String guid;
+    private Host.Type type;
 
-    private String _extensionName;
+    private String extensionName;
 
     public ExternalResourceBase() {
         setType(Host.Type.Routing);
@@ -86,11 +86,11 @@ public class ExternalResourceBase implements ServerResource {
 
     @Override
     public Host.Type getType() {
-        return null;
+        return type;
     }
 
     public void setType(Host.Type type) {
-        this._type = type;
+        this.type = type;
     }
 
     @Override
@@ -100,14 +100,14 @@ public class ExternalResourceBase implements ServerResource {
         final StartupRoutingCommand cmd =
                 new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), Hypervisor.HypervisorType.External,
                         Networks.RouterPrivateIpStrategy.HostLocal);
-        cmd.setDataCenter(_dcId);
-        cmd.setPod(_pod);
-        cmd.setCluster(_cluster);
+        cmd.setDataCenter(dcId);
+        cmd.setPod(pod);
+        cmd.setCluster(cluster);
         cmd.setHostType(Host.Type.Routing);
-        cmd.setName(_guid);
+        cmd.setName(guid);
         cmd.setPrivateIpAddress(Hypervisor.HypervisorType.External.toString());
-        cmd.setGuid(_guid);
-        cmd.setIqn(_guid);
+        cmd.setGuid(guid);
+        cmd.setIqn(guid);
         cmd.setVersion(ExternalResourceBase.class.getPackage().getImplementationVersion());
         return new StartupCommand[] {cmd};
     }
@@ -130,7 +130,7 @@ public class ExternalResourceBase implements ServerResource {
 
     @Override
     public PingCommand getCurrentStatus(long id) {
-        final Map<String, HostVmStateReportEntry> vmStates = externalProvisioner.getHostVmStateReport(_extensionName, id);
+        final Map<String, HostVmStateReportEntry> vmStates = externalProvisioner.getHostVmStateReport(extensionName, id);
         return new PingRoutingCommand(Host.Type.Routing, id, vmStates);
     }
 
@@ -161,7 +161,7 @@ public class ExternalResourceBase implements ServerResource {
             } else if (cmd instanceof RunCustomActionCommand) {
                 return execute((RunCustomActionCommand) cmd);
             } else {
-                return execute( cmd);
+                return execute(cmd);
             }
         } catch (IllegalArgumentException e) {
             return new Answer(cmd, false, e.getMessage());
@@ -177,30 +177,30 @@ public class ExternalResourceBase implements ServerResource {
     }
 
     public RunCustomActionAnswer execute(RunCustomActionCommand cmd) {
-        return externalProvisioner.runCustomAction(_extensionName, cmd);
+        return externalProvisioner.runCustomAction(extensionName, cmd);
     }
 
     public Answer execute(Command cmd) {
-        RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(cmd.toString(), new HashMap<>());
-        RunCustomActionAnswer customActionAnswer = externalProvisioner.runCustomAction(_extensionName, runCustomActionCommand);
-        Answer answer = new Answer(cmd, customActionAnswer.getResult(), customActionAnswer.getRunDetails().toString());
-        return answer;
+        RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(cmd.toString(), new HashMap<>(),
+                new HashMap<>());
+        RunCustomActionAnswer customActionAnswer = externalProvisioner.runCustomAction(extensionName,
+                runCustomActionCommand);
+        return new Answer(cmd, customActionAnswer.getResult(), customActionAnswer.getRunDetails().toString());
     }
 
     public StopAnswer execute(StopCommand cmd) {
-        Boolean expungeVM = cmd.isExpungeVM();
-        if (expungeVM != null && expungeVM) {
-            return externalProvisioner.expungeInstance(_extensionName, cmd);
+        if (cmd.isExpungeVM()) {
+            return externalProvisioner.expungeInstance(extensionName, cmd);
         }
-        return externalProvisioner.stopInstance(_extensionName, cmd);
+        return externalProvisioner.stopInstance(extensionName, cmd);
     }
 
     public RebootAnswer execute(RebootCommand cmd) {
-        return externalProvisioner.rebootInstance(_extensionName, cmd);
+        return externalProvisioner.rebootInstance(extensionName, cmd);
     }
 
     public PostExternalProvisioningAnswer execute(PostExternalProvisioningCommand cmd) {
-        return externalProvisioner.postSetupInstance(_extensionName, cmd);
+        return externalProvisioner.postSetupInstance(extensionName, cmd);
     }
 
     public GetHostStatsAnswer execute(GetHostStatsCommand cmd) {
@@ -208,15 +208,15 @@ public class ExternalResourceBase implements ServerResource {
     }
 
     public PrepareExternalProvisioningAnswer execute(PrepareExternalProvisioningCommand cmd) {
-        return externalProvisioner.prepareExternalProvisioning(_extensionName, cmd);
+        return externalProvisioner.prepareExternalProvisioning(extensionName, cmd);
     }
 
     public StartAnswer execute(StartCommand cmd) {
-        return externalProvisioner.startInstance(_extensionName, cmd);
+        return externalProvisioner.startInstance(extensionName, cmd);
     }
 
     private Answer execute(CheckHealthCommand cmd) {
-        return externalProvisioner.checkHealth(_extensionName, cmd);
+        return externalProvisioner.checkHealth(extensionName, cmd);
     }
 
     @Override
@@ -268,15 +268,15 @@ public class ExternalResourceBase implements ServerResource {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         externalProvisioner = ComponentContext.inject(SimpleExternalProvisioner.class);
         externalProvisioner.configure(name, params);
-        _externalAgentMgr = ComponentContext.inject(ExternalAgentManagerImpl.class);
-        _externalAgentMgr.configure(name, params);
+        externalAgentManager = ComponentContext.inject(ExternalAgentManagerImpl.class);
+        externalAgentManager.configure(name, params);
 
-        _dcId = (String) params.get("zone");
-        _pod = (String) params.get("pod");
-        _cluster = (String) params.get("cluster");
-        _guid = (String) params.get("guid");
-        _url = (String) params.get("guid");
-        _extensionName = (String) params.get("extensionName");
+        dcId = (String) params.get("zone");
+        pod = (String) params.get("pod");
+        cluster = (String) params.get("cluster");
+        guid = (String) params.get("guid");
+        url = (String) params.get("guid");
+        extensionName = (String) params.get("extensionName");
 
         return true;
     }

@@ -21,6 +21,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListCmd;
@@ -29,12 +30,15 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
 import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.extension.ExtensionCustomAction;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 
 @APICommand(name = "listCustomActions",
         description = "Lists the custom actions",
         responseObject = ExtensionCustomActionResponse.class,
         responseHasSensitiveInfo = false,
+        entityType = {ExtensionCustomAction.class},
+        authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.ResourceAdmin, RoleType.User},
         since = "4.21.0")
 public class ListCustomActionCmd extends BaseListCmd {
 

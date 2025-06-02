@@ -217,7 +217,6 @@ public class ApiConstants {
     public static final String EXTENSION_RESOURCE_ID = "extensionresourceid";
     public static final String EXTENSION_RESOURCE_MAP = "extensionresourcemap";
 
-    public static final String EXTENSION_CUSTOM_ACTION = "extensioncustomaction";
     public static final String EXTENSION_CUSTOM_ACTION_ID = "customactionid";
     public static final String SCRIPT = "script";
     public static final String FENCE = "fence";

@@ -19,41 +19,64 @@
   <a-table
     style="margin: 10px 0;"
     :columns="columns"
-    v-if="dataArray && dataArray.length > 0"
-    :data-source="dataArray"
+    :data-source="computedDataSource"
     :pagination="false"
     :bordered="true"
     :showHeader="false"
-    :rowKey="record => record.key">
+    :rowKey="record => record.id">
+    <template #bodyCell="{ text }">
+      {{ text }}
+    </template>
   </a-table>
 </template>
 
 <script>
 
 export default {
-  name: 'KeyValueTable',
+  name: 'ObjectListTable',
   props: {
     dataMap: {
       type: Object,
-      required: true
+      default: null
+    },
+    dataArray: {
+      type: Array,
+      default: null
     }
   },
-  data () {
-    return {
-      columns: [
-        {
-          title: this.$t('label.key'),
-          dataIndex: 'key'
-        },
-        {
-          title: this.$t('label.value'),
-          dataIndex: 'value'
-        }
-      ]
-    }
+  beforeCreate () {
+    this.defaultColumns = [
+      {
+        title: this.$t('label.key'),
+        dataIndex: 'key'
+      },
+      {
+        title: this.$t('label.value'),
+        dataIndex: 'value'
+      }
+    ]
   },
   computed: {
-    dataArray () {
+    columns () {
+      if (this.dataArray && this.dataArray.length > 0) {
+        const cols = []
+        Object.keys(this.dataArray[0]).forEach(key => {
+          cols.push({
+            title: this.$t('label.' + key),
+            dataIndex: key
+          })
+        })
+        return cols
+      }
+      return this.defaultColumns
+    },
+    computedDataSource () {
+      if (this.dataArray) {
+        return this.dataArray
+      }
+      if (!this.dataMap || this.dataMap.length === 0) {
+        return []
+      }
       const data = Object.keys(this.dataMap).map((key, i) => ({
         id: i + 1,
         key,

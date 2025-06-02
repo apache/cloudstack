@@ -20,7 +20,6 @@
 package org.apache.cloudstack.framework.extensions.manager;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -33,7 +32,6 @@ import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
-import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExtensionCustomActionParameterResponse;
 import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
@@ -81,22 +79,25 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.ExternalProvisioner;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.org.Cluster;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -138,10 +139,11 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     @Inject
     VMInstanceDao vmInstanceDao;
 
-    private static final List<String> CUSTOM_ACTION_VALID_RESOURCE_TYPES = Arrays.asList(
-            ApiCommandResourceType.VirtualMachine.name(),
-            ApiCommandResourceType.Host.name(),
-            ApiCommandResourceType.Cluster.name());
+    @Inject
+    VirtualMachineManager virtualMachineManager;
+
+    @Inject
+    EntityManager entityManager;
 
     protected String getExternalDetailKey(String key) {
         if (key.startsWith(VmDetailConstants.EXTERNAL_DETAIL_PREFIX)) {
@@ -232,6 +234,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         final long id = cmd.getId();
         final String description = cmd.getDescription();
         final Map<String, String> details = cmd.getDetails();
+        final Boolean cleanupDetails = cmd.isCleanupDetails();
         ExtensionVO extensionVO = extensionDao.findById(id);
         if (extensionVO == null) {
             throw new InvalidParameterValueException("Failed to find the extension");
@@ -244,11 +247,13 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                             extensionVO.getName()));
                 }
             }
-            if (MapUtils.isNotEmpty(details)) {
-                List<ExtensionDetailsVO> detailsVOList = new ArrayList<>();
+            if (Boolean.TRUE.equals(cleanupDetails) || MapUtils.isNotEmpty(details)) {
                 extensionDetailsDao.removeDetails(extensionVO.getId());
-                for (Map.Entry<String, String> entry : details.entrySet()) {
-                    detailsVOList.add(new ExtensionDetailsVO(extensionVO.getId(), entry.getKey(), entry.getValue()));
+                List<ExtensionDetailsVO> detailsVOList = new ArrayList<>();
+                if (!Boolean.TRUE.equals(cleanupDetails) && MapUtils.isNotEmpty(details)) {
+                    for (Map.Entry<String, String> entry : details.entrySet()) {
+                        detailsVOList.add(new ExtensionDetailsVO(extensionVO.getId(), entry.getKey(), entry.getValue()));
+                    }
                 }
                 extensionDetailsDao.saveDetails(detailsVOList);
             }
@@ -259,20 +264,21 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_EXTENSION_DELETE, eventDescription = "deleting extension")
     public boolean deleteExtension(DeleteExtensionCmd cmd) {
-        Long extensionId = cmd.getExtensionId();
+        Long extensionId = cmd.getId();
         ExtensionVO extension = extensionDao.findById(extensionId);
         if (extension == null) {
             throw new InvalidParameterValueException("Unable to find the extension with the specified id");
         }
-
         List<ExtensionResourceMapVO> registeredResources = extensionResourceMapDao.listByExtensionId(extensionId);
         if (CollectionUtils.isNotEmpty(registeredResources)) {
             throw new CloudRuntimeException("There are resources registered with this extension, unregister the extension from them");
         }
 
-        extensionDao.remove(extensionId);
-
-        return true;
+        return Transaction.execute((TransactionCallbackWithException<Boolean, CloudRuntimeException>) status -> {
+            extensionDetailsDao.removeDetails(extensionId);
+            extensionDao.remove(extensionId);
+            return true;
+        });
     }
 
     @Override
@@ -302,17 +308,19 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (existing != null) {
             throw new CloudRuntimeException("Extension already registered with this resource");
         }
-        ExtensionResourceMapVO extensionMap = new ExtensionResourceMapVO(extensionId, cluster.getId(), resourceType);
-        ExtensionResourceMapVO savedExtensionMap = extensionResourceMapDao.persist(extensionMap);
-        List<ExtensionResourceMapDetailsVO> detailsVOList = new ArrayList<>();
-        if (MapUtils.isNotEmpty(details)) {
-            for (Map.Entry<String, String> entry : details.entrySet()) {
-                detailsVOList.add(new ExtensionResourceMapDetailsVO(savedExtensionMap.getId(),
-                        entry.getKey(), entry.getValue()));
+        return Transaction.execute((TransactionCallbackWithException<ExtensionResourceMap, CloudRuntimeException>) status -> {
+            ExtensionResourceMapVO extensionMap = new ExtensionResourceMapVO(extensionId, cluster.getId(), resourceType);
+            ExtensionResourceMapVO savedExtensionMap = extensionResourceMapDao.persist(extensionMap);
+            List<ExtensionResourceMapDetailsVO> detailsVOList = new ArrayList<>();
+            if (MapUtils.isNotEmpty(details)) {
+                for (Map.Entry<String, String> entry : details.entrySet()) {
+                    detailsVOList.add(new ExtensionResourceMapDetailsVO(savedExtensionMap.getId(),
+                            entry.getKey(), entry.getValue()));
+                }
+                extensionResourceMapDetailsDao.saveDetails(detailsVOList);
             }
-            extensionResourceMapDetailsDao.saveDetails(detailsVOList);
-        }
-        return extensionMap;
+            return extensionMap;
+        });
     }
 
     @Override
@@ -351,21 +359,16 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     @Override
     public ExtensionResponse createExtensionResponse(Extension extension,
                  EnumSet<ApiConstants.ExtensionDetails> viewDetails) {
-        ExtensionVO extensionVO;
-        if (extension instanceof ExtensionVO) {
-            extensionVO = (ExtensionVO) extension;
-        } else {
-            extensionVO = extensionDao.findById(extension.getId());
-        }
-        ExtensionResponse response = new ExtensionResponse(extensionVO.getUuid(), extensionVO.getName(), extensionVO.getDescription(), extensionVO.getType());
-        response.setCreated(extensionVO.getCreated());
-        String scriptPath = externalProvisioner.getExtensionScriptPath(extensionVO.getName());
+        ExtensionResponse response = new ExtensionResponse(extension.getUuid(), extension.getName(),
+                extension.getDescription(), extension.getType());
+        response.setCreated(extension.getCreated());
+        String scriptPath = externalProvisioner.getExtensionScriptPath(extension.getName());
         response.setScriptPath(scriptPath);
         if (viewDetails.contains(ApiConstants.ExtensionDetails.all) ||
                 viewDetails.contains(ApiConstants.ExtensionDetails.resource)) {
             List<ExtensionResourceResponse> resourcesResponse = new ArrayList<>();
             List<ExtensionResourceMapVO> extensionResourceMapVOs =
-                    extensionResourceMapDao.listByExtensionId(extensionVO.getId());
+                    extensionResourceMapDao.listByExtensionId(extension.getId());
             for (ExtensionResourceMapVO extensionResourceMapVO : extensionResourceMapVOs) {
                 ExtensionResourceResponse extensionResourceResponse = new ExtensionResourceResponse();
                 extensionResourceResponse.setType(extensionResourceMapVO.getResourceType().name());
@@ -388,7 +391,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
         if (viewDetails.contains(ApiConstants.ExtensionDetails.all) ||
                 viewDetails.contains(ApiConstants.ExtensionDetails.external)) {
-            Map<String, String> extensionDetails = extensionDetailsDao.listDetailsKeyPairs(extensionVO.getId());
+            Map<String, String> extensionDetails = extensionDetailsDao.listDetailsKeyPairs(extension.getId());
             if (MapUtils.isNotEmpty(extensionDetails)) {
                 response.setDetails(extensionDetails);
             }
@@ -403,14 +406,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         }
         List<ExtensionCustomAction.Parameter> parameters = new ArrayList<>();
         for (Map<String, String> entry : (Collection<Map<String, String>>)parametersMap.values()) {
-            String name = entry.get("name");
-            String type = entry.get("type");
-            String required = entry.get("required");
-            if (StringUtils.isBlank(name)) {
-                throw new InvalidParameterValueException("Invalid parameter specified with empty name");
-            }
-            ExtensionCustomAction.Parameter parameter = new ExtensionCustomAction.Parameter(name,
-                    ExtensionCustomAction.Parameter.Type.fromString(type), Boolean.getBoolean(required));
+            ExtensionCustomAction.Parameter parameter = ExtensionCustomAction.Parameter.fromMap(entry);
             logger.debug("Adding {} for custom action [{}]", parameter, actionName);
             parameters.add(parameter);
         }
@@ -434,21 +430,24 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             throw new CloudRuntimeException("Action by name already exists");
         }
         List<ExtensionCustomAction.Parameter> parameters = getParametersListFromMap(name, parametersMap);
-
+        ExtensionCustomAction.ResourceType resourceTypeVal = null;
+        if (StringUtils.isNotBlank(resourceType)) {
+            try {
+                resourceTypeVal = ExtensionCustomAction.ResourceType.fromString(resourceType);
+            } catch (IllegalArgumentException e) {
+                throw new InvalidParameterValueException(String.format("%s. Valid values are: %s", e.getMessage(),
+                        EnumSet.allOf(ExtensionCustomAction.ResourceType.class)));
+            }
+        }
         final ExtensionCustomActionVO customAction =
                 new ExtensionCustomActionVO(name, description, extensionId, enabled);
-        if (StringUtils.isNotBlank(resourceType)) {
-            if (!CUSTOM_ACTION_VALID_RESOURCE_TYPES.contains(resourceType)) {
-                throw new InvalidParameterValueException(String.format("Invalid %s specified. Valid options are: %s",
-                        ApiConstants.RESOURCE_TYPE,
-                        StringUtils.join(CUSTOM_ACTION_VALID_RESOURCE_TYPES, ", ")));
-            }
-            customAction.setResourceType(resourceType);
-        }
-        if (CollectionUtils.isNotEmpty(rolesList)) {
-            customAction.setRolesList(rolesList.toString());
+        if (resourceTypeVal != null) {
+            customAction.setResourceType(resourceTypeVal);
         }
         return Transaction.execute((TransactionCallbackWithException<ExtensionCustomActionVO, CloudRuntimeException>) status -> {
+            if (CollectionUtils.isNotEmpty(rolesList)) {
+                customAction.setRolesList(rolesList.toString());
+            }
             ExtensionCustomActionVO savedAction = extensionCustomActionDao.persist(customAction);
             List<ExtensionCustomActionDetailsVO> detailsVOList = new ArrayList<>();
             detailsVOList.add(new ExtensionCustomActionDetailsVO(
@@ -458,9 +457,8 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
                     false
             ));
             if (MapUtils.isNotEmpty(details)) {
-                for (Map.Entry<String, String> entry : details.entrySet()) {
-                    detailsVOList.add(new ExtensionCustomActionDetailsVO(savedAction.getId(), entry.getKey(), entry.getValue()));
-                }
+                details.forEach((key, value) -> detailsVOList.add(
+                        new ExtensionCustomActionDetailsVO(savedAction.getId(), key, value)));
             }
             if (CollectionUtils.isNotEmpty(detailsVOList)) {
                 extensionCustomActionDetailsDao.saveDetails(detailsVOList);
@@ -473,17 +471,16 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_EXTENSION_CUSTOM_ACTION_DELETE, eventDescription = "deleting extension custom action")
     public boolean deleteCustomAction(DeleteCustomActionCmd cmd) {
-        Long customActionId = cmd.getCustomActionId();
+        Long customActionId = cmd.getId();
         ExtensionCustomActionVO customActionVO = extensionCustomActionDao.findById(customActionId);
         if (customActionVO == null) {
             throw new InvalidParameterValueException("Unable to find the custom action with the specified id");
         }
-
-        extensionCustomActionDetailsDao.removeDetails(customActionId);
-
-        extensionCustomActionDao.remove(customActionId);
-
-        return true;
+        return Transaction.execute((TransactionCallbackWithException<Boolean, CloudRuntimeException>) status -> {
+            extensionCustomActionDetailsDao.removeDetails(customActionId);
+            extensionCustomActionDao.remove(customActionId);
+            return true;
+        });
     }
 
     @Override
@@ -545,9 +542,9 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         List<String> rolesList = cmd.getRolesList();
         Boolean enabled = cmd.isEnabled();
         Map parametersMap = cmd.getParametersMap();
-        Boolean cleanupParameters = cmd.getCleanupParameters();
+        Boolean cleanupParameters = cmd.isCleanupParameters();
         Map<String, String> details = cmd.getDetails();
-        Boolean cleanupDetails = cmd.getCleanupDetails();
+        Boolean cleanupDetails = cmd.isCleanupDetails();
 
         ExtensionCustomActionVO customAction = extensionCustomActionDao.findById(id);
         if (customAction == null) {
@@ -560,12 +557,14 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             needUpdate = true;
         }
         if (resourceType != null) {
-            if (StringUtils.isNotBlank(resourceType) && !CUSTOM_ACTION_VALID_RESOURCE_TYPES.contains(resourceType)) {
-                throw new InvalidParameterValueException(String.format("Invalid %s specified. Valid options are: %s",
-                        ApiConstants.RESOURCE_TYPE,
-                        StringUtils.join(CUSTOM_ACTION_VALID_RESOURCE_TYPES, ", ")));
+            try {
+                ExtensionCustomAction.ResourceType resourceTypeVal =
+                        ExtensionCustomAction.ResourceType.fromString(resourceType);
+                customAction.setResourceType(resourceTypeVal);
+            } catch (IllegalArgumentException e) {
+                throw new InvalidParameterValueException(String.format("%s. Valid values are: %s", e.getMessage(),
+                        EnumSet.allOf(ExtensionCustomAction.ResourceType.class)));
             }
-            customAction.setResourceType(StringUtils.isNotBlank(resourceType) ? resourceType : null);
             needUpdate = true;
         }
         if (CollectionUtils.isNotEmpty(rolesList)) {
@@ -581,96 +580,161 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         if (!Boolean.TRUE.equals(cleanupParameters) && MapUtils.isNotEmpty(parametersMap)) {
             parameters = getParametersListFromMap(customAction.getName(), parametersMap);
         }
-        if (needUpdate) {
-            boolean result = extensionCustomActionDao.update(id, customAction);
-            if (!result) {
-                throw new CloudRuntimeException(String.format("Failed to update custom action: %s",
-                        customAction.getName()));
-            }
-        }
-        List<ExtensionCustomActionDetailsVO> detailsVOList = new ArrayList<>();
-        if (Boolean.TRUE.equals(cleanupParameters) || CollectionUtils.isNotEmpty(parameters)) {
-            extensionCustomActionDetailsDao.removeDetail(customAction.getId(), ApiConstants.PARAMETERS);
-            if (CollectionUtils.isNotEmpty(parameters)) {
-                detailsVOList.add(new ExtensionCustomActionDetailsVO(
-                        customAction.getId(),
-                        ApiConstants.PARAMETERS,
-                        ExtensionCustomAction.Parameter.toJsonFromList(parameters),
-                        false
-                ));
-            }
-        }
 
-        if (Boolean.TRUE.equals(cleanupDetails) || MapUtils.isNotEmpty(details)) {
-            if (CollectionUtils.isNotEmpty(detailsVOList)) {
-                ExtensionCustomActionDetailsVO paramDetails =
-                        extensionCustomActionDetailsDao.findDetail(customAction.getId(), ApiConstants.PARAMETERS);
-                if (paramDetails != null) {
-                    detailsVOList.add(paramDetails);
+        final boolean needUpdateFinal = needUpdate;
+        final List<ExtensionCustomAction.Parameter> parametersFinal = parameters;
+        return Transaction.execute((TransactionCallbackWithException<ExtensionCustomAction, CloudRuntimeException>) status -> {
+            if (needUpdateFinal) {
+                boolean result = extensionCustomActionDao.update(id, customAction);
+                if (!result) {
+                    throw new CloudRuntimeException(String.format("Failed to update custom action: %s",
+                            customAction.getName()));
                 }
             }
-            extensionCustomActionDetailsDao.removeDetails(customAction.getId());
-            if (!Boolean.TRUE.equals(cleanupDetails) && MapUtils.isNotEmpty(details)) {
-                details.forEach((key, value) -> detailsVOList.add(
-                            new ExtensionCustomActionDetailsVO(customAction.getId(), key, value)));
+            List<ExtensionCustomActionDetailsVO> detailsVOList = new ArrayList<>();
+            if (Boolean.TRUE.equals(cleanupParameters) || CollectionUtils.isNotEmpty(parametersFinal)) {
+                extensionCustomActionDetailsDao.removeDetail(customAction.getId(), ApiConstants.PARAMETERS);
+                if (CollectionUtils.isNotEmpty(parametersFinal)) {
+                    detailsVOList.add(new ExtensionCustomActionDetailsVO(
+                            customAction.getId(),
+                            ApiConstants.PARAMETERS,
+                            ExtensionCustomAction.Parameter.toJsonFromList(parametersFinal),
+                            false
+                    ));
+                }
             }
-        }
-        if (CollectionUtils.isNotEmpty(detailsVOList)) {
-            extensionCustomActionDetailsDao.saveDetails(detailsVOList);
-        }
 
-        return customAction;
+            if (Boolean.TRUE.equals(cleanupDetails) || MapUtils.isNotEmpty(details)) {
+                if (CollectionUtils.isNotEmpty(detailsVOList)) {
+                    ExtensionCustomActionDetailsVO paramDetails =
+                            extensionCustomActionDetailsDao.findDetail(customAction.getId(), ApiConstants.PARAMETERS);
+                    if (paramDetails != null) {
+                        detailsVOList.add(paramDetails);
+                    }
+                }
+                extensionCustomActionDetailsDao.removeDetails(customAction.getId());
+                if (!Boolean.TRUE.equals(cleanupDetails) && MapUtils.isNotEmpty(details)) {
+                    details.forEach((key, value) -> detailsVOList.add(
+                            new ExtensionCustomActionDetailsVO(customAction.getId(), key, value)));
+                }
+            }
+            if (CollectionUtils.isNotEmpty(detailsVOList)) {
+                extensionCustomActionDetailsDao.saveDetails(detailsVOList);
+            }
+
+            return customAction;
+        });
     }
 
     @Override
     public CustomActionResultResponse runCustomAction(RunCustomActionCmd cmd) {
-        Long customActionId =  cmd.getCustomActionId();
-        Long instanceId = cmd.getInstanceId();
-        Map<String, String> parameters = cmd.getParameters();
+        final Long id =  cmd.getCustomActionId();
+        final String resourceType = cmd.getResourceType();
+        final String resourceUuid = cmd.getResourceId();
+        Map<String, String> cmdParameters = cmd.getParameters();
 
-        VMInstanceVO vmInstanceVO = vmInstanceDao.findById(instanceId);
-        Long hostId;
-        if (vmInstanceVO.getState().equals(VirtualMachine.State.Running)) {
-            hostId = vmInstanceVO.getHostId();
-        } else {
-            hostId = vmInstanceVO.getLastHostId();
+        ExtensionCustomActionVO customActionVO = extensionCustomActionDao.findById(id);
+        if (customActionVO == null) {
+            throw new InvalidParameterValueException("Invalid custom action specified");
         }
-        if (hostId == null) {
-            throw new CloudRuntimeException("Unable to figure out the endpoint to run custom action");
+        final String actionName = customActionVO.getName();
+        final long extensionId = customActionVO.getExtensionId();
+        final ExtensionVO extensionVO = extensionDao.findById(extensionId);
+        if (extensionVO == null) {
+            logger.error("Unable to find extension for {}", customActionVO);
+            throw new CloudRuntimeException("Internal error running action");
         }
-
-        HostVO host = hostDao.findById(hostId);
-        Long clusterId = host.getClusterId();
-
-        ExtensionResourceMapVO existing = extensionResourceMapDao.findByResourceIdAndType(clusterId,
-                ExtensionResourceMap.ResourceType.Cluster);
-        if (existing == null) {
-            throw new CloudRuntimeException("Extension is not registered with this resource");
+        ExtensionCustomAction.ResourceType actionResourceType = customActionVO.getResourceType();
+        if (actionResourceType == null && StringUtils.isBlank(resourceType)) {
+            throw new InvalidParameterValueException("Resource type not specified for the action");
         }
-
-        ExtensionCustomActionVO customActionVO = extensionCustomActionDao.findById(customActionId);
-        String action = customActionVO.getName();
-
-        Map<String, String> customActionParameters = extensionCustomActionDetailsDao.listDetailsKeyPairs(customActionVO.getId());
-
-        for (Map.Entry<String, String> entry : parameters.entrySet()) {
-            String key = entry.getKey();
-            if (!customActionParameters.containsKey(key)) {
-                throw new IllegalArgumentException(String.format("Parameter %s in not registered with the action ", key));
+        boolean validType = true;
+        if (StringUtils.isNotBlank(resourceType)) {
+            try {
+                ExtensionCustomAction.ResourceType cmdResourceType =
+                        ExtensionCustomAction.ResourceType.fromString(resourceType);
+                validType = actionResourceType == null || actionResourceType.equals(cmdResourceType);
+                actionResourceType = cmdResourceType;
+            } catch (IllegalArgumentException ignored) {
+                validType = false;
             }
+        }
+        if (!validType || actionResourceType == null) {
+            logger.error("Invalid resource type - {} specified for {}", resourceType, customActionVO);
+            throw new CloudRuntimeException("Internal error running action");
+        }
+        Object entity = entityManager.findByUuid(actionResourceType.getAssociatedClass(), resourceUuid);
+        if (entity == null) {
+            logger.error("Specified resource does not exist for running {}", customActionVO);
+            throw new CloudRuntimeException("Internal error running action");
+        }
+        Long clusterId = null;
+        Long hostId = null;
+        if (entity instanceof Cluster) {
+            clusterId = ((Cluster)entity).getId();
+            List<HostVO> hosts = hostDao.listByClusterAndHypervisorType(clusterId, Hypervisor.HypervisorType.External);
+            if (CollectionUtils.isEmpty(hosts)) {
+                logger.error("No hosts found for {} for running {}", entity, customActionVO);
+                throw new CloudRuntimeException("Internal error running action");
+            }
+            hostId = hosts.get(0).getId();
+        } else if (entity instanceof Host) {
+            Host host = (Host)entity;
+            if (Hypervisor.HypervisorType.External.equals(host.getHypervisorType())) {
+                logger.error("Invalid {} specified as resource for running {}", entity, customActionVO);
+                throw new InvalidParameterValueException("Invalid resource specified");
+            }
+            hostId = host.getId();
+            clusterId = host.getClusterId();
+        } else if (entity instanceof VirtualMachine) {
+            VirtualMachine virtualMachine = (VirtualMachine)entity;
+            if (Hypervisor.HypervisorType.External.equals(virtualMachine.getHypervisorType())) {
+                logger.error("Invalid {} specified as resource for running {}", entity, customActionVO);
+                throw new InvalidParameterValueException("Invalid resource specified");
+            }
+            Pair<Long, Long> clusterAndHostId = virtualMachineManager.findClusterAndHostIdForVm(virtualMachine, false);
+            clusterId = clusterAndHostId.first();
+            hostId = clusterAndHostId.second();
+        }
+
+        if (clusterId == null || hostId == null) {
+            logger.error(
+                    "Unable to find cluster or host with the specified resource - cluster ID: {}, host ID: {}",
+                    clusterId, hostId);
+            throw new CloudRuntimeException("Internal resource specified");
+        }
+
+        ExtensionResourceMapVO extensionResource = extensionResourceMapDao.findByResourceIdAndType(clusterId,
+                ExtensionResourceMap.ResourceType.Cluster);
+        if (extensionResource == null) {
+            logger.error("No extension registered with cluster ID: {}", clusterId);
+            throw new CloudRuntimeException("Internal error running action");
+        }
+
+        List<ExtensionCustomAction.Parameter> actionParameters = null;
+        Map<String, String> details =
+                extensionCustomActionDetailsDao.listDetailsKeyPairs(customActionVO.getId());
+        if (details.containsKey(ApiConstants.PARAMETERS)) {
+            actionParameters =
+                    ExtensionCustomAction.Parameter.toListFromJson(details.get(ApiConstants.PARAMETERS));
+            details.remove(ApiConstants.PARAMETERS);
+        }
+        Map<String, Object> parameters = null;
+        if (CollectionUtils.isNotEmpty(actionParameters) && MapUtils.isNotEmpty(cmdParameters)) {
+            parameters = ExtensionCustomAction.Parameter.validateParameterValues(actionParameters, cmdParameters);
         }
 
         RunCustomActionAnswer answer;
         CustomActionResultResponse response = new CustomActionResultResponse();
         response.setId(customActionVO.getUuid());
-        response.setName(action);
+        response.setName(actionName);
         response.setObjectName("CustomActionResult");
-        Map<String, String> details = new HashMap<>();
-        details.put(ApiConstants.SUCCESS, String.valueOf(false));
+        Map<String, String> answerDetails = new HashMap<>();
+        answerDetails.put(ApiConstants.SUCCESS, String.valueOf(false));
         try {
-            RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(action, parameters);
+            RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(actionName, parameters, details);
             answer = (RunCustomActionAnswer) agentMgr.send(hostId, runCustomActionCommand);
-            details = answer.getRunDetails();
+            answerDetails = answer.getRunDetails();
         } catch (AgentUnavailableException e) {
             String msg = "Unable to run custom action";
             logger.error("{} due to {}", msg, e.getMessage(), e);
@@ -680,15 +744,20 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
             logger.error(msg, e);
             details.put(ApiConstants.RESULT1, msg);
         }
-        response.setDetails(details);
+        response.setDetails(answerDetails);
 
         return response;
     }
 
     @Override
     public ExtensionCustomActionResponse createCustomActionResponse(ExtensionCustomAction customAction) {
-        ExtensionCustomActionResponse response = new ExtensionCustomActionResponse( customAction.getUuid(),
+        ExtensionCustomActionResponse response = new ExtensionCustomActionResponse(customAction.getUuid(),
                 customAction.getName(), customAction.getDescription(), customAction.getRolesList());
+        if (customAction.getResourceType() != null) {
+            response.setResourceType(customAction.getResourceType().name());
+        }
+        response.setEnabled(customAction.isEnabled());
+        response.setCreated(customAction.getCreated());
         Optional.ofNullable(extensionDao.findById(customAction.getExtensionId())).ifPresent(extensionVO -> {
             response.setExtensionId(extensionVO.getUuid());
             response.setExtensionName(extensionVO.getName());
@@ -706,7 +775,7 @@ public class ExtensionsManagerImpl extends ManagerBase implements ExtensionsMana
         Map<String, String> details =
                 extensionCustomActionDetailsDao.listDetailsKeyPairs(customAction.getId(), true);
         response.setDetails(details);
-        response.setObjectName(ApiConstants.EXTENSION_CUSTOM_ACTION);
+        response.setObjectName(ExtensionCustomAction.class.getSimpleName().toLowerCase());
         return response;
     }
 

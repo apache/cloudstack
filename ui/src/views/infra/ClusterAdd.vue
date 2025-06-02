@@ -103,7 +103,7 @@
       </div>
 
       <div class="form__item" v-if="hypervisor === 'External'">
-        <div class="form__label">{{ $t('label.extension.id') }}</div>
+        <div class="form__label">{{ $t('label.extensionid') }}</div>
         <a-select
           v-model:value="extensionid"
           showSearch

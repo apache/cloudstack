@@ -21,6 +21,8 @@ import com.cloud.utils.db.GenericDao;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -52,7 +54,8 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
     private Long extensionId;
 
     @Column(name = "resource_type")
-    private String resourceType;
+    @Enumerated(value = EnumType.STRING)
+    private ResourceType resourceType;
 
     @Column(name = "roles_list")
     private String rolesList;
@@ -123,11 +126,12 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
         this.extensionId = extensionId;
     }
 
-    public String getResourceType() {
+    @Override
+    public ResourceType getResourceType() {
         return resourceType;
     }
 
-    public void setResourceType(String resourceType) {
+    public void setResourceType(ResourceType resourceType) {
         this.resourceType = resourceType;
     }
 
@@ -150,6 +154,7 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
         this.enabled = enabled;
     }
 
+    @Override
     public Date getCreated() {
         return created;
     }

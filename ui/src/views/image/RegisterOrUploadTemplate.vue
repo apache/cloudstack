@@ -214,7 +214,7 @@
             </a-form-item>
             <a-form-item ref="extensionid" name="extensionid" v-if="hyperExternalShow">
               <template #label>
-                <tooltip-label :title="$t('label.extension.id')" :tooltip="apiParams.extensionid.description"/>
+                <tooltip-label :title="$t('label.extensionid')" :tooltip="apiParams.extensionid.description"/>
               </template>
               <a-select
                 v-model:value="form.extensionid"

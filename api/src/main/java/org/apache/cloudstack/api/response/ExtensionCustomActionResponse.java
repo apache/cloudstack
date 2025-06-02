@@ -51,9 +51,17 @@ public class ExtensionCustomActionResponse extends BaseResponse {
     @Param(description = "Name of the extension that this extension custom action belongs to")
     private String extensionName;
 
+    @SerializedName(ApiConstants.RESOURCE_TYPE)
+    @Param(description = "Resource type for which the action is available")
+    private String resourceType;
+
     @SerializedName(ApiConstants.ROLES_LIST)
     @Param(description = "Comma separated list of roles associated with the extension custom action")
     private String rolesList;
+
+    @SerializedName(ApiConstants.ENABLED)
+    @Param(description = "Whether the extension custom action is enabled or not")
+    private Boolean enabled;
 
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "Details of the extension custom action")
@@ -106,12 +114,24 @@ public class ExtensionCustomActionResponse extends BaseResponse {
         this.extensionName = extensionName;
     }
 
+    public String getResourceType() {
+        return resourceType;
+    }
+
+    public void setResourceType(String resourceType) {
+        this.resourceType = resourceType;
+    }
+
     public String getRolesList() {
         return rolesList;
     }
 
     public void setRolesList(String rolesList) {
         this.rolesList = rolesList;
+    }
+
+    public void setEnabled(Boolean enabled) {
+        this.enabled = enabled;
     }
 
     public void setParameters(Set<ExtensionCustomActionParameterResponse> parameters) {

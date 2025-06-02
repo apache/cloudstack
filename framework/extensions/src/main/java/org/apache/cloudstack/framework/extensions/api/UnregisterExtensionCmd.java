@@ -21,6 +21,7 @@ import java.util.EnumSet;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,15 +29,19 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtensionResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 
 import com.cloud.exception.ConcurrentOperationException;
-import org.apache.cloudstack.extension.Extension;
 import com.cloud.user.Account;
 
-@APICommand(name = "unregisterExtension", description = "Unregister an extension with a resource",
-        responseObject = SuccessResponse.class, responseHasSensitiveInfo = false, since = "4.21.0")
+@APICommand(name = "unregisterExtension",
+        description = "Unregister an extension with a resource",
+        responseObject = ExtensionResponse.class,
+        responseHasSensitiveInfo = false,
+        entityType = {Extension.class},
+        authorized = {RoleType.Admin},
+        since = "4.21.0")
 public class UnregisterExtensionCmd extends BaseCmd {
 
     @Inject

@@ -17,8 +17,9 @@
 
 package org.apache.cloudstack.framework.extensions.api;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.user.Account;
+import javax.inject.Inject;
+
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,16 +27,22 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 import org.apache.cloudstack.api.response.ExtensionResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.extension.Extension;
+import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 
-import javax.inject.Inject;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.user.Account;
 
-@APICommand(name = DeleteExtensionCmd.APINAME, description = "list of extensions",
-        responseObject = ExtensionResponse.class, responseHasSensitiveInfo = false, since = "4.21.0")
+@APICommand(name = "deleteExtension",
+        description = "Delete the extensions",
+        responseObject = ExtensionResponse.class,
+        responseHasSensitiveInfo = false,
+        entityType = {Extension.class},
+        authorized = {RoleType.Admin},
+        since = "4.21.0")
 public class DeleteExtensionCmd extends BaseCmd {
-    public static final String APINAME = "deleteExtension";
 
     @Inject
     ExtensionsManager extensionsManager;
@@ -46,14 +53,14 @@ public class DeleteExtensionCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID,
             entityType = ExtensionResponse.class, description = "uuid of the extension")
-    private Long extensionId;
+    private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getExtensionId() {
-        return extensionId;
+    public Long getId() {
+        return id;
     }
 
     /////////////////////////////////////////////////////
@@ -84,6 +91,6 @@ public class DeleteExtensionCmd extends BaseCmd {
 
     @Override
     public Long getApiResourceId() {
-        return getExtensionId();
+        return getId();
     }
 }

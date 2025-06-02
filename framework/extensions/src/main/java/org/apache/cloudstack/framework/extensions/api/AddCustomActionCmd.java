@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -30,6 +31,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
 import org.apache.cloudstack.api.response.ExtensionResponse;
+import org.apache.cloudstack.extension.ExtensionCustomAction;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -37,11 +39,15 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import org.apache.cloudstack.extension.ExtensionCustomAction;
 import com.cloud.user.Account;
 
-@APICommand(name = "addCustomAction", description = "Register the custom action",
-        responseObject = ExtensionCustomActionResponse.class, responseHasSensitiveInfo = false, since = "4.21.0")
+@APICommand(name = "addCustomAction",
+        description = "Add a custom action for an extension",
+        responseObject = ExtensionCustomActionResponse.class,
+        responseHasSensitiveInfo = false,
+        entityType = {ExtensionCustomAction.class},
+        authorized = {RoleType.Admin},
+        since = "4.21.0")
 public class AddCustomActionCmd extends BaseCmd {
 
     @Inject

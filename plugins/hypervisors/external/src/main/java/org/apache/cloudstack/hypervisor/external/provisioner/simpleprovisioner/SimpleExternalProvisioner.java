@@ -37,6 +37,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.guru.ExternalHypervisorGuru;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -383,6 +384,12 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
 
         String actionName = cmd.getActionName();
         Map<String, String> details = cmd.getDetails();
+
+        Map<String, Object> parameters = cmd.getParameters();
+        if (MapUtils.isNotEmpty(parameters)) {
+            String paramStr = GsonHelper.getGson().toJson(parameters);
+            details.put(ApiConstants.PARAMETERS, paramStr);
+        }
 
         logger.debug("Executing custom action '{}' in the external system", actionName);
 

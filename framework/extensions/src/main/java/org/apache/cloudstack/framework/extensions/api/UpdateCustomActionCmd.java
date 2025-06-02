@@ -29,14 +29,13 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
-import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.extension.ExtensionCustomAction;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 
-import org.apache.cloudstack.extension.ExtensionCustomAction;
 import com.cloud.user.Account;
 
-@APICommand(name = "UpdateCustomAction",
+@APICommand(name = "updateCustomAction",
         description = "Update the custom action",
         responseObject = SuccessResponse.class,
         responseHasSensitiveInfo = false, since = "4.21.0")
@@ -48,7 +47,7 @@ public class UpdateCustomActionCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
             required = true,
-            entityType = ExtensionResponse.class,
+            entityType = ExtensionCustomActionResponse.class,
             description = "ID of the custom action")
     private Long id;
 
@@ -128,7 +127,7 @@ public class UpdateCustomActionCmd extends BaseCmd {
         return parameters;
     }
 
-    public Boolean getCleanupParameters() {
+    public Boolean isCleanupParameters() {
         return cleanupParameters;
     }
 
@@ -136,7 +135,7 @@ public class UpdateCustomActionCmd extends BaseCmd {
         return convertDetailsToMap(details);
     }
 
-    public Boolean getCleanupDetails() {
+    public Boolean isCleanupDetails() {
         return cleanupDetails;
     }
 
@@ -148,6 +147,7 @@ public class UpdateCustomActionCmd extends BaseCmd {
     public void execute() throws ServerApiException {
         ExtensionCustomAction extensionCustomAction = extensionsManager.updateCustomAction(this);
         ExtensionCustomActionResponse response = extensionsManager.createCustomActionResponse(extensionCustomAction);
+        response.setResponseName(getCommandName());
         setResponseObject(response);
     }
 

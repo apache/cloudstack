@@ -54,7 +54,8 @@
         </template>
       </template>
       <template #expandedRowRender="{ record }">
-        <key-value-table
+        <strong>{{ $t('label.details') }}</strong>
+        <object-list-table
           :data-map="record.details" />
       </template>
     </a-table>
@@ -64,13 +65,13 @@
 <script>
 import { api } from '@/api'
 import eventBus from '@/config/eventBus'
-import KeyValueTable from '@/components/view/KeyValueTable.vue'
+import ObjectListTable from '@/components/view/ObjectListTable.vue'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
   name: 'ExtensionResourcesTab',
   components: {
-    KeyValueTable,
+    ObjectListTable,
     TooltipButton
   },
   props: {
