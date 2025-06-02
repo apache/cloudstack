@@ -225,9 +225,6 @@ write_files:
         exit 0
       fi
 
-      HA_CLUSTER={{ k8s.ha.cluster }}
-      CLUSTER_PUBLIC_IP={{ k8s.public.ip }}
-
       if [[ $(systemctl is-active setup-kube-system) != "inactive" ]]; then
         echo "setup-kube-system is running!"
         exit 1
@@ -244,10 +241,6 @@ write_files:
       mkdir -p /root/.kube
       cp -i /etc/kubernetes/admin.conf /root/.kube/config
       chown $(id -u):$(id -g) /root/.kube/config
-
-      if [[ "$HA_CLUSTER" == "true" ]]; then
-        sed -i -E "s|(server:\\s*).*|\\1https://${CLUSTER_PUBLIC_IP}:6443|" /root/.kube/config
-      fi
 
       sudo touch /home/cloud/success
       echo "true" > /home/cloud/success
