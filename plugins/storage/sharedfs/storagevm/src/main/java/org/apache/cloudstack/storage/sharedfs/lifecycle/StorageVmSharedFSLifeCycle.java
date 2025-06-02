@@ -61,6 +61,7 @@ import com.cloud.vm.dao.UserVmDao;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.storage.sharedfs.SharedFSLifeCycle;
 import org.apache.commons.codec.binary.Base64;
@@ -174,10 +175,11 @@ public class StorageVmSharedFSLifeCycle implements SharedFSLifeCycle {
             customParameterMap.put("maxIopsDo", maxIops.toString());
         }
         List<String> keypairs = new ArrayList<String>();
+        ConfigKey<String> preferredArchitecture = ResourceManager.SystemVmPreferredArchitecture;
 
         for (final Iterator<Hypervisor.HypervisorType> iter = hypervisors.iterator(); iter.hasNext();) {
             final Hypervisor.HypervisorType hypervisor = iter.next();
-            VMTemplateVO template = templateDao.findSystemVMReadyTemplate(zoneId, hypervisor);
+            VMTemplateVO template = templateDao.findSystemVMReadyTemplate(zoneId, hypervisor, preferredArchitecture.value());
             if (template == null && !iter.hasNext()) {
                 throw new CloudRuntimeException(String.format("Unable to find the systemvm template for %s or it was not downloaded in %s.", hypervisor.toString(), zone.toString()));
             }

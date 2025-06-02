@@ -23,6 +23,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -578,10 +579,18 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     }
 
     @Override
-    public VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType) {
+    public VMTemplateVO findSystemVMReadyTemplate(long zoneId, HypervisorType hypervisorType, String preferredArch) {
         List<VMTemplateVO> templates = listAllReadySystemVMTemplates(zoneId);
         if (CollectionUtils.isEmpty(templates)) {
             return null;
+        }
+        if (StringUtils.isNotBlank(preferredArch)) {
+            templates = templates.stream()
+                    .filter(x -> x.getArch().getType().equalsIgnoreCase(preferredArch))
+                    .collect(Collectors.toList());
+            if (CollectionUtils.isEmpty(templates)) {
+                return null;
+            }
         }
         if (hypervisorType == HypervisorType.Any) {
             return templates.get(0);
