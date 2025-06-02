@@ -193,10 +193,8 @@ public class VMTemplateDaoImplTest {
         Long zoneId = 1L;
         VMTemplateVO systemVmTemplate1 = mock(VMTemplateVO.class);
         Mockito.when(systemVmTemplate1.getArch()).thenReturn(CPU.CPUArch.x86);
-        Mockito.when(systemVmTemplate1.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         VMTemplateVO systemVmTemplate2 = mock(VMTemplateVO.class);
         Mockito.when(systemVmTemplate2.getArch()).thenReturn(CPU.CPUArch.x86);
-        Mockito.when(systemVmTemplate2.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
         VMTemplateVO systemVmTemplate3 = mock(VMTemplateVO.class);
         Mockito.when(systemVmTemplate3.getArch()).thenReturn(CPU.CPUArch.arm64);
         Mockito.when(systemVmTemplate3.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
