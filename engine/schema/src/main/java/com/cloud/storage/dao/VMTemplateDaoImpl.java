@@ -585,12 +585,12 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             return null;
         }
         if (StringUtils.isNotBlank(preferredArch)) {
+            // Sort the templates by preferred architecture first
             templates = templates.stream()
-                    .filter(x -> x.getArch().getType().equalsIgnoreCase(preferredArch))
+                    .sorted(Comparator.comparing(
+                            x -> !x.getArch().getType().equalsIgnoreCase(preferredArch)
+                    ))
                     .collect(Collectors.toList());
-            if (CollectionUtils.isEmpty(templates)) {
-                return null;
-            }
         }
         if (hypervisorType == HypervisorType.Any) {
             return templates.get(0);
