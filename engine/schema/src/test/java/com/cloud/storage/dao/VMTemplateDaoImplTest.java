@@ -31,6 +31,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -185,5 +186,27 @@ public class VMTemplateDaoImplTest {
         doReturn(Collections.emptyList()).when(templateDao).listBy(any(), any());
         VMTemplateVO result = templateDao.findLatestTemplateByTypeAndHypervisorAndArch(hypervisorType, arch, type);
         assertNull(result);
+    }
+
+    @Test
+    public void testFindSystemVMReadyTemplate() {
+        Long zoneId = 1L;
+        VMTemplateVO systemVmTemplate1 = mock(VMTemplateVO.class);
+        Mockito.when(systemVmTemplate1.getArch()).thenReturn(CPU.CPUArch.x86);
+        Mockito.when(systemVmTemplate1.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        VMTemplateVO systemVmTemplate2 = mock(VMTemplateVO.class);
+        Mockito.when(systemVmTemplate2.getArch()).thenReturn(CPU.CPUArch.x86);
+        Mockito.when(systemVmTemplate2.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        VMTemplateVO systemVmTemplate3 = mock(VMTemplateVO.class);
+        Mockito.when(systemVmTemplate3.getArch()).thenReturn(CPU.CPUArch.arm64);
+        Mockito.when(systemVmTemplate3.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.KVM);
+        List<VMTemplateVO> templates = Arrays.asList(systemVmTemplate1, systemVmTemplate2, systemVmTemplate3);
+        Mockito.when(hostDao.listDistinctHypervisorTypes(zoneId)).thenReturn(Arrays.asList(Hypervisor.HypervisorType.KVM));
+        SearchBuilder<VMTemplateVO> sb = mock(SearchBuilder.class);
+        templateDao.readySystemTemplateSearch = sb;
+        when(sb.create()).thenReturn(mock(SearchCriteria.class));
+        doReturn(templates).when(templateDao).listBy(any(SearchCriteria.class), any(Filter.class));
+        VMTemplateVO readyTemplate = templateDao.findSystemVMReadyTemplate(zoneId, Hypervisor.HypervisorType.KVM, CPU.CPUArch.arm64.getType());
+        Assert.assertEquals(CPU.CPUArch.arm64, readyTemplate.getArch());
     }
 }
