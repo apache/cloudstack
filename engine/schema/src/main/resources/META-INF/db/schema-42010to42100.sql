@@ -140,7 +140,7 @@ BEGIN
 ;   UPDATE `cloud`.`guest_os`
     SET `category_id` = to_category_id
     WHERE `category_id` = (SELECT `id` FROM `cloud`.`guest_os_category` WHERE `name` = from_category_name)
-;   UPDATE `cloud`.`guest_os_category` SET `removed``=now() WHERE `name` = from_category_name
+;   UPDATE `cloud`.`guest_os_category` SET `removed`=now() WHERE `name` = from_category_name
 ; END;
 CALL `cloud`.`UPDATE_NEW_AND_DELETE_OLD_CATEGORY_FOR_GUEST_OS`('Other', 'Novel');
 CALL `cloud`.`UPDATE_NEW_AND_DELETE_OLD_CATEGORY_FOR_GUEST_OS`('Other', 'None');
