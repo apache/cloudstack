@@ -67,7 +67,7 @@ public class UserResponse extends BaseResponse implements SetResourceIconRespons
     @Param(description = "the account type of the user")
     private Integer accountType;
 
-    @SerializedName("usersource")
+    @SerializedName(ApiConstants.USER_SOURCE)
     @Param(description = "the source type of the user in lowercase, such as native, ldap, saml2")
     private String userSource;
 

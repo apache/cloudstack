@@ -160,6 +160,11 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
             since = "4.20.1")
     private String arch;
 
+    @Parameter(name = ApiConstants.LEASED, type = CommandType.BOOLEAN,
+            description = "Whether to return only leased instances",
+            since = "4.21.0")
+    private Boolean onlyLeasedInstances = false;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -301,6 +306,10 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
 
     public CPU.CPUArch getArch() {
         return StringUtils.isBlank(arch) ? null : CPU.CPUArch.fromType(arch);
+    }
+
+    public boolean getOnlyLeasedInstances() {
+        return BooleanUtils.toBoolean(onlyLeasedInstances);
     }
 
     /////////////////////////////////////////////////////

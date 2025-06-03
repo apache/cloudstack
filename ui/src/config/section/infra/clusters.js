@@ -26,8 +26,8 @@ export default {
   permission: ['listClustersMetrics'],
   searchFilters: ['name', 'zoneid', 'podid', 'arch', 'hypervisor'],
   columns: () => {
-    const fields = ['name', 'state', 'allocationstate', 'clustertype', 'arch', 'hypervisortype', 'hosts']
-    const metricsFields = ['cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'drsimbalance']
+    const fields = ['name', 'allocationstate', 'clustertype', 'arch', 'hypervisortype']
+    const metricsFields = ['state', 'hosts', 'cpuused', 'cpumaxdeviation', 'cpuallocated', 'cputotal', 'memoryused', 'memorymaxdeviation', 'memoryallocated', 'memorytotal', 'drsimbalance']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
     }
@@ -35,7 +35,7 @@ export default {
     fields.push('zonename')
     return fields
   },
-  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'arch', 'hypervisortype', 'podname', 'zonename', 'drsimbalance'],
+  details: ['name', 'id', 'allocationstate', 'clustertype', 'managedstate', 'arch', 'hypervisortype', 'podname', 'zonename', 'drsimbalance', 'storageaccessgroups', 'podstorageaccessgroups', 'zonestorageaccessgroups'],
   related: [{
     name: 'host',
     title: 'label.hosts',
@@ -83,12 +83,8 @@ export default {
       icon: 'edit-outlined',
       label: 'label.edit',
       dataView: true,
-      args: ['clustername', 'arch'],
-      mapping: {
-        arch: {
-          options: ['x86_64', 'aarch64']
-        }
-      }
+      popup: true,
+      component: shallowRef(defineAsyncComponent(() => import('@/views/infra/ClusterUpdate.vue')))
     },
     {
       api: 'updateCluster',

@@ -31,6 +31,7 @@ import java.util.List;
 import org.apache.cloudstack.annotation.dao.AnnotationDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.command.admin.config.ListCfgsByCmd;
 import org.apache.cloudstack.api.command.admin.guest.AddGuestOsCategoryCmd;
 import org.apache.cloudstack.api.command.admin.guest.DeleteGuestOsCategoryCmd;
 import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsCategoryCmd;
@@ -40,10 +41,14 @@ import org.apache.cloudstack.api.command.user.ssh.RegisterSSHKeyPairCmd;
 import org.apache.cloudstack.api.command.user.userdata.DeleteUserDataCmd;
 import org.apache.cloudstack.api.command.user.userdata.ListUserDataCmd;
 import org.apache.cloudstack.api.command.user.userdata.RegisterUserDataCmd;
+import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
+import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.junit.After;
 import org.junit.Assert;
@@ -62,6 +67,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.cpu.CPU;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -138,10 +144,6 @@ public class ManagementServerImplTest {
     @Mock
     UserDataManager userDataManager;
 
-    @Spy
-    @InjectMocks
-    ManagementServerImpl spy = new ManagementServerImpl();
-
     @Mock
     UserVmDetailsDao userVmDetailsDao;
 
@@ -149,10 +151,23 @@ public class ManagementServerImplTest {
     HostDetailsDao hostDetailsDao;
 
     @Mock
+    ConfigurationDao configDao;
+
+    @Mock
+    ConfigDepot configDepot;
+
+    @Mock
+    DomainDao domainDao;
+
+    @Mock
     GuestOSCategoryDao _guestOSCategoryDao;
 
     @Mock
     GuestOSDao _guestOSDao;
+
+    @Spy
+    @InjectMocks
+    ManagementServerImpl spy = new ManagementServerImpl();
 
     private AutoCloseable closeable;
 
@@ -700,6 +715,42 @@ public class ManagementServerImplTest {
         Assert.assertTrue(spy.zoneWideVolumeRequiresStorageMotion(dataStore, host1, host2));
     }
 
+    @Test(expected = InvalidParameterValueException.class)
+    public void testSearchForConfigurationsMultipleIds() {
+        ListCfgsByCmd cmd = Mockito.mock(ListCfgsByCmd.class);
+        Mockito.when(cmd.getConfigName()).thenReturn("pool.storage.capacity.disablethreshold");
+        Mockito.when(cmd.getZoneId()).thenReturn(1L);
+        Mockito.when(cmd.getStoragepoolId()).thenReturn(2L);
+        spy.searchForConfigurations(cmd);
+    }
+
+    @Test
+    public void testSearchForConfigurations() {
+        Long poolId = 1L;
+        ListCfgsByCmd cmd = Mockito.mock(ListCfgsByCmd.class);
+        Mockito.when(cmd.getConfigName()).thenReturn("pool.storage.capacity.disablethreshold");
+        Mockito.when(cmd.getStoragepoolId()).thenReturn(poolId);
+        Mockito.when(cmd.getZoneId()).thenReturn(null);
+        Mockito.when(cmd.getClusterId()).thenReturn(null);
+        Mockito.when(cmd.getAccountId()).thenReturn(null);
+        Mockito.when(cmd.getDomainId()).thenReturn(null);
+        Mockito.when(cmd.getImageStoreId()).thenReturn(null);
+
+        SearchCriteria<ConfigurationVO> sc = Mockito.mock(SearchCriteria.class);
+        Mockito.when(configDao.createSearchCriteria()).thenReturn(sc);
+        ConfigurationVO cfg = new ConfigurationVO("Advanced", "DEFAULT", "test", "pool.storage.capacity.disablethreshold", null, "description");
+        Mockito.when(configDao.searchAndCount(any(), any())).thenReturn(new Pair<>(List.of(cfg), 1));
+        Mockito.when(configDao.findByName("pool.storage.capacity.disablethreshold")).thenReturn(cfg);
+
+        ConfigKey storageDisableThreshold = new ConfigKey<>(ConfigKey.CATEGORY_ALERT, Double.class, "pool.storage.capacity.disablethreshold", "0.85",
+                "Percentage (as a value between 0 and 1) of storage utilization above which allocators will disable using the pool for low storage available.",
+                true, List.of(ConfigKey.Scope.StoragePool, ConfigKey.Scope.Zone));
+        when(configDepot.get("pool.storage.capacity.disablethreshold")).thenReturn(storageDisableThreshold);
+
+        Pair<List<? extends Configuration>, Integer> result = spy.searchForConfigurations(cmd);
+
+        Assert.assertEquals("0.85", result.first().get(0).getValue());
+    }
     @Test
     public void testAddGuestOsCategory() {
         AddGuestOsCategoryCmd addCmd = Mockito.mock(AddGuestOsCategoryCmd.class);
@@ -966,5 +1017,6 @@ public class ManagementServerImplTest {
         Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).createSearchBuilder();
         Mockito.verify(searchCriteria, Mockito.times(1)).setParameters("id", id);
         Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).searchAndCount(Mockito.eq(searchCriteria), Mockito.any());
+
     }
 }

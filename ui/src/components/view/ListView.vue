@@ -65,7 +65,6 @@
           <span v-else :style="{ 'margin-right': record.ostypename ? '5px' : '0' }">
             <os-logo v-if="record.ostypename" :osName="record.ostypename" size="xl" />
           </span>
-
           <span v-if="record.hasannotations">
             <span v-if="record.id">
               <router-link :to="{ path: $route.path + '/' + record.id }">{{ text }}</router-link>
@@ -100,6 +99,20 @@
                 <warning-outlined style="color: #f5222d"/>
               </a-tooltip>
             </span>
+          </span>
+          <span
+            v-if="record.leaseduration !== undefined"
+            :style="{
+              'margin-right': '5px',
+              'float': 'right'}">
+              <a-tooltip>
+                <template #title>{{ $t('label.remainingdays')  + ": " + getRemainingLeaseText(record.leaseduration) }}</template>
+                <field-time-outlined
+                  :style="{
+                    color: getLeaseColor(record.leaseduration),
+                    fontSize: '20px'
+                  }"/>
+              </a-tooltip>
           </span>
         </span>
       </template>
@@ -260,8 +273,17 @@
       <template v-if="column.key === 'agentstate'">
         <status :text="text ? text : ''" displayText />
       </template>
+      <template v-if="column.key === 'cpunumber'">
+        <span>{{ record.serviceofferingdetails?.mincpunumber && record.serviceofferingdetails?.maxcpunumber ? `${record.serviceofferingdetails.mincpunumber} - ${record.serviceofferingdetails.maxcpunumber}` : record.cpunumber }}</span>
+      </template>
+      <template v-if="column.key === 'memory'">
+        <span>{{ record.serviceofferingdetails?.minmemory && record.serviceofferingdetails?.maxmemory ? `${record.serviceofferingdetails.minmemory} - ${record.serviceofferingdetails.maxmemory}` : record.memory }}</span>
+      </template>
       <template v-if="column.key === 'quotastate'">
         <status :text="text ? text : ''" displayText />
+      </template>
+      <template v-if="column.key === 'vmstate'">
+        <status :text="text ? text : ''" displayText vmState/>
       </template>
       <template v-if="column.key === 'offerha'">
         {{ text ? $t('state.enabled') : $t('state.disabled')}}
@@ -738,7 +760,7 @@ export default {
         '/zone', '/pod', '/cluster', '/host', '/storagepool', '/imagestore', '/systemvm', '/router', '/ilbvm', '/annotation',
         '/computeoffering', '/systemoffering', '/diskoffering', '/backupoffering', '/networkoffering', '/vpcoffering',
         '/tungstenfabric', '/oauthsetting', '/guestos', '/guestoshypervisormapping', '/webhook', 'webhookdeliveries', '/quotatariff', '/sharedfs',
-        '/ipv4subnets'].join('|'))
+        '/ipv4subnets', '/managementserver'].join('|'))
         .test(this.$route.path)
     },
     enableGroupAction () {
@@ -1073,6 +1095,24 @@ export default {
             }
           }
         })
+      }
+    },
+    getRemainingLeaseText (leaseDuration) {
+      if (leaseDuration > 0) {
+        return leaseDuration + (leaseDuration === 1 ? ' day' : ' days')
+      } else if (leaseDuration === 0) {
+        return 'expiring today'
+      } else {
+        return 'over'
+      }
+    },
+    getLeaseColor (leaseDuration) {
+      if (leaseDuration >= 7) {
+        return '#888'
+      } else if (leaseDuration >= 0) {
+        return '#ffbf00'
+      } else {
+        return '#fd7e14'
       }
     }
   }

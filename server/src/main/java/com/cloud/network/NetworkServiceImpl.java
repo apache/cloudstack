@@ -1476,6 +1476,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
     }
 
+    private String getVpcPrependedNetworkName(String networkName, Vpc vpc) {
+        final String delimiter = VpcManager.VpcTierNamePrependDelimiter.value();
+        return vpc.getName() + delimiter + networkName;
+    }
+
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_CREATE, eventDescription = "creating network")
@@ -1805,6 +1810,13 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         }
 
         checkNetworkDns(ipv6, ntwkOff, vpcId, ip4Dns1, ip4Dns2, ip6Dns1, ip6Dns2);
+
+        if (vpcId != null && VpcManager.VpcTierNamePrepend.value()) {
+            Vpc vpc = _vpcDao.findById(vpcId);
+            if (vpc != null) {
+                name = getVpcPrependedNetworkName(name, vpc);
+            }
+        }
 
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zone.getId(),
                 domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, secondaryVlanId, privateVlanType, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
@@ -2909,6 +2921,12 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService, C
         Account callerAccount = _accountMgr.getActiveAccountById(user.getAccountId());
         _accountMgr.checkAccess(callerAccount, AccessType.OperateEntry, true, network);
         if (!network.isRedundant() && makeRedundant) {
+            NetworkOffering networkOffering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
+            Map<Network.Capability, String> sourceNatCapabilities = getNetworkOfferingServiceCapabilities(networkOffering, Service.SourceNat);
+            String isRedundantRouterSupported = sourceNatCapabilities.get(Capability.RedundantRouter);
+            if (!Boolean.parseBoolean(isRedundantRouterSupported)) {
+                throw new InvalidParameterValueException(String.format("Redundant router is not supported by the network offering %s", networkOffering));
+            }
             network.setRedundant(true);
             if (!_networksDao.update(network.getId(), network)) {
                 throw new CloudRuntimeException("Failed to update network into a redundant one, please try again");

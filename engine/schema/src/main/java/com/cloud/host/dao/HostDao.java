@@ -31,6 +31,7 @@ import com.cloud.resource.ResourceState;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 
 /**
  * Data Access Object for server
@@ -83,6 +84,10 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> findHypervisorHostInCluster(long clusterId);
 
+    List<HostVO> findHypervisorHostInPod(long podId);
+
+    List<HostVO> findHypervisorHostInZone(long zoneId);
+
     HostVO findAnyStateHypervisorHostInCluster(long clusterId);
 
     HostVO findOldestExistentHypervisorHostInCluster(long clusterId);
@@ -95,9 +100,13 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> findByPodId(Long podId);
 
+    List<HostVO> findByPodId(Long podId, Type type);
+
     List<Long> listIdsByPodId(Long podId);
 
     List<HostVO> findByClusterId(Long clusterId);
+
+    List<HostVO> findByClusterId(Long clusterId, Type type);
 
     List<Long> listIdsByClusterId(Long clusterId);
 
@@ -166,12 +175,30 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> listHostsWithActiveVMs(long offeringId);
 
+    List<HostVO> listHostsByMsAndDc(long msId, long dcId);
+
+    List<HostVO> listHostsByMs(long msId);
+
     /**
      * Retrieves the number of hosts/agents this {@see ManagementServer} has responsibility over.
-     * @param msid the id of the {@see ManagementServer}
+     * @param msId the id of the {@see ManagementServer}
      * @return the number of hosts/agents this {@see ManagementServer} has responsibility over
      */
-    int countByMs(long msid);
+    int countByMs(long msId);
+
+    /**
+     * Retrieves the host ids/agents this {@see ManagementServer} has responsibility over.
+     * @param msId the id of the {@see ManagementServer}
+     * @return the host ids/agents this {@see ManagementServer} has responsibility over
+     */
+    List<String> listByMs(long msId);
+
+    /**
+     * Retrieves the last host ids/agents this {@see ManagementServer} has responsibility over.
+     * @param msId the id of the {@see ManagementServer}
+     * @return the last host ids/agents this {@see ManagementServer} has responsibility over
+     */
+    List<String> listByLastMs(long msId);
 
     /**
      * Retrieves the hypervisor versions of the hosts in the datacenter which are in Up state in ascending order
@@ -190,7 +217,7 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     boolean isHostUp(long hostId);
 
     List<Long> findHostIdsByZoneClusterResourceStateTypeAndHypervisorType(final Long zoneId, final Long clusterId,
-            final List<ResourceState> resourceStates, final List<Type> types,
+            final Long msId, final List<ResourceState> resourceStates, final List<Type> types,
             final List<Hypervisor.HypervisorType> hypervisorTypes);
 
     List<HypervisorType> listDistinctHypervisorTypes(final Long zoneId);
@@ -200,4 +227,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<CPU.CPUArch> listDistinctArchTypes(final Long clusterId);
 
     List<HostVO> listByIds(final List<Long> ids);
+
+    Long findClusterIdByVolumeInfo(VolumeInfo volumeInfo);
+
+    List<String> listDistinctStorageAccessGroups(String name, String keyword);
 }

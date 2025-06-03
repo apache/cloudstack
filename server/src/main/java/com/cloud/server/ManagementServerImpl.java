@@ -103,13 +103,13 @@ import org.apache.cloudstack.api.command.admin.guest.UpdateGuestOsMappingCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
 import org.apache.cloudstack.api.command.admin.host.AddSecondaryStorageCmd;
 import org.apache.cloudstack.api.command.admin.host.CancelHostAsDegradedCmd;
-import org.apache.cloudstack.api.command.admin.host.CancelMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.CancelHostMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.DeclareHostAsDegradedCmd;
 import org.apache.cloudstack.api.command.admin.host.DeleteHostCmd;
 import org.apache.cloudstack.api.command.admin.host.FindHostsForMigrationCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostTagsCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
-import org.apache.cloudstack.api.command.admin.host.PrepareForMaintenanceCmd;
+import org.apache.cloudstack.api.command.admin.host.PrepareForHostMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.ReleaseHostReservationCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
@@ -216,6 +216,7 @@ import org.apache.cloudstack.api.command.admin.storage.AddImageStoreS3CMD;
 import org.apache.cloudstack.api.command.admin.storage.AddObjectStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.ChangeStoragePoolScopeCmd;
+import org.apache.cloudstack.api.command.admin.storage.ConfigureStorageAccessCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
 import org.apache.cloudstack.api.command.admin.storage.DeleteImageStoreCmd;
@@ -226,6 +227,7 @@ import org.apache.cloudstack.api.command.admin.storage.FindStoragePoolsForMigrat
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListObjectStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
+import org.apache.cloudstack.api.command.admin.storage.ListStorageAccessGroupsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageProvidersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
@@ -641,6 +643,7 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.userdata.UserDataManager;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.cloudstack.vm.lease.VMLeaseManager;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -898,7 +901,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     protected UserVmDao _userVmDao;
     @Inject
-    private ConfigurationDao _configDao;
+    protected ConfigurationDao _configDao;
     @Inject
     private ConfigurationGroupDao _configGroupDao;
     @Inject
@@ -910,7 +913,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private DiskOfferingDao _diskOfferingDao;
     @Inject
-    private DomainDao _domainDao;
+    protected DomainDao _domainDao;
     @Inject
     private AccountDao _accountDao;
     @Inject
@@ -966,7 +969,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private HostTagsDao _hostTagsDao;
     @Inject
-    private ConfigDepot _configDepot;
+    protected ConfigDepot _configDepot;
     @Inject
     private UserVmManager _userVmMgr;
     @Inject
@@ -1280,6 +1283,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Object allocationState = cmd.getAllocationState();
         final String keyword = cmd.getKeyword();
         final CPU.CPUArch arch = cmd.getArch();
+        final String storageAccessGroup = cmd.getStorageAccessGroup();
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
 
         final Filter searchFilter = new Filter(ClusterVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -1293,6 +1297,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("clusterType", sb.entity().getClusterType(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
         sb.and("arch", sb.entity().getArch(), SearchCriteria.Op.EQ);
+        if (storageAccessGroup != null) {
+            sb.and().op("storageAccessGroupExact", sb.entity().getStorageAccessGroups(), SearchCriteria.Op.EQ);
+            sb.or("storageAccessGroupPrefix", sb.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            sb.or("storageAccessGroupSuffix", sb.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            sb.or("storageAccessGroupMiddle", sb.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            sb.cp();
+        }
 
         final SearchCriteria<ClusterVO> sc = sb.create();
         if (id != null) {
@@ -1334,6 +1345,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (arch != null) {
             sc.setParameters("arch", arch);
+        }
+
+        if (storageAccessGroup != null) {
+            sc.setParameters("storageAccessGroupExact", storageAccessGroup);
+            sc.setParameters("storageAccessGroupPrefix", storageAccessGroup + ",%");
+            sc.setParameters("storageAccessGroupSuffix", "%," + storageAccessGroup);
+            sc.setParameters("storageAccessGroupMiddle", "%," + storageAccessGroup + ",%");
         }
 
         final Pair<List<ClusterVO>, Integer> result = _clusterDao.searchAndCount(sc, searchFilter);
@@ -2019,6 +2037,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Long zoneId = cmd.getZoneId();
         final Object keyword = cmd.getKeyword();
         final Object allocationState = cmd.getAllocationState();
+        final String storageAccessGroup = cmd.getStorageAccessGroup();
+
         zoneId = _accountMgr.checkAccessAndSpecifyAuthority(CallContext.current().getCallingAccount(), zoneId);
 
         final Filter searchFilter = new Filter(HostPodVO.class, "dataCenterId", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -2027,6 +2047,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("name", sb.entity().getName(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("allocationState", sb.entity().getAllocationState(), SearchCriteria.Op.EQ);
+        if (storageAccessGroup != null) {
+            sb.and().op("storageAccessGroupExact", sb.entity().getStorageAccessGroups(), SearchCriteria.Op.EQ);
+            sb.or("storageAccessGroupPrefix", sb.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            sb.or("storageAccessGroupSuffix", sb.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            sb.or("storageAccessGroupMiddle", sb.entity().getStorageAccessGroups(), SearchCriteria.Op.LIKE);
+            sb.cp();
+        }
 
         final SearchCriteria<HostPodVO> sc = sb.create();
         if (keyword != null) {
@@ -2051,6 +2078,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (allocationState != null) {
             sc.setParameters("allocationState", allocationState);
+        }
+
+        if (storageAccessGroup != null) {
+            sc.setParameters("storageAccessGroupExact", storageAccessGroup);
+            sc.setParameters("storageAccessGroupPrefix", storageAccessGroup + ",%");
+            sc.setParameters("storageAccessGroupSuffix", "%," + storageAccessGroup);
+            sc.setParameters("storageAccessGroupMiddle", "%," + storageAccessGroup + ",%");
         }
 
         final Pair<List<HostPodVO>, Integer> result = _hostPodDao.searchAndCount(sc, searchFilter);
@@ -2212,7 +2246,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final String groupName = cmd.getGroupName();
         final String subGroupName = cmd.getSubGroupName();
         final String parentName = cmd.getParentName();
-        String scope = null;
+        ConfigKey.Scope scope = null;
         Long id = null;
         int paramCountCheck = 0;
 
@@ -2228,35 +2262,35 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         if (zoneId != null) {
-            scope = ConfigKey.Scope.Zone.toString();
+            scope = ConfigKey.Scope.Zone;
             id = zoneId;
             paramCountCheck++;
         }
         if (clusterId != null) {
-            scope = ConfigKey.Scope.Cluster.toString();
+            scope = ConfigKey.Scope.Cluster;
             id = clusterId;
             paramCountCheck++;
         }
         if (accountId != null) {
             Account account = _accountMgr.getAccount(accountId);
             _accountMgr.checkAccess(caller, null, false, account);
-            scope = ConfigKey.Scope.Account.toString();
+            scope = ConfigKey.Scope.Account;
             id = accountId;
             paramCountCheck++;
         }
         if (domainId != null) {
             _accountMgr.checkAccess(caller, _domainDao.findById(domainId));
-            scope = ConfigKey.Scope.Domain.toString();
+            scope = ConfigKey.Scope.Domain;
             id = domainId;
             paramCountCheck++;
         }
         if (storagepoolId != null) {
-            scope = ConfigKey.Scope.StoragePool.toString();
+            scope = ConfigKey.Scope.StoragePool;
             id = storagepoolId;
             paramCountCheck++;
         }
         if (imageStoreId != null) {
-            scope = ConfigKey.Scope.ImageStore.toString();
+            scope = ConfigKey.Scope.ImageStore;
             id = imageStoreId;
             paramCountCheck++;
         }
@@ -2311,19 +2345,19 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         // hidden configurations are not displayed using the search API
         sc.addAnd("category", SearchCriteria.Op.NEQ, "Hidden");
 
-        if (scope != null && !scope.isEmpty()) {
+        if (scope != null) {
             // getting the list of parameters at requested scope
             if (ConfigurationManagerImpl.ENABLE_ACCOUNT_SETTINGS_FOR_DOMAIN.value()
-                && scope.equals(ConfigKey.Scope.Domain.toString())) {
-                sc.addAnd("scope", SearchCriteria.Op.IN, ConfigKey.Scope.Domain.toString(), ConfigKey.Scope.Account.toString());
+                && scope.equals(ConfigKey.Scope.Domain)) {
+                sc.addAnd("scope", SearchCriteria.Op.BINARY_OR, (ConfigKey.Scope.Domain.getBitValue() | ConfigKey.Scope.Account.getBitValue()));
             } else {
-                sc.addAnd("scope", SearchCriteria.Op.EQ, scope);
+                sc.addAnd("scope", SearchCriteria.Op.BINARY_OR, scope.getBitValue());
             }
         }
 
         final Pair<List<ConfigurationVO>, Integer> result = _configDao.searchAndCount(sc, searchFilter);
 
-        if (scope != null && !scope.isEmpty()) {
+        if (scope != null) {
             // Populate values corresponding the resource id
             final List<ConfigurationVO> configVOList = new ArrayList<>();
             for (final ConfigurationVO param : result.first()) {
@@ -2331,13 +2365,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (configVo != null) {
                     final ConfigKey<?> key = _configDepot.get(param.getName());
                     if (key != null) {
-                        if (scope.equals(ConfigKey.Scope.Domain.toString())) {
-                            Object value = key.valueInDomain(id);
-                            configVo.setValue(value == null ? null : value.toString());
-                        } else {
-                            Object value = key.valueIn(id);
-                            configVo.setValue(value == null ? null : value.toString());
-                        }
+                        Object value = key.valueInScope(scope, id);
+                        configVo.setValue(value == null ? null : value.toString());
                         configVOList.add(configVo);
                     } else {
                         logger.warn("ConfigDepot could not find parameter " + param.getName() + " for scope " + scope);
@@ -3636,14 +3665,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(MoveDomainCmd.class);
         cmdList.add(AddHostCmd.class);
         cmdList.add(AddSecondaryStorageCmd.class);
-        cmdList.add(CancelMaintenanceCmd.class);
+        cmdList.add(CancelHostMaintenanceCmd.class);
         cmdList.add(CancelHostAsDegradedCmd.class);
         cmdList.add(DeclareHostAsDegradedCmd.class);
         cmdList.add(DeleteHostCmd.class);
         cmdList.add(ListHostsCmd.class);
         cmdList.add(ListHostTagsCmd.class);
         cmdList.add(FindHostsForMigrationCmd.class);
-        cmdList.add(PrepareForMaintenanceCmd.class);
+        cmdList.add(PrepareForHostMaintenanceCmd.class);
         cmdList.add(ReconnectHostCmd.class);
         cmdList.add(UpdateHostCmd.class);
         cmdList.add(UpdateHostPasswordCmd.class);
@@ -3705,12 +3734,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListSwiftsCmd.class);
         cmdList.add(ListStoragePoolsCmd.class);
         cmdList.add(ListStorageTagsCmd.class);
+        cmdList.add(ListStorageAccessGroupsCmd.class);
         cmdList.add(FindStoragePoolsForMigrationCmd.class);
         cmdList.add(PreparePrimaryStorageForMaintenanceCmd.class);
         cmdList.add(UpdateStoragePoolCmd.class);
         cmdList.add(SyncStoragePoolCmd.class);
         cmdList.add(UpdateStorageCapabilitiesCmd.class);
         cmdList.add(UpdateImageStoreCmd.class);
+        cmdList.add(ConfigureStorageAccessCmd.class);
         cmdList.add(DestroySystemVmCmd.class);
         cmdList.add(ListSystemVMsCmd.class);
         cmdList.add(MigrateSystemVMCmd.class);
@@ -4644,6 +4675,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put(ApiConstants.INSTANCES_STATS_USER_ONLY, StatsCollector.vmStatsCollectUserVMOnly.value());
         capabilities.put(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_ENABLED, StatsCollector.vmDiskStatsRetentionEnabled.value());
         capabilities.put(ApiConstants.INSTANCES_DISKS_STATS_RETENTION_TIME, StatsCollector.vmDiskStatsMaxRetentionTime.value());
+        capabilities.put(ApiConstants.INSTANCE_LEASE_ENABLED, VMLeaseManager.InstanceLeaseEnabled.value());
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);

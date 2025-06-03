@@ -114,7 +114,7 @@ public class QueryManagerImplTest {
 
     @Spy
     @InjectMocks
-    private QueryManagerImpl queryManagerImplSpy = new QueryManagerImpl();
+    private QueryManagerImpl queryManagerImplSpy;
 
     @Mock
     EntityManager entityManager;
@@ -225,7 +225,7 @@ public class QueryManagerImplTest {
         Mockito.when(entityManager.findByUuidIncludingRemoved(Network.class, uuid)).thenReturn(network);
         Mockito.doNothing().when(accountManager).checkAccess(account, SecurityChecker.AccessType.ListEntry, true, network);
         Mockito.when(eventDao.searchAndCount(Mockito.any(), Mockito.any(Filter.class))).thenReturn(pair);
-        Mockito.when(eventJoinDao.searchByIds(Mockito.any())).thenReturn(eventJoins);
+        Mockito.lenient().when(eventJoinDao.searchByIds(Mockito.any())).thenReturn(eventJoins);
         List<EventResponse> respList = new ArrayList<EventResponse>();
         for (EventJoinVO vt : eventJoins) {
             respList.add(eventJoinDao.newEventResponse(vt));
@@ -505,11 +505,13 @@ public class QueryManagerImplTest {
         Account.Type accountType = Account.Type.ADMIN;
         Long domainId = 1L;
         String apiKeyAccess = "Disabled";
+        User.Source userSource = User.Source.NATIVE;
         Mockito.when(cmd.getUsername()).thenReturn(username);
         Mockito.when(cmd.getAccountName()).thenReturn(accountName);
         Mockito.when(cmd.getAccountType()).thenReturn(accountType);
         Mockito.when(cmd.getDomainId()).thenReturn(domainId);
         Mockito.when(cmd.getApiKeyAccess()).thenReturn(apiKeyAccess);
+        Mockito.when(cmd.getUserSource()).thenReturn(userSource);
 
         UserAccountJoinVO user = new UserAccountJoinVO();
         DomainVO domain = Mockito.mock(DomainVO.class);
@@ -531,6 +533,7 @@ public class QueryManagerImplTest {
         Mockito.verify(sc).setParameters("type", accountType);
         Mockito.verify(sc).setParameters("domainId", domainId);
         Mockito.verify(sc).setParameters("apiKeyAccess", false);
+        Mockito.verify(sc).setParameters("userSource", userSource.toString());
         Mockito.verify(userAccountJoinDao, Mockito.times(1)).searchAndCount(
                 any(SearchCriteria.class), any(Filter.class));
     }

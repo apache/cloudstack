@@ -1387,7 +1387,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 cpuWeight = _maxWeight;
             }
 
-            if (vmSpec.getLimitCpuUse()) {
+            if (vmSpec.isLimitCpuUse()) {
                 // CPU cap is per VM, so need to assign cap based on the number
                 // of vcpus
                 utilization = (int)(vmSpec.getMaxSpeed() * 0.99 * vmSpec.getCpus() / _host.getSpeed() * 100);
@@ -1699,6 +1699,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
             nwr.nameLabel = newName;
             nwr.tags = new HashSet<>();
             nwr.tags.add(generateTimeStamp());
+            nwr.managed = true;
             vlanNetwork = Network.create(conn, nwr);
             vlanNic = getNetworkByName(conn, newName);
             if (vlanNic == null) { // Still vlanNic is null means we could not
@@ -2004,6 +2005,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 // started
                 otherConfig.put("assume_network_is_shared", "true");
                 rec.otherConfig = otherConfig;
+                rec.managed = true;
                 nw = Network.create(conn, rec);
                 logger.debug("### XenServer network for tunnels created:" + nwName);
             } else {
@@ -3691,6 +3693,11 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
 
     @Override
     public StartupCommand[] initialize() throws IllegalArgumentException {
+        return initialize(false);
+    }
+
+    @Override
+    public StartupCommand[] initialize(boolean isTransferredConnection) throws IllegalArgumentException {
         final Connection conn = getConnection();
         if (!getHostInfo(conn)) {
             logger.warn("Unable to get host information for " + _host.getIp());
@@ -3701,6 +3708,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
         cmd.setHypervisorType(HypervisorType.XenServer);
         cmd.setCluster(_cluster);
         cmd.setPoolSync(false);
+        cmd.setConnectionTransferred(isTransferredConnection);
 
         try {
             final Pool pool = Pool.getByUuid(conn, _host.getPool());
@@ -4703,7 +4711,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 cpuWeight = _maxWeight;
             }
 
-            if (vmSpec.getLimitCpuUse()) {
+            if (vmSpec.isLimitCpuUse()) {
                 long utilization; // max CPU cap, default is unlimited
                 utilization = (int)(vmSpec.getMaxSpeed() * 0.99 * vmSpec.getCpus() / _host.getSpeed() * 100);
                 // vm.addToVCPUsParamsLive(conn, "cap",
@@ -4829,6 +4837,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 configs.put("netmask", NetUtils.getLinkLocalNetMask());
                 configs.put("vswitch-disable-in-band", "true");
                 rec.otherConfig = configs;
+                rec.managed = true;
                 linkLocal = Network.create(conn, rec);
             } else {
                 linkLocal = networks.iterator().next();
@@ -5017,6 +5026,7 @@ public abstract class CitrixResourceBase extends ServerResourceBase implements S
                 if (networks.isEmpty()) {
                     rec.nameDescription = "vswitch network for " + nwName;
                     rec.nameLabel = nwName;
+                    rec.managed = true;
                     vswitchNw = Network.create(conn, rec);
                 } else {
                     vswitchNw = networks.iterator().next();

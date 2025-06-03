@@ -583,6 +583,34 @@
                           @change="val => { dynamicscalingenabled = val }"/>
                       </a-form-item>
                     </a-form-item>
+                    <a-form-item name="showLeaseOptions" ref="showLeaseOptions" v-if="isLeaseFeatureEnabled">
+                      <template #label>
+                        <tooltip-label :title="$t('label.lease.enable')" :tooltip="$t('label.lease.enable.tooltip')"/>
+                      </template>
+                      <a-switch v-model:checked="showLeaseOptions" @change="onToggleLeaseData"/>
+                    </a-form-item>
+                    <a-row :gutter="12" v-if="isLeaseFeatureEnabled && showLeaseOptions">
+                      <a-col :md="12" :lg="12">
+                        <a-form-item name="leaseduration" ref="leaseduration">
+                          <template #label>
+                            <tooltip-label :title="$t('label.leaseduration')" />
+                          </template>
+                          <a-input
+                            v-model:value="form.leaseduration"
+                            :placeholder="$t('label.instance.lease.placeholder')"/>
+                        </a-form-item>
+                      </a-col>
+                      <a-col :md="12" :lg="12">
+                        <a-form-item name="leaseexpiryaction" ref="leaseexpiryaction">
+                          <template #label>
+                            <tooltip-label :title="$t('label.leaseexpiryaction')"  />
+                          </template>
+                          <a-select v-model:value="form.leaseexpiryaction" :defaultValue="leaseexpiryaction">
+                            <a-select-option v-for="action in expiryActions" :key="action" :label="action" />
+                          </a-select>
+                        </a-form-item>
+                      </a-col>
+                    </a-row>
                     <a-form-item :label="$t('label.userdata')">
                       <a-card>
                         <div v-if="this.template && this.template.userdataid">
@@ -1068,7 +1096,20 @@ export default {
       formModel: {},
       nicToNetworkSelection: [],
       selectedArchitecture: null,
-      architectureTypes: {}
+      isLeaseFeatureEnabled: this.$store.getters.features.instanceleaseenabled,
+      showLeaseOptions: false,
+      leaseduration: -1,
+      leaseexpiryaction: undefined,
+      expiryActions: ['STOP', 'DESTROY'],
+      defaultLeaseDuration: 90,
+      defaultLeaseExpiryAction: 'STOP',
+      naturalNumberRule: {
+        type: 'number',
+        validator: this.validateNumber
+      },
+      architectureTypes: {
+        opts: []
+      }
     }
   },
   computed: {
@@ -1581,6 +1622,10 @@ export default {
         if (this.sshKeyPairs && this.sshKeyPairs.length > 0) {
           this.vm.keypairs = this.sshKeyPairs
         }
+
+        if (this.leaseduration < 1) {
+          this.vm.leaseduration = undefined
+        }
       }
     }
   },
@@ -1618,7 +1663,8 @@ export default {
       this.zoneid = null
       this.rules = reactive({
         zoneid: [{ required: true, message: `${this.$t('message.error.select')}` }],
-        hypervisor: [{ required: true, message: `${this.$t('message.error.select')}` }]
+        hypervisor: [{ required: true, message: `${this.$t('message.error.select')}` }],
+        leaseduration: [this.naturalNumberRule]
       })
 
       if (this.zoneSelected) {
@@ -2283,6 +2329,12 @@ export default {
         }
         if (values.group) {
           deployVmData.group = values.group
+        }
+        if (values.leaseduration) {
+          deployVmData.leaseduration = values.leaseduration
+        }
+        if (values.leaseexpiryaction) {
+          deployVmData.leaseexpiryaction = values.leaseexpiryaction
         }
         // step 8: enter setup
         if ('properties' in values) {
@@ -2995,6 +3047,16 @@ export default {
         this.rootDiskSizeFixed = offering.rootdisksize
         this.showRootDiskSizeChanger = false
       }
+
+      if (this.isLeaseFeatureEnabled) {
+        if (offering && offering.leaseduration > 0) {
+          this.showLeaseOptions = true
+        } else {
+          this.showLeaseOptions = false
+        }
+        this.onToggleLeaseData()
+      }
+
       this.form.rootdisksizeitem = this.showRootDiskSizeChanger && this.rootDiskSizeFixed > 0
       this.formModel = toRaw(this.form)
     },
@@ -3038,6 +3100,23 @@ export default {
           parent.$message.success(parent.$t('label.copied.clipboard'))
         }
       })
+    },
+    onToggleLeaseData () {
+      if (this.showLeaseOptions === false) {
+        this.leaseduration = -1
+        this.leaseexpiryaction = undefined
+      } else {
+        this.leaseduration = this.serviceOffering.leaseduration ? this.serviceOffering.leaseduration : this.defaultLeaseDuration
+        this.leaseexpiryaction = this.serviceOffering.leaseexpiryaction ? this.serviceOffering.leaseexpiryaction : this.defaultLeaseExpiryAction
+      }
+      this.form.leaseduration = this.leaseduration
+      this.form.leaseexpiryaction = this.leaseexpiryaction
+    },
+    async validateNumber (rule, value) {
+      if (value && (isNaN(value) || value <= 0)) {
+        return Promise.reject(this.$t('message.error.number'))
+      }
+      return Promise.resolve()
     }
   }
 }
@@ -3081,7 +3160,7 @@ export default {
   .vm-info-card {
     .ant-card-body {
       min-height: 250px;
-      max-height: calc(100vh - 150px);
+      max-height: calc(100vh - 140px);
       overflow-y: auto;
       scroll-behavior: smooth;
     }

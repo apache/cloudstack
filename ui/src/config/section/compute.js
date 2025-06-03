@@ -29,8 +29,7 @@ export default {
       title: 'label.instances',
       icon: 'cloud-server-outlined',
       docHelp: 'adminguide/virtual_machines.html',
-      permission: ['listVirtualMachines', 'listVirtualMachinesMetrics'],
-      getApiToCall: () => store.getters.metrics ? 'listVirtualMachinesMetrics' : 'listVirtualMachines',
+      permission: ['listVirtualMachinesMetrics'],
       resourceType: 'UserVm',
       params: () => {
         var params = { details: 'group,nics,secgrp,tmpl,servoff,diskoff,iso,volume,affgrp,backoff' }
@@ -44,6 +43,9 @@ export default {
         const filters = ['running', 'stopped']
         if (!(store.getters.project && store.getters.project.id)) {
           filters.unshift('self')
+        }
+        if (store.getters.features.instanceleaseenabled) {
+          filters.push('leased')
         }
         return filters
       },
@@ -84,7 +86,7 @@ export default {
         var fields = ['name', 'displayname', 'id', 'state', 'ipaddress', 'ip6address', 'templatename', 'ostypename',
           'serviceofferingname', 'isdynamicallyscalable', 'haenable', 'hypervisor', 'arch', 'boottype', 'bootmode', 'account',
           'domain', 'zonename', 'userdataid', 'userdataname', 'userdataparams', 'userdatadetails', 'userdatapolicy',
-          'hostcontrolstate', 'deleteprotection']
+          'hostcontrolstate', 'deleteprotection', 'leaseexpirydate', 'leaseexpiryaction']
         const listZoneHaveSGEnabled = store.getters.zones.filter(zone => zone.securitygroupsenabled === true)
         if (!listZoneHaveSGEnabled || listZoneHaveSGEnabled.length === 0) {
           return fields

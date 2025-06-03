@@ -70,6 +70,8 @@ import org.apache.cloudstack.api.command.user.vpc.RestartVPCCmd;
 import org.apache.cloudstack.api.command.user.vpc.UpdateVPCCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.network.Ipv4GuestSubnetNetworkMap;
@@ -194,7 +196,7 @@ import com.cloud.vm.dao.NicDao;
 
 import static com.cloud.offering.NetworkOffering.RoutingMode.Dynamic;
 
-public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService {
+public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService, Configurable {
 
     public static final String SERVICE = "service";
     public static final String CAPABILITYTYPE = "capabilitytype";
@@ -3127,6 +3129,19 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             _staticRouteDao.update(route.getId(), route);
             logger.debug("Marked static route " + route + " with state " + StaticRoute.State.Revoke);
         }
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return VpcManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[]{
+                VpcTierNamePrepend,
+                VpcTierNamePrependDelimiter
+        };
     }
 
     protected class VpcCleanupTask extends ManagedContextRunnable {

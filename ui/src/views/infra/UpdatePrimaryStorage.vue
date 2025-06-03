@@ -83,6 +83,27 @@
             :placeholder="$t('message.nfs.mount.options.description')"
             v-focus="true" />
         </a-form-item>
+
+        <a-form-item name="storageaccessgroups" ref="storageaccessgroups" v-if="resource.scope !== 'HOST'">
+          <template #label>
+            <tooltip-label :title="$t('label.storageaccessgroups')" :tooltip="apiParamsConfigureStorageAccess.storageaccessgroups.description"/>
+          </template>
+          <a-select
+            mode="tags"
+            v-model:value="form.storageaccessgroups"
+            showSearch
+            optionFilterProp="label"
+            :filterOption="(input, option) => {
+              return option.children?.[0].children.toLowerCase().indexOf(input.toLowerCase()) >= 0
+            }"
+            :loading="storageAccessGroupsLoading"
+            :placeholder="apiParamsConfigureStorageAccess.storageaccessgroups.description">
+            <a-select-option v-for="(opt) in storageAccessGroups" :key="opt">
+              {{ opt }}
+            </a-select-option>
+          </a-select>
+        </a-form-item>
+
         <div :span="24" class="action-button">
           <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
           <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -113,14 +134,18 @@ export default {
   },
   data () {
     return {
-      loading: false
+      loading: false,
+      storageAccessGroups: [],
+      storageAccessGroupsLoading: false
     }
   },
   beforeCreate () {
     this.apiParams = this.$getApiParams('updateStoragePool')
+    this.apiParamsConfigureStorageAccess = this.$getApiParams('configureStorageAccess')
   },
   created () {
     this.initForm()
+    this.fetchStorageAccessGroupsData()
   },
   computed: {
     canUpdateNFSMountOpts () {
@@ -141,12 +166,30 @@ export default {
         isTagARule: this.resource.istagarule,
         capacityBytes: this.resource.disksizetotal,
         capacityIOPS: this.resource.capacityiops,
-        nfsMountOpts: this.resource.nfsmountopts
+        nfsMountOpts: this.resource.nfsmountopts,
+        storageaccessgroups: this.resource.storageaccessgroups
+          ? this.resource.storageaccessgroups.split(',')
+          : []
       })
       this.rules = reactive({ })
     },
     isAdmin () {
       return isAdmin()
+    },
+    fetchStorageAccessGroupsData () {
+      const params = {}
+      this.storageAccessGroupsLoading = true
+      api('listStorageAccessGroups', params).then(json => {
+        const sags = json.liststorageaccessgroupsresponse.storageaccessgroup || []
+        for (const sag of sags) {
+          if (!this.storageAccessGroups.includes(sag.name)) {
+            this.storageAccessGroups.push(sag.name)
+          }
+        }
+      }).finally(() => {
+        this.storageAccessGroupsLoading = false
+      })
+      this.rules = reactive({})
     },
     handleSubmit (e) {
       if (this.loading) return
@@ -166,7 +209,7 @@ export default {
           params['details[0].nfsmountopts'] = values.nfsMountOpts
         }
 
-        this.updateStoragePool(params)
+        this.updateStoragePool(params, values)
       }).catch(error => {
         this.formRef.value.scrollToField(error.errorFields[0].name)
       })
@@ -174,9 +217,34 @@ export default {
     closeAction () {
       this.$emit('close-action')
     },
-    updateStoragePool (args) {
+    updateStoragePool (args, values) {
       api('updateStoragePool', args).then(json => {
         this.$message.success(`${this.$t('message.success.edit.primary.storage')}: ${this.resource.name}`)
+
+        if (values.storageaccessgroups != null && values.storageaccessgroups.length > 0) {
+          args.storageaccessgroups = values.storageaccessgroups.join(',')
+        } else {
+          args.storageaccessgroups = ''
+        }
+
+        if (args.storageaccessgroups !== undefined && (this.resource.storageaccessgroups ? this.resource.storageaccessgroups.split(',').join(',') : '') !== args.storageaccessgroups) {
+          api('configureStorageAccess', {
+            storageid: args.id,
+            storageaccessgroups: args.storageaccessgroups
+          }).then(response => {
+            this.$pollJob({
+              jobId: response.configurestorageaccessresponse.jobid,
+              successMethod: () => {
+                this.$message.success({
+                  content: this.$t('label.action.configure.storage.access.group'),
+                  duration: 2
+                })
+              },
+              errorMessage: this.$t('message.configuring.storage.access.failed')
+            })
+          })
+        }
+
         this.$emit('refresh-data')
         this.closeAction()
       }).catch(error => {

@@ -63,6 +63,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
@@ -105,6 +106,7 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.cloudstack.utils.jsinterpreter.TagAsRuleHelper;
@@ -164,6 +166,7 @@ import com.cloud.resource.ResourceState;
 import com.cloud.serializer.GsonHelper;
 import com.cloud.server.ManagementService;
 import com.cloud.server.ResourceTag;
+import com.cloud.server.StatsCollector;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -353,8 +356,11 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @Inject
     private BackupDao backupDao;
     @Inject
+    private StatsCollector statsCollector;
+    @Inject
     HostPodDao podDao;
-
+    @Inject
+    EndPointSelector _epSelector;
 
     protected Gson _gson;
 
@@ -3141,6 +3147,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             }
 
             DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
+            ((VolumeObjectTO) volTO).setCheckpointPaths(_volumeMgr.getVolumeCheckpointPathsAndImageStoreUrls(volumeId, vm.getHypervisorType()).first());
             DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
             Map<String, String> details = new HashMap<String, String>();
             disk.setDetails(details);
@@ -3402,6 +3409,18 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             Pod destPoolPod = _entityMgr.findById(Pod.class, destPool.getPodId());
 
             destPool = _volumeMgr.findChildDataStoreInDataStoreCluster(dc, destPoolPod, destPool.getClusterId(), null, null, destPool.getId());
+        }
+
+        Pair<Boolean, String> checkResult = storageMgr.checkIfReadyVolumeFitsInStoragePoolWithStorageAccessGroups(destPool, vol);
+        if (!checkResult.first()) {
+            throw new CloudRuntimeException(checkResult.second());
+        }
+
+        if (!liveMigrateVolume && vm != null) {
+            DataStore primaryStore = dataStoreMgr.getPrimaryDataStore(destPool.getId());
+            if (_epSelector.select(primaryStore) == null) {
+                throw new CloudRuntimeException("Unable to find accessible host for volume migration");
+            }
         }
 
         if (!storageMgr.storagePoolCompatibleWithVolumePool(destPool, (Volume) vol)) {
@@ -5212,6 +5231,21 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         _workJobDao.persist(workJob);
 
         return workJob;
+    }
+
+    @Override
+    public Long getVolumePhysicalSize(ImageFormat format, String path, String chainInfo) {
+        VolumeStats vs = null;
+        if (format == ImageFormat.VHD || format == ImageFormat.QCOW2 || format == ImageFormat.RAW) {
+            if (path != null) {
+                vs = statsCollector.getVolumeStats(path);
+            }
+        } else if (format == ImageFormat.OVA) {
+            if (chainInfo != null) {
+                vs = statsCollector.getVolumeStats(chainInfo);
+            }
+        }
+        return (vs == null) ? null : vs.getPhysicalSize();
     }
 
     @Override

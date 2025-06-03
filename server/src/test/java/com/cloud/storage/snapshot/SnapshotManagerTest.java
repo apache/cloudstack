@@ -235,7 +235,6 @@ public class SnapshotManagerTest {
 
         doNothing().when(_resourceLimitMgr).checkResourceLimit(any(Account.class), any(ResourceType.class));
         doNothing().when(_resourceLimitMgr).checkResourceLimit(any(Account.class), any(ResourceType.class), anyLong());
-        doNothing().when(_resourceLimitMgr).decrementResourceCount(anyLong(), any(ResourceType.class), anyLong());
         doNothing().when(_resourceLimitMgr).incrementResourceCount(anyLong(), any(ResourceType.class));
         doNothing().when(_resourceLimitMgr).incrementResourceCount(anyLong(), any(ResourceType.class), anyLong());
 
@@ -352,7 +351,6 @@ public class SnapshotManagerTest {
         when(_vmDao.findById(anyLong())).thenReturn(vmMock);
         when(vmMock.getState()).thenReturn(State.Stopped);
         when (snapshotStrategy.revertSnapshot(any(SnapshotInfo.class))).thenReturn(true);
-        when(_volumeDao.update(anyLong(), any(VolumeVO.class))).thenReturn(true);
         doReturn(DataStoreRole.Image).when(snapshotHelperMock).getDataStoreRole(any());
         Snapshot snapshot = _snapshotMgr.revertSnapshot(TEST_SNAPSHOT_ID);
         Assert.assertNotNull(snapshot);

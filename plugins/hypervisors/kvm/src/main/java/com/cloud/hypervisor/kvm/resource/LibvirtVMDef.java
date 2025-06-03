@@ -249,7 +249,7 @@ public class LibvirtVMDef {
                         guestDef.append("<boot dev='" + bo + "'/>\n");
                     }
                 }
-                if (_arch == null || !_arch.equals("aarch64")) {
+                if (_arch == null || ! (_arch.equals("aarch64") || _arch.equals("s390x"))) { // simplification of (as ref.) (!(_arch != null && _arch.equals("s390x")) || (_arch == null || !_arch.equals("aarch64")))
                     guestDef.append("<smbios mode='sysinfo'/>\n");
                 }
                 guestDef.append("</os>\n");
@@ -583,7 +583,7 @@ public class LibvirtVMDef {
                 }
             }
 
-            if (_emulator != null && _emulator.endsWith("aarch64")) {
+            if (_emulator != null && (_emulator.endsWith("aarch64") || _emulator.endsWith("s390x"))) {
                 devicesBuilder.append("<controller type='pci' model='pcie-root'/>\n");
                 for (int i = 0; i < 32; i++) {
                   devicesBuilder.append("<controller type='pci' model='pcie-root-port'/>\n");
@@ -1655,7 +1655,7 @@ public class LibvirtVMDef {
             if (_scriptPath != null) {
                 netBuilder.append("<script path='" + _scriptPath + "'/>\n");
             }
-            if (_pxeDisable) {
+            if (_pxeDisable && !"s390x".equals(System.getProperty("os.arch"))) {
                 netBuilder.append("<rom bar='off' file=''/>");
             }
             if (_virtualPortType != null) {

@@ -170,4 +170,6 @@ public interface AgentManager {
     void notifyMonitorsOfRemovedHost(long hostId, long clusterId);
 
     void propagateChangeToAgents(Map<String, String> params);
+
+    boolean transferDirectAgentsFromMS(String fromMsUuid, long fromMsId, long timeoutDurationInMs);
 }

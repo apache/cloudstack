@@ -752,21 +752,21 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             logger.debug(String.format("%s is running...", this.getClass().getSimpleName()));
             long msid = ManagementServerNode.getManagementServerId();
             ManagementServerHostVO mshost = null;
-            ManagementServerHostStatsEntry hostStatsEntry = null;
+            ManagementServerHostStatsEntry msHostStatsEntry = null;
             try {
                 mshost = managementServerHostDao.findByMsid(msid);
                 // get local data
-                hostStatsEntry = getDataFrom(mshost);
-                managementServerHostStats.put(mshost.getUuid(), hostStatsEntry);
+                msHostStatsEntry = getDataFrom(mshost);
+                managementServerHostStats.put(mshost.getUuid(), msHostStatsEntry);
                 // send to other hosts
-                clusterManager.publishStatus(gson.toJson(hostStatsEntry));
+                clusterManager.publishStatus(gson.toJson(msHostStatsEntry));
             } catch (Throwable t) {
                 // pokemon catch to make sure the thread stays running
                 logger.error("Error trying to retrieve management server host statistics", t);
             }
             try {
                 // send to DB
-                storeStatus(hostStatsEntry, mshost);
+                storeStatus(msHostStatsEntry, mshost);
             } catch (Throwable t) {
                 // pokemon catch to make sure the thread stays running
                 logger.error("Error trying to store  management server host statistics", t);
@@ -834,8 +834,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
 
         private void getDataBaseStatistics(ManagementServerHostStatsEntry newEntry, long msid) {
-            int count = _hostDao.countByMs(msid);
-            newEntry.setAgentCount(count);
+            List<String> lastAgents = _hostDao.listByLastMs(msid);
+            newEntry.setLastAgents(lastAgents);
+            List<String> agents = _hostDao.listByMs(msid);
+            newEntry.setAgents(agents);
+            newEntry.setAgentCount(agents.size());
         }
 
         private void getMemoryData(@NotNull ManagementServerHostStatsEntry newEntry) {
@@ -2008,7 +2011,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         Integer maxRetentionTime = vmStatsMaxRetentionTime.value();
         if (maxRetentionTime <= 0) {
             logger.debug(String.format("Skipping VM stats cleanup. The [%s] parameter [%s] is set to 0 or less than 0.",
-                    vmStatsMaxRetentionTime.scope(), vmStatsMaxRetentionTime.toString()));
+                    ConfigKey.Scope.decodeAsCsv(vmStatsMaxRetentionTime.getScopeBitmask()), vmStatsMaxRetentionTime.toString()));
             return;
         }
         logger.trace("Removing older VM stats records.");
@@ -2026,7 +2029,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         if (maxRetentionTime <= 0) {
             if (logger.isDebugEnabled()) {
                 logger.debug(String.format("Skipping Volume stats cleanup. The [%s] parameter [%s] is set to 0 or less than 0.",
-                        vmDiskStatsMaxRetentionTime.scope(), vmDiskStatsMaxRetentionTime.toString()));
+                        ConfigKey.Scope.decodeAsCsv(vmDiskStatsMaxRetentionTime.getScopeBitmask()), vmDiskStatsMaxRetentionTime.toString()));
             }
             return;
         }

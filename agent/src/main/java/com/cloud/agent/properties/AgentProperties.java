@@ -383,7 +383,7 @@ public class AgentProperties{
     /**
      * This param will set the CPU architecture for the domain to override what the management server would send.<br>
      * In case of arm64 (aarch64), this will change the machine type to 'virt' and add a SCSI and a USB controller in the domain XML.<br>
-     * Possible values: x86_64 | aarch64 <br>
+     * Possible values: x86_64 | aarch64 | s390x <br>
      * Data type: String.<br>
      * Default value: <code>null</code> (will set use the architecture of the VM's OS).
      */
@@ -816,7 +816,17 @@ public class AgentProperties{
      * Data type: Integer.<br>
      * Default value: <code>null</code>
      */
-    public static final Property<Integer> SSL_HANDSHAKE_TIMEOUT = new Property<>("ssl.handshake.timeout", null, Integer.class);
+    public static final Property<Integer> SSL_HANDSHAKE_TIMEOUT = new Property<>("ssl.handshake.timeout", 30, Integer.class);
+
+    /**
+     * Timeout (in seconds) to wait for the incremental snapshot to complete.
+     * */
+    public static final Property<Integer> INCREMENTAL_SNAPSHOT_TIMEOUT = new Property<>("incremental.snapshot.timeout", 10800);
+
+    /**
+     * Timeout (in seconds) to wait for the snapshot reversion to complete.
+     * */
+    public static final Property<Integer> REVERT_SNAPSHOT_TIMEOUT = new Property<>("revert.snapshot.timeout", 10800);
 
     public static class Property <T>{
         private String name;
