@@ -64,11 +64,13 @@ export default {
       osCategoryId: null
     }
   },
-  created () {
+  mounted () {
     if (this.$route.meta.name === 'iso') {
       this.imageApi = 'listIsos'
     }
-    this.fetchData()
+    setTimeout(() => {
+      this.fetchData()
+    }, 100)
   },
   computed: {
     allowed () {
@@ -130,7 +132,7 @@ export default {
     fetchOsCategoryIdIfNeeded () {
       const needed = this.allowed &&
         'listOsTypes' in this.$store.getters.apis &&
-        this.resource && this.resource.ostypeid &&
+        !!this.resource && !!this.resource.ostypeid &&
         (this.$config.imageSelectionInterface === undefined ||
         this.$config.imageSelectionInterface === 'modern')
       if (!needed) {
