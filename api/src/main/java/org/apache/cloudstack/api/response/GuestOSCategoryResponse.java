@@ -38,11 +38,11 @@ public class GuestOSCategoryResponse extends BaseResponse implements SetResource
     private String name;
 
     @SerializedName(ApiConstants.IS_FEATURED)
-    @Param(description = "Whether the OS category is featured", since = "4.20.1")
+    @Param(description = "Whether the OS category is featured", since = "4.21.0")
     private Boolean featured;
 
     @SerializedName(ApiConstants.RESOURCE_ICON)
-    @Param(description = "Base64 string representation of the resource icon", since = "4.20.1")
+    @Param(description = "Base64 string representation of the resource icon", since = "4.21.0")
     private ResourceIconResponse resourceIconResponse;
 
     @SerializedName(ApiConstants.CREATED)

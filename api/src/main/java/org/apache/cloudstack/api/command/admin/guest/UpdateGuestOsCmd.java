@@ -60,7 +60,7 @@ public class UpdateGuestOsCmd extends BaseAsyncCmd {
     private Boolean display;
 
     @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType = GuestOSCategoryResponse.class,
-            description = "the ID of the OS category", since = "4.20.1")
+            description = "the ID of the OS category", since = "4.21.0")
     private Long osCategoryId;
 
 

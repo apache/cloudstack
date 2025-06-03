@@ -36,7 +36,7 @@ import com.cloud.user.Account;
         responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false,
-        since = "4.20.1",
+        since = "4.21.0",
         authorized = {RoleType.Admin})
 public class DeleteGuestOsCategoryCmd extends BaseCmd {
 

@@ -50,13 +50,13 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.IS_FEATURED,
             type = CommandType.BOOLEAN,
             description = "List available OS categories by featured or not",
-            since = "4.20.1")
+            since = "4.21.0")
     private Boolean featured;
 
     @Parameter(name = ApiConstants.IS_ISO,
             type = CommandType.BOOLEAN,
             description = "List OS categories for which an ISO is available",
-            since = "4.20.1")
+            since = "4.21.0")
     private Boolean iso;
 
     @Parameter(name = ApiConstants.IS_VNF, type = CommandType.BOOLEAN,
@@ -68,19 +68,19 @@ public class ListGuestOsCategoriesCmd extends BaseListCmd {
             type = CommandType.UUID,
             entityType = ZoneResponse.class,
             description = "List available OS categories types for the zone",
-            since = "4.20.1")
+            since = "4.21.0")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.ARCH,
             type = CommandType.STRING,
             description = "List OS categories types available for given CPU architecture",
-            since = "4.20.1")
+            since = "4.21.0")
     private String arch;
 
     @Parameter(name = ApiConstants.SHOW_RESOURCE_ICON,
             type = CommandType.BOOLEAN,
             description = "flag to display the resource image for the OS category",
-            since = "4.20.1")
+            since = "4.21.0")
     private Boolean showIcon;
 
     /////////////////////////////////////////////////////

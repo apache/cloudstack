@@ -115,7 +115,7 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
 
     @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType= GuestOSCategoryResponse.class,
             description = "the ID of the OS category for the template",
-            since = "4.20.1")
+            since = "4.21.0")
     private Long osCategoryId;
 
     /////////////////////////////////////////////////////
