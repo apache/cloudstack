@@ -513,7 +513,7 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
             raise self.skipTest("Skipping test case for non-xenserver hypervisor")
         """
         Following commands are used to convert a VM from HVM to PV and set using vm-param-set
-        HVM-boot-policy=
+        HVM-boot-policy=""
         PV-bootloader=pygrub
         PV-args=hvc0
         """
@@ -524,7 +524,7 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
         add_config_response = self.add_global_config(name, value)
 
         if add_config_response.name:
-            extraconfig = 'HVM-boot-policy%3D%0APV-bootloader%3Dpygrub%0APV-args%3Dhvc0'
+            extraconfig = 'HVM-boot-policy%3D%22%22%0APV-bootloader%3Dpygrub%0APV-args%3Dhvc0'
             try:
                 response = self.deploy_vm(hypervisor, extraconfig)
                 host_id = response.hostid

@@ -202,7 +202,7 @@ export default {
     },
     fetchZoneDetails () {
       api('listZones', {
-        zoneid: this.resource.zoneid
+        id: this.resource.zoneid
       }).then(response => {
         const zone = response?.listzonesresponse?.zone || []
         this.securityGroupsEnabled = zone?.[0]?.securitygroupsenabled || this.$store.getters.showSecurityGroups
@@ -336,10 +336,8 @@ export default {
         params.name = values.name
         params.displayname = values.displayname
         params.ostypeid = values.ostypeid
-        if (this.securityGroupsEnabled) {
-          if (values.securitygroupids) {
-            params.securitygroupids = values.securitygroupids
-          }
+        if (this.securityGroupsEnabled && Array.isArray(values.securitygroupids) && values.securitygroupids.length > 0) {
+          params.securitygroupids = values.securitygroupids
         }
         if (values.isdynamicallyscalable !== undefined) {
           params.isdynamicallyscalable = values.isdynamicallyscalable

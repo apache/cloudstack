@@ -16,7 +16,7 @@
 //under the License.
 package org.apache.cloudstack.api.command;
 
-import com.cloud.user.Account;
+import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -32,6 +32,7 @@ import javax.inject.Inject;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaListEmailConfigurationCmd extends BaseCmd {
 
+    @ACL
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = BaseCmd.CommandType.UUID, entityType = AccountResponse.class, required = true,
             description = "Account ID for which to list quota template email configurations")
     private long accountId;
@@ -49,6 +50,6 @@ public class QuotaListEmailConfigurationCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        return Account.ACCOUNT_ID_SYSTEM;
+        return accountId;
     }
 }
