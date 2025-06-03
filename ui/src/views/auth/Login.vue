@@ -97,7 +97,7 @@
             </template>
           </a-input>
         </a-form-item>
-        <a-form-item ref="project" name="project">
+        <a-form-item ref="project" name="project" v-if="$config.displayProjectFieldOnLogin">
           <a-input
             size="large"
             type="text"

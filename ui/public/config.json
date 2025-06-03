@@ -97,5 +97,6 @@
   "basicZoneEnabled": true,
   "multipleServer": false,
   "allowSettingTheme": true,
+  "displayProjectFieldOnLogin": false,
   "docHelpMappings": {}
 }
