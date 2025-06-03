@@ -179,6 +179,7 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
                     ExtensionResourceMap.ResourceType.Cluster);
             ExtensionVO extensionVO = externalOrchestratorDao.findById(extensionResourceMapVO.getExtensionId());
             params.put("extensionName", extensionVO.getName());
+            params.put("extensionRelativeEntryPoint", extensionVO.getRelativeEntryPoint());
 
             resources = createAgentResources(params);
             return resources;
@@ -191,12 +192,21 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
     @Override
     protected HashMap<String, Object> buildConfigParams(HostVO host) {
         HashMap<String, Object> params = super.buildConfigParams(host);
+        long clusterId = Long.parseLong((String) params.get("cluster"));
         ExtensionResourceMapVO extensionResourceMapVO =
-                extensionResourceMapDao.findByResourceIdAndType(Long.parseLong((String) params.get("cluster")),
+                extensionResourceMapDao.findByResourceIdAndType(clusterId,
                         ExtensionResourceMap.ResourceType.Cluster);
+        if (extensionResourceMapVO == null) {
+            logger.debug("Cluster ID: {} not registered with any extension", clusterId);
+            return params;
+        }
         ExtensionVO extensionVO = externalOrchestratorDao.findById(extensionResourceMapVO.getExtensionId());
+        if (extensionVO == null) {
+            logger.error("Extension with ID: {} not found", extensionResourceMapVO.getExtensionId());
+            return params;
+        }
         params.put("extensionName", extensionVO.getName());
-
+        params.put("extensionRelativeEntryPoint", extensionVO.getRelativeEntryPoint());
         return params;
     }
 
@@ -248,7 +258,7 @@ public class ExternalServerDiscoverer extends DiscovererBase implements Discover
                         ExtensionResourceMap.ResourceType.Cluster);
         ExtensionVO extensionVO = externalOrchestratorDao.findById(extensionResourceMapVO.getExtensionId());
         logger.debug("Creating host for {}", extensionVO);
-        externalProvisioner.prepareScripts(extensionVO.getName()); // ToDo: good idea to add prepare here?
+        externalProvisioner.prepareScripts(extensionVO.getName(), extensionVO.getRelativeEntryPoint());
         return _resourceMgr.fillRoutingHostVO(host, ssCmd, Hypervisor.HypervisorType.External, details, hostTags);
     }
 

@@ -39,9 +39,7 @@ import com.google.gson.reflect.TypeToken;
 
 public interface ExtensionCustomAction extends InternalIdentity, Identity {
     enum ResourceType {
-        VirtualMachine(com.cloud.vm.VirtualMachine.class),
-        Host(com.cloud.host.Host.class),
-        Cluster(com.cloud.org.Cluster.class);
+        VirtualMachine(com.cloud.vm.VirtualMachine.class);
 
         private final Class<?> clazz;
 
@@ -74,7 +72,11 @@ public interface ExtensionCustomAction extends InternalIdentity, Identity {
 
     ResourceType getResourceType();
 
-    String getRolesList();
+    Integer getRoles();
+
+    String getSuccessMessage();
+
+    String getErrorMessage();
 
     boolean isEnabled();
 

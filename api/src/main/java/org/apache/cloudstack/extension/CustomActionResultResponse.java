@@ -35,9 +35,13 @@ public class CustomActionResultResponse extends BaseResponse {
     @Param(description = "Name of the action")
     private String name;
 
-    @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "Details of the action execution")
-    private Map<String, String> details;
+    @SerializedName(ApiConstants.SUCCESS)
+    @Param(description = "Whether custom action succeed or not")
+    private Boolean success;
+
+    @SerializedName(ApiConstants.RESULT1)
+    @Param(description = "Result of the action execution")
+    private Map<String, String> result;
 
     public void setId(String id) {
         this.id = id;
@@ -47,7 +51,11 @@ public class CustomActionResultResponse extends BaseResponse {
         this.name = name;
     }
 
-    public void setDetails(Map<String, String> details) {
-        this.details = details;
+    public void setSuccess(Boolean success) {
+        this.success = success;
+    }
+
+    public void setResult(Map<String, String> result) {
+        this.result = result;
     }
 }

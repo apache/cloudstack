@@ -35,6 +35,7 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.extensions.dao.ExtensionDao;
 import org.apache.cloudstack.guru.ExternalHypervisorGuru;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -101,6 +102,9 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     VMInstanceDao vmInstanceDao;
 
     @Inject
+    ExtensionDao extensionDao;
+
+    @Inject
     private HypervisorGuruManager _hvGuruMgr;
 
     @Override
@@ -139,8 +143,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
         return modifiedDetails;
     }
 
-    protected String getExtensionCheckedScriptPath(String extensionName) {
-        String path = getExtensionScriptPath(extensionName);
+    protected String getExtensionCheckedScriptPath(String extensionName, String extensionRelativeEntryPoint) {
+        String path = getExtensionEntryPoint(extensionRelativeEntryPoint);
         File file = new File(path);
         if (!file.exists()) {
             logger.error("Provisioner script {} for extension: {} does not exist", path, extensionName);
@@ -180,14 +184,13 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     @Override
-    public String getExtensionScriptPath(String extensionName) {
-        return String.format("%s%s%s%sprovisioner.sh", extensionsDirectory, File.separator, extensionName,
-                File.separator);
+    public String getExtensionEntryPoint(String relativeEntryPoint) {
+        return String.format("%s%s%s", extensionsDirectory, File.separator, relativeEntryPoint);
     }
 
     @Override
-    public PrepareExternalProvisioningAnswer prepareExternalProvisioning(String extensionName, PrepareExternalProvisioningCommand cmd) {
-        String extensionPath = getExtensionCheckedScriptPath(extensionName);
+    public PrepareExternalProvisioningAnswer prepareExternalProvisioning(String extensionName, String extensionRelativeEntryPoint, PrepareExternalProvisioningCommand cmd) {
+        String extensionPath = getExtensionCheckedScriptPath(extensionName, extensionRelativeEntryPoint);
         if (StringUtils.isEmpty(extensionPath)) {
             return new PrepareExternalProvisioningAnswer(cmd, "Extension not configured", false);
         }
@@ -224,8 +227,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     @Override
-    public StartAnswer startInstance(String extensionName, StartCommand cmd) {
-        String extensionPath = getExtensionCheckedScriptPath(extensionName);
+    public StartAnswer startInstance(String extensionName, String extensionRelativeEntryPoint, StartCommand cmd) {
+        String extensionPath = getExtensionCheckedScriptPath(extensionName, extensionRelativeEntryPoint);
         if (StringUtils.isEmpty(extensionPath)) {
             return new StartAnswer(cmd, "Extension not configured");
         }
@@ -269,8 +272,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     @Override
-    public StopAnswer stopInstance(String extensionName, StopCommand cmd) {
-        String extensionPath = getExtensionCheckedScriptPath(extensionName);
+    public StopAnswer stopInstance(String extensionName, String extensionRelativeEntryPoint, StopCommand cmd) {
+        String extensionPath = getExtensionCheckedScriptPath(extensionName, extensionRelativeEntryPoint);
         if (StringUtils.isEmpty(extensionPath)) {
             return new StopAnswer(cmd, "Extension not configured", false);
         }
@@ -295,8 +298,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     @Override
-    public RebootAnswer rebootInstance(String extensionName, RebootCommand cmd) {
-        String extensionPath = getExtensionCheckedScriptPath(extensionName);
+    public RebootAnswer rebootInstance(String extensionName, String extensionRelativeEntryPoint, RebootCommand cmd) {
+        String extensionPath = getExtensionCheckedScriptPath(extensionName, extensionRelativeEntryPoint);
         if (StringUtils.isEmpty(extensionPath)) {
             return new RebootAnswer(cmd, "Extension not configured", false);
         }
@@ -319,15 +322,15 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     @Override
-    public StopAnswer expungeInstance(String extensionName, StopCommand cmd) {
-        String extensionPath = getExtensionCheckedScriptPath(extensionName);
+    public StopAnswer expungeInstance(String extensionName, String extensionRelativeEntryPoint, StopCommand cmd) {
+        String extensionPath = getExtensionCheckedScriptPath(extensionName, extensionRelativeEntryPoint);
         if (StringUtils.isEmpty(extensionPath)) {
             return new StopAnswer(cmd, "Extension not configured", false);
         }
         VirtualMachineTO virtualMachineTO = cmd.getVirtualMachine();
         UserVmVO userVm = _uservmDao.findById(virtualMachineTO.getId());
         String vmUUID = userVm.getUuid();
-        logger.debug("Executing stop command in the external system for the VM {}", vmUUID);
+        logger.debug("Executing stop command as part of expunge in the external system for the VM {}", vmUUID);
 
         String prepareExternalScript = Script.findScript("", extensionPath);
         HostVO host = hostDao.findById(userVm.getLastHostId());
@@ -342,14 +345,14 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     @Override
-    public PostExternalProvisioningAnswer postSetupInstance(String extensionName, PostExternalProvisioningCommand cmd) {
+    public PostExternalProvisioningAnswer postSetupInstance(String extensionName, String extensionRelativeEntryPoint, PostExternalProvisioningCommand cmd) {
         return new PostExternalProvisioningAnswer(cmd, null, null);
     }
 
     @Override
-    public Map<String, HostVmStateReportEntry> getHostVmStateReport(String extensionName, long hostId) {
+    public Map<String, HostVmStateReportEntry> getHostVmStateReport(String extensionName, String extensionRelativeEntryPoint, long hostId) {
         final Map<String, HostVmStateReportEntry> vmStates = new HashMap<>();
-        String extensionPath = getExtensionCheckedScriptPath(extensionName);
+        String extensionPath = getExtensionCheckedScriptPath(extensionName, extensionRelativeEntryPoint);
         if (StringUtils.isEmpty(extensionPath)) {
             return vmStates;
         }
@@ -375,8 +378,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     @Override
-    public RunCustomActionAnswer runCustomAction(String extensionName, RunCustomActionCommand cmd) {
-        String extensionPath = getExtensionCheckedScriptPath(extensionName);
+    public RunCustomActionAnswer runCustomAction(String extensionName, String extensionRelativeEntryPoint, RunCustomActionCommand cmd) {
+        String extensionPath = getExtensionCheckedScriptPath(extensionName, extensionRelativeEntryPoint);
         if (StringUtils.isEmpty(extensionPath)) {
             return new RunCustomActionAnswer(cmd, false, "Extension not configured");
         }
@@ -401,11 +404,17 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     @Override
-    public void prepareScripts(String extensionName) {
-        String destinationPath = getExtensionScriptPath(extensionName);
+    public void prepareScripts(String extensionName, String extensionRelativeEntryPoint) {
+        String destinationPath = getExtensionEntryPoint(extensionRelativeEntryPoint);
+        if (!destinationPath.endsWith(".sh")) {
+            logger.info("File {} for extension: {} is not a bash script, skipping copy.", destinationPath,
+                    extensionName);
+            return;
+        }
         File destinationFile = new File(destinationPath);
         if (destinationFile.exists()) {
-            logger.info("File already exists at {}, skipping copy.", destinationPath);
+            logger.info("File already exists at {} for extension: {}, skipping copy.", destinationPath,
+                    extensionName);
             return;
         }
         CloudRuntimeException exception =
@@ -541,8 +550,8 @@ public class SimpleExternalProvisioner extends ManagerBase implements ExternalPr
     }
 
     @Override
-    public Answer checkHealth(String extensionName, CheckHealthCommand cmd) {
-        String extensionPath = getExtensionCheckedScriptPath(extensionName);
+    public Answer checkHealth(String extensionName, String extensionRelativeEntryPoint, CheckHealthCommand cmd) {
+        String extensionPath = getExtensionCheckedScriptPath(extensionName, extensionRelativeEntryPoint);
         if (StringUtils.isEmpty(extensionPath)) {
             return new Answer(cmd, false, "Extension not configured");
         }

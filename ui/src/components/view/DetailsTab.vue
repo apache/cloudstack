@@ -127,6 +127,9 @@
           <div v-else-if="item === 'usersource'">
             {{ $t(getUserSourceLabel(dataResource[item])) }}
           </div>
+          <div v-else-if="item === 'roles' && Array.isArray(dataResource[item])">
+            {{ dataResource[item].join(', ') }}
+          </div>
           <div v-else>{{ dataResource[item] }}</div>
         </div>
       </a-list-item>

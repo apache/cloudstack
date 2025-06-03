@@ -20,11 +20,10 @@ package org.apache.cloudstack.framework.extensions.vo;
 import java.util.Date;
 import java.util.UUID;
 
-import org.apache.cloudstack.extension.Extension;
-import com.cloud.utils.db.GenericDao;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -32,7 +31,10 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.extension.Extension;
 import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "extension")
@@ -43,12 +45,12 @@ public class ExtensionVO implements Extension {
         this.created = new Date();
     }
 
-    public ExtensionVO(String name, String description, String type, String script) {
+    public ExtensionVO(String name, String description, Type type, String relativeEntryPoint) {
         this.uuid = UUID.randomUUID().toString();
         this.name = name;
         this.description = description;
         this.type = type;
-        this.script = script;
+        this.relativeEntryPoint = relativeEntryPoint;
         this.created = new Date();
     }
 
@@ -63,14 +65,15 @@ public class ExtensionVO implements Extension {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "description")
+    @Column(name = "description", length = 4096)
     private String description;
 
     @Column(name = "type", nullable = false)
-    private String type;
+    @Enumerated(value = EnumType.STRING)
+    private Type type;
 
-    @Column(name = "script", nullable = false, length = 2048)
-    private String script;
+    @Column(name = "relative_entry_point", nullable = false, length = 2048)
+    private String relativeEntryPoint;
 
     @Column(name = "created", nullable = false, updatable = false)
     @Temporal(TemporalType.TIMESTAMP)
@@ -107,21 +110,17 @@ public class ExtensionVO implements Extension {
     }
 
     @Override
-    public String getType() {
+    public Type getType() {
         return type;
     }
 
-    public void setType(String type) {
-        this.type = type;
-    }
-
     @Override
-    public String getScript() {
-        return script;
+    public String getRelativeEntryPoint() {
+        return relativeEntryPoint;
     }
 
-    public void setScript(String script) {
-        this.script = script;
+    public void setRelativeEntryPoint(String relativeEntryPoint) {
+        this.relativeEntryPoint = relativeEntryPoint;
     }
 
     @Override

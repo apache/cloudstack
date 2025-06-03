@@ -17,16 +17,18 @@
 
 package org.apache.cloudstack.api.response;
 
-import org.apache.cloudstack.extension.ExtensionCustomAction;
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
+import org.apache.cloudstack.extension.ExtensionCustomAction;
 
-import java.util.Date;
-import java.util.Map;
-import java.util.Set;
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = ExtensionCustomAction.class)
 public class ExtensionCustomActionResponse extends BaseResponse {
@@ -55,9 +57,17 @@ public class ExtensionCustomActionResponse extends BaseResponse {
     @Param(description = "Resource type for which the action is available")
     private String resourceType;
 
-    @SerializedName(ApiConstants.ROLES_LIST)
-    @Param(description = "Comma separated list of roles associated with the extension custom action")
-    private String rolesList;
+    @SerializedName(ApiConstants.ROLES)
+    @Param(description = "List of roles associated with the extension custom action")
+    private List<String> roles;
+
+    @SerializedName(ApiConstants.SUCCESS_MESSAGE)
+    @Param(description = "Message that will be used on successful execution of the action")
+    private String successMessage;
+
+    @SerializedName(ApiConstants.ERROR_MESSAGE)
+    @Param(description = "Message that will be used on failure during execution of the action")
+    private String errorMessage;
 
     @SerializedName(ApiConstants.ENABLED)
     @Param(description = "Whether the extension custom action is enabled or not")
@@ -75,11 +85,10 @@ public class ExtensionCustomActionResponse extends BaseResponse {
     @Param(description = "Creation timestamp of the extension custom action")
     private Date created;
 
-    public ExtensionCustomActionResponse(String id, String name, String description, String rolesList) {
+    public ExtensionCustomActionResponse(String id, String name, String description) {
         this.id = id;
         this.name = name;
         this.description = description;
-        this.rolesList = rolesList;
     }
 
     public String getId() {
@@ -122,12 +131,20 @@ public class ExtensionCustomActionResponse extends BaseResponse {
         this.resourceType = resourceType;
     }
 
-    public String getRolesList() {
-        return rolesList;
+    public List<String> getRoles() {
+        return roles;
     }
 
-    public void setRolesList(String rolesList) {
-        this.rolesList = rolesList;
+    public void setRoles(List<String> roles) {
+        this.roles = roles;
+    }
+
+    public void setSuccessMessage(String successMessage) {
+        this.successMessage = successMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
     }
 
     public void setEnabled(Boolean enabled) {

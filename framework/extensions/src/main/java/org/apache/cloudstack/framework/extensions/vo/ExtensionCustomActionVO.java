@@ -47,7 +47,7 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
     @Column(name = "name", nullable = false)
     private String name;
 
-    @Column(name = "description", nullable = false)
+    @Column(name = "description", length = 4096)
     private String description;
 
     @Column(name = "extension_id", nullable = false)
@@ -57,8 +57,14 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
     @Enumerated(value = EnumType.STRING)
     private ResourceType resourceType;
 
-    @Column(name = "roles_list")
-    private String rolesList;
+    @Column(name = "roles")
+    private Integer roles;
+
+    @Column(name = "success_message", length = 4096)
+    private String successMessage;
+
+    @Column(name = "error_message", length = 4096)
+    private String errorMessage;
 
     @Column(name = "enabled")
     private boolean enabled;
@@ -75,17 +81,35 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
         this.created = new Date();
     }
 
-    public ExtensionCustomActionVO(String name, String description, long extensionId, boolean enabled) {
+    public ExtensionCustomActionVO(String name, String description, long extensionId, String successMessage,
+           String errorMessage, boolean enabled) {
         this.uuid = UUID.randomUUID().toString();
         this.created = new Date();
         this.name = name;
         this.description = description;
         this.extensionId = extensionId;
+        this.successMessage = successMessage;
+        this.errorMessage = errorMessage;
         this.enabled = enabled;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    @Override
+    public long getId() {
+        return id;
+    }
+
+    @Override
+    public String getUuid() {
+        return uuid;
+    }
+
+    public void setRoles(int roles) {
+        this.roles = roles;
+    }
+
+    @Override
+    public Integer getRoles() {
+        return roles;
     }
 
     public void setUuid(String uuid) {
@@ -102,15 +126,6 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
 
     public String getDescription() {
         return description;
-    }
-
-    public void setRolesList(String rolesList) {
-        this.rolesList = rolesList;
-    }
-
-    @Override
-    public String getRolesList() {
-        return rolesList;
     }
 
     public void setDescription(String description) {
@@ -135,14 +150,24 @@ public class ExtensionCustomActionVO implements ExtensionCustomAction {
         this.resourceType = resourceType;
     }
 
-    @Override
-    public String getUuid() {
-        return uuid;
+    public String getSuccessMessage() {
+        return successMessage;
     }
 
-    @Override
-    public long getId() {
-        return id;
+    public void setSuccessMessage(String successMessage) {
+        this.successMessage = successMessage;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
+    public void setCreated(Date created) {
+        this.created = created;
     }
 
     @Override

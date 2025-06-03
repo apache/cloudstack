@@ -24,18 +24,17 @@
       :loading="loading"
       layout="vertical"
       @finish="handleSubmit">
-      <a-form-item name="extensionid" ref="extensionid">
+      <a-form-item name="extensionid" ref="extensionid" v-if="!extension">
         <template #label>
           <tooltip-label :title="$t('label.extensionid')" :tooltip="apiParams.extensionid.description"/>
         </template>
           <infinite-scroll-select
-            :disabled="!!resource"
             v-model:value="form.extensionid"
             :placeholder="apiParams.extensionid.description"
             api="listExtensions"
             :apiParams="extensionsApiParams"
             resourceType="extension"
-            defaultIcon="rocket-outlined" />
+            defaultIcon="node-expand-outlined" />
       </a-form-item>
       <a-form-item name="name" ref="name">
         <template #label>
@@ -43,8 +42,7 @@
         </template>
         <a-input
           v-model:value="form.name"
-          :placeholder="apiParams.name.description"
-          v-focus="true" />
+          :placeholder="apiParams.name.description" />
       </a-form-item>
       <a-form-item name="description" ref="description">
         <template #label>
@@ -55,19 +53,20 @@
           :placeholder="apiParams.description.description"
           v-focus="true" />
       </a-form-item>
-      <a-form-item ref="resourcetype" name="resourcetype">
+      <a-form-item ref="roles" name="roles">
         <template #label>
-          <tooltip-label :title="$t('label.resourcetype')" :tooltip="apiParams.resourcetype.description"/>
+          <tooltip-label :title="$t('label.roles')" :tooltip="apiParams.roles.description"/>
         </template>
         <a-select
           showSearch
-          v-model:value="form.resourcetype"
-          :placeholder="apiParams.resourcetype.description"
+          mode="multiple"
+          v-model:value="form.roles"
+          :placeholder="apiParams.roles.description"
           optionFilterProp="label"
           :filterOption="(input, option) => {
             return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
-          <a-select-option v-for="opt in resourceTypes" :key="opt.id" :label="opt.id || opt.description">
+          <a-select-option v-for="opt in roles" :key="opt.id" :label="opt.id || opt.description">
             {{ opt.id || opt.description }}
           </a-select-option>
         </a-select>
@@ -80,6 +79,22 @@
         <parameters-input
           v-model:value="form.parameters" />
       </a-form-item>
+      <a-form-item name="successmessage" ref="successmessage">
+        <template #label>
+          <tooltip-label :title="$t('label.successmessage')" :tooltip="apiParams.successmessage.description"/>
+        </template>
+        <a-input
+          v-model:value="form.successmessage"
+          :placeholder="apiParams.successmessage.description" />
+      </a-form-item>
+      <a-form-item name="errormessage" ref="errormessage">
+        <template #label>
+          <tooltip-label :title="$t('label.errormessage')" :tooltip="apiParams.errormessage.description"/>
+        </template>
+        <a-input
+          v-model:value="form.errormessage"
+          :placeholder="apiParams.errormessage.description" />
+      </a-form-item>
       <a-form-item>
         <template #label>
           <tooltip-label :title="$t('label.details')" :tooltip="apiParams.details.description"/>
@@ -88,6 +103,12 @@
         <details-input
           v-model:value="form.details" />
       </a-form-item>
+        <a-form-item name="enabled" ref="enabled">
+          <template #label>
+            <tooltip-label :title="$t('label.enabled')" :tooltip="apiParams.enabled.description"/>
+          </template>
+          <a-switch v-model:checked="form.enabled" />
+        </a-form-item>
       <div :span="24" class="action-button">
         <a-button @click="closeAction">{{ $t('label.cancel') }}</a-button>
         <a-button :loading="loading" ref="submit" type="primary" @click="handleSubmit">{{ $t('label.ok') }}</a-button>
@@ -113,14 +134,14 @@ export default {
     DetailsInput
   },
   props: {
-    resource: {
+    extension: {
       type: Object,
       default: null
     }
   },
   data () {
     return {
-      resourceTypes: [],
+      roles: [],
       loading: false
     }
   },
@@ -132,10 +153,10 @@ export default {
   },
   created () {
     this.initForm()
-    this.fetchResourceTypes()
-    if (this.resource) {
-      this.form.extensionid = this.resource.id
+    if (this.extension) {
+      this.form.extensionid = this.extensionid
     }
+    this.fetchRoles()
   },
   methods: {
     initForm () {
@@ -146,11 +167,11 @@ export default {
         name: [{ required: true, message: `${this.$t('message.error.name')}` }]
       })
     },
-    fetchResourceTypes () {
-      this.resourceTypes = []
-      const resourceTypesList = ['VirtualMachine', 'Host', 'Cluster']
-      resourceTypesList.forEach((item) => {
-        this.resourceTypes.push({
+    fetchRoles () {
+      this.roles = []
+      const rolesList = ['Admin', 'ResourceAdmin', 'DomainAdmin', 'User']
+      rolesList.forEach((item) => {
+        this.roles.push({
           id: item,
           description: item
         })

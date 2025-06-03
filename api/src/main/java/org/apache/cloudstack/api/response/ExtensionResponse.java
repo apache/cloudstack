@@ -47,12 +47,12 @@ public class ExtensionResponse extends BaseResponse {
     @Param(description = "Type of the extension")
     private String type;
 
-    @SerializedName(ApiConstants.SCRIPT)
-    @Param(description = "the path of the script")
-    private String script;
+    @SerializedName(ApiConstants.ENTRY_POINT)
+    @Param(description = "The path of the entry point fo the extension")
+    private String entryPoint;
 
     @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "the details of the extension")
+    @Param(description = "The details of the extension")
     private Map<String, String> details;
 
     @SerializedName(ApiConstants.RESOURCES)
@@ -98,12 +98,8 @@ public class ExtensionResponse extends BaseResponse {
         this.type = type;
     }
 
-    public String getScriptPath() {
-        return script;
-    }
-
-    public void setScriptPath(String script) {
-        this.script = script;
+    public void setEntryPoint(String entryPoint) {
+        this.entryPoint = entryPoint;
     }
 
     public void setDetails(Map<String, String> details) {

@@ -79,6 +79,7 @@ public class ExternalResourceBase implements ServerResource {
     private Host.Type type;
 
     private String extensionName;
+    private String extensionRelativeEntryPoint;
 
     public ExternalResourceBase() {
         setType(Host.Type.Routing);
@@ -130,7 +131,8 @@ public class ExternalResourceBase implements ServerResource {
 
     @Override
     public PingCommand getCurrentStatus(long id) {
-        final Map<String, HostVmStateReportEntry> vmStates = externalProvisioner.getHostVmStateReport(extensionName, id);
+        final Map<String, HostVmStateReportEntry> vmStates = externalProvisioner.getHostVmStateReport(extensionName,
+                extensionRelativeEntryPoint, id);
         return new PingRoutingCommand(Host.Type.Routing, id, vmStates);
     }
 
@@ -177,30 +179,30 @@ public class ExternalResourceBase implements ServerResource {
     }
 
     public RunCustomActionAnswer execute(RunCustomActionCommand cmd) {
-        return externalProvisioner.runCustomAction(extensionName, cmd);
+        return externalProvisioner.runCustomAction(extensionName, extensionRelativeEntryPoint, cmd);
     }
 
     public Answer execute(Command cmd) {
         RunCustomActionCommand runCustomActionCommand = new RunCustomActionCommand(cmd.toString(), new HashMap<>(),
                 new HashMap<>());
         RunCustomActionAnswer customActionAnswer = externalProvisioner.runCustomAction(extensionName,
-                runCustomActionCommand);
-        return new Answer(cmd, customActionAnswer.getResult(), customActionAnswer.getRunDetails().toString());
+                extensionRelativeEntryPoint, runCustomActionCommand);
+        return new Answer(cmd, customActionAnswer.getResult(), customActionAnswer.getDetails());
     }
 
     public StopAnswer execute(StopCommand cmd) {
         if (cmd.isExpungeVM()) {
-            return externalProvisioner.expungeInstance(extensionName, cmd);
+            return externalProvisioner.expungeInstance(extensionName, extensionRelativeEntryPoint, cmd);
         }
-        return externalProvisioner.stopInstance(extensionName, cmd);
+        return externalProvisioner.stopInstance(extensionName, extensionRelativeEntryPoint, cmd);
     }
 
     public RebootAnswer execute(RebootCommand cmd) {
-        return externalProvisioner.rebootInstance(extensionName, cmd);
+        return externalProvisioner.rebootInstance(extensionName, extensionRelativeEntryPoint, cmd);
     }
 
     public PostExternalProvisioningAnswer execute(PostExternalProvisioningCommand cmd) {
-        return externalProvisioner.postSetupInstance(extensionName, cmd);
+        return externalProvisioner.postSetupInstance(extensionName, extensionRelativeEntryPoint, cmd);
     }
 
     public GetHostStatsAnswer execute(GetHostStatsCommand cmd) {
@@ -208,15 +210,15 @@ public class ExternalResourceBase implements ServerResource {
     }
 
     public PrepareExternalProvisioningAnswer execute(PrepareExternalProvisioningCommand cmd) {
-        return externalProvisioner.prepareExternalProvisioning(extensionName, cmd);
+        return externalProvisioner.prepareExternalProvisioning(extensionName, extensionRelativeEntryPoint, cmd);
     }
 
     public StartAnswer execute(StartCommand cmd) {
-        return externalProvisioner.startInstance(extensionName, cmd);
+        return externalProvisioner.startInstance(extensionName, extensionRelativeEntryPoint, cmd);
     }
 
     private Answer execute(CheckHealthCommand cmd) {
-        return externalProvisioner.checkHealth(extensionName, cmd);
+        return externalProvisioner.checkHealth(extensionName, extensionRelativeEntryPoint, cmd);
     }
 
     @Override
@@ -277,6 +279,7 @@ public class ExternalResourceBase implements ServerResource {
         guid = (String) params.get("guid");
         url = (String) params.get("guid");
         extensionName = (String) params.get("extensionName");
+        extensionRelativeEntryPoint = (String) params.get("extensionRelativeEntryPoint");
 
         return true;
     }

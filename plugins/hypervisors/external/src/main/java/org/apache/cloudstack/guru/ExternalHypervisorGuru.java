@@ -73,11 +73,11 @@ public class ExternalHypervisorGuru extends HypervisorGuruBase implements Hyperv
 
         Map<String, String> newDetails = new HashMap<>();
         Map<String, String> toDetails = to.getDetails();
-        newDetails.putAll(toDetails);
         Map<String, String> serviceOfferingDetails = _serviceOfferingDetailsDao.listDetailsKeyPairs(vmProfile.getServiceOfferingId());
         if (MapUtils.isNotEmpty(serviceOfferingDetails)) {
             newDetails.putAll(serviceOfferingDetails);
         }
+        newDetails.putAll(toDetails);
         if (MapUtils.isNotEmpty(newDetails)) {
             to.setDetails(newDetails);
         }

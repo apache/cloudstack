@@ -31,6 +31,7 @@
         <a-input
           v-model:value="form.name"
           :placeholder="apiParams.name.description"
+          @change="updateEntryPoint"
           v-focus="true" />
       </a-form-item>
       <a-form-item name="description" ref="description">
@@ -39,8 +40,17 @@
         </template>
         <a-input
           v-model:value="form.description"
-          :placeholder="apiParams.description.description"
-          v-focus="true" />
+          :placeholder="apiParams.description.description" />
+      </a-form-item>
+      <a-form-item name="entrypoint" ref="entrypoint">
+        <template #label>
+          <tooltip-label :title="$t('label.entrypoint')" :tooltip="apiParams.entrypoint.description"/>
+        </template>
+        <span v-if="!!safeName">{{ extenstionBasePath }}</span>
+        <a-input
+          v-model:value="form.entrypoint"
+          :placeholder="apiParams.entrypoint.description"
+          @input="markEntryPointModified" />
       </a-form-item>
       <a-form-item ref="type" name="type">
         <template #label>
@@ -89,6 +99,8 @@ export default {
   },
   data () {
     return {
+      extensionsPath: '',
+      entryPointModified: false,
       extensionTypes: [],
       loading: false
     }
@@ -98,7 +110,20 @@ export default {
   },
   created () {
     this.initForm()
+    this.fetchExtensionsPath()
     this.fetchExtensionTypes()
+  },
+  computed: {
+    safeName () {
+      var value = this.form.name
+      if (!value || value.length === 0) {
+        return ''
+      }
+      return value.replace(/[^a-zA-Z0-9._-]/g, '')
+    },
+    extenstionBasePath () {
+      return this.extensionsPath + '/' + this.safeName + '/'
+    }
   },
   methods: {
     initForm () {
@@ -119,6 +144,25 @@ export default {
         })
       })
     },
+    fetchExtensionsPath () {
+      api('listConfigurations', { name: 'external.provisioner.extensions.directory' }).then(json => {
+        this.extensionsPath = (json?.listconfigurationsresponse?.configuration?.[0]?.value || '')
+      })
+    },
+    markEntryPointModified () {
+      this.entryPointModified = true
+    },
+    updateEntryPoint () {
+      if (this.entryPointModified) {
+        return
+      }
+      var value = this.safeName
+      if (value.length === 0) {
+        this.form.entrypoint = undefined
+        return
+      }
+      this.form.entrypoint = value + '.sh'
+    },
     handleSubmit (e) {
       e.preventDefault()
       if (this.loading) return
@@ -132,6 +176,11 @@ export default {
         if (values.description) {
           params.description = values.description
         }
+        var entryPoint = values.entrypoint
+        if (!entryPoint) {
+          entryPoint = this.safeName + '.sh'
+        }
+        params.entrypoint = this.extenstionBasePath + entryPoint
         if (values.details) {
           Object.entries(values.details).forEach(([key, value]) => {
             params['details[0].' + key] = value

@@ -19,30 +19,10 @@
 
 package com.cloud.agent.api;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class RunCustomActionAnswer extends Answer {
-
-    Map<String, String> runDetails;
-
-    public RunCustomActionAnswer() {
-        super();
-    }
 
     public RunCustomActionAnswer(RunCustomActionCommand cmd, boolean success, String details) {
         super(cmd, success, details);
-        runDetails = new HashMap<>();
-        runDetails.put("success", String.valueOf(success));
-        runDetails.put("result", details);
-    }
-
-    public Map<String, String> getRunDetails() {
-        return runDetails;
-    }
-
-    public void setRunDetails(Map<String, String> runDetails) {
-        this.runDetails = runDetails;
     }
 
     @Override

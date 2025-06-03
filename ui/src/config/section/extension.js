@@ -19,26 +19,26 @@ import { shallowRef, defineAsyncComponent } from 'vue'
 import store from '@/store'
 
 export default {
-  name: 'extension',
+  name: 'external',
   title: 'label.external',
   icon: 'partition-outlined',
   children: [
     {
       name: 'xaas',
-      title: 'label.xaas',
+      title: 'label.extension',
       icon: 'node-expand-outlined',
       docHelp: 'adminguide/extensions.html',
       permission: ['listExtensions'],
       params: (dataView) => {
-        const params = { type: 'Orchestrator' }
+        const params = {}
         if (!dataView) {
           params.details = 'min'
         }
         return params
       },
       resourceType: 'Extension',
-      columns: ['name', 'type', 'script', 'created'],
-      details: ['name', 'id', 'type', 'details', 'script', 'extensionresourceid', 'created'],
+      columns: ['name', 'type', 'entrypoint', 'created'],
+      details: ['name', 'id', 'type', 'details', 'entrypoint', 'created'],
       tabs: [{
         name: 'details',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
@@ -61,7 +61,7 @@ export default {
         {
           api: 'createExtension',
           icon: 'plus-outlined',
-          label: 'label.action.create.extension',
+          label: 'label.create.extension',
           docHelp: 'adminguide/extensions.html',
           listView: true,
           popup: true,
@@ -71,7 +71,6 @@ export default {
           api: 'updateExtension',
           icon: 'edit-outlined',
           label: 'label.update.extension',
-          message: 'message.action.update.extension',
           dataView: true,
           popup: true,
           component: shallowRef(defineAsyncComponent(() => import('@/views/extension/UpdateExtension.vue')))
@@ -101,9 +100,10 @@ export default {
       icon: 'play-square-outlined',
       docHelp: 'adminguide/extensions.html#custom-actions',
       permission: ['listCustomActions'],
-      resourceType: 'customaction',
-      columns: ['name', 'extensionname', 'resourcetype', 'enabled', 'created'],
-      details: ['name', 'id', 'description', 'extensionname', 'resourcetype', 'parameters', 'details', 'created'],
+      resourceType: 'ExtensionCustomAction',
+      hidden: true,
+      columns: ['name', 'extensionname', 'enabled', 'created'],
+      details: ['name', 'id', 'description', 'extensionname', 'roles', 'resourcetype', 'parameters', 'details', 'created'],
       tabs: [{
         name: 'details',
         component: shallowRef(defineAsyncComponent(() => import('@/components/view/DetailsTab.vue')))
@@ -115,15 +115,15 @@ export default {
         show: () => { return 'listEvents' in store.getters.apis }
       }],
       actions: [
-        {
-          api: 'addCustomAction',
-          icon: 'plus-outlined',
-          label: 'label.add.custom.action',
-          docHelp: 'adminguide/extensions.html#custom-actions',
-          listView: true,
-          popup: true,
-          component: shallowRef(defineAsyncComponent(() => import('@/views/extension/AddCustomAction.vue')))
-        },
+        // {
+        //   api: 'addCustomAction',
+        //   icon: 'plus-outlined',
+        //   label: 'label.add.custom.action',
+        //   docHelp: 'adminguide/extensions.html#custom-actions',
+        //   listView: true,
+        //   popup: true,
+        //   component: shallowRef(defineAsyncComponent(() => import('@/views/extension/AddCustomAction.vue')))
+        // },
         {
           api: 'updateCustomAction',
           icon: 'edit-outlined',

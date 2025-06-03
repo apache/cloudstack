@@ -48,25 +48,25 @@ public interface ExternalProvisioner extends Manager {
      */
     String getDescription();
 
-    String getExtensionScriptPath(String extensionName);
+    String getExtensionEntryPoint(String relativeEntryPoint);
 
-    PrepareExternalProvisioningAnswer prepareExternalProvisioning(String extensionName, PrepareExternalProvisioningCommand cmd);
+    void prepareScripts(String extensionName, String extensionRelativeEntryPoint);
 
-    StartAnswer startInstance(String extensionName, StartCommand cmd);
+    PrepareExternalProvisioningAnswer prepareExternalProvisioning(String extensionName, String extensionRelativeEntryPoint, PrepareExternalProvisioningCommand cmd);
 
-    StopAnswer stopInstance(String extensionName, StopCommand cmd);
+    StartAnswer startInstance(String extensionName, String extensionRelativeEntryPoint, StartCommand cmd);
 
-    RebootAnswer rebootInstance(String extensionName, RebootCommand cmd);
+    StopAnswer stopInstance(String extensionName, String extensionRelativeEntryPoint, StopCommand cmd);
 
-    StopAnswer expungeInstance(String extensionName, StopCommand cmd);
+    RebootAnswer rebootInstance(String extensionName, String extensionRelativeEntryPoint, RebootCommand cmd);
 
-    PostExternalProvisioningAnswer postSetupInstance(String extensionName, PostExternalProvisioningCommand cmd);
+    StopAnswer expungeInstance(String extensionName, String extensionRelativeEntryPoint, StopCommand cmd);
 
-    Map<String, HostVmStateReportEntry> getHostVmStateReport(String extensionName, long hostId);
+    PostExternalProvisioningAnswer postSetupInstance(String extensionName, String extensionRelativeEntryPoint, PostExternalProvisioningCommand cmd);
 
-    RunCustomActionAnswer runCustomAction(String extensionName, RunCustomActionCommand cmd);
+    Map<String, HostVmStateReportEntry> getHostVmStateReport(String extensionName, String extensionRelativeEntryPoint, long hostId);
 
-    void prepareScripts(String extensionName);
+    RunCustomActionAnswer runCustomAction(String extensionName, String extensionRelativeEntryPoint, RunCustomActionCommand cmd);
 
-    Answer checkHealth(String extensionName, CheckHealthCommand cmd);
+    Answer checkHealth(String extensionName, String extensionRelativeEntryPoint, CheckHealthCommand cmd);
 }

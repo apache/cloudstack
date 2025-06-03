@@ -28,17 +28,11 @@ import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ExtensionCustomActionResponse;
 import org.apache.cloudstack.api.response.ExtensionResponse;
 import org.apache.cloudstack.extension.ExtensionCustomAction;
 import org.apache.cloudstack.framework.extensions.manager.ExtensionsManager;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 
 @APICommand(name = "addCustomAction",
@@ -68,16 +62,11 @@ public class AddCustomActionCmd extends BaseCmd {
             description = "Resource type for which the action is available")
     private String resourceType;
 
-    @Parameter(name = ApiConstants.ROLES_LIST,
+    @Parameter(name = ApiConstants.ROLES,
             type = CommandType.LIST,
             collectionType = CommandType.STRING,
-            description = "the list of allowed role types")
+            description = "The list of allowed role types")
     private List<String> rolesList;
-
-    @Parameter(name = ApiConstants.ENABLED,
-            type = CommandType.BOOLEAN,
-            description = "Whether the action is enabled or not. Default is enabled.")
-    private Boolean enabled;
 
     @Parameter(name = ApiConstants.PARAMETERS, type = CommandType.MAP,
             description = "Parameters mapping for the action using keys - name, type, required. " +
@@ -85,6 +74,23 @@ public class AddCustomActionCmd extends BaseCmd {
                     "If 'required' is not specified then false will be used. "
                     + "Example: parameters[0].name=xxx&parameters[0].type=BOOLEAN&parameters[0].required=true")
     protected Map parameters;
+
+    @Parameter(name = ApiConstants.SUCCESS_MESSAGE, type = CommandType.STRING,
+            description = "Success message that will be used on successful execution of the action. " +
+                    "Name of the action and and extension can be used in the - actionName, extensionName. "
+                    + "Example: Successfully complete {{actionName}} for {{extensionName")
+    protected String successMessage;
+
+    @Parameter(name = ApiConstants.ERROR_MESSAGE, type = CommandType.STRING,
+            description = "Error message that will be used on failure during execution of the action. " +
+                    "Name of the action and and extension can be used in the - actionName, extensionName. "
+                    + "Example: Failed to complete {{actionName}} for {{extensionName")
+    protected String errorMessage;
+
+    @Parameter(name = ApiConstants.ENABLED,
+            type = CommandType.BOOLEAN,
+            description = "Whether the action is enabled or not. Default is disabled.")
+    private Boolean enabled;
 
     @Parameter(name = ApiConstants.DETAILS,
             type = CommandType.MAP,
@@ -124,6 +130,14 @@ public class AddCustomActionCmd extends BaseCmd {
         return parameters;
     }
 
+    public String getSuccessMessage() {
+        return successMessage;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
+    }
+
     public Map<String, String> getDetails() {
         return convertDetailsToMap(details);
     }
@@ -133,7 +147,7 @@ public class AddCustomActionCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+    public void execute() {
         ExtensionCustomAction extensionCustomAction = extensionsManager.addCustomAction(this);
         ExtensionCustomActionResponse response = extensionsManager.createCustomActionResponse(extensionCustomAction);
         response.setResponseName(getCommandName());

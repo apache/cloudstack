@@ -33,19 +33,20 @@
           :placeholder="apiParams.description.description"
           v-focus="true" />
       </a-form-item>
-      <a-form-item ref="resourcetype" name="resourcetype">
+      <a-form-item ref="roles" name="roles">
         <template #label>
-          <tooltip-label :title="$t('label.resourcetype')" :tooltip="apiParams.resourcetype.description"/>
+          <tooltip-label :title="$t('label.roles')" :tooltip="apiParams.roles.description"/>
         </template>
         <a-select
           showSearch
-          v-model:value="form.resourcetype"
-          :placeholder="apiParams.resourcetype.description"
+          mode="multiple"
+          v-model:value="form.roles"
+          :placeholder="apiParams.roles.description"
           optionFilterProp="label"
           :filterOption="(input, option) => {
             return option.label.toLowerCase().indexOf(input.toLowerCase()) >= 0
           }" >
-          <a-select-option v-for="opt in resourceTypes" :key="opt.id" :label="opt.id || opt.description">
+          <a-select-option v-for="opt in roles" :key="opt.id" :label="opt.id || opt.description">
             {{ opt.id || opt.description }}
           </a-select-option>
         </a-select>
@@ -57,6 +58,22 @@
         <div style="margin-bottom: 10px">{{ $t('message.add.custom.action.parameters') }}</div>
         <parameters-input
           v-model:value="form.parameters" />
+      </a-form-item>
+      <a-form-item name="successmessage" ref="successmessage">
+        <template #label>
+          <tooltip-label :title="$t('label.successmessage')" :tooltip="apiParams.successmessage.description"/>
+        </template>
+        <a-input
+          v-model:value="form.successmessage"
+          :placeholder="apiParams.successmessage.description" />
+      </a-form-item>
+      <a-form-item name="errormessage" ref="errormessage">
+        <template #label>
+          <tooltip-label :title="$t('label.errormessage')" :tooltip="apiParams.errormessage.description"/>
+        </template>
+        <a-input
+          v-model:value="form.errormessage"
+          :placeholder="apiParams.errormessage.description" />
       </a-form-item>
       <a-form-item>
         <template #label>
@@ -96,7 +113,7 @@ export default {
   },
   data () {
     return {
-      resourceTypes: [],
+      roles: [],
       loading: false
     }
   },
@@ -108,7 +125,7 @@ export default {
   },
   created () {
     this.initForm()
-    this.fetchResourceTypes()
+    this.fetchRoles()
   },
   methods: {
     initForm () {
@@ -121,11 +138,11 @@ export default {
       })
       this.rules = reactive({})
     },
-    fetchResourceTypes () {
-      this.resourceTypes = []
-      const resourceTypesList = ['VirtualMachine', 'Host', 'Cluster']
-      resourceTypesList.forEach((item) => {
-        this.resourceTypes.push({
+    fetchRoles () {
+      this.roles = []
+      const rolesList = ['Admin', 'ResourceAdmin', 'DomainAdmin', 'User']
+      rolesList.forEach((item) => {
+        this.roles.push({
           id: item,
           description: item
         })

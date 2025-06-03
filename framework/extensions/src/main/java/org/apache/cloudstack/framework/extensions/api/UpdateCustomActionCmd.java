@@ -61,11 +61,11 @@ public class UpdateCustomActionCmd extends BaseCmd {
             description = "Type of the resource for actions")
     private String resourceType;
 
-    @Parameter(name = ApiConstants.ROLES_LIST,
+    @Parameter(name = ApiConstants.ROLES,
             type = CommandType.LIST,
             collectionType = CommandType.STRING,
-            description = "the list of allowed role types")
-    private List<String> rolesList;
+            description = "The list of allowed role types")
+    private List<String> roles;
 
     @Parameter(name = ApiConstants.ENABLED,
             type = CommandType.BOOLEAN,
@@ -85,6 +85,18 @@ public class UpdateCustomActionCmd extends BaseCmd {
                     "(If set to true, parameters will be removed for this action, parameters field ignored; " +
                     "if false or not set, no action)")
     private Boolean cleanupParameters;
+
+    @Parameter(name = ApiConstants.SUCCESS_MESSAGE, type = CommandType.STRING,
+            description = "Success message that will be used on successful execution of the action. " +
+                    "Name of the action and and extension can be used in the - actionName, extensionName. "
+                    + "Example: Successfully complete {{actionName}} for {{extensionName")
+    protected String successMessage;
+
+    @Parameter(name = ApiConstants.ERROR_MESSAGE, type = CommandType.STRING,
+            description = "Error message that will be used on failure during execution of the action. " +
+                    "Name of the action and and extension can be used in the - actionName, extensionName. "
+                    + "Example: Failed to complete {{actionName}} for {{extensionName")
+    protected String errorMessage;
 
     @Parameter(name = ApiConstants.DETAILS,
             type = CommandType.MAP,
@@ -119,8 +131,8 @@ public class UpdateCustomActionCmd extends BaseCmd {
         return enabled;
     }
 
-    public List<String> getRolesList() {
-        return rolesList;
+    public List<String> getRoles() {
+        return roles;
     }
 
     public Map getParametersMap() {
@@ -129,6 +141,14 @@ public class UpdateCustomActionCmd extends BaseCmd {
 
     public Boolean isCleanupParameters() {
         return cleanupParameters;
+    }
+
+    public String getSuccessMessage() {
+        return successMessage;
+    }
+
+    public String getErrorMessage() {
+        return errorMessage;
     }
 
     public Map<String, String> getDetails() {

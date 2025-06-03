@@ -66,6 +66,10 @@ public class CreateExtensionCmd extends BaseCmd {
             description = "Type of the extension")
     private String type;
 
+    @Parameter(name = ApiConstants.ENTRY_POINT, type = CommandType.STRING,
+            description = "Relative path for entry point for extension")
+    private String entryPoint;
+
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
             description = "Details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].endpoint.url=urlvalue")
     protected Map details;
@@ -84,6 +88,10 @@ public class CreateExtensionCmd extends BaseCmd {
 
     public String getType() {
         return type;
+    }
+
+    public String getEntryPoint() {
+        return entryPoint;
     }
 
     public Map<String, String> getDetails() {

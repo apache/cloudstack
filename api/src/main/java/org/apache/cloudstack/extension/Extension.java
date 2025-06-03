@@ -23,9 +23,12 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface Extension extends InternalIdentity, Identity {
+    enum Type {
+        Orchestrator
+    }
     String getName();
     String getDescription();
-    String getType();
-    String getScript();
+    Type getType();
+    String getRelativeEntryPoint();
     Date getCreated();
 }

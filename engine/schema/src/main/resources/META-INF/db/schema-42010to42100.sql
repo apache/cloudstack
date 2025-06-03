@@ -90,13 +90,13 @@ CREATE TABLE IF NOT EXISTS `cloud`.`extension` (
   `name` varchar(255) NOT NULL,
   `description` varchar(4096),
   `type` varchar(255) NOT NULL,
-  `script` varchar(2048) NOT NULL,
+  `relative_entry_point` varchar(2048) NOT NULL,
   `created` datetime NOT NULL,
   `removed` datetime DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`extension_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`extension_details` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
   `extension_id` bigint unsigned NOT NULL COMMENT 'extension to which the detail is related to',
   `name` varchar(255) NOT NULL COMMENT 'name of the detail',
@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`extension_resource_map` (
   INDEX `idx_extension_resource` (`resource_id`, `resource_type`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE `cloud`.`extension_resource_map_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`extension_resource_map_details` (
   `id` bigint unsigned UNIQUE NOT NULL AUTO_INCREMENT COMMENT 'id',
   `extension_resource_map_id` bigint unsigned NOT NULL COMMENT 'mapping to which the detail is related',
   `name` varchar(255) NOT NULL COMMENT 'name of the detail',
@@ -135,10 +135,12 @@ CREATE TABLE IF NOT EXISTS `cloud`.`extension_custom_action` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `uuid` varchar(255) NOT NULL UNIQUE,
   `name` varchar(255) NOT NULL,
-  `description` varchar(255) NOT NULL,
+  `description` varchar(4096) NOT NULL,
   `extension_id` bigint(20) unsigned NOT NULL,
   `resource_type` varchar(255),
   `roles_list` varchar(255) DEFAULT NULL,
+  `success_message` varchar(4096),
+  `error_message` varchar(4096),
   `enabled` boolean DEFAULT true,
   `created` datetime NOT NULL,
   `removed` datetime DEFAULT NULL,

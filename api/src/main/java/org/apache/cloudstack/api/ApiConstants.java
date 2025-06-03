@@ -196,7 +196,9 @@ public class ApiConstants {
     public static final String END_IP = "endip";
     public static final String END_IPV6 = "endipv6";
     public static final String END_PORT = "endport";
+    public static final String ENTRY_POINT = "entrypoint";
     public static final String ENTRY_TIME = "entrytime";
+    public static final String ERROR_MESSAGE = "errormessage";
     public static final String EVENT_ID = "eventid";
     public static final String EVENT_TYPE = "eventtype";
     public static final String EXPIRES = "expires";
@@ -207,18 +209,10 @@ public class ApiConstants {
     public static final String EXTRA_DHCP_OPTION_VALUE = "extradhcpvalue";
     public static final String EXTERNAL = "external";
     public static final String EXTERNAL_UUID = "externaluuid";
-    public static final String EXTERNAL_PROVISIONER = "externalprovisioner";
     public static final String EXTERNAL_DETAILS = "externaldetails";
     public static final String PARAMETERS = "parameters";
-    public static final String EXTENSION = "extension";
-    public static final String EXTENSIONS = "extensions";
     public static final String EXTENSION_ID = "extensionid";
     public static final String EXTENSION_NAME = "extensionname";
-    public static final String EXTENSION_RESOURCE_ID = "extensionresourceid";
-    public static final String EXTENSION_RESOURCE_MAP = "extensionresourcemap";
-
-    public static final String EXTENSION_CUSTOM_ACTION_ID = "customactionid";
-    public static final String SCRIPT = "script";
     public static final String FENCE = "fence";
     public static final String FETCH_LATEST = "fetchlatest";
     public static final String FILESYSTEM = "filesystem";
@@ -349,6 +343,7 @@ public class ApiConstants {
     public static final String MAX_BACKUPS = "maxbackups";
     public static final String MAX_CPU_NUMBER = "maxcpunumber";
     public static final String MAX_MEMORY = "maxmemory";
+    public static final String MESSAGE = "message";
     public static final String MIN_CPU_NUMBER = "mincpunumber";
     public static final String MIN_MEMORY = "minmemory";
     public static final String MIGRATION_TYPE = "migrationtype";
@@ -521,6 +516,7 @@ public class ApiConstants {
     public static final String POD_STORAGE_ACCESS_GROUPS = "podstorageaccessgroups";
     public static final String ZONE_STORAGE_ACCESS_GROUPS = "zonestorageaccessgroups";
     public static final String SUCCESS = "success";
+    public static final String SUCCESS_MESSAGE = "successmessage";
     public static final String SUITABLE_FOR_VM = "suitableforvirtualmachine";
     public static final String SUPPORTS_STORAGE_SNAPSHOT = "supportsstoragesnapshot";
     public static final String TARGET_IQN = "targetiqn";
@@ -683,7 +679,7 @@ public class ApiConstants {
     public static final String PROJECT_ROLE_NAME = "projectrolename";
     public static final String ROLE_TYPE = "roletype";
     public static final String ROLE_NAME = "rolename";
-    public static final String ROLES_LIST = "roleslist";
+    public static final String ROLES = "roles";
     public static final String PERMISSION = "permission";
     public static final String RULE = "rule";
     public static final String RULES = "rules";

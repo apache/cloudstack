@@ -34,7 +34,7 @@
       :rowExpandable="(record) => record.parameters && Object.keys(record.parameters).length > 0">
       <template #bodyCell="{ column, text, record }">
         <template v-if="column.key === 'name'">
-          <router-link :to="{ path: '/customaction/' + record.id }">
+          <router-link :to="{ path: '/extca/' + record.id }">
             {{ text }}
           </router-link>
         </template>
@@ -87,7 +87,7 @@
       :closable="true"
       :footer="null"
       @cancel="closeModals">
-      <add-custom-action :resource="resource" @close-action="closeModals" />
+      <add-custom-action :extension="resource" @close-action="closeModals" />
     </a-modal>
 
     <a-modal
