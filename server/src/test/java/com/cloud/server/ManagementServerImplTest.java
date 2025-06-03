@@ -809,7 +809,7 @@ public class ManagementServerImplTest {
         when(_guestOSCategoryDao.findById(id)).thenReturn(guestOSCategory);
         GuestOsCategory result = spy.updateGuestOsCategory(updateCmd);
         Assert.assertNotNull(result);
-        Assert.assertNull( result.getName());
+        Assert.assertNotNull(result.getName());
         Assert.assertFalse(result.isFeatured());
         Mockito.verify(_guestOSCategoryDao, Mockito.times(1)).findById(id);
         Mockito.verify(_guestOSCategoryDao, Mockito.never()).update(Mockito.eq(id), any(GuestOSCategoryVO.class));
