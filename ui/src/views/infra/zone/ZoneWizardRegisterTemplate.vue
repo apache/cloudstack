@@ -159,7 +159,7 @@ export default {
           id: 7,
           name: 'OpenSUSE 15.5',
           version: '15.5',
-          osCategoryName: 'OpneSUSE',
+          osCategoryName: 'OpenSUSE',
           arch: 'x86_64',
           url: 'https://mirror.squ.edu.om/opensuse/opensuse/distribution/leap/15.5/appliances/openSUSE-Leap-15.5-Minimal-VM.x86_64-Cloud.qcow2'
         },
@@ -207,7 +207,7 @@ export default {
           id: 13,
           name: 'OpenSUSE 15.5',
           version: '15.5',
-          osCategoryName: 'OpneSUSE',
+          osCategoryName: 'OpenSUSE',
           arch: 'aarch64',
           url: 'https://download.opensuse.org/distribution/leap/15.5/appliances/openSUSE-Leap-15.5-Minimal-VM.aarch64-Cloud.qcow2'
         }
@@ -248,7 +248,6 @@ export default {
       const templatesToRegister = this.predefinedTemplates.filter(template => this.selectedRowKeys.includes(template.id) && this.deployedTemplates[template.id] !== true)
       const registrationResults = []
       for (const templateData of templatesToRegister) {
-        console.log(`Registering template: ${templateData.name} with ID: ${templateData.id}`)
         const promise = this.registerTemplate(templateData)
           .then(() => ({
             id: templateData.id,
@@ -305,9 +304,9 @@ export default {
       return osTypeId
     },
     getImageFormat (url) {
-      const extenstion = url.split('.').pop()
-      var format = extenstion
-      switch (extenstion) {
+      const fileExtension = url.split('.').pop()
+      var format = fileExtension
+      switch (fileExtension) {
         case 'img':
           format = 'RAW'
           break
