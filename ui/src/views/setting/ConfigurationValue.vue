@@ -193,7 +193,7 @@
   </a-list>
 </template>
 <script>
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import TooltipButton from '@/components/widgets/TooltipButton'
 
 export default {
@@ -280,7 +280,7 @@ export default {
         name: configrecord.name,
         value: newValue
       }
-      api('updateConfiguration', params).then(json => {
+      postAPI('updateConfiguration', params).then(json => {
         this.editableValue = this.getEditableValue(json.updateconfigurationresponse.configuration)
         this.actualValue = this.editableValue
         this.$emit('change-config', { value: newValue })
@@ -315,7 +315,7 @@ export default {
         [this.scopeKey]: this.$route.params?.id,
         name: configrecord.name
       }
-      api('resetConfiguration', params).then(json => {
+      postAPI('resetConfiguration', params).then(json => {
         this.editableValue = this.getEditableValue(json.resetconfigurationresponse.configuration)
         this.actualValue = this.editableValue
         var newValue = this.editableValue

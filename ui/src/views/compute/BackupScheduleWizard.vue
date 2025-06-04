@@ -35,7 +35,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI } from '@/api'
 import FormSchedule from '@views/compute/backup/FormSchedule'
 import BackupSchedule from '@views/compute/backup/BackupSchedule'
 
@@ -72,7 +72,7 @@ export default {
       this.dataSource = {}
       this.loading = true
       params.virtualmachineid = this.resource.id
-      api('listBackupSchedule', params).then(json => {
+      getAPI('listBackupSchedule', params).then(json => {
         this.dataSource = json.listbackupscheduleresponse.backupschedule || {}
       }).finally(() => {
         this.loading = false

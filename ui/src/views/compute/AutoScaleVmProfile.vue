@@ -307,7 +307,7 @@
 </template>
 
 <script>
-import { api } from '@/api'
+import { getAPI, postAPI } from '@/api'
 import { isAdmin, isAdminOrDomainAdmin } from '@/role'
 import Status from '@/components/widgets/Status'
 import TooltipButton from '@/components/widgets/TooltipButton'
@@ -409,7 +409,7 @@ export default {
       this.fetchData()
     },
     fetchUserData () {
-      api('listUsers', {
+      getAPI('listUsers', {
         domainid: this.resource.domainid,
         account: this.resource.account
       }).then(json => {
@@ -427,7 +427,7 @@ export default {
       } else {
         params.templatefilter = 'executable'
       }
-      api('listTemplates', params).then(json => {
+      getAPI('listTemplates', params).then(json => {
         this.templatesList = json.listtemplatesresponse?.template || []
       })
     },
@@ -439,14 +439,14 @@ export default {
       if (isAdminOrDomainAdmin()) {
         params.isrecursive = 'true'
       }
-      api('listServiceOfferings', params).then(json => {
+      getAPI('listServiceOfferings', params).then(json => {
         this.serviceOfferingsList = json.listserviceofferingsresponse?.serviceoffering || []
         this.serviceOfferingsList = this.serviceOfferingsList.filter(offering => !offering.iscustomized)
       })
     },
     fetchData () {
       this.loading = true
-      api('listAutoScaleVmProfiles', {
+      getAPI('listAutoScaleVmProfiles', {
         listAll: true,
         id: this.resource.vmprofileid
       }).then(response => {
@@ -572,7 +572,7 @@ export default {
         params['otherdeployparams[' + j + '].value'] = paramValueToAdd
       }
 
-      api('updateAutoScaleVmProfile', params).then(response => {
+      postAPI('updateAutoScaleVmProfile', params).then(response => {
         this.$pollJob({
           jobId: response.updateautoscalevmprofileresponse.jobid,
           successMethod: (result) => {
@@ -600,7 +600,7 @@ export default {
       const args = params
       const data = {}
 
-      api('updateAutoScaleVmProfile', args, httpMethod, data).then(response => {
+      postAPI('updateAutoScaleVmProfile', args, httpMethod, data).then(response => {
         this.$pollJob({
           jobId: response.updateautoscalevmprofileresponse.jobid,
           successMethod: (result) => {

@@ -98,7 +98,7 @@
 
 <script>
 import { ref, reactive, toRaw } from 'vue'
-import { api } from '@/api'
+import { postAPI } from '@/api'
 import store from '@/store'
 import { SERVER_MANAGER } from '@/store/mutation-types'
 import TranslationMenu from '@/components/header/TranslationMenu'
@@ -159,7 +159,7 @@ export default {
         if (!loginParams.domain) {
           loginParams.domain = '/'
         }
-        api('forgotPassword', {}, 'POST', loginParams)
+        postAPI('forgotPassword', loginParams)
           .finally(() => {
             this.$message.success(this.$t('message.forgot.password.success'))
             this.$router.push({ path: '/login' }).catch(() => {})
