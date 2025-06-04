@@ -53,6 +53,10 @@ export default {
     resource: {
       type: Object,
       required: true
+    },
+    osCategoryId: {
+      type: String,
+      default: null
     }
   },
   emits: ['update-zones'],
@@ -60,8 +64,7 @@ export default {
     return {
       imageApi: 'listTemplates',
       loading: false,
-      zones: [],
-      osCategoryId: null
+      zones: []
     }
   },
   mounted () {
@@ -84,7 +87,6 @@ export default {
     },
     fetchData () {
       this.fetchResourceData()
-      this.fetchOsCategoryIdIfNeeded()
     },
     fetchResourceData () {
       const params = {}
@@ -127,19 +129,6 @@ export default {
         if (this.zones.length !== 0) {
           this.$emit('update-zones', this.zones)
         }
-      })
-    },
-    fetchOsCategoryIdIfNeeded () {
-      const needed = this.allowed &&
-        'listOsTypes' in this.$store.getters.apis &&
-        !!this.resource && !!this.resource.ostypeid &&
-        (this.$config.imageSelectionInterface === undefined ||
-        this.$config.imageSelectionInterface === 'modern')
-      if (!needed) {
-        return
-      }
-      api('listOsTypes', { id: this.resource.ostypeid }).then(json => {
-        this.osCategoryId = json?.listostypesresponse?.ostype?.[0]?.oscategoryid || null
       })
     },
     handleDeployInstanceMenu (e) {
