@@ -36,10 +36,12 @@ public class GenericHeuristicPresetVariable {
         fieldNamesToIncludeInToString.add("name");
     }
 
+    /***
+     * Converts the preset variable into a valid JSON object that will be injected into the JS interpreter.
+     * This method should not be overridden or changed.
+     */
     @Override
-    public String toString() {
-        return String.format("GenericHeuristicPresetVariable %s",
-                ReflectionToStringBuilderUtils.reflectOnlySelectedFields(
-                        this, fieldNamesToIncludeInToString.toArray(new String[0])));
+    public final String toString() {
+        return ReflectionToStringBuilderUtils.reflectOnlySelectedFields(this, fieldNamesToIncludeInToString.toArray(new String[0]));
     }
 }

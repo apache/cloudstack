@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.agent;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -63,9 +64,13 @@ public interface IAgentShell {
 
     String[] getHosts();
 
+    void setAvoidHosts(List<String> hosts);
+
+    List<String> getAvoidHosts();
+
     long getLbCheckerInterval(Long receivedLbInterval);
 
-    void updateConnectedHost();
+    void updateConnectedHost(String connectedHost);
 
     String getConnectedHost();
 

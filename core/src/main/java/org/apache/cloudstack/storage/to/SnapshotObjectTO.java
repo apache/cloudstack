@@ -35,18 +35,27 @@ public class SnapshotObjectTO extends DownloadableObjectTO implements DataTO {
     private VolumeObjectTO volume;
     private String parentSnapshotPath;
     private DataStoreTO dataStore;
+    private DataStoreTO imageStore;
+    private boolean kvmIncrementalSnapshot = false;
     private String vmName;
     private String name;
     private HypervisorType hypervisorType;
     private long id;
     private boolean quiescevm;
     private String[] parents;
+    private DataStoreTO parentStore;
+    private String checkpointPath;
     private Long physicalSize = (long) 0;
     private long accountId;
 
 
     public SnapshotObjectTO() {
 
+    }
+
+    @Override
+    public DataObjectType getObjectType() {
+        return DataObjectType.SNAPSHOT;
     }
 
     public SnapshotObjectTO(SnapshotInfo snapshot) {
@@ -59,27 +68,28 @@ public class SnapshotObjectTO extends DownloadableObjectTO implements DataTO {
             this.setVmName(vol.getAttachedVmName());
         }
 
-        SnapshotInfo parentSnapshot = snapshot.getParent();
-        ArrayList<String> parentsArry = new ArrayList<String>();
-        if (parentSnapshot != null) {
-            this.parentSnapshotPath = parentSnapshot.getPath();
-            while(parentSnapshot != null) {
-                parentsArry.add(parentSnapshot.getPath());
-                parentSnapshot = parentSnapshot.getParent();
-            }
-            parents =  parentsArry.toArray(new String[parentsArry.size()]);
-            ArrayUtils.reverse(parents);
-        }
-
         this.dataStore = snapshot.getDataStore().getTO();
         this.setName(snapshot.getName());
         this.hypervisorType = snapshot.getHypervisorType();
         this.quiescevm = false;
-    }
 
-    @Override
-    public DataObjectType getObjectType() {
-        return DataObjectType.SNAPSHOT;
+        this.checkpointPath = snapshot.getCheckpointPath();
+        this.kvmIncrementalSnapshot = snapshot.isKvmIncrementalSnapshot();
+
+        SnapshotInfo parentSnapshot = snapshot.getParent();
+
+        if (parentSnapshot == null || (HypervisorType.KVM.equals(snapshot.getHypervisorType()) && !parentSnapshot.isKvmIncrementalSnapshot())) {
+            return;
+        }
+
+        ArrayList<String> parentsArray = new ArrayList<>();
+        this.parentSnapshotPath = parentSnapshot.getPath();
+        while (parentSnapshot != null) {
+            parentsArray.add(parentSnapshot.getPath());
+            parentSnapshot = parentSnapshot.getParent();
+        }
+        parents = parentsArray.toArray(new String[parentsArray.size()]);
+        ArrayUtils.reverse(parents);
     }
 
     @Override
@@ -89,6 +99,30 @@ public class SnapshotObjectTO extends DownloadableObjectTO implements DataTO {
 
     public void setDataStore(DataStoreTO store) {
         this.dataStore = store;
+    }
+
+    public DataStoreTO getImageStore() {
+        return imageStore;
+    }
+
+    public void setImageStore(DataStoreTO imageStore) {
+        this.imageStore = imageStore;
+    }
+
+    public boolean isKvmIncrementalSnapshot() {
+        return kvmIncrementalSnapshot;
+    }
+
+    public void setKvmIncrementalSnapshot(boolean kvmIncrementalSnapshot) {
+        this.kvmIncrementalSnapshot = kvmIncrementalSnapshot;
+    }
+
+    public String getCheckpointPath() {
+        return checkpointPath;
+    }
+
+    public void setCheckpointPath(String checkpointPath) {
+        this.checkpointPath = checkpointPath;
     }
 
     @Override
@@ -176,6 +210,14 @@ public class SnapshotObjectTO extends DownloadableObjectTO implements DataTO {
 
     public void setAccountId(long accountId) {
         this.accountId = accountId;
+    }
+
+    public DataStoreTO getParentStore() {
+        return parentStore;
+    }
+
+    public void setParentStore(DataStoreTO parentStore) {
+        this.parentStore = parentStore;
     }
 
     @Override

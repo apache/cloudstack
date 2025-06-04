@@ -80,7 +80,7 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "true if the vm needs to be volatile, i.e., on every reboot of vm from API root disk is discarded and creates a new root disk")
     private Boolean isVolatile;
 
-    @SerializedName("storagetags")
+    @SerializedName(ApiConstants.STORAGE_TAGS)
     @Param(description = "the tags for the service offering")
     private String tags;
 
@@ -237,6 +237,14 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     @SerializedName(ApiConstants.PURGE_RESOURCES)
     @Param(description = "Whether to cleanup VM and its associated resource upon expunge", since = "4.20")
     private Boolean purgeResources;
+
+    @SerializedName(ApiConstants.INSTANCE_LEASE_DURATION)
+    @Param(description = "Instance lease duration (in days) for service offering", since = "4.21.0")
+    private Integer leaseDuration;
+
+    @SerializedName(ApiConstants.INSTANCE_LEASE_EXPIRY_ACTION)
+    @Param(description = "Action to be taken once lease is over", since = "4.21.0")
+    private String leaseExpiryAction;
 
     public ServiceOfferingResponse() {
     }
@@ -503,6 +511,22 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setCacheMode(String cacheMode) {
         this.cacheMode = cacheMode;
+    }
+
+    public Integer getLeaseDuration() {
+        return leaseDuration;
+    }
+
+    public void setLeaseDuration(Integer leaseDuration) {
+        this.leaseDuration = leaseDuration;
+    }
+
+    public String getLeaseExpiryAction() {
+        return leaseExpiryAction;
+    }
+
+    public void setLeaseExpiryAction(String leaseExpiryAction) {
+        this.leaseExpiryAction = leaseExpiryAction;
     }
 
     public String getVsphereStoragePolicy() {

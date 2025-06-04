@@ -216,7 +216,7 @@ export default {
     },
     fetchData () {
       this.fetchOsTypes()
-      this.fetchArchitectureTypes()
+      this.architectureTypes.opts = this.$fetchCpuArchitectureTypes()
       this.fetchUserdata()
       this.fetchUserdataPolicy()
     },
@@ -234,19 +234,6 @@ export default {
       }).finally(() => {
         this.osTypes.loading = false
       })
-    },
-    fetchArchitectureTypes () {
-      this.architectureTypes.opts = []
-      const typesList = []
-      typesList.push({
-        id: 'x86_64',
-        description: 'AMD 64 bits (x86_64)'
-      })
-      typesList.push({
-        id: 'aarch64',
-        description: 'ARM 64 bits (aarch64)'
-      })
-      this.architectureTypes.opts = typesList
     },
     fetchUserdataPolicy () {
       const userdataPolicy = []

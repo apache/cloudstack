@@ -19,29 +19,35 @@ package com.cloud.hypervisor.vmware.mo;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 
-import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.utils.Pair;
-import org.apache.cloudstack.utils.reflectiontostringbuilderutils.ReflectionToStringBuilderUtils;
+
+import com.vmware.vim25.DynamicProperty;
+import com.vmware.vim25.ObjectContent;
+import com.vmware.vim25.VirtualMachineBootOptions;
+import com.vmware.vim25.VirtualMachinePowerState;
 import org.apache.cloudstack.vm.UnmanagedInstanceTO;
+import org.apache.commons.lang3.StringUtils;
 
 import com.vmware.vim25.CustomFieldDef;
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.ManagedObjectReference;
-import com.vmware.vim25.InvalidPropertyFaultMsg;
-import com.vmware.vim25.RuntimeFaultFaultMsg;
-import com.vmware.vim25.ObjectContent;
-import com.vmware.vim25.RetrieveResult;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class BaseMO {
     protected static Logger logger = LogManager.getLogger(BaseMO.class);
 
     protected VmwareContext _context;
     protected ManagedObjectReference _mor;
+
+    protected static String[] propertyPathsForUnmanagedVmsThinListing = new String[] {"name", "config.template",
+            "runtime.powerState", "config.guestId", "config.guestFullName", "runtime.host",
+            "config.bootOptions", "config.firmware"};
 
     private String _name;
 
@@ -64,18 +70,6 @@ public class BaseMO {
         _mor = new ManagedObjectReference();
         _mor.setType(morType);
         _mor.setValue(morValue);
-    }
-
-    protected static Pair<String, List<ObjectContent>> createReturnObjectPair(RetrieveResult result) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("vmware result : {} ", ReflectionToStringBuilderUtils.reflectCollection(result));
-        }
-        if (result == null) {
-            return new Pair<>(null, new ArrayList<>());
-        }
-        String tokenForRetrievingNewResults = result.getToken();
-        List<ObjectContent> listOfObjects = result.getObjects();
-        return new Pair<>(tokenForRetrievingNewResults, listOfObjects);
     }
 
     public VmwareContext getContext() {
@@ -165,11 +159,11 @@ public class BaseMO {
         return null;
     }
 
-    public int getCustomFieldKey(String fieldName) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+    public int getCustomFieldKey(String fieldName) throws Exception {
         return getCustomFieldKey(getMor().getType(), fieldName);
     }
 
-    public int getCustomFieldKey(String morType, String fieldName) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
+    public int getCustomFieldKey(String morType, String fieldName) throws Exception {
         assert (morType != null);
 
         ManagedObjectReference cfmMor = _context.getServiceContent().getCustomFieldsManager();
@@ -182,29 +176,92 @@ public class BaseMO {
         return cfmMo.getCustomFieldKey(morType, fieldName);
     }
 
-    protected Pair<String, List<ObjectContent>> retrieveNextSetOfProperties(String tokenForPriorQuery) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg {
-        RetrieveResult result = _context.getService().continueRetrievePropertiesEx(_context.getPropertyCollector(), tokenForPriorQuery);
-        return BaseMO.createReturnObjectPair(result);
+    private static UnmanagedInstanceTO.PowerState convertPowerState(VirtualMachinePowerState powerState) {
+        return powerState == VirtualMachinePowerState.POWERED_ON ? UnmanagedInstanceTO.PowerState.PowerOn :
+                powerState == VirtualMachinePowerState.POWERED_OFF ? UnmanagedInstanceTO.PowerState.PowerOff : UnmanagedInstanceTO.PowerState.PowerUnknown;
     }
 
-    protected void objectContentToUnmanagedInstanceTO(Pair<String, List<ObjectContent>> objectContents, List<UnmanagedInstanceTO> vms) throws InvalidPropertyFaultMsg, RuntimeFaultFaultMsg, InvocationTargetException, NoSuchMethodException, IllegalAccessException {
-        List<ObjectContent> ocs = objectContents.second();
+    protected List<UnmanagedInstanceTO> convertVmsObjectContentsToUnmanagedInstances(List<ObjectContent> ocs, String keyword) throws Exception {
+        Map<String, Pair<String, String>> hostClusterNamesMap = new HashMap<>();
+        List<UnmanagedInstanceTO> vms = new ArrayList<>();
         if (ocs != null) {
             for (ObjectContent oc : ocs) {
-                ManagedObjectReference vmMor = oc.getObj();
-                if (vmMor != null) {
-                    VirtualMachineMO vmMo = new VirtualMachineMO(_context, vmMor);
-                    try {
-                        if (!vmMo.isTemplate()) {
-                            HostMO hostMO = vmMo.getRunningHost();
-                            UnmanagedInstanceTO unmanagedInstance = VmwareHelper.getUnmanagedInstance(hostMO, vmMo);
-                            vms.add(unmanagedInstance);
-                        }
-                    } catch (Exception e) {
-                        logger.debug("Unexpected error checking unmanaged instance {}, excluding it: {}", vmMo.getVmName(), e.getMessage(), e);
+                List<DynamicProperty> objProps = oc.getPropSet();
+                if (objProps != null) {
+                    UnmanagedInstanceTO vm = createUnmanagedInstanceTOFromThinListingDynamicProperties(
+                            objProps, keyword, hostClusterNamesMap);
+                    if (vm != null) {
+                        vms.add(vm);
                     }
                 }
             }
+        }
+        if (vms.size() > 0) {
+            vms.sort(Comparator.comparing(UnmanagedInstanceTO::getName));
+        }
+        return vms;
+    }
+
+    private UnmanagedInstanceTO createUnmanagedInstanceTOFromThinListingDynamicProperties(List<DynamicProperty> objProps,
+                                                                                            String keyword,
+                                                                                            Map<String, Pair<String, String>> hostClusterNamesMap) throws Exception {
+        UnmanagedInstanceTO vm = new UnmanagedInstanceTO();
+        String vmName;
+        boolean isTemplate = false;
+        boolean excludeByKeyword = false;
+
+        for (DynamicProperty objProp : objProps) {
+            if (objProp.getName().equals("name")) {
+                vmName = (String) objProp.getVal();
+                if (StringUtils.isNotBlank(keyword) && !vmName.contains(keyword)) {
+                    excludeByKeyword = true;
+                }
+                vm.setName(vmName);
+            } else if (objProp.getName().equals("config.template")) {
+                isTemplate = (Boolean) objProp.getVal();
+            } else if (objProp.getName().equals("runtime.powerState")) {
+                VirtualMachinePowerState powerState = (VirtualMachinePowerState) objProp.getVal();
+                vm.setPowerState(convertPowerState(powerState));
+            } else if (objProp.getName().equals("config.guestFullName")) {
+                vm.setOperatingSystem((String) objProp.getVal());
+            } else if (objProp.getName().equals("config.guestId")) {
+                vm.setOperatingSystemId((String) objProp.getVal());
+            } else if (objProp.getName().equals("config.bootOptions")) {
+                VirtualMachineBootOptions bootOptions = (VirtualMachineBootOptions) objProp.getVal();
+                String bootMode = "LEGACY";
+                if (bootOptions != null && bootOptions.isEfiSecureBootEnabled()) {
+                    bootMode = "SECURE";
+                }
+                vm.setBootMode(bootMode);
+            } else if (objProp.getName().equals("config.firmware")) {
+                String firmware = (String) objProp.getVal();
+                vm.setBootType(firmware.equalsIgnoreCase("efi") ? "UEFI" : "BIOS");
+            } else if (objProp.getName().equals("runtime.host")) {
+                ManagedObjectReference hostMor = (ManagedObjectReference) objProp.getVal();
+                setUnmanagedInstanceTOHostAndCluster(vm, hostMor, hostClusterNamesMap);
+            }
+        }
+        if (isTemplate || excludeByKeyword) {
+            return null;
+        }
+        return vm;
+    }
+
+    private void setUnmanagedInstanceTOHostAndCluster(UnmanagedInstanceTO vm, ManagedObjectReference hostMor,
+                                                      Map<String, Pair<String, String>> hostClusterNamesMap) throws Exception {
+        if (hostMor != null && StringUtils.isNotBlank(hostMor.getValue())) {
+            String hostMorValue = hostMor.getValue();
+            Pair<String, String> hostClusterPair;
+            if (hostClusterNamesMap.containsKey(hostMorValue)) {
+                hostClusterPair = hostClusterNamesMap.get(hostMorValue);
+            } else {
+                HostMO hostMO = new HostMO(_context, hostMor);
+                ClusterMO clusterMO = new ClusterMO(_context, hostMO.getHyperHostCluster());
+                hostClusterPair = new Pair<>(hostMO.getHostName(), clusterMO.getName());
+                hostClusterNamesMap.put(hostMorValue, hostClusterPair);
+            }
+            vm.setHostName(hostClusterPair.first());
+            vm.setClusterName(hostClusterPair.second());
         }
     }
 }
