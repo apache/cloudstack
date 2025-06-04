@@ -31,6 +31,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.quota.QuotaAccountStateFilter;
 import org.apache.cloudstack.quota.QuotaService;
 import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 
 
@@ -64,17 +65,9 @@ public class QuotaSummaryCmd extends BaseListCmd {
 
     @Override
     public void execute() {
-        Account caller = CallContext.current().getCallingAccount();
         Pair<List<QuotaSummaryResponse>, Integer> responses = quotaResponseBuilder.createQuotaSummaryResponse(this);
-        if (caller.getType() == Account.Type.ADMIN) {
-            if (getAccountName() != null && getDomainId() != null)
-                responses = quotaResponseBuilder.createQuotaSummaryResponse(getAccountName(), getDomainId());
-            else
-                responses = quotaResponseBuilder.createQuotaSummaryResponse(isListAll(), getKeyword(), getStartIndex(), getPageSizeVal());
-        } else {
-            responses = quotaResponseBuilder.createQuotaSummaryResponse(caller.getAccountName(), caller.getDomainId());
-        }
-        final ListResponse<QuotaSummaryResponse> response = new ListResponse<QuotaSummaryResponse>();
+        ListResponse<QuotaSummaryResponse> response = new ListResponse<>();
+
         response.setResponses(responses.first(), responses.second());
         response.setResponseName(getCommandName());
         setResponseObject(response);
