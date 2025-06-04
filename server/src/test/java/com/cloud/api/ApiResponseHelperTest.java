@@ -21,13 +21,19 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
 
@@ -39,6 +45,7 @@ import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.ResourceIconResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UnmanagedInstanceResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -71,6 +78,8 @@ import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkServiceMapDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.resource.icon.ResourceIconVO;
+import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceIconManager;
 import com.cloud.server.ResourceTag;
 import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.VMTemplateVO;
@@ -111,6 +120,9 @@ public class ApiResponseHelperTest {
 
     @Mock
     IPAddressDao ipAddressDaoMock;
+
+    @Mock
+    ResourceIconManager resourceIconManager;
 
     @Spy
     @InjectMocks
@@ -554,5 +566,67 @@ public class ApiResponseHelperTest {
             mockedStatic.verify(() -> ApiDBUtils.getResourceIconByResourceUUID(Mockito.any(), Mockito.any()),
                     Mockito.never());
         }
+    }
+
+    @Test
+    public void testGetResourceIconsUsingOsCategory_withValidData() {
+        TemplateResponse template1 = Mockito.mock(TemplateResponse.class);
+        when(template1.getId()).thenReturn("t1");
+        when(template1.getOsTypeCategoryId()).thenReturn(100L);
+        TemplateResponse template2 = Mockito.mock(TemplateResponse.class);
+        when(template2.getId()).thenReturn("t2");
+        when(template2.getOsTypeCategoryId()).thenReturn(200L);
+        List<TemplateResponse> responses = Arrays.asList(template1, template2);
+        Map<Long, ResourceIcon> icons = new HashMap<>();
+        ResourceIcon icon1 = Mockito.mock(ResourceIcon.class);
+        ResourceIcon icon2 = Mockito.mock(ResourceIcon.class);
+        icons.put(100L, icon1);
+        icons.put(200L, icon2);
+        when(resourceIconManager.getByResourceTypeAndIds(Mockito.eq(ResourceTag.ResourceObjectType.GuestOsCategory), Mockito.anySet()))
+                .thenReturn(icons);
+        Map<String, ResourceIcon> result = apiResponseHelper.getResourceIconsUsingOsCategory(responses);
+        assertEquals(2, result.size());
+        assertEquals(icon1, result.get("t1"));
+        assertEquals(icon2, result.get("t2"));
+    }
+
+    @Test
+    public void testGetResourceIconsUsingOsCategory_missingIcons() {
+        TemplateResponse template1 = Mockito.mock(TemplateResponse.class);
+        when(template1.getId()).thenReturn("t1");
+        when(template1.getOsTypeCategoryId()).thenReturn(100L);
+        List<TemplateResponse> responses = List.of(template1);
+        when(resourceIconManager.getByResourceTypeAndIds(Mockito.eq(ResourceTag.ResourceObjectType.GuestOsCategory), Mockito.anySet())).thenReturn(Collections.emptyMap());
+        Map<String, ResourceIcon> result = apiResponseHelper.getResourceIconsUsingOsCategory(responses);
+        assertTrue(result.containsKey("t1"));
+        assertNull(result.get("t1"));
+    }
+
+    @Test
+    public void testUpdateTemplateIsoResponsesForIcons_withMixedIcons() {
+        TemplateResponse template1 = Mockito.mock(TemplateResponse.class);
+        when(template1.getId()).thenReturn("t1");
+        TemplateResponse template2 = Mockito.mock(TemplateResponse.class);
+        when(template2.getId()).thenReturn("t2");
+        List<TemplateResponse> responses = Arrays.asList(template1, template2);
+        Map<String, ResourceIcon> isoIcons = new HashMap<>();
+        isoIcons.put("t1", Mockito.mock(ResourceIcon.class));
+        when(resourceIconManager.getByResourceTypeAndUuids(ResourceTag.ResourceObjectType.ISO, Set.of("t1", "t2")))
+                .thenReturn(isoIcons);
+        Map<String, ResourceIcon> fallbackIcons = Map.of("t2", Mockito.mock(ResourceIcon.class));
+        Mockito.doReturn(fallbackIcons).when(apiResponseHelper).getResourceIconsUsingOsCategory(Mockito.anyList());
+        ResourceIconResponse iconResponse1 = new ResourceIconResponse();
+        ResourceIconResponse iconResponse2 = new ResourceIconResponse();
+        Mockito.doReturn(iconResponse1).when(apiResponseHelper).createResourceIconResponse(isoIcons.get("t1"));
+        Mockito.doReturn(iconResponse2).when(apiResponseHelper).createResourceIconResponse(fallbackIcons.get("t2"));
+        apiResponseHelper.updateTemplateIsoResponsesForIcons(responses);
+        verify(template1).setResourceIconResponse(iconResponse1);
+        verify(template2).setResourceIconResponse(iconResponse2);
+    }
+
+    @Test
+    public void testUpdateTemplateIsoResponsesForIcons_emptyInput() {
+        apiResponseHelper.updateTemplateIsoResponsesForIcons(Collections.emptyList());
+        Mockito.verify(resourceIconManager, Mockito.never()).getByResourceTypeAndUuids(Mockito.any(), Mockito.anyCollection());
     }
 }

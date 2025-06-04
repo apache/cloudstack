@@ -16,12 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -31,15 +25,12 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.cpu.CPU;
-import com.cloud.server.ResourceIcon;
-import com.cloud.server.ResourceTag;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 
@@ -203,41 +194,11 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Override
     public void execute() {
         ListResponse<TemplateResponse> response = _queryService.listIsos(this);
-        if (response != null && response.getCount() > 0 && getShowIcon()) {
-            updateIsoResponse(response.getResponses());
+        if (response != null && getShowIcon()) {
+            _responseGenerator.updateTemplateIsoResponsesForIcons(response.getResponses());
         }
         response.setResponseName(getCommandName());
         setResponseObject(response);
-    }
-
-    protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<TemplateResponse> responses) {
-        Set<Long> guestOsCategoryIds = responses.stream().map(TemplateResponse::getOsTypeCategoryId).collect(Collectors.toSet());
-        Map<Long, ResourceIcon> guestOsCategoryIcons =
-                resourceIconManager.getByResourceTypeAndIds(ResourceTag.ResourceObjectType.GuestOsCategory,
-                        guestOsCategoryIds);
-        Map<String, ResourceIcon> vmIcons = new HashMap<>();
-        for (TemplateResponse response : responses) {
-            vmIcons.put(response.getId(), guestOsCategoryIcons.get(response.getOsTypeCategoryId()));
-        }
-        return vmIcons;
-    }
-
-    private void updateIsoResponse(List<TemplateResponse> responses) {
-        Set<String> isoUuids = responses.stream().map(TemplateResponse::getId).collect(Collectors.toSet());
-        Map<String, ResourceIcon> templateIcons = resourceIconManager.getByResourceTypeAndUuids(ResourceTag.ResourceObjectType.ISO, isoUuids);
-        List<TemplateResponse> noTemplateIconResponses = responses
-                .stream()
-                .filter(r -> !templateIcons.containsKey(r.getId()))
-                .collect(Collectors.toList());
-        templateIcons.putAll(getResourceIconsUsingOsCategory(noTemplateIconResponses));
-        for (TemplateResponse response : responses) {
-            ResourceIcon icon = templateIcons.get(response.getId());
-            if (icon == null) {
-                continue;
-            }
-            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(icon);
-            response.setResourceIconResponse(iconResponse);
-        }
     }
 
     public Long getStoragePoolId() {
