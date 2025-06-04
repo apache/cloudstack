@@ -41,6 +41,8 @@
 
     <bean id="projRoleManagerImpl" class="org.apache.cloudstack.acl.ProjectRoleManagerImpl" />
 
+    <bean id="ApiKeyPairManagerImpl" class="org.apache.cloudstack.acl.ApiKeyPairManagerImpl" />
+
     <bean id="accountManagerImpl" class="com.cloud.user.AccountManagerImpl">
         <property name="userAuthenticators"
             value="#{userAuthenticatorsRegistry.registered}" />
