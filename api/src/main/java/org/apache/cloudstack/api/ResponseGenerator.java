@@ -578,5 +578,5 @@ public interface ResponseGenerator {
 
     SharedFSResponse createSharedFSResponse(ResponseView view, SharedFS sharedFS);
 
-    void updateTemplateIsoResponsesForIcons(List<TemplateResponse> responses);
+    void updateTemplateIsoResponsesForIcons(List<TemplateResponse> responses, ResourceTag.ResourceObjectType type);
 }

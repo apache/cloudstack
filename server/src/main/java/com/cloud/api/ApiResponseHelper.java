@@ -5525,12 +5525,13 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public void updateTemplateIsoResponsesForIcons(List<TemplateResponse> responses) {
+    public void updateTemplateIsoResponsesForIcons(List<TemplateResponse> responses,
+                   ResourceTag.ResourceObjectType type) {
         if (CollectionUtils.isEmpty(responses)) {
             return;
         }
         Set<String> uuids = responses.stream().map(TemplateResponse::getId).collect(Collectors.toSet());
-        Map<String, ResourceIcon> templateIcons = resourceIconManager.getByResourceTypeAndUuids(ResourceTag.ResourceObjectType.ISO, uuids);
+        Map<String, ResourceIcon> templateIcons = resourceIconManager.getByResourceTypeAndUuids(type, uuids);
         List<TemplateResponse> noTemplateIconResponses = responses
                 .stream()
                 .filter(r -> !templateIcons.containsKey(r.getId()))

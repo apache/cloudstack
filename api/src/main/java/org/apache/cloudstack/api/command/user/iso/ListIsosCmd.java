@@ -31,6 +31,7 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.cpu.CPU;
+import com.cloud.server.ResourceTag;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
 
@@ -195,7 +196,8 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     public void execute() {
         ListResponse<TemplateResponse> response = _queryService.listIsos(this);
         if (response != null && getShowIcon()) {
-            _responseGenerator.updateTemplateIsoResponsesForIcons(response.getResponses());
+            _responseGenerator.updateTemplateIsoResponsesForIcons(response.getResponses(),
+                    ResourceTag.ResourceObjectType.ISO);
         }
         response.setResponseName(getCommandName());
         setResponseObject(response);

@@ -619,14 +619,16 @@ public class ApiResponseHelperTest {
         ResourceIconResponse iconResponse2 = new ResourceIconResponse();
         Mockito.doReturn(iconResponse1).when(apiResponseHelper).createResourceIconResponse(isoIcons.get("t1"));
         Mockito.doReturn(iconResponse2).when(apiResponseHelper).createResourceIconResponse(fallbackIcons.get("t2"));
-        apiResponseHelper.updateTemplateIsoResponsesForIcons(responses);
+        apiResponseHelper.updateTemplateIsoResponsesForIcons(responses, ResourceTag.ResourceObjectType.ISO);
         verify(template1).setResourceIconResponse(iconResponse1);
         verify(template2).setResourceIconResponse(iconResponse2);
     }
 
     @Test
     public void testUpdateTemplateIsoResponsesForIcons_emptyInput() {
-        apiResponseHelper.updateTemplateIsoResponsesForIcons(Collections.emptyList());
-        Mockito.verify(resourceIconManager, Mockito.never()).getByResourceTypeAndUuids(Mockito.any(), Mockito.anyCollection());
+        apiResponseHelper.updateTemplateIsoResponsesForIcons(Collections.emptyList(),
+                ResourceTag.ResourceObjectType.Template);
+        Mockito.verify(resourceIconManager, Mockito.never()).getByResourceTypeAndUuids(Mockito.any(),
+                Mockito.anyCollection());
     }
 }

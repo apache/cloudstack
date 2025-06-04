@@ -38,6 +38,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.cloud.cpu.CPU;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.server.ResourceTag;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
@@ -226,7 +227,8 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
     public void execute() {
         ListResponse<TemplateResponse> response = _queryService.listTemplates(this);
         if (response != null && getShowIcon()) {
-            _responseGenerator.updateTemplateIsoResponsesForIcons(response.getResponses());
+            _responseGenerator.updateTemplateIsoResponsesForIcons(response.getResponses(),
+                    ResourceTag.ResourceObjectType.Template);
         }
         response.setResponseName(getCommandName());
         setResponseObject(response);
