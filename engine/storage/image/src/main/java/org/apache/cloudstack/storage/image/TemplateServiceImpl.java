@@ -288,21 +288,41 @@ public class TemplateServiceImpl implements TemplateService {
         }
     }
 
-    protected boolean isSkipTemplateStoreDownload(VMTemplateVO template, Long zoneId) {
+    protected boolean shouldDownloadTemplateToStore(VMTemplateVO template, DataStore store) {
+        Long zoneId = store.getScope().getScopeId();
+        DataStore directedStore = _tmpltMgr.verifyHeuristicRulesForZone(template, zoneId);
+        if (directedStore != null && store.getId() != directedStore.getId()) {
+            logger.info("Template [{}] will not be download to image store [{}], as a heuristic rule is directing it to another store.",
+                    template.getUniqueName(), store.getName());
+            return false;
+        }
+
         if (template.isPublicTemplate()) {
-            return false;
+            logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is public.", template.getUniqueName(),
+                    store.getName());
+            return true;
         }
+
         if (template.isFeatured()) {
-            return false;
+            logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is featured.", template.getUniqueName(),
+                    store.getName());
+            return true;
         }
+
         if (TemplateType.SYSTEM.equals(template.getTemplateType())) {
-            return false;
+            logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is a system VM template.",
+                    template.getUniqueName(),store.getName());
+            return true;
         }
+
         if (zoneId != null &&  _vmTemplateStoreDao.findByTemplateZone(template.getId(), zoneId, DataStoreRole.Image) == null) {
-            logger.debug("Template {} is not present on any image store for the zone ID: {}, its download cannot be skipped", template, zoneId);
-            return false;
+            logger.debug("Download of template [{}] to image store [{}] cannot be skipped, as it is not present on any image store of zone [{}].",
+                    template.getUniqueName(), store.getName(), zoneId);
+            return true;
         }
-        return true;
+
+        logger.info("Skipping download of template [{}] to image store [{}].", template.getUniqueName(), store.getName());
+        return false;
     }
 
     @Override
@@ -534,8 +554,7 @@ public class TemplateServiceImpl implements TemplateService {
                                 continue;
                             }
                             // if this is private template, skip sync to a new image store
-                            if (isSkipTemplateStoreDownload(tmplt, zoneId)) {
-                                logger.info("Skip sync downloading private template {} to a new image store", tmplt);
+                            if (!shouldDownloadTemplateToStore(tmplt, store)) {
                                 continue;
                             }
 
