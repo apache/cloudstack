@@ -469,8 +469,8 @@
                 <version>${cs.reload4j.version}</version>
             </dependency>
             <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
+                <groupId>com.mysql</groupId>
+                <artifactId>mysql-connector-j</artifactId>
                 <version>${cs.mysql.version}</version>
                 <scope>test</scope>
             </dependency>
@@ -484,12 +484,6 @@
                         <groupId>log4j</groupId>
                     </exclusion>
                 </exclusions>
-            </dependency>
-            <dependency>
-                <groupId>com.mysql</groupId>
-                <artifactId>mysql-connector-j</artifactId>
-                <version>${cs.mysql.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>net.sf.ehcache</groupId>
