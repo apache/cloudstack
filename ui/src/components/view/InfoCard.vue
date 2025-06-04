@@ -30,8 +30,8 @@
                 <edit-outlined class="upload-icon"/>
               </div>
               <slot name="avatar">
-                <span v-if="(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon) && !['router', 'systemvm', 'volume'].includes($route.path.split('/')[1])">
-                  <resource-icon :image="getImage(resource.icon && resource.icon.base64image || images.template || images.iso || resourceIcon)" size="4x" style="margin-right: 5px"/>
+                <span v-if="resourceIcon && !['router', 'systemvm', 'volume'].includes($route.path.split('/')[1])">
+                  <resource-icon :image="resourceIcon" size="4x" style="margin-right: 5px"/>
                 </span>
                 <span v-else>
                   <os-logo v-if="resource.ostypeid || resource.ostypename || ['guestoscategory'].includes($route.path.split('/')[1])" :osId="resource.ostypeid" :osName="resource.ostypename || resource.name" size="3x" @update-osname="setResourceOsType"/>
@@ -1010,15 +1010,16 @@ export default {
       return [this.resource.keypairs.toString()]
     },
     resourceIcon () {
-      if (this.$showIcon()) {
-        if (this.resource?.icon?.base64image) {
-          return this.resource.icon.base64image
-        }
-        if (this.resource?.resourceIcon?.base64image) {
-          return this.resource.resourceIcon.base64image
-        }
+      if (!this.$showIcon()) {
+        return null
       }
-      return null
+      if (this.resource?.icon?.base64image) {
+        return this.resource.icon.base64image
+      }
+      if (this.resource?.resourceIcon?.base64image) {
+        return this.resource.resourceIcon.base64image
+      }
+      return this.images.template || this.images.iso || null
     },
     routeFromResourceType () {
       return this.$getRouteFromResourceType(this.resource.resourcetype)
