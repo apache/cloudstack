@@ -80,7 +80,6 @@
       <a-spin :spinning="imagesLoading">
         <os-based-image-radio-group
           :imagesList="imagesList"
-          :categoryIcon="selectedCategoryIcon"
           :itemCount="imagesCount"
           :input-decorator="localSelectedImageType"
           :selected="selectedImageId"
@@ -270,13 +269,6 @@ export default {
     },
     categoryFontAwesomeIconStyle () {
       return [this.$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#666' }]
-    },
-    selectedCategoryIcon () {
-      const id = this.selectedCategory?.id
-      if (!id || ['-1', '0'].includes(id)) {
-        return ''
-      }
-      return this.selectedCategory.icon?.base64image || ''
     },
     searchFiltersDisabled () {
       return this.selectedCategory?.disableimagefilters

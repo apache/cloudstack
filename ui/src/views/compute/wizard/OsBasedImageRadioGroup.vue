@@ -33,9 +33,9 @@
             class="radio-group__radio"
             :value="item.id">
             <resource-icon
-              v-if="(item.icon && item.icon.base64image) || categoryIcon"
+              v-if="item.icon && item.icon.base64image"
               class="radio-group__os-logo"
-              :image="(item.icon && item.icon.base64image) ? item.icon.base64image : categoryIcon"
+              :image="item.icon.base64image"
               size="2x" />
             <os-logo
               v-else
@@ -110,10 +110,6 @@ export default {
     imagesList: {
       type: Array,
       default: () => []
-    },
-    categoryIcon: {
-      type: String,
-      default: ''
     },
     inputDecorator: {
       type: String,
