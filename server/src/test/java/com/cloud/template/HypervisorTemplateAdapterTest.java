@@ -49,7 +49,6 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.Event;
 import org.apache.cloudstack.framework.events.EventDistributor;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.secstorage.heuristics.HeuristicType;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.heuristics.HeuristicRuleHelper;
