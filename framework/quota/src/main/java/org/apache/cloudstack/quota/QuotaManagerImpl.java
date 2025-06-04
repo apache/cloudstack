@@ -360,11 +360,10 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
 
     @Override
     public boolean findConfigurationValue(AccountVO accountVO, ConfigKey<Boolean> key) {
-        boolean result = Boolean.parseBoolean(getConfigValueOrDefaultValue(key));
         logger.trace("Searching configuration [{}] of account [{}] in its settings.", key.key(), accountVO);
         AccountDetailVO accountDetail = accountDetailsDao.findDetail(accountVO.getAccountId(), key.key());
         if (accountDetail != null) {
-            result = Boolean.parseBoolean(accountDetail.getValue());
+            boolean result = Boolean.parseBoolean(accountDetail.getValue());
             logger.trace("Using value [{}] found in account [{}] settings to configuration [{}].", result, accountVO, key.key());
             return result;
         }
@@ -373,11 +372,12 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             logger.trace("Searching for configuration [{}] of account [{}] in its domain [{}] settings.", key.key(), accountVO, accountVO.getDomainId());
             DomainDetailVO domainDetail = domainDetailsDao.findDetail(accountVO.getDomainId(), key.key());
             if (domainDetail != null) {
-                result = Boolean.parseBoolean(domainDetail.getValue());
+                boolean result = Boolean.parseBoolean(domainDetail.getValue());
                 logger.trace("Using value [{}] found in domain [{}] settings to configuration [{}].", result, accountVO.getDomainId(), key.key());
                 return result;
             }
         }
+        boolean result = Boolean.parseBoolean(getConfigValueOrDefaultValue(key));
         logger.trace("Using default value [{}] to configuration [{}].", result, key.key());
         return result;
     }
