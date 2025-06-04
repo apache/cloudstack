@@ -20,12 +20,17 @@
 package com.cloud.agent.api;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
+import org.apache.cloudstack.storage.DiskControllerMappingVO;
+
+import java.util.List;
 
 public class SecStorageVMSetupCommand extends Command {
     String[] allowedInternalSites = new String[0];
     String copyUserName;
     @LogLevel(Log4jLevel.Off)
     String copyPassword;
+
+    private List<DiskControllerMappingVO> supportedDiskControllers;
 
     public SecStorageVMSetupCommand() {
         super();
@@ -60,4 +65,11 @@ public class SecStorageVMSetupCommand extends Command {
         this.copyPassword = copyPassword;
     }
 
+    public List<DiskControllerMappingVO> getSupportedDiskControllers() {
+        return supportedDiskControllers;
+    }
+
+    public void setSupportedDiskControllers(List<DiskControllerMappingVO> supportedDiskControllers) {
+        this.supportedDiskControllers = supportedDiskControllers;
+    }
 }

@@ -51,6 +51,9 @@ public class BaseMO {
 
     private String _name;
 
+    protected BaseMO() {
+    }
+
     public BaseMO(VmwareContext context, ManagedObjectReference mor) {
         assert (context != null);
 
