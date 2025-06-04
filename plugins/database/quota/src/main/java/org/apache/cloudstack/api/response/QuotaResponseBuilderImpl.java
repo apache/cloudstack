@@ -596,14 +596,14 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     }
 
     protected void warnQuotaTariffUpdateDeprecatedFields(QuotaTariffUpdateCmd cmd) {
-        String warnMessage = "The parameter 's%s' for API 'quotaTariffUpdate' is no longer needed and it will be removed in future releases.";
+        String warnMessage = "The parameter '{}' for API 'quotaTariffUpdate' is no longer needed and it will be removed in future releases.";
 
         if (cmd.getStartDate() != null) {
-            logger.warn(String.format(warnMessage, "startdate"));
+            logger.warn(warnMessage, "startdate");
         }
 
         if (cmd.getUsageType() != null) {
-            logger.warn(String.format(warnMessage, "usagetype"));
+            logger.warn(warnMessage, "usagetype");
         }
     }
 
