@@ -105,4 +105,6 @@ public interface Vpc extends ControlledEntity, Identity, InternalIdentity {
     String getIp6Dns1();
 
     String getIp6Dns2();
+
+    boolean useRouterIpAsResolver();
 }
