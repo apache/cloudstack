@@ -16,19 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
-import com.cloud.cpu.CPU;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.server.ResourceIcon;
-import com.cloud.server.ResourceTag;
-
-import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
-import org.apache.cloudstack.api.response.ResourceIconResponse;
-import org.apache.commons.collections.CollectionUtils;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,15 +32,22 @@ import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
+import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ResourceIconResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
+import com.cloud.cpu.CPU;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceTag;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
 import com.cloud.user.Account;
-import org.apache.commons.lang3.StringUtils;
 
 @APICommand(name = "listTemplates", description = "List all public, private, and privileged templates.", responseObject = TemplateResponse.class, entityType = {VirtualMachineTemplate.class}, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -236,14 +239,33 @@ public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements User
         setResponseObject(response);
     }
 
-    private void updateTemplateResponse(List<TemplateResponse> response) {
-        for (TemplateResponse templateResponse : response) {
-            ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.Template, templateResponse.getId());
-            if (resourceIcon == null) {
+    protected Map<String, ResourceIcon> getResourceIconsUsingOsCategory(List<TemplateResponse> responses) {
+        Set<Long> guestOsCategoryIds = responses.stream().map(TemplateResponse::getOsTypeCategoryId).collect(Collectors.toSet());
+        Map<Long, ResourceIcon> guestOsCategoryIcons =
+                resourceIconManager.getByResourceTypeAndIds(ResourceTag.ResourceObjectType.GuestOsCategory,
+                        guestOsCategoryIds);
+        Map<String, ResourceIcon> vmIcons = new HashMap<>();
+        for (TemplateResponse response : responses) {
+            vmIcons.put(response.getId(), guestOsCategoryIcons.get(response.getOsTypeCategoryId()));
+        }
+        return vmIcons;
+    }
+
+    private void updateTemplateResponse(List<TemplateResponse> responses) {
+        Set<String> templateUuids = responses.stream().map(TemplateResponse::getId).collect(Collectors.toSet());
+        Map<String, ResourceIcon> templateIcons = resourceIconManager.getByResourceTypeAndUuids(ResourceTag.ResourceObjectType.Template, templateUuids);
+        List<TemplateResponse> noTemplateIconResponses = responses
+                .stream()
+                .filter(r -> !templateIcons.containsKey(r.getId()))
+                .collect(Collectors.toList());
+        templateIcons.putAll(getResourceIconsUsingOsCategory(noTemplateIconResponses));
+        for (TemplateResponse response : responses) {
+            ResourceIcon icon = templateIcons.get(response.getId());
+            if (icon == null) {
                 continue;
             }
-            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
-            templateResponse.setResourceIconResponse(iconResponse);
+            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(icon);
+            response.setResourceIconResponse(iconResponse);
         }
     }
 
