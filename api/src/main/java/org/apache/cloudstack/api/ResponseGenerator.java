@@ -22,20 +22,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.cloud.bgp.ASNumber;
-import com.cloud.bgp.ASNumberRange;
-
-import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
-import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
 import org.apache.cloudstack.api.response.ASNRangeResponse;
 import org.apache.cloudstack.api.response.ASNumberResponse;
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
@@ -60,10 +56,10 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.EventResponse;
 import org.apache.cloudstack.api.response.ExtractResponse;
-import org.apache.cloudstack.api.response.SharedFSResponse;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
+import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.GuestOsMappingResponse;
 import org.apache.cloudstack.api.response.GuestVlanRangeResponse;
@@ -73,11 +69,11 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
 import org.apache.cloudstack.api.response.HypervisorGuestOsNamesResponse;
 import org.apache.cloudstack.api.response.IPAddressResponse;
-import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
 import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.cloudstack.api.response.IpQuarantineResponse;
 import org.apache.cloudstack.api.response.IsolationMethodResponse;
 import org.apache.cloudstack.api.response.LBHealthCheckResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
@@ -115,6 +111,7 @@ import org.apache.cloudstack.api.response.SecondaryStorageHeuristicsResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.ServiceResponse;
+import org.apache.cloudstack.api.response.SharedFSResponse;
 import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
 import org.apache.cloudstack.api.response.Site2SiteVpnConnectionResponse;
 import org.apache.cloudstack.api.response.Site2SiteVpnGatewayResponse;
@@ -159,10 +156,14 @@ import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.secstorage.heuristics.Heuristic;
-import org.apache.cloudstack.storage.sharedfs.SharedFS;
+import org.apache.cloudstack.storage.object.Bucket;
 import org.apache.cloudstack.storage.object.ObjectStore;
+import org.apache.cloudstack.storage.sharedfs.SharedFS;
 import org.apache.cloudstack.usage.Usage;
+import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
+import com.cloud.bgp.ASNumber;
+import com.cloud.bgp.ASNumberRange;
 import com.cloud.capacity.Capacity;
 import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
@@ -223,10 +224,11 @@ import com.cloud.projects.ProjectAccount;
 import com.cloud.projects.ProjectInvitation;
 import com.cloud.region.ha.GlobalLoadBalancerRule;
 import com.cloud.resource.RollingMaintenanceManager;
-import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceIcon;
+import com.cloud.server.ResourceTag;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSHypervisor;
+import com.cloud.storage.GuestOsCategory;
 import com.cloud.storage.ImageStore;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.StoragePool;
@@ -240,14 +242,13 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserData;
 import com.cloud.uservm.UserVm;
-import com.cloud.utils.net.Ip;
 import com.cloud.utils.Pair;
+import com.cloud.utils.net.Ip;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.snapshot.VMSnapshot;
-import org.apache.cloudstack.vm.UnmanagedInstanceTO;
 
 public interface ResponseGenerator {
     UserResponse createUserResponse(UserAccount user);
@@ -485,6 +486,10 @@ public interface ResponseGenerator {
 
     AutoScaleVmGroupResponse createAutoScaleVmGroupResponse(AutoScaleVmGroup vmGroup);
 
+    GuestOSCategoryResponse createGuestOSCategoryResponse(GuestOsCategory guestOsCategory);
+
+    GuestOSCategoryResponse createGuestOSCategoryResponse(GuestOsCategory guestOsCategory, boolean showIcon);
+
     GuestOSResponse createGuestOSResponse(GuestOS os);
 
     GuestOsMappingResponse createGuestOSMappingResponse(GuestOSHypervisor osHypervisor);
@@ -572,4 +577,6 @@ public interface ResponseGenerator {
     BackupRepositoryResponse createBackupRepositoryResponse(BackupRepository repository);
 
     SharedFSResponse createSharedFSResponse(ResponseView view, SharedFS sharedFS);
+
+    void updateTemplateIsoResponsesForIcons(List<TemplateResponse> responses, ResourceTag.ResourceObjectType type);
 }

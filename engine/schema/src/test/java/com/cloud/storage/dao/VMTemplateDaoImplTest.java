@@ -21,7 +21,11 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -44,8 +48,11 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.Storage;
 import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GenericSearchBuilder;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
@@ -54,6 +61,9 @@ public class VMTemplateDaoImplTest {
 
     @Mock
     HostDao hostDao;
+
+    @Mock
+    VMTemplateZoneDao templateZoneDao;
 
     @Spy
     @InjectMocks
@@ -185,5 +195,108 @@ public class VMTemplateDaoImplTest {
         doReturn(Collections.emptyList()).when(templateDao).listBy(any(), any());
         VMTemplateVO result = templateDao.findLatestTemplateByTypeAndHypervisorAndArch(hypervisorType, arch, type);
         assertNull(result);
+    }
+
+    private void mockTemplateZoneJoin() {
+        VMTemplateZoneVO templateZoneVO = mock(VMTemplateZoneVO.class);
+        SearchBuilder<VMTemplateZoneVO> templateZoneVOSearchBuilder = mock(SearchBuilder.class);
+        when(templateZoneVOSearchBuilder.entity()).thenReturn(templateZoneVO);
+        when(templateZoneDao.createSearchBuilder()).thenReturn(templateZoneVOSearchBuilder);
+    }
+
+    @Test
+    public void testListTemplateIsoByArchAndZone_WithDataCenterId() {
+        Long dataCenterId = 1L;
+        CPU.CPUArch arch = CPU.CPUArch.getDefault();
+        Boolean isIso = true;
+        VMTemplateVO templateVO = mock(VMTemplateVO.class);
+        GenericSearchBuilder<VMTemplateVO, Long> searchBuilder = mock(GenericSearchBuilder.class);
+        when(searchBuilder.entity()).thenReturn(templateVO);
+        SearchCriteria<Long>searchCriteria = mock(SearchCriteria.class);
+        when(templateDao.createSearchBuilder(Long.class)).thenReturn(searchBuilder);
+        when(searchBuilder.create()).thenReturn(searchCriteria);
+        mockTemplateZoneJoin();
+        doReturn(new ArrayList<>()).when(templateDao).customSearch(searchCriteria, null);
+        List<Long> result = templateDao.listTemplateIsoByArchVnfAndZone(dataCenterId, arch, isIso, false);
+        assertNotNull(result);
+        verify(searchBuilder, times(1)).select(null, SearchCriteria.Func.DISTINCT, templateVO.getGuestOSId());
+        verify(searchBuilder, times(1)).and(eq("state"), any(), eq(SearchCriteria.Op.IN));
+        verify(searchBuilder, times(1)).and(eq("type"), any(), eq(SearchCriteria.Op.IN));
+        verify(searchBuilder, times(1)).and(eq("arch"), any(), eq(SearchCriteria.Op.EQ));
+        verify(searchBuilder, times(1)).and(eq("isIso"), any(), eq(SearchCriteria.Op.EQ));
+        verify(searchBuilder, times(1)).join(eq("templateZoneSearch"), any(), any(), any(), eq(JoinBuilder.JoinType.INNER));
+        verify(templateDao, times(1)).customSearch(searchCriteria, null);
+    }
+
+    @Test
+    public void testListTemplateIsoByArchAndZone_WithoutDataCenterId() {
+        Long dataCenterId = null;
+        CPU.CPUArch arch = CPU.CPUArch.getDefault();
+        Boolean isIso = false;
+        VMTemplateVO templateVO = mock(VMTemplateVO.class);
+        GenericSearchBuilder<VMTemplateVO, Long> searchBuilder = mock(GenericSearchBuilder.class);
+        when(searchBuilder.entity()).thenReturn(templateVO);
+        SearchCriteria<Long>searchCriteria = mock(SearchCriteria.class);
+        when(templateDao.createSearchBuilder(Long.class)).thenReturn(searchBuilder);
+        when(searchBuilder.create()).thenReturn(searchCriteria);
+        doReturn(new ArrayList<>()).when(templateDao).customSearch(searchCriteria, null);
+        List<Long> result = templateDao.listTemplateIsoByArchVnfAndZone(dataCenterId, arch, isIso, false);
+        assertNotNull(result);
+        verify(searchBuilder, times(1)).select(null, SearchCriteria.Func.DISTINCT, templateVO.getGuestOSId());
+        verify(searchBuilder, times(1)).and(eq("state"), any(), eq(SearchCriteria.Op.IN));
+        verify(searchBuilder, times(1)).and(eq("type"), any(), eq(SearchCriteria.Op.IN));
+        verify(searchBuilder, times(1)).and(eq("arch"), any(), eq(SearchCriteria.Op.EQ));
+        verify(searchBuilder, times(1)).and(eq("isIso"), any(), eq(SearchCriteria.Op.NEQ));
+        verify(searchBuilder, never()).join(eq("templateZoneSearch"), any(), any(), any(), eq(JoinBuilder.JoinType.INNER));
+        verify(templateDao, times(1)).customSearch(searchCriteria, null);
+    }
+
+    @Test
+    public void testListTemplateIsoByArchAndZone_WithoutArch() {
+        Long dataCenterId = 1L;
+        CPU.CPUArch arch = null;
+        Boolean isIso = true;
+        VMTemplateVO templateVO = mock(VMTemplateVO.class);
+        GenericSearchBuilder<VMTemplateVO, Long> searchBuilder = mock(GenericSearchBuilder.class);
+        when(searchBuilder.entity()).thenReturn(templateVO);
+        SearchCriteria<Long>searchCriteria = mock(SearchCriteria.class);
+        when(templateDao.createSearchBuilder(Long.class)).thenReturn(searchBuilder);
+        when(searchBuilder.create()).thenReturn(searchCriteria);
+        mockTemplateZoneJoin();
+        doReturn(new ArrayList<>()).when(templateDao).customSearch(searchCriteria, null);
+        List<Long> result = templateDao.listTemplateIsoByArchVnfAndZone(dataCenterId, arch, isIso, false);
+        assertNotNull(result);
+        verify(searchBuilder, times(1)).select(null, SearchCriteria.Func.DISTINCT, templateVO.getGuestOSId());
+        verify(searchBuilder, times(1)).and(eq("state"), any(), eq(SearchCriteria.Op.IN));
+        verify(searchBuilder, times(1)).and(eq("type"), any(), eq(SearchCriteria.Op.IN));
+        verify(searchBuilder, times(1)).and(eq("arch"), any(), eq(SearchCriteria.Op.EQ));
+        verify(searchBuilder, times(1)).and(eq("isIso"), any(), eq(SearchCriteria.Op.EQ));
+        verify(searchBuilder, times(1)).join(eq("templateZoneSearch"), any(), any(), any(), eq(JoinBuilder.JoinType.INNER));
+        verify(templateDao, times(1)).customSearch(searchCriteria, null);
+    }
+
+    @Test
+    public void testListTemplateIsoByArchAndZone_WithoutIsIso() {
+        Long dataCenterId = 1L;
+        CPU.CPUArch arch = CPU.CPUArch.getDefault();
+        Boolean isIso = null;
+        VMTemplateVO templateVO = mock(VMTemplateVO.class);
+        GenericSearchBuilder<VMTemplateVO, Long> searchBuilder = mock(GenericSearchBuilder.class);
+        when(searchBuilder.entity()).thenReturn(templateVO);
+        SearchCriteria<Long>searchCriteria = mock(SearchCriteria.class);
+        when(templateDao.createSearchBuilder(Long.class)).thenReturn(searchBuilder);
+        when(searchBuilder.create()).thenReturn(searchCriteria);
+        mockTemplateZoneJoin();
+        doReturn(new ArrayList<>()).when(templateDao).customSearch(searchCriteria, null);
+        List<Long> result = templateDao.listTemplateIsoByArchVnfAndZone(dataCenterId, arch, isIso, false);
+        assertNotNull(result);
+        verify(searchBuilder, times(1)).select(null, SearchCriteria.Func.DISTINCT, templateVO.getGuestOSId());
+        verify(searchBuilder, times(1)).and(eq("state"), any(), eq(SearchCriteria.Op.IN));
+        verify(searchBuilder, times(1)).and(eq("type"), any(), eq(SearchCriteria.Op.IN));
+        verify(searchBuilder, times(1)).and(eq("arch"), any(), eq(SearchCriteria.Op.EQ));
+        verify(searchBuilder, never()).and(eq("isIso"), any(), eq(SearchCriteria.Op.NEQ));
+        verify(searchBuilder, never()).and(eq("isIso"), any(), eq(SearchCriteria.Op.EQ));
+        verify(searchBuilder, times(1)).join(eq("templateZoneSearch"), any(), any(), any(), eq(JoinBuilder.JoinType.INNER));
+        verify(templateDao, times(1)).customSearch(searchCriteria, null);
     }
 }

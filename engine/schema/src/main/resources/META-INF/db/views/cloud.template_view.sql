@@ -41,6 +41,7 @@ SELECT
     `vm_template`.`guest_os_id` AS `guest_os_id`,
     `guest_os`.`uuid` AS `guest_os_uuid`,
     `guest_os`.`display_name` AS `guest_os_name`,
+    `guest_os`.`category_id` AS `guest_os_category_id`,
     `vm_template`.`bootable` AS `bootable`,
     `vm_template`.`prepopulate` AS `prepopulate`,
     `vm_template`.`cross_zones` AS `cross_zones`,

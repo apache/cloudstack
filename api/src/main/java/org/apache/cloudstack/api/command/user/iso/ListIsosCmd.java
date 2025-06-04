@@ -16,11 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.iso;
 
-import com.cloud.cpu.CPU;
-import com.cloud.server.ResourceIcon;
-import com.cloud.server.ResourceTag;
-import org.apache.cloudstack.api.response.ResourceIconResponse;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandResourceType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,16 +23,17 @@ import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.command.user.UserCmd;
+import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
-import com.cloud.user.Account;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.List;
+import com.cloud.cpu.CPU;
+import com.cloud.server.ResourceTag;
+import com.cloud.template.VirtualMachineTemplate.TemplateFilter;
+import com.cloud.user.Account;
 
 @APICommand(name = "listIsos", description = "Lists all available ISO files.", responseObject = TemplateResponse.class, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -94,6 +90,11 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
             description = "the CPU arch of the ISO. Valid options are: x86_64, aarch64",
             since = "4.20")
     private String arch;
+
+    @Parameter(name = ApiConstants.OS_CATEGORY_ID, type = CommandType.UUID, entityType= GuestOSCategoryResponse.class,
+            description = "the ID of the OS category for the ISO",
+            since = "4.21.0")
+    private Long osCategoryId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -173,6 +174,10 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
         return CPU.CPUArch.fromType(arch);
     }
 
+    public Long getOsCategoryId() {
+        return osCategoryId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -190,22 +195,12 @@ public class ListIsosCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     @Override
     public void execute() {
         ListResponse<TemplateResponse> response = _queryService.listIsos(this);
-        if (response != null && response.getCount() > 0 && getShowIcon()) {
-            updateIsoResponse(response.getResponses());
+        if (response != null && getShowIcon()) {
+            _responseGenerator.updateTemplateIsoResponsesForIcons(response.getResponses(),
+                    ResourceTag.ResourceObjectType.ISO);
         }
         response.setResponseName(getCommandName());
         setResponseObject(response);
-    }
-
-    private void updateIsoResponse(List<TemplateResponse> response) {
-        for (TemplateResponse templateResponse : response) {
-            ResourceIcon resourceIcon = resourceIconManager.getByResourceTypeAndUuid(ResourceTag.ResourceObjectType.ISO, templateResponse.getId());
-            if (resourceIcon == null) {
-                continue;
-            }
-            ResourceIconResponse iconResponse = _responseGenerator.createResourceIconResponse(resourceIcon);
-            templateResponse.setResourceIconResponse(iconResponse);
-        }
     }
 
     public Long getStoragePoolId() {
