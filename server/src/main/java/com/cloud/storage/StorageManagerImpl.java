@@ -1958,7 +1958,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         logger.debug("Total over provisioned capacity of the pool {} is {}", storagePool, toHumanReadableSize(totalOverProvCapacity));
         CapacityState capacityState = CapacityState.Enabled;
         if (storagePool.getScope() == ScopeType.ZONE) {
-            DataCenterVO dc = ApiDBUtils.findZoneById(storagePool.getDataCenterId());
+            DataCenterVO dc = _dcDao.findById(storagePool.getDataCenterId());
             AllocationState allocationState = dc.getAllocationState();
             capacityState = (allocationState == AllocationState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
         } else {

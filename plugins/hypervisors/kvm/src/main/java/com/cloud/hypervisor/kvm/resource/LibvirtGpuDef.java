@@ -35,7 +35,7 @@ public class LibvirtGpuDef {
         GpuDevice.DeviceType deviceType = vgpuType.getDeviceType();
 
         if (deviceType == GpuDevice.DeviceType.MDEV) {
-            // Generate XML for MDEV device (vGPU)
+            // Generate XML for MDEV device (vGPU, including MIG instances)
             generateMdevXml(gpuBuilder);
         } else {
             // Generate XML for PCI device (passthrough GPU or VF)
@@ -47,8 +47,9 @@ public class LibvirtGpuDef {
 
     private void generateMdevXml(StringBuilder gpuBuilder) {
         String mdevUuid = vgpuType.getBusAddress(); // For MDEV devices, busAddress contains the UUID
+        String displayAttribute = vgpuType.isDisplay() ? "on" : "off";
 
-        gpuBuilder.append("<hostdev mode='subsystem' type='mdev' managed='no'>\n");
+        gpuBuilder.append("<hostdev mode='subsystem' type='mdev' managed='no' display='").append(displayAttribute).append("'>\n");
         gpuBuilder.append("  <source>\n");
         gpuBuilder.append("    <address uuid='").append(mdevUuid).append("'/>\n");
         gpuBuilder.append("  </source>\n");
@@ -58,7 +59,18 @@ public class LibvirtGpuDef {
     private void generatePciXml(StringBuilder gpuBuilder) {
         String busAddress = vgpuType.getBusAddress();
 
-        gpuBuilder.append("<hostdev mode='subsystem' type='pci' managed='yes'>\n");
+        // For VDI use cases with display=on, ramfb provides early boot framebuffer
+        // before GPU driver loads. This is critical for:
+        // - Windows VDI guests (require framebuffer during boot)
+        // - UEFI/OVMF firmware environments
+        // - ARM64 hosts (cache coherency issues with traditional VGA)
+        // - Multi-monitor VDI setups (primary display)
+        if (vgpuType.isDisplay()) {
+            gpuBuilder.append("<hostdev mode='subsystem' type='pci' managed='yes' display='on' ramfb='on'>\n");
+        } else {
+            // Compute-only workloads don't need display or ramfb
+            gpuBuilder.append("<hostdev mode='subsystem' type='pci' managed='yes' display='off'>\n");
+        }
         gpuBuilder.append("  <driver name='vfio'/>\n");
         gpuBuilder.append("  <source>\n");
 
@@ -88,4 +100,3 @@ public class LibvirtGpuDef {
         gpuBuilder.append("</hostdev>\n");
     }
 }
-

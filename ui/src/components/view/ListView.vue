@@ -156,6 +156,12 @@
               v-if="record.id"
             >{{ $t(text.toLowerCase()) }}</router-link>
           </span>
+          <span v-else-if="$route.path.startsWith('/gpucard') && record.gpucardid">
+            <router-link
+              :to="{ path: '/vgpuprofile/' + record.id }"
+              v-if="record.id"
+            >{{ $t(text.toLowerCase()) }}</router-link>
+          </span>
           <span v-else>
             <router-link
               :to="{ path: $route.path + '/' + record.id }"
@@ -189,10 +195,33 @@
                   }"/>
               </a-tooltip>
           </span>
+          <span
+            v-if="['host', 'vm', 'computeoffering', 'systemoffering'].includes($route.path.split('/')[1]) && (record?.gputotal > 0 || record?.gpucount > 0)"
+            style="margin-right: 5px"
+          >
+            <a-tag style="margin-left: 5px">{{ $t('label.gpu.enabled') }}</a-tag>
+          </span>
         </span>
       </template>
       <template v-if="column.key === 'templatetype'">
         <span>{{ text }}</span>
+      </template>
+      <template v-if="column.key === 'gpu'">
+        <span v-if="record.gpucardname && record.vgpuprofilename">
+          {{ record?.gpucount > 0 ? record.gpucount + 'x' : '' }}
+          <router-link v-if="record.gpucardid" :to="{ path: '/gpucard/' + record.gpucardid }">{{ record.gpucardname }}</router-link>
+          <span v-else>{{ record.gpucardname }}</span>
+          <router-link v-if="record.vgpuprofileid && record.vgpuprofilename !== 'passthrough'" :to="{ path: '/vgpuprofile/' + record.vgpuprofileid }">{{ record.vgpuprofilename === 'passthrough' ? '' : "(" + record.vgpuprofilename + ")"}}</router-link>
+          <span v-else>{{ record.vgpuprofilename === 'passthrough' ? '' : "(" + record.vgpuprofilename + ")"}}</span>
+        </span>
+      </template>
+      <template v-if="column.key === 'resolution'">
+        <span v-if="record.maxresolutionx && record.maxresolutiony">
+          {{ record.maxresolutionx }}x{{ record.maxresolutiony }}
+        </span>
+        <span v-else>
+          {{  text }}
+        </span>
       </template>
       <template v-if="column.key === 'templateid'">
         <router-link :to="{ path: '/template/' + record.templateid }">{{ text }}</router-link>
@@ -345,6 +374,11 @@
       <template v-if="column.key === 'physicalsize'">
         <span v-if="text">
           {{ isNaN(text) ? text : (parseFloat(parseFloat(text) / 1024.0 / 1024.0 / 1024.0).toFixed(2) + ' GiB') }}
+        </span>
+      </template>
+      <template v-if="column.key === 'videoram'">
+        <span v-if="text">
+          {{ isNaN(text) ? text : (parseFloat(text) / 1024.0).toFixed(2) + ' GB' }}
         </span>
       </template>
       <template v-if="column.key === 'physicalnetworkname'">
@@ -729,10 +763,6 @@
         <router-link
           v-if="$router.resolve('/gpucard/' + record.gpucardid).matched[0].redirect !== '/exception/404'"
           :to="{ path: '/gpucard/' + record.gpucardid }"
-        >{{ text }}</router-link>
-        <router-link
-          v-else-if="$router.resolve('/managementservers/' + record.managementserverid).matched[0].redirect !== '/exception/404'"
-          :to="{ path: '/managementservers/' + record.managementserverid }"
         >{{ text }}</router-link>
         <span v-else>{{ text }}</span>
       </template>

@@ -67,7 +67,7 @@ export default {
       name: 'gpudevices',
       title: 'label.gpu.devices',
       icon: 'BoxPlotOutlined',
-      // docHelp: 'adminguide/management.html#gpu-devices', TODO: Add doc help
+      hidden: true,
       permission: ['listGpuDevices'],
       columns: ['id', 'busaddress', 'gpucardname', 'vgpuprofilename', 'hostname', 'virtualmachinename'],
       details: ['id', 'busaddress', 'gpucardname', 'vgpuprofilename', 'hostname', 'virtualmachinename'],

@@ -44,12 +44,13 @@
         </a-button>
         <volumes-tab :resource="vm" :loading="loading" />
       </a-tab-pane>
-      <a-tab-pane :tab="$t('label.gpus')" key="gpus" v-if="dataResource.gpucardname">
-        <ListResourceTable
+      <a-tab-pane :tab="$t('label.gpu')" key="gpu" v-if="dataResource.gpucardname">
+        <GPUTab
           apiName="listGpuDevices"
           :resource="dataResource"
           :params="{virtualmachineid: dataResource.id}"
-          :columns="['id', 'gpucardname', 'vgpuprofilename', 'state']"
+          resourceType="VirtualMachine"
+          :columns="['gpucardname', 'vgpuprofilename', 'state'].concat($store.getters.userInfo.roletype === 'Admin' ? ['id', 'hostname'] : [])"
           :routerlinks="(record) => { return { displayname: '/gpudevice/' + record.id } }"/>
       </a-tab-pane>
       <a-tab-pane :tab="$t('label.nics')" key="nics" v-if="'listNics' in $store.getters.apis">
@@ -151,6 +152,7 @@ import ResourceIcon from '@/components/view/ResourceIcon'
 import AnnotationsTab from '@/components/view/AnnotationsTab'
 import VolumesTab from '@/components/view/VolumesTab.vue'
 import SecurityGroupSelection from '@views/compute/wizard/SecurityGroupSelection'
+import GPUTab from '@/components/view/GPUTab.vue'
 
 export default {
   name: 'InstanceTab',
@@ -162,6 +164,7 @@ export default {
     DetailSettings,
     CreateVolume,
     NicsTab,
+    GPUTab,
     InstanceSchedules,
     ListResourceTable,
     SecurityGroupSelection,

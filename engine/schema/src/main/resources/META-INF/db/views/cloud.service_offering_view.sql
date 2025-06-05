@@ -80,6 +80,7 @@ SELECT
     `vgpu_profile`.`uuid` AS `vgpu_profile_uuid`,
     `vgpu_profile`.`name` AS `vgpu_profile_name`,
     `service_offering`.`gpu_count` AS `gpu_count`,
+    `service_offering`.`gpu_display` AS `gpu_display`,
     GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
     GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
     GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,

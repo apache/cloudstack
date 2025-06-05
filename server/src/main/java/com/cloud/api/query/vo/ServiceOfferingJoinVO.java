@@ -248,6 +248,9 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name = "gpu_count")
     private Integer gpuCount;
 
+    @Column(name = "gpu_display")
+    private Boolean gpuDisplay;
+
     public ServiceOfferingJoinVO() {
     }
 
@@ -521,5 +524,9 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
 
     public Integer getGpuCount() {
         return gpuCount;
+    }
+
+    public Boolean getGpuDisplay() {
+        return gpuDisplay;
     }
 }

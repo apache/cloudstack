@@ -48,7 +48,6 @@ import org.apache.cloudstack.query.QueryService;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -759,8 +758,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
     public List<UserVmJoinVO> listByAccountServiceOfferingTemplateAndNotInState(long accountId, List<State> states,
             List<Long> offeringIds, List<Long> templateIds) {
         SearchBuilder<UserVmJoinVO> userVmSearch = createSearchBuilder();
+
         userVmSearch.selectFields(userVmSearch.entity().getId(), userVmSearch.entity().getCpu(),
-                userVmSearch.entity().getRamSize());
+                userVmSearch.entity().getRamSize(), userVmSearch.entity().getGpuCount());
+
         userVmSearch.and("accountId", userVmSearch.entity().getAccountId(), Op.EQ);
         userVmSearch.and("serviceOfferingId", userVmSearch.entity().getServiceOfferingId(), Op.IN);
         userVmSearch.and("templateId", userVmSearch.entity().getTemplateId(), Op.IN);

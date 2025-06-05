@@ -22,17 +22,18 @@ import com.cloud.host.Host;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.api.command.admin.gpu.CreateGpuCardCmd;
+import org.apache.cloudstack.api.command.admin.gpu.CreateGpuDeviceCmd;
 import org.apache.cloudstack.api.command.admin.gpu.CreateVgpuProfileCmd;
 import org.apache.cloudstack.api.command.admin.gpu.DeleteGpuCardCmd;
+import org.apache.cloudstack.api.command.admin.gpu.DeleteGpuDeviceCmd;
 import org.apache.cloudstack.api.command.admin.gpu.DeleteVgpuProfileCmd;
-import org.apache.cloudstack.api.command.admin.gpu.DisableGpuDeviceCmd;
+import org.apache.cloudstack.api.command.admin.gpu.UnmanageGpuDeviceCmd;
 import org.apache.cloudstack.api.command.admin.gpu.DiscoverGpuDevicesCmd;
-import org.apache.cloudstack.api.command.admin.gpu.EnableGpuDeviceCmd;
-import org.apache.cloudstack.api.command.admin.gpu.ListGpuDevicesCmd;
+import org.apache.cloudstack.api.command.admin.gpu.ManageGpuDeviceCmd;
+import org.apache.cloudstack.api.command.user.gpu.ListGpuDevicesCmd;
 import org.apache.cloudstack.api.command.admin.gpu.UpdateGpuCardCmd;
-import org.apache.cloudstack.api.command.admin.gpu.UpdateVgpuProfileCmd;
-import org.apache.cloudstack.api.command.admin.gpu.CreateGpuDeviceCmd;
 import org.apache.cloudstack.api.command.admin.gpu.UpdateGpuDeviceCmd;
+import org.apache.cloudstack.api.command.admin.gpu.UpdateVgpuProfileCmd;
 import org.apache.cloudstack.api.command.user.gpu.ListGpuCardsCmd;
 import org.apache.cloudstack.api.command.user.gpu.ListVgpuProfilesCmd;
 import org.apache.cloudstack.api.response.GpuCardResponse;
@@ -46,116 +47,103 @@ import java.util.List;
 
 public interface GpuService extends Manager {
 
-    ConfigKey<Boolean> GpuDetachOnStop = new ConfigKey<>(Boolean.class,
-            "gpu.detach.on.stop",
-            "Advanced",
-            "false",
-            "Whether to detach GPU devices from VM on stop or keep them allocated",
-            true, ConfigKey.Scope.Domain, null);
+    ConfigKey<Boolean> GpuDetachOnStop = new ConfigKey<>(Boolean.class, "gpu.detach.on.stop", "Advanced", "false",
+            "Whether to detach GPU devices from VM on stop or keep them allocated", true, ConfigKey.Scope.Domain, null);
 
-    /**
-     * Creates a GPU card in the database
-     *
-     * @param cmd the API command
-     * @return the created GPU card object
-     */
     GpuCard createGpuCard(CreateGpuCardCmd cmd);
 
-    /**
-     * Updates a GPU card in the database
-     *
-     * @param cmd the API command
-     * @return the updated GPU card object
-     */
     GpuCard updateGpuCard(UpdateGpuCardCmd cmd);
 
-    /**
-     * Deletes a GPU card from the database
-     *
-     * @param cmd the API command
-     * @return true if successful, false otherwise
-     */
     boolean deleteGpuCard(DeleteGpuCardCmd cmd);
 
-    /**
-     * Creates a vGPU profile in the database
-     *
-     * @param cmd the API command
-     * @return the created vGPU profile object
-     */
     VgpuProfileResponse createVgpuProfile(CreateVgpuProfileCmd cmd);
 
-    /**
-     * Updates a vGPU profile in the database
-     *
-     * @param cmd the API command
-     * @return the updated vGPU profile object
-     */
     VgpuProfileResponse updateVgpuProfile(UpdateVgpuProfileCmd cmd);
 
-    /**
-     * Deletes a vGPU profile from the database
-     *
-     * @param cmd the API command
-     * @return true if successful, false otherwise
-     */
     boolean deleteVgpuProfile(DeleteVgpuProfileCmd cmd);
 
-    /**
-     * Lists GPU cards based on criteria
-     *
-     * @param cmd the API command
-     * @return a list of GPU card responses
-     */
     ListResponse<GpuCardResponse> listGpuCards(ListGpuCardsCmd cmd);
 
-    /**
-     * Lists vGPU profiles based on criteria
-     *
-     * @param cmd the API command
-     * @return a list of vGPU profile responses
-     */
     ListResponse<VgpuProfileResponse> listVgpuProfiles(ListVgpuProfilesCmd cmd);
 
-    /**
-     * Lists GPU devices based on criteria
-     *
-     * @param cmd the API command
-     * @return a list of GPU device responses
-     */
-    ListResponse<GpuDeviceResponse> listGpuDevices(ListGpuDevicesCmd cmd);
-
-    boolean disableGpuDevice(DisableGpuDeviceCmd cmd);
-
-    boolean enableGpuDevice(EnableGpuDeviceCmd cmd);
-
-    void deallocateGpuDevicesForVmOnHost(long vm, GpuDevice.State state);
-
-    void assignGpuDevicesToVmOnHost(long vmId, long hostId, List<VgpuTypesInfo> gpuDevices);
-
-    ListResponse<GpuDeviceResponse> discoverGpuDevices(DiscoverGpuDevicesCmd cmd);
-
-    boolean isGPUDeviceAvailable(Host host, Long vmId, VgpuProfile vgpuProfile, int gpuCount);
-
-    GPUDeviceTO getGPUDevice(VirtualMachine vm, VgpuProfile vgpuProfile, int gpuCount);
-
-    HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetailsFromGpuDevices(Host host);
-
-    void addGpuDevicesToHost(Host host, List<VgpuTypesInfo> newGpuDevicesInfo);
-
-    /**
-     * Creates a GPU device manually on a host
-     *
-     * @param cmd the API command
-     * @return the created GPU device response
-     */
     GpuDeviceResponse createGpuDevice(CreateGpuDeviceCmd cmd);
 
-    /**
-     * Updates an existing GPU device
-     *
-     * @param cmd the API command
-     * @return the updated GPU device response
-     */
     GpuDeviceResponse updateGpuDevice(UpdateGpuDeviceCmd cmd);
+
+    ListResponse<GpuDeviceResponse> listGpuDevices(ListGpuDevicesCmd cmd);
+
+    boolean disableGpuDevice(UnmanageGpuDeviceCmd cmd);
+
+    boolean enableGpuDevice(ManageGpuDeviceCmd cmd);
+
+    /**
+     * Deallocate GPU devices for a VM on a host.
+     *
+     * @param vmId The ID of the VM to deallocate GPU devices for.
+     */
+    void deallocateGpuDevicesForVmOnHost(long vmId);
+
+    /**
+     * Deallocate existing GPU devices for a VM on a host and allocate new GPU devices to the VM.
+     *
+     * @param vmId       The ID of the VM to allocate GPU devices to.
+     * @param hostId     The ID of the host to allocate GPU devices to.
+     * @param gpuDevices The list of GPU devices to allocate to the VM.
+     */
+    void allocateGpuDevicesToVmOnHost(long vmId, long hostId, List<VgpuTypesInfo> gpuDevices);
+
+    /**
+     * Discover GPU devices on a host by using the getGPUStatistics command and updating the GPU details for the host.
+     *
+     * @param cmd The command to discover GPU devices.
+     * @return The list of GPU devices.
+     */
+    ListResponse<GpuDeviceResponse> discoverGpuDevices(DiscoverGpuDevicesCmd cmd);
+
+    /**
+     * Check if GPU devices are available for a VM on a host by checking the number of available GPU devices for the
+     * vGPU profile.
+     *
+     * @param host        The host to check GPU devices for.
+     * @param vmId        The ID of the VM to check GPU devices for.
+     * @param vgpuProfile The vGPU profile to check GPU devices for.
+     * @param gpuCount    The number of GPU devices to check for.
+     * @return True if GPU devices are available, false otherwise.
+     */
+    boolean isGPUDeviceAvailable(Host host, Long vmId, VgpuProfile vgpuProfile, int gpuCount);
+
+    /**
+     * Get GPU devices for a VM on a host by checking the number of available GPU devices for the vGPU profile.
+     * If the VM already has GPU devices assigned, deallocate them and allocate new GPU devices to the VM.
+     * The new GPU devices are allocated optimally to the VM.
+     *
+     * @param vm          The VM to get GPU devices for.
+     * @param vgpuProfile The vGPU profile to get GPU devices for.
+     * @param gpuCount    The number of GPU devices to get.
+     * @return The GPU devices.
+     */
+    GPUDeviceTO getGPUDevice(VirtualMachine vm, VgpuProfile vgpuProfile, int gpuCount);
+
+    /**
+     * Gets the GPU group details from the GPU devices on a host.
+     * This fetches the GPU devices from the host and prepares the GPU group details for the host.
+     * The GPU group details are a map of GPU group name (Card's device name) to a map of vGPU profile name to
+     * VgpuTypesInfo.
+     * The VgpuTypesInfo contains the information about the GPU device.
+     *
+     * @param host The host to get GPU group details for.
+     * @return The GPU group details.
+     */
+    HashMap<String, HashMap<String, VgpuTypesInfo>> getGpuGroupDetailsFromGpuDevicesOnHost(Host host);
+
+    /**
+     * This method is used to add the GPU devices to the host when the host is discovered or when the GPU devices are
+     * updated.
+     *
+     * @param host              The host to add the GPU devices to.
+     * @param newGpuDevicesInfo The list of GPU devices to add to the host.
+     */
+    void addGpuDevicesToHost(Host host, List<VgpuTypesInfo> newGpuDevicesInfo);
+
+    boolean deleteGpuDevices(DeleteGpuDeviceCmd deleteGpuDeviceCmd);
 }

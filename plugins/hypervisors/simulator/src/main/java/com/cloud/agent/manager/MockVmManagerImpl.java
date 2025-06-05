@@ -519,6 +519,11 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             final MockVm vm = _mockVmDao.findByVmName(vmName);
             if (vm != null) {
                 vm.setPowerState(PowerState.PowerOff);
+                _mockGpuDeviceDao.listByVmId(vm.getId()).forEach(mockGpuDevice -> {
+                    mockGpuDevice.setVmId(null);
+                    mockGpuDevice.setState(MockGpuDevice.State.Available);
+                    _mockGpuDeviceDao.persist(mockGpuDevice);
+                });
                 _mockVmDao.update(vm.getId(), (MockVMVO)vm);
             }
 

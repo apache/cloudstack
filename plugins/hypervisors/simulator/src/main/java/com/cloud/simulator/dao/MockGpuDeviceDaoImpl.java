@@ -16,12 +16,11 @@
 // under the License.
 package com.cloud.simulator.dao;
 
-import com.cloud.simulator.MockGpuDevice;
 import com.cloud.simulator.MockGpuDeviceVO;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.Filter;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -30,10 +29,8 @@ import java.util.List;
 public class MockGpuDeviceDaoImpl extends GenericDaoBase<MockGpuDeviceVO, Long> implements MockGpuDeviceDao {
 
     private final SearchBuilder<MockGpuDeviceVO> allFieldSearch;
-    private final SearchBuilder<MockGpuDeviceVO> hostAndAvailableSearch;
 
     public MockGpuDeviceDaoImpl() {
-
         allFieldSearch = createSearchBuilder();
         allFieldSearch.and("busAddress", allFieldSearch.entity().getBusAddress(), SearchCriteria.Op.EQ);
         allFieldSearch.and("hostId", allFieldSearch.entity().getHostId(), SearchCriteria.Op.EQ);
@@ -44,12 +41,6 @@ public class MockGpuDeviceDaoImpl extends GenericDaoBase<MockGpuDeviceVO, Long> 
         allFieldSearch.and("state", allFieldSearch.entity().getState(), SearchCriteria.Op.EQ);
         allFieldSearch.and("vmId", allFieldSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         allFieldSearch.done();
-
-        hostAndAvailableSearch = createSearchBuilder();
-        hostAndAvailableSearch.and("hostId", hostAndAvailableSearch.entity().getHostId(), SearchCriteria.Op.EQ);
-        hostAndAvailableSearch.and("state", hostAndAvailableSearch.entity().getState(), SearchCriteria.Op.EQ);
-        hostAndAvailableSearch.and("vmId", hostAndAvailableSearch.entity().getVmId(), SearchCriteria.Op.NULL);
-        hostAndAvailableSearch.done();
     }
 
     @Override
@@ -71,22 +62,6 @@ public class MockGpuDeviceDaoImpl extends GenericDaoBase<MockGpuDeviceVO, Long> 
     public List<MockGpuDeviceVO> listByVmId(Long vmId) {
         SearchCriteria<MockGpuDeviceVO> sc = allFieldSearch.create();
         sc.setParameters("vmId", vmId);
-        return search(sc, null);
-    }
-
-    @Override
-    public List<MockGpuDeviceVO> listByHostIdAndVmId(Long hostId, Long vmId) {
-        SearchCriteria<MockGpuDeviceVO> sc = allFieldSearch.create();
-        sc.setParameters("hostId", hostId);
-        sc.setParameters("vmId", vmId);
-        return search(sc, null);
-    }
-
-    @Override
-    public List<MockGpuDeviceVO> listAvailableByHost(Long hostId) {
-        SearchCriteria<MockGpuDeviceVO> sc = hostAndAvailableSearch.create();
-        sc.setParameters("hostId", hostId);
-        sc.setParameters("state", MockGpuDevice.State.Available);
         return search(sc, null);
     }
 }

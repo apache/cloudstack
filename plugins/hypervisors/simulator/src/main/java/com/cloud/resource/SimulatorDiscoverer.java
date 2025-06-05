@@ -305,29 +305,6 @@ public class SimulatorDiscoverer extends DiscovererBase implements Discoverer, L
         return _resourceMgr.fillRoutingHostVO(host, ssCmd, HypervisorType.Simulator, details, hostTags);
     }
 
-//    public List<VgpuTypesInfo> getGPUDevices() {
-//        List<VgpuTypesInfo> gpuDevices = new ArrayList<>();
-//        // Fallback to the hardcoded implementation if DAO is not available
-//        logger.warn("MockGpuDeviceDao is not available, using fallback hardcoded GPU devices");
-//        List<String> lspciOutput = new ArrayList<>();
-//        lspciOutput.add("00:01.0 \"3D controller [0302]\" \"Apache Cloudstack Simulator [0000]\" \"Simulated GPU [ACS Simulated GPU] [ffff]\" -ra1 -p00 \"XXXX [0000]\" \"Device [0001]\"");
-//        lspciOutput.add("00:02.0 \"3D controller [0302]\" \"Apache Cloudstack Simulator [0000]\" \"Simulated GPU [ACS Simulated GPU] [ffff]\" -ra1 -p00 \"XXXX [0000]\" \"Device [0001]\"");
-//
-//        for (String gpuDevice : lspciOutput) {
-//            String[] gpuDeviceDetails = gpuDevice.split(" \"");
-//            String busAddress = gpuDeviceDetails[0];
-//            String vendorId = gpuDeviceDetails[2].split("\\[")[1].split("]")[0];
-//            String deviceId = gpuDeviceDetails[3].split("\\[")[2].split("]")[0];
-//            String vendorName = gpuDeviceDetails[2].split(" \\[")[0];
-//            String deviceName = gpuDeviceDetails[3].split(" \\[")[0];
-//            String modelName = "passthrough";
-//
-//            gpuDevices.add(new VgpuTypesInfo(modelName, modelName, busAddress,
-//                    vendorId, vendorName, deviceId, deviceName));
-//        }
-//        return gpuDevices;
-//    }
-
     @Override
     public DeleteHostAnswer deleteHost(HostVO host, boolean isForced, boolean isForceDeleteStorage) throws UnableDeleteHostException {
         return null;

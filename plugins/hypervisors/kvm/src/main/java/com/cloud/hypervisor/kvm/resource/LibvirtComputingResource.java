@@ -493,12 +493,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String agentHooksBasedir = "/etc/cloudstack/agent/hooks";
 
     protected String agentHooksLibvirtXmlScript = "libvirt-vm-xml-transformer.groovy";
+    protected String agentHooksLibvirtXmlShellScript = "libvirt-vm-xml-transformer.sh";
     protected String agentHooksLibvirtXmlMethod = "transform";
 
     protected String agentHooksVmOnStartScript = "libvirt-vm-state-change.groovy";
+    protected String agentHooksVmOnStartShellScript = "libvirt-vm-state-change.sh";
     protected String agentHooksVmOnStartMethod = "onStart";
 
     protected String agentHooksVmOnStopScript = "libvirt-vm-state-change.groovy";
+    protected String agentHooksVmOnStopShellScript = "libvirt-vm-state-change.sh";
     protected String agentHooksVmOnStopMethod = "onStop";
 
     protected static final String LOCAL_STORAGE_PATH = "local.storage.path";
@@ -692,15 +695,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public LibvirtKvmAgentHook getTransformer() throws IOException {
-        return new LibvirtKvmAgentHook(agentHooksBasedir, agentHooksLibvirtXmlScript, agentHooksLibvirtXmlMethod);
+        return new LibvirtKvmAgentHook(agentHooksBasedir, agentHooksLibvirtXmlScript, agentHooksLibvirtXmlShellScript, agentHooksLibvirtXmlMethod);
     }
 
     public LibvirtKvmAgentHook getStartHook() throws IOException {
-        return new LibvirtKvmAgentHook(agentHooksBasedir, agentHooksVmOnStartScript, agentHooksVmOnStartMethod);
+        return new LibvirtKvmAgentHook(agentHooksBasedir, agentHooksVmOnStartScript, agentHooksVmOnStartShellScript, agentHooksVmOnStartMethod);
     }
 
     public LibvirtKvmAgentHook getStopHook() throws IOException {
-        return new LibvirtKvmAgentHook(agentHooksBasedir, agentHooksVmOnStopScript, agentHooksVmOnStopMethod);
+        return new LibvirtKvmAgentHook(agentHooksBasedir, agentHooksVmOnStopScript, agentHooksVmOnStopShellScript, agentHooksVmOnStopMethod);
     }
 
     public LibvirtUtilitiesHelper getLibvirtUtilitiesHelper() {
@@ -1604,17 +1607,26 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         agentHooksLibvirtXmlScript = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_SCRIPT);
         LOGGER.debug("agent.hooks.libvirt_vm_xml_transformer.script is " + agentHooksLibvirtXmlScript);
 
+        agentHooksLibvirtXmlShellScript = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_SHELL_SCRIPT);
+        LOGGER.debug("agent.hooks.libvirt_vm_xml_transformer.shell_script is " + agentHooksLibvirtXmlShellScript);
+
         agentHooksLibvirtXmlMethod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_XML_TRANSFORMER_METHOD);
         LOGGER.debug("agent.hooks.libvirt_vm_xml_transformer.method is " + agentHooksLibvirtXmlMethod);
 
         agentHooksVmOnStartScript = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_ON_START_SCRIPT);
         LOGGER.debug("agent.hooks.libvirt_vm_on_start.script is " + agentHooksVmOnStartScript);
 
+        agentHooksVmOnStartShellScript = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_ON_START_SHELL_SCRIPT);
+        LOGGER.debug("agent.hooks.libvirt_vm_on_start.shell_script is " + agentHooksVmOnStartShellScript);
+
         agentHooksVmOnStartMethod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_ON_START_METHOD);
         LOGGER.debug("agent.hooks.libvirt_vm_on_start.method is " + agentHooksVmOnStartMethod);
 
         agentHooksVmOnStopScript = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_ON_STOP_SCRIPT);
         LOGGER.debug("agent.hooks.libvirt_vm_on_stop.script is " + agentHooksVmOnStopScript);
+
+        agentHooksVmOnStopShellScript = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_ON_STOP_SHELL_SCRIPT);
+        LOGGER.debug("agent.hooks.libvirt_vm_on_stop.shell_script is " + agentHooksVmOnStopShellScript);
 
         agentHooksVmOnStopMethod = AgentPropertiesFileHandler.getPropertyValue(AgentProperties.AGENT_HOOKS_LIBVIRT_VM_ON_STOP_METHOD);
         LOGGER.debug("agent.hooks.libvirt_vm_on_stop.method is " + agentHooksVmOnStopMethod);
@@ -1985,8 +1997,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         LOGGER.debug("GPU discovery result: {}", result);
 
-        // TODO: Add running VMs to the list of GPU devices
         // This will be used to update the GPU device list when agent on a host is unavailable or the VM is imported.
+        return parseGpuDevicesFromResult(result);
+    }
+
+    protected List<VgpuTypesInfo> parseGpuDevicesFromResult(String result) {
         List<VgpuTypesInfo> gpuDevices = new ArrayList<>();
         try {
             JsonParser jsonParser = new JsonParser();
@@ -2012,8 +2027,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 String numaNode = getJsonStringValueOrNull(jsonObject, "numa_node");
                 String pciRoot = getJsonStringValueOrNull(jsonObject, "pci_root");
 
-                VgpuTypesInfo vgpuType = new VgpuTypesInfo(GpuDevice.DeviceType.PCI, "passthrough", "passthrough", busAddress, vendorId,
-                                vendorName, deviceId, deviceName, numaNode, pciRoot);
+                VgpuTypesInfo vgpuType = new VgpuTypesInfo(GpuDevice.DeviceType.PCI, vendorName + " " + deviceName,
+                        "passthrough", busAddress, vendorId, vendorName, deviceId, deviceName, numaNode, pciRoot);
                 if (fullPassthroughEnabled) {
                     vgpuType.setPassthroughEnabled(true);
                 } else {
@@ -2024,23 +2039,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 gpuDevices.add(vgpuType);
 
                 for (JsonElement vgpuInstance : vgpuInstances) {
-                    String mdevUuid = vgpuInstance.getAsJsonObject().get("mdev_uuid").getAsString();
-                    String profileName = vgpuInstance.getAsJsonObject().get("profile_name").getAsString();
-                    Long availableInstances = vgpuInstance.getAsJsonObject().get("available_instances").getAsLong();
-                    VgpuTypesInfo device = new VgpuTypesInfo(GpuDevice.DeviceType.MDEV, profileName, profileName, mdevUuid, vendorId, vendorName, deviceId, deviceName, numaNode, pciRoot);
-                    device.setParentBusAddress(busAddress);
-                    device.setRemainingCapacity(availableInstances);
-                    device.setVmName(getJsonStringValueOrNull(vgpuInstance.getAsJsonObject(), "used_by_vm"));
-                    gpuDevices.add(device);
+                    gpuDevices.add(getGpuDeviceFromVgpuInstance(vgpuInstance, busAddress, vendorId, vendorName, deviceId,
+                            deviceName, numaNode, pciRoot));
                 }
 
                 for (JsonElement vfInstance : vfInstances) {
-                    String vfPciAddress = vfInstance.getAsJsonObject().get("vf_pci_address").getAsString();
-                    String vfProfile = vfInstance.getAsJsonObject().get("vf_profile").getAsString();
-                    VgpuTypesInfo device = new VgpuTypesInfo(GpuDevice.DeviceType.PCI, vfProfile, vfProfile, vfPciAddress, vendorId, vendorName, deviceId, deviceName, numaNode, pciRoot);
-                    device.setParentBusAddress(busAddress);
-                    device.setVmName(getJsonStringValueOrNull(vfInstance.getAsJsonObject(), "used_by_vm"));
-                    gpuDevices.add(device);
+                    gpuDevices.add(getGpuDeviceFromVfInstance(vfInstance, busAddress, vendorId, vendorName, deviceId,
+                            deviceName, numaNode, pciRoot));
                 }
             }
 
@@ -2048,6 +2053,37 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             LOGGER.error("Failed to parse GPU discovery result: {}", e.getMessage(), e);
         }
         return gpuDevices;
+    }
+
+    protected VgpuTypesInfo getGpuDeviceFromVgpuInstance(JsonElement vgpuInstance, String busAddress, String vendorId,
+            String vendorName, String deviceId, String deviceName, String numaNode, String pciRoot) {
+        JsonObject vgpuInstanceJsonObject = vgpuInstance.getAsJsonObject();
+        String mdevUuid = getJsonStringValueOrNull(vgpuInstanceJsonObject, "mdev_uuid");
+        String profileName = getJsonStringValueOrNull(vgpuInstanceJsonObject, "profile_name");
+        Long maxInstances = getJsonLongValueOrNull(vgpuInstanceJsonObject, "max_instances");
+        Long videoRam = getJsonLongValueOrNull(vgpuInstanceJsonObject, "video_ram");
+        Long maxHeads = getJsonLongValueOrNull(vgpuInstanceJsonObject, "max_heads");
+        Long maxResolutionX = getJsonLongValueOrNull(vgpuInstanceJsonObject, "max_resolution_x");
+        Long maxResolutionY = getJsonLongValueOrNull(vgpuInstanceJsonObject, "max_resolution_y");
+        VgpuTypesInfo device = new VgpuTypesInfo(GpuDevice.DeviceType.MDEV, vendorName + " " + deviceName, profileName, mdevUuid, vendorId, vendorName, deviceId, deviceName, numaNode, pciRoot);
+        device.setParentBusAddress(busAddress);
+        device.setMaxVgpuPerGpu(maxInstances);
+        device.setVideoRam(videoRam);
+        device.setMaxHeads(maxHeads);
+        device.setMaxResolutionX(maxResolutionX);
+        device.setMaxResolutionY(maxResolutionY);
+        device.setVmName(getJsonStringValueOrNull(vgpuInstance.getAsJsonObject(), "used_by_vm"));
+        return device;
+    }
+
+    protected VgpuTypesInfo getGpuDeviceFromVfInstance(JsonElement vfInstance, String busAddress, String vendorId,
+            String vendorName, String deviceId, String deviceName, String numaNode, String pciRoot) {
+        String vfPciAddress = vfInstance.getAsJsonObject().get("vf_pci_address").getAsString();
+        String vfProfile = vfInstance.getAsJsonObject().get("vf_profile").getAsString();
+        VgpuTypesInfo device = new VgpuTypesInfo(GpuDevice.DeviceType.PCI, vendorName + " " + deviceName, vfProfile, vfPciAddress, vendorId, vendorName, deviceId, deviceName, numaNode, pciRoot);
+        device.setParentBusAddress(busAddress);
+        device.setVmName(getJsonStringValueOrNull(vfInstance.getAsJsonObject(), "used_by_vm"));
+        return device;
     }
 
     /**
@@ -2063,6 +2099,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return null;
         }
         return element.getAsString();
+    }
+
+    protected Long getJsonLongValueOrNull(JsonObject jsonObject, String fieldName) {
+        JsonElement element = jsonObject.get(fieldName);
+        if (element == null || element.isJsonNull()) {
+            return null;
+        }
+        return element.getAsLong();
     }
 
     boolean isDirectAttachedNetwork(final String type) {
@@ -2917,6 +2961,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         devices.addDevice(createConsoleDef());
         devices.addDevice(createGraphicDef(vmTO));
 
+        if (vmTO.getGpuDevice() != null && CollectionUtils.isNotEmpty(vmTO.getGpuDevice().getGpuDevices())) {
+            attachGpuDevices(vmTO, devices);
+        }
+
         if (!isGuestS390x()) {
             devices.addDevice(createTabletInputDef());
         }
@@ -2942,6 +2990,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             addSCSIControllers(devices, vcpus, vmTO.getDisks().length, isIothreadsEnabled);
         }
         return devices;
+    }
+
+    protected void attachGpuDevices(final VirtualMachineTO vmTO, final DevicesDef devicesDef) {
+        // GPU device is not set for the VM
+        List<VgpuTypesInfo> gpuDevices = vmTO.getGpuDevice().getGpuDevices();
+        for (VgpuTypesInfo gpuDevice : gpuDevices) {
+            LibvirtGpuDef gpu = new LibvirtGpuDef();
+
+            gpu.defGpu(gpuDevice);
+
+            devicesDef.addDevice(gpu);
+            LOGGER.info("Attached GPU device " + gpuDevice.getDeviceName() + " to VM " + vmTO.getName());
+        }
     }
 
     protected WatchDogDef createWatchDogDef() {
@@ -6325,22 +6386,5 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
     public String getGuestCpuArch() {
         return guestCpuArch;
-    }
-
-    public void attachGpuDevices(final VirtualMachineTO vmSpec, final LibvirtVMDef vm) throws InternalErrorException, LibvirtException {
-        // GPU device is not set for the VM
-        if (vmSpec.getGpuDevice() == null || CollectionUtils.isEmpty(vmSpec.getGpuDevice().getGpuDevices())) {
-            return;
-        }
-        List<VgpuTypesInfo> gpuDevices = vmSpec.getGpuDevice().getGpuDevices();
-        for (VgpuTypesInfo gpuDevice : gpuDevices) {
-            LibvirtGpuDef gpu = new LibvirtGpuDef();
-
-            // TODO: Handle GPU devices
-            gpu.defGpu(gpuDevice);
-
-            vm.getDevices().addDevice(gpu);
-            LOGGER.info("Attached GPU device " + gpuDevice.getDeviceName() + " to VM " + vmSpec.getName());
-        }
     }
 }

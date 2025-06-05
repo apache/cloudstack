@@ -394,7 +394,9 @@ public class ApiConstants {
     public static final String GPU_CARD_ID = "gpucardid";
     public static final String GPU_CARD_NAME = "gpucardname";
     public static final String GPU_COUNT = "gpucount";
+    public static final String GPU_DISPLAY = "gpudisplay";
     public static final String GPU_DEVICE_TYPE = "gpudevicetype";
+    public static final String GPU_ENABLED = "gpuenabled";
     public static final String MAX_VGPU_PER_PHYSICAL_GPU = "maxvgpuperphysicalgpu";
     public static final String GUEST_OS_LIST = "guestoslist";
     public static final String GUEST_OS_COUNT = "guestoscount";

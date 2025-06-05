@@ -22,17 +22,11 @@ import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.GpuCardResponse;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.gpu.GpuService;
 
-import javax.inject.Inject;
-
-@APICommand(name = "listGpuCards", description = "Lists all available GPU cards", responseObject
-        = GpuCardResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.21.0")
+@APICommand(name = "listGpuCards", description = "Lists all available GPU cards",
+        responseObject = GpuCardResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+        since = "4.21.0")
 public class ListGpuCardsCmd extends BaseListCmd {
-
-    @Inject
-    private GpuService gpuService;
 
     /// //////////////////////////////////////////////////
     /// ///////////// API parameters /////////////////////
@@ -42,33 +36,25 @@ public class ListGpuCardsCmd extends BaseListCmd {
             description = "ID of the GPU card")
     private Long id;
 
-    @Parameter(name = ApiConstants.VENDOR_NAME, type = CommandType.STRING, description = "vendor "
-                                                                                         + "name "
-                                                                                         + "of "
-                                                                                         + "the "
-                                                                                         + "GPU "
-                                                                                         + "card")
+    @Parameter(name = ApiConstants.VENDOR_NAME, type = CommandType.STRING,
+            description = "vendor name of the GPU card")
     private String vendorName;
 
-    @Parameter(name = ApiConstants.VENDOR_ID, type = CommandType.STRING, description = "vendor ID"
-                                                                                       + " of the"
-                                                                                       + " GPU "
-                                                                                       + "card")
+    @Parameter(name = ApiConstants.VENDOR_ID, type = CommandType.STRING,
+            description = "vendor ID of the GPU card")
     private String vendorId;
 
-    @Parameter(name = ApiConstants.DEVICE_ID, type = CommandType.STRING, description = "device ID"
-                                                                                       + " of the"
-                                                                                       + " GPU "
-                                                                                       + "card")
+    @Parameter(name = ApiConstants.DEVICE_ID, type = CommandType.STRING,
+            description = "device ID of the GPU card")
     private String deviceId;
 
-    @Parameter(name = ApiConstants.DEVICE_NAME, type = CommandType.STRING, description = "device "
-                                                                                         + "name "
-                                                                                         + "of "
-                                                                                         + "the "
-                                                                                         + "GPU "
-                                                                                         + "card")
+    @Parameter(name = ApiConstants.DEVICE_NAME, type = CommandType.STRING,
+            description = "device name of the GPU card")
     private String deviceName;
+
+    @Parameter(name = ApiConstants.ACTIVE_ONLY, type = CommandType.BOOLEAN,
+            description = "If true, only GPU cards which have a device will be listed. If false, all GPU cards will be listed.")
+    private Boolean activeOnly;
 
     /// //////////////////////////////////////////////////
     /// //////////////// Accessors ///////////////////////
@@ -94,12 +80,15 @@ public class ListGpuCardsCmd extends BaseListCmd {
         return deviceName;
     }
 
+    public boolean getActiveOnly() {
+        return Boolean.TRUE.equals(activeOnly);
+    }
+
     /// //////////////////////////////////////////////////
     /// //////////// API Implementation///////////////////
     /// //////////////////////////////////////////////////
 
-    @Override
-    public void execute() {
+    @Override public void execute() {
         ListResponse<GpuCardResponse> response = gpuService.listGpuCards(this);
         response.setResponseName(getCommandName());
         setResponseObject(response);

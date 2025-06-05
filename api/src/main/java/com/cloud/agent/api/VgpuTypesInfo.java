@@ -40,6 +40,7 @@ public class VgpuTypesInfo {
     private Long maxVgpuPerGpu;
     private Long remainingCapacity;
     private Long maxCapacity;
+    private boolean display = false;
 
     public String getModelName() {
         return modelName;
@@ -53,16 +54,32 @@ public class VgpuTypesInfo {
         return videoRam;
     }
 
+    public void setVideoRam(Long videoRam) {
+        this.videoRam = videoRam;
+    }
+
     public Long getMaxHeads() {
         return maxHeads;
+    }
+
+    public void setMaxHeads(Long maxHeads) {
+        this.maxHeads = maxHeads;
     }
 
     public Long getMaxResolutionX() {
         return maxResolutionX;
     }
 
+    public void setMaxResolutionX(Long maxResolutionX) {
+        this.maxResolutionX = maxResolutionX;
+    }
+
     public Long getMaxResolutionY() {
         return maxResolutionY;
+    }
+
+    public void setMaxResolutionY(Long maxResolutionY) {
+        this.maxResolutionY = maxResolutionY;
     }
 
     public Long getMaxVpuPerGpu() {
@@ -175,6 +192,14 @@ public class VgpuTypesInfo {
 
     public void setVmName(String vmName) {
         this.vmName = vmName;
+    }
+
+    public boolean isDisplay() {
+        return display;
+    }
+
+    public void setDisplay(boolean display) {
+        this.display = display;
     }
 
     public VgpuTypesInfo(GpuDevice.DeviceType deviceType, String groupName, String modelName, String busAddress,

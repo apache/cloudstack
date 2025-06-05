@@ -28,6 +28,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.user.Account;
 import com.cloud.utils.Pair;
+import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Assert;
 import org.junit.Before;
@@ -63,6 +64,7 @@ public class FirstFitAllocatorTest {
 
     private Host host1;
     private Host host2;
+    private VirtualMachineProfile vmProfile;
     ConfigurationDao configDao;
 
     @Before
@@ -86,12 +88,16 @@ public class FirstFitAllocatorTest {
         host1 = mock(Host.class);
         host2 = mock(Host.class);
 
+        vmProfile = mock(VirtualMachineProfile.class);
+        when(vmProfile.getId()).thenReturn(1L);
+
         when(plan.getDataCenterId()).thenReturn(1L);
         when(offering.getCpu()).thenReturn(2);
         when(offering.getSpeed()).thenReturn(1000);
         when(offering.getRamSize()).thenReturn(2048);
         when(offering.getId()).thenReturn(123L);
         when(offering.getHostTag()).thenReturn(null);
+        when(offering.getVgpuProfileId()).thenReturn(null);
     }
 
     @Test
@@ -119,7 +125,7 @@ public class FirstFitAllocatorTest {
         when(capacityMgr.checkIfHostHasCpuCapabilityAndCapacity(eq(host2), eq(offering), eq(true)))
                 .thenReturn(new Pair<>(true, false));
 
-        List<Host> result = allocator.allocateTo(plan, offering, null, avoid, inputHosts, 2, true, account);
+        List<Host> result = allocator.allocateTo(vmProfile, plan, offering, null, avoid, inputHosts, 2, true, account);
 
         // Only host1 should be returned
         assertEquals(1, result.size());
@@ -136,7 +142,7 @@ public class FirstFitAllocatorTest {
 
         when(capacityMgr.checkIfHostReachMaxGuestLimit(host2)).thenReturn(true); // Reached limit
 
-        List<Host> result = allocator.allocateTo(plan, offering, null, avoid, inputHosts, 2, true, account);
+        List<Host> result = allocator.allocateTo(vmProfile, plan, offering, null, avoid, inputHosts, 2, true, account);
 
         assertTrue(result.isEmpty());
     }
@@ -156,7 +162,7 @@ public class FirstFitAllocatorTest {
 
         when(resourceMgr.isGPUDeviceAvailable(eq(host1), eq("NVIDIA"), eq("GRID"))).thenReturn(false);
 
-        List<Host> result = allocator.allocateTo(plan, offering, null, avoid, inputHosts, 1, true, account);
+        List<Host> result = allocator.allocateTo(vmProfile, plan, offering, null, avoid, inputHosts, 1, true, account);
 
         assertTrue(result.isEmpty());
     }

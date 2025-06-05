@@ -19,8 +19,7 @@ package com.cloud.simulator;
 public interface MockGpuDevice {
 
     enum State {
-        Allocated,
-        Available
+        Allocated, Available
     }
 
     long getId();

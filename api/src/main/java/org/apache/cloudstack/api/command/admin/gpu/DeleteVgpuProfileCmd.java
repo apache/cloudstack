@@ -26,25 +26,19 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.VgpuProfileResponse;
-import org.apache.cloudstack.gpu.GpuService;
 
-import javax.inject.Inject;
 
-@APICommand(name = "deleteVgpuProfile", description = "Deletes a vGPU profile from the system", responseObject =
-        SuccessResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.21.0",
-        authorized = {RoleType.Admin})
+@APICommand(name = "deleteVgpuProfile", description = "Deletes a vGPU profile from the system",
+            responseObject = SuccessResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
+            since = "4.21.0", authorized = {RoleType.Admin})
 public class DeleteVgpuProfileCmd extends BaseCmd {
-
-    @Inject
-    private GpuService gpuService;
 
     /// //////////////////////////////////////////////////
     /// ///////////// API parameters /////////////////////
     /// //////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VgpuProfileResponse.class,
-            required = true, description = "the ID of the vGPU profile")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = VgpuProfileResponse.class, required = true,
+               description = "the ID of the vGPU profile")
     private Long id;
 
     /// //////////////////////////////////////////////////

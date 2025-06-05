@@ -25,20 +25,15 @@ import org.apache.cloudstack.api.InternalIdentity;
 public interface GpuDevice extends InternalIdentity, Identity {
 
     enum State {
-        Allocated,
-        Free,
-        Error,
+        Allocated, Free, Error, PartiallyAllocated,
     }
 
-    enum ResourceState {
-        Enabled,
-        Disabled,
+    enum ManagedState {
+        Managed, Unmanaged,
     }
 
     enum DeviceType {
-        PCI,
-        MDEV,
-        VGPUOnly,
+        PCI, MDEV, VGPUOnly,
     }
 
     long getHostId();

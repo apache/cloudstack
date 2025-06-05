@@ -253,6 +253,22 @@
                 </span>
               </div>
             </div>
+            <div class="resource-detail-item" v-if="'gpucardname' in resource && resource.gpucardname !== ''">
+              <div class="resource-detail-item__label">{{ $t('label.gpu') }}</div>
+              <div class="resource-detail-item__details">
+                <font-awesome-icon
+                  :icon="['fa-solid', 'fa-microchip']"
+                  class="anticon"
+                  :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+                <span>
+                  {{ resource.gpucount ? resource.gpucount + ' x ' : '' }}
+                  <router-link v-if="resource.gpucardid" :to="{ path: '/gpucard/' + resource.gpucardid }">{{ resource.gpucardname}} </router-link>
+                  <span v-else>{{ resource.gpucardname }}</span>
+                  <router-link v-if="resource.vgpuprofileid" :to="{ path: '/vgpuprofile/' + resource.vgpuprofileid }">{{ ' (' + resource.vgpuprofilename + ')' }}</router-link>
+                  <span v-else-if="resource.vgpuprofilename">{{ ' (' + resource.vgpuprofilename + ')' }}</span>
+                </span>
+              </div>
+            </div>
             <div class="resource-detail-item" v-else-if="resource.memorytotalgb">
               <div class="resource-detail-item__label">{{ $t('label.memory') }}</div>
               <div class="resource-detail-item__details">
@@ -316,6 +332,27 @@
                   </div>
                 </div>
 
+              </div>
+            </div>
+            <div class="resource-detail-item" v-if="resource.gputotal">
+              <div class="resource-detail-item__label">{{ $t('label.gpu') }}</div>
+              <div class="resource-detail-item__details">
+                <font-awesome-icon
+                  :icon="['fa-solid', 'fa-microchip']"
+                  class="anticon"
+                  :style="[$store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' }]" />
+                {{ resource.gputotal + ' ' + $t('label.gpu') }}
+              </div>
+              <div>
+                <span v-if="resource.gpuused">
+                  <a-progress
+                    class="progress-bar"
+                    size="small"
+                    status="active"
+                    :percent="Number(parseFloat(100.0 * parseFloat(resource.gpuused) / parseFloat(resource.gputotal)).toFixed(2))"
+                    :format="(percent, successPercent) => parseFloat(percent).toFixed(2) + '% ' + $t('label.used')"
+                  />
+                </span>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.volumes || resource.sizegb">
@@ -581,6 +618,17 @@
                 <router-link v-if="!isStatic && ($route.meta.name === 'router' || $route.meta.name === 'systemvm')" :to="{ path: '/systemoffering/' + resource.serviceofferingid}">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
                 <router-link v-else-if="$router.resolve('/computeoffering/' + resource.serviceofferingid).matched[0].redirect !== '/exception/404'" :to="{ path: '/computeoffering/' + resource.serviceofferingid }">{{ resource.serviceofferingname || resource.serviceofferingid }} </router-link>
                 <span v-else>{{ resource.serviceofferingname || resource.serviceofferingid }}</span>
+                <span v-if="resource.leaseduration !== undefined">
+                  <a-tooltip>
+                    <template #title>{{ $t('label.remainingdays')  + ": " + getRemainingLeaseText(record.leaseduration) }}</template>
+                    <field-time-outlined
+                      :style="{
+                        color: $store.getters.darkMode ? { color: 'rgba(255, 255, 255, 0.65)' } : { color: '#888' },
+                        fontSize: '20px',
+                        paddingLeft: '5px'
+                      }"/>
+                  </a-tooltip>
+                </span>
               </div>
             </div>
             <div class="resource-detail-item" v-if="resource.controlofferingname && resource.controlofferingid">

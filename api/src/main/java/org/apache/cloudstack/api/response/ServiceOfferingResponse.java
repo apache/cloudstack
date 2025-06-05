@@ -254,6 +254,10 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
     @Param(description = "the count of GPUs to attach ", since = "4.21")
     private Integer gpuCount;
 
+    @SerializedName(ApiConstants.GPU_DISPLAY)
+    @Param(description = "whether GPU device is used for display or not ", since = "4.21")
+    private Boolean gpuDisplay;
+
     @SerializedName(ApiConstants.PURGE_RESOURCES)
     @Param(description = "Whether to cleanup VM and its associated resource upon expunge", since = "4.20")
     private Boolean purgeResources;
@@ -642,6 +646,14 @@ public class ServiceOfferingResponse extends BaseResponseWithAnnotations {
 
     public void setGpuCount(Integer gpuCount) {
         this.gpuCount = gpuCount;
+    }
+
+    public Boolean getGpuDisplay() {
+        return gpuDisplay;
+    }
+
+    public void setGpuDisplay(Boolean gpuDisplay) {
+        this.gpuDisplay = gpuDisplay;
     }
 
     public void setPurgeResources(Boolean purgeResources) {

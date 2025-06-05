@@ -118,6 +118,12 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
             since = "4.21.0")
     private Long vgpuProfileId;
 
+    @Parameter(name = ApiConstants.GPU_ENABLED,
+            type = CommandType.BOOLEAN,
+            description = "Flag to indicate if the service offering supports GPU. If set to true, only service offerings that support GPU will be returned.",
+            since = "4.21.0")
+    private Boolean gpuEnabled;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -181,6 +187,10 @@ public class ListServiceOfferingsCmd extends BaseListProjectAndAccountResourcesC
 
     public Long getVgpuProfileId() {
         return vgpuProfileId;
+    }
+
+    public Boolean getGpuEnabled() {
+        return gpuEnabled;
     }
 
     /////////////////////////////////////////////////////

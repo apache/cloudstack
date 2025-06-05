@@ -16,10 +16,10 @@
 // under the License.
 package org.apache.cloudstack.gpu;
 
-import java.util.Date;
-
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import java.util.Date;
 
 /**
  * GPU card interface representing a physical GPU card model

@@ -171,6 +171,12 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
             since = "4.21.0")
     private Boolean onlyLeasedInstances = false;
 
+    @Parameter(name = ApiConstants.GPU_ENABLED,
+            type = CommandType.BOOLEAN,
+            description = "Flag to indicate if the VMs should be filtered by GPU support. If set to true, only VMs that support GPU will be returned.",
+            since = "4.21.0")
+    private Boolean gpuEnabled;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -316,6 +322,10 @@ public class ListVMsCmd extends BaseListRetrieveOnlyResourceCountCmd implements 
 
     public boolean getOnlyLeasedInstances() {
         return BooleanUtils.toBoolean(onlyLeasedInstances);
+    }
+
+    public Boolean getGpuEnabled() {
+        return gpuEnabled;
     }
 
     /////////////////////////////////////////////////////

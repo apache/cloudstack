@@ -1526,6 +1526,18 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                     userVmSearchBuilder.entity().getId(), JoinBuilder.JoinType.INNER);
         }
 
+        if (cmd.getGpuEnabled() != null) {
+            SearchBuilder<ServiceOfferingVO> serviceOfferingSearch;
+            if (cmd.getGpuEnabled()) {
+                serviceOfferingSearch = _srvOfferingDao.createSearchBuilder();
+                serviceOfferingSearch.and("vgpuProfileId", serviceOfferingSearch.entity().getVgpuProfileId(), Op.NNULL);
+            } else {
+                serviceOfferingSearch = _srvOfferingDao.createSearchBuilder();
+                serviceOfferingSearch.and("vgpuProfileId", serviceOfferingSearch.entity().getVgpuProfileId(), Op.NULL);
+            }
+            userVmSearchBuilder.join("serviceOffering", serviceOfferingSearch, serviceOfferingSearch.entity().getId(), userVmSearchBuilder.entity().getServiceOfferingId(), JoinBuilder.JoinType.INNER);
+        }
+
         if (keyPairName != null) {
             SearchBuilder<UserVmDetailVO> vmDetailSearchKeys = userVmDetailsDao.createSearchBuilder();
             SearchBuilder<UserVmDetailVO> vmDetailSearchVmIds = userVmDetailsDao.createSearchBuilder();
@@ -4011,6 +4023,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ServiceOffering.State state = cmd.getState();
         final Long templateId = cmd.getTemplateId();
         final Long vgpuProfileId = cmd.getVgpuProfileId();
+        final Boolean gpuEnabled = cmd.getGpuEnabled();
 
         final Account owner = accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
 
@@ -4052,6 +4065,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (vgpuProfileId != null) {
             serviceOfferingSearch.and("vgpuProfileId", serviceOfferingSearch.entity().getVgpuProfileId(), Op.EQ);
+        }
+
+        if (gpuEnabled != null) {
+            if (gpuEnabled) {
+                serviceOfferingSearch.and("gpuEnabledTrue", serviceOfferingSearch.entity().getVgpuProfileId(), Op.NNULL);
+            } else {
+                serviceOfferingSearch.and("gpuEnabledTrue", serviceOfferingSearch.entity().getVgpuProfileId(), Op.NULL);
+            }
         }
 
         if (vmId != null) {

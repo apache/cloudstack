@@ -175,7 +175,7 @@ export default {
         case 7: return this.$t('label.vlan')
         case 8: return this.$t('label.direct.ips')
         case 9: return this.$t('label.local.storage')
-        case 19: return this.$t('label.gpu')
+        case 11: return this.$t('label.gpu')
         case 90: return this.$t('label.num.cpu.cores')
         default: return ''
       }

@@ -84,7 +84,6 @@ import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageDispatcher;
 import org.apache.cloudstack.framework.messagebus.MessageHandler;
-import org.apache.cloudstack.gpu.GpuDevice;
 import org.apache.cloudstack.gpu.GpuService;
 import org.apache.cloudstack.jobs.JobInfo;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -2338,6 +2337,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             _reservationDao.setResourceId(Resource.ResourceType.user_vm, null);
             _reservationDao.setResourceId(Resource.ResourceType.cpu, null);
             _reservationDao.setResourceId(Resource.ResourceType.memory, null);
+            _reservationDao.setResourceId(Resource.ResourceType.gpu, null);
         }
         return _stateMachine.transitTo(vm, e, new Pair<>(vm.getHostId(), hostId), _vmDao);
     }
@@ -2356,7 +2356,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         deleteVMSnapshots(vm, expunge);
 
-        gpuService.deallocateGpuDevicesForVmOnHost(vm.getId(), GpuDevice.State.Free);
+        gpuService.deallocateGpuDevicesForVmOnHost(vm.getId());
 
         Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
             @Override

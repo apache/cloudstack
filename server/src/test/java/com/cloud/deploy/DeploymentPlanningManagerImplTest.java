@@ -39,6 +39,7 @@ import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.InsufficientServerCapacityException;
 import com.cloud.gpu.GPU;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
+import com.cloud.gpu.dao.VgpuProfileDao;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -1151,6 +1152,11 @@ public class DeploymentPlanningManagerImplTest {
         @Bean
         public VMTemplateDao vmTemplateDao() {
             return Mockito.mock(VMTemplateDao.class);
+        }
+
+        @Bean
+        public VgpuProfileDao vgpuProfileDao() {
+            return Mockito.mock(VgpuProfileDao.class);
         }
 
         public static class Library implements TypeFilter {

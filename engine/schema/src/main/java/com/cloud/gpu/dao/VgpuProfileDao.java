@@ -34,9 +34,6 @@ public interface VgpuProfileDao extends GenericDao<VgpuProfileVO, Long> {
 
     VgpuProfileVO findByNameAndCardId(String name, long cardId);
 
-    List<VgpuProfileVO> findByNameAndCardIds(String name, List<Long> cardIdList);
-
-    Pair<List<VgpuProfileVO>, Integer> searchAndCountVgpuProfiles(
-            Long id, String name, String keyword, Long gpuCardId, Long startIndex, Long pageSize
-    );
+    Pair<List<VgpuProfileVO>, Integer> searchAndCountVgpuProfiles(Long id, String name, String keyword, Long gpuCardId,
+            boolean activeOnly, Long startIndex, Long pageSize);
 }

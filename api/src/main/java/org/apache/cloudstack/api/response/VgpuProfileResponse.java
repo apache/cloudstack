@@ -42,6 +42,22 @@ public class VgpuProfileResponse extends GpuCardResponse {
     @Param(description = "the maximum number of vGPUs per physical GPU")
     private Long maxVgpuPerPgpu;
 
+    @SerializedName(ApiConstants.VIDEORAM)
+    @Param(description = "the video RAM size in MB")
+    private Long videoRam;
+
+    @SerializedName(ApiConstants.MAXHEADS)
+    @Param(description = "the maximum number of display heads")
+    private Long maxHeads;
+
+    @SerializedName(ApiConstants.MAXRESOLUTIONX)
+    @Param(description = "the maximum X resolution")
+    private Long maxResolutionX;
+
+    @SerializedName(ApiConstants.MAXRESOLUTIONY)
+    @Param(description = "the maximum Y resolution")
+    private Long maxResolutionY;
+
     public VgpuProfileResponse(VgpuProfile vgpuProfile, GpuCard gpuCard) {
         super(gpuCard);
         id = vgpuProfile.getUuid();
@@ -50,6 +66,10 @@ public class VgpuProfileResponse extends GpuCardResponse {
         gpuCardId = gpuCard.getUuid();
         gpuCardName = gpuCard.getName();
         maxVgpuPerPgpu = vgpuProfile.getMaxVgpuPerPgpu();
+        videoRam = vgpuProfile.getVideoRam();
+        maxHeads = vgpuProfile.getMaxHeads();
+        maxResolutionX = vgpuProfile.getMaxResolutionX();
+        maxResolutionY = vgpuProfile.getMaxResolutionY();
         setObjectName("vgpuprofile");
     }
 
@@ -65,7 +85,51 @@ public class VgpuProfileResponse extends GpuCardResponse {
         return description;
     }
 
+    public String getGpuCardId() {
+        return gpuCardId;
+    }
+
+    public String getGpuCardName() {
+        return gpuCardName;
+    }
+
+    public Long getMaxVgpuPerPgpu() {
+        return maxVgpuPerPgpu;
+    }
+
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public Long getVideoRam() {
+        return videoRam;
+    }
+
+    public void setVideoRam(Long videoRam) {
+        this.videoRam = videoRam;
+    }
+
+    public Long getMaxHeads() {
+        return maxHeads;
+    }
+
+    public void setMaxHeads(Long maxHeads) {
+        this.maxHeads = maxHeads;
+    }
+
+    public Long getMaxResolutionX() {
+        return maxResolutionX;
+    }
+
+    public void setMaxResolutionX(Long maxResolutionX) {
+        this.maxResolutionX = maxResolutionX;
+    }
+
+    public Long getMaxResolutionY() {
+        return maxResolutionY;
+    }
+
+    public void setMaxResolutionY(Long maxResolutionY) {
+        this.maxResolutionY = maxResolutionY;
     }
 }

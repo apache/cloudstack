@@ -296,7 +296,6 @@ import com.cloud.domain.DomainVO;
 import com.cloud.event.Event;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.gpu.GPU;
 import com.cloud.host.ControlState;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -2158,16 +2157,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                         result.get(0).getPodId(), result.get(0).getClusterId())) != null) {
             HashMap<String, Long> vgpuVMs = ApiDBUtils.getVgpuVmsCount(result.get(0).getDataCenterId(), result.get(0).getPodId(), result.get(0).getClusterId());
 
-            float capacityUsed = 0;
+            long capacityUsed = 0;
             long capacityMax = 0;
             for (VgpuTypesInfo capacity : gpuCapacities) {
-                // TODO: Fix calculation here and also take into account the gpu count for the VM.
                 if (vgpuVMs.containsKey(capacity.getGroupName().concat(capacity.getModelName()))) {
-                    capacityUsed += (float)vgpuVMs.get(capacity.getGroupName().concat(capacity.getModelName())) / capacity.getMaxVpuPerGpu();
+                    capacityUsed += vgpuVMs.get(capacity.getGroupName().concat(capacity.getModelName()));
                 }
-                if (capacity.getModelName().equals(GPU.GPUType.passthrough.toString())) {
-                    capacityMax += capacity.getMaxCapacity();
-                }
+                capacityMax += capacity.getMaxCapacity();
             }
 
             DataCenter zone = ApiDBUtils.findZoneById(result.get(0).getDataCenterId());
@@ -2188,10 +2184,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             capacityResponse.setCapacityType(Capacity.CAPACITY_TYPE_GPU);
             capacityResponse.setCapacityName(CapacityVO.getCapacityName(Capacity.CAPACITY_TYPE_GPU));
-            capacityResponse.setCapacityUsed((long)Math.ceil(capacityUsed));
+            capacityResponse.setCapacityUsed(capacityUsed);
+            capacityResponse.setCapacityAllocated(capacityUsed);
             capacityResponse.setCapacityTotal(capacityMax);
             if (capacityMax > 0) {
-                capacityResponse.setPercentUsed(format.format(capacityUsed / capacityMax * 100f));
+                capacityResponse.setPercentUsed(format.format((float)capacityUsed / capacityMax * 100f));
             } else {
                 capacityResponse.setPercentUsed(format.format(0));
             }

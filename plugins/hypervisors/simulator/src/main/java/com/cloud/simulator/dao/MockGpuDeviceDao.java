@@ -25,6 +25,7 @@ public interface MockGpuDeviceDao extends GenericDao<MockGpuDeviceVO, Long> {
 
     /**
      * Find GPU device by bus address
+     *
      * @param busAddress the bus address
      * @return the GPU device or null if not found
      */
@@ -32,25 +33,11 @@ public interface MockGpuDeviceDao extends GenericDao<MockGpuDeviceVO, Long> {
 
     /**
      * List GPU devices by host ID
+     *
      * @param hostId the host ID
      * @return list of GPU devices
      */
     List<MockGpuDeviceVO> listByHostId(Long hostId);
 
     List<MockGpuDeviceVO> listByVmId(Long vmId);
-
-    /**
-     * List GPU devices by host ID and VM ID
-     * @param hostId the host ID
-     * @param vmId the VM ID
-     * @return list of GPU devices
-     */
-    List<MockGpuDeviceVO> listByHostIdAndVmId(Long hostId, Long vmId);
-
-    /**
-     * List GPU devices available for allocation on a host
-     * @param hostId the host ID
-     * @return list of available GPU devices
-     */
-    List<MockGpuDeviceVO> listAvailableByHost(Long hostId);
 }

@@ -51,4 +51,24 @@ public interface VgpuProfile extends InternalIdentity, Identity {
      * @return the maximum number of vGPUs per physical GPU
      */
     Long getMaxVgpuPerPgpu();
+
+    /**
+     * @return the video RAM size in MB
+     */
+    Long getVideoRam();
+
+    /**
+     * @return the maximum number of display heads
+     */
+    Long getMaxHeads();
+
+    /**
+     * @return the maximum X resolution
+     */
+    Long getMaxResolutionX();
+
+    /**
+     * @return the maximum Y resolution
+     */
+    Long getMaxResolutionY();
 }

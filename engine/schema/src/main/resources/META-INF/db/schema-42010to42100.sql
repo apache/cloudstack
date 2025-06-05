@@ -255,13 +255,16 @@ CREATE TABLE IF NOT EXISTS `cloud`.`vgpu_profile` (
   `name` varchar(255) NOT NULL COMMENT 'name of the vGPU profile',
   `description` varchar(255) DEFAULT NULL COMMENT 'description of the vGPU profile',
   `card_id` bigint unsigned NOT NULL COMMENT 'id of the GPU card',
+  `video_ram` bigint unsigned DEFAULT NULL COMMENT 'video RAM of the vGPU profile',
+  `max_heads` bigint unsigned DEFAULT NULL COMMENT 'maximum number of heads of the vGPU profile',
+  `max_resolution_x` bigint unsigned DEFAULT NULL COMMENT 'maximum resolution x of the vGPU profile',
+  `max_resolution_y` bigint unsigned DEFAULT NULL COMMENT 'maximum resolution y of the vGPU profile',
   `max_vgpu_per_pgpu` bigint unsigned DEFAULT NULL COMMENT 'Maximum number of vGPUs per physical GPU',
   `created` datetime NOT NULL COMMENT 'date created',
   PRIMARY KEY (`id`),
   UNIQUE KEY (`name`, `card_id`),
   CONSTRAINT `fk_vgpu_profile_card_id` FOREIGN KEY (`card_id`) REFERENCES `gpu_card`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='vGPU profiles supported by CloudStack';
-
 
 -- Create the GPU device table to hold the GPU device information on different hosts
 CREATE TABLE IF NOT EXISTS `cloud`.`gpu_device` (
@@ -273,9 +276,11 @@ CREATE TABLE IF NOT EXISTS `cloud`.`gpu_device` (
   `type` varchar(32) NOT NULL COMMENT 'type of the GPU device. PCI or MDEV',
   `host_id` bigint unsigned NOT NULL COMMENT 'id of the host where GPU is installed',
   `vm_id` bigint unsigned DEFAULT NULL COMMENT 'id of the VM using this GPU device',
+  `numa_node` varchar(255) DEFAULT NULL COMMENT 'NUMA node of the GPU device',
+  `pci_root` varchar(255) DEFAULT NULL COMMENT 'PCI root of the GPU device',
   `parent_gpu_device_id` bigint unsigned DEFAULT NULL COMMENT 'id of the parent GPU device. null if it is a physical GPU device and for vGPUs points to the actual GPU',
   `state` varchar(32) NOT NULL COMMENT 'state of the GPU device',
-  `resource_state` varchar(32) NOT NULL COMMENT 'resource state of the GPU device',
+  `managed_state` varchar(32) NOT NULL COMMENT 'resource state of the GPU device',
   PRIMARY KEY (`id`),
   UNIQUE KEY (`bus_address`, `host_id`),
   CONSTRAINT `fk_gpu_devices__card_id` FOREIGN KEY (`card_id`) REFERENCES `gpu_card` (`id`) ON DELETE CASCADE,
@@ -284,7 +289,9 @@ CREATE TABLE IF NOT EXISTS `cloud`.`gpu_device` (
   CONSTRAINT `fk_gpu_devices__parent_gpu_device_id` FOREIGN KEY (`parent_gpu_device_id`) REFERENCES `gpu_device` (`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='GPU devices installed on hosts';
 
+-- Add references to GPU tables
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.service_offering', 'vgpu_profile_id', 'bigint unsigned DEFAULT NULL COMMENT "vgpu profile ID"');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.service_offering', 'gpu_count', 'int unsigned DEFAULT NULL COMMENT "number of GPUs"');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.service_offering', 'gpu_display', 'boolean DEFAULT false COMMENT "enable GPU display"');
 CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.service_offering','fk_service_offering__vgpu_profile_id');
 CALL `cloud`.`IDEMPOTENT_ADD_FOREIGN_KEY`('cloud.service_offering', 'fk_service_offering__vgpu_profile_id', '(vgpu_profile_id)', '`vgpu_profile`(`id`)');

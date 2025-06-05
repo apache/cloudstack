@@ -278,13 +278,22 @@
           <a-col :md="12" :lg="12">
             <a-form-item name="gpucount" ref="gpucount">
               <template #label>
-                <tooltip-label :title="$t('label.gpu.count')" :tooltip="$t('label.gpu.count.tooltip')"/>
+                <tooltip-label :title="$t('label.gpu.count')" :tooltip="apiParams.gpucount.description"/>
               </template>
               <a-input
                 v-model:value="form.gpucount"
                 type="number"
                 min="1"
+                max="16"
                 :placeholder="$t('label.gpu.count')"/>
+            </a-form-item>
+          </a-col>
+          <a-col :md="12" :lg="12">
+            <a-form-item name="gpudisplay" ref="gpudisplay">
+              <template #label>
+                <tooltip-label :title="$t('label.gpu.display')" :tooltip="apiParams.gpudisplay.description"/>
+              </template>
+              <a-switch v-model:checked="form.gpudisplay" />
             </a-form-item>
           </a-col>
         </a-row>
@@ -744,6 +753,7 @@ export default {
         gpucardid: this.selectedGpuCard,
         vgpuprofile: '',
         gpucount: '1',
+        gpudisplay: false,
         computeonly: this.computeonly,
         storagetype: this.storageType,
         provisioningtype: this.provisioningType,
@@ -836,7 +846,6 @@ export default {
     fetchGPUCards () {
       this.gpuCardLoading = true
       api('listGpuCards', {
-        listall: true
       }).then(json => {
         this.gpuCards = json.listgpucardsresponse.gpucard || []
         // Add a "None" option at the beginning
@@ -981,11 +990,11 @@ export default {
     },
     handleGpuCardChange (cardId) {
       this.selectedGpuCard = cardId
+      this.form.vgpuprofile = ''
       if (cardId && cardId !== '') {
         this.fetchVgpuProfiles(cardId)
       } else {
         this.vgpuProfiles = []
-        this.form.vgpuprofile = ''
         this.form.gpucount = '1'
       }
     },
@@ -996,6 +1005,7 @@ export default {
         gpucardid: gpuCardId
       }).then(json => {
         this.vgpuProfiles = json.listvgpuprofilesresponse.vgpuprofile || []
+        this.form.vgpuprofile = this.vgpuProfiles.length > 0 ? this.vgpuProfiles[0].id : ''
       }).catch(error => {
         console.error('Error fetching vGPU profiles:', error)
         this.vgpuProfiles = []
@@ -1035,8 +1045,11 @@ export default {
         if (values.vgpuprofile) {
           params.vgpuprofileid = values.vgpuprofile
         }
-        if (values.gpucount && values.gpucount.length > 0) {
+        if (values.gpucount && values.gpucount > 0) {
           params.gpucount = values.gpucount
+        }
+        if (values.gpudisplay !== undefined) {
+          params.gpudisplay = values.gpudisplay
         }
 
         // custom fields (begin)
@@ -1191,9 +1204,6 @@ export default {
       }
       this.form.leaseduration = this.leaseduration
       this.form.leaseexpiryaction = this.leaseexpiryaction
-    },
-    handleGpuOfferingChange (id) {
-      this.showGpuCount = id !== ''
     }
   }
 }

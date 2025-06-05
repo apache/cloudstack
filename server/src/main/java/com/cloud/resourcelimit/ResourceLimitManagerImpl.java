@@ -297,6 +297,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             projectResourceLimitMap.put(Resource.ResourceType.vpc.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectVpcs.key())));
             projectResourceLimitMap.put(Resource.ResourceType.cpu.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectCpus.key())));
             projectResourceLimitMap.put(Resource.ResourceType.memory.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectMemory.key())));
+            projectResourceLimitMap.put(Resource.ResourceType.gpu.name(), DefaultMaxProjectGpus.value());
             projectResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxProjectPrimaryStorage.key())));
             projectResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), MaxProjectSecondaryStorage.value());
             projectResourceLimitMap.put(Resource.ResourceType.backup.name(), Long.parseLong(_configDao.getValue(BackupManager.DefaultMaxProjectBackups.key())));
@@ -313,6 +314,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             accountResourceLimitMap.put(Resource.ResourceType.vpc.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountVpcs.key())));
             accountResourceLimitMap.put(Resource.ResourceType.cpu.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountCpus.key())));
             accountResourceLimitMap.put(Resource.ResourceType.memory.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountMemory.key())));
+            accountResourceLimitMap.put(Resource.ResourceType.gpu.name(), DefaultMaxAccountGpus.value());
             accountResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxAccountPrimaryStorage.key())));
             accountResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), MaxAccountSecondaryStorage.value());
             accountResourceLimitMap.put(Resource.ResourceType.project.name(), DefaultMaxAccountProjects.value());
@@ -333,6 +335,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             domainResourceLimitMap.put(Resource.ResourceType.primary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainPrimaryStorage.key())));
             domainResourceLimitMap.put(Resource.ResourceType.secondary_storage.name(), Long.parseLong(_configDao.getValue(Config.DefaultMaxDomainSecondaryStorage.key())));
             domainResourceLimitMap.put(Resource.ResourceType.project.name(), DefaultMaxDomainProjects.value());
+            domainResourceLimitMap.put(Resource.ResourceType.gpu.name(), DefaultMaxDomainGpus.value());
             domainResourceLimitMap.put(Resource.ResourceType.backup.name(), Long.parseLong(_configDao.getValue(BackupManager.DefaultMaxDomainBackups.key())));
             domainResourceLimitMap.put(Resource.ResourceType.backup_storage.name(), Long.parseLong(_configDao.getValue(BackupManager.DefaultMaxDomainBackupStorage.key())));
             domainResourceLimitMap.put(Resource.ResourceType.bucket.name(), Long.parseLong(_configDao.getValue(BucketApiService.DefaultMaxDomainBuckets.key())));
@@ -1303,6 +1306,8 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             newCount = calculateVmCpuCountForAccount(accountId, tag);
         } else if (type == Resource.ResourceType.memory) {
             newCount = calculateVmMemoryCountForAccount(accountId, tag);
+        } else if (type == Resource.ResourceType.gpu) {
+            newCount = calculateVmGpuCountForAccount(accountId, tag);
         } else if (type == Resource.ResourceType.primary_storage) {
             newCount = calculatePrimaryStorageForAccount(accountId, tag);
         } else if (type == Resource.ResourceType.secondary_storage) {
@@ -1429,6 +1434,22 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return memory - reservedMemory;
     }
 
+    protected long calculateVmGpuCountForAccount(long accountId, String tag) {
+        if (StringUtils.isEmpty(tag)) {
+            return calculateGpuForAccount(accountId);
+        }
+        long gputotal = 0;
+        List<UserVmJoinVO> vms = getVmsWithAccountAndTag(accountId, tag);
+
+        for (UserVmJoinVO vm : vms) {
+            if (vm.getGpuCount() != null) {
+                gputotal += vm.getGpuCount();
+            }
+        }
+        long reservedGpus = calculateReservedResources(vms, accountId, ResourceType.gpu, tag);
+        return gputotal - reservedGpus;
+    }
+
     public long countCpusForAccount(long accountId) {
         long cputotal = 0;
         List<UserVmJoinVO> userVms = getVmsWithAccount(accountId);
@@ -1447,6 +1468,18 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
         long reservedRamTotal = calculateReservedResources(userVms, accountId, ResourceType.memory, null);
         return ramtotal - reservedRamTotal;
+    }
+
+    public long calculateGpuForAccount(long accountId) {
+        long gputotal = 0;
+        List<UserVmJoinVO> userVms = getVmsWithAccount(accountId);
+        for (UserVmJoinVO vm : userVms) {
+            if (vm.getGpuCount() != null) {
+                gputotal += vm.getGpuCount();
+            }
+        }
+        long reservedGpuTotal = calculateReservedResources(userVms, accountId, ResourceType.gpu, null);
+        return gputotal - reservedGpuTotal;
     }
 
     public long calculateSecondaryStorageForAccount(long accountId) {
@@ -1854,12 +1887,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         if (newMemory == null) {
             newMemory = newOffering.getRamSize() != null ? Long.valueOf(newOffering.getRamSize()) : 0L;
         }
+        Long currentGpu = currentOffering.getGpuCount() != null ? Long.valueOf(currentOffering.getGpuCount()) : 0L;
+        Long newGpu = newOffering.getGpuCount() != null ? Long.valueOf(newOffering.getGpuCount()) : 0L;
 
         Set<String> sameTags = updatedResourceLimitHostTags.first();
         Set<String> newTags = updatedResourceLimitHostTags.second();
         Set<String> removedTags = updatedResourceLimitHostTags.third();
 
-        if (!newCpu.equals(currentCpu) || !newMemory.equals(currentMemory)) {
+        if (!newCpu.equals(currentCpu) || !newMemory.equals(currentMemory) || !newGpu.equals(currentGpu)) {
             for (String tag : sameTags) {
                 if (newCpu - currentCpu > 0) {
                     incrementResourceCountWithTag(accountId, ResourceType.cpu, tag, newCpu - currentCpu);
@@ -1872,6 +1907,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 } else if (newMemory - currentMemory < 0) {
                     decrementResourceCountWithTag(accountId, ResourceType.memory, tag, currentMemory - newMemory);
                 }
+
+                if (newGpu - currentGpu > 0) {
+                    incrementResourceCountWithTag(accountId, ResourceType.gpu, tag, newGpu - currentGpu);
+                } else if (newGpu - currentGpu < 0) {
+                    decrementResourceCountWithTag(accountId, ResourceType.gpu, tag, currentGpu - newGpu);
+                }
             }
         }
 
@@ -1879,12 +1920,14 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             decrementResourceCountWithTag(accountId, ResourceType.user_vm, tag, 1L);
             decrementResourceCountWithTag(accountId, ResourceType.cpu, tag, currentCpu);
             decrementResourceCountWithTag(accountId, ResourceType.memory, tag, currentMemory);
+            decrementResourceCountWithTag(accountId, ResourceType.gpu, tag, currentGpu);
         }
 
         for (String tag : newTags) {
             incrementResourceCountWithTag(accountId, ResourceType.user_vm, tag, 1L);
             incrementResourceCountWithTag(accountId, ResourceType.cpu, tag, newCpu);
             incrementResourceCountWithTag(accountId, ResourceType.memory, tag, newMemory);
+            incrementResourceCountWithTag(accountId, ResourceType.gpu, tag, newGpu);
         }
     }
 
@@ -1986,10 +2029,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         }
         Long cpu = serviceOffering.getCpu() != null ? Long.valueOf(serviceOffering.getCpu()) : 0L;
         Long ram = serviceOffering.getRamSize() != null ? Long.valueOf(serviceOffering.getRamSize()) : 0L;
+        Long gpu = serviceOffering.getGpuCount() != null ? Long.valueOf(serviceOffering.getGpuCount()) : 0L;
         for (String tag : tags) {
             checkResourceLimitWithTag(owner, ResourceType.user_vm, tag);
             checkResourceLimitWithTag(owner, ResourceType.cpu, tag, cpu);
             checkResourceLimitWithTag(owner, ResourceType.memory, tag, ram);
+            checkResourceLimitWithTag(owner, ResourceType.gpu, tag, gpu);
         }
     }
 
@@ -2004,10 +2049,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 }
                 Long cpu = serviceOffering.getCpu() != null ? Long.valueOf(serviceOffering.getCpu()) : 0L;
                 Long ram = serviceOffering.getRamSize() != null ? Long.valueOf(serviceOffering.getRamSize()) : 0L;
+                Long gpu = serviceOffering.getGpuCount() != null ? Long.valueOf(serviceOffering.getGpuCount()) : 0L;
                 for (String tag : tags) {
                     incrementResourceCountWithTag(accountId, ResourceType.user_vm, tag);
                     incrementResourceCountWithTag(accountId, ResourceType.cpu, tag, cpu);
                     incrementResourceCountWithTag(accountId, ResourceType.memory, tag, ram);
+                    incrementResourceCountWithTag(accountId, ResourceType.gpu, tag, gpu);
                 }
             }
         });
@@ -2025,10 +2072,12 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 }
                 Long cpu = serviceOffering.getCpu() != null ? Long.valueOf(serviceOffering.getCpu()) : 0L;
                 Long ram = serviceOffering.getRamSize() != null ? Long.valueOf(serviceOffering.getRamSize()) : 0L;
+                Long gpu = serviceOffering.getGpuCount() != null ? Long.valueOf(serviceOffering.getGpuCount()) : 0L;
                 for (String tag : tags) {
                     decrementResourceCountWithTag(accountId, ResourceType.user_vm, tag);
                     decrementResourceCountWithTag(accountId, ResourceType.cpu, tag, cpu);
                     decrementResourceCountWithTag(accountId, ResourceType.memory, tag, ram);
+                    decrementResourceCountWithTag(accountId, ResourceType.gpu, tag, gpu);
                 }
             }
         });
@@ -2071,11 +2120,13 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         if (newMemory == null) {
             newMemory = newOffering.getRamSize() != null ? Long.valueOf(newOffering.getRamSize()) : 0L;
         }
+        Long currentGpu = currentOffering.getGpuCount() != null ? Long.valueOf(currentOffering.getGpuCount()) : 0L;
+        Long newGpu = newOffering.getGpuCount() != null ? Long.valueOf(newOffering.getGpuCount()) : 0L;
 
         Set<String> sameTags = updatedResourceLimitHostTags.first();
         Set<String> newTags = updatedResourceLimitHostTags.second();
 
-        if (newCpu - currentCpu > 0 || newMemory - currentMemory > 0) {
+        if (newCpu - currentCpu > 0 || newMemory - currentMemory > 0 || newGpu - currentGpu > 0) {
             for (String tag : sameTags) {
                 if (newCpu - currentCpu > 0) {
                     checkResourceLimitWithTag(owner, ResourceType.cpu, tag, newCpu - currentCpu);
@@ -2084,6 +2135,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 if (newMemory - currentMemory > 0) {
                     checkResourceLimitWithTag(owner, ResourceType.memory, tag, newMemory - currentMemory);
                 }
+
+                if (newGpu - currentGpu > 0) {
+                    checkResourceLimitWithTag(owner, ResourceType.gpu, tag, newGpu - currentGpu);
+                }
             }
         }
 
@@ -2091,6 +2146,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             checkResourceLimitWithTag(owner, ResourceType.user_vm, tag, 1L);
             checkResourceLimitWithTag(owner, ResourceType.cpu, tag, newCpu);
             checkResourceLimitWithTag(owner, ResourceType.memory, tag, newMemory);
+            checkResourceLimitWithTag(owner, ResourceType.gpu, tag, newGpu);
         }
     }
 
@@ -2179,6 +2235,48 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
+    public void checkVmGpuResourceLimit(Account owner, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long gpu) throws ResourceAllocationException {
+        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
+        if (CollectionUtils.isEmpty(tags)) {
+            return;
+        }
+        if (gpu == null) {
+            gpu = serviceOffering.getGpuCount() != null ? Long.valueOf(serviceOffering.getGpuCount()) : 0L;
+        }
+        for (String tag : tags) {
+            checkResourceLimitWithTag(owner, ResourceType.gpu, tag, gpu);
+        }
+    }
+
+    @Override
+    public void incrementVmGpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long gpu) {
+        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
+        if (CollectionUtils.isEmpty(tags)) {
+            return;
+        }
+        if (gpu == null) {
+            gpu = serviceOffering.getGpuCount() != null ? Long.valueOf(serviceOffering.getGpuCount()) : 0L;
+        }
+        for (String tag : tags) {
+            incrementResourceCountWithTag(accountId, ResourceType.gpu, tag, gpu);
+        }
+    }
+
+    @Override
+    public void decrementVmGpuResourceCount(long accountId, Boolean display, ServiceOffering serviceOffering, VirtualMachineTemplate template, Long gpu) {
+        List<String> tags = getResourceLimitHostTagsForResourceCountOperation(display, serviceOffering, template);
+        if (CollectionUtils.isEmpty(tags)) {
+            return;
+        }
+        if (gpu == null) {
+            gpu = serviceOffering.getGpuCount() != null ? Long.valueOf(serviceOffering.getGpuCount()) : 0L;
+        }
+        for (String tag : tags) {
+            decrementResourceCountWithTag(accountId, ResourceType.gpu, tag, gpu);
+        }
+    }
+
+    @Override
     public String getConfigComponentName() {
         return ResourceLimitManagerImpl.class.getName();
     }
@@ -2193,7 +2291,10 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                 ResourceLimitHostTags,
                 ResourceLimitStorageTags,
                 DefaultMaxAccountProjects,
-                DefaultMaxDomainProjects
+                DefaultMaxDomainProjects,
+                DefaultMaxAccountGpus,
+                DefaultMaxDomainGpus,
+                DefaultMaxProjectGpus
         };
     }
 

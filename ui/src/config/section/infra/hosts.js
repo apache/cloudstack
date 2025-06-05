@@ -36,7 +36,7 @@ export default {
       'name', 'state', 'resourcestate', 'ipaddress', 'arch', 'hypervisor',
       { field: 'systeminstances', customTitle: 'system.vms' }, 'version'
     ]
-    const metricsFields = ['instances', 'powerstate', 'cpunumber', 'cputotalghz', 'cpuusedghz', 'cpuallocatedghz', 'memorytotalgb', 'memoryusedgb', 'memoryallocatedgb', 'networkread', 'networkwrite']
+    const metricsFields = ['instances', 'powerstate', 'cpunumber', 'cputotalghz', 'cpuusedghz', 'cpuallocatedghz', 'memorytotalgb', 'memoryusedgb', 'memoryallocatedgb', 'gputotal', 'gpuused', 'networkread', 'networkwrite']
     if (store.getters.metrics) {
       fields.push(...metricsFields)
     }
@@ -164,15 +164,6 @@ export default {
       docHelp: 'adminguide/hosts.html#maintaining-hypervisors-on-hosts',
       dataView: true,
       show: (record) => { return record.resourcestate === 'Maintenance' || record.resourcestate === 'ErrorInMaintenance' || record.resourcestate === 'PrepareForMaintenance' || record.resourcestate === 'ErrorInPrepareForMaintenance' }
-    },
-    {
-      api: 'discoverGpuDevices',
-      icon: 'file-sync-outlined',
-      label: 'label.discover.gpu.devices',
-      message: 'message.action.discover.gpu.devices',
-      docHelp: 'adminguide/hosts.html#discovering-gpu-devices', // TODO: add doc help
-      dataView: true,
-      popup: true
     },
     {
       api: 'configureOutOfBandManagement',
