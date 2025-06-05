@@ -37,7 +37,7 @@
         </a-form-item>
         <a-form-item name="userdata" ref="userdata">
           <template #label>
-            <tooltip-label :title="$t('label.userdata')" :tooltip="$t('label.register.user.data.details')"/>
+            <tooltip-label :title="$t('label.user.data')" :tooltip="$t('label.register.user.data.details')"/>
           </template>
           <a-textarea
             v-model:value="form.userdata"
@@ -48,7 +48,7 @@
         </a-form-item>
         <a-form-item name="params" ref="params">
           <template #label>
-            <tooltip-label :title="$t('label.userdataparams')" :tooltip="apiParams.params.description"/>
+            <tooltip-label :title="$t('label.user.data.params')" :tooltip="apiParams.params.description"/>
           </template>
           <a-select
             mode="tags"
@@ -155,7 +155,7 @@ export default {
       })
       this.rules = reactive({
         name: [{ required: true, message: this.$t('message.error.name') }],
-        userdata: [{ required: true, message: this.$t('message.error.userdata') }]
+        userdata: [{ required: true, message: this.$t('message.error.user.data') }]
       })
     },
     fetchData () {

@@ -662,7 +662,7 @@
           </div>
         </div>
         <div class="resource-detail-item" v-if="resource.userdataname">
-          <div class="resource-detail-item__label">{{ $t('label.userdata') }}</div>
+          <div class="resource-detail-item__label">{{ $t('label.user.data') }}</div>
           <div class="resource-detail-item__details">
             <solution-outlined />
             <router-link v-if="!isStatic && $router.resolve('/userdata/' + resource.userdataid).matched[0].redirect !== '/exception/404'" :to="{ path: '/userdata/' + resource.userdataid }">{{ resource.userdataname || resource.userdataid }}</router-link>
